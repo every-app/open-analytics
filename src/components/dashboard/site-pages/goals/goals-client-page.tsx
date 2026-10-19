@@ -16,12 +16,12 @@ import { Button } from "@insightflare/ui/button";
 import { Card, CardContent } from "@insightflare/ui/card";
 import { PageHeading } from "@insightflare/ui/page-heading";
 import { Spinner } from "@insightflare/ui/spinner";
-import { RiAddLine, RiCloseLine, RiDeleteBinLine } from "@remixicon/react";
 import {
   useInfiniteQuery,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -255,7 +255,7 @@ export function GoalsClientPage({
               setEditorOpen(true);
             }}
           >
-            <RiAddLine data-icon="inline-start" /> {labels.create}
+            <PlusIcon data-icon="inline-start" /> {labels.create}
           </Button>
         ) : null}
       </div>
@@ -301,7 +301,7 @@ export function GoalsClientPage({
                     setEditorOpen(true);
                   }}
                 >
-                  <RiAddLine data-icon="inline-start" /> {labels.create}
+                  <PlusIcon data-icon="inline-start" /> {labels.create}
                 </Button>
               ) : null}
             </CardContent>
@@ -383,7 +383,7 @@ export function GoalsClientPage({
       >
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
-            <AlertDialogTitle icon={RiDeleteBinLine}>
+            <AlertDialogTitle icon={Trash2Icon}>
               {labels.deleteTitle}
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -392,7 +392,7 @@ export function GoalsClientPage({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>
-              <RiCloseLine /> {labels.cancel}
+              <XIcon /> {labels.cancel}
             </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
@@ -402,8 +402,7 @@ export function GoalsClientPage({
                 void remove();
               }}
             >
-              {deleting ? <Spinner /> : <RiDeleteBinLine />}{" "}
-              {labels.deleteConfirm}
+              {deleting ? <Spinner /> : <Trash2Icon />} {labels.deleteConfirm}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

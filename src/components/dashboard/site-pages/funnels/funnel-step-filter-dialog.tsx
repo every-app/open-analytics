@@ -5,7 +5,7 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from "@insightflare/ui/responsive-dialog";
-import { RiFilter2Line } from "@remixicon/react";
+import { ListFilterIcon } from "lucide-react";
 
 import { FilterEditor } from "@/components/dashboard/filters/filter-editor";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
@@ -36,7 +36,7 @@ export function FunnelStepFilterDialog({
         onPointerDownCapture={(event) => event.stopPropagation()}
       >
         <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle icon={RiFilter2Line}>
+          <ResponsiveDialogTitle icon={ListFilterIcon}>
             {labels.stepFilter}
           </ResponsiveDialogTitle>
         </ResponsiveDialogHeader>

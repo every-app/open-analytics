@@ -1,5 +1,5 @@
 import { TableActionButton } from "@insightflare/ui/table-action-button";
-import { RiSettings3Line } from "@remixicon/react";
+import { SettingsIcon } from "lucide-react";
 
 import { navigateWithTransition } from "@/lib/page-transition";
 import { useRouter } from "@/lib/router";
@@ -20,7 +20,7 @@ export function PublicLinkSettingsButton({
       label={label}
       onClick={() => navigateWithTransition(router, href)}
     >
-      <RiSettings3Line className="size-4" />
+      <SettingsIcon className="size-4" />
     </TableActionButton>
   );
 }

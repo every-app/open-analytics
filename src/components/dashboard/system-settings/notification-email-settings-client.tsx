@@ -13,8 +13,8 @@ import { Input } from "@insightflare/ui/input";
 import { Label } from "@insightflare/ui/label";
 import { PageHeading } from "@insightflare/ui/page-heading";
 import { Spinner } from "@insightflare/ui/spinner";
-import { RiMailSendLine, RiSendPlane2Line } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { SendIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import type { SystemSettingsInitialData } from "@/lib/dashboard/management-data";
@@ -79,7 +79,7 @@ export function NotificationEmailSettingsClient({
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiMailSendLine className="size-4" />
+            <SendIcon className="size-4" />
             {copy.notificationEmailTitle}
             {status ? (
               <Badge variant={status.enabled ? "default" : "secondary"}>
@@ -132,7 +132,7 @@ export function NotificationEmailSettingsClient({
                     key="test"
                     className="inline-flex items-center gap-[var(--button-content-gap)]"
                   >
-                    <RiSendPlane2Line data-icon="inline-start" />
+                    <SendIcon data-icon="inline-start" />
                     {copy.test}
                   </span>
                 )}

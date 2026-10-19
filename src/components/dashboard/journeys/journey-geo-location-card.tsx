@@ -9,12 +9,8 @@ import {
 } from "@insightflare/ui/card";
 import { Clickable } from "@insightflare/ui/clickable";
 import { Skeleton } from "@insightflare/ui/skeleton";
-import {
-  RiExternalLinkLine,
-  RiInformationLine,
-  RiMapPin2Line,
-} from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { ExternalLinkIcon, InfoIcon, MapPinIcon } from "lucide-react";
 
 import {
   buildLocalityLocationValue,
@@ -846,7 +842,7 @@ export const JourneyGeoLocationCard = memo(function JourneyGeoLocationCard({
     <Card aria-busy={loading || investigationLoading ? "true" : undefined}>
       <CardHeader>
         <CardTitle className="inline-flex items-center gap-2">
-          <RiMapPin2Line className="size-4" />
+          <MapPinIcon className="size-4" />
           {title}
         </CardTitle>
       </CardHeader>
@@ -942,14 +938,14 @@ export const JourneyGeoLocationCard = memo(function JourneyGeoLocationCard({
                               className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-primary"
                             >
                               {messages.geo.viewOnWikipedia}
-                              <RiExternalLinkLine className="size-3.5 shrink-0" />
+                              <ExternalLinkIcon className="size-3.5 shrink-0" />
                             </a>
                           ) : null}
 
                           <div className="space-y-1.5 text-[11px] leading-4 text-muted-foreground">
                             <p>
                               <span className="mr-1.5 inline-flex h-4 align-top items-center">
-                                <RiInformationLine className="size-3.5" />
+                                <InfoIcon className="size-3.5" />
                               </span>
                               {messages.geo.ipNotice}
                             </p>

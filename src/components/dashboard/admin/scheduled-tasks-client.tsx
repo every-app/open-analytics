@@ -22,14 +22,14 @@ import {
 } from "@insightflare/ui/select";
 import { Spinner } from "@insightflare/ui/spinner";
 import { TableCell, TableHead, TableRow } from "@insightflare/ui/table";
-import {
-  RiAlarmWarningLine,
-  RiCalendarScheduleLine,
-  RiCheckboxCircleLine,
-  RiRefreshLine,
-  RiTimeLine,
-} from "@remixicon/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import {
+  CalendarClockIcon,
+  CircleCheckIcon,
+  ClockIcon,
+  RefreshCwIcon,
+  SirenIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { useDashboardQueryControls } from "@/components/dashboard/shell/dashboard-query-provider";
@@ -293,7 +293,7 @@ export function ScheduledTasksClient({
               onClick={() => void runsQuery.refetch()}
             >
               <span className="inline-flex size-4 shrink-0 items-center justify-center">
-                {replacingRows ? <Spinner /> : <RiRefreshLine />}
+                {replacingRows ? <Spinner /> : <RefreshCwIcon />}
               </span>
               <AutoResizer
                 initial
@@ -327,7 +327,7 @@ export function ScheduledTasksClient({
         items={[
           {
             id: "runs-24h",
-            icon: <RiCalendarScheduleLine />,
+            icon: <CalendarClockIcon />,
             label: t.runs24h,
             loading: replacingRows,
             value: numberFormat(locale, data?.health.totalRuns24h ?? 0),
@@ -335,7 +335,7 @@ export function ScheduledTasksClient({
           },
           {
             id: "success-rate-24h",
-            icon: <RiCheckboxCircleLine />,
+            icon: <CircleCheckIcon />,
             label: t.successRate24h,
             loading: replacingRows,
             value: formatRate(locale, data?.health.successRate24h ?? null),
@@ -347,7 +347,7 @@ export function ScheduledTasksClient({
           },
           {
             id: "problem-runs-24h",
-            icon: <RiAlarmWarningLine />,
+            icon: <SirenIcon />,
             label: t.problemRuns24h,
             loading: replacingRows,
             value: numberFormat(locale, failedOrPartial),
@@ -356,7 +356,7 @@ export function ScheduledTasksClient({
           },
           {
             id: "last-run",
-            icon: <RiTimeLine />,
+            icon: <ClockIcon />,
             label: t.lastRun,
             loading: replacingRows,
             value: data?.health.lastRunAt
@@ -377,7 +377,7 @@ export function ScheduledTasksClient({
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiCalendarScheduleLine className="size-4" />
+            <CalendarClockIcon className="size-4" />
             {t.taskListTitle}
           </CardTitle>
           <CardDescription>{t.taskListDescription}</CardDescription>

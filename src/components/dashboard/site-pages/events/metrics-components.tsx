@@ -13,11 +13,11 @@ import {
 } from "@insightflare/ui/card";
 import type { MetricSummaryItem } from "@insightflare/ui/metric-summary-grid";
 import {
-  RiDatabase2Line,
-  RiFileList3Line,
-  RiPulseLine,
-  RiStackLine,
-} from "@remixicon/react";
+  ActivityIcon,
+  DatabaseIcon,
+  FileTextIcon,
+  LayersIcon,
+} from "lucide-react";
 
 import { numberFormat, percentFormat } from "@/lib/dashboard/format";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
@@ -92,7 +92,7 @@ export function createEventMetricItems({
   return [
     {
       id: "events",
-      icon: <RiPulseLine />,
+      icon: <ActivityIcon />,
       label: labels.totalEvents,
       value: numberFormat(locale, summary.events),
       detail:
@@ -105,7 +105,7 @@ export function createEventMetricItems({
     },
     {
       id: "event-types",
-      icon: <RiStackLine />,
+      icon: <LayersIcon />,
       label: labels.eventTypes,
       value: numberFormat(locale, summary.eventTypes),
       detail:
@@ -116,7 +116,7 @@ export function createEventMetricItems({
     },
     {
       id: "sessions",
-      icon: <RiFileList3Line />,
+      icon: <FileTextIcon />,
       label: labels.sessions,
       value: numberFormat(locale, summary.sessions),
       detail:
@@ -127,7 +127,7 @@ export function createEventMetricItems({
     },
     {
       id: "visitors",
-      icon: <RiDatabase2Line />,
+      icon: <DatabaseIcon />,
       label: labels.visitors,
       value: numberFormat(locale, summary.visitors),
       detail:
@@ -205,7 +205,7 @@ export const EventTrendStackedBarCard = memo(function EventTrendStackedBarCard({
       <CardHeader className="gap-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <CardTitle className="inline-flex items-center gap-2">
-            <RiPulseLine className="size-4" />
+            <ActivityIcon className="size-4" />
             {title}
           </CardTitle>
         </div>

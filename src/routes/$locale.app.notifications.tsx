@@ -4,8 +4,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@insightflare/ui/card";
-import { RiNotification3Line } from "@remixicon/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { BellIcon } from "lucide-react";
 
 import { TeamNotificationsClient } from "@/components/dashboard/admin/team-notifications/client";
 import { canManageTeam } from "@/lib/dashboard/permissions";
@@ -48,7 +48,7 @@ function Page() {
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiNotification3Line className="size-4" />
+            <BellIcon className="size-4" />
             {messages.teamManagement.notifications.forbiddenTitle}
           </CardTitle>
         </CardHeader>

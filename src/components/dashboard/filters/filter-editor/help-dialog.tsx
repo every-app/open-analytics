@@ -9,7 +9,7 @@ import {
   ResponsiveDialogTitle,
 } from "@insightflare/ui/responsive-dialog";
 import { VerticalScrollMask } from "@insightflare/ui/vertical-scroll-mask";
-import { RiInformationLine } from "@remixicon/react";
+import { InfoIcon } from "lucide-react";
 
 import {
   type FilterOperator,
@@ -65,7 +65,7 @@ export function FilterExpressionHelpDialog({
         drawerClassName="overflow-hidden"
       >
         <ResponsiveDialogHeader className="border-b px-4 py-4 sm:px-5">
-          <ResponsiveDialogTitle icon={RiInformationLine}>
+          <ResponsiveDialogTitle icon={InfoIcon}>
             {messages.filterBuilder.expressionHelpTitle}
           </ResponsiveDialogTitle>
           <ResponsiveDialogDescription>

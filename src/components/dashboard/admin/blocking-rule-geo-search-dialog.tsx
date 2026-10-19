@@ -21,8 +21,8 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from "@insightflare/ui/responsive-dialog";
-import { RiArrowLeftLine, RiSearchLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { ArrowLeftIcon, SearchIcon } from "lucide-react";
 
 import {
   GeoBreadcrumbSeparator,
@@ -366,7 +366,7 @@ export function BlockingRuleGeoSearchDialog({
         drawerClassName="overflow-hidden"
       >
         <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle icon={RiSearchLine}>
+          <ResponsiveDialogTitle icon={SearchIcon}>
             {title} · {copy.searchTitle}
           </ResponsiveDialogTitle>
           <ResponsiveDialogDescription>
@@ -402,7 +402,7 @@ export function BlockingRuleGeoSearchDialog({
                     setQuery("");
                   }}
                 >
-                  <RiArrowLeftLine data-icon="inline-start" />
+                  <ArrowLeftIcon data-icon="inline-start" />
                   <span>{copy.searchBack}</span>
                 </Button>
               </div>
@@ -413,7 +413,7 @@ export function BlockingRuleGeoSearchDialog({
                 {copy.searchInputLabel} · {searchScopeLabel}
               </Label>
               <div className="relative">
-                <RiSearchLine className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id={`blocking-rule-geo-search-${field}`}
                   value={query}

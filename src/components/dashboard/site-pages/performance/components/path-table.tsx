@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from "@insightflare/ui/card";
 import { Skeleton } from "@insightflare/ui/skeleton";
-import { RiRouteLine } from "@remixicon/react";
+import { RouteIcon } from "lucide-react";
 
 import {
   TabbedDataTableCard,
@@ -345,7 +345,7 @@ export const PathPerformanceTable = memo(function PathPerformanceTable({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <CardTitle className="inline-flex items-center gap-2">
-              <RiRouteLine className="size-4" />
+              <RouteIcon className="size-4" />
               {messages.performance.pathsTitle}
             </CardTitle>
             <PerformancePanelText

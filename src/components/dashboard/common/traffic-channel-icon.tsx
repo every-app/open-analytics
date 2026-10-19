@@ -1,40 +1,40 @@
 import {
-  RiAdvertisementLine,
-  RiCursorLine,
-  RiLinksLine,
-  RiMailLine,
-  RiMegaphoneLine,
-  RiMoneyDollarCircleLine,
-  RiPriceTag3Line,
-  RiQuestionLine,
-  RiSearchLine,
-  RiShareForwardLine,
-} from "@remixicon/react";
+  BadgeDollarSignIcon,
+  CircleDollarSignIcon,
+  CircleHelpIcon,
+  LinkIcon,
+  MailIcon,
+  MegaphoneIcon,
+  MousePointerIcon,
+  SearchIcon,
+  ShareIcon,
+  TagIcon,
+} from "lucide-react";
 
 import type { TrafficChannelId } from "@/lib/analytics/traffic-channel-rules";
 export function TrafficChannelIcon({ channel }: { channel: TrafficChannelId }) {
   const className = "size-4 text-muted-foreground";
   switch (channel) {
     case "organic_search":
-      return <RiSearchLine className={className} />;
+      return <SearchIcon className={className} />;
     case "social":
-      return <RiShareForwardLine className={className} />;
+      return <ShareIcon className={className} />;
     case "paid_search":
-      return <RiMoneyDollarCircleLine className={className} />;
+      return <CircleDollarSignIcon className={className} />;
     case "paid_social":
-      return <RiMegaphoneLine className={className} />;
+      return <MegaphoneIcon className={className} />;
     case "display":
-      return <RiAdvertisementLine className={className} />;
+      return <BadgeDollarSignIcon className={className} />;
     case "email":
-      return <RiMailLine className={className} />;
+      return <MailIcon className={className} />;
     case "affiliate":
     case "referral":
-      return <RiLinksLine className={className} />;
+      return <LinkIcon className={className} />;
     case "campaign":
-      return <RiPriceTag3Line className={className} />;
+      return <TagIcon className={className} />;
     case "direct":
-      return <RiCursorLine className={className} />;
+      return <MousePointerIcon className={className} />;
     case "other":
-      return <RiQuestionLine className={className} />;
+      return <CircleHelpIcon className={className} />;
   }
 }

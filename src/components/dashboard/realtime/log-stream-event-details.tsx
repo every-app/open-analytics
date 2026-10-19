@@ -14,11 +14,7 @@ import {
 } from "@insightflare/ui/drawer";
 import { JsonTreePanel } from "@insightflare/ui/json-tree";
 import { Separator } from "@insightflare/ui/separator";
-import {
-  RiExternalLinkLine,
-  RiGlobalLine,
-  RiPulseLine,
-} from "@remixicon/react";
+import { ActivityIcon, ExternalLinkIcon, GlobeIcon } from "lucide-react";
 
 import {
   GeoPointsMapIsland,
@@ -712,7 +708,7 @@ export function RealtimeLogEventDetailsDrawer({
                 className="block shrink-0"
               />
             ) : (
-              <RiGlobalLine className="size-3.5 text-muted-foreground" />
+              <GlobeIcon className="size-3.5 text-muted-foreground" />
             )
           }
           value={
@@ -1104,7 +1100,7 @@ export function RealtimeLogEventDetailsDrawer({
       <DrawerContent className="!w-full !max-w-none sm:!w-[min(58vw,34rem)]">
         <DrawerHeader className="border-b">
           <div className="flex min-w-0 items-center gap-2">
-            <RiPulseLine className="size-4 shrink-0 text-muted-foreground" />
+            <ActivityIcon className="size-4 shrink-0 text-muted-foreground" />
             <DrawerTitle>{messages.realtime.detailsTitle}</DrawerTitle>
           </div>
           <DrawerDescription>{displayData.title}</DrawerDescription>
@@ -1196,7 +1192,7 @@ export function RealtimeLogEventDetailsDrawer({
                         integratingEventLabel
                       ) : (
                         <>
-                          <RiExternalLinkLine data-icon="inline-start" />
+                          <ExternalLinkIcon data-icon="inline-start" />
                           {messages.events.openVisitor}
                         </>
                       )}
@@ -1244,7 +1240,7 @@ export function RealtimeLogEventDetailsDrawer({
                         integratingEventLabel
                       ) : (
                         <>
-                          <RiExternalLinkLine data-icon="inline-start" />
+                          <ExternalLinkIcon data-icon="inline-start" />
                           {messages.events.openSession}
                         </>
                       )}

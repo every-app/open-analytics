@@ -1,9 +1,9 @@
 import {
-  RiCalendarLine,
-  RiGroupLine,
-  RiPercentLine,
-  RiPulseLine,
-} from "@remixicon/react";
+  ActivityIcon,
+  CalendarIcon,
+  PercentIcon,
+  UsersIcon,
+} from "lucide-react";
 
 import {
   type ComponentFixture,
@@ -26,14 +26,14 @@ const metricSummaryGridFixtures = [
           id: "events",
           label: "Events",
           value: "12,840",
-          icon: <RiPulseLine />,
+          icon: <ActivityIcon />,
           detail: "+8.2% from previous period",
         },
         {
           id: "visitors",
           label: "Visitors",
           value: "4,216",
-          icon: <RiGroupLine />,
+          icon: <UsersIcon />,
           detail: "Across 3,108 sessions",
           change: { value: "+5.4%", direction: "up", tone: "positive" },
         },
@@ -41,14 +41,14 @@ const metricSummaryGridFixtures = [
           id: "conversion",
           label: "Conversion rate",
           value: "12.5%",
-          icon: <RiPercentLine />,
+          icon: <PercentIcon />,
           detail: "527 converted visitors",
         },
         {
           id: "cohorts",
           label: "Cohorts",
           value: "30",
-          icon: <RiCalendarLine />,
+          icon: <CalendarIcon />,
           detail: "Periods analyzed",
         },
       ],

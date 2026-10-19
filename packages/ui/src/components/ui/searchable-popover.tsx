@@ -1,5 +1,5 @@
 import * as React from "react";
-import { RiSearchLine } from "@remixicon/react";
+import { SearchIcon } from "lucide-react";
 
 import { cn } from "../../lib/utils";
 import { Input } from "./input";
@@ -136,7 +136,7 @@ const SearchablePopoverContent = React.forwardRef<
       >
         {header}
         <div className="relative shrink-0">
-          <RiSearchLine
+          <SearchIcon
             aria-hidden
             className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
           />

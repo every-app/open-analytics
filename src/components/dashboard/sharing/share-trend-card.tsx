@@ -13,8 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@insightflare/ui/card";
-import { RiLineChartLine } from "@remixicon/react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { ChartLineIcon } from "lucide-react";
 
 import {
   dashboardComparisonLabel,
@@ -412,7 +412,7 @@ export const ShareTrendChartCard = memo(function ShareTrendChartCard({
     <Card className="h-full overflow-visible">
       <CardHeader>
         <CardTitle className="inline-flex items-center gap-2">
-          <RiLineChartLine className="size-4" />
+          <ChartLineIcon className="size-4" />
           {title}
         </CardTitle>
         {headerBelow ? <div>{headerBelow}</div> : null}

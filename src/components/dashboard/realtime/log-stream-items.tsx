@@ -2,8 +2,8 @@ import { memo, useMemo } from "react";
 import { Icon } from "@iconify/react";
 import { Card, CardContent } from "@insightflare/ui/card";
 import { Clickable } from "@insightflare/ui/clickable";
-import { RiGlobalLine } from "@remixicon/react";
 import Avatar from "boring-avatars";
+import { GlobeIcon } from "lucide-react";
 import { motion } from "motion/react";
 
 import { shortDateTime } from "@/lib/dashboard/format";
@@ -103,7 +103,7 @@ const RealtimeLogStreamItemCard = memo(function RealtimeLogStreamItemCard({
                         className="block shrink-0"
                       />
                     ) : (
-                      <RiGlobalLine className="size-3.5 text-muted-foreground" />
+                      <GlobeIcon className="size-3.5 text-muted-foreground" />
                     )
                   }
                   label={countryLabel}

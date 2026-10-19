@@ -1,15 +1,15 @@
-import { RiLoaderLine } from "@remixicon/react";
+import { LoaderCircleIcon } from "lucide-react";
 
 import { cn } from "../../lib/utils";
 
 export type SpinnerProps = Omit<
-  React.ComponentProps<typeof RiLoaderLine>,
+  React.ComponentProps<typeof LoaderCircleIcon>,
   "children"
 >;
 
 function Spinner({ className, ...props }: SpinnerProps) {
   return (
-    <RiLoaderLine
+    <LoaderCircleIcon
       role="status"
       aria-label="Loading"
       className={cn("size-4 animate-spin", className)}

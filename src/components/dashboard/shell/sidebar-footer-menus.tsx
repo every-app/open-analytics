@@ -7,11 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@insightflare/ui/dropdown-menu";
-import {
-  RiLogoutBoxRLine,
-  RiNotification3Line,
-  RiSettings3Line,
-} from "@remixicon/react";
+import { BellIcon, LogOutIcon, SettingsIcon } from "lucide-react";
 
 import {
   SIDEBAR_FOOTER_TRIGGER_BASE_CLASS,
@@ -110,7 +106,7 @@ export const SidebarFooterMenus = memo(function SidebarFooterMenus({
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
             <Link href={notificationsHref}>
-              <RiNotification3Line />
+              <BellIcon />
               <span>{messages.notificationCenter.title}</span>
               {unreadAttentionCount > 0 ? (
                 <span className="ml-auto pr-2 font-mono text-xs tabular-nums text-destructive">
@@ -121,14 +117,14 @@ export const SidebarFooterMenus = memo(function SidebarFooterMenus({
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href={accountHref}>
-              <RiSettings3Line />
+              <SettingsIcon />
               <span>{messages.accountSettings.title}</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
             <a href={gatewayUrl}>
-              <RiLogoutBoxRLine />
+              <LogOutIcon />
               <span>{messages.sidebarFooter.gateway}</span>
             </a>
           </DropdownMenuItem>

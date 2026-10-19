@@ -13,7 +13,7 @@ import {
 import { DataTableSwitch } from "@insightflare/ui/data-table-switch";
 import { Spinner } from "@insightflare/ui/spinner";
 import { TableCell, TableHead, TableRow } from "@insightflare/ui/table";
-import { RiAlarmWarningLine, RiCpuLine, RiRefreshLine } from "@remixicon/react";
+import { CpuIcon, RefreshCwIcon, SirenIcon } from "lucide-react";
 
 import { shortDateTime } from "@/lib/dashboard/format";
 import type { Locale } from "@/lib/i18n/config";
@@ -78,7 +78,7 @@ export function DoDiagnosticPanel({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <RiCpuLine className="size-4" />
+          <CpuIcon className="size-4" />
           {t.doDiagnosticTitle}
         </CardTitle>
         <CardDescription>{t.doDiagnosticDescription}</CardDescription>
@@ -105,7 +105,7 @@ export function DoDiagnosticPanel({
                   disabled={loading}
                   onClick={onRun}
                 >
-                  <RiRefreshLine data-icon="inline-start" />
+                  <RefreshCwIcon data-icon="inline-start" />
                   {t.doDiagnosticRun}
                 </Button>
               </div>
@@ -236,7 +236,7 @@ export function DoDiagnosticPanel({
 
                 {data && data.unreachableSites > 0 ? (
                   <Badge variant="outline" className="gap-2 text-destructive">
-                    <RiAlarmWarningLine className="size-3" />
+                    <SirenIcon className="size-3" />
                     {t.doDiagnosticUnreachable}:{" "}
                     {formatMetricNumber(locale, data.unreachableSites)}
                   </Badge>

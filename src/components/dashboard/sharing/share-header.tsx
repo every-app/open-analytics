@@ -27,13 +27,13 @@ import {
   DropdownMenuTrigger,
 } from "@insightflare/ui/dropdown-menu";
 import {
-  RiArrowDownSLine,
-  RiComputerLine,
-  RiGlobalLine,
-  RiMoonLine,
-  RiSunLine,
-  RiTranslate2,
-} from "@remixicon/react";
+  ChevronDownIcon,
+  GlobeIcon,
+  LanguagesIcon,
+  MonitorIcon,
+  MoonIcon,
+  SunIcon,
+} from "lucide-react";
 
 import { DashboardHeaderControls } from "@/components/dashboard/shell/dashboard-header-controls";
 import { useTheme } from "@/components/theme-provider";
@@ -64,9 +64,9 @@ function localeLabel(messages: AppMessages, locale: Locale): string {
   return messages.actions.switchToEnglish;
 }
 function pickThemeIcon(theme: string) {
-  if (theme === "dark") return RiMoonLine;
-  if (theme === "light") return RiSunLine;
-  return RiComputerLine;
+  if (theme === "dark") return MoonIcon;
+  if (theme === "light") return SunIcon;
+  return MonitorIcon;
 }
 export function ShareHeader({
   locale,
@@ -156,7 +156,7 @@ export function ShareHeader({
                   className="justify-start"
                   onClick={() => setTheme("light")}
                 >
-                  <RiSunLine data-icon="inline-start" />
+                  <SunIcon data-icon="inline-start" />
                   {messages.actions.switchToLight}
                 </Button>
               </DrawerClose>
@@ -167,7 +167,7 @@ export function ShareHeader({
                   className="justify-start"
                   onClick={() => setTheme("dark")}
                 >
-                  <RiMoonLine data-icon="inline-start" />
+                  <MoonIcon data-icon="inline-start" />
                   {messages.actions.switchToDark}
                 </Button>
               </DrawerClose>
@@ -178,7 +178,7 @@ export function ShareHeader({
                   className="justify-start"
                   onClick={() => setTheme("system")}
                 >
-                  <RiComputerLine data-icon="inline-start" />
+                  <MonitorIcon data-icon="inline-start" />
                   {messages.common.system}
                 </Button>
               </DrawerClose>
@@ -198,7 +198,7 @@ export function ShareHeader({
                 className="text-muted-foreground"
               />
               <span>{messages.common.theme}</span>
-              <RiArrowDownSLine
+              <ChevronDownIcon
                 className="text-muted-foreground"
                 data-icon="inline-end"
               />
@@ -220,15 +220,15 @@ export function ShareHeader({
               }}
             >
               <DropdownMenuRadioItem value="light">
-                <RiSunLine className="size-4 text-muted-foreground" />
+                <SunIcon className="size-4 text-muted-foreground" />
                 {messages.actions.switchToLight}
               </DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="dark">
-                <RiMoonLine className="size-4 text-muted-foreground" />
+                <MoonIcon className="size-4 text-muted-foreground" />
                 {messages.actions.switchToDark}
               </DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="system">
-                <RiComputerLine className="size-4 text-muted-foreground" />
+                <MonitorIcon className="size-4 text-muted-foreground" />
                 {messages.common.system}
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
@@ -243,7 +243,7 @@ export function ShareHeader({
               className="inline-flex bg-background xl:hidden"
               aria-label={messages.common.language}
             >
-              <RiGlobalLine className="text-muted-foreground" />
+              <GlobeIcon className="text-muted-foreground" />
             </Button>
           </DrawerTrigger>
           <DrawerContent>
@@ -259,7 +259,7 @@ export function ShareHeader({
                     className="justify-start"
                     onClick={() => switchLocale(item)}
                   >
-                    <RiTranslate2 data-icon="inline-start" />
+                    <LanguagesIcon data-icon="inline-start" />
                     <span>{localeLabel(messages, item)}</span>
                   </Button>
                 </DrawerClose>
@@ -275,12 +275,12 @@ export function ShareHeader({
               className="hidden bg-background xl:inline-flex"
               aria-label={messages.common.language}
             >
-              <RiGlobalLine
+              <GlobeIcon
                 data-icon="inline-start"
                 className="text-muted-foreground"
               />
               <span>{messages.common.language}</span>
-              <RiArrowDownSLine
+              <ChevronDownIcon
                 className="text-muted-foreground"
                 data-icon="inline-end"
               />

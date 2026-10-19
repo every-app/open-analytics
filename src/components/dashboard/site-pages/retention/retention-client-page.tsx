@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { MetricSummaryGrid } from "@insightflare/ui/metric-summary-grid";
 import { PageHeading } from "@insightflare/ui/page-heading";
-import { RiPulseLine, RiRepeat2Line } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { ActivityIcon, Repeat2Icon } from "lucide-react";
 
 import {
   dashboardComparisonLabel,
@@ -210,13 +210,13 @@ export function RetentionClientPage({
             <RetentionStateCard
               title={labels.loadError}
               subtitle={messages.retention.subtitle}
-              icon={RiPulseLine}
+              icon={ActivityIcon}
             />
           ) : (
             <RetentionStateCard
               title={labels.empty}
               subtitle={labels.emptyHint}
-              icon={RiRepeat2Line}
+              icon={Repeat2Icon}
             />
           )}
         </AutoTransition>

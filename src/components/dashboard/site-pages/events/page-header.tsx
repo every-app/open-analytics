@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Button } from "@insightflare/ui/button";
 import { PageHeading } from "@insightflare/ui/page-heading";
-import { RiArrowLeftLine } from "@remixicon/react";
+import { ArrowLeftIcon } from "lucide-react";
 
 import type { AppMessages } from "@/lib/i18n/messages";
 import { navigateWithTransition } from "@/lib/page-transition";
@@ -41,7 +41,7 @@ export const EventPageHeader = memo(function EventPageHeader({
             size="sm"
             onClick={handleBack}
           >
-            <RiArrowLeftLine data-icon="inline-start" />
+            <ArrowLeftIcon data-icon="inline-start" />
             {backLabel || messages.common.backToTeam}
           </Button>
         ) : null

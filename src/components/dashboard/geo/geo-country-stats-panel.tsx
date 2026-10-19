@@ -7,12 +7,12 @@ import { DataTableSwitch } from "@insightflare/ui/data-table-switch";
 import { TableCell, TableHead, TableRow } from "@insightflare/ui/table";
 import { VerticalScrollMask } from "@insightflare/ui/vertical-scroll-mask";
 import {
-  RiArrowDownSLine,
-  RiArrowLeftLine,
-  RiArrowUpSLine,
-  RiExternalLinkLine,
-  RiInformationLine,
-} from "@remixicon/react";
+  ArrowLeftIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  ExternalLinkIcon,
+  InfoIcon,
+} from "lucide-react";
 
 import {
   ComparisonMetricToggle,
@@ -121,16 +121,16 @@ export const GeoCountryStatsPanel = memo(function GeoCountryStatsPanel({
   const renderSortIndicator = (key: SortKey) => {
     if (effectiveSortKey === key) {
       return sort.direction === "desc" ? (
-        <RiArrowDownSLine className="size-3.5" />
+        <ChevronDownIcon className="size-3.5" />
       ) : (
-        <RiArrowUpSLine className="size-3.5" />
+        <ChevronUpIcon className="size-3.5" />
       );
     }
 
     return (
       <span className="flex flex-col text-muted-foreground/70">
-        <RiArrowUpSLine className="-mb-1 size-3.5" />
-        <RiArrowDownSLine className="-mt-1 size-3.5" />
+        <ChevronUpIcon className="-mb-1 size-3.5" />
+        <ChevronDownIcon className="-mt-1 size-3.5" />
       </span>
     );
   };
@@ -506,7 +506,7 @@ export const GeoCountryStatsPanel = memo(function GeoCountryStatsPanel({
                             "[&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
                           )}
                         >
-                          <RiArrowLeftLine />
+                          <ArrowLeftIcon />
                           <span>{messages.geo.back}</span>
                         </Clickable>
                       </div>
@@ -568,12 +568,12 @@ export const GeoCountryStatsPanel = memo(function GeoCountryStatsPanel({
                                 className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-primary"
                               >
                                 {messages.geo.viewOnWikipedia}
-                                <RiExternalLinkLine className="size-3.5 shrink-0" />
+                                <ExternalLinkIcon className="size-3.5 shrink-0" />
                               </a>
                             ) : null}
                             <p className="text-[11px] leading-4 text-muted-foreground">
                               <span className="mr-1.5 inline-flex h-4 align-top items-center">
-                                <RiInformationLine className="size-3.5" />
+                                <InfoIcon className="size-3.5" />
                               </span>
                               {geoInvestigationNotice}
                             </p>

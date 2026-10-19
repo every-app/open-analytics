@@ -47,7 +47,7 @@ import {
 } from "@insightflare/ui/tooltip";
 import { useIsMobile } from "@insightflare/ui/use-mobile";
 import { VerticalScrollMask } from "@insightflare/ui/vertical-scroll-mask";
-import { RiDownloadLine, RiSearchLine } from "@remixicon/react";
+import { DownloadIcon, SearchIcon } from "lucide-react";
 
 import type {
   TabbedDataTableCardProps,
@@ -835,7 +835,7 @@ function TabbedDataTableCardDataControllerImpl<
       >
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle icon={RiSearchLine}>{activeSearchTitle}</DialogTitle>
+            <DialogTitle icon={SearchIcon}>{activeSearchTitle}</DialogTitle>
           </DialogHeader>
           {searchContent}
         </DialogContent>
@@ -852,7 +852,7 @@ function TabbedDataTableCardDataControllerImpl<
             onClick={() => setSearchTab(activeTab)}
             aria-label={searchActionLabel}
           >
-            <RiSearchLine className="size-4" />
+            <SearchIcon className="size-4" />
           </Clickable>
         </TooltipTrigger>
         <TooltipContent>{searchActionLabel}</TooltipContent>
@@ -868,7 +868,7 @@ function TabbedDataTableCardDataControllerImpl<
             onClick={() => setExportOpen(true)}
             aria-label={exportLabels.action}
           >
-            <RiDownloadLine className="size-4" />
+            <DownloadIcon className="size-4" />
           </Clickable>
         </TooltipTrigger>
         <TooltipContent>{exportLabels.action}</TooltipContent>
@@ -889,9 +889,7 @@ function TabbedDataTableCardDataControllerImpl<
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle icon={RiDownloadLine}>
-              {exportLabels.title}
-            </DialogTitle>
+            <DialogTitle icon={DownloadIcon}>{exportLabels.title}</DialogTitle>
             <DialogDescription>{exportLabels.description}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
@@ -979,7 +977,7 @@ function TabbedDataTableCardDataControllerImpl<
               }
               aria-busy={exporting}
             >
-              {exporting ? <Spinner /> : <RiDownloadLine />}
+              {exporting ? <Spinner /> : <DownloadIcon />}
               {exporting ? loadingLabel : exportLabels.download}
             </Button>
           </DialogFooter>

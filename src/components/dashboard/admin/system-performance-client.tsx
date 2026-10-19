@@ -26,16 +26,16 @@ import {
 } from "@insightflare/ui/select";
 import { Spinner } from "@insightflare/ui/spinner";
 import { TableCell, TableHead, TableRow } from "@insightflare/ui/table";
-import {
-  RiAlarmWarningLine,
-  RiBarChartBoxLine,
-  RiCpuLine,
-  RiDatabase2Line,
-  RiRefreshLine,
-  RiSpeedUpLine,
-  RiTimeLine,
-} from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  ChartColumnIcon,
+  ClockIcon,
+  CpuIcon,
+  DatabaseIcon,
+  GaugeIcon,
+  RefreshCwIcon,
+  SirenIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { useDashboardQueryControls } from "@/components/dashboard/shell/dashboard-query-provider";
@@ -226,7 +226,7 @@ export function SystemPerformanceClient({
               }}
             >
               <span className="inline-flex size-4 shrink-0 items-center justify-center">
-                {loading ? <Spinner /> : <RiRefreshLine />}
+                {loading ? <Spinner /> : <RefreshCwIcon />}
               </span>
               <AutoResizer
                 initial
@@ -260,7 +260,7 @@ export function SystemPerformanceClient({
         items={[
           {
             id: "total-events",
-            icon: <RiDatabase2Line />,
+            icon: <DatabaseIcon />,
             label: t.totalEvents,
             loading,
             value: summary
@@ -272,7 +272,7 @@ export function SystemPerformanceClient({
           },
           {
             id: "p95-latency",
-            icon: <RiSpeedUpLine />,
+            icon: <GaugeIcon />,
             label: t.p95Latency,
             loading,
             value: summary ? formatLatency(locale, summary.p95LatencyMs) : "--",
@@ -288,7 +288,7 @@ export function SystemPerformanceClient({
           },
           {
             id: "data-freshness",
-            icon: <RiTimeLine />,
+            icon: <ClockIcon />,
             label: t.dataFreshness,
             loading,
             value: summary ? formatAge(locale, summary.dataFreshnessMs) : "--",
@@ -304,7 +304,7 @@ export function SystemPerformanceClient({
           },
           {
             id: "clock-anomalies",
-            icon: <RiAlarmWarningLine />,
+            icon: <SirenIcon />,
             label: t.clockAnomalies,
             loading,
             value: summary ? formatPercent(locale, summary.anomalyRate) : "--",
@@ -319,7 +319,7 @@ export function SystemPerformanceClient({
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiSpeedUpLine className="size-4" />
+            <GaugeIcon className="size-4" />
             {t.latencyPercentileTrend}
           </CardTitle>
           <CardDescription>
@@ -343,7 +343,7 @@ export function SystemPerformanceClient({
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiCpuLine className="size-4" />
+            <CpuIcon className="size-4" />
             {t.throughputTrend}
           </CardTitle>
           <CardDescription>{t.throughputTrendDescription}</CardDescription>
@@ -428,7 +428,7 @@ export function SystemPerformanceClient({
         <Card>
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiTimeLine className="size-4" />
+              <ClockIcon className="size-4" />
               {t.openVisitHealth}
             </CardTitle>
             <CardDescription>{t.openVisitHealthDescription}</CardDescription>
@@ -529,7 +529,7 @@ export function SystemPerformanceClient({
         <Card>
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiSpeedUpLine className="size-4" />
+              <GaugeIcon className="size-4" />
               {t.latencySampleHealth}
             </CardTitle>
             <CardDescription>
@@ -622,7 +622,7 @@ export function SystemPerformanceClient({
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiBarChartBoxLine className="size-4" />
+            <ChartColumnIcon className="size-4" />
             {t.topSitesTitle}
           </CardTitle>
           <CardDescription>{t.topSitesDescription}</CardDescription>
@@ -682,7 +682,7 @@ export function SystemPerformanceClient({
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiAlarmWarningLine className="size-4" />
+            <SirenIcon className="size-4" />
             {t.slowestEventsTitle}
           </CardTitle>
           <CardDescription>{t.slowestEventsDescription}</CardDescription>

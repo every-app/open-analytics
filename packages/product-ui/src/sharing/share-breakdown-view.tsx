@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@insightflare/ui/card";
 import { Skeleton } from "@insightflare/ui/skeleton";
-import { RiDonutChartLine } from "@remixicon/react";
+import { ChartPieIcon } from "lucide-react";
 
 import { numberFormat, percentFormat } from "../number-format";
 import { cn } from "../utils/cn";
@@ -132,7 +132,7 @@ export const ShareBreakdownView = memo(function ShareBreakdownView({
     <Card className={className}>
       <CardHeader className="gap-2">
         <CardTitle className="inline-flex items-center gap-2">
-          <RiDonutChartLine className="size-4" />
+          <ChartPieIcon className="size-4" />
           {title}
         </CardTitle>
         <AutoResizer className="w-full" duration={0.2}>

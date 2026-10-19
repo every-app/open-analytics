@@ -1,5 +1,5 @@
 import * as React from "react";
-import { RiArrowDownSLine, RiCheckLine } from "@remixicon/react";
+import { CheckIcon, ChevronDownIcon } from "lucide-react";
 
 import { cn } from "../../lib/utils";
 import {
@@ -261,7 +261,7 @@ function SelectTrigger({
         {...props}
       >
         {children}
-        <RiArrowDownSLine className="pointer-events-none size-4 text-muted-foreground" />
+        <ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />
       </button>
     </Popover.Trigger>
   );
@@ -541,7 +541,7 @@ function SelectItem({
       {...props}
     >
       <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center">
-        {isSelected ? <RiCheckLine className="pointer-events-none" /> : null}
+        {isSelected ? <CheckIcon className="pointer-events-none" /> : null}
       </span>
       <span>{children}</span>
     </div>

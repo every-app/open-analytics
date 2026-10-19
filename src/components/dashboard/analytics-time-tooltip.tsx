@@ -6,7 +6,7 @@ import {
 } from "@insightflare/product-ui/analytics-tooltip";
 import { Badge } from "@insightflare/ui/badge";
 import { Clickable } from "@insightflare/ui/clickable";
-import { RiSearchLine } from "@remixicon/react";
+import { SearchIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { useReportingTimeZone } from "@/components/time-zone-provider";
@@ -284,7 +284,7 @@ function AnalyticsDetailsTooltipContent({
                   onClick={item.action.onClick}
                   aria-label={item.action.label}
                 >
-                  <RiSearchLine size="1.2em" />
+                  <SearchIcon size="1.2em" />
                 </Clickable>
               ) : null}
             </div>

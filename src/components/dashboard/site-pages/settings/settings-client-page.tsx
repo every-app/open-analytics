@@ -42,22 +42,22 @@ import {
 } from "@insightflare/ui/select";
 import { Slider } from "@insightflare/ui/slider";
 import { Spinner } from "@insightflare/ui/spinner";
-import {
-  RiBarChartBoxLine,
-  RiCloseLine,
-  RiCodeLine,
-  RiDeleteBinLine,
-  RiFileCopyLine,
-  RiGlobalLine,
-  RiLinksLine,
-  RiRouteLine,
-  RiSave3Line,
-  RiSettings3Line,
-  RiShareForwardLine,
-  RiSpeedUpLine,
-  RiTestTubeLine,
-} from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  ChartColumnIcon,
+  CodeIcon,
+  CopyIcon,
+  FlaskConicalIcon,
+  GaugeIcon,
+  GlobeIcon,
+  LinkIcon,
+  RouteIcon,
+  SaveIcon,
+  SettingsIcon,
+  ShareIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { HighlightedCode } from "@/components/code/highlighted-code";
@@ -658,7 +658,7 @@ export function SettingsClientPage({
         <Card className="h-full">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiSettings3Line className="size-4" />
+              <SettingsIcon className="size-4" />
               {copy.editTitle}
             </CardTitle>
             <CardDescription>{copy.editSubtitle}</CardDescription>
@@ -724,7 +724,7 @@ export function SettingsClientPage({
                       key="save"
                       className="inline-flex items-center gap-[var(--button-content-gap)]"
                     >
-                      <RiSave3Line data-icon="inline-start" />
+                      <SaveIcon data-icon="inline-start" />
                       {copy.save}
                     </span>
                   )}
@@ -737,7 +737,7 @@ export function SettingsClientPage({
         <Card className="h-full">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiShareForwardLine className="size-4" />
+              <ShareIcon className="size-4" />
               {copy.publicSharingTitle}
             </CardTitle>
             <CardDescription>{copy.publicSharingSubtitle}</CardDescription>
@@ -825,7 +825,7 @@ export function SettingsClientPage({
                       }}
                       disabled={!publicLink}
                     >
-                      <RiFileCopyLine data-icon="inline-start" />
+                      <CopyIcon data-icon="inline-start" />
                       <span>
                         {messages.teamManagement.publicLinks.copyLink}
                       </span>
@@ -868,7 +868,7 @@ export function SettingsClientPage({
                     key="save-public-sharing"
                     className="inline-flex items-center gap-[var(--button-content-gap)]"
                   >
-                    <RiSave3Line data-icon="inline-start" />
+                    <SaveIcon data-icon="inline-start" />
                     {copy.save}
                   </span>
                 )}
@@ -880,7 +880,7 @@ export function SettingsClientPage({
         <Card className="h-full lg:col-span-2">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiCodeLine className="size-4" />
+              <CodeIcon className="size-4" />
               {copy.scriptTitle}
             </CardTitle>
             <CardDescription>{copy.scriptSubtitle}</CardDescription>
@@ -921,7 +921,7 @@ export function SettingsClientPage({
               }}
               disabled={loadingScript || !scriptSnippet}
             >
-              <RiFileCopyLine data-icon="inline-start" />
+              <CopyIcon data-icon="inline-start" />
               <span>{copy.copyScript}</span>
             </Button>
           </CardContent>
@@ -936,7 +936,7 @@ export function SettingsClientPage({
         <Card className="h-full">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiBarChartBoxLine className="size-4" />
+              <ChartColumnIcon className="size-4" />
               {copy.trackingStrengthGroupTitle}
             </CardTitle>
             <CardDescription>
@@ -1033,7 +1033,7 @@ export function SettingsClientPage({
                     key="save-strength"
                     className="inline-flex items-center gap-[var(--button-content-gap)]"
                   >
-                    <RiSave3Line data-icon="inline-start" />
+                    <SaveIcon data-icon="inline-start" />
                     {copy.saveTracking}
                   </span>
                 )}
@@ -1045,7 +1045,7 @@ export function SettingsClientPage({
         <Card className="h-full">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiLinksLine className="size-4" />
+              <LinkIcon className="size-4" />
               {copy.queryHashGroupTitle}
             </CardTitle>
             <CardDescription>{copy.queryHashGroupDescription}</CardDescription>
@@ -1148,7 +1148,7 @@ export function SettingsClientPage({
                     key="save-query-hash"
                     className="inline-flex items-center gap-[var(--button-content-gap)]"
                   >
-                    <RiSave3Line data-icon="inline-start" />
+                    <SaveIcon data-icon="inline-start" />
                     {copy.saveTracking}
                   </span>
                 )}
@@ -1160,7 +1160,7 @@ export function SettingsClientPage({
         <Card className="h-full">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiRouteLine className="size-4" />
+              <RouteIcon className="size-4" />
               {copy.autoTrackGroupTitle}
             </CardTitle>
             <CardDescription>{copy.autoTrackGroupDescription}</CardDescription>
@@ -1222,7 +1222,7 @@ export function SettingsClientPage({
                     key="save-auto-tracking"
                     className="inline-flex items-center gap-[var(--button-content-gap)]"
                   >
-                    <RiSave3Line data-icon="inline-start" />
+                    <SaveIcon data-icon="inline-start" />
                     {copy.saveTracking}
                   </span>
                 )}
@@ -1234,7 +1234,7 @@ export function SettingsClientPage({
         <Card className="h-full">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiSpeedUpLine className="size-4" />
+              <GaugeIcon className="size-4" />
               {copy.performanceGroupTitle}
             </CardTitle>
             <CardDescription>
@@ -1301,7 +1301,7 @@ export function SettingsClientPage({
                     key="save-performance"
                     className="inline-flex items-center gap-[var(--button-content-gap)]"
                   >
-                    <RiSave3Line data-icon="inline-start" />
+                    <SaveIcon data-icon="inline-start" />
                     {copy.saveTracking}
                   </span>
                 )}
@@ -1349,7 +1349,7 @@ export function SettingsClientPage({
         <Card className="h-full">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiTestTubeLine className="size-4" />
+              <FlaskConicalIcon className="size-4" />
               {copy.botProtectionEnabledLabel}
             </CardTitle>
             <CardDescription>{copy.botProtectionEnabledHint}</CardDescription>
@@ -1414,7 +1414,7 @@ export function SettingsClientPage({
                     key="save-bot-protection"
                     className="inline-flex items-center gap-[var(--button-content-gap)]"
                   >
-                    <RiSave3Line data-icon="inline-start" />
+                    <SaveIcon data-icon="inline-start" />
                     {copy.saveTracking}
                   </span>
                 )}
@@ -1426,7 +1426,7 @@ export function SettingsClientPage({
         <Card className="h-full">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiGlobalLine className="size-4" />
+              <GlobeIcon className="size-4" />
               {copy.hostingProxyBlockingEnabledLabel}
             </CardTitle>
             <CardDescription>
@@ -1493,7 +1493,7 @@ export function SettingsClientPage({
                     key="save-hosting-proxy-blocking"
                     className="inline-flex items-center gap-[var(--button-content-gap)]"
                   >
-                    <RiSave3Line data-icon="inline-start" />
+                    <SaveIcon data-icon="inline-start" />
                     {copy.saveTracking}
                   </span>
                 )}
@@ -1519,7 +1519,7 @@ export function SettingsClientPage({
           <Card className="h-full border-destructive/40">
             <CardHeader>
               <CardTitle className="inline-flex items-center gap-2">
-                <RiDeleteBinLine className="size-4" />
+                <Trash2Icon className="size-4" />
                 {copy.deleteTitle}
               </CardTitle>
               <CardDescription>{copy.deleteSubtitle}</CardDescription>
@@ -1545,7 +1545,7 @@ export function SettingsClientPage({
                         key="delete"
                         className="inline-flex items-center gap-[var(--button-content-gap)]"
                       >
-                        <RiDeleteBinLine data-icon="inline-start" />
+                        <Trash2Icon data-icon="inline-start" />
                         {copy.delete}
                       </span>
                     )}
@@ -1557,7 +1557,7 @@ export function SettingsClientPage({
 
           <AlertDialogContent size="sm">
             <AlertDialogHeader>
-              <AlertDialogTitle icon={RiDeleteBinLine}>
+              <AlertDialogTitle icon={Trash2Icon}>
                 {copy.deleteTitle}
               </AlertDialogTitle>
               <AlertDialogDescription>
@@ -1566,7 +1566,7 @@ export function SettingsClientPage({
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={trackingSaving || deleting}>
-                <RiCloseLine className="size-4" />
+                <XIcon className="size-4" />
                 <span>{messages.teamSelect.cancel}</span>
               </AlertDialogCancel>
               <AlertDialogAction
@@ -1591,7 +1591,7 @@ export function SettingsClientPage({
                       key="confirm-delete"
                       className="inline-flex items-center gap-2"
                     >
-                      <RiDeleteBinLine className="size-4" />
+                      <Trash2Icon className="size-4" />
                       {copy.delete}
                     </span>
                   )}

@@ -18,8 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from "@insightflare/ui/table";
-import { RiRefreshLine, RiShieldLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { RefreshCwIcon, ShieldIcon } from "lucide-react";
 
 import { intlLocale } from "@/lib/dashboard/format";
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
@@ -97,7 +97,7 @@ export function RequestObservationClient({
               {query.isFetching ? (
                 <Spinner data-icon="inline-start" />
               ) : (
-                <RiRefreshLine data-icon="inline-start" />
+                <RefreshCwIcon data-icon="inline-start" />
               )}
               {copy.refresh}
             </Button>
@@ -112,7 +112,7 @@ export function RequestObservationClient({
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiShieldLine className="size-4" />
+            <ShieldIcon className="size-4" />
             {copy.blockedTotal}: {summary?.total ?? "…"}
           </CardTitle>
           <CardDescription>{copy.retentionNote}</CardDescription>

@@ -40,20 +40,20 @@ import {
   TableRow,
 } from "@insightflare/ui/table";
 import { TableActionButton } from "@insightflare/ui/table-action-button";
-import {
-  RiAddLine,
-  RiCheckboxCircleLine,
-  RiCloseLine,
-  RiDeleteBinLine,
-  RiEditLine,
-  RiEyeLine,
-  RiMailSendLine,
-  RiNotification3Line,
-  RiPauseCircleLine,
-  RiPlayCircleLine,
-  RiSave3Line,
-} from "@remixicon/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  BellIcon,
+  CircleCheckIcon,
+  CirclePauseIcon,
+  CirclePlayIcon,
+  EyeIcon,
+  PencilIcon,
+  PlusIcon,
+  SaveIcon,
+  SendIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
@@ -339,7 +339,7 @@ export function TeamNotificationsClient({
           <>
             <Button type="button" variant="outline" asChild>
               <Link href={`/${locale}/app/notifications/email-preview`}>
-                <RiMailSendLine data-icon="inline-start" />
+                <SendIcon data-icon="inline-start" />
                 <span>{copy.emailPreview}</span>
               </Link>
             </Button>
@@ -348,7 +348,7 @@ export function TeamNotificationsClient({
               variant="outline"
               onClick={() => setTestDialogOpen(true)}
             >
-              <RiMailSendLine data-icon="inline-start" />
+              <SendIcon data-icon="inline-start" />
               <span>{copy.sendTestNotification}</span>
             </Button>
             <Button
@@ -356,7 +356,7 @@ export function TeamNotificationsClient({
               onClick={() => openCreate()}
               disabled={!canCreateRule}
             >
-              <RiAddLine data-icon="inline-start" />
+              <PlusIcon data-icon="inline-start" />
               <span>{copy.createRule}</span>
             </Button>
           </>
@@ -367,7 +367,7 @@ export function TeamNotificationsClient({
         <Card>
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiNotification3Line className="size-4" />
+              <BellIcon className="size-4" />
               {copy.rulesTitle}
             </CardTitle>
             <CardDescription>
@@ -400,7 +400,7 @@ export function TeamNotificationsClient({
                     key="empty"
                     className="flex flex-col items-center gap-3 py-12 text-center text-sm text-muted-foreground"
                   >
-                    <RiNotification3Line className="size-8 text-muted-foreground/70" />
+                    <BellIcon className="size-8 text-muted-foreground/70" />
                     <p>{copy.empty}</p>
                   </div>
                 ) : (
@@ -478,7 +478,7 @@ export function TeamNotificationsClient({
                                 {previewingId === rule.id ? (
                                   <Spinner className="size-3" />
                                 ) : (
-                                  <RiEyeLine className="size-4" />
+                                  <EyeIcon className="size-4" />
                                 )}
                               </TableActionButton>
                               <TableActionButton
@@ -492,14 +492,14 @@ export function TeamNotificationsClient({
                                 {runningId === rule.id ? (
                                   <Spinner className="size-3" />
                                 ) : (
-                                  <RiPlayCircleLine className="size-4" />
+                                  <CirclePlayIcon className="size-4" />
                                 )}
                               </TableActionButton>
                               <TableActionButton
                                 label={`${copy.edit}: ${rule.name}`}
                                 onClick={() => openEdit(rule)}
                               >
-                                <RiEditLine className="size-4" />
+                                <PencilIcon className="size-4" />
                               </TableActionButton>
                               <TableActionButton
                                 label={`${
@@ -511,9 +511,9 @@ export function TeamNotificationsClient({
                                 }
                               >
                                 {rule.enabled ? (
-                                  <RiPauseCircleLine className="size-4" />
+                                  <CirclePauseIcon className="size-4" />
                                 ) : (
-                                  <RiPlayCircleLine className="size-4" />
+                                  <CirclePlayIcon className="size-4" />
                                 )}
                               </TableActionButton>
                               <TableActionButton
@@ -521,7 +521,7 @@ export function TeamNotificationsClient({
                                 tone="destructive"
                                 onClick={() => void removeRule(rule)}
                               >
-                                <RiDeleteBinLine className="size-4" />
+                                <Trash2Icon className="size-4" />
                               </TableActionButton>
                             </div>
                           </TableCell>
@@ -539,22 +539,20 @@ export function TeamNotificationsClient({
       <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle icon={RiMailSendLine}>
-              {copy.deliveryTestTitle}
-            </DialogTitle>
+            <DialogTitle icon={SendIcon}>{copy.deliveryTestTitle}</DialogTitle>
             <DialogDescription>
               {copy.deliveryTestDescription}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-2 text-foreground">
-              <RiCheckboxCircleLine className="size-4 text-emerald-600" />
+              <CircleCheckIcon className="size-4 text-emerald-600" />
               {copy.inAppTestHint}
             </div>
             <div
               className={`flex items-center gap-2${emailConfigured ? " text-foreground" : ""}`}
             >
-              <RiMailSendLine
+              <SendIcon
                 className={`size-4${emailConfigured ? " text-emerald-600" : ""}`}
               />
               {emailConfigured
@@ -569,7 +567,7 @@ export function TeamNotificationsClient({
               onClick={() => setTestDialogOpen(false)}
               disabled={testing}
             >
-              <RiCloseLine data-icon="inline-start" />
+              <XIcon data-icon="inline-start" />
               <span>{messages.teamSelect.cancel}</span>
             </Button>
             <Button
@@ -581,7 +579,7 @@ export function TeamNotificationsClient({
               {testing ? (
                 <Spinner data-icon="inline-start" />
               ) : (
-                <RiMailSendLine data-icon="inline-start" />
+                <SendIcon data-icon="inline-start" />
               )}
               <span>{copy.sendTestNotification}</span>
             </Button>
@@ -595,7 +593,7 @@ export function TeamNotificationsClient({
       >
         <ResponsiveDialogContent desktopClassName="max-h-[min(860px,calc(100vh-2rem))] max-w-5xl">
           <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle icon={RiEyeLine}>
+            <ResponsiveDialogTitle icon={EyeIcon}>
               {copy.previewDialogTitle}
             </ResponsiveDialogTitle>
             <ResponsiveDialogDescription>
@@ -801,7 +799,7 @@ export function TeamNotificationsClient({
               variant="outline"
               onClick={() => setPreviewDialogOpen(false)}
             >
-              <RiCloseLine data-icon="inline-start" />
+              <XIcon data-icon="inline-start" />
               <span>{messages.teamSelect.cancel}</span>
             </Button>
           </ResponsiveDialogFooter>
@@ -816,7 +814,7 @@ export function TeamNotificationsClient({
         >
           <div className="shrink-0 border-b p-4 sm:p-6">
             <ResponsiveDialogHeader>
-              <ResponsiveDialogTitle icon={RiNotification3Line}>
+              <ResponsiveDialogTitle icon={BellIcon}>
                 {form.id ? copy.editRule : copy.createRule}
               </ResponsiveDialogTitle>
               <ResponsiveDialogDescription>
@@ -848,7 +846,7 @@ export function TeamNotificationsClient({
               onClick={() => setDialogOpen(false)}
               disabled={saving}
             >
-              <RiCloseLine data-icon="inline-start" />
+              <XIcon data-icon="inline-start" />
               <span>{messages.teamSelect.cancel}</span>
             </Button>
             <Button
@@ -856,7 +854,7 @@ export function TeamNotificationsClient({
               onClick={() => void saveRule()}
               disabled={saving}
             >
-              {saving ? <Spinner /> : <RiSave3Line />}
+              {saving ? <Spinner /> : <SaveIcon />}
               <span>{form.id ? copy.saveRule : copy.createRule}</span>
             </Button>
           </ResponsiveDialogFooter>

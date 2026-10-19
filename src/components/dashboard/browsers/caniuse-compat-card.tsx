@@ -21,12 +21,8 @@ import { Clickable } from "@insightflare/ui/clickable";
 import { Input } from "@insightflare/ui/input";
 import { OverlayScrollbar } from "@insightflare/ui/overlay-scrollbar";
 import { Spinner } from "@insightflare/ui/spinner";
-import {
-  RiArrowLeftLine,
-  RiExternalLinkLine,
-  RiInformationLine,
-} from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { ArrowLeftIcon, ExternalLinkIcon, InfoIcon } from "lucide-react";
 
 import { fetchBrowserVersionBreakdown } from "@/lib/dashboard/client/data/index";
 import { numberFormat, percentFormat } from "@/lib/dashboard/format";
@@ -433,7 +429,7 @@ export const CanIUseCompatCard = memo(function CanIUseCompatCard({
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiInformationLine className="size-4" />
+            <InfoIcon className="size-4" />
             {m.caniuseTitle}
           </CardTitle>
           <CardDescription>{m.caniuseSubtitle}</CardDescription>
@@ -513,7 +509,7 @@ export const CanIUseCompatCard = memo(function CanIUseCompatCard({
                             "[&_svg]:size-4 [&_svg]:shrink-0",
                           )}
                         >
-                          <RiArrowLeftLine />
+                          <ArrowLeftIcon />
                           <span>{m.caniuseClearSelection}</span>
                         </Clickable>
                       </div>
@@ -639,7 +635,7 @@ export const CanIUseCompatCard = memo(function CanIUseCompatCard({
                           rel="noopener noreferrer"
                           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                         >
-                          <RiExternalLinkLine className="size-3 shrink-0" />
+                          <ExternalLinkIcon className="size-3 shrink-0" />
                           Can I Use
                         </a>
                         {featureDetail.spec && (
@@ -649,7 +645,7 @@ export const CanIUseCompatCard = memo(function CanIUseCompatCard({
                             rel="noopener noreferrer"
                             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                           >
-                            <RiExternalLinkLine className="size-3 shrink-0" />
+                            <ExternalLinkIcon className="size-3 shrink-0" />
                             Spec
                           </a>
                         )}
@@ -661,7 +657,7 @@ export const CanIUseCompatCard = memo(function CanIUseCompatCard({
                             rel="noopener noreferrer"
                             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                           >
-                            <RiExternalLinkLine className="size-3 shrink-0" />
+                            <ExternalLinkIcon className="size-3 shrink-0" />
                             {link.title}
                           </a>
                         ))}

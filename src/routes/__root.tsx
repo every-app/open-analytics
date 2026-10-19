@@ -13,7 +13,6 @@ import {
 import { LayerManagerProvider } from "@insightflare/ui/layer-manager";
 import { SCROLLBAR_POLICY_INIT_SCRIPT } from "@insightflare/ui/overlay-scrollbar";
 import { TooltipProvider } from "@insightflare/ui/tooltip";
-import { RiFileWarningLine, RiGithubLine, RiHome4Line } from "@remixicon/react";
 import {
   createRootRoute,
   HeadContent,
@@ -22,6 +21,7 @@ import {
   Scripts,
   useLocation,
 } from "@tanstack/react-router";
+import { FileWarningIcon, GithubIcon, HouseIcon } from "lucide-react";
 
 import globalStylesheetUrl from "@/app/globals.css?url";
 import { AppToaster } from "@/components/app-toaster";
@@ -222,7 +222,7 @@ function ErrorPageLayout({
         <CardHeader className="space-y-3">
           <div className="flex items-start justify-between gap-3">
             <CardTitle className="inline-flex items-center gap-2 text-lg">
-              <RiFileWarningLine
+              <FileWarningIcon
                 className={
                   status === 500 ? "size-4 text-destructive" : "size-4"
                 }
@@ -276,13 +276,13 @@ function ErrorPageLayout({
           <div className="flex flex-col gap-2 border-t border-border/70 pt-4 sm:flex-row sm:justify-end">
             <Button variant="outline" asChild>
               <Link href={`/${locale}/app`}>
-                <RiHome4Line data-icon="inline-start" />
+                <HouseIcon data-icon="inline-start" />
                 {copy.homeAction}
               </Link>
             </Button>
             <Button variant="outline" asChild>
               <Link href={reportUrl} target="_blank" rel="noreferrer">
-                <RiGithubLine data-icon="inline-start" />
+                <GithubIcon data-icon="inline-start" />
                 {copy.reportAction}
               </Link>
             </Button>

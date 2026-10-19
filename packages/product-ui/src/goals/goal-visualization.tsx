@@ -1,7 +1,7 @@
 import { AutoResizer } from "@insightflare/ui/auto-resizer";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Skeleton } from "@insightflare/ui/skeleton";
-import { RiArrowDownLine, RiArrowUpLine } from "@remixicon/react";
+import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
 
 export interface GoalMetricComparisonDisplay {
   readonly direction: "up" | "down";
@@ -49,7 +49,7 @@ function ChangeRateInline({
 }: {
   readonly change: GoalMetricComparisonDisplay;
 }) {
-  const Icon = change.direction === "up" ? RiArrowUpLine : RiArrowDownLine;
+  const Icon = change.direction === "up" ? ArrowUpIcon : ArrowDownIcon;
   return (
     <span
       className={`inline-flex items-end gap-0.5 font-mono text-xs leading-none ${change.direction === "up" ? "text-emerald-600" : "text-rose-600"}`}

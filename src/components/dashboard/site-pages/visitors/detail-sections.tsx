@@ -16,13 +16,13 @@ import {
 } from "@insightflare/ui/card";
 import { Clickable } from "@insightflare/ui/clickable";
 import { Skeleton } from "@insightflare/ui/skeleton";
-import {
-  RiCalendarEventLine,
-  RiLogoutBoxRLine,
-  RiPulseLine,
-  RiTimeLine,
-} from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  ActivityIcon,
+  CalendarDaysIcon,
+  ClockIcon,
+  LogOutIcon,
+} from "lucide-react";
 
 import {
   AsyncDimensionBreakdownCard,
@@ -104,13 +104,13 @@ function EventIcon({ event }: { event: JourneyEvent }) {
       )}
     >
       {isSessionStart ? (
-        <RiTimeLine className="size-4" />
+        <ClockIcon className="size-4" />
       ) : isLeave ? (
-        <RiLogoutBoxRLine className="size-4" />
+        <LogOutIcon className="size-4" />
       ) : isCustom ? (
-        <RiPulseLine className="size-4" />
+        <ActivityIcon className="size-4" />
       ) : (
-        <RiCalendarEventLine className="size-4" />
+        <CalendarDaysIcon className="size-4" />
       )}
     </span>
   );
@@ -515,7 +515,7 @@ const VisitDetailsCard = memo(function VisitDetailsCard({
     <Card>
       <CardHeader>
         <CardTitle className="inline-flex items-center gap-2">
-          <RiCalendarEventLine className="size-4" />
+          <CalendarDaysIcon className="size-4" />
           {labels.visitDetailsTitle}
         </CardTitle>
         <CardDescription>{labels.visitDetailsSubtitle}</CardDescription>
@@ -695,7 +695,7 @@ const ActivityAndSessionsSection = memo(function ActivityAndSessionsSection({
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiPulseLine className="size-4" />
+            <ActivityIcon className="size-4" />
             {labels.activity}
           </CardTitle>
         </CardHeader>

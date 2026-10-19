@@ -12,8 +12,8 @@ import {
   CardTitle,
 } from "@insightflare/ui/card";
 import { PageHeading } from "@insightflare/ui/page-heading";
-import { RiSpeedUpLine } from "@remixicon/react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { GaugeIcon } from "lucide-react";
 
 import {
   dashboardComparisonLabel,
@@ -405,7 +405,7 @@ export function PerformanceClientPage({
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="space-y-1">
                       <CardTitle className="inline-flex items-center gap-2">
-                        <RiSpeedUpLine className="size-4" />
+                        <GaugeIcon className="size-4" />
                         {messages.performance.chartTitle}
                       </CardTitle>
                       <PerformancePanelText

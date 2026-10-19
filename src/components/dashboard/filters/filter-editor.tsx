@@ -14,12 +14,12 @@ import { Input } from "@insightflare/ui/input";
 import { OverlayScrollbar } from "@insightflare/ui/overlay-scrollbar";
 import { VerticalScrollMask } from "@insightflare/ui/vertical-scroll-mask";
 import {
-  RiChatQuoteLine,
-  RiCheckLine,
-  RiCloseLine,
-  RiErrorWarningLine,
-  RiFilterOffLine,
-} from "@remixicon/react";
+  CheckIcon,
+  CircleAlertIcon,
+  FunnelXIcon,
+  MessageSquareQuoteIcon,
+  XIcon,
+} from "lucide-react";
 
 import { describeFilterExpression } from "@/lib/dashboard/filter-description";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
@@ -451,7 +451,7 @@ export function FilterEditor({
                   aria-label={messages.filterBuilder.naturalLanguageDescription}
                   className="min-h-8 px-4 py-2 text-xs leading-4 text-muted-foreground"
                 >
-                  <RiChatQuoteLine
+                  <MessageSquareQuoteIcon
                     className="mr-2 inline-block size-4 align-text-bottom"
                     aria-hidden
                   />
@@ -507,7 +507,7 @@ export function FilterEditor({
           >
             {renderedExpressionError ? (
               <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-destructive">
-                <RiErrorWarningLine className="size-4 shrink-0" aria-hidden />
+                <CircleAlertIcon className="size-4 shrink-0" aria-hidden />
                 <Clickable
                   className="justify-start text-left text-destructive"
                   hoverScale={1.05}
@@ -521,20 +521,20 @@ export function FilterEditor({
         </AutoResizer>
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
           <Button type="button" variant="ghost" onClick={clear}>
-            <RiFilterOffLine data-icon="inline-start" />
+            <FunnelXIcon data-icon="inline-start" />
             {messages.filters.clear}
           </Button>
           <div className="flex flex-wrap items-center justify-end gap-2">
             {footerActions ??
               (onCancel ? (
                 <Button type="button" variant="outline" onClick={onCancel}>
-                  <RiCloseLine data-icon="inline-start" />
+                  <XIcon data-icon="inline-start" />
                   {cancelLabel}
                 </Button>
               ) : null)}
             {!footerActions ? (
               <Button type="button" onClick={apply}>
-                <RiCheckLine data-icon="inline-start" />
+                <CheckIcon data-icon="inline-start" />
                 {applyLabel}
               </Button>
             ) : null}

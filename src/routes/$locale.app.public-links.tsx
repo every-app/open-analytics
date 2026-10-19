@@ -14,8 +14,8 @@ import {
   TableHeader,
   TableRow,
 } from "@insightflare/ui/table";
-import { RiExternalLinkLine, RiLinksLine } from "@remixicon/react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
+import { ExternalLinkIcon, LinkIcon } from "lucide-react";
 
 import { PublicLinkCopyButton } from "@/components/dashboard/sharing/public-link-copy-button";
 import { PublicLinkSettingsButton } from "@/components/dashboard/sharing/public-link-settings-button";
@@ -59,14 +59,14 @@ function PublicLinksPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm">
-            <RiLinksLine className="size-4" />
+            <LinkIcon className="size-4" />
             {copy.title}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {teamContext.sites.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center text-sm text-muted-foreground">
-              <RiLinksLine className="size-8 text-muted-foreground/70" />
+              <LinkIcon className="size-8 text-muted-foreground/70" />
               <p>{copy.noSites}</p>
             </div>
           ) : (
@@ -117,7 +117,7 @@ function PublicLinksPage() {
                             >
                               {publicUrl}
                             </Link>
-                            <RiExternalLinkLine className="size-4 shrink-0 text-muted-foreground" />
+                            <ExternalLinkIcon className="size-4 shrink-0 text-muted-foreground" />
                           </div>
                         ) : (
                           <span className="text-xs text-muted-foreground">

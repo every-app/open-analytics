@@ -38,17 +38,17 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@insightflare/ui/tooltip";
-import {
-  RiArrowDownSLine,
-  RiCheckLine,
-  RiDatabase2Line,
-  RiFileList3Line,
-  RiFilter3Line,
-  RiFilterOffLine,
-  RiSearchLine,
-  RiStackLine,
-} from "@remixicon/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  DatabaseIcon,
+  FileTextIcon,
+  FunnelIcon,
+  FunnelXIcon,
+  LayersIcon,
+  SearchIcon,
+} from "lucide-react";
 import { AnimatePresence, useReducedMotion } from "motion/react";
 
 import { AnimatedDataTableRow } from "@/components/dashboard/common/animated-data-table-row";
@@ -531,7 +531,7 @@ export const EventFieldsCard = memo(function EventFieldsCard({
                   isExpanded ? labels.collapseField : labels.expandField
                 }
               >
-                <RiArrowDownSLine
+                <ChevronDownIcon
                   className={cn(
                     "transition-transform duration-200 ease-out",
                     isExpanded ? "rotate-0" : "-rotate-90",
@@ -573,7 +573,7 @@ export const EventFieldsCard = memo(function EventFieldsCard({
                 disabled={fieldListLoading}
                 aria-label={`${labels.fieldValuesTitle}: ${fieldLabel}`}
               >
-                <RiSearchLine className="size-3.5" />
+                <SearchIcon className="size-3.5" />
               </button>
             </TooltipTrigger>
             <TooltipContent>{labels.fieldValuesTitle}</TooltipContent>
@@ -714,7 +714,7 @@ export const EventFieldsCard = memo(function EventFieldsCard({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="inline-flex items-center gap-2 text-sm font-medium">
-              <RiFileList3Line className="size-4 shrink-0" />
+              <FileTextIcon className="size-4 shrink-0" />
               {labels.fieldsTitle}
             </h2>
           </div>
@@ -731,7 +731,7 @@ export const EventFieldsCard = memo(function EventFieldsCard({
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <CardTitle className="inline-flex items-center gap-2">
-                    <RiDatabase2Line className="size-4" />
+                    <DatabaseIcon className="size-4" />
                     {labels.payloadFields}
                   </CardTitle>
                   {fieldListLoading ? <Spinner className="size-3.5" /> : null}
@@ -778,7 +778,7 @@ export const EventFieldsCard = memo(function EventFieldsCard({
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <CardTitle className="inline-flex items-center gap-2">
-                      <RiStackLine className="size-4" />
+                      <LayersIcon className="size-4" />
                       {labels.fieldValuesTitle}
                     </CardTitle>
                     {fieldValuesLoading ? (
@@ -839,7 +839,7 @@ export const EventFieldsCard = memo(function EventFieldsCard({
       >
         <ResponsiveDialogContent desktopClassName="max-w-xl">
           <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle icon={RiFilter3Line}>
+            <ResponsiveDialogTitle icon={FunnelIcon}>
               {labels.payloadFilterTitle}
             </ResponsiveDialogTitle>
             <ResponsiveDialogDescription>
@@ -866,11 +866,11 @@ export const EventFieldsCard = memo(function EventFieldsCard({
               variant="outline"
               onClick={clearPayloadFilters}
             >
-              <RiFilterOffLine data-icon="inline-start" />
+              <FunnelXIcon data-icon="inline-start" />
               <span>{labels.payloadFilterClear}</span>
             </Button>
             <Button type="button" onClick={applyPayloadFilterDraft}>
-              <RiCheckLine data-icon="inline-start" />
+              <CheckIcon data-icon="inline-start" />
               <span>{labels.payloadFilterApply}</span>
             </Button>
           </ResponsiveDialogFooter>

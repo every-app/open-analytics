@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@insightflare/ui/select";
-import { RiUserLine } from "@remixicon/react";
+import { UserIcon } from "lucide-react";
 
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import {
@@ -439,7 +439,7 @@ export function FilterPanelHeader({
                 ) : null}
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span className="inline-flex items-center gap-1">
-                    <RiUserLine className="size-3.5" aria-hidden />
+                    <UserIcon className="size-3.5" aria-hidden />
                     {formatI18nTemplate(
                       messages.filterBuilder.savedFiltersAuthor,
                       { name: matchedSavedFilter.authorName },

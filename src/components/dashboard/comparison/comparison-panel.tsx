@@ -21,13 +21,13 @@ import {
   ResponsiveDialogTitle,
 } from "@insightflare/ui/responsive-dialog";
 import { VerticalScrollMask } from "@insightflare/ui/vertical-scroll-mask";
-import {
-  RiBarChartGroupedLine,
-  RiCheckLine,
-  RiCloseLine,
-  RiFilter2Line,
-} from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  ChartColumnStackedIcon,
+  CheckIcon,
+  ListFilterIcon,
+  XIcon,
+} from "lucide-react";
 
 import { FilterEditor } from "@/components/dashboard/filters/filter-editor";
 import { SavedFilterSelect } from "@/components/dashboard/filters/filter-panel";
@@ -105,7 +105,7 @@ function ComparisonFilterDialog({
         onPointerDown={(event) => event.stopPropagation()}
       >
         <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle icon={RiFilter2Line}>
+          <ResponsiveDialogTitle icon={ListFilterIcon}>
             {messages.dashboardHeader.compareCustomFilter}
           </ResponsiveDialogTitle>
           <ResponsiveDialogDescription>
@@ -301,7 +301,7 @@ export function ComparisonPanel({
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={() => setCustomFilterDialogOpen(true)}
                 >
-                  <RiFilter2Line data-icon="inline-start" />
+                  <ListFilterIcon data-icon="inline-start" />
                   <span className="min-w-0 truncate">
                     {messages.dashboardHeader.compareCustomFilter}
                   </span>
@@ -322,7 +322,7 @@ export function ComparisonPanel({
         </VerticalScrollMask>
         <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-background pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <Button type="button" variant="outline" onClick={onCancel}>
-            <RiCloseLine data-icon="inline-start" />
+            <XIcon data-icon="inline-start" />
             <span>{messages.dashboardHeader.compareCancel}</span>
           </Button>
           <Button
@@ -336,7 +336,7 @@ export function ComparisonPanel({
               })
             }
           >
-            <RiCheckLine data-icon="inline-start" />
+            <CheckIcon data-icon="inline-start" />
             <span>{messages.dashboardHeader.compareApply}</span>
           </Button>
         </div>
@@ -361,7 +361,7 @@ export function ComparisonPanel({
 export function ComparisonPanelTitle({ messages }: { messages: AppMessages }) {
   return (
     <span className="inline-flex items-center gap-2">
-      <RiBarChartGroupedLine className="size-4" />
+      <ChartColumnStackedIcon className="size-4" />
       <span>{messages.dashboardHeader.compareTitle}</span>
     </span>
   );

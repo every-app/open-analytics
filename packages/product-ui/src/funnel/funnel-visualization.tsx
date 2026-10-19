@@ -1,7 +1,7 @@
 import { AutoResizer } from "@insightflare/ui/auto-resizer";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Skeleton } from "@insightflare/ui/skeleton";
-import { RiArrowDownLine, RiArrowUpLine } from "@remixicon/react";
+import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
 
 import {
   numberFormat,
@@ -95,7 +95,7 @@ export function FunnelChangeRateInline({
   locale = "en-US",
 }: FunnelChangeRateInlineProps) {
   if (value === null) return null;
-  const Icon = value >= 0 ? RiArrowUpLine : RiArrowDownLine;
+  const Icon = value >= 0 ? ArrowUpIcon : ArrowDownIcon;
   return (
     <span
       className={`inline-flex shrink-0 items-end gap-0.5 font-mono text-xs leading-none ${changeRateClass(value)}`}

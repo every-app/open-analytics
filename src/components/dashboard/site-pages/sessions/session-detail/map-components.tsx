@@ -9,7 +9,7 @@ import {
 } from "@insightflare/ui/card";
 import { Clickable } from "@insightflare/ui/clickable";
 import { Skeleton } from "@insightflare/ui/skeleton";
-import { RiArrowLeftLine, RiPulseLine } from "@remixicon/react";
+import { ActivityIcon, ArrowLeftIcon } from "lucide-react";
 
 import {
   VisitorAvatar,
@@ -291,7 +291,7 @@ export const SessionPerformancePanel = memo(function SessionPerformancePanel({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <CardTitle className="inline-flex items-center gap-2">
-              <RiPulseLine className="size-4" />
+              <ActivityIcon className="size-4" />
               {labels.performanceTitle}
             </CardTitle>
           </div>
@@ -432,7 +432,7 @@ export const SessionMapHero = memo(function SessionMapHero({
             aria-label={labels.back}
             onClick={onBack}
           >
-            <RiArrowLeftLine className="size-3.5" />
+            <ArrowLeftIcon className="size-3.5" />
             {labels.back}
           </Clickable>
         ) : (
@@ -441,7 +441,7 @@ export const SessionMapHero = memo(function SessionMapHero({
             className="inline-flex items-center gap-1 text-xs text-foreground/80 outline-none hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring/60"
             aria-label={labels.back}
           >
-            <RiArrowLeftLine className="size-3.5" />
+            <ArrowLeftIcon className="size-3.5" />
             {labels.back}
           </Link>
         )}

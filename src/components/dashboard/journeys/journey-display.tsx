@@ -7,14 +7,14 @@ import {
   useState,
 } from "react";
 import { Icon } from "@iconify/react";
-import {
-  RiCellphoneLine,
-  RiComputerLine,
-  RiDeviceLine,
-  RiGlobalLine,
-  RiTabletLine,
-} from "@remixicon/react";
 import Avatar from "boring-avatars";
+import {
+  GlobeIcon,
+  MonitorIcon,
+  MonitorSmartphoneIcon,
+  SmartphoneIcon,
+  TabletIcon,
+} from "lucide-react";
 
 import {
   LazyGeoCityBreadcrumbLabel,
@@ -87,12 +87,12 @@ export function resolveDeviceTypeMeta(
     lowered.includes("computer") ||
     lowered === "pc";
   const Icon = isTablet
-    ? RiTabletLine
+    ? TabletIcon
     : isMobile
-      ? RiCellphoneLine
+      ? SmartphoneIcon
       : isDesktop
-        ? RiComputerLine
-        : RiDeviceLine;
+        ? MonitorIcon
+        : MonitorSmartphoneIcon;
   const label = isMissing
     ? missingLabel
     : isUnknown
@@ -386,7 +386,7 @@ export const LocationMeta = memo(function LocationMeta({
             className="block shrink-0"
           />
         ) : (
-          <RiGlobalLine className="size-4 text-muted-foreground" />
+          <GlobeIcon className="size-4 text-muted-foreground" />
         )
       }
       label={label}

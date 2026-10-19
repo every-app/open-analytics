@@ -1,16 +1,16 @@
 import { PERSISTENT_VERTICAL_SCROLLBAR_OPTIONS } from "@insightflare/ui/overlay-scrollbar";
 import {
-  RiBarChartBoxLine,
-  RiCalendarScheduleLine,
-  RiGlobalLine,
-  RiLinksLine,
-  RiNotification3Line,
-  RiRobot2Line,
-  RiSettings3Line,
-  RiSpeedUpLine,
-  RiTeamLine,
-  RiWindow2Line,
-} from "@remixicon/react";
+  AppWindowIcon,
+  BellIcon,
+  BotIcon,
+  CalendarClockIcon,
+  ChartColumnIcon,
+  GaugeIcon,
+  GlobeIcon,
+  LinkIcon,
+  SettingsIcon,
+  UsersIcon,
+} from "lucide-react";
 
 import { type SiteData } from "@/lib/dashboard-api/client/edge";
 import type { AppMessages } from "@/lib/i18n/messages";
@@ -91,18 +91,18 @@ export interface SidebarRouteState {
   siteSubSection?: string;
 }
 export function getTeamSectionIcon(key: string) {
-  if (key === "sites") return RiBarChartBoxLine;
-  if (key === "site-management") return RiWindow2Line;
-  if (key === "notifications") return RiNotification3Line;
-  if (key === "public-links") return RiLinksLine;
-  return RiGlobalLine;
+  if (key === "sites") return ChartColumnIcon;
+  if (key === "site-management") return AppWindowIcon;
+  if (key === "notifications") return BellIcon;
+  if (key === "public-links") return LinkIcon;
+  return GlobeIcon;
 }
 export function getManagementSectionIcon(key: string) {
-  if (key === "scheduled-tasks") return RiCalendarScheduleLine;
-  if (key === "request-observation") return RiRobot2Line;
-  if (key === "system-settings") return RiSettings3Line;
-  if (key === "system-performance") return RiSpeedUpLine;
-  return RiTeamLine;
+  if (key === "scheduled-tasks") return CalendarClockIcon;
+  if (key === "request-observation") return BotIcon;
+  if (key === "system-settings") return SettingsIcon;
+  if (key === "system-performance") return GaugeIcon;
+  return UsersIcon;
 }
 export function normalizeLocalePath(pathname: string): string {
   const cleaned = pathname || "";

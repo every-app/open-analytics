@@ -4,7 +4,7 @@ import {
   useDetailDrawerClose,
 } from "@insightflare/product-ui/detail-drawer";
 import { Button } from "@insightflare/ui/button";
-import { RiCloseLine } from "@remixicon/react";
+import { XIcon } from "lucide-react";
 
 import { useDashboardQuery } from "@/components/dashboard/site-pages/common/use-dashboard-query";
 import {
@@ -59,7 +59,7 @@ function PageDetailDrawerLoading({
             aria-label={messages.common.close}
             onClick={drawerClose}
           >
-            <RiCloseLine />
+            <XIcon />
           </Button>
         ) : null}
       </div>

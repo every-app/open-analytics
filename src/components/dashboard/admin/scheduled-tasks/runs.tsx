@@ -16,7 +16,7 @@ import { Skeleton } from "@insightflare/ui/skeleton";
 import { Spinner } from "@insightflare/ui/spinner";
 import { TableCell, TableHead, TableRow } from "@insightflare/ui/table";
 import { TableActionButton } from "@insightflare/ui/table-action-button";
-import { RiCloseCircleLine, RiFileList3Line } from "@remixicon/react";
+import { CircleXIcon, FileTextIcon } from "lucide-react";
 
 import { AnalyticsDataTable } from "@/components/dashboard/common/analytics-data-table";
 import {
@@ -311,7 +311,7 @@ export function ScheduledTaskRunsTable({
                 onClick={() => onOpenRun(run)}
                 className={cn(selected && "text-foreground")}
               >
-                <RiFileList3Line className="size-4" />
+                <FileTextIcon className="size-4" />
               </TableActionButton>
             </TableCell>
           </>
@@ -609,7 +609,7 @@ export function ScheduledTaskRunLogDrawer({
                                 {taskRun.errorMessage ? (
                                   <div className="mt-3 border border-destructive/30 bg-destructive/5 p-3 text-sm">
                                     <div className="flex items-center gap-2 font-medium text-destructive">
-                                      <RiCloseCircleLine className="size-4" />
+                                      <CircleXIcon className="size-4" />
                                       {taskRun.errorName ?? labels.error}
                                     </div>
                                     <p className="mt-1 text-xs text-muted-foreground">

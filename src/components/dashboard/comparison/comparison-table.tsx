@@ -6,7 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@insightflare/ui/tooltip";
-import { RiBarChartLine, RiTimeLine, RiUserLine } from "@remixicon/react";
+import { ChartNoAxesColumnIcon, ClockIcon, UserIcon } from "lucide-react";
 
 import type {
   TabbedDataTableColumn,
@@ -97,10 +97,13 @@ export function createComparisonTableColumns<
     },
   ];
 }
-const METRIC_ICONS: Record<ComparisonTableMetric, typeof RiBarChartLine> = {
-  views: RiBarChartLine,
-  visitors: RiUserLine,
-  sessions: RiTimeLine,
+const METRIC_ICONS: Record<
+  ComparisonTableMetric,
+  typeof ChartNoAxesColumnIcon
+> = {
+  views: ChartNoAxesColumnIcon,
+  visitors: UserIcon,
+  sessions: ClockIcon,
 };
 export const ComparisonMetricToggle = memo(function ComparisonMetricToggle({
   metric,

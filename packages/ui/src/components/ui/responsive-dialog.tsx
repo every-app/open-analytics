@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { RiCloseLine, RiInformationLine } from "@remixicon/react";
+import { InfoIcon, XIcon } from "lucide-react";
 
 import { useIsMobile } from "../../hooks/use-mobile";
 import { cn } from "../../lib/utils";
@@ -169,7 +169,7 @@ export function ResponsiveDialogHeader({
 export function ResponsiveDialogTitle({
   children,
   className,
-  icon: Icon = RiInformationLine,
+  icon: Icon = InfoIcon,
   iconClassName,
   ...props
 }: React.ComponentProps<typeof DialogTitle>) {
@@ -228,7 +228,7 @@ export function ResponsiveDialogFooter({
         {showCloseButton ? (
           <DrawerClose asChild>
             <Button variant="outline">
-              <RiCloseLine data-icon="inline-start" />
+              <XIcon data-icon="inline-start" />
               <span>Close</span>
             </Button>
           </DrawerClose>

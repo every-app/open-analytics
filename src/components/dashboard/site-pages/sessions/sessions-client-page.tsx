@@ -6,8 +6,8 @@ import {
 } from "@insightflare/product-ui/tables";
 import { Input } from "@insightflare/ui/input";
 import { PageHeading } from "@insightflare/ui/page-heading";
-import { RiSearchLine } from "@remixicon/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { SearchIcon } from "lucide-react";
 
 import {
   createSessionTableColumnDefinitions,
@@ -257,7 +257,7 @@ export function SessionsClientPage({
         actions={
           <div className="flex w-full items-center justify-end gap-2">
             <div className="relative min-w-0 flex-1 sm:w-80 sm:flex-none">
-              <RiSearchLine className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}

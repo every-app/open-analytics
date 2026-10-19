@@ -15,11 +15,11 @@ import { Skeleton } from "@insightflare/ui/skeleton";
 import { Slider } from "@insightflare/ui/slider";
 import { Switch } from "@insightflare/ui/switch";
 import {
-  RiArrowRightLine,
-  RiDeleteBinLine,
-  RiEditLine,
-  RiFileList3Line,
-} from "@remixicon/react";
+  ArrowRightIcon,
+  FileTextIcon,
+  PencilIcon,
+  Trash2Icon,
+} from "lucide-react";
 
 import { AnalysisJourneyTable } from "@/components/dashboard/site-pages/journeys/analysis-journey-table";
 import {
@@ -577,7 +577,7 @@ function FunnelDetailContent({
               disabled={loading}
               onClick={() => onEdit(funnel)}
             >
-              <RiEditLine data-icon="inline-start" />
+              <PencilIcon data-icon="inline-start" />
               {labels.edit}
             </Button>
             <Button
@@ -586,7 +586,7 @@ function FunnelDetailContent({
               disabled={loading}
               onClick={() => onDelete(funnel)}
             >
-              <RiDeleteBinLine data-icon="inline-start" />
+              <Trash2Icon data-icon="inline-start" />
               {labels.delete}
             </Button>
           </div>
@@ -598,7 +598,7 @@ function FunnelDetailContent({
       <Card className="min-w-0">
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiArrowRightLine className="size-4" />
+            <ArrowRightIcon className="size-4" />
             {labels.step}
           </CardTitle>
           <CardDescription>{labels.listSubtitle}</CardDescription>
@@ -633,7 +633,7 @@ function FunnelDetailContent({
         <section className="min-w-0 space-y-3">
           <div>
             <h3 className="inline-flex items-center gap-2 text-sm font-medium">
-              <RiFileList3Line className="size-4 shrink-0" />
+              <FileTextIcon className="size-4 shrink-0" />
               {labels.conversionRecords}
             </h3>
           </div>

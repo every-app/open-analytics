@@ -1,6 +1,5 @@
 import * as React from "react";
-import type { RemixiconComponentType } from "@remixicon/react";
-import { RiInformationLine } from "@remixicon/react";
+import { InfoIcon, type LucideIcon } from "lucide-react";
 import { AlertDialog as AlertDialogPrimitive } from "radix-ui";
 
 import { cn } from "../../lib/utils";
@@ -152,11 +151,11 @@ function AlertDialogMedia({
 function AlertDialogTitle({
   className,
   children,
-  icon: Icon = RiInformationLine,
+  icon: Icon = InfoIcon,
   iconClassName,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Title> & {
-  icon?: RemixiconComponentType | null;
+  icon?: LucideIcon | null;
   iconClassName?: string;
 }) {
   return (

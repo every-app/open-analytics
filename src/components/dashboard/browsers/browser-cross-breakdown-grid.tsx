@@ -13,8 +13,8 @@ import {
   CardTitle,
 } from "@insightflare/ui/card";
 import { Spinner } from "@insightflare/ui/spinner";
-import { RiBarChartBoxLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { ChartColumnIcon } from "lucide-react";
 
 import {
   type DeviceTypeIcon,
@@ -209,7 +209,7 @@ const BrowserCrossStackedBarCard = memo(function BrowserCrossStackedBarCard({
     <Card className="h-full overflow-hidden">
       <CardHeader>
         <CardTitle className="inline-flex items-center gap-2">
-          <RiBarChartBoxLine className="size-4" />
+          <ChartColumnIcon className="size-4" />
           {title}
         </CardTitle>
       </CardHeader>

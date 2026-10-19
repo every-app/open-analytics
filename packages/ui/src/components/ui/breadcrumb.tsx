@@ -1,5 +1,5 @@
 import * as React from "react";
-import { RiArrowRightSLine, RiMoreLine } from "@remixicon/react";
+import { ChevronRightIcon, EllipsisIcon } from "lucide-react";
 import { Slot } from "radix-ui";
 
 import { cn } from "../../lib/utils";
@@ -82,7 +82,7 @@ function BreadcrumbSeparator({
       className={cn("[&>svg]:size-3.5", className)}
       {...props}
     >
-      {children ?? <RiArrowRightSLine />}
+      {children ?? <ChevronRightIcon />}
     </li>
   );
 }
@@ -102,7 +102,7 @@ function BreadcrumbEllipsis({
       )}
       {...props}
     >
-      <RiMoreLine />
+      <EllipsisIcon />
       <span className="sr-only">More</span>
     </span>
   );

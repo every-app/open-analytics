@@ -49,16 +49,16 @@ import {
   TooltipTrigger,
 } from "@insightflare/ui/tooltip";
 import {
-  RiArrowDownSLine,
-  RiArrowLeftSLine,
-  RiArrowRightSLine,
-  RiBarChartGroupedLine,
-  RiCalendarLine,
-  RiCheckLine,
-  RiCloseLine,
-  RiFilter3Line,
-  RiTimeLine,
-} from "@remixicon/react";
+  CalendarIcon,
+  ChartColumnStackedIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  FunnelIcon,
+  XIcon,
+} from "lucide-react";
 
 import {
   ComparisonPanel,
@@ -183,7 +183,7 @@ function FilterTrigger({
             onClick={onClick}
             style={style}
           >
-            <RiFilter3Line
+            <FunnelIcon
               data-icon="inline-start"
               className={cn(activeFilterCount === 0 && "text-muted-foreground")}
             />
@@ -256,7 +256,7 @@ function CompareTrigger({
             aria-label={messages.dashboardHeader.compareButton}
             onClick={onClick}
           >
-            <RiBarChartGroupedLine
+            <ChartColumnStackedIcon
               data-icon="inline-start"
               className={cn(!active && "text-muted-foreground")}
             />
@@ -744,7 +744,7 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
           >
             <DrawerTrigger asChild>
               <Button variant="outline">
-                <RiTimeLine data-icon="inline-start" />
+                <ClockIcon data-icon="inline-start" />
                 {mobileTimeLabel}
               </Button>
             </DrawerTrigger>
@@ -772,7 +772,7 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
                       disabled={!previousPeriodRange}
                       onClick={handleShiftToPreviousPeriod}
                     >
-                      <RiArrowLeftSLine data-icon="inline-start" />
+                      <ChevronLeftIcon data-icon="inline-start" />
                       <span>{previousPeriodLabel}</span>
                     </Button>
                     <Button
@@ -783,7 +783,7 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
                       onClick={handleShiftToNextPeriod}
                     >
                       <span>{nextPeriodLabel}</span>
-                      <RiArrowRightSLine data-icon="inline-end" />
+                      <ChevronRightIcon data-icon="inline-end" />
                     </Button>
                   </ButtonGroup>
                 </div>
@@ -807,7 +807,7 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
                               handleRangeValueChange(item, "mobile");
                             }}
                           >
-                            <RiCalendarLine data-icon="inline-start" />
+                            <CalendarIcon data-icon="inline-start" />
                             <span>{rangeLabel(messages, item)}</span>
                           </Button>
                         ))}
@@ -837,7 +837,7 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
                             handleIntervalValueChange(item);
                           }}
                         >
-                          <RiTimeLine data-icon="inline-start" />
+                          <ClockIcon data-icon="inline-start" />
                           <span className="min-w-0 truncate">
                             {intervalLabel(messages, item)}
                           </span>
@@ -868,7 +868,7 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
               <DrawerFooter>
                 <DrawerClose asChild>
                   <Button>
-                    <RiCloseLine data-icon="inline-start" />
+                    <XIcon data-icon="inline-start" />
                     <span>{closeLabel}</span>
                   </Button>
                 </DrawerClose>
@@ -983,7 +983,7 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
                   aria-label={previousPeriodLabel}
                   onClick={handleShiftToPreviousPeriod}
                 >
-                  <RiArrowLeftSLine />
+                  <ChevronLeftIcon />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
@@ -1001,7 +1001,7 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
                   aria-label={nextPeriodLabel}
                   onClick={handleShiftToNextPeriod}
                 >
-                  <RiArrowRightSLine />
+                  <ChevronRightIcon />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">{nextPeriodLabel}</TooltipContent>
@@ -1015,13 +1015,13 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
                 className="min-w-[156px] justify-between"
               >
                 <span className="inline-flex items-center gap-2">
-                  <RiCalendarLine
+                  <CalendarIcon
                     data-icon="inline-start"
                     className="text-muted-foreground"
                   />
                   <span>{rangeLabelText}</span>
                 </span>
-                <RiArrowDownSLine
+                <ChevronDownIcon
                   data-icon="inline-end"
                   className="text-muted-foreground"
                 />
@@ -1068,13 +1068,13 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
                 className="min-w-[96px] justify-between"
               >
                 <span className="inline-flex items-center gap-2">
-                  <RiTimeLine
+                  <ClockIcon
                     data-icon="inline-start"
                     className="text-muted-foreground"
                   />
                   <span>{intervalLabelText}</span>
                 </span>
-                <RiArrowDownSLine
+                <ChevronDownIcon
                   data-icon="inline-end"
                   className="text-muted-foreground"
                 />
@@ -1123,7 +1123,7 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
       <Dialog open={customDialogOpen} onOpenChange={setCustomDialogOpen}>
         <DialogContent className="w-fit">
           <DialogHeader>
-            <DialogTitle icon={RiCalendarLine}>
+            <DialogTitle icon={CalendarIcon}>
               {messages.ranges.custom}
             </DialogTitle>
             <DialogDescription>
@@ -1157,7 +1157,7 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
               }}
               disabled={!pendingNormalized}
             >
-              <RiCheckLine data-icon="inline-start" />
+              <CheckIcon data-icon="inline-start" />
               <span>{messages.dashboardHeader.customApply}</span>
             </Button>
           </DialogFooter>

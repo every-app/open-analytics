@@ -4,7 +4,7 @@ import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Card, CardContent } from "@insightflare/ui/card";
 import { Clickable } from "@insightflare/ui/clickable";
 import { Skeleton } from "@insightflare/ui/skeleton";
-import { RiSpeedUpLine } from "@remixicon/react";
+import { GaugeIcon } from "lucide-react";
 
 import {
   formatMetricValue,
@@ -426,7 +426,7 @@ export const MetricSummaryCard = memo(function MetricSummaryCard({
               </div>
               <div className="rounded-none bg-muted/45 p-4">
                 <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-                  <RiSpeedUpLine className="size-4 text-muted-foreground" />
+                  <GaugeIcon className="size-4 text-muted-foreground" />
                   {messages.performance.datasetTitle}
                 </div>
                 <PerformancePanelText

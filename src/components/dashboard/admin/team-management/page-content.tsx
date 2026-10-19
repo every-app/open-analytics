@@ -3,7 +3,7 @@ import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Button } from "@insightflare/ui/button";
 import { PageHeading } from "@insightflare/ui/page-heading";
 import { Spinner } from "@insightflare/ui/spinner";
-import { RiAddLine, RiGlobalLine } from "@remixicon/react";
+import { GlobeIcon, PlusIcon } from "lucide-react";
 
 import Link from "@/lib/router";
 
@@ -35,7 +35,7 @@ export function TeamManagementPageContent() {
             <>
               <Button variant="outline" asChild>
                 <Link href={`/${locale}/app/sites`}>
-                  <RiGlobalLine data-icon="inline-start" />
+                  <GlobeIcon data-icon="inline-start" />
                   <span className="inline-flex items-center gap-[var(--button-content-gap)]">
                     {copy.stats.sites}:
                     <AutoResizer
@@ -74,7 +74,7 @@ export function TeamManagementPageContent() {
                     setCreateSiteDialogOpen(true);
                   }}
                 >
-                  <RiAddLine data-icon="inline-start" />
+                  <PlusIcon data-icon="inline-start" />
                   <span>{siteCreateCopy.create}</span>
                 </Button>
               ) : null}

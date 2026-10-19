@@ -1,12 +1,12 @@
 import type { ComponentType } from "react";
 import {
-  RiBarChartBoxLine,
-  RiCodeLine,
-  RiGlobalLine,
-  RiLinksLine,
-  RiRouteLine,
-  RiSettings3Line,
-} from "@remixicon/react";
+  ChartColumnIcon,
+  CodeIcon,
+  GlobeIcon,
+  LinkIcon,
+  RouteIcon,
+  SettingsIcon,
+} from "lucide-react";
 
 import {
   BLOCKING_FIELD_IDS,
@@ -133,15 +133,15 @@ export const BLOCKING_RULE_FIELD_DEFINITIONS: ReadonlyArray<{
   field: BlockingFieldId;
   icon: ComponentType<{ className?: string }>;
 }> = [
-  { field: "domains", icon: RiGlobalLine },
-  { field: "paths", icon: RiRouteLine },
-  { field: "queryParameters", icon: RiSettings3Line },
-  { field: "referrers", icon: RiLinksLine },
-  { field: "userAgents", icon: RiCodeLine },
-  { field: "ips", icon: RiBarChartBoxLine },
-  { field: "asns", icon: RiBarChartBoxLine },
-  { field: "countries", icon: RiGlobalLine },
-  { field: "regions", icon: RiGlobalLine },
+  { field: "domains", icon: GlobeIcon },
+  { field: "paths", icon: RouteIcon },
+  { field: "queryParameters", icon: SettingsIcon },
+  { field: "referrers", icon: LinkIcon },
+  { field: "userAgents", icon: CodeIcon },
+  { field: "ips", icon: ChartColumnIcon },
+  { field: "asns", icon: ChartColumnIcon },
+  { field: "countries", icon: GlobeIcon },
+  { field: "regions", icon: GlobeIcon },
 ];
 export function blockingEditorValues(input: unknown): BlockingEditorValues {
   const parsed = parseBlockingRules(input);

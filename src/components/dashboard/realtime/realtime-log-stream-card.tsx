@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@insightflare/ui/card";
 import { Spinner } from "@insightflare/ui/spinner";
-import { RiPulseLine } from "@remixicon/react";
+import { ActivityIcon } from "lucide-react";
 import { AnimatePresence, useReducedMotion } from "motion/react";
 
 import { useDashboardQueryControls } from "@/components/dashboard/shell/dashboard-query-provider";
@@ -230,7 +230,7 @@ export const RealtimeLogStreamCard = memo(function RealtimeLogStreamCard({
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiPulseLine className="size-4" />
+            <ActivityIcon className="size-4" />
             {messages.realtime.recentEvents}
           </CardTitle>
         </CardHeader>

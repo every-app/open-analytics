@@ -11,8 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@insightflare/ui/card";
-import { RiBarChartBoxLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { ChartColumnIcon } from "lucide-react";
 
 import { resolveDeviceTypeMeta } from "@/components/dashboard/journeys/journey-display";
 import { fetchClientCrossBreakdown } from "@/lib/dashboard/client/data/index";
@@ -192,7 +192,7 @@ const CrossBreakdownCard = memo(function CrossBreakdownCard({
     <Card className="h-full overflow-hidden">
       <CardHeader>
         <CardTitle className="inline-flex items-center gap-2">
-          <RiBarChartBoxLine className="size-4" />
+          <ChartColumnIcon className="size-4" />
           {title}
         </CardTitle>
       </CardHeader>

@@ -11,12 +11,12 @@ import type { MetricSummaryItem } from "@insightflare/ui/metric-summary-grid";
 import { OverlayScrollbar } from "@insightflare/ui/overlay-scrollbar";
 import { Skeleton } from "@insightflare/ui/skeleton";
 import {
-  type RemixiconComponentType,
-  RiCalendarLine,
-  RiGroupLine,
-  RiPercentLine,
-  RiRepeat2Line,
-} from "@remixicon/react";
+  CalendarIcon,
+  type LucideIcon,
+  PercentIcon,
+  Repeat2Icon,
+  UsersIcon,
+} from "lucide-react";
 
 import {
   AnalyticsDetailsTooltipTarget,
@@ -109,7 +109,7 @@ export function createRetentionMetricItems({
   return [
     item(
       "cohorts",
-      <RiCalendarLine />,
+      <CalendarIcon />,
       labels.cohortsMetric,
       numberFormat(locale, summary.cohortCount),
       `${numberFormat(locale, viewModel.columns.length)} ${labels.periodsAnalyzed}`,
@@ -118,7 +118,7 @@ export function createRetentionMetricItems({
     ),
     item(
       "visitors",
-      <RiGroupLine />,
+      <UsersIcon />,
       labels.visitorsMetric,
       numberFormat(locale, summary.totalVisitors),
       labels.cohortDetail,
@@ -127,7 +127,7 @@ export function createRetentionMetricItems({
     ),
     item(
       "period-one",
-      <RiPercentLine />,
+      <PercentIcon />,
       labels.periodOneMetric,
       summary.periodOneRate === null
         ? "--"
@@ -140,7 +140,7 @@ export function createRetentionMetricItems({
     ),
     item(
       "average-return",
-      <RiRepeat2Line />,
+      <Repeat2Icon />,
       labels.averageReturnMetric,
       summary.averageReturnRate === null
         ? "--"
@@ -160,7 +160,7 @@ export const RetentionStateCard = memo(function RetentionStateCard({
 }: {
   title: string;
   subtitle: string;
-  icon: RemixiconComponentType;
+  icon: LucideIcon;
 }) {
   return (
     <Card>
@@ -503,7 +503,7 @@ export const RetentionMatrix = memo(function RetentionMatrix({
       <CardHeader className="gap-3 md:grid-cols-[1fr_auto]">
         <div className="space-y-1">
           <CardTitle className="inline-flex items-center gap-2">
-            <RiRepeat2Line className="size-4" />
+            <Repeat2Icon className="size-4" />
             {labels.matrixTitle}
           </CardTitle>
           <CardDescription>{labels.matrixSubtitle}</CardDescription>

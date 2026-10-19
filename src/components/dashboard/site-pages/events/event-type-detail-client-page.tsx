@@ -8,8 +8,8 @@ import {
   CardTitle,
 } from "@insightflare/ui/card";
 import { MetricSummaryGrid } from "@insightflare/ui/metric-summary-grid";
-import { RiPulseLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { ActivityIcon } from "lucide-react";
 
 import { JourneyDetailStateSwitch } from "@/components/dashboard/journeys/journey-detail-state";
 import { useDashboardQuery } from "@/components/dashboard/site-pages/common/use-dashboard-query";
@@ -559,7 +559,7 @@ export const EventTypeDetailClientPage = memo(
           <Card className="overflow-visible">
             <CardHeader>
               <CardTitle className="inline-flex items-center gap-2">
-                <RiPulseLine className="size-4" />
+                <ActivityIcon className="size-4" />
                 {messages.events.trendTitle}
               </CardTitle>
             </CardHeader>

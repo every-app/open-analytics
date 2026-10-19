@@ -1,7 +1,7 @@
 import { AutoResizer } from "@insightflare/ui/auto-resizer";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Button } from "@insightflare/ui/button";
-import { RiFilter3Line } from "@remixicon/react";
+import { FunnelIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -78,7 +78,7 @@ export function PayloadFilterButton({
       }
       onClick={onClick}
     >
-      <RiFilter3Line data-icon="inline-start" />
+      <FunnelIcon data-icon="inline-start" />
       {labels.payloadFilter}
       <PayloadFilterActiveCountBadge count={count} />
     </Button>

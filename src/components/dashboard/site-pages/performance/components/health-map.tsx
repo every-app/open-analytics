@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@insightflare/ui/card";
 import { Skeleton } from "@insightflare/ui/skeleton";
-import { RiMapPin2Line } from "@remixicon/react";
+import { MapPinIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
 import {
@@ -735,7 +735,7 @@ export const PerformanceHealthMapCard = memo(function PerformanceHealthMapCard({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <CardTitle className="inline-flex items-center gap-2">
-              <RiMapPin2Line className="size-4" />
+              <MapPinIcon className="size-4" />
               {messages.performance.countryHealthTitle}
             </CardTitle>
             <PerformancePanelText

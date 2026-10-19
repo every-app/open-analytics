@@ -19,12 +19,8 @@ import { Input } from "@insightflare/ui/input";
 import { PageHeading } from "@insightflare/ui/page-heading";
 import { Skeleton } from "@insightflare/ui/skeleton";
 import { TableCell, TableHead, TableRow } from "@insightflare/ui/table";
-import {
-  RiArrowDownSLine,
-  RiArrowUpSLine,
-  RiSearchLine,
-} from "@remixicon/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { ChevronDownIcon, ChevronUpIcon, SearchIcon } from "lucide-react";
 
 import {
   AnalyticsDetailsTooltipTarget,
@@ -184,16 +180,16 @@ function SortIndicator({
 }) {
   if (active) {
     return direction === "desc" ? (
-      <RiArrowDownSLine className="size-3.5" />
+      <ChevronDownIcon className="size-3.5" />
     ) : (
-      <RiArrowUpSLine className="size-3.5" />
+      <ChevronUpIcon className="size-3.5" />
     );
   }
 
   return (
     <span className="inline-flex flex-col leading-none text-muted-foreground">
-      <RiArrowUpSLine className="-mb-1 size-3.5" />
-      <RiArrowDownSLine className="-mt-1 size-3.5" />
+      <ChevronUpIcon className="-mb-1 size-3.5" />
+      <ChevronDownIcon className="-mt-1 size-3.5" />
     </span>
   );
 }
@@ -934,7 +930,7 @@ export function VisitorsClientPage({
         actions={
           <div className="flex w-full items-center justify-end gap-2">
             <div className="relative min-w-0 flex-1 sm:w-80 sm:flex-none">
-              <RiSearchLine className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}

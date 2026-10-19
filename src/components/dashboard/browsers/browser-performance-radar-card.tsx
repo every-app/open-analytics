@@ -11,8 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@insightflare/ui/card";
-import { RiPulseLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { ActivityIcon } from "lucide-react";
 
 import {
   dashboardComparisonLabel,
@@ -192,7 +192,7 @@ export const BrowserPerformanceRadarCard = memo(
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiPulseLine className="size-4" />
+            <ActivityIcon className="size-4" />
             {messages.browsers.radarTitle}
           </CardTitle>
           <p className="text-sm text-muted-foreground">

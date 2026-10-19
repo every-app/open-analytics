@@ -1,6 +1,6 @@
 import * as React from "react";
-import { RiSideBarLine } from "@remixicon/react";
 import { cva, type VariantProps } from "class-variance-authority";
+import { PanelLeftIcon } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { Slot } from "radix-ui";
 
@@ -270,7 +270,7 @@ function SidebarTrigger({
           }}
           {...props}
         >
-          <RiSideBarLine />
+          <PanelLeftIcon />
           <span className="sr-only">Toggle Sidebar</span>
         </Button>
       </TooltipTrigger>

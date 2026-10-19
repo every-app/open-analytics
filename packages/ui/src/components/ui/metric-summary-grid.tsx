@@ -1,9 +1,5 @@
 import type { ReactElement } from "react";
-import {
-  RiArrowDownLine,
-  RiArrowUpLine,
-  RiSubtractLine,
-} from "@remixicon/react";
+import { ArrowDownIcon, ArrowUpIcon, MinusIcon } from "lucide-react";
 
 import { cn } from "../../lib/utils";
 import { AutoResizer } from "./auto-resizer";
@@ -84,10 +80,10 @@ function MetricSummaryCell({
       }`;
   const ChangeIcon =
     item.change?.direction === "up"
-      ? RiArrowUpLine
+      ? ArrowUpIcon
       : item.change?.direction === "down"
-        ? RiArrowDownLine
-        : RiSubtractLine;
+        ? ArrowDownIcon
+        : MinusIcon;
 
   const content = (
     <>

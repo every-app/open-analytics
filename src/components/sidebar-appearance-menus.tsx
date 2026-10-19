@@ -10,12 +10,12 @@ import {
   DropdownMenuTrigger,
 } from "@insightflare/ui/dropdown-menu";
 import {
-  RiCheckLine,
-  RiComputerLine,
-  RiGlobalLine,
-  RiMoonLine,
-  RiSunLine,
-} from "@remixicon/react";
+  CheckIcon,
+  GlobeIcon,
+  MonitorIcon,
+  MoonIcon,
+  SunIcon,
+} from "lucide-react";
 
 import { useTheme } from "@/components/theme-provider";
 import type { Locale } from "@/lib/i18n/config";
@@ -40,9 +40,9 @@ const footerGridClass =
   "relative m-0 h-10 w-full p-0 transition-[height] duration-[380ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none";
 
 function pickThemeIcon(theme: string) {
-  if (theme === "dark") return RiMoonLine;
-  if (theme === "light") return RiSunLine;
-  return RiComputerLine;
+  if (theme === "dark") return MoonIcon;
+  if (theme === "light") return SunIcon;
+  return MonitorIcon;
 }
 
 export function SidebarAppearanceMenus({
@@ -120,15 +120,15 @@ export function SidebarAppearanceMenus({
             }}
           >
             <DropdownMenuRadioItem value="light">
-              <RiSunLine />
+              <SunIcon />
               <span>{messages.actions.switchToLight}</span>
             </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="dark">
-              <RiMoonLine />
+              <MoonIcon />
               <span>{messages.actions.switchToDark}</span>
             </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="system">
-              <RiComputerLine />
+              <MonitorIcon />
               <span>{messages.common.system}</span>
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
@@ -149,7 +149,7 @@ export function SidebarAppearanceMenus({
           )}
           aria-label={messages.common.language}
         >
-          <RiGlobalLine className="size-4" />
+          <GlobeIcon className="size-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent sideOffset={8} className="!w-44 !min-w-44">
           <DropdownMenuLabel>{messages.common.language}</DropdownMenuLabel>
@@ -159,7 +159,7 @@ export function SidebarAppearanceMenus({
               <Link href={item.href}>
                 <span className="inline-flex w-4 justify-center">
                   {locale === item.locale ? (
-                    <RiCheckLine className="size-4" />
+                    <CheckIcon className="size-4" />
                   ) : null}
                 </span>
                 <span>{item.label}</span>

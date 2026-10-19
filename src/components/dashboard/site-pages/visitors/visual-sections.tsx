@@ -16,7 +16,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@insightflare/ui/tooltip";
-import { RiArrowLeftLine } from "@remixicon/react";
+import { ArrowLeftIcon } from "lucide-react";
 
 import { LazyGeoCityBreadcrumbLabel } from "@/components/dashboard/geo/lazy-geo-location-label";
 import {
@@ -149,7 +149,7 @@ export const VisitorMapHero = memo(function VisitorMapHero({
             aria-label={labels.back}
             onClick={onBack}
           >
-            <RiArrowLeftLine className="size-3.5" />
+            <ArrowLeftIcon className="size-3.5" />
             {labels.back}
           </Clickable>
         ) : (
@@ -158,7 +158,7 @@ export const VisitorMapHero = memo(function VisitorMapHero({
             className="inline-flex items-center gap-1 text-xs text-foreground/80 outline-none hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring/60"
             aria-label={labels.back}
           >
-            <RiArrowLeftLine className="size-3.5" />
+            <ArrowLeftIcon className="size-3.5" />
             {labels.back}
           </Link>
         )}

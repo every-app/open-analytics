@@ -9,11 +9,11 @@ import {
   DropdownMenuTrigger,
 } from "@insightflare/ui/dropdown-menu";
 import {
-  RiArrowRightSLine,
-  RiDeleteBinLine,
-  RiEditLine,
-  RiMoreLine,
-} from "@remixicon/react";
+  ChevronRightIcon,
+  EllipsisIcon,
+  PencilIcon,
+  Trash2Icon,
+} from "lucide-react";
 
 import type { AppMessages } from "@/lib/i18n/messages";
 export function GoalActions({
@@ -50,7 +50,7 @@ export function GoalActions({
               onPointerDown={(event) => event.stopPropagation()}
               className="size-8 text-muted-foreground hover:bg-accent hover:text-foreground [&_svg]:size-4"
             >
-              <RiMoreLine />
+              <EllipsisIcon />
             </Clickable>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
@@ -63,7 +63,7 @@ export function GoalActions({
                 window.setTimeout(onEdit, 150);
               }}
             >
-              <RiEditLine /> {labels.edit}
+              <PencilIcon /> {labels.edit}
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
@@ -73,7 +73,7 @@ export function GoalActions({
                 window.setTimeout(onDelete, 150);
               }}
             >
-              <RiDeleteBinLine /> {labels.delete}
+              <Trash2Icon /> {labels.delete}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -90,7 +90,7 @@ export function GoalActions({
           }}
           className="size-8 text-muted-foreground hover:bg-accent hover:text-foreground [&_svg]:size-4"
         >
-          <RiArrowRightSLine />
+          <ChevronRightIcon />
         </Clickable>
       ) : null}
     </div>

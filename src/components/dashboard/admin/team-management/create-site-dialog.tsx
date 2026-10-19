@@ -11,7 +11,7 @@ import {
 import { Input } from "@insightflare/ui/input";
 import { Label } from "@insightflare/ui/label";
 import { Spinner } from "@insightflare/ui/spinner";
-import { RiAddLine, RiCloseLine, RiGlobalLine } from "@remixicon/react";
+import { GlobeIcon, PlusIcon, XIcon } from "lucide-react";
 
 import { useTeamManagementContext } from "./context";
 export function TeamManagementCreateSiteDialog() {
@@ -45,7 +45,7 @@ export function TeamManagementCreateSiteDialog() {
     >
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle icon={RiGlobalLine}>
+          <DialogTitle icon={GlobeIcon}>
             {siteCreateCopy.createTitle}
           </DialogTitle>
           <DialogDescription>{siteCreateCopy.createSubtitle}</DialogDescription>
@@ -105,7 +105,7 @@ export function TeamManagementCreateSiteDialog() {
               onClick={() => setCreateSiteDialogOpen(false)}
               disabled={creatingSite}
             >
-              <RiCloseLine data-icon="inline-start" />
+              <XIcon data-icon="inline-start" />
               <span>{messages.teamSelect.cancel}</span>
             </Button>
             <Button type="submit" disabled={creatingSite}>
@@ -123,7 +123,7 @@ export function TeamManagementCreateSiteDialog() {
                     key="create-site"
                     className="inline-flex items-center gap-[var(--button-content-gap)]"
                   >
-                    <RiAddLine data-icon="inline-start" />
+                    <PlusIcon data-icon="inline-start" />
                     {siteCreateCopy.create}
                   </span>
                 )}

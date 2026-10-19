@@ -1,6 +1,6 @@
 import { Button } from "@insightflare/ui/button";
 import { Input } from "@insightflare/ui/input";
-import { RiDeleteBinLine, RiDraggable, RiFilter2Line } from "@remixicon/react";
+import { GripVerticalIcon, ListFilterIcon, Trash2Icon } from "lucide-react";
 import { Reorder, useDragControls } from "motion/react";
 
 import type { FunnelStep } from "@/lib/dashboard-api/client/edge";
@@ -60,7 +60,7 @@ export function FunnelStepRow({
         onPointerDown={(event) => controls.start(event)}
         className="cursor-grab touch-none active:cursor-grabbing"
       >
-        <RiDraggable />
+        <GripVerticalIcon />
       </Button>
       <span className="sr-only">
         {labels.step} {index + 1}
@@ -80,7 +80,7 @@ export function FunnelStepRow({
         onClick={onFilter}
         className="w-28 shrink-0 justify-center"
       >
-        <RiFilter2Line data-icon="inline-start" />
+        <ListFilterIcon data-icon="inline-start" />
         <span>
           {labels.filter}
           {count > 0 ? ` (${count})` : ""}
@@ -94,7 +94,7 @@ export function FunnelStepRow({
         disabled={total <= 2}
         onClick={onDelete}
       >
-        <RiDeleteBinLine />
+        <Trash2Icon />
       </Button>
     </Reorder.Item>
   );

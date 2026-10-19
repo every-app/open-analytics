@@ -5,11 +5,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@insightflare/ui/tooltip";
-import {
-  RiArrowRightUpLine,
-  RiSearchLine,
-  RiShareForwardLine,
-} from "@remixicon/react";
+import { ArrowUpRightIcon, SearchIcon, ShareIcon } from "lucide-react";
 
 import {
   TabbedDataTableCard,
@@ -270,9 +266,9 @@ export const ReferrerBreakdownCard = memo(function ReferrerBreakdownCard({
                   aria-label={`${messages.common.open}: ${displayLabel}`}
                 >
                   {activeTab === "link" ? (
-                    <RiArrowRightUpLine size="1.4em" />
+                    <ArrowUpRightIcon size="1.4em" />
                   ) : (
-                    <RiSearchLine size="1.2em" />
+                    <SearchIcon size="1.2em" />
                   )}
                 </Clickable>
               </TooltipTrigger>
@@ -356,7 +352,7 @@ export const ReferrerBreakdownCard = memo(function ReferrerBreakdownCard({
     <section className="space-y-3">
       <div className="space-y-1">
         <h2 className="inline-flex items-center gap-2 text-sm font-medium tracking-tight">
-          <RiShareForwardLine className="size-4 shrink-0" />
+          <ShareIcon className="size-4 shrink-0" />
           {messages.referrers.breakdownTitle}
         </h2>
       </div>

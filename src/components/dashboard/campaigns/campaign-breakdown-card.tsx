@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo } from "react";
-import { RiPriceTag3Line } from "@remixicon/react";
+import { TagIcon } from "lucide-react";
 
 import {
   type CampaignBreakdownRow,
@@ -221,7 +221,7 @@ export const CampaignBreakdownCard = memo(function CampaignBreakdownCard({
     <section className="space-y-3">
       <div className="space-y-1">
         <h2 className="inline-flex items-center gap-2 text-sm font-medium tracking-tight">
-          <RiPriceTag3Line className="size-4 shrink-0" />
+          <TagIcon className="size-4 shrink-0" />
           {messages.campaigns.breakdownTitle}
         </h2>
       </div>

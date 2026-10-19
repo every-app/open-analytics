@@ -7,13 +7,13 @@ import {
   CardTitle,
 } from "@insightflare/ui/card";
 import { OverlayScrollbar } from "@insightflare/ui/overlay-scrollbar";
-import {
-  RiErrorWarningLine,
-  RiExternalLinkLine,
-  RiKey2Line,
-  RiTerminalBoxLine,
-} from "@remixicon/react";
 import { createFileRoute } from "@tanstack/react-router";
+import {
+  CircleAlertIcon,
+  ExternalLinkIcon,
+  KeyRoundIcon,
+  SquareTerminalIcon,
+} from "lucide-react";
 
 import { dashboardPageTitle } from "@/lib/page-title";
 import Link from "@/lib/router";
@@ -41,7 +41,7 @@ function Page() {
             <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
               <div className="space-y-4">
                 <div className="inline-flex w-fit items-center gap-2 border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-[11px] font-medium uppercase text-destructive">
-                  <RiErrorWarningLine className="size-3.5" />
+                  <CircleAlertIcon className="size-3.5" />
                   {copy.eyebrow}
                 </div>
                 <div className="space-y-2">
@@ -57,7 +57,7 @@ function Page() {
                 </div>
               </div>
               <div className="grid size-14 shrink-0 place-items-center border border-destructive/30 bg-destructive/10 text-destructive">
-                <RiKey2Line className="size-7" />
+                <KeyRoundIcon className="size-7" />
               </div>
             </div>
           </CardHeader>
@@ -79,7 +79,7 @@ function Page() {
             </div>
             <div className="space-y-4">
               <h2 className="inline-flex items-center gap-2 text-sm font-medium">
-                <RiTerminalBoxLine className="size-4" />
+                <SquareTerminalIcon className="size-4" />
                 {copy.commandTitle}
               </h2>
               <p className="text-xs text-muted-foreground">
@@ -102,7 +102,7 @@ function Page() {
               <Button variant="outline" asChild>
                 <Link href="https://github.com/every-app/open-analytics">
                   {copy.docsLabel}
-                  <RiExternalLinkLine data-icon="inline-end" />
+                  <ExternalLinkIcon data-icon="inline-end" />
                 </Link>
               </Button>
               <Button asChild>

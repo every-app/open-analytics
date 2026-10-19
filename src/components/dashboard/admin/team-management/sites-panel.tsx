@@ -9,11 +9,11 @@ import {
   CardTitle,
 } from "@insightflare/ui/card";
 import {
-  RiArrowDownLine,
-  RiArrowRightSLine,
-  RiArrowUpLine,
-  RiBarChartBoxLine,
-} from "@remixicon/react";
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ChartColumnIcon,
+  ChevronRightIcon,
+} from "lucide-react";
 
 import { SiteBrandIcon } from "@/components/dashboard/common/site-brand-icon";
 import {
@@ -84,7 +84,7 @@ export function TeamManagementSitesPanel() {
     lowerIsBetter?: boolean;
   }) {
     if (value === null) return null;
-    const Icon = value >= 0 ? RiArrowUpLine : RiArrowDownLine;
+    const Icon = value >= 0 ? ArrowUpIcon : ArrowDownIcon;
     return (
       <span
         className={`inline-flex items-end gap-0.5 font-mono text-xs leading-none ${changeRateClass(value, lowerIsBetter)}`}
@@ -100,7 +100,7 @@ export function TeamManagementSitesPanel() {
       <Card className="overflow-visible">
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiBarChartBoxLine className="size-4" />
+            <ChartColumnIcon className="size-4" />
             {copy.sites.aggregateTitle}
           </CardTitle>
         </CardHeader>
@@ -162,7 +162,7 @@ export function TeamManagementSitesPanel() {
                         </div>
                       </div>
                       <span className="inline-flex size-6 shrink-0 items-center justify-center text-muted-foreground">
-                        <RiArrowRightSLine className="size-4" />
+                        <ChevronRightIcon className="size-4" />
                       </span>
                     </div>
                   </CardHeader>

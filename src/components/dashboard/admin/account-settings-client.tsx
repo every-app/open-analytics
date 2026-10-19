@@ -27,14 +27,14 @@ import {
   SelectValue,
 } from "@insightflare/ui/select";
 import { Spinner } from "@insightflare/ui/spinner";
-import {
-  RiComputerLine,
-  RiGlobalLine,
-  RiNotification3Line,
-  RiSave3Line,
-  RiUserSettingsLine,
-} from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  BellIcon,
+  GlobeIcon,
+  MonitorIcon,
+  SaveIcon,
+  UserCogIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { useReportingTimeZone } from "@/components/time-zone-provider";
@@ -377,7 +377,7 @@ export function AccountSettingsClient({
         <Card className="h-full lg:col-span-2">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiUserSettingsLine className="size-4" />
+              <UserCogIcon className="size-4" />
               {copy.profileTitle}
             </CardTitle>
             <CardDescription>{copy.profileDescription}</CardDescription>
@@ -433,7 +433,7 @@ export function AccountSettingsClient({
                         key="profile-save"
                         className="inline-flex items-center gap-[var(--button-content-gap)]"
                       >
-                        <RiSave3Line data-icon="inline-start" />
+                        <SaveIcon data-icon="inline-start" />
                         {copy.profileSave}
                       </span>
                     )}
@@ -447,7 +447,7 @@ export function AccountSettingsClient({
         <Card className="h-full lg:col-span-2">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiNotification3Line className="size-4" />
+              <BellIcon className="size-4" />
               {notificationCopy.preferencesTitle}
             </CardTitle>
             <CardDescription>
@@ -593,7 +593,7 @@ export function AccountSettingsClient({
                               key="notification-preferences-save"
                               className="inline-flex items-center gap-[var(--button-content-gap)]"
                             >
-                              <RiSave3Line data-icon="inline-start" />
+                              <SaveIcon data-icon="inline-start" />
                               {copy.save}
                             </span>
                           )}
@@ -610,7 +610,7 @@ export function AccountSettingsClient({
         <Card className="h-full overflow-visible lg:col-span-2">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiGlobalLine className="size-4" />
+              <GlobeIcon className="size-4" />
               {copy.preferredLanguageTitle}
             </CardTitle>
             <CardDescription>
@@ -678,7 +678,7 @@ export function AccountSettingsClient({
                         key="preferred-locale-save"
                         className="inline-flex items-center gap-[var(--button-content-gap)]"
                       >
-                        <RiSave3Line data-icon="inline-start" />
+                        <SaveIcon data-icon="inline-start" />
                         {copy.save}
                       </span>
                     )}
@@ -694,7 +694,7 @@ export function AccountSettingsClient({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="space-y-1">
                 <CardTitle className="inline-flex items-center gap-2">
-                  <RiGlobalLine className="size-4" />
+                  <GlobeIcon className="size-4" />
                   {copy.timeZoneTitle}
                 </CardTitle>
                 <CardDescription>{copy.timeZoneDescription}</CardDescription>
@@ -710,14 +710,14 @@ export function AccountSettingsClient({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-none border border-border p-3">
                   <div className="mb-1 flex items-center gap-2 text-xs font-medium">
-                    <RiGlobalLine className="size-4 text-muted-foreground" />
+                    <GlobeIcon className="size-4 text-muted-foreground" />
                     {copy.activeTimeZone}
                   </div>
                   <div className="text-sm">{activeTimeZoneLabel}</div>
                 </div>
                 <div className="rounded-none border border-border p-3">
                   <div className="mb-1 flex items-center gap-2 text-xs font-medium">
-                    <RiComputerLine className="size-4 text-muted-foreground" />
+                    <MonitorIcon className="size-4 text-muted-foreground" />
                     {copy.browserTimeZone}
                   </div>
                   <div className="text-sm">{browserTimeZoneLabel}</div>
@@ -808,7 +808,7 @@ export function AccountSettingsClient({
                         key="save"
                         className="inline-flex items-center gap-[var(--button-content-gap)]"
                       >
-                        <RiSave3Line data-icon="inline-start" />
+                        <SaveIcon data-icon="inline-start" />
                         {copy.save}
                       </span>
                     )}

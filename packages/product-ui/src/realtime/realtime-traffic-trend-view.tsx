@@ -14,7 +14,7 @@ import {
   ChartTooltip,
 } from "@insightflare/ui/chart";
 import { Spinner } from "@insightflare/ui/spinner";
-import { RiPulseLine } from "@remixicon/react";
+import { ActivityIcon } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -173,7 +173,7 @@ export function RealtimeTrafficTrendView({
     <Card className="overflow-visible" aria-busy={loading}>
       <CardHeader>
         <CardTitle className="inline-flex items-center gap-2">
-          <RiPulseLine className="size-4" aria-hidden="true" />
+          <ActivityIcon className="size-4" aria-hidden="true" />
           {title}
         </CardTitle>
       </CardHeader>

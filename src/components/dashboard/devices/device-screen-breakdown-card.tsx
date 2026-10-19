@@ -18,12 +18,8 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@insightflare/ui/dropdown-menu";
-import {
-  RiArrowDownSLine,
-  RiComputerLine,
-  RiExternalLinkLine,
-} from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { ChevronDownIcon, ExternalLinkIcon, MonitorIcon } from "lucide-react";
 
 import {
   TabbedDataTableCard,
@@ -313,7 +309,7 @@ function ScreenCategoryPieCard({
     <Card className="flex h-full flex-col">
       <CardHeader>
         <CardTitle className="inline-flex items-center gap-2">
-          <RiComputerLine className="size-4" />
+          <MonitorIcon className="size-4" />
           {messages.devices.screenBucketTitle}
         </CardTitle>
       </CardHeader>
@@ -565,7 +561,7 @@ function ScreenPreviewCard({
     <Card className="overflow-hidden">
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <CardTitle className="inline-flex items-center gap-2">
-          <RiComputerLine className="size-4" />
+          <MonitorIcon className="size-4" />
           {messages.devices.screenPreviewTitle}
         </CardTitle>
         <div className="flex flex-wrap items-center gap-2">
@@ -580,7 +576,7 @@ function ScreenPreviewCard({
                   {selectedItem?.displayLabel ??
                     messages.devices.selectedViewportLabel}
                 </span>
-                <RiArrowDownSLine
+                <ChevronDownIcon
                   data-icon="inline-end"
                   className="text-muted-foreground"
                 />
@@ -602,7 +598,7 @@ function ScreenPreviewCard({
           {previewUrl ? (
             <Button asChild variant="outline" size="sm">
               <a href={previewUrl} target="_blank" rel="noreferrer">
-                <RiExternalLinkLine data-icon="inline-start" />
+                <ExternalLinkIcon data-icon="inline-start" />
                 <span>{messages.devices.openSiteLabel}</span>
               </a>
             </Button>
@@ -816,7 +812,7 @@ export const DeviceScreenBreakdownCard = memo(
       <section className="space-y-4">
         <div className="px-1">
           <h2 className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
-            <RiComputerLine className="size-4 shrink-0" />
+            <MonitorIcon className="size-4 shrink-0" />
             {messages.devices.screenDistributionTitle}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">

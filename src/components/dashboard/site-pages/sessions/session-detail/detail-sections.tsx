@@ -19,11 +19,11 @@ import {
 import { Clickable } from "@insightflare/ui/clickable";
 import { Skeleton } from "@insightflare/ui/skeleton";
 import {
-  RiCalendarEventLine,
-  RiLogoutBoxRLine,
-  RiPulseLine,
-  RiTimeLine,
-} from "@remixicon/react";
+  ActivityIcon,
+  CalendarDaysIcon,
+  ClockIcon,
+  LogOutIcon,
+} from "lucide-react";
 
 import {
   AsyncDimensionBreakdownCard,
@@ -82,13 +82,13 @@ export function EventIcon({ event }: { event: JourneyEvent }) {
       )}
     >
       {isSessionStart ? (
-        <RiTimeLine className="size-4" />
+        <ClockIcon className="size-4" />
       ) : isLeave ? (
-        <RiLogoutBoxRLine className="size-4" />
+        <LogOutIcon className="size-4" />
       ) : isCustom ? (
-        <RiPulseLine className="size-4" />
+        <ActivityIcon className="size-4" />
       ) : (
-        <RiCalendarEventLine className="size-4" />
+        <CalendarDaysIcon className="size-4" />
       )}
     </span>
   );
@@ -555,7 +555,7 @@ export const VisitDetailsTab = memo(function VisitDetailsTab({
     <Card>
       <CardHeader>
         <CardTitle className="inline-flex items-center gap-2">
-          <RiCalendarEventLine className="size-4" />
+          <CalendarDaysIcon className="size-4" />
           {labels.visitDetailsTitle}
         </CardTitle>
         <CardDescription>{labels.visitDetailsSubtitle}</CardDescription>

@@ -6,10 +6,10 @@ import {
   type Locale,
 } from "react-day-picker";
 import {
-  RiArrowDownSLine,
-  RiArrowLeftSLine,
-  RiArrowRightSLine,
-} from "@remixicon/react";
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "lucide-react";
 
 import { cn } from "../../lib/utils";
 import { Button, buttonVariants } from "./button";
@@ -149,16 +149,13 @@ function Calendar({
         Chevron: ({ className, orientation, ...props }) => {
           if (orientation === "left") {
             return (
-              <RiArrowLeftSLine
-                className={cn("size-4", className)}
-                {...props}
-              />
+              <ChevronLeftIcon className={cn("size-4", className)} {...props} />
             );
           }
 
           if (orientation === "right") {
             return (
-              <RiArrowRightSLine
+              <ChevronRightIcon
                 className={cn("size-4", className)}
                 {...props}
               />
@@ -166,7 +163,7 @@ function Calendar({
           }
 
           return (
-            <RiArrowDownSLine className={cn("size-4", className)} {...props} />
+            <ChevronDownIcon className={cn("size-4", className)} {...props} />
           );
         },
         DayButton: ({ ...props }) => (

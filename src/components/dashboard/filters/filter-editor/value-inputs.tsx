@@ -21,8 +21,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@insightflare/ui/tooltip";
-import { RiArrowDownSLine } from "@remixicon/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { ChevronDownIcon } from "lucide-react";
 
 import {
   convertCanonicalTextToDisplay,
@@ -156,7 +156,7 @@ export function SearchablePayloadPathInput({
           <span className="min-w-0 truncate text-left">
             {condition.payloadPath || messages.filterBuilder.valueUnset}
           </span>
-          <RiArrowDownSLine
+          <ChevronDownIcon
             data-icon="inline-end"
             className="shrink-0 text-muted-foreground"
           />
@@ -549,7 +549,7 @@ export function SearchableValueInput({
                     .join(", ") || messages.filterBuilder.valueUnset
                 : displayValueText || messages.filterBuilder.valueUnset}
             </span>
-            <RiArrowDownSLine className="shrink-0 text-muted-foreground" />
+            <ChevronDownIcon className="shrink-0 text-muted-foreground" />
           </Button>
         </SearchablePopoverTrigger>
         <SearchablePopoverContent

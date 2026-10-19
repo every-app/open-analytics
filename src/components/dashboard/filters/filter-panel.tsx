@@ -20,14 +20,14 @@ import {
   ResponsiveDialogTitle,
 } from "@insightflare/ui/responsive-dialog";
 import { Spinner } from "@insightflare/ui/spinner";
-import {
-  RiCheckLine,
-  RiDeleteBinLine,
-  RiEditLine,
-  RiFileCopyLine,
-  RiSaveLine,
-} from "@remixicon/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  CheckIcon,
+  CopyIcon,
+  PencilIcon,
+  SaveIcon,
+  Trash2Icon,
+} from "lucide-react";
 
 import {
   createSavedFilter,
@@ -582,7 +582,7 @@ export function FilterPanel({
                 variant="outline"
                 onClick={() => openSavedFilterCreate()}
               >
-                <RiSaveLine data-icon="inline-start" />
+                <SaveIcon data-icon="inline-start" />
                 <span>{messages.filterBuilder.saveThisFilter}</span>
               </Button>
             ) : null}
@@ -592,7 +592,7 @@ export function FilterPanel({
                 variant="outline"
                 onClick={() => openSavedFilterCreate(matchedSavedFilter)}
               >
-                <RiFileCopyLine data-icon="inline-start" />
+                <CopyIcon data-icon="inline-start" />
                 <span>{messages.filterBuilder.saveAsThisFilter}</span>
               </Button>
             ) : null}
@@ -602,7 +602,7 @@ export function FilterPanel({
                 variant="outline"
                 onClick={() => openSavedFilterManagement(matchedSavedFilter)}
               >
-                <RiEditLine data-icon="inline-start" />
+                <PencilIcon data-icon="inline-start" />
                 <span>{messages.filterBuilder.manageThisFilter}</span>
               </Button>
             ) : null}
@@ -616,13 +616,13 @@ export function FilterPanel({
                 {updateSavedFilterMutation.isPending ? (
                   <Spinner data-icon="inline-start" />
                 ) : (
-                  <RiCheckLine data-icon="inline-start" />
+                  <CheckIcon data-icon="inline-start" />
                 )}
                 <span>{messages.filterBuilder.finishEditingFilter}</span>
               </Button>
             ) : null}
             <Button type="button" onClick={apply}>
-              <RiCheckLine data-icon="inline-start" />
+              <CheckIcon data-icon="inline-start" />
               <span>{messages.filterBuilder.apply}</span>
             </Button>
           </>
@@ -638,7 +638,7 @@ export function FilterPanel({
       >
         <ResponsiveDialogContent desktopClassName="max-w-md">
           <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle icon={RiSaveLine}>
+            <ResponsiveDialogTitle icon={SaveIcon}>
               {messages.filterBuilder.createSavedFilter}
             </ResponsiveDialogTitle>
             <ResponsiveDialogDescription>
@@ -677,11 +677,7 @@ export function FilterPanel({
                 createSavedFilterMutation.mutate(savedFilterForm);
               }}
             >
-              {createSavedFilterMutation.isPending ? (
-                <Spinner />
-              ) : (
-                <RiSaveLine />
-              )}
+              {createSavedFilterMutation.isPending ? <Spinner /> : <SaveIcon />}
               <span>
                 {createSavedFilterMutation.isPending
                   ? messages.filterBuilder.savedFilterSaving
@@ -700,7 +696,7 @@ export function FilterPanel({
       >
         <ResponsiveDialogContent desktopClassName="max-w-md">
           <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle icon={RiEditLine}>
+            <ResponsiveDialogTitle icon={PencilIcon}>
               {messages.filterBuilder.manageSavedFilter}
             </ResponsiveDialogTitle>
             <ResponsiveDialogDescription>
@@ -731,7 +727,7 @@ export function FilterPanel({
                 setConfirmSavedFilterDeleteOpen(true);
               }}
             >
-              <RiDeleteBinLine data-icon="inline-start" />
+              <Trash2Icon data-icon="inline-start" />
               <span>{messages.filterBuilder.deleteSavedFilter}</span>
             </Button>
             <div className="flex flex-wrap justify-end gap-2">
@@ -756,7 +752,7 @@ export function FilterPanel({
                   setSavedFilterOperationError(null);
                 }}
               >
-                <RiEditLine data-icon="inline-start" />
+                <PencilIcon data-icon="inline-start" />
                 <span>{messages.filterBuilder.editSavedFilter}</span>
               </Button>
               <Button
@@ -780,7 +776,7 @@ export function FilterPanel({
                 {updateSavedFilterMutation.isPending ? (
                   <Spinner />
                 ) : (
-                  <RiSaveLine />
+                  <SaveIcon />
                 )}
                 <span>
                   {updateSavedFilterMutation.isPending
@@ -799,7 +795,7 @@ export function FilterPanel({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle
-              icon={RiDeleteBinLine}
+              icon={Trash2Icon}
               iconClassName="text-destructive"
             >
               {messages.filterBuilder.deleteSavedFilterTitle}
@@ -827,7 +823,7 @@ export function FilterPanel({
               {deleteSavedFilterMutation.isPending ? (
                 <Spinner />
               ) : (
-                <RiDeleteBinLine />
+                <Trash2Icon />
               )}
               <span>
                 {deleteSavedFilterMutation.isPending

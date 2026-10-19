@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@insightflare/ui/card";
 import { Spinner } from "@insightflare/ui/spinner";
-import { RiLineChartLine } from "@remixicon/react";
+import { ChartLineIcon } from "lucide-react";
 
 import {
   durationFormat,
@@ -335,7 +335,7 @@ export function OverviewTrendSection({
     <Card className="overflow-visible">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="inline-flex items-center gap-2">
-          <RiLineChartLine className="size-4" />
+          <ChartLineIcon className="size-4" />
           {messages.overview.trendTitle}
         </CardTitle>
         <span className="text-xs text-muted-foreground">

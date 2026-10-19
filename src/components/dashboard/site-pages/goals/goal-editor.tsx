@@ -12,7 +12,7 @@ import {
   ResponsiveDialogTitle,
 } from "@insightflare/ui/responsive-dialog";
 import { Spinner } from "@insightflare/ui/spinner";
-import { RiCloseLine, RiFilter2Line, RiSave3Line } from "@remixicon/react";
+import { ListFilterIcon, SaveIcon, XIcon } from "lucide-react";
 
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type { GoalDefinition } from "@/lib/dashboard-api/client/edge";
@@ -100,7 +100,7 @@ export function GoalEditor({
             className="flex min-h-0 flex-1 flex-col gap-4"
           >
             <ResponsiveDialogHeader>
-              <ResponsiveDialogTitle icon={RiSave3Line}>
+              <ResponsiveDialogTitle icon={SaveIcon}>
                 {goal ? labels.editTitle : labels.createTitle}
               </ResponsiveDialogTitle>
             </ResponsiveDialogHeader>
@@ -127,8 +127,8 @@ export function GoalEditor({
                     onPointerDown={(event) => event.stopPropagation()}
                     onClick={() => setFilterDialogOpen(true)}
                   >
-                    <RiFilter2Line data-icon="inline-start" /> {labels.filter} (
-                    {filterCount})
+                    <ListFilterIcon data-icon="inline-start" /> {labels.filter}{" "}
+                    ({filterCount})
                   </Button>
                   {!valid && (name.length > 0 || filterDsl.length > 0) ? (
                     <p className="text-xs text-destructive">
@@ -141,11 +141,11 @@ export function GoalEditor({
             <ResponsiveDialogFooter>
               <ResponsiveDialogClose asChild>
                 <Button type="button" variant="outline" disabled={submitting}>
-                  <RiCloseLine data-icon="inline-start" /> {labels.cancel}
+                  <XIcon data-icon="inline-start" /> {labels.cancel}
                 </Button>
               </ResponsiveDialogClose>
               <Button type="submit" disabled={!valid || submitting}>
-                {submitting ? <Spinner /> : <RiSave3Line />}
+                {submitting ? <Spinner /> : <SaveIcon />}
                 {submitting
                   ? labels.creating
                   : goal

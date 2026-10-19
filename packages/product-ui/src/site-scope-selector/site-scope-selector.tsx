@@ -1,5 +1,5 @@
 import { Button } from "@insightflare/ui/button";
-import { RiCheckboxBlankCircleLine, RiCheckLine } from "@remixicon/react";
+import { CheckIcon, CircleIcon } from "lucide-react";
 
 import { cn } from "../utils/cn";
 
@@ -45,9 +45,9 @@ export function SiteScopeSelector({
         onClick={() => onChange([])}
       >
         {allSitesSelected ? (
-          <RiCheckLine data-icon="inline-start" />
+          <CheckIcon data-icon="inline-start" />
         ) : (
-          <RiCheckboxBlankCircleLine data-icon="inline-start" />
+          <CircleIcon data-icon="inline-start" />
         )}
         <span>{allSitesLabel}</span>
       </Button>
@@ -72,9 +72,9 @@ export function SiteScopeSelector({
               }}
             >
               {selected ? (
-                <RiCheckLine data-icon="inline-start" />
+                <CheckIcon data-icon="inline-start" />
               ) : (
-                <RiCheckboxBlankCircleLine data-icon="inline-start" />
+                <CircleIcon data-icon="inline-start" />
               )}
               <span>{label}</span>
             </Button>

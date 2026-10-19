@@ -8,11 +8,11 @@ import {
 } from "@insightflare/ui/card";
 import { Skeleton } from "@insightflare/ui/skeleton";
 import {
-  RiCheckboxCircleFill,
-  RiCloseCircleFill,
-  RiErrorWarningFill,
-  RiPulseLine,
-} from "@remixicon/react";
+  ActivityIcon,
+  CircleAlertIcon,
+  CircleCheckIcon,
+  CircleXIcon,
+} from "lucide-react";
 
 import {
   formatDuration,
@@ -127,29 +127,29 @@ const VISITOR_PERFORMANCE_STATUS_STYLE = {
   great: {
     labelClassName: "text-chart-4",
     softClassName: "bg-chart-4/10 text-chart-4",
-    icon: RiCheckboxCircleFill,
+    icon: CircleCheckIcon,
   },
   "needs-improvement": {
     labelClassName: "text-[oklch(0.75_0.16_80)]",
     softClassName: "bg-[oklch(0.75_0.16_80_/_0.12)] text-[oklch(0.75_0.16_80)]",
-    icon: RiErrorWarningFill,
+    icon: CircleAlertIcon,
   },
   poor: {
     labelClassName: "text-destructive",
     softClassName: "bg-destructive/10 text-destructive",
-    icon: RiCloseCircleFill,
+    icon: CircleXIcon,
   },
   none: {
     labelClassName: "text-muted-foreground",
     softClassName: "bg-muted text-muted-foreground",
-    icon: RiPulseLine,
+    icon: ActivityIcon,
   },
 } satisfies Record<
   VisitorPerformanceStatus,
   {
     labelClassName: string;
     softClassName: string;
-    icon: typeof RiCheckboxCircleFill;
+    icon: typeof CircleCheckIcon;
   }
 >;
 const EMPTY_VISITOR_PERFORMANCE_METRIC_SUMMARY: JourneyPerformanceMetricSummary =
@@ -458,7 +458,7 @@ export const VisitorPerformancePanel = memo(function VisitorPerformancePanel({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <CardTitle className="inline-flex items-center gap-2">
-              <RiPulseLine className="size-4" />
+              <ActivityIcon className="size-4" />
               {labels.performanceTitle}
             </CardTitle>
           </div>

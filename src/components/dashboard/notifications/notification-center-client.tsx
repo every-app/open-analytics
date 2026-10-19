@@ -20,19 +20,19 @@ import {
   SelectValue,
 } from "@insightflare/ui/select";
 import { Spinner } from "@insightflare/ui/spinner";
-import {
-  type RemixiconComponentType,
-  RiAlertLine,
-  RiCheckDoubleLine,
-  RiCheckLine,
-  RiFileList3Line,
-  RiFilterOffLine,
-  RiInboxLine,
-  RiMailUnreadLine,
-  RiNotification3Line,
-  RiRefreshLine,
-} from "@remixicon/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  BellIcon,
+  CheckCheckIcon,
+  CheckIcon,
+  FileTextIcon,
+  FunnelXIcon,
+  InboxIcon,
+  type LucideIcon,
+  MailOpenIcon,
+  RefreshCwIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { shortDateTime } from "@/lib/dashboard/format";
@@ -121,11 +121,11 @@ function countForTab(
   }
   return messagesList.filter(isReport).length;
 }
-function tabIcon(tab: NotificationTab): RemixiconComponentType {
-  if (tab === "unread") return RiMailUnreadLine;
-  if (tab === "attention") return RiAlertLine;
-  if (tab === "report") return RiFileList3Line;
-  return RiInboxLine;
+function tabIcon(tab: NotificationTab): LucideIcon {
+  if (tab === "unread") return MailOpenIcon;
+  if (tab === "attention") return TriangleAlertIcon;
+  if (tab === "report") return FileTextIcon;
+  return InboxIcon;
 }
 function NotificationSectionHeading({
   actions,
@@ -173,7 +173,7 @@ function NotificationMessageList({
     return (
       <Card>
         <CardContent className="flex flex-col items-center gap-3 py-10 text-center text-sm text-muted-foreground">
-          <RiNotification3Line className="size-8 text-muted-foreground/70" />
+          <BellIcon className="size-8 text-muted-foreground/70" />
           <p>{empty}</p>
         </CardContent>
       </Card>
@@ -273,7 +273,7 @@ function NotificationMessageList({
                       {updatingId === item.id ? (
                         <Spinner data-icon="inline-start" />
                       ) : (
-                        <RiCheckLine data-icon="inline-start" />
+                        <CheckIcon data-icon="inline-start" />
                       )}
                       <span>{copy.markRead}</span>
                     </Button>
@@ -499,7 +499,7 @@ export function NotificationCenterClient({
               {markingAll ? (
                 <Spinner data-icon="inline-start" />
               ) : (
-                <RiCheckDoubleLine data-icon="inline-start" />
+                <CheckCheckIcon data-icon="inline-start" />
               )}
               <span>{copy.markAllRead}</span>
             </Button>
@@ -510,7 +510,7 @@ export function NotificationCenterClient({
               onClick={() => void messagesQuery.refetch()}
             >
               <span className="inline-flex size-4 shrink-0 items-center justify-center">
-                {loading ? <Spinner /> : <RiRefreshLine />}
+                {loading ? <Spinner /> : <RefreshCwIcon />}
               </span>
               <AutoResizer
                 initial
@@ -572,7 +572,7 @@ export function NotificationCenterClient({
               size="sm"
               onClick={clearRuleFilter}
             >
-              <RiFilterOffLine data-icon="inline-start" />
+              <FunnelXIcon data-icon="inline-start" />
               <span>{copy.ruleFilterClear}</span>
             </Button>
           </CardContent>
@@ -597,7 +597,7 @@ export function NotificationCenterClient({
           ) : filteredMessages.length === 0 ? (
             <Card key="empty">
               <CardContent className="flex flex-col items-center gap-3 py-12 text-center text-sm text-muted-foreground">
-                <RiNotification3Line className="size-8 text-muted-foreground/70" />
+                <BellIcon className="size-8 text-muted-foreground/70" />
                 <p>{copy.empty}</p>
               </CardContent>
             </Card>

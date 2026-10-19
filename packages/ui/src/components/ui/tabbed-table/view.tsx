@@ -1,5 +1,5 @@
 import { type ReactNode, useMemo, useState } from "react";
-import { RiArrowDownSLine, RiArrowUpSLine } from "@remixicon/react";
+import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { AnimatePresence, useReducedMotion } from "motion/react";
 
 import { cn } from "../../../lib/utils";
@@ -184,14 +184,14 @@ export function TabbedDataTableHeader<
                 {sortable ? (
                   active ? (
                     sort.direction === "desc" ? (
-                      <RiArrowDownSLine className="size-3.5" />
+                      <ChevronDownIcon className="size-3.5" />
                     ) : (
-                      <RiArrowUpSLine className="size-3.5" />
+                      <ChevronUpIcon className="size-3.5" />
                     )
                   ) : (
                     <span className="inline-flex flex-col leading-none text-muted-foreground">
-                      <RiArrowUpSLine className="-mb-1 size-3.5" />
-                      <RiArrowDownSLine className="-mt-1 size-3.5" />
+                      <ChevronUpIcon className="-mb-1 size-3.5" />
+                      <ChevronDownIcon className="-mt-1 size-3.5" />
                     </span>
                   )
                 ) : null}

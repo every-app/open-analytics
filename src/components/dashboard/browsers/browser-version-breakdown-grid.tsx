@@ -18,8 +18,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@insightflare/ui/tooltip";
-import { RiGlobalLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { GlobeIcon } from "lucide-react";
 
 import { fetchBrowserVersionBreakdown } from "@/lib/dashboard/client/data/index";
 import type { DashboardComparisonQuery } from "@/lib/dashboard/comparison-query";
@@ -474,7 +474,7 @@ export const BrowserVersionBreakdownGrid = memo(
       <section className="space-y-4">
         <div className="px-1">
           <h2 className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
-            <RiGlobalLine className="size-4 shrink-0" />
+            <GlobeIcon className="size-4 shrink-0" />
             {messages.browsers.versionBreakdownTitle}
           </h2>
         </div>

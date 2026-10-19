@@ -6,7 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@insightflare/ui/tooltip";
-import { RiBarChartLine, RiUserLine } from "@remixicon/react";
+import { ChartNoAxesColumnIcon, UserIcon } from "lucide-react";
 
 import { type TabbedDataTableColumn } from "@/components/dashboard/common/tabbed-data-table-card";
 import { resolveDeviceTypeMeta } from "@/components/dashboard/journeys/journey-display";
@@ -152,7 +152,7 @@ export const ComparisonMetricToggle = memo(function ComparisonMetricToggle({
     metric === "views" ? "visitors" : "views";
   const label =
     metric === "views" ? messages.common.views : messages.common.visitors;
-  const Icon = metric === "views" ? RiBarChartLine : RiUserLine;
+  const Icon = metric === "views" ? ChartNoAxesColumnIcon : UserIcon;
 
   return (
     <Tooltip>

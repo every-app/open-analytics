@@ -24,7 +24,7 @@ import {
   SidebarTrigger,
 } from "@insightflare/ui/sidebar";
 import { VerticalScrollMask } from "@insightflare/ui/vertical-scroll-mask";
-import { RiArrowLeftLine } from "@remixicon/react";
+import { ArrowLeftIcon } from "lucide-react";
 
 import { AppShellLayout } from "@/components/app-shell-layout";
 import { AppSidebarBrand } from "@/components/app-sidebar-brand";
@@ -262,7 +262,7 @@ export function DashboardShell({
                         <SidebarMenuItem>
                           <SidebarMenuButton asChild>
                             <Link href={teamRootHref}>
-                              <RiArrowLeftLine />
+                              <ArrowLeftIcon />
                               <span>{backToTeamLabel}</span>
                             </Link>
                           </SidebarMenuButton>

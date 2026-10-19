@@ -13,8 +13,8 @@ import {
 } from "@insightflare/product-ui/tables";
 import { Input } from "@insightflare/ui/input";
 import { TooltipProvider } from "@insightflare/ui/tooltip";
-import { RiSearchLine } from "@remixicon/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { SearchIcon } from "lucide-react";
 
 import {
   createSessionTableColumnDefinitions,
@@ -353,7 +353,7 @@ export function AnalysisJourneyTable({
             <div className="shrink-0">{toolbarLeading}</div>
           ) : null}
           <div className="relative min-w-0 flex-1 sm:ml-auto sm:w-80 sm:flex-none">
-            <RiSearchLine className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={isVisitor ? visitorQuery : sessionQuery}
               onChange={(event) =>

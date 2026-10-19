@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@insightflare/ui/select";
-import { RiAddLine, RiDeleteBinLine } from "@remixicon/react";
+import { PlusIcon, Trash2Icon } from "lucide-react";
 
 import {
   buildTimeZoneOptions,
@@ -462,7 +462,7 @@ export function RuleFormFields({
                                 onClick={() => removeCondition(condition.id)}
                                 aria-label={copy.removeCondition}
                               >
-                                <RiDeleteBinLine />
+                                <Trash2Icon />
                                 <span className="xl:sr-only">
                                   {copy.removeCondition}
                                 </span>
@@ -508,7 +508,7 @@ export function RuleFormFields({
                       variant="outline"
                       onClick={addCondition}
                     >
-                      <RiAddLine data-icon="inline-start" />
+                      <PlusIcon data-icon="inline-start" />
                       <span>{copy.addCondition}</span>
                     </Button>
                   </div>

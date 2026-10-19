@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@insightflare/ui/select";
 import { Spinner } from "@insightflare/ui/spinner";
-import { RiAddLine, RiCloseLine, RiSave3Line } from "@remixicon/react";
+import { PlusIcon, SaveIcon, XIcon } from "lucide-react";
 import { Reorder } from "motion/react";
 
 import type { TimeWindow } from "@/lib/dashboard/query-state";
@@ -196,7 +196,7 @@ export function FunnelEditor({
             className="flex min-h-0 flex-1 flex-col gap-4"
           >
             <ResponsiveDialogHeader>
-              <ResponsiveDialogTitle icon={RiSave3Line}>
+              <ResponsiveDialogTitle icon={SaveIcon}>
                 {funnel ? labels.editTitle : labels.createTitle}
               </ResponsiveDialogTitle>
             </ResponsiveDialogHeader>
@@ -322,7 +322,7 @@ export function FunnelEditor({
                         setSteps((current) => [...current, step]);
                       }}
                     >
-                      <RiAddLine data-icon="inline-start" /> {labels.addStep}
+                      <PlusIcon data-icon="inline-start" /> {labels.addStep}
                     </Button>
                   </div>
                   <AutoResizer initial={false} duration={0.2}>
@@ -364,11 +364,11 @@ export function FunnelEditor({
             <ResponsiveDialogFooter>
               <ResponsiveDialogClose asChild>
                 <Button type="button" variant="outline" disabled={submitting}>
-                  <RiCloseLine data-icon="inline-start" /> {labels.cancel}
+                  <XIcon data-icon="inline-start" /> {labels.cancel}
                 </Button>
               </ResponsiveDialogClose>
               <Button type="submit" disabled={!valid || submitting}>
-                {submitting ? <Spinner /> : <RiSave3Line />}
+                {submitting ? <Spinner /> : <SaveIcon />}
                 {funnel ? labels.saveEdit : labels.save}
               </Button>
             </ResponsiveDialogFooter>

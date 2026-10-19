@@ -12,24 +12,24 @@ import {
   OverlayScrollbar,
 } from "@insightflare/ui/overlay-scrollbar";
 import {
-  RiComputerLine,
-  RiDashboardLine,
-  RiFileList3Line,
-  RiFilter2Line,
-  RiFlashlightLine,
-  RiGlobalLine,
-  RiMapPin2Line,
-  RiMegaphoneLine,
-  RiPulseLine,
-  RiRepeatLine,
-  RiRobot2Line,
-  RiSettings3Line,
-  RiShareForwardLine,
-  RiShieldCheckLine,
-  RiSpeedUpLine,
-  RiTargetLine,
-  RiUser3Line,
-} from "@remixicon/react";
+  ActivityIcon,
+  BotIcon,
+  FileTextIcon,
+  GaugeIcon,
+  GlobeIcon,
+  LayoutDashboardIcon,
+  ListFilterIcon,
+  MapPinIcon,
+  MegaphoneIcon,
+  MonitorIcon,
+  RepeatIcon,
+  SettingsIcon,
+  ShareIcon,
+  ShieldCheckIcon,
+  TargetIcon,
+  UserRoundIcon,
+  ZapIcon,
+} from "lucide-react";
 import { motion } from "motion/react";
 
 import { useLiveSearchParams } from "@/lib/dashboard/client/history";
@@ -69,25 +69,25 @@ interface AnalyticsTabsProps {
   items: AnalyticsTabItem[];
 }
 function getAnalyticsSectionIcon(key: AnalyticsTabKey) {
-  if (key === "overview") return RiDashboardLine;
-  if (key === "request-overview") return RiDashboardLine;
-  if (key === "request-abnormal") return RiRobot2Line;
-  if (key === "request-normal") return RiShieldCheckLine;
-  if (key === "realtime") return RiPulseLine;
-  if (key === "pages") return RiFileList3Line;
-  if (key === "referrers") return RiShareForwardLine;
-  if (key === "sessions") return RiPulseLine;
-  if (key === "campaigns") return RiMegaphoneLine;
-  if (key === "events") return RiFlashlightLine;
-  if (key === "funnels") return RiFilter2Line;
-  if (key === "goals") return RiTargetLine;
-  if (key === "visitors") return RiUser3Line;
-  if (key === "retention") return RiRepeatLine;
-  if (key === "geo") return RiMapPin2Line;
-  if (key === "devices") return RiComputerLine;
-  if (key === "performance") return RiSpeedUpLine;
-  if (key === "settings") return RiSettings3Line;
-  return RiGlobalLine;
+  if (key === "overview") return LayoutDashboardIcon;
+  if (key === "request-overview") return LayoutDashboardIcon;
+  if (key === "request-abnormal") return BotIcon;
+  if (key === "request-normal") return ShieldCheckIcon;
+  if (key === "realtime") return ActivityIcon;
+  if (key === "pages") return FileTextIcon;
+  if (key === "referrers") return ShareIcon;
+  if (key === "sessions") return ActivityIcon;
+  if (key === "campaigns") return MegaphoneIcon;
+  if (key === "events") return ZapIcon;
+  if (key === "funnels") return ListFilterIcon;
+  if (key === "goals") return TargetIcon;
+  if (key === "visitors") return UserRoundIcon;
+  if (key === "retention") return RepeatIcon;
+  if (key === "geo") return MapPinIcon;
+  if (key === "devices") return MonitorIcon;
+  if (key === "performance") return GaugeIcon;
+  if (key === "settings") return SettingsIcon;
+  return GlobeIcon;
 }
 function normalizePathname(pathname: string): string {
   if (!pathname || pathname === "/") return pathname || "/";

@@ -5,7 +5,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@insightflare/ui/tooltip";
-import { RiArrowRightUpLine, RiSearchLine } from "@remixicon/react";
+import { ArrowUpRightIcon, SearchIcon } from "lucide-react";
 
 import {
   TabbedDataTableCard,
@@ -1168,7 +1168,7 @@ export function OverviewPagesSection({
                   }
                   aria-label={`${messages.common.open}: ${displayLabel}`}
                 >
-                  <RiArrowRightUpLine size="1.4em" />
+                  <ArrowUpRightIcon size="1.4em" />
                 </Clickable>
               </TooltipTrigger>
               <TooltipContent>
@@ -1190,7 +1190,7 @@ export function OverviewPagesSection({
                   }
                   aria-label={messages.common.search}
                 >
-                  <RiSearchLine size="1.2em" />
+                  <SearchIcon size="1.2em" />
                 </Clickable>
               </TooltipTrigger>
               <TooltipContent>{messages.common.search}</TooltipContent>
@@ -1205,7 +1205,7 @@ export function OverviewPagesSection({
                   }
                   aria-label={messages.common.search}
                 >
-                  <RiSearchLine size="1.2em" />
+                  <SearchIcon size="1.2em" />
                 </Clickable>
               </TooltipTrigger>
               <TooltipContent>{messages.common.search}</TooltipContent>
@@ -1438,7 +1438,7 @@ export function OverviewPagesSection({
                 }
                 aria-label={`${messages.common.open}: ${displayLabel}`}
               >
-                <RiArrowRightUpLine size="1.4em" />
+                <ArrowUpRightIcon size="1.4em" />
               </Clickable>
             ) : null}
           </span>
@@ -1570,7 +1570,7 @@ export function OverviewPagesSection({
                     }
                     aria-label={messages.common.search}
                   >
-                    <RiSearchLine size="1.2em" />
+                    <SearchIcon size="1.2em" />
                   </Clickable>
                 </TooltipTrigger>
                 <TooltipContent>{messages.common.search}</TooltipContent>

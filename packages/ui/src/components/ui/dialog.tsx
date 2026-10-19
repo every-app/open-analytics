@@ -1,6 +1,5 @@
 import * as React from "react";
-import type { RemixiconComponentType } from "@remixicon/react";
-import { RiCloseLine, RiInformationLine } from "@remixicon/react";
+import { InfoIcon, type LucideIcon, XIcon } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 
 import { cn } from "../../lib/utils";
@@ -177,7 +176,7 @@ function DialogContentFrame({
                 className="absolute top-2 right-2"
                 size="icon-sm"
               >
-                <RiCloseLine />
+                <XIcon />
                 <span className="sr-only">Close</span>
               </Button>
             </DialogPrimitive.Close>
@@ -249,7 +248,7 @@ function DialogFooter({
       {showCloseButton && (
         <DialogPrimitive.Close asChild>
           <Button variant="outline">
-            <RiCloseLine data-icon="inline-start" />
+            <XIcon data-icon="inline-start" />
             <span>Close</span>
           </Button>
         </DialogPrimitive.Close>
@@ -261,11 +260,11 @@ function DialogFooter({
 function DialogTitle({
   className,
   children,
-  icon: Icon = RiInformationLine,
+  icon: Icon = InfoIcon,
   iconClassName,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Title> & {
-  icon?: RemixiconComponentType | null;
+  icon?: LucideIcon | null;
   iconClassName?: string;
 }) {
   return (

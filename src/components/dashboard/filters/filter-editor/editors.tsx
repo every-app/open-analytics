@@ -17,12 +17,12 @@ import {
   SelectValue,
 } from "@insightflare/ui/select";
 import {
-  RiAddLine,
-  RiArrowDownSLine,
-  RiCheckLine,
-  RiDeleteBinLine,
-  RiSubtractLine,
-} from "@remixicon/react";
+  CheckIcon,
+  ChevronDownIcon,
+  MinusIcon,
+  PlusIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
 import type { TimeWindow } from "@/lib/dashboard/query-state";
@@ -366,9 +366,9 @@ function TimeOffsetAmountInput({
         }}
       >
         {negative ? (
-          <RiSubtractLine aria-hidden="true" className="size-4" />
+          <MinusIcon aria-hidden="true" className="size-4" />
         ) : (
-          <RiAddLine aria-hidden="true" className="size-4" />
+          <PlusIcon aria-hidden="true" className="size-4" />
         )}
       </Button>
       <Input
@@ -1237,7 +1237,7 @@ function ConditionEditor({
                 <span className="min-w-0 truncate text-left">
                   {selectedFieldLabel}
                 </span>
-                <RiArrowDownSLine
+                <ChevronDownIcon
                   data-icon="inline-end"
                   className="shrink-0 text-muted-foreground"
                 />
@@ -1278,7 +1278,7 @@ function ConditionEditor({
                       >
                         <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center">
                           {advancedField === pickerField.value ? (
-                            <RiCheckLine className="pointer-events-none" />
+                            <CheckIcon className="pointer-events-none" />
                           ) : null}
                         </span>
                         <span className="min-w-0 truncate">
@@ -2039,7 +2039,7 @@ function ConditionEditor({
           aria-label={messages.teamManagement.notifications.removeCondition}
           onClick={onRemove}
         >
-          <RiDeleteBinLine />
+          <Trash2Icon />
           <span className="sr-only">
             {messages.teamManagement.notifications.removeCondition}
           </span>
@@ -2151,7 +2151,7 @@ export function GroupEditor({
               aria-label={messages.teamManagement.notifications.removeCondition}
               onClick={() => onRemove(group.id)}
             >
-              <RiDeleteBinLine />
+              <Trash2Icon />
               <span className="sr-only">
                 {messages.teamManagement.notifications.removeCondition}
               </span>
@@ -2231,7 +2231,7 @@ export function GroupEditor({
                 variant="outline"
                 onClick={() => onAddCondition(group.id, entityRoot)}
               >
-                <RiAddLine data-icon="inline-start" />
+                <PlusIcon data-icon="inline-start" />
                 <span>
                   {messages.teamManagement.notifications.addCondition}
                 </span>
@@ -2241,7 +2241,7 @@ export function GroupEditor({
                 variant="outline"
                 onClick={() => onAddGroup(group.id, entityRoot)}
               >
-                <RiAddLine data-icon="inline-start" />
+                <PlusIcon data-icon="inline-start" />
                 <span>{messages.filterBuilder.addGroup}</span>
               </Button>
             </motion.div>

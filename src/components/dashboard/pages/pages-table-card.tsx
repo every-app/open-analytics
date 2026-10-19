@@ -14,12 +14,12 @@ import { Input } from "@insightflare/ui/input";
 import { Skeleton } from "@insightflare/ui/skeleton";
 import { TableCell, TableHead, TableRow } from "@insightflare/ui/table";
 import {
-  RiArrowDownLine,
-  RiArrowDownSLine,
-  RiArrowUpLine,
-  RiArrowUpSLine,
-  RiSearchLine,
-} from "@remixicon/react";
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  SearchIcon,
+} from "lucide-react";
 
 import { AnalyticsDetailsTooltipTarget } from "@/components/dashboard/analytics-time-tooltip";
 import { AnalyticsDataTable } from "@/components/dashboard/common/analytics-data-table";
@@ -173,15 +173,15 @@ function SortIndicator({
 }) {
   if (active) {
     return direction === "desc" ? (
-      <RiArrowDownSLine className="size-3.5" />
+      <ChevronDownIcon className="size-3.5" />
     ) : (
-      <RiArrowUpSLine className="size-3.5" />
+      <ChevronUpIcon className="size-3.5" />
     );
   }
   return (
     <span className="inline-flex flex-col leading-none text-muted-foreground">
-      <RiArrowUpSLine className="-mb-1 size-3.5" />
-      <RiArrowDownSLine className="-mt-1 size-3.5" />
+      <ChevronUpIcon className="-mb-1 size-3.5" />
+      <ChevronDownIcon className="-mt-1 size-3.5" />
     </span>
   );
 }
@@ -251,7 +251,7 @@ function ChangeValue({
   suffix?: string;
 }) {
   if (value === null) return <span className="text-muted-foreground">—</span>;
-  const Icon = value >= 0 ? RiArrowUpLine : RiArrowDownLine;
+  const Icon = value >= 0 ? ArrowUpIcon : ArrowDownIcon;
   return (
     <span
       className={cn(
@@ -633,7 +633,7 @@ export function PagesTableCard({
   const toolbar = (
     <div className="flex w-full min-w-0 items-center justify-end gap-2">
       <div className="relative min-w-0 flex-1 sm:w-80 sm:flex-none">
-        <RiSearchLine className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={searchValue}
           onChange={(event) => onSearchChange(event.target.value)}

@@ -1,5 +1,5 @@
 import { TableActionButton } from "@insightflare/ui/table-action-button";
-import { RiFileCopyLine } from "@remixicon/react";
+import { CopyIcon } from "lucide-react";
 import { toast } from "sonner";
 
 interface PublicLinkCopyButtonProps {
@@ -22,7 +22,7 @@ export function PublicLinkCopyButton({
         });
       }}
     >
-      <RiFileCopyLine className="size-4" />
+      <CopyIcon className="size-4" />
     </TableActionButton>
   );
 }

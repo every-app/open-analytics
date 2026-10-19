@@ -17,11 +17,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@insightflare/ui/tooltip";
-import {
-  RiDraggable,
-  RiLayoutColumnLine,
-  RiRefreshLine,
-} from "@remixicon/react";
+import { Columns3Icon, GripVerticalIcon, RefreshCwIcon } from "lucide-react";
 import { Reorder, useDragControls } from "motion/react";
 
 import { cn } from "../utils/cn";
@@ -247,7 +243,7 @@ function ColumnSettingsRow({
         onPointerDown={(event) => dragControls.start(event)}
         aria-label={dragHint}
       >
-        <RiDraggable className="size-4" />
+        <GripVerticalIcon className="size-4" />
       </button>
       <Checkbox
         id={`analytics-table-column-${column.id}`}
@@ -348,7 +344,7 @@ export function AnalyticsTableColumnSettings<TId extends string = string>({
                 size="icon"
                 aria-label={labels.action}
               >
-                <RiLayoutColumnLine />
+                <Columns3Icon />
               </Button>
             </ResponsiveDialogTrigger>
           </span>
@@ -360,7 +356,7 @@ export function AnalyticsTableColumnSettings<TId extends string = string>({
         drawerClassName="max-h-[85dvh]"
       >
         <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle icon={RiLayoutColumnLine}>
+          <ResponsiveDialogTitle icon={Columns3Icon}>
             {labels.title}
           </ResponsiveDialogTitle>
           <ResponsiveDialogDescription>
@@ -396,7 +392,7 @@ export function AnalyticsTableColumnSettings<TId extends string = string>({
         </ResponsiveDialogBody>
         <ResponsiveDialogFooter className="flex-row justify-between">
           <Button type="button" variant="ghost" onClick={onReset}>
-            <RiRefreshLine data-icon="inline-start" />
+            <RefreshCwIcon data-icon="inline-start" />
             {labels.reset}
           </Button>
           <ResponsiveDialogClose asChild>

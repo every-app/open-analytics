@@ -69,14 +69,14 @@
     "typecheck": "tsc --noEmit -p tsconfig.build.json"
   },
   "peerDependencies": {
-    "@types/react": "^19.0.0",
     "@insightflare/ui": "0.7.1",
+    "@types/react": "^19.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "dependencies": {
-    "@remixicon/react": "^4.9.0",
     "clsx": "^2.1.1",
+    "lucide-react": "^0.542.0",
     "motion": "^12.43.0",
     "overlayscrollbars": "^2.16.0",
     "recharts": "^2.15.4",

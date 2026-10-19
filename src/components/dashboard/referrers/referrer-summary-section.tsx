@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@insightflare/ui/card";
-import { RiShareForwardLine } from "@remixicon/react";
+import { ShareIcon } from "lucide-react";
 
 import { numberFormat, percentFormat } from "@/lib/dashboard/format";
 import type { ReferrerSummaryData } from "@/lib/dashboard-api/client/edge";
@@ -180,7 +180,7 @@ export const ReferrerSummarySection = memo(function ReferrerSummarySection({
         <Card>
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
-              <RiShareForwardLine className="size-4" />
+              <ShareIcon className="size-4" />
               {messages.referrers.summaryTitle}
             </CardTitle>
           </CardHeader>

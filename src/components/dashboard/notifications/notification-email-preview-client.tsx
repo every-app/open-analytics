@@ -19,8 +19,8 @@ import {
   SelectValue,
 } from "@insightflare/ui/select";
 import { Spinner } from "@insightflare/ui/spinner";
-import { RiMailSendLine, RiRefreshLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { RefreshCwIcon, SendIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
@@ -117,7 +117,7 @@ export function NotificationEmailPreviewClient({
               {loading ? (
                 <Spinner data-icon="inline-start" />
               ) : (
-                <RiRefreshLine data-icon="inline-start" />
+                <RefreshCwIcon data-icon="inline-start" />
               )}
             </span>
             <AutoResizer
@@ -230,7 +230,7 @@ export function NotificationEmailPreviewClient({
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2 text-base">
-            <RiMailSendLine className="size-4" />
+            <SendIcon className="size-4" />
             {subject ? `${page.subject}: ${subject}` : page.title}
           </CardTitle>
         </CardHeader>

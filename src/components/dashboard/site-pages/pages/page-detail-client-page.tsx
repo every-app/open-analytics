@@ -4,8 +4,8 @@ import { AutoResizer } from "@insightflare/ui/auto-resizer";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Button } from "@insightflare/ui/button";
 import { Skeleton } from "@insightflare/ui/skeleton";
-import { RiCloseLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { XIcon } from "lucide-react";
 
 import {
   AsyncDimensionBreakdownCard,
@@ -539,7 +539,7 @@ export const PageDetailClientPage = memo(function PageDetailClientPage({
             aria-label={messages.common.close}
             onClick={drawerClose}
           >
-            <RiCloseLine />
+            <XIcon />
           </Button>
         ) : null}
       </div>

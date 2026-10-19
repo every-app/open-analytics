@@ -21,7 +21,7 @@ import {
 import { JsonTreePanel } from "@insightflare/ui/json-tree";
 import { Separator } from "@insightflare/ui/separator";
 import { Skeleton } from "@insightflare/ui/skeleton";
-import { RiExternalLinkLine } from "@remixicon/react";
+import { ExternalLinkIcon } from "lucide-react";
 
 import {
   GeoPointsMapIsland,
@@ -701,7 +701,7 @@ export const EventDetailDrawer = memo(function EventDetailDrawer({
                       disabled={!visitorId}
                       onClick={() => openVisitorDetail(visitorId)}
                     >
-                      <RiExternalLinkLine data-icon="inline-start" />
+                      <ExternalLinkIcon data-icon="inline-start" />
                       {labels.openVisitor}
                     </Button>
                   </div>
@@ -821,7 +821,7 @@ export const EventDetailDrawer = memo(function EventDetailDrawer({
                       disabled={!sessionId}
                       onClick={() => openSessionDetail(sessionId)}
                     >
-                      <RiExternalLinkLine data-icon="inline-start" />
+                      <ExternalLinkIcon data-icon="inline-start" />
                       {labels.openSession}
                     </Button>
                   </div>

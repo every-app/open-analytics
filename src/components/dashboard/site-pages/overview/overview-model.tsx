@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { RiArrowDownLine, RiArrowUpLine } from "@remixicon/react";
+import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
 
 import {
   addZonedInterval,
@@ -212,7 +212,7 @@ export const ChangeRateInline = memo(function ChangeRateInline({
   lowerIsBetter?: boolean;
 }) {
   if (value === null) return null;
-  const Icon = value >= 0 ? RiArrowUpLine : RiArrowDownLine;
+  const Icon = value >= 0 ? ArrowUpIcon : ArrowDownIcon;
   return (
     <span
       className={`inline-flex items-end gap-0.5 font-mono text-xs leading-none ${changeRateClass(value, lowerIsBetter)}`}

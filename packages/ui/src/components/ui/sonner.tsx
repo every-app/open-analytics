@@ -1,10 +1,10 @@
 import {
-  RiCheckboxCircleLine,
-  RiCloseCircleLine,
-  RiErrorWarningLine,
-  RiInformationLine,
-  RiLoaderLine,
-} from "@remixicon/react";
+  CircleAlertIcon,
+  CircleCheckIcon,
+  CircleXIcon,
+  InfoIcon,
+  LoaderCircleIcon,
+} from "lucide-react";
 import {
   Toaster as Sonner,
   type ToasterProps as SonnerToasterProps,
@@ -32,11 +32,11 @@ const Toaster = ({
         className,
       )}
       icons={{
-        success: <RiCheckboxCircleLine className="size-4" />,
-        info: <RiInformationLine className="size-4" />,
-        warning: <RiErrorWarningLine className="size-4" />,
-        error: <RiCloseCircleLine className="size-4" />,
-        loading: <RiLoaderLine className="size-4 animate-spin" />,
+        success: <CircleCheckIcon className="size-4" />,
+        info: <InfoIcon className="size-4" />,
+        warning: <CircleAlertIcon className="size-4" />,
+        error: <CircleXIcon className="size-4" />,
+        loading: <LoaderCircleIcon className="size-4 animate-spin" />,
       }}
       style={
         {

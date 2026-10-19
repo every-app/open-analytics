@@ -6,8 +6,8 @@ import {
 import { AsyncContent as ContentSwitch } from "@insightflare/ui/async-content";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Card, CardContent, CardTitle } from "@insightflare/ui/card";
-import { RiShareForwardLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { ShareIcon } from "lucide-react";
 
 import {
   dashboardComparisonLabel,
@@ -459,7 +459,7 @@ export const ReferrerPerformanceRadarCard = memo(
       <section className="space-y-4">
         <div className="space-y-1">
           <CardTitle className="inline-flex items-center gap-2">
-            <RiShareForwardLine className="size-4" />
+            <ShareIcon className="size-4" />
             {messages.referrers.radarTitle}
           </CardTitle>
           <p className="text-sm text-muted-foreground">

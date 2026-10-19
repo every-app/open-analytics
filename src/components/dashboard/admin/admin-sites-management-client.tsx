@@ -15,8 +15,8 @@ import { PageHeading } from "@insightflare/ui/page-heading";
 import { Spinner } from "@insightflare/ui/spinner";
 import { TableCell, TableHead, TableRow } from "@insightflare/ui/table";
 import { TableActionButton } from "@insightflare/ui/table-action-button";
-import { RiAddLine, RiFileList3Line, RiLineChartLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import { ChartLineIcon, FileTextIcon, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { useDashboardQueryControls } from "@/components/dashboard/shell/dashboard-query-provider";
@@ -137,7 +137,7 @@ export function AdminSitesManagementClient({
       <Card className="max-w-3xl">
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiAddLine className="size-4" />
+            <PlusIcon className="size-4" />
             {t.createTitle}
           </CardTitle>
           <CardDescription>{t.createSubtitle}</CardDescription>
@@ -196,7 +196,7 @@ export function AdminSitesManagementClient({
                       key="create"
                       className="inline-flex items-center gap-[var(--button-content-gap)]"
                     >
-                      <RiAddLine data-icon="inline-start" />
+                      <PlusIcon data-icon="inline-start" />
                       {t.create}
                     </span>
                   )}
@@ -210,7 +210,7 @@ export function AdminSitesManagementClient({
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiFileList3Line className="size-4" />
+            <FileTextIcon className="size-4" />
             {t.listTitle}
           </CardTitle>
           <CardDescription>{t.listSubtitle}</CardDescription>
@@ -250,7 +250,7 @@ export function AdminSitesManagementClient({
                       }}
                       label={t.open}
                     >
-                      <RiLineChartLine className="size-4" />
+                      <ChartLineIcon className="size-4" />
                     </TableActionButton>
                   ) : null}
                 </TableCell>

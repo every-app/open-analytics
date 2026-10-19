@@ -1,12 +1,12 @@
 import { type PerformanceTrendChartPoint } from "@insightflare/product-ui/charts";
 import {
-  RiArrowDownLine,
-  RiArrowUpLine,
-  RiCheckboxCircleFill,
-  RiCloseCircleFill,
-  RiErrorWarningFill,
-  RiPulseLine,
-} from "@remixicon/react";
+  ActivityIcon,
+  ArrowDownIcon,
+  ArrowUpIcon,
+  CircleAlertIcon,
+  CircleCheckIcon,
+  CircleXIcon,
+} from "lucide-react";
 
 import { type CountryFeature } from "@/components/dashboard/site-pages/performance/performance-map-utils";
 import {
@@ -131,28 +131,28 @@ export const STATUS_STYLE: Record<
   {
     labelClassName: string;
     softClassName: string;
-    icon: typeof RiCheckboxCircleFill;
+    icon: typeof CircleCheckIcon;
   }
 > = {
   great: {
     labelClassName: "text-chart-4",
     softClassName: "bg-chart-4/10 text-chart-4",
-    icon: RiCheckboxCircleFill,
+    icon: CircleCheckIcon,
   },
   "needs-improvement": {
     labelClassName: "text-[oklch(0.75_0.16_80)]",
     softClassName: "bg-[oklch(0.75_0.16_80_/_0.12)] text-[oklch(0.75_0.16_80)]",
-    icon: RiErrorWarningFill,
+    icon: CircleAlertIcon,
   },
   poor: {
     labelClassName: "text-destructive",
     softClassName: "bg-destructive/10 text-destructive",
-    icon: RiCloseCircleFill,
+    icon: CircleXIcon,
   },
   none: {
     labelClassName: "text-muted-foreground",
     softClassName: "bg-muted text-muted-foreground",
-    icon: RiPulseLine,
+    icon: ActivityIcon,
   },
 };
 export function emptyPerformance(
@@ -436,7 +436,7 @@ export function PerformanceChangeRate({
   if (value == null || !Number.isFinite(value)) return null;
 
   const improved = activePanel === "score" ? value >= 0 : value <= 0;
-  const ChangeIcon = value >= 0 ? RiArrowUpLine : RiArrowDownLine;
+  const ChangeIcon = value >= 0 ? ArrowUpIcon : ArrowDownIcon;
 
   return (
     <span

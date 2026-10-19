@@ -10,13 +10,13 @@ import {
 import { MetricSummaryGrid } from "@insightflare/ui/metric-summary-grid";
 import { Skeleton } from "@insightflare/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@insightflare/ui/tabs";
-import {
-  RiDeleteBinLine,
-  RiEditLine,
-  RiFileList3Line,
-  RiLineChartLine,
-} from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  ChartLineIcon,
+  FileTextIcon,
+  PencilIcon,
+  Trash2Icon,
+} from "lucide-react";
 
 import { AnalysisJourneyTable } from "@/components/dashboard/site-pages/journeys/analysis-journey-table";
 import {
@@ -420,7 +420,7 @@ export function GoalDetail({
               disabled={actionPending}
               onClick={onEdit}
             >
-              <RiEditLine data-icon="inline-start" />
+              <PencilIcon data-icon="inline-start" />
               {labels.edit}
             </Button>
             <Button
@@ -429,7 +429,7 @@ export function GoalDetail({
               disabled={actionPending}
               onClick={onDelete}
             >
-              <RiDeleteBinLine data-icon="inline-start" />
+              <Trash2Icon data-icon="inline-start" />
               {labels.delete}
             </Button>
           </div>
@@ -449,7 +449,7 @@ export function GoalDetail({
       <Card className="min-w-0 overflow-visible">
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
-            <RiLineChartLine className="size-4" />
+            <ChartLineIcon className="size-4" />
             {labels.timeseries}
           </CardTitle>
           <CardDescription>{labels.listSubtitle}</CardDescription>
@@ -481,7 +481,7 @@ export function GoalDetail({
       <section className="min-w-0 space-y-3">
         <div className="space-y-1">
           <h3 className="inline-flex items-center gap-2 text-sm font-medium">
-            <RiFileList3Line className="size-4 shrink-0" />
+            <FileTextIcon className="size-4 shrink-0" />
             {labels.conversionRecords}
           </h3>
         </div>

@@ -24,14 +24,14 @@ import {
 } from "@insightflare/ui/responsive-dialog";
 import { Spinner } from "@insightflare/ui/spinner";
 import {
-  RiCheckLine,
-  RiCloseLine,
-  RiErrorWarningLine,
-  RiQuestionLine,
-  RiSave3Line,
-  RiSearchLine,
-  RiTestTubeLine,
-} from "@remixicon/react";
+  CheckIcon,
+  CircleAlertIcon,
+  CircleHelpIcon,
+  FlaskConicalIcon,
+  SaveIcon,
+  SearchIcon,
+  XIcon,
+} from "lucide-react";
 
 import { BlockingRuleGeoSearchDialog } from "@/components/dashboard/admin/blocking-rule-geo-search-dialog";
 import {
@@ -78,7 +78,7 @@ function BlockingRuleHelpDialog({
         drawerClassName="overflow-hidden"
       >
         <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle icon={RiQuestionLine}>
+          <ResponsiveDialogTitle icon={CircleHelpIcon}>
             {copy.title} · {dialogCopy.helpTitle}
           </ResponsiveDialogTitle>
           <ResponsiveDialogDescription>
@@ -225,7 +225,7 @@ function BlockingRuleTestDialog({
         drawerClassName="overflow-hidden"
       >
         <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle icon={RiTestTubeLine}>
+          <ResponsiveDialogTitle icon={FlaskConicalIcon}>
             {copy.title} · {dialogCopy.testTitle}
           </ResponsiveDialogTitle>
           <ResponsiveDialogDescription>
@@ -304,9 +304,9 @@ function BlockingRuleTestDialog({
                       )}
                     >
                       {fieldResult.decision === "block" ? (
-                        <RiErrorWarningLine className="size-4" />
+                        <CircleAlertIcon className="size-4" />
                       ) : (
-                        <RiCheckLine className="size-4" />
+                        <CheckIcon className="size-4" />
                       )}
                       {fieldResult.decision === "block"
                         ? dialogCopy.testBlocked
@@ -355,7 +355,7 @@ function BlockingRuleTestDialog({
         <ResponsiveDialogFooter>
           <ResponsiveDialogClose asChild>
             <Button type="button" variant="outline">
-              <RiCloseLine data-icon="inline-start" />
+              <XIcon data-icon="inline-start" />
               <span>{dialogCopy.testClose}</span>
             </Button>
           </ResponsiveDialogClose>
@@ -364,7 +364,7 @@ function BlockingRuleTestDialog({
             onClick={handleTest}
             disabled={errors.length > 0}
           >
-            <RiTestTubeLine data-icon="inline-start" />
+            <FlaskConicalIcon data-icon="inline-start" />
             <span>{dialogCopy.testRun}</span>
           </Button>
         </ResponsiveDialogFooter>
@@ -512,7 +512,7 @@ export function BlockingRuleEditorCard({
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-[var(--button-content-gap)]">
-                  <RiSave3Line data-icon="inline-start" />
+                  <SaveIcon data-icon="inline-start" />
                   {saveLabel}
                 </span>
               )}
@@ -525,7 +525,7 @@ export function BlockingRuleEditorCard({
                 variant="outline"
                 onClick={() => setSearchOpen(true)}
               >
-                <RiSearchLine data-icon="inline-start" />
+                <SearchIcon data-icon="inline-start" />
                 <span>{dialogCopy.searchButton}</span>
               </Button>
             ) : null}
@@ -534,7 +534,7 @@ export function BlockingRuleEditorCard({
               variant="outline"
               onClick={() => setTestOpen(true)}
             >
-              <RiTestTubeLine data-icon="inline-start" />
+              <FlaskConicalIcon data-icon="inline-start" />
               <span>{dialogCopy.testButton}</span>
             </Button>
             <Button
@@ -542,7 +542,7 @@ export function BlockingRuleEditorCard({
               variant="outline"
               onClick={() => setHelpOpen(true)}
             >
-              <RiQuestionLine data-icon="inline-start" />
+              <CircleHelpIcon data-icon="inline-start" />
               <span>{dialogCopy.helpButton}</span>
             </Button>
           </div>

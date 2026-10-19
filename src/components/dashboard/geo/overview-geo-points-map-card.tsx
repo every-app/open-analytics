@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { Card, CardTitle } from "@insightflare/ui/card";
-import { RiCopyrightLine, RiMapPin2Line } from "@remixicon/react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { CopyrightIcon, MapPinIcon } from "lucide-react";
 
 import {
   type GeoPointsMapCountryCount,
@@ -115,14 +115,14 @@ export const OverviewGeoPointsMapCard = memo(function OverviewGeoPointsMapCard({
       <div className="border-b">
         <div className="flex min-h-10 items-center justify-between gap-2 px-3">
           <CardTitle className="inline-flex items-center gap-2">
-            <RiMapPin2Line className="size-4" />
+            <MapPinIcon className="size-4" />
             {messages.geo.mapTitle}
           </CardTitle>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <RiCopyrightLine aria-hidden="true" size="1em" />
+            <CopyrightIcon aria-hidden="true" size="1em" />
             <span>OpenStreetMap contributors</span>
             <span aria-hidden="true">·</span>
-            <RiCopyrightLine aria-hidden="true" size="1em" />
+            <CopyrightIcon aria-hidden="true" size="1em" />
             <span>CARTO</span>
           </div>
         </div>

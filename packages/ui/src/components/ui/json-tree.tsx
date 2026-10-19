@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from "react";
-import { RiArrowDownSLine, RiFileCopyLine } from "@remixicon/react";
+import { ChevronDownIcon, CopyIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "../../lib/utils";
@@ -176,7 +176,7 @@ export function JsonTree({ value, depth = 0, labels, label }: JsonTreeProps) {
               onClick={toggle}
               aria-label={expanded ? labels.collapseField : labels.expandField}
             >
-              <RiArrowDownSLine
+              <ChevronDownIcon
                 className={cn(
                   "size-3.5 text-primary transition-transform duration-200 ease-out",
                   expanded ? "rotate-0" : "-rotate-90",
@@ -256,7 +256,7 @@ export function JsonTreePanel({
                 void copyJson();
               }}
             >
-              <RiFileCopyLine className="size-4" />
+              <CopyIcon className="size-4" />
             </Clickable>
           </TooltipTrigger>
           <TooltipContent>{labels.copyJson}</TooltipContent>

@@ -10,7 +10,7 @@ import {
 import { Input } from "@insightflare/ui/input";
 import { Label } from "@insightflare/ui/label";
 import { Spinner } from "@insightflare/ui/spinner";
-import { RiDatabase2Line, RiSave3Line } from "@remixicon/react";
+import { DatabaseIcon, SaveIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import type { SystemSettingsInitialData } from "@/lib/dashboard/management-data";
@@ -88,7 +88,7 @@ export function ScheduledTaskRetentionSettingsClient({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <RiDatabase2Line className="size-4" />
+          <DatabaseIcon className="size-4" />
           {copy.retentionTitle}
         </CardTitle>
         <CardDescription>{copy.retentionDescription}</CardDescription>
@@ -124,7 +124,7 @@ export function ScheduledTaskRetentionSettingsClient({
           disabled={saving || hasInvalidValue}
           onClick={() => void handleSave()}
         >
-          {saving ? <Spinner /> : <RiSave3Line />}
+          {saving ? <Spinner /> : <SaveIcon />}
           {saving ? copy.retentionSaving : copy.retentionSave}
         </Button>
       </CardContent>

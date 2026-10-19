@@ -10,7 +10,7 @@ import {
 } from "@insightflare/ui/chart";
 import { Skeleton } from "@insightflare/ui/skeleton";
 import { Spinner } from "@insightflare/ui/spinner";
-import { RiSearchLine } from "@remixicon/react";
+import { SearchIcon } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { cn } from "../utils/cn";
@@ -574,7 +574,7 @@ export const EventTrendLegend = memo(function EventTrendLegend({
                       {item.displayLabel}
                     </span>
                     {clickable ? (
-                      <RiSearchLine className="size-[1.2em] shrink-0 text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/event-trend-item:opacity-100 group-focus-visible/event-trend-item:opacity-100" />
+                      <SearchIcon className="size-[1.2em] shrink-0 text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/event-trend-item:opacity-100 group-focus-visible/event-trend-item:opacity-100" />
                     ) : null}
                   </div>
                   <AutoTransition>
