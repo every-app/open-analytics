@@ -264,7 +264,6 @@ export function ScheduledTasksClient({
     <div className="space-y-5">
       <PageHeading
         title={messages.managementNav.scheduledTasks}
-        subtitle={t.subtitle}
         actions={
           <>
             <Select

@@ -1,51 +1,39 @@
 import { useEffect, useState } from "react";
-import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Button } from "@insightflare/ui/button";
+import { Skeleton } from "@insightflare/ui/skeleton";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@insightflare/ui/card";
-import { DataTableSwitch } from "@insightflare/ui/data-table-switch";
-import { Input } from "@insightflare/ui/input";
-import { Label } from "@insightflare/ui/label";
-import { PageHeading } from "@insightflare/ui/page-heading";
-import { Spinner } from "@insightflare/ui/spinner";
-import { TableCell, TableHead, TableRow } from "@insightflare/ui/table";
-import { TableActionButton } from "@insightflare/ui/table-action-button";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@insightflare/ui/table";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLineIcon, FileTextIcon, PlusIcon } from "lucide-react";
+import { ChevronRightIcon, GlobeIcon, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { EmptyState } from "@/components/common/empty-state";
+import { CreateSiteDialog } from "@/components/dashboard/admin/create-site-dialog";
+import { getSiteSlug } from "@/components/dashboard/admin/team-management/model";
 import { useDashboardQueryControls } from "@/components/dashboard/shell/dashboard-query-provider";
+import {
+  SettingsCard,
+  SettingsPage,
+} from "@/components/settings/settings-section";
 import { shortDateTime } from "@/lib/dashboard/format";
 import { buildSitePath } from "@/lib/dashboard/paths";
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
 import type { SiteData, TeamData } from "@/lib/dashboard-api/client/edge";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
-import { navigateWithTransition } from "@/lib/page-transition";
-import { useRouter } from "@/lib/router";
+import Link from "@/lib/router";
+
 interface AdminSitesManagementClientProps {
   locale: Locale;
   messages: AppMessages;
   activeTeam: TeamData;
   initialSites?: readonly SiteData[] | null;
-}
-function safeSlug(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-function siteSlug(site: SiteData): string {
-  const domain = String(site.domain || "").trim();
-  const candidate = safeSlug(domain);
-  if (candidate.length > 0) return candidate;
-  return site.id.slice(0, 8);
 }
 async function fetchSites(
   teamId: string,
@@ -56,6 +44,8 @@ async function fetchSites(
     signal,
   });
 }
+
+/** Settings → Sites: the organization's sites, and adding one. */
 export function AdminSitesManagementClient({
   locale,
   messages,
@@ -63,12 +53,8 @@ export function AdminSitesManagementClient({
   initialSites = null,
 }: AdminSitesManagementClientProps) {
   const { timeZone } = useDashboardQueryControls();
-  const router = useRouter();
   const t = messages.adminSites;
-  const [submitting, setSubmitting] = useState(false);
-  const [name, setName] = useState("");
-  const [domain, setDomain] = useState("");
-  const [publicSlug, setPublicSlug] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
   const sitesQuery = useQuery({
     queryKey: ["dashboard", "admin-sites", activeTeam.id],
     queryFn: ({ signal }) => fetchSites(activeTeam.id, signal),
@@ -76,7 +62,6 @@ export function AdminSitesManagementClient({
     enabled: typeof window !== "undefined" && Boolean(activeTeam.id),
   });
   const sites = sitesQuery.data ?? [];
-  const loading = sitesQuery.isPending;
 
   useEffect(() => {
     if (!sitesQuery.isError) return;
@@ -92,173 +77,89 @@ export function AdminSitesManagementClient({
     t.loadFailed,
   ]);
 
-  async function handleCreateSite() {
-    const team = activeTeam;
-    if (!team?.id) return;
-    if (name.trim().length < 2 || domain.trim().length < 3) {
-      toast.error(t.invalidInput);
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const data = await requestAdminService<SiteData>("sites", {
-        method: "POST",
-        body: {
-          teamId: team.id,
-          name: name.trim(),
-          domain: domain.trim(),
-          publicSlug: publicSlug.trim() || undefined,
-        },
-      });
-      setName("");
-      setDomain("");
-      setPublicSlug("");
-      toast.success(t.createSuccess);
-      navigateWithTransition(
-        router,
-        `/${locale}/app/${team.slug}/${siteSlug(data)}/settings`,
-      );
-      router.refresh();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t.createFailed;
-      toast.error(message || t.createFailed);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  const noDataText = t.noData;
+  const addSiteButton = (
+    <Button type="button" onClick={() => setCreateOpen(true)}>
+      <PlusIcon data-icon="inline-start" />
+      {t.createTitle}
+    </Button>
+  );
 
   return (
-    <div className="space-y-4">
-      <PageHeading title={t.title} subtitle={t.subtitle} />
-
-      <Card className="max-w-3xl">
-        <CardHeader>
-          <CardTitle className="inline-flex items-center gap-2">
-            <PlusIcon className="size-4" />
-            {t.createTitle}
-          </CardTitle>
-          <CardDescription>{t.createSubtitle}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            className="grid gap-3 md:grid-cols-2"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void handleCreateSite();
-            }}
-          >
-            <div className="space-y-1.5 md:col-span-2">
-              <Label htmlFor="admin-site-team">{t.team}</Label>
-              <Input id="admin-site-team" value={activeTeam.name} readOnly />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="admin-site-name">{t.name}</Label>
-              <Input
-                id="admin-site-name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="admin-site-domain">{t.domain}</Label>
-              <Input
-                id="admin-site-domain"
-                value={domain}
-                onChange={(event) => setDomain(event.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1.5 md:col-span-2">
-              <Label htmlFor="admin-site-public-slug">{t.publicSlug}</Label>
-              <Input
-                id="admin-site-public-slug"
-                value={publicSlug}
-                onChange={(event) => setPublicSlug(event.target.value)}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Button type="submit" disabled={submitting}>
-                <AutoTransition className="inline-flex items-center gap-[var(--button-content-gap)]">
-                  {submitting ? (
-                    <span
-                      key="creating"
-                      className="inline-flex items-center gap-[var(--button-content-gap)]"
-                    >
-                      <Spinner data-icon="inline-start" />
-                      {t.creating}
-                    </span>
-                  ) : (
-                    <span
-                      key="create"
-                      className="inline-flex items-center gap-[var(--button-content-gap)]"
-                    >
-                      <PlusIcon data-icon="inline-start" />
-                      {t.create}
-                    </span>
-                  )}
-                </AutoTransition>
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="inline-flex items-center gap-2">
-            <FileTextIcon className="size-4" />
-            {t.listTitle}
-          </CardTitle>
-          <CardDescription>{t.listSubtitle}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <DataTableSwitch
-            loading={loading}
-            hasContent={sites.length > 0}
-            loadingLabel={messages.common.loading}
-            emptyLabel={noDataText}
-            colSpan={5}
-            header={
+    <SettingsPage
+      title={messages.settingsNav.sites}
+      actions={sites.length > 0 ? addSiteButton : undefined}
+    >
+      <SettingsCard className="divide-y-0">
+        {sitesQuery.isPending ? (
+          <div className="divide-y divide-border">
+            {[0, 1, 2].map((index) => (
+              <div key={index} className="px-5 py-4">
+                <Skeleton className="h-5 w-56" />
+              </div>
+            ))}
+          </div>
+        ) : sites.length === 0 ? (
+          <EmptyState
+            variant="plain"
+            media="rows"
+            icon={GlobeIcon}
+            title={t.noData}
+            action={addSiteButton}
+          />
+        ) : (
+          <Table>
+            <TableHeader>
               <TableRow>
                 <TableHead>{t.columns.name}</TableHead>
                 <TableHead>{t.columns.domain}</TableHead>
-                <TableHead>{t.columns.slug}</TableHead>
                 <TableHead>{t.columns.created}</TableHead>
-                <TableHead className="text-right">{t.columns.action}</TableHead>
+                <TableHead className="w-10">
+                  <span className="sr-only">{t.columns.action}</span>
+                </TableHead>
               </TableRow>
-            }
-            rows={sites.map((site) => (
-              <TableRow key={site.id}>
-                <TableCell className="font-medium">{site.name}</TableCell>
-                <TableCell className="font-mono">{site.domain}</TableCell>
-                <TableCell className="font-mono">{siteSlug(site)}</TableCell>
-                <TableCell>
-                  {shortDateTime(locale, site.createdAt, timeZone)}
-                </TableCell>
-                <TableCell className="text-right">
-                  {activeTeam ? (
-                    <TableActionButton
-                      onClick={() => {
-                        navigateWithTransition(
-                          router,
-                          buildSitePath(locale, siteSlug(site)),
-                        );
-                      }}
-                      label={t.open}
-                    >
-                      <ChartLineIcon className="size-4" />
-                    </TableActionButton>
-                  ) : null}
-                </TableCell>
-              </TableRow>
-            ))}
-          />
-        </CardContent>
-      </Card>
-    </div>
+            </TableHeader>
+            <TableBody>
+              {sites.map((site) => {
+                const href = buildSitePath(locale, getSiteSlug(site));
+                return (
+                  <TableRow key={site.id}>
+                    <TableCell className="font-medium">
+                      <Link href={href} className="hover:underline">
+                        {site.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {site.domain}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {shortDateTime(locale, site.createdAt * 1000, timeZone)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        asChild
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={t.open}
+                      >
+                        <Link href={href}>
+                          <ChevronRightIcon />
+                        </Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
+      </SettingsCard>
+      <CreateSiteDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        locale={locale}
+        messages={messages}
+        teamId={activeTeam.id}
+      />
+    </SettingsPage>
   );
 }

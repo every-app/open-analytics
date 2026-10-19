@@ -71,7 +71,6 @@ export function RequestObservationClient({
     <div className="space-y-4">
       <PageHeading
         title={copy.title}
-        subtitle={copy.subtitle}
         actions={
           <div className="flex items-center gap-2">
             {WINDOWS.map((window) => (

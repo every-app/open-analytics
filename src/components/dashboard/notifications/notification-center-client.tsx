@@ -459,7 +459,6 @@ export function NotificationCenterClient({
     <div className="space-y-4">
       <PageHeading
         title={copy.title}
-        subtitle={copy.subtitle}
         actions={
           <>
             <Select value={typeFilter} onValueChange={setTypeFilter}>

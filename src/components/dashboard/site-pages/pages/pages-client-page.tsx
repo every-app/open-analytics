@@ -290,10 +290,7 @@ export function PagesClientPage({
 
   return (
     <div className="space-y-6">
-      <PageHeading
-        title={messages.pages.title}
-        subtitle={messages.pages.subtitle}
-      />
+      <PageHeading title={messages.pages.title} />
 
       <PagesShareTrendCard
         locale={locale}

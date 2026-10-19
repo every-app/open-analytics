@@ -1,9 +1,10 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 
 import { ScheduledTasksClient } from "@/components/dashboard/admin/scheduled-tasks-client";
+import { SettingsFrame } from "@/components/settings/settings-section";
 import { loadScheduledTasksInitialData } from "@/lib/dashboard/route-data";
 import { dashboardPageTitle } from "@/lib/page-title";
-export const Route = createFileRoute("/$locale/app/manage/scheduled-tasks")({
+export const Route = createFileRoute("/$locale/app/settings/scheduled-tasks")({
   beforeLoad: async ({ context }) => {
     if (context.teamContext.user.systemRole !== "admin") throw notFound();
     return {
@@ -26,10 +27,12 @@ function Page() {
   const { locale, messages, scheduledTasksInitialData } =
     Route.useRouteContext();
   return (
-    <ScheduledTasksClient
-      locale={locale}
-      messages={messages}
-      initialData={scheduledTasksInitialData}
-    />
+    <SettingsFrame width="wide">
+      <ScheduledTasksClient
+        locale={locale}
+        messages={messages}
+        initialData={scheduledTasksInitialData}
+      />
+    </SettingsFrame>
   );
 }

@@ -369,10 +369,7 @@ export function PerformanceClientPage({
 
   return (
     <div className="space-y-6">
-      <PageHeading
-        title={messages.performance.title}
-        subtitle={messages.performance.subtitle}
-      />
+      <PageHeading title={messages.performance.title} />
 
       {showContent ? (
         <div className="grid items-start gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">

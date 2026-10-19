@@ -184,10 +184,7 @@ export function ReferrersClientPage({
 
   return (
     <div className="space-y-6">
-      <PageHeading
-        title={messages.referrers.title}
-        subtitle={messages.referrers.subtitle}
-      />
+      <PageHeading title={messages.referrers.title} />
 
       <ReferrerSummarySection
         locale={locale}

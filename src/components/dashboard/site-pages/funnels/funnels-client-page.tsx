@@ -369,10 +369,7 @@ export function FunnelsClientPage({
   return (
     <div className="min-w-0 max-w-full space-y-6">
       <div className="flex min-w-0 items-center justify-between gap-4">
-        <PageHeading
-          title={messages.funnels.title}
-          subtitle={messages.funnels.subtitle}
-        />
+        <PageHeading title={messages.funnels.title} />
         {canManage ? (
           <Button type="button" className="shrink-0" onClick={openCreate}>
             <PlusIcon data-icon="inline-start" /> {labels.create}

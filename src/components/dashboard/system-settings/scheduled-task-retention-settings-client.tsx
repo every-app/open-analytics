@@ -1,18 +1,14 @@
 import { useMemo, useState } from "react";
-import { Button } from "@insightflare/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@insightflare/ui/card";
 import { Input } from "@insightflare/ui/input";
-import { Label } from "@insightflare/ui/label";
-import { Spinner } from "@insightflare/ui/spinner";
-import { DatabaseIcon, SaveIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { SaveButton } from "@/components/settings/save-button";
+import {
+  SettingsCard,
+  SettingsCardFooter,
+  SettingsRow,
+  SettingsSection,
+} from "@/components/settings/settings-section";
 import type { SystemSettingsInitialData } from "@/lib/dashboard/management-data";
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
 import type { AppMessages } from "@/lib/i18n/messages";
@@ -20,6 +16,7 @@ import type {
   ScheduledTaskRetentionConfig,
   ScheduledTasksData,
 } from "@/lib/scheduled-tasks";
+
 interface ScheduledTaskRetentionSettingsClientProps {
   messages: AppMessages;
   initialData?: SystemSettingsInitialData | null;
@@ -28,6 +25,7 @@ const FIELDS: Array<{
   key: keyof ScheduledTaskRetentionConfig;
   label: keyof AppMessages["systemSettings"];
 }> = [
+  { key: "analyticsDetailDays", label: "analyticsDetailDaysLabel" },
   { key: "scheduledTaskLogsDays", label: "scheduledTaskLogsDaysLabel" },
   { key: "notificationTestDays", label: "notificationTestDaysLabel" },
   {
@@ -38,7 +36,6 @@ const FIELDS: Array<{
     key: "notificationDefaultDays",
     label: "notificationDefaultDaysLabel",
   },
-  { key: "analyticsDetailDays", label: "analyticsDetailDaysLabel" },
 ];
 const DEFAULTS: ScheduledTaskRetentionConfig = {
   scheduledTaskLogsDays: 30,
@@ -47,14 +44,23 @@ const DEFAULTS: ScheduledTaskRetentionConfig = {
   notificationDefaultDays: 120,
   analyticsDetailDays: 396,
 };
+
+function sameConfig(
+  left: ScheduledTaskRetentionConfig,
+  right: ScheduledTaskRetentionConfig,
+): boolean {
+  return FIELDS.every(({ key }) => left[key] === right[key]);
+}
+
 export function ScheduledTaskRetentionSettingsClient({
   messages,
   initialData = null,
 }: ScheduledTaskRetentionSettingsClientProps) {
   const copy = messages.systemSettings;
-  const [config, setConfig] = useState<ScheduledTaskRetentionConfig>(
+  const [saved, setSaved] = useState<ScheduledTaskRetentionConfig>(
     initialData?.scheduledTaskRetention ?? DEFAULTS,
   );
+  const [config, setConfig] = useState<ScheduledTaskRetentionConfig>(saved);
   const [saving, setSaving] = useState(false);
   const hasInvalidValue = useMemo(
     () =>
@@ -65,14 +71,16 @@ export function ScheduledTaskRetentionSettingsClient({
     [config],
   );
 
-  async function handleSave() {
-    if (hasInvalidValue) return;
+  async function handleSave(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (hasInvalidValue || saving) return;
     setSaving(true);
     try {
       const data = await requestAdminService<ScheduledTasksData>(
         "scheduled-tasks",
         { method: "PATCH", body: { retention: config } },
       );
+      setSaved(data.retention);
       setConfig(data.retention);
       toast.success(copy.retentionSaved);
     } catch (error) {
@@ -85,26 +93,31 @@ export function ScheduledTaskRetentionSettingsClient({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <DatabaseIcon className="size-4" />
-          {copy.retentionTitle}
-        </CardTitle>
-        <CardDescription>{copy.retentionDescription}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-4 sm:grid-cols-2">
+    <SettingsSection
+      title={copy.retentionTitle}
+      description={copy.retentionDescription}
+    >
+      <form onSubmit={handleSave}>
+        <SettingsCard>
           {FIELDS.map(({ key, label }) => (
-            <div key={key} className="space-y-2">
-              <Label htmlFor={`retention-${key}`}>{copy[label]}</Label>
+            <SettingsRow
+              key={key}
+              label={copy[label] as string}
+              htmlFor={`retention-${key}`}
+            >
               <Input
                 id={`retention-${key}`}
+                className="sm:w-28"
                 type="number"
                 min={1}
                 max={3650}
                 step={1}
                 value={config[key]}
+                aria-invalid={
+                  !Number.isInteger(config[key]) ||
+                  config[key] < 1 ||
+                  config[key] > 3650
+                }
                 onChange={(event) =>
                   setConfig((current) => ({
                     ...current,
@@ -112,22 +125,18 @@ export function ScheduledTaskRetentionSettingsClient({
                   }))
                 }
               />
-            </div>
+            </SettingsRow>
           ))}
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          {copy.retentionRangeHint}
-        </p>
-        <Button
-          type="button"
-          className="mt-5 gap-2"
-          disabled={saving || hasInvalidValue}
-          onClick={() => void handleSave()}
-        >
-          {saving ? <Spinner /> : <SaveIcon />}
-          {saving ? copy.retentionSaving : copy.retentionSave}
-        </Button>
-      </CardContent>
-    </Card>
+          <SettingsCardFooter note={copy.retentionRangeHint}>
+            <SaveButton
+              label={copy.retentionSave}
+              savingLabel={copy.retentionSaving}
+              saving={saving}
+              disabled={hasInvalidValue || sameConfig(config, saved)}
+            />
+          </SettingsCardFooter>
+        </SettingsCard>
+      </form>
+    </SettingsSection>
   );
 }

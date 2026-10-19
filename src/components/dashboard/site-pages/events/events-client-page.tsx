@@ -304,11 +304,7 @@ export function EventsClientPage({
 
   return (
     <div className="space-y-6">
-      <EventPageHeader
-        messages={messages}
-        title={messages.events.title}
-        subtitle={messages.events.subtitle}
-      />
+      <EventPageHeader messages={messages} title={messages.events.title} />
 
       <MetricSummaryGrid
         items={createEventMetricItems({

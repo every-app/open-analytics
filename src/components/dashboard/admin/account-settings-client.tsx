@@ -1,24 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AutoResizer } from "@insightflare/ui/auto-resizer";
-import { AutoTransition } from "@insightflare/ui/auto-transition";
-import { Badge } from "@insightflare/ui/badge";
-import { Button } from "@insightflare/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@insightflare/ui/card";
-import { Checkbox } from "@insightflare/ui/checkbox";
-import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldLabel,
-} from "@insightflare/ui/field";
 import { Input } from "@insightflare/ui/input";
-import { PageHeading } from "@insightflare/ui/page-heading";
 import {
   Select,
   SelectContent,
@@ -26,17 +7,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@insightflare/ui/select";
-import { Spinner } from "@insightflare/ui/spinner";
+import { Skeleton } from "@insightflare/ui/skeleton";
+import { Switch } from "@insightflare/ui/switch";
 import { useQuery } from "@tanstack/react-query";
-import {
-  BellIcon,
-  GlobeIcon,
-  MonitorIcon,
-  SaveIcon,
-  UserCogIcon,
-} from "lucide-react";
 import { toast } from "sonner";
 
+import { SaveButton } from "@/components/settings/save-button";
+import {
+  SettingsCard,
+  SettingsCardFooter,
+  SettingsPage,
+  SettingsRow,
+  SettingsSection,
+} from "@/components/settings/settings-section";
 import { useReportingTimeZone } from "@/components/time-zone-provider";
 import {
   buildTimeZoneOptions,
@@ -222,8 +205,6 @@ export function AccountSettingsClient({
     !saving &&
     (mode === "browser" || Boolean(nextPreference)) &&
     nextPreference !== timeZonePreference;
-  const sourceLabel =
-    timeZonePreference.length > 0 ? copy.manualSource : copy.browserSource;
   const activeTimeZoneLabel = formatTimeZoneOptionLabel({
     locale: intlLocale(locale),
     timeZone,
@@ -369,456 +350,264 @@ export function AccountSettingsClient({
     }
   }
 
+  const notificationRows: Array<{
+    key: string;
+    label: string;
+    description: string;
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+  }> = draftNotificationPreferences
+    ? [
+        {
+          key: "email",
+          label: notificationCopy.emailNotificationsLabel,
+          description: notificationCopy.emailNotificationsDescription,
+          checked: draftNotificationPreferences.email,
+          onChange: (checked) =>
+            updateDraftNotificationPreferences({ email: checked }),
+        },
+        {
+          key: "reports",
+          label: notificationCopy.reportsUnreadLabel,
+          description: notificationCopy.reportsUnreadDescription,
+          checked: draftNotificationPreferences.attention.reportsCreateUnread,
+          onChange: (checked) =>
+            updateDraftNotificationPreferences({
+              attention: { reportsCreateUnread: checked },
+            }),
+        },
+        {
+          key: "milestones",
+          label: notificationCopy.milestonesUnreadLabel,
+          description: notificationCopy.milestonesUnreadDescription,
+          checked:
+            draftNotificationPreferences.attention.milestonesCreateUnread,
+          onChange: (checked) =>
+            updateDraftNotificationPreferences({
+              attention: { milestonesCreateUnread: checked },
+            }),
+        },
+        {
+          key: "alerts",
+          label: notificationCopy.alertsUnreadLabel,
+          description: notificationCopy.alertsUnreadDescription,
+          checked: draftNotificationPreferences.attention.alertsCreateUnread,
+          onChange: (checked) =>
+            updateDraftNotificationPreferences({
+              attention: { alertsCreateUnread: checked },
+            }),
+        },
+      ]
+    : [];
+
   return (
-    <div className="space-y-5">
-      <PageHeading title={copy.title} subtitle={copy.subtitle} />
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="h-full lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="inline-flex items-center gap-2">
-              <UserCogIcon className="size-4" />
-              {copy.profileTitle}
-            </CardTitle>
-            <CardDescription>{copy.profileDescription}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex h-full flex-col">
-            <form
-              className="flex h-full flex-col gap-5"
-              onSubmit={handleProfileSubmit}
+    <SettingsPage title={messages.settingsNav.account}>
+      <SettingsSection title={copy.profileTitle}>
+        <form onSubmit={handleProfileSubmit}>
+          <SettingsCard>
+            <SettingsRow
+              label={copy.nicknameLabel}
+              htmlFor="account-profile-name"
             >
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field>
-                  <FieldLabel htmlFor="account-profile-name">
-                    {copy.nicknameLabel}
-                  </FieldLabel>
-                  <Input
-                    id="account-profile-name"
-                    value={profileName}
-                    maxLength={120}
-                    autoComplete="name"
-                    placeholder={copy.nicknamePlaceholder}
-                    onChange={(event) => setProfileName(event.target.value)}
-                    disabled={profileSaving}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="account-profile-email">
-                    {copy.emailLabel}
-                  </FieldLabel>
-                  <Input
-                    id="account-profile-email"
-                    type="email"
-                    value={profileUser.email}
-                    readOnly
-                    disabled
-                  />
-                </Field>
-              </div>
-              <FieldDescription>{copy.emailManagedByGateway}</FieldDescription>
+              <Input
+                id="account-profile-name"
+                className="sm:w-72"
+                value={profileName}
+                maxLength={120}
+                autoComplete="name"
+                placeholder={copy.nicknamePlaceholder}
+                onChange={(event) => setProfileName(event.target.value)}
+                disabled={profileSaving}
+              />
+            </SettingsRow>
+            <SettingsRow
+              label={copy.emailLabel}
+              description={copy.emailManagedByGateway}
+            >
+              <span className="text-sm text-muted-foreground">
+                {profileUser.email}
+              </span>
+            </SettingsRow>
+            <SettingsCardFooter>
+              <SaveButton
+                label={copy.profileSave}
+                savingLabel={copy.profileSaving}
+                saving={profileSaving}
+                disabled={!canSaveProfile}
+              />
+            </SettingsCardFooter>
+          </SettingsCard>
+        </form>
+      </SettingsSection>
 
-              <div className="mt-auto flex justify-start">
-                <Button type="submit" disabled={!canSaveProfile}>
-                  <AutoTransition className="inline-flex items-center gap-[var(--button-content-gap)]">
-                    {profileSaving ? (
-                      <span
-                        key="profile-saving"
-                        className="inline-flex items-center gap-[var(--button-content-gap)]"
-                      >
-                        <Spinner data-icon="inline-start" />
-                        {copy.profileSaving}
-                      </span>
-                    ) : (
-                      <span
-                        key="profile-save"
-                        className="inline-flex items-center gap-[var(--button-content-gap)]"
-                      >
-                        <SaveIcon data-icon="inline-start" />
-                        {copy.profileSave}
-                      </span>
-                    )}
-                  </AutoTransition>
-                </Button>
+      <SettingsSection title={notificationCopy.preferencesTitle}>
+        {notificationPreferencesLoading || !draftNotificationPreferences ? (
+          <SettingsCard>
+            {[0, 1, 2, 3].map((index) => (
+              <div key={index} className="px-5 py-4">
+                <Skeleton className="h-5 w-48" />
               </div>
-            </form>
-          </CardContent>
-        </Card>
+            ))}
+          </SettingsCard>
+        ) : (
+          <form onSubmit={handleNotificationPreferencesSubmit}>
+            <SettingsCard>
+              {notificationRows.map((row) => (
+                <SettingsRow
+                  key={row.key}
+                  label={row.label}
+                  description={row.description}
+                  htmlFor={`account-notification-${row.key}`}
+                >
+                  <Switch
+                    id={`account-notification-${row.key}`}
+                    checked={row.checked}
+                    disabled={notificationPreferencesSaving}
+                    onCheckedChange={(checked) => row.onChange(checked)}
+                  />
+                </SettingsRow>
+              ))}
+              <SettingsCardFooter>
+                <SaveButton
+                  label={copy.save}
+                  savingLabel={copy.saving}
+                  saving={notificationPreferencesSaving}
+                  disabled={!canSaveNotificationPreferences}
+                />
+              </SettingsCardFooter>
+            </SettingsCard>
+          </form>
+        )}
+      </SettingsSection>
 
-        <Card className="h-full lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="inline-flex items-center gap-2">
-              <BellIcon className="size-4" />
-              {notificationCopy.preferencesTitle}
-            </CardTitle>
-            <CardDescription>
-              {notificationCopy.preferencesDescription}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex h-full flex-col">
-            <AutoResizer initial duration={0.28} ease={[0.22, 1, 0.36, 1]}>
-              <AutoTransition
-                initial={false}
-                duration={0.2}
-                type="fade"
-                presenceMode="wait"
-                transitionKey={
-                  notificationPreferencesLoading ||
-                  !draftNotificationPreferences
-                    ? "loading"
-                    : "preferences"
-                }
+      <SettingsSection title={copy.preferredLanguageTitle}>
+        <form onSubmit={handlePreferredLocaleSubmit}>
+          <SettingsCard>
+            <SettingsRow
+              label={copy.preferredLanguageLabel}
+              htmlFor="account-preferred-language"
+            >
+              <Select
+                value={preferredLocale || "default"}
+                disabled={preferredLocaleSaving}
+                onValueChange={(value) => {
+                  if (value === "default") setPreferredLocale("");
+                  if (isValidLocale(value)) {
+                    setPreferredLocale(value);
+                  }
+                }}
               >
-                {notificationPreferencesLoading ||
-                !draftNotificationPreferences ? (
-                  <div
-                    key="loading"
-                    className="flex h-32 items-center justify-center text-sm text-muted-foreground"
-                    aria-busy="true"
-                  >
-                    <Spinner className="mr-2 size-4" />
-                    {messages.common.loading}
-                  </div>
-                ) : (
-                  <form
-                    key="preferences"
-                    className="flex h-full flex-col gap-5"
-                    onSubmit={handleNotificationPreferencesSubmit}
-                  >
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <Field>
-                        <FieldLabel>
-                          {notificationCopy.emailNotificationsLabel}
-                        </FieldLabel>
-                        <div className="flex items-start gap-3">
-                          <Checkbox
-                            checked={draftNotificationPreferences.email}
-                            disabled={notificationPreferencesSaving}
-                            onCheckedChange={(checked) =>
-                              updateDraftNotificationPreferences({
-                                email: !!checked,
-                              })
-                            }
-                          />
-                          <FieldDescription>
-                            {notificationCopy.emailNotificationsDescription}
-                          </FieldDescription>
-                        </div>
-                      </Field>
-                      <Field>
-                        <FieldLabel>
-                          {notificationCopy.reportsUnreadLabel}
-                        </FieldLabel>
-                        <div className="flex items-start gap-3">
-                          <Checkbox
-                            checked={
-                              draftNotificationPreferences.attention
-                                .reportsCreateUnread
-                            }
-                            disabled={notificationPreferencesSaving}
-                            onCheckedChange={(checked) =>
-                              updateDraftNotificationPreferences({
-                                attention: { reportsCreateUnread: !!checked },
-                              })
-                            }
-                          />
-                          <FieldDescription>
-                            {notificationCopy.reportsUnreadDescription}
-                          </FieldDescription>
-                        </div>
-                      </Field>
-                      <Field>
-                        <FieldLabel>
-                          {notificationCopy.milestonesUnreadLabel}
-                        </FieldLabel>
-                        <div className="flex items-start gap-3">
-                          <Checkbox
-                            checked={
-                              draftNotificationPreferences.attention
-                                .milestonesCreateUnread
-                            }
-                            disabled={notificationPreferencesSaving}
-                            onCheckedChange={(checked) =>
-                              updateDraftNotificationPreferences({
-                                attention: {
-                                  milestonesCreateUnread: !!checked,
-                                },
-                              })
-                            }
-                          />
-                          <FieldDescription>
-                            {notificationCopy.milestonesUnreadDescription}
-                          </FieldDescription>
-                        </div>
-                      </Field>
-                      <Field>
-                        <FieldLabel>
-                          {notificationCopy.alertsUnreadLabel}
-                        </FieldLabel>
-                        <div className="flex items-start gap-3">
-                          <Checkbox
-                            checked={
-                              draftNotificationPreferences.attention
-                                .alertsCreateUnread
-                            }
-                            disabled={notificationPreferencesSaving}
-                            onCheckedChange={(checked) =>
-                              updateDraftNotificationPreferences({
-                                attention: { alertsCreateUnread: !!checked },
-                              })
-                            }
-                          />
-                          <FieldDescription>
-                            {notificationCopy.alertsUnreadDescription}
-                          </FieldDescription>
-                        </div>
-                      </Field>
-                    </div>
+                <SelectTrigger
+                  id="account-preferred-language"
+                  className="w-full sm:w-56"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">
+                    {copy.preferredLanguageDefault}
+                  </SelectItem>
+                  <SelectItem value="en">
+                    {copy.preferredLanguageEnglish}
+                  </SelectItem>
+                  <SelectItem value="zh">
+                    {copy.preferredLanguageChinese}
+                  </SelectItem>
+                  <SelectItem value="zh-tw">
+                    {copy.preferredLanguageTraditionalChinese}
+                  </SelectItem>
+                  <SelectItem value="ja">
+                    {copy.preferredLanguageJapanese}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </SettingsRow>
+            <SettingsCardFooter>
+              <SaveButton
+                label={copy.save}
+                savingLabel={copy.saving}
+                saving={preferredLocaleSaving}
+                disabled={!canSavePreferredLocale}
+              />
+            </SettingsCardFooter>
+          </SettingsCard>
+        </form>
+      </SettingsSection>
 
-                    <div className="mt-auto flex justify-start">
-                      <Button
-                        type="submit"
-                        disabled={!canSaveNotificationPreferences}
-                      >
-                        <AutoTransition className="inline-flex items-center gap-[var(--button-content-gap)]">
-                          {notificationPreferencesSaving ? (
-                            <span
-                              key="notification-preferences-saving"
-                              className="inline-flex items-center gap-[var(--button-content-gap)]"
-                            >
-                              <Spinner data-icon="inline-start" />
-                              {copy.saving}
-                            </span>
-                          ) : (
-                            <span
-                              key="notification-preferences-save"
-                              className="inline-flex items-center gap-[var(--button-content-gap)]"
-                            >
-                              <SaveIcon data-icon="inline-start" />
-                              {copy.save}
-                            </span>
-                          )}
-                        </AutoTransition>
-                      </Button>
-                    </div>
-                  </form>
-                )}
-              </AutoTransition>
-            </AutoResizer>
-          </CardContent>
-        </Card>
-
-        <Card className="h-full overflow-visible lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="inline-flex items-center gap-2">
-              <GlobeIcon className="size-4" />
-              {copy.preferredLanguageTitle}
-            </CardTitle>
-            <CardDescription>
-              {copy.preferredLanguageDescription}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex h-full flex-col">
-            <form
-              className="flex h-full flex-col gap-5"
-              onSubmit={handlePreferredLocaleSubmit}
+      <SettingsSection title={copy.timeZoneTitle}>
+        <form onSubmit={handleTimeZoneSubmit}>
+          <SettingsCard>
+            <SettingsRow label={copy.activeTimeZone}>
+              <span className="text-sm text-muted-foreground">
+                {activeTimeZoneLabel}
+              </span>
+            </SettingsRow>
+            <SettingsRow label={copy.browserTimeZone}>
+              <span className="text-sm text-muted-foreground">
+                {browserTimeZoneLabel}
+              </span>
+            </SettingsRow>
+            <SettingsRow
+              label={copy.preferenceLabel}
+              htmlFor="account-timezone-mode"
             >
-              <Field>
-                <FieldLabel htmlFor="account-preferred-language">
-                  {copy.preferredLanguageLabel}
-                </FieldLabel>
+              <Select
+                value={mode}
+                onValueChange={(value) => {
+                  if (value === "browser" || value === "custom") {
+                    setMode(value);
+                  }
+                }}
+              >
+                <SelectTrigger
+                  id="account-timezone-mode"
+                  className="w-full sm:w-56"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="browser">{copy.useBrowser}</SelectItem>
+                  <SelectItem value="custom">{copy.useCustom}</SelectItem>
+                </SelectContent>
+              </Select>
+            </SettingsRow>
+            {mode === "custom" ? (
+              <SettingsRow
+                label={copy.customTimeZoneLabel}
+                htmlFor="account-timezone-select"
+                stacked
+              >
                 <Select
-                  value={preferredLocale || "default"}
-                  disabled={preferredLocaleSaving}
-                  onValueChange={(value) => {
-                    if (value === "default") setPreferredLocale("");
-                    if (isValidLocale(value)) {
-                      setPreferredLocale(value);
-                    }
-                  }}
+                  value={selectedCustomTimeZone}
+                  onValueChange={(value) => setCustomTimeZone(value)}
                 >
                   <SelectTrigger
-                    id="account-preferred-language"
+                    id="account-timezone-select"
                     className="w-full"
                   >
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="default">
-                      {copy.preferredLanguageDefault}
-                    </SelectItem>
-                    <SelectItem value="en">
-                      {copy.preferredLanguageEnglish}
-                    </SelectItem>
-                    <SelectItem value="zh">
-                      {copy.preferredLanguageChinese}
-                    </SelectItem>
-                    <SelectItem value="zh-tw">
-                      {copy.preferredLanguageTraditionalChinese}
-                    </SelectItem>
-                    <SelectItem value="ja">
-                      {copy.preferredLanguageJapanese}
-                    </SelectItem>
+                  <SelectContent className="max-h-80">
+                    {timeZoneOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-              </Field>
-
-              <div className="mt-auto flex justify-start">
-                <Button type="submit" disabled={!canSavePreferredLocale}>
-                  <AutoTransition className="inline-flex items-center gap-[var(--button-content-gap)]">
-                    {preferredLocaleSaving ? (
-                      <span
-                        key="preferred-locale-saving"
-                        className="inline-flex items-center gap-[var(--button-content-gap)]"
-                      >
-                        <Spinner data-icon="inline-start" />
-                        {copy.saving}
-                      </span>
-                    ) : (
-                      <span
-                        key="preferred-locale-save"
-                        className="inline-flex items-center gap-[var(--button-content-gap)]"
-                      >
-                        <SaveIcon data-icon="inline-start" />
-                        {copy.save}
-                      </span>
-                    )}
-                  </AutoTransition>
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card className="h-full overflow-visible lg:col-span-2">
-          <CardHeader>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-1">
-                <CardTitle className="inline-flex items-center gap-2">
-                  <GlobeIcon className="size-4" />
-                  {copy.timeZoneTitle}
-                </CardTitle>
-                <CardDescription>{copy.timeZoneDescription}</CardDescription>
-              </div>
-              <Badge variant="outline">{sourceLabel}</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="flex h-full flex-col">
-            <form
-              className="flex h-full flex-col gap-5"
-              onSubmit={handleTimeZoneSubmit}
-            >
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-lg border border-border p-3">
-                  <div className="mb-1 flex items-center gap-2 text-xs font-medium">
-                    <GlobeIcon className="size-4 text-muted-foreground" />
-                    {copy.activeTimeZone}
-                  </div>
-                  <div className="text-sm">{activeTimeZoneLabel}</div>
-                </div>
-                <div className="rounded-lg border border-border p-3">
-                  <div className="mb-1 flex items-center gap-2 text-xs font-medium">
-                    <MonitorIcon className="size-4 text-muted-foreground" />
-                    {copy.browserTimeZone}
-                  </div>
-                  <div className="text-sm">{browserTimeZoneLabel}</div>
-                </div>
-              </div>
-
-              <Field>
-                <FieldLabel htmlFor="account-timezone-mode">
-                  {copy.preferenceLabel}
-                </FieldLabel>
-                <Select
-                  value={mode}
-                  onValueChange={(value) => {
-                    if (value === "browser" || value === "custom") {
-                      setMode(value);
-                    }
-                  }}
-                >
-                  <SelectTrigger id="account-timezone-mode" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="browser">{copy.useBrowser}</SelectItem>
-                    <SelectItem value="custom">{copy.useCustom}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FieldDescription>
-                  {copy.preferenceDescription}
-                </FieldDescription>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="account-timezone-select">
-                  {copy.customTimeZoneLabel}
-                </FieldLabel>
-                <AutoResizer initial duration={0.24} ease={[0.22, 1, 0.36, 1]}>
-                  <AutoTransition
-                    initial={false}
-                    duration={0.18}
-                    type="fade"
-                    presenceMode="wait"
-                    transitionKey={mode}
-                  >
-                    <FieldContent key={mode}>
-                      <Select
-                        value={selectedCustomTimeZone}
-                        disabled={mode === "browser"}
-                        onValueChange={(value) => {
-                          setCustomTimeZone(value);
-                          if (mode !== "custom") setMode("custom");
-                        }}
-                      >
-                        <SelectTrigger
-                          id="account-timezone-select"
-                          className="w-full"
-                        >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-80">
-                          {timeZoneOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FieldDescription>
-                        {copy.customTimeZoneDescription}
-                      </FieldDescription>
-                    </FieldContent>
-                  </AutoTransition>
-                </AutoResizer>
-              </Field>
-
-              <div className="mt-auto flex justify-start">
-                <Button type="submit" disabled={!canSave}>
-                  <AutoTransition className="inline-flex items-center gap-[var(--button-content-gap)]">
-                    {saving ? (
-                      <span
-                        key="saving"
-                        className="inline-flex items-center gap-[var(--button-content-gap)]"
-                      >
-                        <Spinner data-icon="inline-start" />
-                        {copy.saving}
-                      </span>
-                    ) : (
-                      <span
-                        key="save"
-                        className="inline-flex items-center gap-[var(--button-content-gap)]"
-                      >
-                        <SaveIcon data-icon="inline-start" />
-                        {copy.save}
-                      </span>
-                    )}
-                  </AutoTransition>
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+              </SettingsRow>
+            ) : null}
+            <SettingsCardFooter>
+              <SaveButton
+                label={copy.save}
+                savingLabel={copy.saving}
+                saving={saving}
+                disabled={!canSave}
+              />
+            </SettingsCardFooter>
+          </SettingsCard>
+        </form>
+      </SettingsSection>
+    </SettingsPage>
   );
 }

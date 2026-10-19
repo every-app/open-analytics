@@ -18,6 +18,10 @@ import { nf } from "@/lib/edge/admin/response";
 import { handleScheduledTasksAdmin } from "@/lib/edge/admin/scheduled-tasks/handler";
 import type { AdminServiceRequest } from "@/lib/edge/admin/service/index";
 import {
+  handleGetStartedAdmin,
+  handleSiteTrackingAdmin,
+} from "@/lib/edge/admin/setup/get-started";
+import {
   handleScriptSnippetAdmin,
   handleSiteConfigAdmin,
   handleSitesAdmin,
@@ -71,6 +75,10 @@ export async function executeRealAdminService(
       return handleNotificationTestAdmin(request, env);
     case "request-observation":
       return handleRequestObservationAdmin(request, env, url);
+    case "get-started":
+      return handleGetStartedAdmin(request, env);
+    case "site-tracking":
+      return handleSiteTrackingAdmin(request, env, url);
     case "system-performance":
       return handleSystemPerformanceAdmin(request, env, url, requireActor);
     case "scheduled-tasks":

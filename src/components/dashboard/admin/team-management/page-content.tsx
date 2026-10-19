@@ -1,91 +1,45 @@
-import { AutoResizer } from "@insightflare/ui/auto-resizer";
-import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Button } from "@insightflare/ui/button";
 import { PageHeading } from "@insightflare/ui/page-heading";
-import { Spinner } from "@insightflare/ui/spinner";
-import { GlobeIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 
-import Link from "@/lib/router";
+import { CreateSiteDialog } from "@/components/dashboard/admin/create-site-dialog";
 
 import { useTeamManagementContext } from "./context";
-import { TeamManagementCreateSiteDialog } from "./create-site-dialog";
+import { GetStartedCard } from "./get-started-card";
 import { TeamManagementSitesPanel } from "./sites-panel";
+
 export function TeamManagementPageContent() {
   const {
-    canManage,
+    activeTeam,
     canManageSites,
-    copy,
-    isPageDataLoading,
+    createSiteDialogOpen,
     locale,
+    messages,
+    openCreateSiteDialog,
     setCreateSiteDialogOpen,
-    setCreateSiteDomain,
-    setCreateSiteError,
-    setCreateSiteName,
-    setCreateSitePublicSlug,
-    siteCount,
-    siteCreateCopy,
   } = useTeamManagementContext();
   return (
     <div className="space-y-6">
       <PageHeading
-        title={copy.sites.title}
-        subtitle={copy.sites.subtitle}
+        title={messages.teamManagement.sites.title}
         actions={
-          canManage ? (
-            <>
-              <Button variant="outline" asChild>
-                <Link href={`/${locale}/app/sites`}>
-                  <GlobeIcon data-icon="inline-start" />
-                  <span className="inline-flex items-center gap-[var(--button-content-gap)]">
-                    {copy.stats.sites}:
-                    <AutoResizer
-                      initial
-                      animateWidth
-                      animateHeight={false}
-                      className="inline-flex items-center"
-                    >
-                      <AutoTransition
-                        initial
-                        className="inline-flex items-center"
-                      >
-                        {isPageDataLoading ? (
-                          <span
-                            key="sites-loading"
-                            className="inline-flex items-center"
-                          >
-                            <Spinner data-icon="inline-end" />
-                          </span>
-                        ) : (
-                          <span key="sites-value">{siteCount}</span>
-                        )}
-                      </AutoTransition>
-                    </AutoResizer>
-                  </span>
-                </Link>
-              </Button>
-              {canManageSites ? (
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setCreateSiteName("");
-                    setCreateSiteDomain("");
-                    setCreateSitePublicSlug("");
-                    setCreateSiteError("");
-                    setCreateSiteDialogOpen(true);
-                  }}
-                >
-                  <PlusIcon data-icon="inline-start" />
-                  <span>{siteCreateCopy.create}</span>
-                </Button>
-              ) : null}
-            </>
+          canManageSites ? (
+            <Button type="button" onClick={openCreateSiteDialog}>
+              <PlusIcon data-icon="inline-start" />
+              {messages.getStarted.addSite}
+            </Button>
           ) : null
         }
       />
-      <TeamManagementCreateSiteDialog />
-      <div className="space-y-4">
-        <TeamManagementSitesPanel />
-      </div>
+      <CreateSiteDialog
+        open={createSiteDialogOpen}
+        onOpenChange={setCreateSiteDialogOpen}
+        locale={locale}
+        messages={messages}
+        teamId={activeTeam.id}
+      />
+      <GetStartedCard />
+      <TeamManagementSitesPanel />
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 
-import { AnalyticsTabs } from "@/components/dashboard/common/analytics-tabs";
 import { ShareHeader } from "@/components/dashboard/sharing/share-header";
 import { DashboardQueryProvider } from "@/components/dashboard/shell/dashboard-query-provider";
+import { useDashboardNavHref } from "@/components/dashboard/shell/dashboard-shell/navigation";
+import { NavTabs } from "@/components/dashboard/shell/nav-tabs";
 import { PageTransition } from "@/components/page-transition";
 import { publicDashboardSiteId } from "@/lib/dashboard/client/request";
 import { parseFilterDocumentFromSearchParams } from "@/lib/dashboard/query-state";
@@ -49,12 +50,26 @@ export function ShareDashboardShell({
   const initialFilters = parseFilterDocumentFromSearchParams(routeSearchParams);
   const initialScopePreference = parseFilterScopePreference(routeSearchParams);
   const isGeoRoute = pathname.endsWith("/geo");
+  const navHref = useDashboardNavHref();
+  const overviewPath = shareTabHref(locale, slug, "overview");
+  const tabs = SHARE_TABS.map((key) => {
+    const href = shareTabHref(locale, slug, key);
+    return {
+      key,
+      href: navHref(href),
+      label: messages.navigation[key],
+      active:
+        key === "overview"
+          ? pathname === overviewPath
+          : pathname.startsWith(href),
+    };
+  });
   const rootClassName = isGeoRoute
     ? "flex h-svh min-h-0 flex-col bg-background text-foreground"
     : "min-h-svh bg-background text-foreground";
   const contentClassName = isGeoRoute
     ? "flex min-h-0 w-full min-w-0 flex-1 flex-col md:overflow-hidden [&>[data-page-transition]]:flex [&>[data-page-transition]]:h-full [&>[data-page-transition]]:min-h-0 [&>[data-page-transition]]:flex-1 [&>[data-page-transition]]:flex-col"
-    : "mx-auto w-full max-w-[1400px] p-4 md:p-6";
+    : "mx-auto w-full max-w-8xl px-4 py-4 md:px-6 md:py-6";
 
   return (
     <DashboardQueryProvider
@@ -64,8 +79,8 @@ export function ShareDashboardShell({
       initialScopePreference={initialScopePreference}
     >
       <div className={rootClassName}>
-        <div className="sticky top-0 z-20 shrink-0 border-b bg-background/92 backdrop-blur">
-          <div className="p-3">
+        <div className="sticky top-0 z-20 shrink-0 bg-background/90 backdrop-blur">
+          <div className="px-4 pt-3 md:px-6">
             <ShareHeader
               locale={locale}
               messages={messages}
@@ -73,15 +88,11 @@ export function ShareDashboardShell({
               siteName={siteName}
             />
           </div>
-          <div className="px-3">
-            <AnalyticsTabs
-              items={SHARE_TABS.map((key) => ({
-                key,
-                href: shareTabHref(locale, slug, key),
-                label: messages.navigation[key],
-              }))}
-            />
-          </div>
+          <NavTabs
+            label={messages.appNav.sections}
+            items={tabs}
+            className="mt-2 px-2 md:px-4"
+          />
         </div>
         <main className={contentClassName}>
           <PageTransition>{children}</PageTransition>

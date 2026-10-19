@@ -9,6 +9,7 @@ import type {
   SiteData,
   TeamData,
 } from "@/lib/dashboard-api/contract/types";
+import type { GetStartedData } from "@/lib/edge/admin/setup/get-started";
 import type { RequestObservationSummary } from "@/lib/edge/collector/request-observations";
 import type { PublicNotificationEmailConfig } from "@/lib/notifications/email-config";
 import type { ScheduledTasksData } from "@/lib/scheduled-tasks";
@@ -53,6 +54,8 @@ export interface AdminServiceReadMap {
   "scheduled-tasks": ScheduledTasksData;
   "system-performance": SystemPerformanceData;
   "request-observation": RequestObservationSummary;
+  "get-started": GetStartedData;
+  "site-tracking": { hasData: boolean };
 }
 export async function executeAdminService(
   input: AdminServiceRequest,

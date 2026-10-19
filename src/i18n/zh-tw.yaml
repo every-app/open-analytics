@@ -693,7 +693,6 @@ realtime:
   leaveAt: 離開時間
 overview:
   title: 造訪總覽
-  subtitle: 檢視核心指標與造訪趨勢。
   trendTitle: 造訪趨勢
   sourceTab: 來源
   sourceDomainColumn: 來源（網域）
@@ -717,7 +716,6 @@ overview:
   searchInTab: "搜尋{tab}"
 pages:
   title: 頁面分析
-  subtitle: 選定時間範圍內造訪最多的路徑。
   pagesPerSession: 每工作階段頁面數
   changePercentColumnLabel: "{metric}變化（%）"
   changePointsColumnLabel: "{metric}變化（百分點）"
@@ -737,7 +735,6 @@ pages:
   viewDetails: 檢視詳情
 referrers:
   title: 來源分析
-  subtitle: 流量來源管道分佈。
   summaryTitle: 來源概覽
   splitTitle: 來源拆分
   chartTitle: 來源結構
@@ -763,7 +760,6 @@ referrers:
   channelLongTail: 其他管道
 campaigns:
   title: 推廣活動
-  subtitle: UTM 推廣活動表現與流量歸因。
   tabSource: 來源
   tabMedium: 媒介
   tabCampaign: 活動
@@ -774,7 +770,6 @@ campaigns:
   noTaggedTraffic: 目前篩選範圍內暫無帶 UTM 標籤的流量。
 sessions:
   title: 工作階段列表
-  subtitle: 用於分析造訪品質的工作階段明細。
   search: 搜尋工作階段...
   started: 開始時間
   sessionId: 工作階段 ID
@@ -981,7 +976,6 @@ funnels:
   updated: 更新於
 goals:
   title: 目標分析
-  subtitle: 使用一個可重複使用的事件或頁面條件衡量轉換。
   listSubtitle: 檢視這段時間範圍內的轉換率變化情況
   conversionRecords: 轉換記錄
   open: 開啟目標
@@ -1021,7 +1015,6 @@ goals:
   updated: 更新於
 visitors:
   title: 訪客分析
-  subtitle: 訪客級別明細與最近活躍情況。
   search: 搜尋訪客...
   visitor: 訪客
   anonymous: 匿名訪客
@@ -1174,7 +1167,6 @@ geo:
       adm5: 五級行政區
 devices:
   title: 裝置分析
-  subtitle: 從裝置型別、系統和螢幕尺寸觀察訪客結構。
   deviceShareTitle: 裝置型別佔比
   osShareTitle: 作業系統佔比
   deviceTrendTitle: 裝置型別趨勢
@@ -1198,7 +1190,6 @@ devices:
     unclassified: 未歸類
 browsers:
   title: 瀏覽器分析
-  subtitle: 按瀏覽器檢視造訪分佈。
   trendTitle: 瀏覽器佔比趨勢
   engineTrendTitle: 核心佔比趨勢
   versionBreakdownTitle: 瀏覽器版本分佈
@@ -1268,40 +1259,27 @@ performance:
 share: {}
 siteSettings:
   title: 站點設定
-  subtitle: 管理目前站點的基礎資訊與生命週期。
   sections:
     basic:
       title: 基本資訊
-      description: 管理站點身份資訊與公開分享設定。
     tracking:
       title: 追蹤設定
-      description: 設定追蹤器如何採集造訪與效能資料。
     blocking:
       title: 遮蔽規則
-      description: 在事件寫入儲存前，按請求上下文過濾採集資料。
     protection:
       title: 請求防護
-      description: 控制檢測到的機器人以及託管或代理網路請求在進入分析資料前的處理方式。
     danger:
       title: 危險區域
-      description: 包含破壞性操作和需要謹慎處理的設定。
-  editTitle: 修改站點資訊
-  editSubtitle: 更新站點名稱和網域。
   nameLabel: 站點名稱
   domainLabel: 網域
   publicSharingTitle: 公開分享
-  publicSharingSubtitle: 設定站點的公開存取連結，啟用後任何人都可透過連結檢視分析資料。
   publicEnabledLabel: 啟用公開存取
   publicSlugLabel: 公開 Slug
   publicSlugPlaceholder: 例如 my-site
   publicSlugHint: 自訂 URL 路徑標識。留空將自動產生。
   publicLinkLabel: 公開連結
-  publicLinkHint: 啟用公開存取後，可透過此連結分享分析資料。
-  publicDisabledHint: 啟用公開存取後將顯示分享連結。
   copiedLink: 連結已複製
   trackingStrengthGroupTitle: 追蹤強度
-  trackingStrengthDescription: 選擇指令碼對訪客標識與統計精度的處理方式。
-  trackingStrengthLabel: 追蹤強度策略
   trackingStrengthStrong: 強
   trackingStrengthSmart: 智慧
   trackingStrengthWeak: 弱
@@ -1312,8 +1290,6 @@ siteSettings:
   botProtectionEnabledHint: 開啟後攔截高置信度機器人請求；關閉後這類請求仍會計入統計。
   hostingProxyBlockingEnabledLabel: 攔截託管/代理網路請求
   hostingProxyBlockingEnabledHint: 開啟後攔截來自託管或代理網路的疑似機器人請求，預設關閉。
-  queryHashGroupTitle: 查詢參數與 Hash 追蹤
-  queryHashGroupDescription: 控制 URL 查詢參數、Hash 與 Do Not Track 的處理方式。
   trackQueryParamsLabel: 開啟查詢參數追蹤
   trackHashLabel: 開啟 Hash 追蹤
   blockingRulesSave: 儲存遮蔽規則
@@ -1560,27 +1536,18 @@ siteSettings:
       testPlaceholder: US-CA
       testHint: 輸入 metadata 中的 COUNTRY-REGION_CODE 值。
   ignoreDoNotTrackLabel: 忽略瀏覽器 Do Not Track
-  autoTrackGroupTitle: 自動追蹤
-  autoTrackGroupDescription: 控制自動事件捕獲行為。
   autoTrackOutboundLinksLabel: 自動追蹤外鏈點選
   autoTrackOutboundLinksHint: 開啟後，點選指向外部網域的連結將自動回報 outbound_click 事件。
-  performanceGroupTitle: 效能追蹤
-  performanceGroupDescription: 透過取樣率控制 Web 效能指標採集。
   performanceSampleRateLabel: 效能取樣率（%）
   performanceSampleRateHint: 被取樣的造訪會在離開頁面時記錄 TTFB、FCP、LCP、CLS 和 INP。填 0 表示不採樣，100 表示全量採集。
-  booleanOn: 開啟
-  booleanOff: 關閉
-  loadingSettings: 正在載入指令碼設定...
   saveTracking: 儲存追蹤設定
   savingTracking: 正在儲存追蹤設定…
   save: 儲存修改
   saving: 儲存中...
   scriptTitle: 安裝統計指令碼
-  scriptSubtitle: 將此指令碼新增到你的網站後即可開始採集分析資料。
   scriptHint: 推薦放在 </head> 結束標籤前；若不方便，也可放在 </body> 前，但請確保每頁只加載一次。
   copyScript: 複製指令碼
   copiedScript: 指令碼已複製。
-  loadingScript: 正在載入指令碼...
   scriptUnavailable: 目前無法取得指令碼。
   deleteTitle: 刪除站點
   deleteSubtitle: 此操作會將目前站點從團隊中移除。
@@ -1598,10 +1565,7 @@ siteSettings:
     invalidInput: 請填寫有效的站點名稱和網域。
 accountSettings:
   emailManagedByGateway: 電子郵件來自你的 Every App 帳戶。
-  title: 帳戶設定
-  subtitle: 管理你的暱稱、通知和儀表盤時區。
   profileTitle: 個人資訊
-  profileDescription: 更新儀表盤中顯示的暱稱。
   nicknameLabel: 暱稱
   nicknamePlaceholder: 例如：產品分析師
   emailLabel: 電子郵件
@@ -1610,7 +1574,6 @@ accountSettings:
   profileSaved: 個人資訊已儲存。
   profileSaveFailed: 儲存個人資訊失敗。
   preferredLanguageTitle: 通知語言
-  preferredLanguageDescription: 選擇定時通知郵件使用的語言。
   preferredLanguageLabel: 郵件語言
   preferredLanguageDefault: 預設
   preferredLanguageEnglish: 英語
@@ -1620,18 +1583,13 @@ accountSettings:
   preferredLanguageSaved: 通知語言已儲存。
   preferredLanguageSaveFailed: 儲存通知語言失敗。
   timeZoneTitle: 報表時區
-  timeZoneDescription: 儀表盤裡的自然日期範圍和聚合分桶都會使用這個時區。
   activeTimeZone: 目前生效時區
   browserTimeZone: 瀏覽器時區
   browserUnavailable: 未檢測到
-  browserSource: 跟隨瀏覽器
-  manualSource: 手動設定
   preferenceLabel: 時區偏好
-  preferenceDescription: 跟隨瀏覽器會使用目前裝置時區；手動設定會在所有裝置上保持同一時區。
   useBrowser: 跟隨瀏覽器時區
   useCustom: 選擇時區
   customTimeZoneLabel: 時區
-  customTimeZoneDescription: 從支援的 IANA 時區中選擇。
   invalidTimeZone: 請選擇有效的 IANA 時區。
   save: 儲存偏好
   saving: 儲存中...
@@ -1639,7 +1597,6 @@ accountSettings:
   saveFailed: 儲存時區偏好失敗。
 notificationCenter:
   title: 通知中心
-  subtitle: 檢視你的全部通知和報告。
   empty: 暫無通知。
   loading: 正在載入通知
   markRead: 標記已讀
@@ -1713,7 +1670,6 @@ notificationCenter:
   allTypes: 全部型別
   allSeverities: 全部嚴重程度
   preferencesTitle: 通知偏好
-  preferencesDescription: 這些設定控制郵件投遞，以及哪些訊息會保持未讀以提醒關注。
   emailNotificationsLabel: 郵件通知
   emailNotificationsDescription: 規則觸發時傳送郵件。
   reportsUnreadLabel: 報告保持未讀
@@ -1846,23 +1802,16 @@ teamSelect:
   groups: {}
   cancel: 取消
 teamManagement:
-  stats:
-    sites: 站點
+  stats: {}
   toasts: {}
   sites:
-    subtitle: 聚合檢視該團隊下所有站點的造訪表現。
     aggregateTitle: 總造訪量
-    noSites: 目前團隊還沒有站點。
     openAnalytics: 檢視分析
-    title: 站點儀表盤
+    title: 所有站點
     pagesPerSession: 每工作階段頁面數
   widgets: {}
   notifications:
-    title: 通知規則
-    subtitle: 管理目前團隊的通知規則。
     empty: 目前團隊還沒有通知規則。
-    forbiddenTitle: 通知規則由團隊管理員管理
-    forbiddenDescription: 你仍然可以檢視自己的通知訊息，並修改個人通知偏好。
     rulesTitle: 通知規則
     enabledCount: "目前團隊已啟用 {count} 條規則。"
     loadingRules: 正在載入通知規則
@@ -2060,7 +2009,6 @@ teamManagement:
       yesterday: 昨天
     emailPreviewPage:
       title: 通知郵件預覽
-      subtitle: 不建立訊息、不呼叫 Resend，直接渲染通知郵件。
       typeLabel: 預覽型別
       localeLabel: 預覽語言
       formatLabel: 預覽格式
@@ -2072,21 +2020,13 @@ teamManagement:
       loadFailed: 渲染郵件預覽失敗。
       subject: 主題
   publicLinks:
-    title: 公開連結
-    subtitle: 管理目前團隊可公開存取的分享連結。
     enabled: 已啟用
     disabled: 未啟用
-    disabledHint: 未啟用公開存取。前往站點設定開啟。
     viewSettings: 檢視設定
     copyLink: 複製連結
     linkCopied: 連結已複製
     noSites: 目前團隊還沒有站點。
-    columns:
-      site: 站點
-      domain: 網域
-      publicUrl: 公開連結
-      status: 狀態
-      action: 操作
+    columns: {}
   apiKeys:
     status: {}
     scopes: {}
@@ -2099,15 +2039,10 @@ teamManagement:
     columns: {}
     roleLabels: {}
 managementNav:
-  sites: 站點管理
   scheduledTasks: 排程任務
-  requestObservation: 請求觀測
-  systemPerformance: 系統效能
-  systemSettings: 系統設定
 managementPages:
   versionUpdates: {}
   scheduledTasks:
-    subtitle: 檢視和管理系統排程任務。
     empty: 暫無排程任務。
     refresh: 重新整理
     loadFailed: 載入排程任務失敗。
@@ -2185,18 +2120,12 @@ managementPages:
 adminUsers:
   columns: {}
 adminSites:
-  title: 站點管理
-  subtitle: 管理目前團隊下的站點。
-  team: 團隊
   createTitle: 新建站點
-  createSubtitle: 新建後可直接進入分析頁面。
   name: 站點名稱
   domain: 網域
   publicSlug: 公開 Slug（可選）
   create: 建立站點
   creating: 建立中...
-  listTitle: 站點列表
-  listSubtitle: 目前團隊下所有站點。
   noData: 暫無站點資料。
   loadFailed: 載入站點失敗。
   createSuccess: 站點建立成功。
@@ -2206,14 +2135,12 @@ adminSites:
   columns:
     name: 名稱
     domain: 網域
-    slug: Slug
     created: 建立時間
     action: 操作
 adminTeams:
   columns: {}
 requestObservation:
   title: 請求觀測
-  subtitle: "收集器近期拒絕的請求：自訂封鎖規則、機器人和託管網路。"
   blockedTotal: "已封鎖請求"
   retentionNote: "保留 30 天。放行的流量見各站點的儀表板。"
   topReasons: "原因"
@@ -2376,7 +2303,6 @@ systemSettings:
   loadFailed: 載入郵件設定失敗。
 systemPerformance:
   title: 系統效能
-  subtitle: 基於現有分析行監控 Open Analytics 的採集、緩衝和寫入健康度。
   refresh: 重新整理
   loadFailed: 載入系統效能資料失敗。
   noData: 目前時間視窗內暫無系統效能資料。
@@ -2465,4 +2391,59 @@ loginForm: {}
 logoutAction: {}
 sidebarFooter:
   gateway: 返回 Every App
+appNav:
+  mainNavigation: 主導覽
+  toggleSidebar: 切換側邊欄
+  traffic: 流量
+  audience: 受眾
+  conversions: 轉換
+  site: 站點
+  sites: 站點
+  allSites: 所有站點
+  inbox: 收件匣
+  settings: 設定
+  switchSite: 切換站點
+  siteSettings: 站點設定
+  addSite: 新增站點
+  accountMenu: 開啟帳戶選單
+  accountSettings: 帳戶設定
+  sections: 分區
 teamEntry: {}
+getStarted:
+  title: 開始使用
+  progress: "{done} / {total}"
+  showSteps: 顯示步驟
+  hideSteps: 隱藏步驟
+  completed: "已完成 {count} 項"
+  steps:
+    site: 新增第一個站點
+    tracking: 安裝追蹤腳本
+    team: 邀請團隊成員
+    notifications: 透過電子郵件接收報告
+    sharing: 分享公開儀表板
+  noSitesTitle: 還沒有站點
+  noSitesDescription: 新增一個站點，然後把它的腳本放到你的頁面上。
+  addSite: 新增站點
+  waitingTitle: 正在等待第一次頁面瀏覽
+  waitingDescription: "把這段腳本加入 {domain} 的每個頁面。頁面瀏覽會在一分鐘內顯示在這裡。"
+  copy: 複製
+  copied: 已複製
+  trackingSettings: 追蹤設定
+settingsNav:
+  label: 設定
+  personal: 個人
+  organization: 組織
+  system: 系統
+  account: 帳戶
+  sites: 站點
+  notifications: 通知
+  publicLinks: 公開連結
+  general: 一般
+  scheduledTasks: 排程任務
+  requestObservation: 請求觀測
+  performance: 效能
+  cancel: 取消
+  managerOnly: 只有擁有者或管理員可以修改。
+  dangerZone: 危險操作
+  copy: 複製
+  copied: 已複製

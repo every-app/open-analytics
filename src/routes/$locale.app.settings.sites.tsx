@@ -1,12 +1,10 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 
-import { NotificationEmailPreviewClient } from "@/components/dashboard/notifications/notification-email-preview-client";
+import { AdminSitesManagementClient } from "@/components/dashboard/admin/admin-sites-management-client";
 import { canManageTeam } from "@/lib/dashboard/permissions";
 import { dashboardPageTitle } from "@/lib/page-title";
 
-export const Route = createFileRoute(
-  "/$locale/app/notifications_/email-preview",
-)({
+export const Route = createFileRoute("/$locale/app/settings/sites")({
   beforeLoad: ({ context }) => {
     const c = context.teamContext;
     if (!canManageTeam(c.activeTeam.membershipRole, c.user.systemRole))
@@ -16,8 +14,7 @@ export const Route = createFileRoute(
     meta: [
       {
         title: dashboardPageTitle(
-          match.context.messages.teamManagement.notifications.emailPreviewPage
-            .title,
+          match.context.messages.settingsNav.sites,
           match.context,
         ),
       },
@@ -26,6 +23,13 @@ export const Route = createFileRoute(
   component: Page,
 });
 function Page() {
-  const { locale, messages } = Route.useRouteContext();
-  return <NotificationEmailPreviewClient locale={locale} messages={messages} />;
+  const { locale, messages, teamContext: c } = Route.useRouteContext();
+  return (
+    <AdminSitesManagementClient
+      locale={locale}
+      messages={messages}
+      activeTeam={c.activeTeam}
+      initialSites={c.sites}
+    />
+  );
 }

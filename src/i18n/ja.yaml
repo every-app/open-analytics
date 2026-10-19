@@ -694,7 +694,6 @@ realtime:
   leaveAt: 離脱時刻
 overview:
   title: トラフィック概要
-  subtitle: 主要指標とトラフィックの推移を確認します。
   trendTitle: トラフィック推移
   sourceTab: ソース
   sourceDomainColumn: ソース（ドメイン）
@@ -718,7 +717,6 @@ overview:
   searchInTab: "{tab} を検索"
 pages:
   title: ページ
-  subtitle: 選択範囲で最も訪問されたパスです。
   pagesPerSession: ページ / セッション
   changePercentColumnLabel: "{metric}の変化（%）"
   changePointsColumnLabel: "{metric}の変化（ポイント）"
@@ -738,7 +736,6 @@ pages:
   viewDetails: 詳細を表示
 referrers:
   title: 参照元
-  subtitle: トラフィックの流入元です。
   summaryTitle: ソース概要
   splitTitle: トラフィック内訳
   chartTitle: ソース構成
@@ -764,7 +761,6 @@ referrers:
   channelLongTail: その他のチャネル
 campaigns:
   title: キャンペーン
-  subtitle: UTM キャンペーンのパフォーマンスとトラフィック属性を確認します。
   tabSource: ソース
   tabMedium: メディア
   tabCampaign: キャンペーン
@@ -775,7 +771,6 @@ campaigns:
   noTaggedTraffic: 選択範囲にタグ付きキャンペーントラフィックはありません。
 sessions:
   title: セッション
-  subtitle: 品質分析のためのセッション単位の詳細です。
   search: セッションを検索...
   started: 開始時刻
   sessionId: セッション ID
@@ -984,7 +979,6 @@ funnels:
   updated: 更新
 goals:
   title: 目標
-  subtitle: 再利用可能なイベントまたはページ条件でコンバージョンを測定します。
   listSubtitle: この期間のコンバージョン率の変化を確認します。
   conversionRecords: コンバージョン記録
   open: 目標を開く
@@ -1024,7 +1018,6 @@ goals:
   updated: 更新
 visitors:
   title: 訪問者
-  subtitle: 訪問者単位の内訳と直近状況です。
   search: 訪問者を検索...
   visitor: 訪問者
   anonymous: 匿名
@@ -1177,7 +1170,6 @@ geo:
       adm5: 行政レベル 5
 devices:
   title: デバイス
-  subtitle: デバイス種別、OS、画面サイズごとに訪問者を把握します。
   deviceShareTitle: デバイス種別シェア
   osShareTitle: OS シェア
   deviceTrendTitle: デバイス種別推移
@@ -1201,7 +1193,6 @@ devices:
     unclassified: 未分類
 browsers:
   title: ブラウザー
-  subtitle: ブラウザー分布とシェアです。
   trendTitle: ブラウザーシェア推移
   engineTrendTitle: エンジンシェア推移
   versionBreakdownTitle: ブラウザーバージョン内訳
@@ -1272,40 +1263,27 @@ performance:
 share: {}
 siteSettings:
   title: サイト設定
-  subtitle: このサイトの基本情報とライフサイクルを設定します。
   sections:
     basic:
       title: 基本情報
-      description: サイト情報と公開共有を管理します。
     tracking:
       title: トラッキング設定
-      description: 訪問とパフォーマンスデータの収集方法を設定します。
     blocking:
       title: ブロックルール
-      description: イベントを保存する前に、リクエストのコンテキストで収集を絞り込みます。
     protection:
       title: リクエスト保護
-      description: 検出したボットやホスティング・プロキシネットワークのリクエストを分析データに入れる前の扱いを設定します。
     danger:
       title: 危険な操作
-      description: 破壊的な操作や慎重な取り扱いが必要な設定です。
-  editTitle: サイト情報を更新
-  editSubtitle: 表示名とドメインを最新に保ちます。
   nameLabel: サイト名
   domainLabel: ドメイン
   publicSharingTitle: 公開共有
-  publicSharingSubtitle: このサイトの公開アクセスリンクを設定します。有効にすると、リンクを持つ全員が分析データを閲覧できます。
   publicEnabledLabel: 公開アクセスを有効化
   publicSlugLabel: 公開スラッグ
   publicSlugPlaceholder: "例: my-site"
   publicSlugHint: URL パス識別子をカスタマイズします。空のままなら自動生成されます。
   publicLinkLabel: 公開リンク
-  publicLinkHint: 公開アクセスを有効にした後、このリンクで分析データを共有できます。
-  publicDisabledHint: 共有リンクは公開アクセスを有効にすると表示されます。
   copiedLink: リンクをコピーしました
   trackingStrengthGroupTitle: トラッキング強度
-  trackingStrengthDescription: トラッカーが訪問者を識別する強さを選択します。
-  trackingStrengthLabel: トラッキング強度モード
   trackingStrengthStrong: 強
   trackingStrengthSmart: スマート
   trackingStrengthWeak: 弱
@@ -1316,8 +1294,6 @@ siteSettings:
   botProtectionEnabledHint: 有効にすると高信頼度のボットリクエストをブロックし、無効にすると統計に含めます。
   hostingProxyBlockingEnabledLabel: ホスティング・プロキシネットワークをブロック
   hostingProxyBlockingEnabledHint: 有効にするとホスティングまたはプロキシネットワークからの疑わしいボットリクエストをブロックします。デフォルトはオフです。
-  queryHashGroupTitle: クエリとハッシュのトラッキング
-  queryHashGroupDescription: クエリ文字列、URL ハッシュ、Do Not Track の扱いを制御します。
   trackQueryParamsLabel: クエリパラメータを追跡
   trackHashLabel: URL ハッシュを追跡
   blockingRulesSave: ブロックルールを保存
@@ -1566,27 +1542,18 @@ siteSettings:
       testPlaceholder: US-CA
       testHint: メタデータの COUNTRY-REGION_CODE 値を入力します。
   ignoreDoNotTrackLabel: ブラウザーの Do Not Track を無視
-  autoTrackGroupTitle: 自動トラッキング
-  autoTrackGroupDescription: 自動イベント取得の挙動を制御します。
   autoTrackOutboundLinksLabel: 外部リンククリックを自動追跡
   autoTrackOutboundLinksHint: 有効にすると、外部ドメインへのリンククリックで outbound_click イベントを自動送信します。
-  performanceGroupTitle: パフォーマンストラッキング
-  performanceGroupDescription: サンプリング率で Web パフォーマンス指標の収集を制御します。
   performanceSampleRateLabel: パフォーマンスサンプリング率（%）
   performanceSampleRateHint: サンプリングされた訪問では、離脱時に TTFB、FCP、LCP、CLS、INP を記録します。0 で無効、100 で全量収集です。
-  booleanOn: オン
-  booleanOff: オフ
-  loadingSettings: スクリプト設定を読み込み中...
   saveTracking: トラッキング設定を保存
   savingTracking: トラッキング設定を保存中...
   save: 変更を保存
   saving: 保存中...
   scriptTitle: トラッキングスクリプトを設置
-  scriptSubtitle: 分析収集を開始するには、このスクリプトを Web サイトに追加してください。
   scriptHint: </head> の前を推奨します。必要なら </body> の前にも配置できますが、各ページで 1 回だけ読み込まれるようにしてください。
   copyScript: スクリプトをコピー
   copiedScript: スクリプトをコピーしました。
-  loadingScript: スクリプトを読み込み中...
   scriptUnavailable: 現在スクリプトを利用できません。
   deleteTitle: サイトを削除
   deleteSubtitle: この操作により、サイトはこのチームから削除されます。
@@ -1604,10 +1571,7 @@ siteSettings:
     invalidInput: 有効なサイト名とドメインを入力してください。
 accountSettings:
   emailManagedByGateway: メールアドレスは Every App のアカウントのものです。
-  title: アカウント設定
-  subtitle: 表示名、通知、ダッシュボードのタイムゾーンを管理します。
   profileTitle: 個人情報
-  profileDescription: ダッシュボードに表示される名前を更新します。
   nicknameLabel: 表示名
   nicknamePlaceholder: "例: プロダクトアナリスト"
   emailLabel: メール
@@ -1616,7 +1580,6 @@ accountSettings:
   profileSaved: 個人情報を保存しました。
   profileSaveFailed: 個人情報を保存できません。
   preferredLanguageTitle: 通知言語
-  preferredLanguageDescription: 定期通知メールで使用する言語を選択します。
   preferredLanguageLabel: メール言語
   preferredLanguageDefault: デフォルト
   preferredLanguageEnglish: 英語
@@ -1626,18 +1589,13 @@ accountSettings:
   preferredLanguageSaved: 通知言語を保存しました。
   preferredLanguageSaveFailed: 通知言語を保存できません。
   timeZoneTitle: レポートタイムゾーン
-  timeZoneDescription: カレンダー範囲と集計バケットは、ダッシュボード全体でこのタイムゾーンを使用します。
   activeTimeZone: 有効なタイムゾーン
   browserTimeZone: ブラウザーのタイムゾーン
   browserUnavailable: 検出されません
-  browserSource: ブラウザー
-  manualSource: 手動
   preferenceLabel: タイムゾーン設定
-  preferenceDescription: ブラウザーモードはこのデバイスに従います。手動モードはすべてのデバイスで同じタイムゾーンを使います。
   useBrowser: ブラウザーのタイムゾーンを使用
   useCustom: タイムゾーンを選択
   customTimeZoneLabel: タイムゾーン
-  customTimeZoneDescription: 対応している IANA タイムゾーンから選択します。
   invalidTimeZone: 有効な IANA タイムゾーンを選択してください。
   save: 設定を保存
   saving: 保存中...
@@ -1645,7 +1603,6 @@ accountSettings:
   saveFailed: タイムゾーン設定を保存できません。
 notificationCenter:
   title: 通知センター
-  subtitle: すべての通知とレポートを確認します。
   empty: 通知はまだありません。
   loading: 通知を読み込み中
   markRead: 既読にする
@@ -1719,7 +1676,6 @@ notificationCenter:
   allTypes: すべての種別
   allSeverities: すべての重要度
   preferencesTitle: 通知設定
-  preferencesDescription: これらの設定は、メール配信と、どのメッセージを要対応として未読のままにするかを制御します。
   emailNotificationsLabel: メール通知
   emailNotificationsDescription: ルールが発火したときにメールを送信します。
   reportsUnreadLabel: レポートを未読にする
@@ -1853,23 +1809,16 @@ teamSelect:
   groups: {}
   cancel: キャンセル
 teamManagement:
-  stats:
-    sites: サイト
+  stats: {}
   toasts: {}
   sites:
-    subtitle: このチーム内すべてのサイトを集計したトラフィックビューです。
     aggregateTitle: 総訪問数
-    noSites: このチームには利用可能なサイトがありません。
     openAnalytics: アナリティクスを開く
-    title: サイトダッシュボード
+    title: すべてのサイト
     pagesPerSession: ページ / セッション
   widgets: {}
   notifications:
-    title: 通知ルール
-    subtitle: このチームの通知ルールを管理します。
     empty: このチームには通知ルールがありません。
-    forbiddenTitle: 通知ルールはチーム管理者が管理します
-    forbiddenDescription: 自分の通知を確認し、個人の通知設定を更新することはできます。
     rulesTitle: 通知ルール
     enabledCount: このチームで {count} 件のルールが有効です。
     loadingRules: 通知ルールを読み込み中
@@ -2067,7 +2016,6 @@ teamManagement:
       yesterday: 昨日
     emailPreviewPage:
       title: 通知メールプレビュー
-      subtitle: メッセージ作成や Resend 送信を行わずに通知メールをレンダリングします。
       typeLabel: プレビュー種別
       localeLabel: プレビューロケール
       formatLabel: プレビュー形式
@@ -2079,21 +2027,13 @@ teamManagement:
       loadFailed: メールプレビューをレンダリングできません。
       subject: 件名
   publicLinks:
-    title: 公開リンク
-    subtitle: このチームの公開共有リンクを管理します。
     enabled: 有効
     disabled: 無効
-    disabledHint: 公開アクセスは無効です。有効にするにはサイト設定を開いてください。
     viewSettings: 設定を表示
     copyLink: リンクをコピー
     linkCopied: リンクをコピーしました
     noSites: このチームにはまだサイトがありません。
-    columns:
-      site: サイト
-      domain: ドメイン
-      publicUrl: 公開リンク
-      status: ステータス
-      action: 操作
+    columns: {}
   apiKeys:
     status: {}
     scopes: {}
@@ -2106,15 +2046,10 @@ teamManagement:
     columns: {}
     roleLabels: {}
 managementNav:
-  sites: サイト管理
   scheduledTasks: スケジュールタスク
-  requestObservation: リクエスト監視
-  systemPerformance: システムパフォーマンス
-  systemSettings: システム設定
 managementPages:
   versionUpdates: {}
   scheduledTasks:
-    subtitle: システムのスケジュールタスクを表示・管理します。
     empty: スケジュールタスクはまだありません。
     refresh: 更新
     loadFailed: スケジュールタスクを読み込めません。
@@ -2192,18 +2127,12 @@ managementPages:
 adminUsers:
   columns: {}
 adminSites:
-  title: サイト管理
-  subtitle: 現在のチーム配下のサイトを管理します。
-  team: チーム
   createTitle: サイトを作成
-  createSubtitle: 新しいサイトはすぐに開けます。
   name: サイト名
   domain: ドメイン
   publicSlug: 公開スラッグ（任意）
   create: サイトを作成
   creating: 作成中...
-  listTitle: サイト
-  listSubtitle: 現在のチーム配下のすべてのサイトです。
   noData: サイトが見つかりません。
   loadFailed: サイトを読み込めません。
   createSuccess: サイトを作成しました。
@@ -2213,14 +2142,12 @@ adminSites:
   columns:
     name: 名前
     domain: ドメイン
-    slug: スラッグ
     created: 作成日時
     action: 操作
 adminTeams:
   columns: {}
 requestObservation:
   title: リクエスト監視
-  subtitle: "コレクターが最近拒否したリクエスト：カスタムブロックルール、ボット、ホスティングネットワーク。"
   blockedTotal: "ブロックしたリクエスト"
   retentionNote: "30 日間保持します。許可されたトラフィックは各サイトのダッシュボードにあります。"
   topReasons: "理由"
@@ -2387,7 +2314,6 @@ systemSettings:
   loadFailed: メール設定を読み込めません。
 systemPerformance:
   title: システムパフォーマンス
-  subtitle: 既存の分析行から Open Analytics の収集、バッファリング、書き込みの健全性を監視します。
   refresh: 更新
   loadFailed: システムパフォーマンスデータを読み込めません。
   noData: この期間にシステムパフォーマンスデータはありません。
@@ -2476,4 +2402,59 @@ loginForm: {}
 logoutAction: {}
 sidebarFooter:
   gateway: Every App に戻る
+appNav:
+  mainNavigation: メインナビゲーション
+  toggleSidebar: サイドバーを切り替え
+  traffic: トラフィック
+  audience: オーディエンス
+  conversions: コンバージョン
+  site: サイト
+  sites: サイト
+  allSites: すべてのサイト
+  inbox: 受信トレイ
+  settings: 設定
+  switchSite: サイトを切り替え
+  siteSettings: サイト設定
+  addSite: サイトを追加
+  accountMenu: アカウントメニューを開く
+  accountSettings: アカウント設定
+  sections: セクション
 teamEntry: {}
+getStarted:
+  title: はじめに
+  progress: "{done} / {total}"
+  showSteps: ステップを表示
+  hideSteps: ステップを隠す
+  completed: "{count} 件完了"
+  steps:
+    site: 最初のサイトを追加
+    tracking: トラッキングスクリプトを設置
+    team: チームを招待
+    notifications: レポートをメールで受け取る
+    sharing: 公開ダッシュボードを共有
+  noSitesTitle: サイトはまだありません
+  noSitesDescription: サイトを追加して、そのスクリプトをページに設置してください。
+  addSite: サイトを追加
+  waitingTitle: 最初のページビューを待っています
+  waitingDescription: "このスクリプトを {domain} のすべてのページに追加してください。ページビューは1分以内にここに表示されます。"
+  copy: コピー
+  copied: コピーしました
+  trackingSettings: トラッキング設定
+settingsNav:
+  label: 設定
+  personal: 個人
+  organization: 組織
+  system: システム
+  account: アカウント
+  sites: サイト
+  notifications: 通知
+  publicLinks: 公開リンク
+  general: 一般
+  scheduledTasks: スケジュールタスク
+  requestObservation: リクエスト監視
+  performance: パフォーマンス
+  cancel: キャンセル
+  managerOnly: 変更できるのはオーナーまたは管理者のみです。
+  dangerZone: 危険な操作
+  copy: コピー
+  copied: コピーしました

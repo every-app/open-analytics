@@ -6,25 +6,50 @@ import { cn } from "@/lib/utils";
 // Settings pages are titled sections of cards, and each card is a stack of
 // rows: what the setting is on the left, its control on the right.
 
+/**
+ * A settings page's margins. `wide` is for pages built around a table or a
+ * chart; the rest keep the reading width of a column of rows.
+ */
+export function SettingsFrame({
+  width = "default",
+  children,
+}: {
+  width?: "default" | "wide";
+  children: ReactNode;
+}) {
+  return (
+    <div className="px-4 pt-6 pb-24 md:px-10 md:pt-10 md:pb-12">
+      <div
+        className={cn(
+          "mx-auto space-y-10",
+          width === "wide" ? "max-w-6xl" : "max-w-3xl",
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 /** One settings page: its title, then its sections. */
 export function SettingsPage({
   title,
   subtitle,
   actions,
+  width,
   children,
 }: {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
+  width?: "default" | "wide";
   children: ReactNode;
 }) {
   return (
-    <div className="px-4 pt-6 pb-24 md:px-10 md:pt-10 md:pb-12">
-      <div className="mx-auto max-w-3xl space-y-10">
-        <PageHeading title={title} subtitle={subtitle} actions={actions} />
-        {children}
-      </div>
-    </div>
+    <SettingsFrame width={width}>
+      <PageHeading title={title} subtitle={subtitle} actions={actions} />
+      {children}
+    </SettingsFrame>
   );
 }
 

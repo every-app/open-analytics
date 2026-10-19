@@ -698,7 +698,6 @@ realtime:
   leaveAt: Left at
 overview:
   title: Traffic Overview
-  subtitle: View core metrics and traffic trends.
   trendTitle: Traffic Trend
   sourceTab: Source
   sourceDomainColumn: Source (Domain)
@@ -722,7 +721,6 @@ overview:
   searchInTab: Search {tab}
 pages:
   title: Pages
-  subtitle: Most visited paths in the selected range.
   pagesPerSession: Pages / Session
   changePercentColumnLabel: "{metric} change (%)"
   changePointsColumnLabel: "{metric} change (pp)"
@@ -742,7 +740,6 @@ pages:
   viewDetails: View details
 referrers:
   title: Referrers
-  subtitle: Where traffic comes from.
   summaryTitle: Source Summary
   splitTitle: Traffic Split
   chartTitle: Source Mix
@@ -768,7 +765,6 @@ referrers:
   channelLongTail: Other channels
 campaigns:
   title: Campaigns
-  subtitle: UTM campaign performance and traffic attribution.
   tabSource: Source
   tabMedium: Medium
   tabCampaign: Campaign
@@ -779,7 +775,6 @@ campaigns:
   noTaggedTraffic: No tagged campaign traffic in the selected range.
 sessions:
   title: Sessions
-  subtitle: Session-level detail for quality analysis.
   search: Search sessions...
   started: Start Time
   sessionId: Session ID
@@ -993,7 +988,6 @@ funnels:
   updated: Updated
 goals:
   title: Goals
-  subtitle: Measure conversion from a single reusable event or page condition.
   listSubtitle: View conversion rate changes across this time range.
   conversionRecords: Conversion records
   open: Open goal
@@ -1034,7 +1028,6 @@ goals:
   updated: Updated
 visitors:
   title: Visitors
-  subtitle: Visitor-level breakdown and recency.
   search: Search visitors...
   visitor: Visitor
   anonymous: Anonymous
@@ -1191,7 +1184,6 @@ geo:
       adm5: Admin Level 5
 devices:
   title: Devices
-  subtitle: Understand visitors by device type, operating system, and screen size.
   deviceShareTitle: Device Type Share
   osShareTitle: Operating System Share
   deviceTrendTitle: Device Type Trend
@@ -1215,7 +1207,6 @@ devices:
     unclassified: Unclassified
 browsers:
   title: Browsers
-  subtitle: Browser distribution and share.
   trendTitle: Browser Share Trend
   engineTrendTitle: Engine Share Trend
   versionBreakdownTitle: Browser Version Breakdown
@@ -1294,42 +1285,27 @@ performance:
 share: {}
 siteSettings:
   title: Site Settings
-  subtitle: Configure this site's basic information and lifecycle.
   sections:
     basic:
       title: Basic Information
-      description: Manage site identity and public sharing.
     tracking:
       title: Tracking Settings
-      description: Configure how the tracker captures visits and performance data.
     blocking:
       title: Blocking Rules
-      description: Filter collection by request context before events reach storage.
     protection:
       title: Request Protection
-      description: Control how detected bots and hosting or proxy traffic are handled
-        before requests enter analytics.
     danger:
       title: Danger Zone
-      description: Destructive actions and operationally sensitive settings.
-  editTitle: Update Site Info
-  editSubtitle: Keep display name and domain up to date.
   nameLabel: Site Name
   domainLabel: Domain
   publicSharingTitle: Public Sharing
-  publicSharingSubtitle: Configure this site's public access link. When enabled,
-    anyone with the link can view analytics data.
   publicEnabledLabel: Enable Public Access
   publicSlugLabel: Public Slug
   publicSlugPlaceholder: e.g. my-site
   publicSlugHint: Customize the URL path identifier. Leave blank to generate one.
   publicLinkLabel: Public Link
-  publicLinkHint: Share analytics data with this link after public access is enabled.
-  publicDisabledHint: The sharing link appears after public access is enabled.
   copiedLink: Link copied
   trackingStrengthGroupTitle: Tracking Strength
-  trackingStrengthDescription: Choose how aggressively the tracker identifies visitors.
-  trackingStrengthLabel: Tracking Strength Mode
   trackingStrengthStrong: Strong
   trackingStrengthSmart: Smart
   trackingStrengthWeak: Weak
@@ -1345,8 +1321,6 @@ siteSettings:
   hostingProxyBlockingEnabledLabel: Block hosting and proxy traffic
   hostingProxyBlockingEnabledHint: Block suspected bot requests from hosting or
     proxy networks. This is disabled by default.
-  queryHashGroupTitle: Query and Hash Tracking
-  queryHashGroupDescription: Control how query strings, URL hashes, and Do Not Track are handled.
   trackQueryParamsLabel: Track Query Parameters
   trackHashLabel: Track URL Hash
   blockingRulesSave: Save Blocking Rules
@@ -1606,30 +1580,21 @@ siteSettings:
       testPlaceholder: US-CA
       testHint: Enter the COUNTRY-REGION_CODE value from metadata.
   ignoreDoNotTrackLabel: Ignore Browser Do Not Track
-  autoTrackGroupTitle: Auto Tracking
-  autoTrackGroupDescription: Control automatic event capture behavior.
   autoTrackOutboundLinksLabel: Auto-track outbound link clicks
   autoTrackOutboundLinksHint: When enabled, clicking links to external domains
     automatically reports outbound_click events.
-  performanceGroupTitle: Performance Tracking
-  performanceGroupDescription: Control Web performance metric collection with a sampling rate.
   performanceSampleRateLabel: Performance Sample Rate (%)
   performanceSampleRateHint: A sampled visit records TTFB, FCP, LCP, CLS, and INP
     on leave. Use 0 to disable sampling or 100 for full coverage.
-  booleanOn: On
-  booleanOff: Off
-  loadingSettings: Loading script settings...
   saveTracking: Save Tracking Settings
   savingTracking: Saving Tracking Settings...
   save: Save Changes
   saving: Saving...
   scriptTitle: Install Tracking Script
-  scriptSubtitle: Add this script to your website to start collecting analytics.
   scriptHint: Recommended before </head>; if needed you can place it before
     </body>, but ensure it's loaded once per page.
   copyScript: Copy Script
   copiedScript: Script copied.
-  loadingScript: Loading script...
   scriptUnavailable: Script is currently unavailable.
   deleteTitle: Delete Site
   deleteSubtitle: This action will remove the site from this team.
@@ -1647,10 +1612,7 @@ siteSettings:
     invalidInput: Please provide a valid site name and domain.
 accountSettings:
   emailManagedByGateway: Your email comes from your Every App account.
-  title: Account Settings
-  subtitle: Manage your display name, notifications and dashboard time zone.
   profileTitle: Personal Details
-  profileDescription: Update the name the dashboard shows for you.
   nicknameLabel: Display name
   nicknamePlaceholder: e.g. Product Analyst
   emailLabel: Email
@@ -1659,7 +1621,6 @@ accountSettings:
   profileSaved: Personal details saved.
   profileSaveFailed: Failed to save personal details.
   preferredLanguageTitle: Notification Language
-  preferredLanguageDescription: Choose the language used for scheduled notification emails.
   preferredLanguageLabel: Email language
   preferredLanguageDefault: Default
   preferredLanguageEnglish: English
@@ -1669,20 +1630,13 @@ accountSettings:
   preferredLanguageSaved: Notification language saved.
   preferredLanguageSaveFailed: Failed to save notification language.
   timeZoneTitle: Reporting Time Zone
-  timeZoneDescription: Calendar ranges and aggregation buckets use this time zone
-    across the dashboard.
   activeTimeZone: Active time zone
   browserTimeZone: Browser time zone
   browserUnavailable: Not detected
-  browserSource: Browser
-  manualSource: Manual
   preferenceLabel: Time zone preference
-  preferenceDescription: Browser mode follows this device. Manual mode keeps the
-    same time zone on every device.
   useBrowser: Use browser time zone
   useCustom: Choose a time zone
   customTimeZoneLabel: Time zone
-  customTimeZoneDescription: Choose from supported IANA time zones.
   invalidTimeZone: Please choose a valid IANA time zone.
   save: Save preference
   saving: Saving...
@@ -1690,7 +1644,6 @@ accountSettings:
   saveFailed: Failed to save time zone preference.
 notificationCenter:
   title: Notification Center
-  subtitle: Review all of your notifications and reports.
   empty: No notifications yet.
   loading: Loading notifications
   markRead: Mark read
@@ -1764,8 +1717,6 @@ notificationCenter:
   allTypes: All types
   allSeverities: All severities
   preferencesTitle: Notification preferences
-  preferencesDescription: These settings control email delivery and which messages
-    remain unread for attention.
   emailNotificationsLabel: Email notifications
   emailNotificationsDescription: Send email when a rule triggers.
   reportsUnreadLabel: Reports unread
@@ -1906,24 +1857,16 @@ teamSelect:
   groups: {}
   cancel: Cancel
 teamManagement:
-  stats:
-    sites: Sites
+  stats: {}
   toasts: {}
   sites:
-    subtitle: Aggregated traffic view across all sites in this team.
     aggregateTitle: Total Visits
-    noSites: No site is available under this team.
     openAnalytics: Open analytics
-    title: Site Dashboard
+    title: All sites
     pagesPerSession: Pages / Session
   widgets: {}
   notifications:
-    title: Notification Rules
-    subtitle: Manage notification rules for this team.
     empty: This team has no notification rules yet.
-    forbiddenTitle: Notification rules are managed by team admins
-    forbiddenDescription: You can still view your own notifications and update your
-      personal notification preferences.
     rulesTitle: Notification Rules
     enabledCount: "{count} enabled rules in this team."
     loadingRules: Loading notification rules
@@ -2123,7 +2066,6 @@ teamManagement:
       yesterday: Yesterday
     emailPreviewPage:
       title: Notification email preview
-      subtitle: Render notification emails without creating messages or sending them.
       typeLabel: Preview type
       localeLabel: Preview locale
       formatLabel: Preview format
@@ -2135,21 +2077,13 @@ teamManagement:
       loadFailed: Failed to render email preview.
       subject: Subject
   publicLinks:
-    title: Public Links
-    subtitle: Manage publicly accessible sharing links for this team.
     enabled: Enabled
     disabled: Disabled
-    disabledHint: Public access is disabled. Open site settings to enable it.
     viewSettings: View Settings
     copyLink: Copy Link
     linkCopied: Link copied
     noSites: This team has no sites yet.
-    columns:
-      site: Site
-      domain: Domain
-      publicUrl: Public Link
-      status: Status
-      action: Action
+    columns: {}
   apiKeys:
     status: {}
     scopes: {}
@@ -2162,15 +2096,10 @@ teamManagement:
     columns: {}
     roleLabels: {}
 managementNav:
-  sites: Site Management
   scheduledTasks: Scheduled Tasks
-  requestObservation: Request Observability
-  systemPerformance: System Performance
-  systemSettings: System Settings
 managementPages:
   versionUpdates: {}
   scheduledTasks:
-    subtitle: View and manage system scheduled tasks.
     empty: No scheduled tasks yet.
     refresh: Refresh
     loadFailed: Failed to load scheduled tasks.
@@ -2250,18 +2179,12 @@ managementPages:
 adminUsers:
   columns: {}
 adminSites:
-  title: Site Management
-  subtitle: Manage sites under the current team.
-  team: Team
   createTitle: Create Site
-  createSubtitle: The new site can be opened immediately.
   name: Site Name
   domain: Domain
   publicSlug: Public Slug (optional)
   create: Create Site
   creating: Creating...
-  listTitle: Sites
-  listSubtitle: All sites under the current team.
   noData: No site found.
   loadFailed: Failed to load sites.
   createSuccess: Site created.
@@ -2271,15 +2194,12 @@ adminSites:
   columns:
     name: Name
     domain: Domain
-    slug: Slug
     created: Created
     action: Action
 adminTeams:
   columns: {}
 requestObservation:
   title: Request Observability
-  subtitle: "Recent requests the collector refused: custom block rules, bots and
-    hosting networks."
   blockedTotal: "Blocked requests"
   retentionNote: "Kept for 30 days. Allowed traffic is in each site's dashboards."
   topReasons: "Reasons"
@@ -2464,8 +2384,6 @@ systemSettings:
   loadFailed: Failed to load email configuration.
 systemPerformance:
   title: System Performance
-  subtitle: Monitor Open Analytics collection, buffering, and write health from
-    existing analytics rows.
   refresh: Refresh
   loadFailed: Failed to load system performance data.
   noData: No system performance data in this window.
@@ -2555,4 +2473,60 @@ loginForm: {}
 logoutAction: {}
 sidebarFooter:
   gateway: Back to Every App
+appNav:
+  mainNavigation: Main navigation
+  toggleSidebar: Toggle sidebar
+  traffic: Traffic
+  audience: Audience
+  conversions: Conversions
+  site: Site
+  sites: Sites
+  allSites: All sites
+  inbox: Inbox
+  settings: Settings
+  switchSite: Switch site
+  siteSettings: Site settings
+  addSite: Add site
+  accountMenu: Open account menu
+  accountSettings: Account settings
+  sections: Sections
 teamEntry: {}
+getStarted:
+  title: Get started
+  progress: "{done} of {total}"
+  showSteps: Show the steps
+  hideSteps: Hide the steps
+  completed: "{count} completed"
+  steps:
+    site: Add your first site
+    tracking: Install the tracking script
+    team: Invite your team
+    notifications: Get reports by email
+    sharing: Share a public dashboard
+  noSitesTitle: No sites yet
+  noSitesDescription: Add a site, then put its script on your pages.
+  addSite: Add site
+  waitingTitle: Waiting for the first page view
+  waitingDescription: "Add this script to every page of {domain}. Page views show
+    up here within a minute."
+  copy: Copy
+  copied: Copied
+  trackingSettings: Tracking settings
+settingsNav:
+  label: Settings
+  personal: Personal
+  organization: Organization
+  system: System
+  account: Account
+  sites: Sites
+  notifications: Notifications
+  publicLinks: Public links
+  general: General
+  scheduledTasks: Scheduled tasks
+  requestObservation: Request observation
+  performance: Performance
+  cancel: Cancel
+  managerOnly: Only an owner or an admin can change this.
+  dangerZone: Danger zone
+  copy: Copy
+  copied: Copied

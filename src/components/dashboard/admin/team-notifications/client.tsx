@@ -4,13 +4,6 @@ import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Badge } from "@insightflare/ui/badge";
 import { Button } from "@insightflare/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@insightflare/ui/card";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -20,7 +13,6 @@ import {
 } from "@insightflare/ui/dialog";
 import { JsonTreePanel } from "@insightflare/ui/json-tree";
 import { OverlayScrollbar } from "@insightflare/ui/overlay-scrollbar";
-import { PageHeading } from "@insightflare/ui/page-heading";
 import {
   ResponsiveDialog,
   ResponsiveDialogBody,
@@ -56,6 +48,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { EmptyState } from "@/components/common/empty-state";
+import {
+  SettingsCard,
+  SettingsPage,
+  SettingsSection,
+} from "@/components/settings/settings-section";
+import { buildSettingsPath } from "@/lib/dashboard/paths";
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
 import {
   type MemberData,
@@ -331,210 +330,170 @@ export function TeamNotificationsClient({
   }
 
   return (
-    <div className="space-y-4">
-      <PageHeading
-        title={copy.title}
-        subtitle={copy.subtitle}
-        actions={
-          <>
-            <Button type="button" variant="outline" asChild>
-              <Link href={`/${locale}/app/notifications/email-preview`}>
-                <SendIcon data-icon="inline-start" />
-                <span>{copy.emailPreview}</span>
-              </Link>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setTestDialogOpen(true)}
+    <SettingsPage
+      title={messages.settingsNav.notifications}
+      width="wide"
+      actions={
+        <>
+          <Button type="button" variant="outline" asChild>
+            <Link
+              href={`${buildSettingsPath(locale, "notifications")}/email-preview`}
             >
               <SendIcon data-icon="inline-start" />
-              <span>{copy.sendTestNotification}</span>
-            </Button>
-            <Button
-              type="button"
-              onClick={() => openCreate()}
-              disabled={!canCreateRule}
-            >
-              <PlusIcon data-icon="inline-start" />
-              <span>{copy.createRule}</span>
-            </Button>
-          </>
-        }
-      />
-
-      <div className="grid gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="inline-flex items-center gap-2">
-              <BellIcon className="size-4" />
-              {copy.rulesTitle}
-            </CardTitle>
-            <CardDescription>
-              {formatI18nTemplate(copy.enabledCount, {
-                count: enabledCount,
-              })}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AutoResizer initial>
-              <AutoTransition
-                transitionKey={
-                  loading ? "loading" : rules.length === 0 ? "empty" : "data"
-                }
-                initial={false}
-                duration={0.18}
-                type="fade"
-                presenceMode="wait"
-              >
-                {loading ? (
-                  <div
-                    key="loading"
-                    className="flex h-40 items-center justify-center text-sm text-muted-foreground"
-                  >
-                    <Spinner className="mr-2 size-4" />
-                    {copy.loadingRules}
-                  </div>
-                ) : rules.length === 0 ? (
-                  <div
-                    key="empty"
-                    className="flex flex-col items-center gap-3 py-12 text-center text-sm text-muted-foreground"
-                  >
-                    <BellIcon className="size-8 text-muted-foreground/70" />
-                    <p>{copy.empty}</p>
-                  </div>
-                ) : (
-                  <Table key="data">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{copy.columns.name}</TableHead>
-                        <TableHead>{copy.columns.type}</TableHead>
-                        <TableHead>{copy.columns.site}</TableHead>
-                        <TableHead>{copy.columns.recipient}</TableHead>
-                        <TableHead>{copy.columns.schedule}</TableHead>
-                        <TableHead>{copy.lastChecked}</TableHead>
-                        <TableHead>{copy.columns.nextRun}</TableHead>
-                        <TableHead>{copy.columns.status}</TableHead>
-                        <TableHead>{copy.actions}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rules.map((rule) => (
-                        <TableRow key={rule.id}>
-                          <TableCell className="font-medium">
-                            {rule.name}
-                          </TableCell>
-                          <TableCell>
-                            {ruleTypeLabel(copy, rule.type)}
-                          </TableCell>
-                          <TableCell>
-                            {siteLabel(siteById, rule.siteId)}
-                          </TableCell>
-                          <TableCell>
-                            {recipientLabel(
-                              copy,
-                              rule.recipient,
-                              memberByUserId,
-                            )}
-                          </TableCell>
-                          <TableCell>{scheduleLabel(copy, rule)}</TableCell>
-                          <TableCell>
-                            {formatRunAt(locale, rule.lastCheckedAt)}
-                          </TableCell>
-                          <TableCell>
-                            {isCoolingDown(rule, nowSeconds) ? (
-                              <span className="text-xs font-medium text-foreground/70">
-                                {formatI18nTemplate(copy.coolingDownUntil, {
-                                  time: formatRunAt(locale, rule.cooldownUntil),
-                                })}
-                              </span>
-                            ) : (
-                              <span>
-                                {nextRunLabel(copy, locale, rule, nowSeconds)}
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={rule.enabled ? "default" : "secondary"}
-                            >
-                              {rule.enabled
-                                ? copy.status.enabled
-                                : copy.status.disabled}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-2">
-                              <TableActionButton
-                                label={`${copy.preview}: ${rule.name}`}
-                                disabled={previewingId === rule.id}
-                                onClick={() => void handlePreview(rule)}
-                                transitionKey={
-                                  previewingId === rule.id
-                                    ? "previewing"
-                                    : "preview"
-                                }
-                              >
-                                {previewingId === rule.id ? (
-                                  <Spinner className="size-3" />
-                                ) : (
-                                  <EyeIcon className="size-4" />
-                                )}
-                              </TableActionButton>
-                              <TableActionButton
-                                label={`${copy.runNow}: ${rule.name}`}
-                                disabled={runningId === rule.id}
-                                onClick={() => void handleRunNow(rule)}
-                                transitionKey={
-                                  runningId === rule.id ? "running" : "run"
-                                }
-                              >
-                                {runningId === rule.id ? (
-                                  <Spinner className="size-3" />
-                                ) : (
-                                  <CirclePlayIcon className="size-4" />
-                                )}
-                              </TableActionButton>
-                              <TableActionButton
-                                label={`${copy.edit}: ${rule.name}`}
-                                onClick={() => openEdit(rule)}
-                              >
-                                <PencilIcon className="size-4" />
-                              </TableActionButton>
-                              <TableActionButton
-                                label={`${
-                                  rule.enabled ? copy.disable : copy.enable
-                                }: ${rule.name}`}
-                                onClick={() => void toggleRule(rule)}
-                                transitionKey={
-                                  rule.enabled ? "enabled" : "disabled"
-                                }
-                              >
-                                {rule.enabled ? (
-                                  <CirclePauseIcon className="size-4" />
-                                ) : (
-                                  <CirclePlayIcon className="size-4" />
-                                )}
-                              </TableActionButton>
-                              <TableActionButton
-                                label={`${copy.delete}: ${rule.name}`}
-                                tone="destructive"
-                                onClick={() => void removeRule(rule)}
-                              >
-                                <Trash2Icon className="size-4" />
-                              </TableActionButton>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </AutoTransition>
-            </AutoResizer>
-          </CardContent>
-        </Card>
-      </div>
+              <span>{copy.emailPreview}</span>
+            </Link>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setTestDialogOpen(true)}
+          >
+            <SendIcon data-icon="inline-start" />
+            <span>{copy.sendTestNotification}</span>
+          </Button>
+          <Button
+            type="button"
+            onClick={() => openCreate()}
+            disabled={!canCreateRule}
+          >
+            <PlusIcon data-icon="inline-start" />
+            <span>{copy.createRule}</span>
+          </Button>
+        </>
+      }
+    >
+      <SettingsSection
+        title={copy.rulesTitle}
+        description={formatI18nTemplate(copy.enabledCount, {
+          count: enabledCount,
+        })}
+      >
+        <SettingsCard className="divide-y-0">
+          {loading ? (
+            <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+              <Spinner className="mr-2 size-4" />
+              {copy.loadingRules}
+            </div>
+          ) : rules.length === 0 ? (
+            <EmptyState
+              variant="plain"
+              media="rows"
+              icon={BellIcon}
+              title={copy.empty}
+            />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{copy.columns.name}</TableHead>
+                  <TableHead>{copy.columns.type}</TableHead>
+                  <TableHead>{copy.columns.site}</TableHead>
+                  <TableHead>{copy.columns.recipient}</TableHead>
+                  <TableHead>{copy.columns.schedule}</TableHead>
+                  <TableHead>{copy.lastChecked}</TableHead>
+                  <TableHead>{copy.columns.nextRun}</TableHead>
+                  <TableHead>{copy.columns.status}</TableHead>
+                  <TableHead>{copy.actions}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rules.map((rule) => (
+                  <TableRow key={rule.id}>
+                    <TableCell className="font-medium">{rule.name}</TableCell>
+                    <TableCell>{ruleTypeLabel(copy, rule.type)}</TableCell>
+                    <TableCell>{siteLabel(siteById, rule.siteId)}</TableCell>
+                    <TableCell>
+                      {recipientLabel(copy, rule.recipient, memberByUserId)}
+                    </TableCell>
+                    <TableCell>{scheduleLabel(copy, rule)}</TableCell>
+                    <TableCell>
+                      {formatRunAt(locale, rule.lastCheckedAt)}
+                    </TableCell>
+                    <TableCell>
+                      {isCoolingDown(rule, nowSeconds) ? (
+                        <span className="text-xs font-medium text-foreground/70">
+                          {formatI18nTemplate(copy.coolingDownUntil, {
+                            time: formatRunAt(locale, rule.cooldownUntil),
+                          })}
+                        </span>
+                      ) : (
+                        <span>
+                          {nextRunLabel(copy, locale, rule, nowSeconds)}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={rule.enabled ? "default" : "secondary"}>
+                        {rule.enabled
+                          ? copy.status.enabled
+                          : copy.status.disabled}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-2">
+                        <TableActionButton
+                          label={`${copy.preview}: ${rule.name}`}
+                          disabled={previewingId === rule.id}
+                          onClick={() => void handlePreview(rule)}
+                          transitionKey={
+                            previewingId === rule.id ? "previewing" : "preview"
+                          }
+                        >
+                          {previewingId === rule.id ? (
+                            <Spinner className="size-3" />
+                          ) : (
+                            <EyeIcon className="size-4" />
+                          )}
+                        </TableActionButton>
+                        <TableActionButton
+                          label={`${copy.runNow}: ${rule.name}`}
+                          disabled={runningId === rule.id}
+                          onClick={() => void handleRunNow(rule)}
+                          transitionKey={
+                            runningId === rule.id ? "running" : "run"
+                          }
+                        >
+                          {runningId === rule.id ? (
+                            <Spinner className="size-3" />
+                          ) : (
+                            <CirclePlayIcon className="size-4" />
+                          )}
+                        </TableActionButton>
+                        <TableActionButton
+                          label={`${copy.edit}: ${rule.name}`}
+                          onClick={() => openEdit(rule)}
+                        >
+                          <PencilIcon className="size-4" />
+                        </TableActionButton>
+                        <TableActionButton
+                          label={`${
+                            rule.enabled ? copy.disable : copy.enable
+                          }: ${rule.name}`}
+                          onClick={() => void toggleRule(rule)}
+                          transitionKey={rule.enabled ? "enabled" : "disabled"}
+                        >
+                          {rule.enabled ? (
+                            <CirclePauseIcon className="size-4" />
+                          ) : (
+                            <CirclePlayIcon className="size-4" />
+                          )}
+                        </TableActionButton>
+                        <TableActionButton
+                          label={`${copy.delete}: ${rule.name}`}
+                          tone="destructive"
+                          onClick={() => void removeRule(rule)}
+                        >
+                          <Trash2Icon className="size-4" />
+                        </TableActionButton>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </SettingsCard>
+      </SettingsSection>
 
       <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
         <DialogContent className="max-w-lg">
@@ -860,6 +819,6 @@ export function TeamNotificationsClient({
           </ResponsiveDialogFooter>
         </ResponsiveDialogContent>
       </ResponsiveDialog>
-    </div>
+    </SettingsPage>
   );
 }

@@ -105,7 +105,6 @@ export function NotificationEmailPreviewClient({
     <div className="space-y-4">
       <PageHeading
         title={page.title}
-        subtitle={page.subtitle}
         actions={
           <Button
             type="button"

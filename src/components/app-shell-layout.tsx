@@ -10,43 +10,51 @@ import { cn } from "@/lib/utils";
 
 interface AppShellLayoutProps {
   sidebar: ReactNode;
-  header: ReactNode;
+  /** The bar above the page on phones: the sidebar's toggle and the name. */
+  mobileTopBar: ReactNode;
+  /** A bar that stays at the top of the page as it scrolls, if any. */
+  header?: ReactNode;
   children: ReactNode;
-  contentAs?: "div" | "main";
   contentClassName?: string;
   contentDataAttributes?: Record<string, string>;
 }
 
-/** Shared application frame for production pages and internal UI tools. */
+/**
+ * OpenSEO's frame: the sidebar on the grey of the window, and the page in a
+ * panel beside it with only its top-left corner rounded.
+ */
 export function AppShellLayout({
   sidebar,
+  mobileTopBar,
   header,
   children,
-  contentAs: Content = "div",
   contentClassName,
   contentDataAttributes,
 }: AppShellLayoutProps) {
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-[100dvh] min-h-0 overflow-hidden">
       {sidebar}
-      <SidebarInset className="h-svh min-h-0 overflow-hidden">
+      <SidebarInset className="min-h-0 overflow-hidden md:!m-0 md:!mt-2 md:!rounded-none md:!rounded-tl-lg md:border-t md:border-l md:border-sidebar-border md:!shadow-none">
+        {mobileTopBar}
         <OverlayScrollbar
           axis="vertical"
-          className="h-full min-h-0 flex-1"
+          className="min-h-0 flex-1"
           viewportClassName="h-full min-h-0"
           contentClassName="flex min-h-full flex-col"
           options={PERSISTENT_VERTICAL_SCROLLBAR_OPTIONS}
           data-page-scroll-container=""
         >
-          <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur">
-            {header}
-          </header>
-          <Content
+          {header ? (
+            <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
+              {header}
+            </header>
+          ) : null}
+          <div
             {...contentDataAttributes}
-            className={cn("min-w-0 w-full", contentClassName)}
+            className={cn("w-full min-w-0", contentClassName)}
           >
             <PageTransition>{children}</PageTransition>
-          </Content>
+          </div>
         </OverlayScrollbar>
       </SidebarInset>
     </SidebarProvider>

@@ -42,13 +42,19 @@ export function SectionNavGroup({
   className?: string;
 }) {
   return (
-    <div className={cn("min-w-0 md:not-first:mt-3", className)}>
+    // Below `md` the groups' links run together in one scrolling strip.
+    <div
+      className={cn(
+        "contents md:block md:min-w-0 md:not-first:mt-3",
+        className,
+      )}
+    >
       <div className="hidden h-8 items-center px-2.5 md:flex">
         <span className="min-w-0 truncate text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
           {label}
         </span>
       </div>
-      <div className="flex gap-1 md:flex-col md:gap-0.5">{children}</div>
+      <div className="contents md:flex md:flex-col md:gap-0.5">{children}</div>
     </div>
   );
 }

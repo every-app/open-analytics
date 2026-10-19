@@ -17,7 +17,7 @@ export const EventPageHeader = memo(function EventPageHeader({
 }: {
   messages: AppMessages;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   backHref?: string;
   backLabel?: string;
   onBack?: () => void;

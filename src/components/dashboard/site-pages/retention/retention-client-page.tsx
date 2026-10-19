@@ -168,10 +168,7 @@ export function RetentionClientPage({
 
   return (
     <div className="space-y-6">
-      <PageHeading
-        title={messages.retention.title}
-        subtitle={messages.retention.subtitle}
-      />
+      <PageHeading title={messages.retention.title} />
 
       {resolvedLoading || (!error && !isEmpty) ? (
         <MetricSummaryGrid

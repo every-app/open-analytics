@@ -1,24 +1,28 @@
-import { PERSISTENT_VERTICAL_SCROLLBAR_OPTIONS } from "@insightflare/ui/overlay-scrollbar";
+import { useCallback } from "react";
 import {
-  AppWindowIcon,
-  BellIcon,
-  BotIcon,
-  CalendarClockIcon,
+  ActivityIcon,
   ChartColumnIcon,
+  FileTextIcon,
   GaugeIcon,
-  GlobeIcon,
-  LinkIcon,
+  LayoutDashboardIcon,
+  ListFilterIcon,
+  type LucideIcon,
+  MapPinIcon,
+  MegaphoneIcon,
+  MonitorIcon,
+  MonitorSmartphoneIcon,
+  RepeatIcon,
   SettingsIcon,
-  UsersIcon,
+  ShareIcon,
+  TargetIcon,
+  UserRoundIcon,
+  ZapIcon,
 } from "lucide-react";
 
-import { type SiteData } from "@/lib/dashboard-api/client/edge";
+import { useLiveSearchParams } from "@/lib/dashboard/client/history";
+import { serializeDashboardSearchParams } from "@/lib/dashboard/filter-state";
 import type { AppMessages } from "@/lib/i18n/messages";
-export interface TeamSectionNavItem {
-  key: string;
-  label: string;
-  href: string;
-}
+
 export interface SidebarSite {
   id: string;
   slug: string;
@@ -26,84 +30,80 @@ export interface SidebarSite {
   domain: string;
   iconPath?: string;
 }
-export type AnalyticsNavKey =
+
+/** A site's report pages, by the key their path ends in ("" for Overview). */
+export type SiteNavKey =
   | "overview"
   | "realtime"
   | "pages"
   | "referrers"
-  | "sessions"
   | "campaigns"
-  | "events"
-  | "funnels"
-  | "goals"
+  | "sessions"
   | "visitors"
   | "retention"
   | "geo"
   | "devices"
   | "browsers"
+  | "events"
+  | "funnels"
+  | "goals"
   | "performance"
-  | "settings"
-  | "request-overview"
-  | "request-abnormal"
-  | "request-normal";
-export const VALID_ANALYTICS_SECTIONS = new Set([
-  "realtime",
-  "pages",
-  "referrers",
-  "sessions",
-  "events",
-  "visitors",
-  "geo",
-  "devices",
-  "browsers",
-  "performance",
-  "settings",
-  "campaigns",
-  "funnels",
-  "goals",
-  "retention",
-]);
-export const DASHBOARD_SCROLLBAR_OPTIONS =
-  PERSISTENT_VERTICAL_SCROLLBAR_OPTIONS;
-export const SIDEBAR_COLLAPSE_SECTION_CLASS =
-  "max-h-20 overflow-hidden transition-[max-height,opacity,transform,padding,margin] duration-[380ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:max-h-0 group-data-[collapsible=icon]:-translate-y-1 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:opacity-0";
-export const SIDEBAR_COLLAPSE_SEPARATOR_CLASS =
-  "transition-[opacity,margin] duration-[380ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none group-data-[collapsible=icon]:my-0 group-data-[collapsible=icon]:opacity-0";
-export const SIDEBAR_COLLAPSE_MARGIN_CLASS =
-  "transition-[margin] duration-[380ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none group-data-[collapsible=icon]:mb-0";
-export function analyticsTabLabel(
-  item: {
-    key: AnalyticsNavKey;
-    label?: string;
+  | "settings";
+
+interface SiteNavGroup {
+  label: keyof AppMessages["appNav"];
+  items: readonly SiteNavKey[];
+}
+
+/** The sidebar's groups of a site's pages, in order. */
+export const SITE_NAV_GROUPS: readonly SiteNavGroup[] = [
+  {
+    label: "traffic",
+    items: ["overview", "realtime", "pages", "referrers", "campaigns"],
   },
-  messages: AppMessages,
-): string {
-  if (item.label) return item.label;
-  return messages.navigation[item.key as keyof typeof messages.navigation];
+  {
+    label: "audience",
+    items: ["sessions", "visitors", "retention", "geo", "devices", "browsers"],
+  },
+  { label: "conversions", items: ["events", "funnels", "goals"] },
+  { label: "site", items: ["performance", "settings"] },
+];
+
+const SITE_NAV_ICONS: Record<SiteNavKey, LucideIcon> = {
+  overview: LayoutDashboardIcon,
+  realtime: ActivityIcon,
+  pages: FileTextIcon,
+  referrers: ShareIcon,
+  campaigns: MegaphoneIcon,
+  sessions: ChartColumnIcon,
+  visitors: UserRoundIcon,
+  retention: RepeatIcon,
+  geo: MapPinIcon,
+  devices: MonitorSmartphoneIcon,
+  browsers: MonitorIcon,
+  events: ZapIcon,
+  funnels: ListFilterIcon,
+  goals: TargetIcon,
+  performance: GaugeIcon,
+  settings: SettingsIcon,
+};
+
+export function siteNavIcon(key: SiteNavKey): LucideIcon {
+  return SITE_NAV_ICONS[key];
 }
-export interface SidebarRouteState {
-  mode: "team" | "site";
-  activeTeamSectionKey?: string;
-  activeManagementSectionKey?: string;
-  activeSiteSlug?: string;
-  /** Within a site: the analytics section, and a detail sub-page. */
-  siteSection?: string;
-  siteSubSection?: string;
+
+export function siteNavLabel(key: SiteNavKey, messages: AppMessages): string {
+  return messages.navigation[key];
 }
-export function getTeamSectionIcon(key: string) {
-  if (key === "sites") return ChartColumnIcon;
-  if (key === "site-management") return AppWindowIcon;
-  if (key === "notifications") return BellIcon;
-  if (key === "public-links") return LinkIcon;
-  return GlobeIcon;
+
+const SITE_NAV_KEYS = new Set<string>(
+  SITE_NAV_GROUPS.flatMap((group) => group.items),
+);
+
+export function isSiteNavKey(value: string): value is SiteNavKey {
+  return SITE_NAV_KEYS.has(value);
 }
-export function getManagementSectionIcon(key: string) {
-  if (key === "scheduled-tasks") return CalendarClockIcon;
-  if (key === "request-observation") return BotIcon;
-  if (key === "system-settings") return SettingsIcon;
-  if (key === "system-performance") return GaugeIcon;
-  return UsersIcon;
-}
+
 export function normalizeLocalePath(pathname: string): string {
   const cleaned = pathname || "";
   if (cleaned.length === 0) return "/app";
@@ -114,58 +114,89 @@ export function normalizeLocalePath(pathname: string): string {
     ? withoutLocale.slice(0, -1)
     : withoutLocale;
 }
-export function safeSlug(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-export function getSidebarSiteSlug(
-  site: Pick<SiteData, "id" | "domain">,
-): string {
-  const candidate = safeSlug(String(site.domain || ""));
-  if (candidate.length > 0) return candidate;
-  return site.id.slice(0, 8);
-}
-export function toSidebarSite(site: SiteData): SidebarSite {
-  return {
-    id: site.id,
-    slug: getSidebarSiteSlug(site),
-    name: site.name,
-    domain: site.domain,
-    iconPath: site.iconPath,
-  };
+
+export interface ShellRouteState {
+  /** The site in the path, when on one of its pages. */
+  siteSlug?: string;
+  /** The site page ("overview" at the site's root) and a detail sub-page. */
+  siteSection?: SiteNavKey;
+  siteSubSection?: string;
+  /** The organization's page otherwise: all sites, the inbox or settings. */
+  orgPage?: "all-sites" | "inbox" | "settings";
+  /** The page reads the range and filters, so the shell shows their controls. */
+  usesDateRange: boolean;
 }
 
-/**
- * Where the sidebar is, from the path: one of the organization's pages
- * (`/app`, `/app/sites`, `/app/notifications`, `/app/manage/...`), or a site
- * (`/app/sites/<slug>/<section>`).
- */
-export function parseSidebarRouteState(pathname: string): SidebarRouteState {
+// Settings pages that chart a period: the sites list, task runs and the
+// Worker's performance (and their addresses before they moved to Settings).
+const DATE_RANGE_SETTINGS = new Set([
+  "sites",
+  "scheduled-tasks",
+  "performance",
+  "system-performance",
+]);
+
+/** Where the shell is, from the path. */
+export function parseShellRouteState(pathname: string): ShellRouteState {
   const segments = pathname.split("/").filter((segment) => segment.length > 0);
-  const appIndex = segments.findIndex((segment) => segment === "app");
+  const appIndex = segments.indexOf("app");
   const local = appIndex >= 0 ? segments.slice(appIndex + 1) : [];
 
   if (local[0] === "sites" && local[1]) {
+    const section = local[2] || "overview";
     return {
-      mode: "site",
-      activeSiteSlug: local[1],
-      siteSection: local[2] || "",
+      siteSlug: local[1],
+      siteSection: isSiteNavKey(section) ? section : undefined,
       siteSubSection: local[3] || "",
+      usesDateRange: section !== "settings",
     };
   }
-  if (local.length === 0)
-    return { mode: "team", activeTeamSectionKey: "sites" };
-  if (local[0] === "sites") {
-    return { mode: "team", activeTeamSectionKey: "site-management" };
+  if (local.length === 0) return { orgPage: "all-sites", usesDateRange: true };
+  if (local[0] === "inbox") return { orgPage: "inbox", usesDateRange: false };
+  if (local[0] === "settings" || local[0] === "manage") {
+    return {
+      orgPage: "settings",
+      usesDateRange: DATE_RANGE_SETTINGS.has(local[1] ?? ""),
+    };
   }
-  if (local[0] === "notifications" || local[0] === "public-links") {
-    return { mode: "team", activeTeamSectionKey: local[0] };
+  // The organization's other pages all live under Settings.
+  return { orgPage: "settings", usesDateRange: local[0] === "sites" };
+}
+
+/**
+ * Moving between report pages keeps what the page is looking at: its range,
+ * interval, time zone, comparison and filters.
+ */
+function dashboardNavigationParams(
+  searchParams: URLSearchParams,
+): URLSearchParams {
+  const next = new URLSearchParams();
+  for (const [key, value] of searchParams) {
+    if (
+      key.startsWith("filter[") ||
+      key === "compare" ||
+      key.startsWith("compareFilter[") ||
+      key === "range" ||
+      key === "interval" ||
+      key === "timeZone" ||
+      key === "scope"
+    ) {
+      next.append(key, value);
+    }
   }
-  if (local[0] === "manage") {
-    return { mode: "team", activeManagementSectionKey: local[1] };
-  }
-  return { mode: "team" };
+  return next;
+}
+
+/** Builds report links that carry the current range and filters along. */
+export function useDashboardNavHref(): (path: string) => string {
+  const searchParams = useLiveSearchParams();
+  return useCallback(
+    (path: string) => {
+      const query = serializeDashboardSearchParams(
+        dashboardNavigationParams(searchParams),
+      );
+      return query ? `${path}?${query}` : path;
+    },
+    [searchParams],
+  );
 }

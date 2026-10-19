@@ -4,7 +4,7 @@ import { AccountSettingsClient } from "@/components/dashboard/admin/account-sett
 import { loadAccountNotificationPreferences } from "@/lib/dashboard/route-data";
 import { dashboardPageTitle } from "@/lib/page-title";
 
-export const Route = createFileRoute("/$locale/app/account")({
+export const Route = createFileRoute("/$locale/app/settings/account")({
   beforeLoad: async () => {
     return {
       accountNotificationPreferencesInitialData:
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/$locale/app/account")({
     meta: [
       {
         title: dashboardPageTitle(
-          match.context.messages.accountSettings.title,
+          match.context.messages.settingsNav.account,
           match.context,
         ),
       },

@@ -642,7 +642,6 @@ export interface AppMessages {
   };
   overview: {
     title: string;
-    subtitle: string;
     trendTitle: string;
     sourceTab: string;
     sourceDomainColumn: string;
@@ -668,7 +667,6 @@ export interface AppMessages {
   };
   pages: {
     title: string;
-    subtitle: string;
     pagesPerSession: string;
     changePercentColumnLabel: string;
     changePointsColumnLabel: string;
@@ -689,7 +687,6 @@ export interface AppMessages {
   };
   referrers: {
     title: string;
-    subtitle: string;
     summaryTitle: string;
     splitTitle: string;
     chartTitle: string;
@@ -716,7 +713,6 @@ export interface AppMessages {
   };
   campaigns: {
     title: string;
-    subtitle: string;
     tabSource: string;
     tabMedium: string;
     tabCampaign: string;
@@ -728,7 +724,6 @@ export interface AppMessages {
   };
   sessions: {
     title: string;
-    subtitle: string;
     search: string;
     started: string;
     sessionId: string;
@@ -939,7 +934,6 @@ export interface AppMessages {
   };
   goals: {
     title: string;
-    subtitle: string;
     listSubtitle: string;
     conversionRecords: string;
     open: string;
@@ -980,7 +974,6 @@ export interface AppMessages {
   };
   visitors: {
     title: string;
-    subtitle: string;
     search: string;
     visitor: string;
     anonymous: string;
@@ -1121,7 +1114,6 @@ export interface AppMessages {
   };
   devices: {
     title: string;
-    subtitle: string;
     deviceShareTitle: string;
     osShareTitle: string;
     deviceTrendTitle: string;
@@ -1147,7 +1139,6 @@ export interface AppMessages {
   };
   browsers: {
     title: string;
-    subtitle: string;
     trendTitle: string;
     engineTrendTitle: string;
     versionBreakdownTitle: string;
@@ -1219,46 +1210,33 @@ export interface AppMessages {
   share: Record<string, never>;
   siteSettings: {
     title: string;
-    subtitle: string;
     sections: {
       basic: {
         title: string;
-        description: string;
       };
       tracking: {
         title: string;
-        description: string;
       };
       blocking: {
         title: string;
-        description: string;
       };
       protection: {
         title: string;
-        description: string;
       };
       danger: {
         title: string;
-        description: string;
       };
     };
-    editTitle: string;
-    editSubtitle: string;
     nameLabel: string;
     domainLabel: string;
     publicSharingTitle: string;
-    publicSharingSubtitle: string;
     publicEnabledLabel: string;
     publicSlugLabel: string;
     publicSlugPlaceholder: string;
     publicSlugHint: string;
     publicLinkLabel: string;
-    publicLinkHint: string;
-    publicDisabledHint: string;
     copiedLink: string;
     trackingStrengthGroupTitle: string;
-    trackingStrengthDescription: string;
-    trackingStrengthLabel: string;
     trackingStrengthStrong: string;
     trackingStrengthSmart: string;
     trackingStrengthWeak: string;
@@ -1269,8 +1247,6 @@ export interface AppMessages {
     botProtectionEnabledHint: string;
     hostingProxyBlockingEnabledLabel: string;
     hostingProxyBlockingEnabledHint: string;
-    queryHashGroupTitle: string;
-    queryHashGroupDescription: string;
     trackQueryParamsLabel: string;
     trackHashLabel: string;
     blockingRulesSave: string;
@@ -1432,27 +1408,18 @@ export interface AppMessages {
       };
     };
     ignoreDoNotTrackLabel: string;
-    autoTrackGroupTitle: string;
-    autoTrackGroupDescription: string;
     autoTrackOutboundLinksLabel: string;
     autoTrackOutboundLinksHint: string;
-    performanceGroupTitle: string;
-    performanceGroupDescription: string;
     performanceSampleRateLabel: string;
     performanceSampleRateHint: string;
-    booleanOn: string;
-    booleanOff: string;
-    loadingSettings: string;
     saveTracking: string;
     savingTracking: string;
     save: string;
     saving: string;
     scriptTitle: string;
-    scriptSubtitle: string;
     scriptHint: string;
     copyScript: string;
     copiedScript: string;
-    loadingScript: string;
     scriptUnavailable: string;
     deleteTitle: string;
     deleteSubtitle: string;
@@ -1472,10 +1439,7 @@ export interface AppMessages {
   };
   accountSettings: {
     emailManagedByGateway: string;
-    title: string;
-    subtitle: string;
     profileTitle: string;
-    profileDescription: string;
     nicknameLabel: string;
     nicknamePlaceholder: string;
     emailLabel: string;
@@ -1484,7 +1448,6 @@ export interface AppMessages {
     profileSaved: string;
     profileSaveFailed: string;
     preferredLanguageTitle: string;
-    preferredLanguageDescription: string;
     preferredLanguageLabel: string;
     preferredLanguageDefault: string;
     preferredLanguageEnglish: string;
@@ -1494,18 +1457,13 @@ export interface AppMessages {
     preferredLanguageSaved: string;
     preferredLanguageSaveFailed: string;
     timeZoneTitle: string;
-    timeZoneDescription: string;
     activeTimeZone: string;
     browserTimeZone: string;
     browserUnavailable: string;
-    browserSource: string;
-    manualSource: string;
     preferenceLabel: string;
-    preferenceDescription: string;
     useBrowser: string;
     useCustom: string;
     customTimeZoneLabel: string;
-    customTimeZoneDescription: string;
     invalidTimeZone: string;
     save: string;
     saving: string;
@@ -1514,7 +1472,6 @@ export interface AppMessages {
   };
   notificationCenter: {
     title: string;
-    subtitle: string;
     empty: string;
     loading: string;
     markRead: string;
@@ -1597,7 +1554,6 @@ export interface AppMessages {
     allTypes: string;
     allSeverities: string;
     preferencesTitle: string;
-    preferencesDescription: string;
     emailNotificationsLabel: string;
     emailNotificationsDescription: string;
     reportsUnreadLabel: string;
@@ -1749,25 +1705,17 @@ export interface AppMessages {
     cancel: string;
   };
   teamManagement: {
-    stats: {
-      sites: string;
-    };
+    stats: Record<string, never>;
     toasts: Record<string, never>;
     sites: {
-      subtitle: string;
       aggregateTitle: string;
-      noSites: string;
       openAnalytics: string;
       title: string;
       pagesPerSession: string;
     };
     widgets: Record<string, never>;
     notifications: {
-      title: string;
-      subtitle: string;
       empty: string;
-      forbiddenTitle: string;
-      forbiddenDescription: string;
       rulesTitle: string;
       enabledCount: string;
       loadingRules: string;
@@ -1973,7 +1921,6 @@ export interface AppMessages {
       };
       emailPreviewPage: {
         title: string;
-        subtitle: string;
         typeLabel: string;
         localeLabel: string;
         formatLabel: string;
@@ -1987,22 +1934,13 @@ export interface AppMessages {
       };
     };
     publicLinks: {
-      title: string;
-      subtitle: string;
       enabled: string;
       disabled: string;
-      disabledHint: string;
       viewSettings: string;
       copyLink: string;
       linkCopied: string;
       noSites: string;
-      columns: {
-        site: string;
-        domain: string;
-        publicUrl: string;
-        status: string;
-        action: string;
-      };
+      columns: Record<string, never>;
     };
     apiKeys: {
       status: Record<string, never>;
@@ -2019,16 +1957,11 @@ export interface AppMessages {
     };
   };
   managementNav: {
-    sites: string;
     scheduledTasks: string;
-    requestObservation: string;
-    systemPerformance: string;
-    systemSettings: string;
   };
   managementPages: {
     versionUpdates: Record<string, never>;
     scheduledTasks: {
-      subtitle: string;
       empty: string;
       refresh: string;
       loadFailed: string;
@@ -2114,18 +2047,12 @@ export interface AppMessages {
     columns: Record<string, never>;
   };
   adminSites: {
-    title: string;
-    subtitle: string;
-    team: string;
     createTitle: string;
-    createSubtitle: string;
     name: string;
     domain: string;
     publicSlug: string;
     create: string;
     creating: string;
-    listTitle: string;
-    listSubtitle: string;
     noData: string;
     loadFailed: string;
     createSuccess: string;
@@ -2135,7 +2062,6 @@ export interface AppMessages {
     columns: {
       name: string;
       domain: string;
-      slug: string;
       created: string;
       action: string;
     };
@@ -2145,7 +2071,6 @@ export interface AppMessages {
   };
   requestObservation: {
     title: string;
-    subtitle: string;
     blockedTotal: string;
     retentionNote: string;
     topReasons: string;
@@ -2294,7 +2219,6 @@ export interface AppMessages {
   };
   systemPerformance: {
     title: string;
-    subtitle: string;
     refresh: string;
     loadFailed: string;
     noData: string;
@@ -2384,7 +2308,66 @@ export interface AppMessages {
   sidebarFooter: {
     gateway: string;
   };
+  appNav: {
+    mainNavigation: string;
+    toggleSidebar: string;
+    traffic: string;
+    audience: string;
+    conversions: string;
+    site: string;
+    sites: string;
+    allSites: string;
+    inbox: string;
+    settings: string;
+    switchSite: string;
+    siteSettings: string;
+    addSite: string;
+    accountMenu: string;
+    accountSettings: string;
+    sections: string;
+  };
   teamEntry: Record<string, never>;
+  getStarted: {
+    title: string;
+    progress: string;
+    showSteps: string;
+    hideSteps: string;
+    completed: string;
+    steps: {
+      site: string;
+      tracking: string;
+      team: string;
+      notifications: string;
+      sharing: string;
+    };
+    noSitesTitle: string;
+    noSitesDescription: string;
+    addSite: string;
+    waitingTitle: string;
+    waitingDescription: string;
+    copy: string;
+    copied: string;
+    trackingSettings: string;
+  };
+  settingsNav: {
+    label: string;
+    personal: string;
+    organization: string;
+    system: string;
+    account: string;
+    sites: string;
+    notifications: string;
+    publicLinks: string;
+    general: string;
+    scheduledTasks: string;
+    requestObservation: string;
+    performance: string;
+    cancel: string;
+    managerOnly: string;
+    dangerZone: string;
+    copy: string;
+    copied: string;
+  };
 }
 
 const enMessages = {
@@ -3161,7 +3144,6 @@ const enMessages = {
   },
   overview: {
     title: "Traffic Overview",
-    subtitle: "View core metrics and traffic trends.",
     trendTitle: "Traffic Trend",
     sourceTab: "Source",
     sourceDomainColumn: "Source (Domain)",
@@ -3187,7 +3169,6 @@ const enMessages = {
   },
   pages: {
     title: "Pages",
-    subtitle: "Most visited paths in the selected range.",
     pagesPerSession: "Pages / Session",
     changePercentColumnLabel: "{metric} change (%)",
     changePointsColumnLabel: "{metric} change (pp)",
@@ -3208,7 +3189,6 @@ const enMessages = {
   },
   referrers: {
     title: "Referrers",
-    subtitle: "Where traffic comes from.",
     summaryTitle: "Source Summary",
     splitTitle: "Traffic Split",
     chartTitle: "Source Mix",
@@ -3236,7 +3216,6 @@ const enMessages = {
   },
   campaigns: {
     title: "Campaigns",
-    subtitle: "UTM campaign performance and traffic attribution.",
     tabSource: "Source",
     tabMedium: "Medium",
     tabCampaign: "Campaign",
@@ -3248,7 +3227,6 @@ const enMessages = {
   },
   sessions: {
     title: "Sessions",
-    subtitle: "Session-level detail for quality analysis.",
     search: "Search sessions...",
     started: "Start Time",
     sessionId: "Session ID",
@@ -3468,8 +3446,6 @@ const enMessages = {
   },
   goals: {
     title: "Goals",
-    subtitle:
-      "Measure conversion from a single reusable event or page condition.",
     listSubtitle: "View conversion rate changes across this time range.",
     conversionRecords: "Conversion records",
     open: "Open goal",
@@ -3512,7 +3488,6 @@ const enMessages = {
   },
   visitors: {
     title: "Visitors",
-    subtitle: "Visitor-level breakdown and recency.",
     search: "Search visitors...",
     visitor: "Visitor",
     anonymous: "Anonymous",
@@ -3676,8 +3651,6 @@ const enMessages = {
   },
   devices: {
     title: "Devices",
-    subtitle:
-      "Understand visitors by device type, operating system, and screen size.",
     deviceShareTitle: "Device Type Share",
     osShareTitle: "Operating System Share",
     deviceTrendTitle: "Device Type Trend",
@@ -3705,7 +3678,6 @@ const enMessages = {
   },
   browsers: {
     title: "Browsers",
-    subtitle: "Browser distribution and share.",
     trendTitle: "Browser Share Trend",
     engineTrendTitle: "Engine Share Trend",
     versionBreakdownTitle: "Browser Version Breakdown",
@@ -3788,55 +3760,34 @@ const enMessages = {
   share: {},
   siteSettings: {
     title: "Site Settings",
-    subtitle: "Configure this site's basic information and lifecycle.",
     sections: {
       basic: {
         title: "Basic Information",
-        description: "Manage site identity and public sharing.",
       },
       tracking: {
         title: "Tracking Settings",
-        description:
-          "Configure how the tracker captures visits and performance data.",
       },
       blocking: {
         title: "Blocking Rules",
-        description:
-          "Filter collection by request context before events reach storage.",
       },
       protection: {
         title: "Request Protection",
-        description:
-          "Control how detected bots and hosting or proxy traffic are handled before requests enter analytics.",
       },
       danger: {
         title: "Danger Zone",
-        description:
-          "Destructive actions and operationally sensitive settings.",
       },
     },
-    editTitle: "Update Site Info",
-    editSubtitle: "Keep display name and domain up to date.",
     nameLabel: "Site Name",
     domainLabel: "Domain",
     publicSharingTitle: "Public Sharing",
-    publicSharingSubtitle:
-      "Configure this site's public access link. When enabled, anyone with the link can view analytics data.",
     publicEnabledLabel: "Enable Public Access",
     publicSlugLabel: "Public Slug",
     publicSlugPlaceholder: "e.g. my-site",
     publicSlugHint:
       "Customize the URL path identifier. Leave blank to generate one.",
     publicLinkLabel: "Public Link",
-    publicLinkHint:
-      "Share analytics data with this link after public access is enabled.",
-    publicDisabledHint:
-      "The sharing link appears after public access is enabled.",
     copiedLink: "Link copied",
     trackingStrengthGroupTitle: "Tracking Strength",
-    trackingStrengthDescription:
-      "Choose how aggressively the tracker identifies visitors.",
-    trackingStrengthLabel: "Tracking Strength Mode",
     trackingStrengthStrong: "Strong",
     trackingStrengthSmart: "Smart",
     trackingStrengthWeak: "Weak",
@@ -3852,9 +3803,6 @@ const enMessages = {
     hostingProxyBlockingEnabledLabel: "Block hosting and proxy traffic",
     hostingProxyBlockingEnabledHint:
       "Block suspected bot requests from hosting or proxy networks. This is disabled by default.",
-    queryHashGroupTitle: "Query and Hash Tracking",
-    queryHashGroupDescription:
-      "Control how query strings, URL hashes, and Do Not Track are handled.",
     trackQueryParamsLabel: "Track Query Parameters",
     trackHashLabel: "Track URL Hash",
     blockingRulesSave: "Save Blocking Rules",
@@ -4051,32 +3999,21 @@ const enMessages = {
       },
     },
     ignoreDoNotTrackLabel: "Ignore Browser Do Not Track",
-    autoTrackGroupTitle: "Auto Tracking",
-    autoTrackGroupDescription: "Control automatic event capture behavior.",
     autoTrackOutboundLinksLabel: "Auto-track outbound link clicks",
     autoTrackOutboundLinksHint:
       "When enabled, clicking links to external domains automatically reports outbound_click events.",
-    performanceGroupTitle: "Performance Tracking",
-    performanceGroupDescription:
-      "Control Web performance metric collection with a sampling rate.",
     performanceSampleRateLabel: "Performance Sample Rate (%)",
     performanceSampleRateHint:
       "A sampled visit records TTFB, FCP, LCP, CLS, and INP on leave. Use 0 to disable sampling or 100 for full coverage.",
-    booleanOn: "On",
-    booleanOff: "Off",
-    loadingSettings: "Loading script settings...",
     saveTracking: "Save Tracking Settings",
     savingTracking: "Saving Tracking Settings...",
     save: "Save Changes",
     saving: "Saving...",
     scriptTitle: "Install Tracking Script",
-    scriptSubtitle:
-      "Add this script to your website to start collecting analytics.",
     scriptHint:
       "Recommended before </head>; if needed you can place it before </body>, but ensure it's loaded once per page.",
     copyScript: "Copy Script",
     copiedScript: "Script copied.",
-    loadingScript: "Loading script...",
     scriptUnavailable: "Script is currently unavailable.",
     deleteTitle: "Delete Site",
     deleteSubtitle: "This action will remove the site from this team.",
@@ -4097,11 +4034,7 @@ const enMessages = {
   },
   accountSettings: {
     emailManagedByGateway: "Your email comes from your Every App account.",
-    title: "Account Settings",
-    subtitle:
-      "Manage your display name, notifications and dashboard time zone.",
     profileTitle: "Personal Details",
-    profileDescription: "Update the name the dashboard shows for you.",
     nicknameLabel: "Display name",
     nicknamePlaceholder: "e.g. Product Analyst",
     emailLabel: "Email",
@@ -4110,8 +4043,6 @@ const enMessages = {
     profileSaved: "Personal details saved.",
     profileSaveFailed: "Failed to save personal details.",
     preferredLanguageTitle: "Notification Language",
-    preferredLanguageDescription:
-      "Choose the language used for scheduled notification emails.",
     preferredLanguageLabel: "Email language",
     preferredLanguageDefault: "Default",
     preferredLanguageEnglish: "English",
@@ -4121,20 +4052,13 @@ const enMessages = {
     preferredLanguageSaved: "Notification language saved.",
     preferredLanguageSaveFailed: "Failed to save notification language.",
     timeZoneTitle: "Reporting Time Zone",
-    timeZoneDescription:
-      "Calendar ranges and aggregation buckets use this time zone across the dashboard.",
     activeTimeZone: "Active time zone",
     browserTimeZone: "Browser time zone",
     browserUnavailable: "Not detected",
-    browserSource: "Browser",
-    manualSource: "Manual",
     preferenceLabel: "Time zone preference",
-    preferenceDescription:
-      "Browser mode follows this device. Manual mode keeps the same time zone on every device.",
     useBrowser: "Use browser time zone",
     useCustom: "Choose a time zone",
     customTimeZoneLabel: "Time zone",
-    customTimeZoneDescription: "Choose from supported IANA time zones.",
     invalidTimeZone: "Please choose a valid IANA time zone.",
     save: "Save preference",
     saving: "Saving...",
@@ -4143,7 +4067,6 @@ const enMessages = {
   },
   notificationCenter: {
     title: "Notification Center",
-    subtitle: "Review all of your notifications and reports.",
     empty: "No notifications yet.",
     loading: "Loading notifications",
     markRead: "Mark read",
@@ -4227,8 +4150,6 @@ const enMessages = {
     allTypes: "All types",
     allSeverities: "All severities",
     preferencesTitle: "Notification preferences",
-    preferencesDescription:
-      "These settings control email delivery and which messages remain unread for attention.",
     emailNotificationsLabel: "Email notifications",
     emailNotificationsDescription: "Send email when a rule triggers.",
     reportsUnreadLabel: "Reports unread",
@@ -4392,26 +4313,17 @@ const enMessages = {
     cancel: "Cancel",
   },
   teamManagement: {
-    stats: {
-      sites: "Sites",
-    },
+    stats: {},
     toasts: {},
     sites: {
-      subtitle: "Aggregated traffic view across all sites in this team.",
       aggregateTitle: "Total Visits",
-      noSites: "No site is available under this team.",
       openAnalytics: "Open analytics",
-      title: "Site Dashboard",
+      title: "All sites",
       pagesPerSession: "Pages / Session",
     },
     widgets: {},
     notifications: {
-      title: "Notification Rules",
-      subtitle: "Manage notification rules for this team.",
       empty: "This team has no notification rules yet.",
-      forbiddenTitle: "Notification rules are managed by team admins",
-      forbiddenDescription:
-        "You can still view your own notifications and update your personal notification preferences.",
       rulesTitle: "Notification Rules",
       enabledCount: "{count} enabled rules in this team.",
       loadingRules: "Loading notification rules",
@@ -4625,8 +4537,6 @@ const enMessages = {
       },
       emailPreviewPage: {
         title: "Notification email preview",
-        subtitle:
-          "Render notification emails without creating messages or sending them.",
         typeLabel: "Preview type",
         localeLabel: "Preview locale",
         formatLabel: "Preview format",
@@ -4640,23 +4550,13 @@ const enMessages = {
       },
     },
     publicLinks: {
-      title: "Public Links",
-      subtitle: "Manage publicly accessible sharing links for this team.",
       enabled: "Enabled",
       disabled: "Disabled",
-      disabledHint:
-        "Public access is disabled. Open site settings to enable it.",
       viewSettings: "View Settings",
       copyLink: "Copy Link",
       linkCopied: "Link copied",
       noSites: "This team has no sites yet.",
-      columns: {
-        site: "Site",
-        domain: "Domain",
-        publicUrl: "Public Link",
-        status: "Status",
-        action: "Action",
-      },
+      columns: {},
     },
     apiKeys: {
       status: {},
@@ -4673,16 +4573,11 @@ const enMessages = {
     },
   },
   managementNav: {
-    sites: "Site Management",
     scheduledTasks: "Scheduled Tasks",
-    requestObservation: "Request Observability",
-    systemPerformance: "System Performance",
-    systemSettings: "System Settings",
   },
   managementPages: {
     versionUpdates: {},
     scheduledTasks: {
-      subtitle: "View and manage system scheduled tasks.",
       empty: "No scheduled tasks yet.",
       refresh: "Refresh",
       loadFailed: "Failed to load scheduled tasks.",
@@ -4771,18 +4666,12 @@ const enMessages = {
     columns: {},
   },
   adminSites: {
-    title: "Site Management",
-    subtitle: "Manage sites under the current team.",
-    team: "Team",
     createTitle: "Create Site",
-    createSubtitle: "The new site can be opened immediately.",
     name: "Site Name",
     domain: "Domain",
     publicSlug: "Public Slug (optional)",
     create: "Create Site",
     creating: "Creating...",
-    listTitle: "Sites",
-    listSubtitle: "All sites under the current team.",
     noData: "No site found.",
     loadFailed: "Failed to load sites.",
     createSuccess: "Site created.",
@@ -4792,7 +4681,6 @@ const enMessages = {
     columns: {
       name: "Name",
       domain: "Domain",
-      slug: "Slug",
       created: "Created",
       action: "Action",
     },
@@ -4802,8 +4690,6 @@ const enMessages = {
   },
   requestObservation: {
     title: "Request Observability",
-    subtitle:
-      "Recent requests the collector refused: custom block rules, bots and hosting networks.",
     blockedTotal: "Blocked requests",
     retentionNote:
       "Kept for 30 days. Allowed traffic is in each site's dashboards.",
@@ -4992,8 +4878,6 @@ const enMessages = {
   },
   systemPerformance: {
     title: "System Performance",
-    subtitle:
-      "Monitor Open Analytics collection, buffering, and write health from existing analytics rows.",
     refresh: "Refresh",
     loadFailed: "Failed to load system performance data.",
     noData: "No system performance data in this window.",
@@ -5089,7 +4973,67 @@ const enMessages = {
   sidebarFooter: {
     gateway: "Back to Every App",
   },
+  appNav: {
+    mainNavigation: "Main navigation",
+    toggleSidebar: "Toggle sidebar",
+    traffic: "Traffic",
+    audience: "Audience",
+    conversions: "Conversions",
+    site: "Site",
+    sites: "Sites",
+    allSites: "All sites",
+    inbox: "Inbox",
+    settings: "Settings",
+    switchSite: "Switch site",
+    siteSettings: "Site settings",
+    addSite: "Add site",
+    accountMenu: "Open account menu",
+    accountSettings: "Account settings",
+    sections: "Sections",
+  },
   teamEntry: {},
+  getStarted: {
+    title: "Get started",
+    progress: "{done} of {total}",
+    showSteps: "Show the steps",
+    hideSteps: "Hide the steps",
+    completed: "{count} completed",
+    steps: {
+      site: "Add your first site",
+      tracking: "Install the tracking script",
+      team: "Invite your team",
+      notifications: "Get reports by email",
+      sharing: "Share a public dashboard",
+    },
+    noSitesTitle: "No sites yet",
+    noSitesDescription: "Add a site, then put its script on your pages.",
+    addSite: "Add site",
+    waitingTitle: "Waiting for the first page view",
+    waitingDescription:
+      "Add this script to every page of {domain}. Page views show up here within a minute.",
+    copy: "Copy",
+    copied: "Copied",
+    trackingSettings: "Tracking settings",
+  },
+  settingsNav: {
+    label: "Settings",
+    personal: "Personal",
+    organization: "Organization",
+    system: "System",
+    account: "Account",
+    sites: "Sites",
+    notifications: "Notifications",
+    publicLinks: "Public links",
+    general: "General",
+    scheduledTasks: "Scheduled tasks",
+    requestObservation: "Request observation",
+    performance: "Performance",
+    cancel: "Cancel",
+    managerOnly: "Only an owner or an admin can change this.",
+    dangerZone: "Danger zone",
+    copy: "Copy",
+    copied: "Copied",
+  },
 } as AppMessages;
 
 const zhMessages = {
@@ -5850,7 +5794,6 @@ const zhMessages = {
   },
   overview: {
     title: "访问总览",
-    subtitle: "查看核心指标与访问趋势。",
     trendTitle: "访问趋势",
     sourceTab: "来源",
     sourceDomainColumn: "来源（域名）",
@@ -5876,7 +5819,6 @@ const zhMessages = {
   },
   pages: {
     title: "页面分析",
-    subtitle: "选定时间范围内访问最多的路径。",
     pagesPerSession: "每会话页面数",
     changePercentColumnLabel: "{metric}变化（%）",
     changePointsColumnLabel: "{metric}变化（百分点）",
@@ -5897,7 +5839,6 @@ const zhMessages = {
   },
   referrers: {
     title: "来源分析",
-    subtitle: "流量来源渠道分布。",
     summaryTitle: "来源概览",
     splitTitle: "来源拆分",
     chartTitle: "来源结构",
@@ -5924,7 +5865,6 @@ const zhMessages = {
   },
   campaigns: {
     title: "推广活动",
-    subtitle: "UTM 推广活动表现与流量归因。",
     tabSource: "来源",
     tabMedium: "媒介",
     tabCampaign: "活动",
@@ -5936,7 +5876,6 @@ const zhMessages = {
   },
   sessions: {
     title: "会话列表",
-    subtitle: "用于分析访问质量的会话明细。",
     search: "搜索会话...",
     started: "开始时间",
     sessionId: "会话 ID",
@@ -6149,7 +6088,6 @@ const zhMessages = {
   },
   goals: {
     title: "目标分析",
-    subtitle: "使用一个可复用的事件或页面条件衡量转化。",
     listSubtitle: "查看这段时间范围内的转化率变化情况",
     conversionRecords: "转化记录",
     open: "打开目标",
@@ -6190,7 +6128,6 @@ const zhMessages = {
   },
   visitors: {
     title: "访客分析",
-    subtitle: "访客级别明细与最近活跃情况。",
     search: "搜索访客...",
     visitor: "访客",
     anonymous: "匿名访客",
@@ -6352,7 +6289,6 @@ const zhMessages = {
   },
   devices: {
     title: "设备分析",
-    subtitle: "从设备类型、系统和屏幕尺寸观察访客结构。",
     deviceShareTitle: "设备类型占比",
     osShareTitle: "操作系统占比",
     deviceTrendTitle: "设备类型趋势",
@@ -6378,7 +6314,6 @@ const zhMessages = {
   },
   browsers: {
     title: "浏览器分析",
-    subtitle: "按浏览器查看访问分布。",
     trendTitle: "浏览器占比趋势",
     engineTrendTitle: "内核占比趋势",
     versionBreakdownTitle: "浏览器版本分布",
@@ -6458,48 +6393,33 @@ const zhMessages = {
   share: {},
   siteSettings: {
     title: "站点设置",
-    subtitle: "管理当前站点的基础信息与生命周期。",
     sections: {
       basic: {
         title: "基本信息",
-        description: "管理站点身份信息与公开分享设置。",
       },
       tracking: {
         title: "跟踪设置",
-        description: "配置跟踪器如何采集访问与性能数据。",
       },
       blocking: {
         title: "屏蔽规则",
-        description: "在事件写入存储前，按请求上下文过滤采集数据。",
       },
       protection: {
         title: "请求防护",
-        description:
-          "控制检测到的机器人以及托管或代理网络请求在进入分析数据前的处理方式。",
       },
       danger: {
         title: "危险区域",
-        description: "包含破坏性操作和需要谨慎处理的设置。",
       },
     },
-    editTitle: "修改站点信息",
-    editSubtitle: "更新站点名称和域名。",
     nameLabel: "站点名称",
     domainLabel: "域名",
     publicSharingTitle: "公开分享",
-    publicSharingSubtitle:
-      "配置站点的公开访问链接，启用后任何人可通过链接查看分析数据。",
     publicEnabledLabel: "启用公开访问",
     publicSlugLabel: "公开 Slug",
     publicSlugPlaceholder: "例如 my-site",
     publicSlugHint: "自定义 URL 路径标识。留空将自动生成。",
     publicLinkLabel: "公开链接",
-    publicLinkHint: "启用公开访问后，可通过此链接分享分析数据。",
-    publicDisabledHint: "启用公开访问后将显示分享链接。",
     copiedLink: "链接已复制",
     trackingStrengthGroupTitle: "跟踪强度",
-    trackingStrengthDescription: "选择脚本对访客标识与统计精度的处理方式。",
-    trackingStrengthLabel: "跟踪强度策略",
     trackingStrengthStrong: "强",
     trackingStrengthSmart: "智能",
     trackingStrengthWeak: "弱",
@@ -6514,9 +6434,6 @@ const zhMessages = {
     hostingProxyBlockingEnabledLabel: "拦截托管/代理网络请求",
     hostingProxyBlockingEnabledHint:
       "开启后拦截来自托管或代理网络的疑似机器人请求，默认关闭。",
-    queryHashGroupTitle: "查询参数与 Hash 跟踪",
-    queryHashGroupDescription:
-      "控制 URL 查询参数、Hash 与 Do Not Track 的处理方式。",
     trackQueryParamsLabel: "开启查询参数跟踪",
     trackHashLabel: "开启 Hash 跟踪",
     blockingRulesSave: "保存屏蔽规则",
@@ -6710,30 +6627,21 @@ const zhMessages = {
       },
     },
     ignoreDoNotTrackLabel: "忽略浏览器 Do Not Track",
-    autoTrackGroupTitle: "自动跟踪",
-    autoTrackGroupDescription: "控制自动事件捕获行为。",
     autoTrackOutboundLinksLabel: "自动跟踪外链点击",
     autoTrackOutboundLinksHint:
       "开启后，点击指向外部域名的链接将自动上报 outbound_click 事件。",
-    performanceGroupTitle: "性能跟踪",
-    performanceGroupDescription: "通过采样率控制 Web 性能指标采集。",
     performanceSampleRateLabel: "性能采样率（%）",
     performanceSampleRateHint:
       "被采样的访问会在离开页面时记录 TTFB、FCP、LCP、CLS 和 INP。填 0 表示不采样，100 表示全量采集。",
-    booleanOn: "开启",
-    booleanOff: "关闭",
-    loadingSettings: "正在加载脚本设置...",
     saveTracking: "保存跟踪设置",
     savingTracking: "正在保存跟踪设置…",
     save: "保存修改",
     saving: "保存中...",
     scriptTitle: "安装统计脚本",
-    scriptSubtitle: "将此脚本添加到你的网站后即可开始采集分析数据。",
     scriptHint:
       "推荐放在 </head> 结束标签前；若不方便，也可放在 </body> 前，但请确保每页只加载一次。",
     copyScript: "复制脚本",
     copiedScript: "脚本已复制。",
-    loadingScript: "正在加载脚本...",
     scriptUnavailable: "当前无法获取脚本。",
     deleteTitle: "删除站点",
     deleteSubtitle: "此操作会将当前站点从团队中移除。",
@@ -6753,10 +6661,7 @@ const zhMessages = {
   },
   accountSettings: {
     emailManagedByGateway: "邮箱来自你的 Every App 账户。",
-    title: "账户设置",
-    subtitle: "管理你的昵称、通知和仪表盘时区。",
     profileTitle: "个人信息",
-    profileDescription: "更新仪表盘中显示的昵称。",
     nicknameLabel: "昵称",
     nicknamePlaceholder: "例如：产品分析师",
     emailLabel: "邮箱",
@@ -6765,7 +6670,6 @@ const zhMessages = {
     profileSaved: "个人信息已保存。",
     profileSaveFailed: "保存个人信息失败。",
     preferredLanguageTitle: "通知语言",
-    preferredLanguageDescription: "选择定时通知邮件使用的语言。",
     preferredLanguageLabel: "邮件语言",
     preferredLanguageDefault: "默认",
     preferredLanguageEnglish: "英语",
@@ -6775,19 +6679,13 @@ const zhMessages = {
     preferredLanguageSaved: "通知语言已保存。",
     preferredLanguageSaveFailed: "保存通知语言失败。",
     timeZoneTitle: "报表时区",
-    timeZoneDescription: "仪表盘里的自然日期范围和聚合分桶都会使用这个时区。",
     activeTimeZone: "当前生效时区",
     browserTimeZone: "浏览器时区",
     browserUnavailable: "未检测到",
-    browserSource: "跟随浏览器",
-    manualSource: "手动设置",
     preferenceLabel: "时区偏好",
-    preferenceDescription:
-      "跟随浏览器会使用当前设备时区；手动设置会在所有设备上保持同一时区。",
     useBrowser: "跟随浏览器时区",
     useCustom: "选择时区",
     customTimeZoneLabel: "时区",
-    customTimeZoneDescription: "从支持的 IANA 时区中选择。",
     invalidTimeZone: "请选择有效的 IANA 时区。",
     save: "保存偏好",
     saving: "保存中...",
@@ -6796,7 +6694,6 @@ const zhMessages = {
   },
   notificationCenter: {
     title: "通知中心",
-    subtitle: "查看你的全部通知和报告。",
     empty: "暂无通知。",
     loading: "正在加载通知",
     markRead: "标记已读",
@@ -6879,8 +6776,6 @@ const zhMessages = {
     allTypes: "全部类型",
     allSeverities: "全部严重程度",
     preferencesTitle: "通知偏好",
-    preferencesDescription:
-      "这些设置控制邮件投递，以及哪些消息会保持未读以提醒关注。",
     emailNotificationsLabel: "邮件通知",
     emailNotificationsDescription: "规则触发时发送邮件。",
     reportsUnreadLabel: "报告保持未读",
@@ -7035,26 +6930,17 @@ const zhMessages = {
     cancel: "取消",
   },
   teamManagement: {
-    stats: {
-      sites: "站点",
-    },
+    stats: {},
     toasts: {},
     sites: {
-      subtitle: "聚合查看该团队下所有站点的访问表现。",
       aggregateTitle: "总访问量",
-      noSites: "当前团队还没有站点。",
       openAnalytics: "查看分析",
-      title: "站点仪表盘",
+      title: "所有站点",
       pagesPerSession: "每会话页面数",
     },
     widgets: {},
     notifications: {
-      title: "通知规则",
-      subtitle: "管理当前团队的通知规则。",
       empty: "当前团队还没有通知规则。",
-      forbiddenTitle: "通知规则由团队管理员管理",
-      forbiddenDescription:
-        "你仍然可以查看自己的通知消息，并修改个人通知偏好。",
       rulesTitle: "通知规则",
       enabledCount: "当前团队已启用 {count} 条规则。",
       loadingRules: "正在加载通知规则",
@@ -7263,7 +7149,6 @@ const zhMessages = {
       },
       emailPreviewPage: {
         title: "通知邮件预览",
-        subtitle: "不创建消息、不调用 Resend，直接渲染通知邮件。",
         typeLabel: "预览类型",
         localeLabel: "预览语言",
         formatLabel: "预览格式",
@@ -7277,22 +7162,13 @@ const zhMessages = {
       },
     },
     publicLinks: {
-      title: "公开链接",
-      subtitle: "管理当前团队可公开访问的分享链接。",
       enabled: "已启用",
       disabled: "未启用",
-      disabledHint: "未启用公开访问。前往站点设置开启。",
       viewSettings: "查看设置",
       copyLink: "复制链接",
       linkCopied: "链接已复制",
       noSites: "当前团队还没有站点。",
-      columns: {
-        site: "站点",
-        domain: "域名",
-        publicUrl: "公开链接",
-        status: "状态",
-        action: "操作",
-      },
+      columns: {},
     },
     apiKeys: {
       status: {},
@@ -7309,16 +7185,11 @@ const zhMessages = {
     },
   },
   managementNav: {
-    sites: "站点管理",
     scheduledTasks: "定时任务",
-    requestObservation: "请求观测",
-    systemPerformance: "系统性能",
-    systemSettings: "系统设置",
   },
   managementPages: {
     versionUpdates: {},
     scheduledTasks: {
-      subtitle: "查看和管理系统定时任务。",
       empty: "暂无定时任务。",
       refresh: "刷新",
       loadFailed: "加载定时任务失败。",
@@ -7405,18 +7276,12 @@ const zhMessages = {
     columns: {},
   },
   adminSites: {
-    title: "站点管理",
-    subtitle: "管理当前团队下的站点。",
-    team: "团队",
     createTitle: "新建站点",
-    createSubtitle: "新建后可直接进入分析页面。",
     name: "站点名称",
     domain: "域名",
     publicSlug: "公开 Slug（可选）",
     create: "创建站点",
     creating: "创建中...",
-    listTitle: "站点列表",
-    listSubtitle: "当前团队下所有站点。",
     noData: "暂无站点数据。",
     loadFailed: "加载站点失败。",
     createSuccess: "站点创建成功。",
@@ -7426,7 +7291,6 @@ const zhMessages = {
     columns: {
       name: "名称",
       domain: "域名",
-      slug: "Slug",
       created: "创建时间",
       action: "操作",
     },
@@ -7436,7 +7300,6 @@ const zhMessages = {
   },
   requestObservation: {
     title: "请求观测",
-    subtitle: "收集器近期拒绝的请求：自定义拦截规则、机器人和托管网络。",
     blockedTotal: "已拦截请求",
     retentionNote: "保留 30 天。放行的流量见各站点的仪表盘。",
     topReasons: "原因",
@@ -7618,7 +7481,6 @@ const zhMessages = {
   },
   systemPerformance: {
     title: "系统性能",
-    subtitle: "基于现有分析行监控 Open Analytics 的采集、缓冲和写入健康度。",
     refresh: "刷新",
     loadFailed: "加载系统性能数据失败。",
     noData: "当前时间窗口内暂无系统性能数据。",
@@ -7714,7 +7576,67 @@ const zhMessages = {
   sidebarFooter: {
     gateway: "返回 Every App",
   },
+  appNav: {
+    mainNavigation: "主导航",
+    toggleSidebar: "切换侧边栏",
+    traffic: "流量",
+    audience: "受众",
+    conversions: "转化",
+    site: "站点",
+    sites: "站点",
+    allSites: "所有站点",
+    inbox: "收件箱",
+    settings: "设置",
+    switchSite: "切换站点",
+    siteSettings: "站点设置",
+    addSite: "添加站点",
+    accountMenu: "打开账户菜单",
+    accountSettings: "账户设置",
+    sections: "分区",
+  },
   teamEntry: {},
+  getStarted: {
+    title: "开始使用",
+    progress: "{done} / {total}",
+    showSteps: "显示步骤",
+    hideSteps: "隐藏步骤",
+    completed: "已完成 {count} 项",
+    steps: {
+      site: "添加第一个站点",
+      tracking: "安装跟踪脚本",
+      team: "邀请团队成员",
+      notifications: "通过邮件接收报告",
+      sharing: "分享公开仪表盘",
+    },
+    noSitesTitle: "还没有站点",
+    noSitesDescription: "添加一个站点，然后把它的脚本放到你的页面上。",
+    addSite: "添加站点",
+    waitingTitle: "正在等待第一次页面浏览",
+    waitingDescription:
+      "把这段脚本添加到 {domain} 的每个页面。页面浏览会在一分钟内显示在这里。",
+    copy: "复制",
+    copied: "已复制",
+    trackingSettings: "跟踪设置",
+  },
+  settingsNav: {
+    label: "设置",
+    personal: "个人",
+    organization: "组织",
+    system: "系统",
+    account: "账户",
+    sites: "站点",
+    notifications: "通知",
+    publicLinks: "公开链接",
+    general: "通用",
+    scheduledTasks: "计划任务",
+    requestObservation: "请求观测",
+    performance: "性能",
+    cancel: "取消",
+    managerOnly: "只有所有者或管理员可以修改。",
+    dangerZone: "危险操作",
+    copy: "复制",
+    copied: "已复制",
+  },
 } as AppMessages;
 
 const zhTwMessages = {
@@ -8475,7 +8397,6 @@ const zhTwMessages = {
   },
   overview: {
     title: "造訪總覽",
-    subtitle: "檢視核心指標與造訪趨勢。",
     trendTitle: "造訪趨勢",
     sourceTab: "來源",
     sourceDomainColumn: "來源（網域）",
@@ -8501,7 +8422,6 @@ const zhTwMessages = {
   },
   pages: {
     title: "頁面分析",
-    subtitle: "選定時間範圍內造訪最多的路徑。",
     pagesPerSession: "每工作階段頁面數",
     changePercentColumnLabel: "{metric}變化（%）",
     changePointsColumnLabel: "{metric}變化（百分點）",
@@ -8522,7 +8442,6 @@ const zhTwMessages = {
   },
   referrers: {
     title: "來源分析",
-    subtitle: "流量來源管道分佈。",
     summaryTitle: "來源概覽",
     splitTitle: "來源拆分",
     chartTitle: "來源結構",
@@ -8549,7 +8468,6 @@ const zhTwMessages = {
   },
   campaigns: {
     title: "推廣活動",
-    subtitle: "UTM 推廣活動表現與流量歸因。",
     tabSource: "來源",
     tabMedium: "媒介",
     tabCampaign: "活動",
@@ -8561,7 +8479,6 @@ const zhTwMessages = {
   },
   sessions: {
     title: "工作階段列表",
-    subtitle: "用於分析造訪品質的工作階段明細。",
     search: "搜尋工作階段...",
     started: "開始時間",
     sessionId: "工作階段 ID",
@@ -8774,7 +8691,6 @@ const zhTwMessages = {
   },
   goals: {
     title: "目標分析",
-    subtitle: "使用一個可重複使用的事件或頁面條件衡量轉換。",
     listSubtitle: "檢視這段時間範圍內的轉換率變化情況",
     conversionRecords: "轉換記錄",
     open: "開啟目標",
@@ -8815,7 +8731,6 @@ const zhTwMessages = {
   },
   visitors: {
     title: "訪客分析",
-    subtitle: "訪客級別明細與最近活躍情況。",
     search: "搜尋訪客...",
     visitor: "訪客",
     anonymous: "匿名訪客",
@@ -8977,7 +8892,6 @@ const zhTwMessages = {
   },
   devices: {
     title: "裝置分析",
-    subtitle: "從裝置型別、系統和螢幕尺寸觀察訪客結構。",
     deviceShareTitle: "裝置型別佔比",
     osShareTitle: "作業系統佔比",
     deviceTrendTitle: "裝置型別趨勢",
@@ -9003,7 +8917,6 @@ const zhTwMessages = {
   },
   browsers: {
     title: "瀏覽器分析",
-    subtitle: "按瀏覽器檢視造訪分佈。",
     trendTitle: "瀏覽器佔比趨勢",
     engineTrendTitle: "核心佔比趨勢",
     versionBreakdownTitle: "瀏覽器版本分佈",
@@ -9083,48 +8996,33 @@ const zhTwMessages = {
   share: {},
   siteSettings: {
     title: "站點設定",
-    subtitle: "管理目前站點的基礎資訊與生命週期。",
     sections: {
       basic: {
         title: "基本資訊",
-        description: "管理站點身份資訊與公開分享設定。",
       },
       tracking: {
         title: "追蹤設定",
-        description: "設定追蹤器如何採集造訪與效能資料。",
       },
       blocking: {
         title: "遮蔽規則",
-        description: "在事件寫入儲存前，按請求上下文過濾採集資料。",
       },
       protection: {
         title: "請求防護",
-        description:
-          "控制檢測到的機器人以及託管或代理網路請求在進入分析資料前的處理方式。",
       },
       danger: {
         title: "危險區域",
-        description: "包含破壞性操作和需要謹慎處理的設定。",
       },
     },
-    editTitle: "修改站點資訊",
-    editSubtitle: "更新站點名稱和網域。",
     nameLabel: "站點名稱",
     domainLabel: "網域",
     publicSharingTitle: "公開分享",
-    publicSharingSubtitle:
-      "設定站點的公開存取連結，啟用後任何人都可透過連結檢視分析資料。",
     publicEnabledLabel: "啟用公開存取",
     publicSlugLabel: "公開 Slug",
     publicSlugPlaceholder: "例如 my-site",
     publicSlugHint: "自訂 URL 路徑標識。留空將自動產生。",
     publicLinkLabel: "公開連結",
-    publicLinkHint: "啟用公開存取後，可透過此連結分享分析資料。",
-    publicDisabledHint: "啟用公開存取後將顯示分享連結。",
     copiedLink: "連結已複製",
     trackingStrengthGroupTitle: "追蹤強度",
-    trackingStrengthDescription: "選擇指令碼對訪客標識與統計精度的處理方式。",
-    trackingStrengthLabel: "追蹤強度策略",
     trackingStrengthStrong: "強",
     trackingStrengthSmart: "智慧",
     trackingStrengthWeak: "弱",
@@ -9139,9 +9037,6 @@ const zhTwMessages = {
     hostingProxyBlockingEnabledLabel: "攔截託管/代理網路請求",
     hostingProxyBlockingEnabledHint:
       "開啟後攔截來自託管或代理網路的疑似機器人請求，預設關閉。",
-    queryHashGroupTitle: "查詢參數與 Hash 追蹤",
-    queryHashGroupDescription:
-      "控制 URL 查詢參數、Hash 與 Do Not Track 的處理方式。",
     trackQueryParamsLabel: "開啟查詢參數追蹤",
     trackHashLabel: "開啟 Hash 追蹤",
     blockingRulesSave: "儲存遮蔽規則",
@@ -9335,30 +9230,21 @@ const zhTwMessages = {
       },
     },
     ignoreDoNotTrackLabel: "忽略瀏覽器 Do Not Track",
-    autoTrackGroupTitle: "自動追蹤",
-    autoTrackGroupDescription: "控制自動事件捕獲行為。",
     autoTrackOutboundLinksLabel: "自動追蹤外鏈點選",
     autoTrackOutboundLinksHint:
       "開啟後，點選指向外部網域的連結將自動回報 outbound_click 事件。",
-    performanceGroupTitle: "效能追蹤",
-    performanceGroupDescription: "透過取樣率控制 Web 效能指標採集。",
     performanceSampleRateLabel: "效能取樣率（%）",
     performanceSampleRateHint:
       "被取樣的造訪會在離開頁面時記錄 TTFB、FCP、LCP、CLS 和 INP。填 0 表示不採樣，100 表示全量採集。",
-    booleanOn: "開啟",
-    booleanOff: "關閉",
-    loadingSettings: "正在載入指令碼設定...",
     saveTracking: "儲存追蹤設定",
     savingTracking: "正在儲存追蹤設定…",
     save: "儲存修改",
     saving: "儲存中...",
     scriptTitle: "安裝統計指令碼",
-    scriptSubtitle: "將此指令碼新增到你的網站後即可開始採集分析資料。",
     scriptHint:
       "推薦放在 </head> 結束標籤前；若不方便，也可放在 </body> 前，但請確保每頁只加載一次。",
     copyScript: "複製指令碼",
     copiedScript: "指令碼已複製。",
-    loadingScript: "正在載入指令碼...",
     scriptUnavailable: "目前無法取得指令碼。",
     deleteTitle: "刪除站點",
     deleteSubtitle: "此操作會將目前站點從團隊中移除。",
@@ -9378,10 +9264,7 @@ const zhTwMessages = {
   },
   accountSettings: {
     emailManagedByGateway: "電子郵件來自你的 Every App 帳戶。",
-    title: "帳戶設定",
-    subtitle: "管理你的暱稱、通知和儀表盤時區。",
     profileTitle: "個人資訊",
-    profileDescription: "更新儀表盤中顯示的暱稱。",
     nicknameLabel: "暱稱",
     nicknamePlaceholder: "例如：產品分析師",
     emailLabel: "電子郵件",
@@ -9390,7 +9273,6 @@ const zhTwMessages = {
     profileSaved: "個人資訊已儲存。",
     profileSaveFailed: "儲存個人資訊失敗。",
     preferredLanguageTitle: "通知語言",
-    preferredLanguageDescription: "選擇定時通知郵件使用的語言。",
     preferredLanguageLabel: "郵件語言",
     preferredLanguageDefault: "預設",
     preferredLanguageEnglish: "英語",
@@ -9400,19 +9282,13 @@ const zhTwMessages = {
     preferredLanguageSaved: "通知語言已儲存。",
     preferredLanguageSaveFailed: "儲存通知語言失敗。",
     timeZoneTitle: "報表時區",
-    timeZoneDescription: "儀表盤裡的自然日期範圍和聚合分桶都會使用這個時區。",
     activeTimeZone: "目前生效時區",
     browserTimeZone: "瀏覽器時區",
     browserUnavailable: "未檢測到",
-    browserSource: "跟隨瀏覽器",
-    manualSource: "手動設定",
     preferenceLabel: "時區偏好",
-    preferenceDescription:
-      "跟隨瀏覽器會使用目前裝置時區；手動設定會在所有裝置上保持同一時區。",
     useBrowser: "跟隨瀏覽器時區",
     useCustom: "選擇時區",
     customTimeZoneLabel: "時區",
-    customTimeZoneDescription: "從支援的 IANA 時區中選擇。",
     invalidTimeZone: "請選擇有效的 IANA 時區。",
     save: "儲存偏好",
     saving: "儲存中...",
@@ -9421,7 +9297,6 @@ const zhTwMessages = {
   },
   notificationCenter: {
     title: "通知中心",
-    subtitle: "檢視你的全部通知和報告。",
     empty: "暫無通知。",
     loading: "正在載入通知",
     markRead: "標記已讀",
@@ -9504,8 +9379,6 @@ const zhTwMessages = {
     allTypes: "全部型別",
     allSeverities: "全部嚴重程度",
     preferencesTitle: "通知偏好",
-    preferencesDescription:
-      "這些設定控制郵件投遞，以及哪些訊息會保持未讀以提醒關注。",
     emailNotificationsLabel: "郵件通知",
     emailNotificationsDescription: "規則觸發時傳送郵件。",
     reportsUnreadLabel: "報告保持未讀",
@@ -9660,26 +9533,17 @@ const zhTwMessages = {
     cancel: "取消",
   },
   teamManagement: {
-    stats: {
-      sites: "站點",
-    },
+    stats: {},
     toasts: {},
     sites: {
-      subtitle: "聚合檢視該團隊下所有站點的造訪表現。",
       aggregateTitle: "總造訪量",
-      noSites: "目前團隊還沒有站點。",
       openAnalytics: "檢視分析",
-      title: "站點儀表盤",
+      title: "所有站點",
       pagesPerSession: "每工作階段頁面數",
     },
     widgets: {},
     notifications: {
-      title: "通知規則",
-      subtitle: "管理目前團隊的通知規則。",
       empty: "目前團隊還沒有通知規則。",
-      forbiddenTitle: "通知規則由團隊管理員管理",
-      forbiddenDescription:
-        "你仍然可以檢視自己的通知訊息，並修改個人通知偏好。",
       rulesTitle: "通知規則",
       enabledCount: "目前團隊已啟用 {count} 條規則。",
       loadingRules: "正在載入通知規則",
@@ -9888,7 +9752,6 @@ const zhTwMessages = {
       },
       emailPreviewPage: {
         title: "通知郵件預覽",
-        subtitle: "不建立訊息、不呼叫 Resend，直接渲染通知郵件。",
         typeLabel: "預覽型別",
         localeLabel: "預覽語言",
         formatLabel: "預覽格式",
@@ -9902,22 +9765,13 @@ const zhTwMessages = {
       },
     },
     publicLinks: {
-      title: "公開連結",
-      subtitle: "管理目前團隊可公開存取的分享連結。",
       enabled: "已啟用",
       disabled: "未啟用",
-      disabledHint: "未啟用公開存取。前往站點設定開啟。",
       viewSettings: "檢視設定",
       copyLink: "複製連結",
       linkCopied: "連結已複製",
       noSites: "目前團隊還沒有站點。",
-      columns: {
-        site: "站點",
-        domain: "網域",
-        publicUrl: "公開連結",
-        status: "狀態",
-        action: "操作",
-      },
+      columns: {},
     },
     apiKeys: {
       status: {},
@@ -9934,16 +9788,11 @@ const zhTwMessages = {
     },
   },
   managementNav: {
-    sites: "站點管理",
     scheduledTasks: "排程任務",
-    requestObservation: "請求觀測",
-    systemPerformance: "系統效能",
-    systemSettings: "系統設定",
   },
   managementPages: {
     versionUpdates: {},
     scheduledTasks: {
-      subtitle: "檢視和管理系統排程任務。",
       empty: "暫無排程任務。",
       refresh: "重新整理",
       loadFailed: "載入排程任務失敗。",
@@ -10030,18 +9879,12 @@ const zhTwMessages = {
     columns: {},
   },
   adminSites: {
-    title: "站點管理",
-    subtitle: "管理目前團隊下的站點。",
-    team: "團隊",
     createTitle: "新建站點",
-    createSubtitle: "新建後可直接進入分析頁面。",
     name: "站點名稱",
     domain: "網域",
     publicSlug: "公開 Slug（可選）",
     create: "建立站點",
     creating: "建立中...",
-    listTitle: "站點列表",
-    listSubtitle: "目前團隊下所有站點。",
     noData: "暫無站點資料。",
     loadFailed: "載入站點失敗。",
     createSuccess: "站點建立成功。",
@@ -10051,7 +9894,6 @@ const zhTwMessages = {
     columns: {
       name: "名稱",
       domain: "網域",
-      slug: "Slug",
       created: "建立時間",
       action: "操作",
     },
@@ -10061,7 +9903,6 @@ const zhTwMessages = {
   },
   requestObservation: {
     title: "請求觀測",
-    subtitle: "收集器近期拒絕的請求：自訂封鎖規則、機器人和託管網路。",
     blockedTotal: "已封鎖請求",
     retentionNote: "保留 30 天。放行的流量見各站點的儀表板。",
     topReasons: "原因",
@@ -10243,7 +10084,6 @@ const zhTwMessages = {
   },
   systemPerformance: {
     title: "系統效能",
-    subtitle: "基於現有分析行監控 Open Analytics 的採集、緩衝和寫入健康度。",
     refresh: "重新整理",
     loadFailed: "載入系統效能資料失敗。",
     noData: "目前時間視窗內暫無系統效能資料。",
@@ -10339,7 +10179,67 @@ const zhTwMessages = {
   sidebarFooter: {
     gateway: "返回 Every App",
   },
+  appNav: {
+    mainNavigation: "主導覽",
+    toggleSidebar: "切換側邊欄",
+    traffic: "流量",
+    audience: "受眾",
+    conversions: "轉換",
+    site: "站點",
+    sites: "站點",
+    allSites: "所有站點",
+    inbox: "收件匣",
+    settings: "設定",
+    switchSite: "切換站點",
+    siteSettings: "站點設定",
+    addSite: "新增站點",
+    accountMenu: "開啟帳戶選單",
+    accountSettings: "帳戶設定",
+    sections: "分區",
+  },
   teamEntry: {},
+  getStarted: {
+    title: "開始使用",
+    progress: "{done} / {total}",
+    showSteps: "顯示步驟",
+    hideSteps: "隱藏步驟",
+    completed: "已完成 {count} 項",
+    steps: {
+      site: "新增第一個站點",
+      tracking: "安裝追蹤腳本",
+      team: "邀請團隊成員",
+      notifications: "透過電子郵件接收報告",
+      sharing: "分享公開儀表板",
+    },
+    noSitesTitle: "還沒有站點",
+    noSitesDescription: "新增一個站點，然後把它的腳本放到你的頁面上。",
+    addSite: "新增站點",
+    waitingTitle: "正在等待第一次頁面瀏覽",
+    waitingDescription:
+      "把這段腳本加入 {domain} 的每個頁面。頁面瀏覽會在一分鐘內顯示在這裡。",
+    copy: "複製",
+    copied: "已複製",
+    trackingSettings: "追蹤設定",
+  },
+  settingsNav: {
+    label: "設定",
+    personal: "個人",
+    organization: "組織",
+    system: "系統",
+    account: "帳戶",
+    sites: "站點",
+    notifications: "通知",
+    publicLinks: "公開連結",
+    general: "一般",
+    scheduledTasks: "排程任務",
+    requestObservation: "請求觀測",
+    performance: "效能",
+    cancel: "取消",
+    managerOnly: "只有擁有者或管理員可以修改。",
+    dangerZone: "危險操作",
+    copy: "複製",
+    copied: "已複製",
+  },
 } as AppMessages;
 
 const jaMessages = {
@@ -11117,7 +11017,6 @@ const jaMessages = {
   },
   overview: {
     title: "トラフィック概要",
-    subtitle: "主要指標とトラフィックの推移を確認します。",
     trendTitle: "トラフィック推移",
     sourceTab: "ソース",
     sourceDomainColumn: "ソース（ドメイン）",
@@ -11143,7 +11042,6 @@ const jaMessages = {
   },
   pages: {
     title: "ページ",
-    subtitle: "選択範囲で最も訪問されたパスです。",
     pagesPerSession: "ページ / セッション",
     changePercentColumnLabel: "{metric}の変化（%）",
     changePointsColumnLabel: "{metric}の変化（ポイント）",
@@ -11165,7 +11063,6 @@ const jaMessages = {
   },
   referrers: {
     title: "参照元",
-    subtitle: "トラフィックの流入元です。",
     summaryTitle: "ソース概要",
     splitTitle: "トラフィック内訳",
     chartTitle: "ソース構成",
@@ -11193,8 +11090,6 @@ const jaMessages = {
   },
   campaigns: {
     title: "キャンペーン",
-    subtitle:
-      "UTM キャンペーンのパフォーマンスとトラフィック属性を確認します。",
     tabSource: "ソース",
     tabMedium: "メディア",
     tabCampaign: "キャンペーン",
@@ -11206,7 +11101,6 @@ const jaMessages = {
   },
   sessions: {
     title: "セッション",
-    subtitle: "品質分析のためのセッション単位の詳細です。",
     search: "セッションを検索...",
     started: "開始時刻",
     sessionId: "セッション ID",
@@ -11428,8 +11322,6 @@ const jaMessages = {
   },
   goals: {
     title: "目標",
-    subtitle:
-      "再利用可能なイベントまたはページ条件でコンバージョンを測定します。",
     listSubtitle: "この期間のコンバージョン率の変化を確認します。",
     conversionRecords: "コンバージョン記録",
     open: "目標を開く",
@@ -11471,7 +11363,6 @@ const jaMessages = {
   },
   visitors: {
     title: "訪問者",
-    subtitle: "訪問者単位の内訳と直近状況です。",
     search: "訪問者を検索...",
     visitor: "訪問者",
     anonymous: "匿名",
@@ -11636,7 +11527,6 @@ const jaMessages = {
   },
   devices: {
     title: "デバイス",
-    subtitle: "デバイス種別、OS、画面サイズごとに訪問者を把握します。",
     deviceShareTitle: "デバイス種別シェア",
     osShareTitle: "OS シェア",
     deviceTrendTitle: "デバイス種別推移",
@@ -11663,7 +11553,6 @@ const jaMessages = {
   },
   browsers: {
     title: "ブラウザー",
-    subtitle: "ブラウザー分布とシェアです。",
     trendTitle: "ブラウザーシェア推移",
     engineTrendTitle: "エンジンシェア推移",
     versionBreakdownTitle: "ブラウザーバージョン内訳",
@@ -11745,52 +11634,34 @@ const jaMessages = {
   share: {},
   siteSettings: {
     title: "サイト設定",
-    subtitle: "このサイトの基本情報とライフサイクルを設定します。",
     sections: {
       basic: {
         title: "基本情報",
-        description: "サイト情報と公開共有を管理します。",
       },
       tracking: {
         title: "トラッキング設定",
-        description: "訪問とパフォーマンスデータの収集方法を設定します。",
       },
       blocking: {
         title: "ブロックルール",
-        description:
-          "イベントを保存する前に、リクエストのコンテキストで収集を絞り込みます。",
       },
       protection: {
         title: "リクエスト保護",
-        description:
-          "検出したボットやホスティング・プロキシネットワークのリクエストを分析データに入れる前の扱いを設定します。",
       },
       danger: {
         title: "危険な操作",
-        description: "破壊的な操作や慎重な取り扱いが必要な設定です。",
       },
     },
-    editTitle: "サイト情報を更新",
-    editSubtitle: "表示名とドメインを最新に保ちます。",
     nameLabel: "サイト名",
     domainLabel: "ドメイン",
     publicSharingTitle: "公開共有",
-    publicSharingSubtitle:
-      "このサイトの公開アクセスリンクを設定します。有効にすると、リンクを持つ全員が分析データを閲覧できます。",
     publicEnabledLabel: "公開アクセスを有効化",
     publicSlugLabel: "公開スラッグ",
     publicSlugPlaceholder: "例: my-site",
     publicSlugHint:
       "URL パス識別子をカスタマイズします。空のままなら自動生成されます。",
     publicLinkLabel: "公開リンク",
-    publicLinkHint:
-      "公開アクセスを有効にした後、このリンクで分析データを共有できます。",
-    publicDisabledHint: "共有リンクは公開アクセスを有効にすると表示されます。",
     copiedLink: "リンクをコピーしました",
     trackingStrengthGroupTitle: "トラッキング強度",
-    trackingStrengthDescription:
-      "トラッカーが訪問者を識別する強さを選択します。",
-    trackingStrengthLabel: "トラッキング強度モード",
     trackingStrengthStrong: "強",
     trackingStrengthSmart: "スマート",
     trackingStrengthWeak: "弱",
@@ -11807,9 +11678,6 @@ const jaMessages = {
       "ホスティング・プロキシネットワークをブロック",
     hostingProxyBlockingEnabledHint:
       "有効にするとホスティングまたはプロキシネットワークからの疑わしいボットリクエストをブロックします。デフォルトはオフです。",
-    queryHashGroupTitle: "クエリとハッシュのトラッキング",
-    queryHashGroupDescription:
-      "クエリ文字列、URL ハッシュ、Do Not Track の扱いを制御します。",
     trackQueryParamsLabel: "クエリパラメータを追跡",
     trackHashLabel: "URL ハッシュを追跡",
     blockingRulesSave: "ブロックルールを保存",
@@ -12008,32 +11876,21 @@ const jaMessages = {
       },
     },
     ignoreDoNotTrackLabel: "ブラウザーの Do Not Track を無視",
-    autoTrackGroupTitle: "自動トラッキング",
-    autoTrackGroupDescription: "自動イベント取得の挙動を制御します。",
     autoTrackOutboundLinksLabel: "外部リンククリックを自動追跡",
     autoTrackOutboundLinksHint:
       "有効にすると、外部ドメインへのリンククリックで outbound_click イベントを自動送信します。",
-    performanceGroupTitle: "パフォーマンストラッキング",
-    performanceGroupDescription:
-      "サンプリング率で Web パフォーマンス指標の収集を制御します。",
     performanceSampleRateLabel: "パフォーマンスサンプリング率（%）",
     performanceSampleRateHint:
       "サンプリングされた訪問では、離脱時に TTFB、FCP、LCP、CLS、INP を記録します。0 で無効、100 で全量収集です。",
-    booleanOn: "オン",
-    booleanOff: "オフ",
-    loadingSettings: "スクリプト設定を読み込み中...",
     saveTracking: "トラッキング設定を保存",
     savingTracking: "トラッキング設定を保存中...",
     save: "変更を保存",
     saving: "保存中...",
     scriptTitle: "トラッキングスクリプトを設置",
-    scriptSubtitle:
-      "分析収集を開始するには、このスクリプトを Web サイトに追加してください。",
     scriptHint:
       "</head> の前を推奨します。必要なら </body> の前にも配置できますが、各ページで 1 回だけ読み込まれるようにしてください。",
     copyScript: "スクリプトをコピー",
     copiedScript: "スクリプトをコピーしました。",
-    loadingScript: "スクリプトを読み込み中...",
     scriptUnavailable: "現在スクリプトを利用できません。",
     deleteTitle: "サイトを削除",
     deleteSubtitle: "この操作により、サイトはこのチームから削除されます。",
@@ -12055,10 +11912,7 @@ const jaMessages = {
   accountSettings: {
     emailManagedByGateway:
       "メールアドレスは Every App のアカウントのものです。",
-    title: "アカウント設定",
-    subtitle: "表示名、通知、ダッシュボードのタイムゾーンを管理します。",
     profileTitle: "個人情報",
-    profileDescription: "ダッシュボードに表示される名前を更新します。",
     nicknameLabel: "表示名",
     nicknamePlaceholder: "例: プロダクトアナリスト",
     emailLabel: "メール",
@@ -12067,7 +11921,6 @@ const jaMessages = {
     profileSaved: "個人情報を保存しました。",
     profileSaveFailed: "個人情報を保存できません。",
     preferredLanguageTitle: "通知言語",
-    preferredLanguageDescription: "定期通知メールで使用する言語を選択します。",
     preferredLanguageLabel: "メール言語",
     preferredLanguageDefault: "デフォルト",
     preferredLanguageEnglish: "英語",
@@ -12077,20 +11930,13 @@ const jaMessages = {
     preferredLanguageSaved: "通知言語を保存しました。",
     preferredLanguageSaveFailed: "通知言語を保存できません。",
     timeZoneTitle: "レポートタイムゾーン",
-    timeZoneDescription:
-      "カレンダー範囲と集計バケットは、ダッシュボード全体でこのタイムゾーンを使用します。",
     activeTimeZone: "有効なタイムゾーン",
     browserTimeZone: "ブラウザーのタイムゾーン",
     browserUnavailable: "検出されません",
-    browserSource: "ブラウザー",
-    manualSource: "手動",
     preferenceLabel: "タイムゾーン設定",
-    preferenceDescription:
-      "ブラウザーモードはこのデバイスに従います。手動モードはすべてのデバイスで同じタイムゾーンを使います。",
     useBrowser: "ブラウザーのタイムゾーンを使用",
     useCustom: "タイムゾーンを選択",
     customTimeZoneLabel: "タイムゾーン",
-    customTimeZoneDescription: "対応している IANA タイムゾーンから選択します。",
     invalidTimeZone: "有効な IANA タイムゾーンを選択してください。",
     save: "設定を保存",
     saving: "保存中...",
@@ -12099,7 +11945,6 @@ const jaMessages = {
   },
   notificationCenter: {
     title: "通知センター",
-    subtitle: "すべての通知とレポートを確認します。",
     empty: "通知はまだありません。",
     loading: "通知を読み込み中",
     markRead: "既読にする",
@@ -12182,8 +12027,6 @@ const jaMessages = {
     allTypes: "すべての種別",
     allSeverities: "すべての重要度",
     preferencesTitle: "通知設定",
-    preferencesDescription:
-      "これらの設定は、メール配信と、どのメッセージを要対応として未読のままにするかを制御します。",
     emailNotificationsLabel: "メール通知",
     emailNotificationsDescription: "ルールが発火したときにメールを送信します。",
     reportsUnreadLabel: "レポートを未読にする",
@@ -12348,26 +12191,17 @@ const jaMessages = {
     cancel: "キャンセル",
   },
   teamManagement: {
-    stats: {
-      sites: "サイト",
-    },
+    stats: {},
     toasts: {},
     sites: {
-      subtitle: "このチーム内すべてのサイトを集計したトラフィックビューです。",
       aggregateTitle: "総訪問数",
-      noSites: "このチームには利用可能なサイトがありません。",
       openAnalytics: "アナリティクスを開く",
-      title: "サイトダッシュボード",
+      title: "すべてのサイト",
       pagesPerSession: "ページ / セッション",
     },
     widgets: {},
     notifications: {
-      title: "通知ルール",
-      subtitle: "このチームの通知ルールを管理します。",
       empty: "このチームには通知ルールがありません。",
-      forbiddenTitle: "通知ルールはチーム管理者が管理します",
-      forbiddenDescription:
-        "自分の通知を確認し、個人の通知設定を更新することはできます。",
       rulesTitle: "通知ルール",
       enabledCount: "このチームで {count} 件のルールが有効です。",
       loadingRules: "通知ルールを読み込み中",
@@ -12580,8 +12414,6 @@ const jaMessages = {
       },
       emailPreviewPage: {
         title: "通知メールプレビュー",
-        subtitle:
-          "メッセージ作成や Resend 送信を行わずに通知メールをレンダリングします。",
         typeLabel: "プレビュー種別",
         localeLabel: "プレビューロケール",
         formatLabel: "プレビュー形式",
@@ -12595,23 +12427,13 @@ const jaMessages = {
       },
     },
     publicLinks: {
-      title: "公開リンク",
-      subtitle: "このチームの公開共有リンクを管理します。",
       enabled: "有効",
       disabled: "無効",
-      disabledHint:
-        "公開アクセスは無効です。有効にするにはサイト設定を開いてください。",
       viewSettings: "設定を表示",
       copyLink: "リンクをコピー",
       linkCopied: "リンクをコピーしました",
       noSites: "このチームにはまだサイトがありません。",
-      columns: {
-        site: "サイト",
-        domain: "ドメイン",
-        publicUrl: "公開リンク",
-        status: "ステータス",
-        action: "操作",
-      },
+      columns: {},
     },
     apiKeys: {
       status: {},
@@ -12628,16 +12450,11 @@ const jaMessages = {
     },
   },
   managementNav: {
-    sites: "サイト管理",
     scheduledTasks: "スケジュールタスク",
-    requestObservation: "リクエスト監視",
-    systemPerformance: "システムパフォーマンス",
-    systemSettings: "システム設定",
   },
   managementPages: {
     versionUpdates: {},
     scheduledTasks: {
-      subtitle: "システムのスケジュールタスクを表示・管理します。",
       empty: "スケジュールタスクはまだありません。",
       refresh: "更新",
       loadFailed: "スケジュールタスクを読み込めません。",
@@ -12726,18 +12543,12 @@ const jaMessages = {
     columns: {},
   },
   adminSites: {
-    title: "サイト管理",
-    subtitle: "現在のチーム配下のサイトを管理します。",
-    team: "チーム",
     createTitle: "サイトを作成",
-    createSubtitle: "新しいサイトはすぐに開けます。",
     name: "サイト名",
     domain: "ドメイン",
     publicSlug: "公開スラッグ（任意）",
     create: "サイトを作成",
     creating: "作成中...",
-    listTitle: "サイト",
-    listSubtitle: "現在のチーム配下のすべてのサイトです。",
     noData: "サイトが見つかりません。",
     loadFailed: "サイトを読み込めません。",
     createSuccess: "サイトを作成しました。",
@@ -12747,7 +12558,6 @@ const jaMessages = {
     columns: {
       name: "名前",
       domain: "ドメイン",
-      slug: "スラッグ",
       created: "作成日時",
       action: "操作",
     },
@@ -12757,8 +12567,6 @@ const jaMessages = {
   },
   requestObservation: {
     title: "リクエスト監視",
-    subtitle:
-      "コレクターが最近拒否したリクエスト：カスタムブロックルール、ボット、ホスティングネットワーク。",
     blockedTotal: "ブロックしたリクエスト",
     retentionNote:
       "30 日間保持します。許可されたトラフィックは各サイトのダッシュボードにあります。",
@@ -12945,8 +12753,6 @@ const jaMessages = {
   },
   systemPerformance: {
     title: "システムパフォーマンス",
-    subtitle:
-      "既存の分析行から Open Analytics の収集、バッファリング、書き込みの健全性を監視します。",
     refresh: "更新",
     loadFailed: "システムパフォーマンスデータを読み込めません。",
     noData: "この期間にシステムパフォーマンスデータはありません。",
@@ -13042,7 +12848,68 @@ const jaMessages = {
   sidebarFooter: {
     gateway: "Every App に戻る",
   },
+  appNav: {
+    mainNavigation: "メインナビゲーション",
+    toggleSidebar: "サイドバーを切り替え",
+    traffic: "トラフィック",
+    audience: "オーディエンス",
+    conversions: "コンバージョン",
+    site: "サイト",
+    sites: "サイト",
+    allSites: "すべてのサイト",
+    inbox: "受信トレイ",
+    settings: "設定",
+    switchSite: "サイトを切り替え",
+    siteSettings: "サイト設定",
+    addSite: "サイトを追加",
+    accountMenu: "アカウントメニューを開く",
+    accountSettings: "アカウント設定",
+    sections: "セクション",
+  },
   teamEntry: {},
+  getStarted: {
+    title: "はじめに",
+    progress: "{done} / {total}",
+    showSteps: "ステップを表示",
+    hideSteps: "ステップを隠す",
+    completed: "{count} 件完了",
+    steps: {
+      site: "最初のサイトを追加",
+      tracking: "トラッキングスクリプトを設置",
+      team: "チームを招待",
+      notifications: "レポートをメールで受け取る",
+      sharing: "公開ダッシュボードを共有",
+    },
+    noSitesTitle: "サイトはまだありません",
+    noSitesDescription:
+      "サイトを追加して、そのスクリプトをページに設置してください。",
+    addSite: "サイトを追加",
+    waitingTitle: "最初のページビューを待っています",
+    waitingDescription:
+      "このスクリプトを {domain} のすべてのページに追加してください。ページビューは1分以内にここに表示されます。",
+    copy: "コピー",
+    copied: "コピーしました",
+    trackingSettings: "トラッキング設定",
+  },
+  settingsNav: {
+    label: "設定",
+    personal: "個人",
+    organization: "組織",
+    system: "システム",
+    account: "アカウント",
+    sites: "サイト",
+    notifications: "通知",
+    publicLinks: "公開リンク",
+    general: "一般",
+    scheduledTasks: "スケジュールタスク",
+    requestObservation: "リクエスト監視",
+    performance: "パフォーマンス",
+    cancel: "キャンセル",
+    managerOnly: "変更できるのはオーナーまたは管理者のみです。",
+    dangerZone: "危険な操作",
+    copy: "コピー",
+    copied: "コピーしました",
+  },
 } as AppMessages;
 
 const DICTIONARIES: Record<Locale, AppMessages> = {

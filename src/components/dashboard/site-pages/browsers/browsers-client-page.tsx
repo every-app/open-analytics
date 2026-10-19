@@ -35,10 +35,7 @@ export function BrowsersClientPage({
 
   return (
     <div className="space-y-6">
-      <PageHeading
-        title={messages.browsers.title}
-        subtitle={messages.browsers.subtitle}
-      />
+      <PageHeading title={messages.browsers.title} />
 
       <BrowserShareOverview
         locale={locale}

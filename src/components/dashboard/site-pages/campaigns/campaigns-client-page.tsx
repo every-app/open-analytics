@@ -165,10 +165,7 @@ export function CampaignsClientPage({
 
   return (
     <div className="space-y-6">
-      <PageHeading
-        title={messages.campaigns.title}
-        subtitle={messages.campaigns.subtitle}
-      />
+      <PageHeading title={messages.campaigns.title} />
 
       <CampaignShareTrendCard
         locale={locale}

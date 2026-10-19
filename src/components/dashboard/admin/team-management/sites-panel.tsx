@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { SiteTrafficStackChart } from "@insightflare/product-ui/charts";
 import { TrafficPairBarChart } from "@insightflare/product-ui/charts";
+import { Button } from "@insightflare/ui/button";
 import {
   Card,
   CardContent,
@@ -13,8 +14,11 @@ import {
   ArrowUpIcon,
   ChartColumnIcon,
   ChevronRightIcon,
+  GlobeIcon,
+  PlusIcon,
 } from "lucide-react";
 
+import { EmptyState } from "@/components/common/empty-state";
 import { SiteBrandIcon } from "@/components/dashboard/common/site-brand-icon";
 import {
   durationFormat,
@@ -66,15 +70,18 @@ export function TeamManagementSitesPanel() {
   const {
     aggregateChartRenderData,
     aggregateChartSites,
-    copy,
+    canManageSites,
     dashboardQuery,
     dashboardSites,
     dashboardWindow,
     locale,
+    isPageDataLoading,
     messages,
+    openCreateSiteDialog,
     pagesPerSessionFormatter,
     siteDashboardCards,
   } = useTeamManagementContext();
+  const getStartedCopy = messages.getStarted;
 
   function ChangeRateInline({
     value,
@@ -87,11 +94,30 @@ export function TeamManagementSitesPanel() {
     const Icon = value >= 0 ? ArrowUpIcon : ArrowDownIcon;
     return (
       <span
-        className={`inline-flex items-end gap-0.5 font-mono text-xs leading-none ${changeRateClass(value, lowerIsBetter)}`}
+        className={`inline-flex items-end gap-0.5 text-xs leading-none tabular-nums ${changeRateClass(value, lowerIsBetter)}`}
       >
         <Icon className="size-3.5" />
         {formatChangeRate(value)}
       </span>
+    );
+  }
+
+  if (!isPageDataLoading && dashboardSites.length === 0) {
+    return (
+      <EmptyState
+        media="rows"
+        icon={GlobeIcon}
+        title={getStartedCopy.noSitesTitle}
+        description={getStartedCopy.noSitesDescription}
+        action={
+          canManageSites ? (
+            <Button type="button" onClick={openCreateSiteDialog}>
+              <PlusIcon data-icon="inline-start" />
+              {getStartedCopy.addSite}
+            </Button>
+          ) : null
+        }
+      />
     );
   }
 
@@ -101,7 +127,7 @@ export function TeamManagementSitesPanel() {
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
             <ChartColumnIcon className="size-4" />
-            {copy.sites.aggregateTitle}
+            {messages.teamManagement.sites.aggregateTitle}
           </CardTitle>
         </CardHeader>
 
@@ -122,12 +148,6 @@ export function TeamManagementSitesPanel() {
               loading={dashboardQuery.isFetching}
             />
           </div>
-
-          {!dashboardQuery.isPending && dashboardSites.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {copy.sites.noSites}
-            </p>
-          ) : null}
         </CardContent>
       </Card>
 
@@ -138,10 +158,10 @@ export function TeamManagementSitesPanel() {
               <Link
                 key={site.id}
                 href={buildSitePath(locale, site.slug)}
-                className="group block h-full cursor-pointer outline-none transition-transform hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-1 focus-visible:ring-ring/60"
-                aria-label={`${copy.sites.openAnalytics}: ${site.name}`}
+                className="group block h-full cursor-pointer rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                aria-label={`${messages.teamManagement.sites.openAnalytics}: ${site.name}`}
               >
-                <Card className="h-full transition-colors group-hover:bg-accent/20">
+                <Card className="h-full transition-colors group-hover:border-foreground/20">
                   <CardHeader className="space-y-2">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-start gap-2.5">
@@ -156,7 +176,7 @@ export function TeamManagementSitesPanel() {
                             />
                             {site.name}
                           </CardTitle>
-                          <CardDescription className="truncate font-mono text-xs">
+                          <CardDescription className="truncate">
                             {site.domain}
                           </CardDescription>
                         </div>
@@ -183,7 +203,7 @@ export function TeamManagementSitesPanel() {
                       />
                     </DeferredSiteChart>
 
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-4 text-[11px] sm:grid-cols-3">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-4 text-xs sm:grid-cols-3">
                       <div className="space-y-1">
                         <p className="text-muted-foreground">
                           {messages.common.views}
@@ -225,7 +245,7 @@ export function TeamManagementSitesPanel() {
                       </div>
                       <div className="space-y-1">
                         <p className="text-muted-foreground">
-                          {copy.sites.pagesPerSession}
+                          {messages.teamManagement.sites.pagesPerSession}
                         </p>
                         <p className="inline-flex items-end gap-1.5 text-base leading-none tabular-nums">
                           {pagesPerSessionFormatter.format(pagesPerSession)}

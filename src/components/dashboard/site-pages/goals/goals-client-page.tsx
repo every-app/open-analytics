@@ -246,7 +246,7 @@ export function GoalsClientPage({
   return (
     <div className="min-w-0 max-w-full space-y-6">
       <div className="flex min-w-0 items-center justify-between gap-4">
-        <PageHeading title={labels.title} subtitle={labels.subtitle} />
+        <PageHeading title={labels.title} />
         {canManage ? (
           <Button
             type="button"

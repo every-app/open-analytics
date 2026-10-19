@@ -34,10 +34,7 @@ export function DevicesClientPage({
 
   return (
     <div className="space-y-6">
-      <PageHeading
-        title={messages.devices.title}
-        subtitle={messages.devices.subtitle}
-      />
+      <PageHeading title={messages.devices.title} />
 
       <DeviceShareOverview
         locale={locale}

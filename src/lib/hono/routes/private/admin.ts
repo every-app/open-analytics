@@ -64,4 +64,6 @@ privateAdminRoutes.all(
   "/request-observation",
   adminServiceRoute("request-observation"),
 );
+privateAdminRoutes.all("/get-started", adminServiceRoute("get-started"));
+privateAdminRoutes.all("/site-tracking", adminServiceRoute("site-tracking"));
 privateAdminRoutes.all("/*", () => nf());

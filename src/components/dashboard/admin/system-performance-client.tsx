@@ -189,7 +189,6 @@ export function SystemPerformanceClient({
     <div className="space-y-5">
       <PageHeading
         title={t.title}
-        subtitle={t.subtitle}
         actions={
           <>
             <Select

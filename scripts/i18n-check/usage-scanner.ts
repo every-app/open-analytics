@@ -79,7 +79,19 @@ function resolvePathFromExpression(
       appMessagesType,
       appMessagesSymbol,
     );
-    if (!base) return null;
+    if (!base) {
+      // A property whose value is the messages object itself, such as a
+      // route's `match.context.messages`.
+      const type = checker.getTypeAtLocation(expression);
+      return isRootAppMessagesType(
+        type,
+        checker,
+        appMessagesType,
+        appMessagesSymbol,
+      )
+        ? { path: [], dynamic: false }
+        : null;
+    }
     return {
       path: [...base.path, expression.name.text],
       dynamic: base.dynamic,

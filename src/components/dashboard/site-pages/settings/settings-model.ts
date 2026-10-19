@@ -1,13 +1,3 @@
-import type { ComponentType } from "react";
-import {
-  ChartColumnIcon,
-  CodeIcon,
-  GlobeIcon,
-  LinkIcon,
-  RouteIcon,
-  SettingsIcon,
-} from "lucide-react";
-
 import {
   BLOCKING_FIELD_IDS,
   type BlockingFieldId,
@@ -129,20 +119,6 @@ export interface BlockingRuleDialogCopy {
   testActionAllow: string;
   testLine: string;
 }
-export const BLOCKING_RULE_FIELD_DEFINITIONS: ReadonlyArray<{
-  field: BlockingFieldId;
-  icon: ComponentType<{ className?: string }>;
-}> = [
-  { field: "domains", icon: GlobeIcon },
-  { field: "paths", icon: RouteIcon },
-  { field: "queryParameters", icon: SettingsIcon },
-  { field: "referrers", icon: LinkIcon },
-  { field: "userAgents", icon: CodeIcon },
-  { field: "ips", icon: ChartColumnIcon },
-  { field: "asns", icon: ChartColumnIcon },
-  { field: "countries", icon: GlobeIcon },
-  { field: "regions", icon: GlobeIcon },
-];
 export function blockingEditorValues(input: unknown): BlockingEditorValues {
   const parsed = parseBlockingRules(input);
   return Object.fromEntries(

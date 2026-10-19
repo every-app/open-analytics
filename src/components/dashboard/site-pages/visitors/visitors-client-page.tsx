@@ -924,7 +924,6 @@ export function VisitorsClientPage({
     <div className="space-y-6">
       <PageHeading
         title={messages.visitors.title}
-        subtitle={messages.visitors.subtitle}
         actions={
           <div className="flex w-full items-center justify-end gap-2">
             <div className="relative min-w-0 flex-1 sm:w-80 sm:flex-none">

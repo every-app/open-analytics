@@ -1,12 +1,4 @@
 import { useState } from "react";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@insightflare/ui/breadcrumb";
 import { Button } from "@insightflare/ui/button";
 import {
   Drawer,
@@ -95,41 +87,27 @@ export function ShareHeader({
 
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <div className="min-w-0 flex-1">
-        <Breadcrumb>
-          <BreadcrumbList className="flex-nowrap">
-            <BreadcrumbItem className="shrink-0">
-              <BreadcrumbLink asChild>
-                <Link
-                  href="https://github.com/every-app/open-analytics"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-2 text-foreground transition-colors hover:text-primary"
-                >
-                  <Image
-                    src="/favicon.svg"
-                    alt="Open Analytics"
-                    width={192}
-                    height={192}
-                    className="size-6 shrink-0"
-                    priority
-                  />
-                  <span className="hidden max-w-[24vw] truncate text-sm font-semibold md:block xl:max-w-none">
-                    <span className="text-primary">Open Analytics</span>{" "}
-                    <span className="text-muted-foreground">V1</span>
-                  </span>
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-
-            <BreadcrumbSeparator className="shrink-0" />
-            <BreadcrumbItem className="min-w-0">
-              <BreadcrumbPage className="block max-w-full truncate text-sm">
-                {siteName}
-              </BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+      <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
+        <Link
+          href="https://github.com/every-app/open-analytics"
+          target="_blank"
+          rel="noreferrer"
+          className="flex shrink-0 items-center gap-2 font-semibold text-foreground"
+        >
+          <Image
+            src="/favicon.svg"
+            alt="Open Analytics"
+            width={192}
+            height={192}
+            className="size-5 shrink-0"
+            priority
+          />
+          <span className="hidden md:inline">{messages.appName}</span>
+        </Link>
+        <span className="text-muted-foreground" aria-hidden>
+          /
+        </span>
+        <span className="min-w-0 truncate font-medium">{siteName}</span>
       </div>
 
       <div className="ml-auto flex shrink-0 flex-nowrap items-center justify-end gap-2">

@@ -5,7 +5,6 @@ import {
   loadDashboardInitialWindow,
   loadDashboardTeam,
 } from "@/lib/dashboard/route-data";
-import { buildManagementSections } from "@/lib/dashboard/team-sections";
 import { usePathname } from "@/lib/router";
 
 export const Route = createFileRoute("/$locale/app")({
@@ -37,11 +36,6 @@ function AppLayout() {
       sites={teamContext.sites}
       unreadAttentionCount={teamContext.unreadAttentionCount}
       initialQueryWindow={initialDashboardWindow}
-      managementSections={
-        teamContext.user.systemRole === "admin"
-          ? buildManagementSections(locale, messages)
-          : undefined
-      }
     >
       <Outlet />
     </DashboardShell>

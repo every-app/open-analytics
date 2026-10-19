@@ -253,7 +253,6 @@ export function SessionsClientPage({
     <div className="space-y-6">
       <PageHeading
         title={messages.sessions.title}
-        subtitle={messages.sessions.subtitle}
         actions={
           <div className="flex w-full items-center justify-end gap-2">
             <div className="relative min-w-0 flex-1 sm:w-80 sm:flex-none">

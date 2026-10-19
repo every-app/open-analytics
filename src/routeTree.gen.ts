@@ -14,17 +14,18 @@ import { Route as LocaleRouteImport } from './routes/$locale'
 import { Route as LocaleAppRouteImport } from './routes/$locale.app'
 import { Route as LocaleRuntimeConfigErrorRouteImport } from './routes/$locale.runtime-config-error'
 import { Route as LocaleAppIndexRouteImport } from './routes/$locale.app.index'
-import { Route as LocaleAppAccountRouteImport } from './routes/$locale.app.account'
 import { Route as LocaleAppInboxRouteImport } from './routes/$locale.app.inbox'
-import { Route as LocaleAppNotificationsRouteImport } from './routes/$locale.app.notifications'
-import { Route as LocaleAppPublicLinksRouteImport } from './routes/$locale.app.public-links'
+import { Route as LocaleAppSettingsRouteImport } from './routes/$locale.app.settings'
 import { Route as LocaleShareSlugRouteImport } from './routes/$locale.share.$slug'
-import { Route as LocaleAppManageRequestObservationRouteImport } from './routes/$locale.app.manage.request-observation'
-import { Route as LocaleAppManageScheduledTasksRouteImport } from './routes/$locale.app.manage.scheduled-tasks'
-import { Route as LocaleAppManageSystemPerformanceRouteImport } from './routes/$locale.app.manage.system-performance'
-import { Route as LocaleAppManageSystemSettingsRouteImport } from './routes/$locale.app.manage.system-settings'
-import { Route as LocaleAppNotificationsEmailPreviewRouteImport } from './routes/$locale.app.notifications_.email-preview'
-import { Route as LocaleAppSitesIndexRouteImport } from './routes/$locale.app.sites.index'
+import { Route as LocaleAppSettingsIndexRouteImport } from './routes/$locale.app.settings.index'
+import { Route as LocaleAppSettingsAccountRouteImport } from './routes/$locale.app.settings.account'
+import { Route as LocaleAppSettingsGeneralRouteImport } from './routes/$locale.app.settings.general'
+import { Route as LocaleAppSettingsNotificationsRouteImport } from './routes/$locale.app.settings.notifications'
+import { Route as LocaleAppSettingsPerformanceRouteImport } from './routes/$locale.app.settings.performance'
+import { Route as LocaleAppSettingsPublicLinksRouteImport } from './routes/$locale.app.settings.public-links'
+import { Route as LocaleAppSettingsRequestObservationRouteImport } from './routes/$locale.app.settings.request-observation'
+import { Route as LocaleAppSettingsScheduledTasksRouteImport } from './routes/$locale.app.settings.scheduled-tasks'
+import { Route as LocaleAppSettingsSitesRouteImport } from './routes/$locale.app.settings.sites'
 import { Route as LocaleAppSitesSiteSlugRouteImport } from './routes/$locale.app.sites.$siteSlug'
 import { Route as LocaleShareSlugIndexRouteImport } from './routes/$locale.share.$slug.index'
 import { Route as LocaleShareSlugBrowsersRouteImport } from './routes/$locale.share.$slug.browsers'
@@ -35,6 +36,7 @@ import { Route as LocaleShareSlugPagesRouteImport } from './routes/$locale.share
 import { Route as LocaleShareSlugPerformanceRouteImport } from './routes/$locale.share.$slug.performance'
 import { Route as LocaleShareSlugReferrersRouteImport } from './routes/$locale.share.$slug.referrers'
 import { Route as LocaleShareSlugRetentionRouteImport } from './routes/$locale.share.$slug.retention'
+import { Route as LocaleAppSettingsNotificationsEmailPreviewRouteImport } from './routes/$locale.app.settings.notifications_.email-preview'
 import { Route as LocaleAppSitesSiteSlugIndexRouteImport } from './routes/$locale.app.sites.$siteSlug.index'
 import { Route as LocaleAppSitesSiteSlugBrowsersRouteImport } from './routes/$locale.app.sites.$siteSlug.browsers'
 import { Route as LocaleAppSitesSiteSlugCampaignsRouteImport } from './routes/$locale.app.sites.$siteSlug.campaigns'
@@ -81,24 +83,14 @@ const LocaleAppIndexRoute = LocaleAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => LocaleAppRoute,
 } as any)
-const LocaleAppAccountRoute = LocaleAppAccountRouteImport.update({
-  id: '/account',
-  path: '/account',
-  getParentRoute: () => LocaleAppRoute,
-} as any)
 const LocaleAppInboxRoute = LocaleAppInboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
   getParentRoute: () => LocaleAppRoute,
 } as any)
-const LocaleAppNotificationsRoute = LocaleAppNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => LocaleAppRoute,
-} as any)
-const LocaleAppPublicLinksRoute = LocaleAppPublicLinksRouteImport.update({
-  id: '/public-links',
-  path: '/public-links',
+const LocaleAppSettingsRoute = LocaleAppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => LocaleAppRoute,
 } as any)
 const LocaleShareSlugRoute = LocaleShareSlugRouteImport.update({
@@ -106,40 +98,57 @@ const LocaleShareSlugRoute = LocaleShareSlugRouteImport.update({
   path: '/share/$slug',
   getParentRoute: () => LocaleRoute,
 } as any)
-const LocaleAppManageRequestObservationRoute =
-  LocaleAppManageRequestObservationRouteImport.update({
-    id: '/manage/request-observation',
-    path: '/manage/request-observation',
-    getParentRoute: () => LocaleAppRoute,
+const LocaleAppSettingsIndexRoute = LocaleAppSettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LocaleAppSettingsRoute,
+} as any)
+const LocaleAppSettingsAccountRoute =
+  LocaleAppSettingsAccountRouteImport.update({
+    id: '/account',
+    path: '/account',
+    getParentRoute: () => LocaleAppSettingsRoute,
   } as any)
-const LocaleAppManageScheduledTasksRoute =
-  LocaleAppManageScheduledTasksRouteImport.update({
-    id: '/manage/scheduled-tasks',
-    path: '/manage/scheduled-tasks',
-    getParentRoute: () => LocaleAppRoute,
+const LocaleAppSettingsGeneralRoute =
+  LocaleAppSettingsGeneralRouteImport.update({
+    id: '/general',
+    path: '/general',
+    getParentRoute: () => LocaleAppSettingsRoute,
   } as any)
-const LocaleAppManageSystemPerformanceRoute =
-  LocaleAppManageSystemPerformanceRouteImport.update({
-    id: '/manage/system-performance',
-    path: '/manage/system-performance',
-    getParentRoute: () => LocaleAppRoute,
+const LocaleAppSettingsNotificationsRoute =
+  LocaleAppSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => LocaleAppSettingsRoute,
   } as any)
-const LocaleAppManageSystemSettingsRoute =
-  LocaleAppManageSystemSettingsRouteImport.update({
-    id: '/manage/system-settings',
-    path: '/manage/system-settings',
-    getParentRoute: () => LocaleAppRoute,
+const LocaleAppSettingsPerformanceRoute =
+  LocaleAppSettingsPerformanceRouteImport.update({
+    id: '/performance',
+    path: '/performance',
+    getParentRoute: () => LocaleAppSettingsRoute,
   } as any)
-const LocaleAppNotificationsEmailPreviewRoute =
-  LocaleAppNotificationsEmailPreviewRouteImport.update({
-    id: '/notifications_/email-preview',
-    path: '/notifications/email-preview',
-    getParentRoute: () => LocaleAppRoute,
+const LocaleAppSettingsPublicLinksRoute =
+  LocaleAppSettingsPublicLinksRouteImport.update({
+    id: '/public-links',
+    path: '/public-links',
+    getParentRoute: () => LocaleAppSettingsRoute,
   } as any)
-const LocaleAppSitesIndexRoute = LocaleAppSitesIndexRouteImport.update({
-  id: '/sites/',
-  path: '/sites/',
-  getParentRoute: () => LocaleAppRoute,
+const LocaleAppSettingsRequestObservationRoute =
+  LocaleAppSettingsRequestObservationRouteImport.update({
+    id: '/request-observation',
+    path: '/request-observation',
+    getParentRoute: () => LocaleAppSettingsRoute,
+  } as any)
+const LocaleAppSettingsScheduledTasksRoute =
+  LocaleAppSettingsScheduledTasksRouteImport.update({
+    id: '/scheduled-tasks',
+    path: '/scheduled-tasks',
+    getParentRoute: () => LocaleAppSettingsRoute,
+  } as any)
+const LocaleAppSettingsSitesRoute = LocaleAppSettingsSitesRouteImport.update({
+  id: '/sites',
+  path: '/sites',
+  getParentRoute: () => LocaleAppSettingsRoute,
 } as any)
 const LocaleAppSitesSiteSlugRoute = LocaleAppSitesSiteSlugRouteImport.update({
   id: '/sites/$siteSlug',
@@ -194,6 +203,12 @@ const LocaleShareSlugRetentionRoute =
     id: '/retention',
     path: '/retention',
     getParentRoute: () => LocaleShareSlugRoute,
+  } as any)
+const LocaleAppSettingsNotificationsEmailPreviewRoute =
+  LocaleAppSettingsNotificationsEmailPreviewRouteImport.update({
+    id: '/notifications_/email-preview',
+    path: '/notifications/email-preview',
+    getParentRoute: () => LocaleAppSettingsRoute,
   } as any)
 const LocaleAppSitesSiteSlugIndexRoute =
   LocaleAppSitesSiteSlugIndexRouteImport.update({
@@ -315,17 +330,18 @@ export interface FileRoutesByFullPath {
   '/$locale': typeof LocaleRouteWithChildren
   '/$locale/app': typeof LocaleAppRouteWithChildren
   '/$locale/runtime-config-error': typeof LocaleRuntimeConfigErrorRoute
-  '/$locale/app/account': typeof LocaleAppAccountRoute
   '/$locale/app/inbox': typeof LocaleAppInboxRoute
-  '/$locale/app/notifications': typeof LocaleAppNotificationsRoute
-  '/$locale/app/public-links': typeof LocaleAppPublicLinksRoute
+  '/$locale/app/settings': typeof LocaleAppSettingsRouteWithChildren
   '/$locale/share/$slug': typeof LocaleShareSlugRouteWithChildren
   '/$locale/app/': typeof LocaleAppIndexRoute
-  '/$locale/app/manage/request-observation': typeof LocaleAppManageRequestObservationRoute
-  '/$locale/app/manage/scheduled-tasks': typeof LocaleAppManageScheduledTasksRoute
-  '/$locale/app/manage/system-performance': typeof LocaleAppManageSystemPerformanceRoute
-  '/$locale/app/manage/system-settings': typeof LocaleAppManageSystemSettingsRoute
-  '/$locale/app/notifications/email-preview': typeof LocaleAppNotificationsEmailPreviewRoute
+  '/$locale/app/settings/account': typeof LocaleAppSettingsAccountRoute
+  '/$locale/app/settings/general': typeof LocaleAppSettingsGeneralRoute
+  '/$locale/app/settings/notifications': typeof LocaleAppSettingsNotificationsRoute
+  '/$locale/app/settings/performance': typeof LocaleAppSettingsPerformanceRoute
+  '/$locale/app/settings/public-links': typeof LocaleAppSettingsPublicLinksRoute
+  '/$locale/app/settings/request-observation': typeof LocaleAppSettingsRequestObservationRoute
+  '/$locale/app/settings/scheduled-tasks': typeof LocaleAppSettingsScheduledTasksRoute
+  '/$locale/app/settings/sites': typeof LocaleAppSettingsSitesRoute
   '/$locale/app/sites/$siteSlug': typeof LocaleAppSitesSiteSlugRouteWithChildren
   '/$locale/share/$slug/browsers': typeof LocaleShareSlugBrowsersRoute
   '/$locale/share/$slug/campaigns': typeof LocaleShareSlugCampaignsRoute
@@ -335,8 +351,9 @@ export interface FileRoutesByFullPath {
   '/$locale/share/$slug/performance': typeof LocaleShareSlugPerformanceRoute
   '/$locale/share/$slug/referrers': typeof LocaleShareSlugReferrersRoute
   '/$locale/share/$slug/retention': typeof LocaleShareSlugRetentionRoute
-  '/$locale/app/sites/': typeof LocaleAppSitesIndexRoute
+  '/$locale/app/settings/': typeof LocaleAppSettingsIndexRoute
   '/$locale/share/$slug/': typeof LocaleShareSlugIndexRoute
+  '/$locale/app/settings/notifications/email-preview': typeof LocaleAppSettingsNotificationsEmailPreviewRoute
   '/$locale/app/sites/$siteSlug/browsers': typeof LocaleAppSitesSiteSlugBrowsersRoute
   '/$locale/app/sites/$siteSlug/campaigns': typeof LocaleAppSitesSiteSlugCampaignsRoute
   '/$locale/app/sites/$siteSlug/devices': typeof LocaleAppSitesSiteSlugDevicesRoute
@@ -361,16 +378,16 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$locale': typeof LocaleRouteWithChildren
   '/$locale/runtime-config-error': typeof LocaleRuntimeConfigErrorRoute
-  '/$locale/app/account': typeof LocaleAppAccountRoute
   '/$locale/app/inbox': typeof LocaleAppInboxRoute
-  '/$locale/app/notifications': typeof LocaleAppNotificationsRoute
-  '/$locale/app/public-links': typeof LocaleAppPublicLinksRoute
   '/$locale/app': typeof LocaleAppIndexRoute
-  '/$locale/app/manage/request-observation': typeof LocaleAppManageRequestObservationRoute
-  '/$locale/app/manage/scheduled-tasks': typeof LocaleAppManageScheduledTasksRoute
-  '/$locale/app/manage/system-performance': typeof LocaleAppManageSystemPerformanceRoute
-  '/$locale/app/manage/system-settings': typeof LocaleAppManageSystemSettingsRoute
-  '/$locale/app/notifications/email-preview': typeof LocaleAppNotificationsEmailPreviewRoute
+  '/$locale/app/settings/account': typeof LocaleAppSettingsAccountRoute
+  '/$locale/app/settings/general': typeof LocaleAppSettingsGeneralRoute
+  '/$locale/app/settings/notifications': typeof LocaleAppSettingsNotificationsRoute
+  '/$locale/app/settings/performance': typeof LocaleAppSettingsPerformanceRoute
+  '/$locale/app/settings/public-links': typeof LocaleAppSettingsPublicLinksRoute
+  '/$locale/app/settings/request-observation': typeof LocaleAppSettingsRequestObservationRoute
+  '/$locale/app/settings/scheduled-tasks': typeof LocaleAppSettingsScheduledTasksRoute
+  '/$locale/app/settings/sites': typeof LocaleAppSettingsSitesRoute
   '/$locale/share/$slug/browsers': typeof LocaleShareSlugBrowsersRoute
   '/$locale/share/$slug/campaigns': typeof LocaleShareSlugCampaignsRoute
   '/$locale/share/$slug/devices': typeof LocaleShareSlugDevicesRoute
@@ -379,8 +396,9 @@ export interface FileRoutesByTo {
   '/$locale/share/$slug/performance': typeof LocaleShareSlugPerformanceRoute
   '/$locale/share/$slug/referrers': typeof LocaleShareSlugReferrersRoute
   '/$locale/share/$slug/retention': typeof LocaleShareSlugRetentionRoute
-  '/$locale/app/sites': typeof LocaleAppSitesIndexRoute
+  '/$locale/app/settings': typeof LocaleAppSettingsIndexRoute
   '/$locale/share/$slug': typeof LocaleShareSlugIndexRoute
+  '/$locale/app/settings/notifications/email-preview': typeof LocaleAppSettingsNotificationsEmailPreviewRoute
   '/$locale/app/sites/$siteSlug/browsers': typeof LocaleAppSitesSiteSlugBrowsersRoute
   '/$locale/app/sites/$siteSlug/campaigns': typeof LocaleAppSitesSiteSlugCampaignsRoute
   '/$locale/app/sites/$siteSlug/devices': typeof LocaleAppSitesSiteSlugDevicesRoute
@@ -407,17 +425,18 @@ export interface FileRoutesById {
   '/$locale': typeof LocaleRouteWithChildren
   '/$locale/app': typeof LocaleAppRouteWithChildren
   '/$locale/runtime-config-error': typeof LocaleRuntimeConfigErrorRoute
-  '/$locale/app/account': typeof LocaleAppAccountRoute
   '/$locale/app/inbox': typeof LocaleAppInboxRoute
-  '/$locale/app/notifications': typeof LocaleAppNotificationsRoute
-  '/$locale/app/public-links': typeof LocaleAppPublicLinksRoute
+  '/$locale/app/settings': typeof LocaleAppSettingsRouteWithChildren
   '/$locale/share/$slug': typeof LocaleShareSlugRouteWithChildren
   '/$locale/app/': typeof LocaleAppIndexRoute
-  '/$locale/app/manage/request-observation': typeof LocaleAppManageRequestObservationRoute
-  '/$locale/app/manage/scheduled-tasks': typeof LocaleAppManageScheduledTasksRoute
-  '/$locale/app/manage/system-performance': typeof LocaleAppManageSystemPerformanceRoute
-  '/$locale/app/manage/system-settings': typeof LocaleAppManageSystemSettingsRoute
-  '/$locale/app/notifications_/email-preview': typeof LocaleAppNotificationsEmailPreviewRoute
+  '/$locale/app/settings/account': typeof LocaleAppSettingsAccountRoute
+  '/$locale/app/settings/general': typeof LocaleAppSettingsGeneralRoute
+  '/$locale/app/settings/notifications': typeof LocaleAppSettingsNotificationsRoute
+  '/$locale/app/settings/performance': typeof LocaleAppSettingsPerformanceRoute
+  '/$locale/app/settings/public-links': typeof LocaleAppSettingsPublicLinksRoute
+  '/$locale/app/settings/request-observation': typeof LocaleAppSettingsRequestObservationRoute
+  '/$locale/app/settings/scheduled-tasks': typeof LocaleAppSettingsScheduledTasksRoute
+  '/$locale/app/settings/sites': typeof LocaleAppSettingsSitesRoute
   '/$locale/app/sites/$siteSlug': typeof LocaleAppSitesSiteSlugRouteWithChildren
   '/$locale/share/$slug/browsers': typeof LocaleShareSlugBrowsersRoute
   '/$locale/share/$slug/campaigns': typeof LocaleShareSlugCampaignsRoute
@@ -427,8 +446,9 @@ export interface FileRoutesById {
   '/$locale/share/$slug/performance': typeof LocaleShareSlugPerformanceRoute
   '/$locale/share/$slug/referrers': typeof LocaleShareSlugReferrersRoute
   '/$locale/share/$slug/retention': typeof LocaleShareSlugRetentionRoute
-  '/$locale/app/sites/': typeof LocaleAppSitesIndexRoute
+  '/$locale/app/settings/': typeof LocaleAppSettingsIndexRoute
   '/$locale/share/$slug/': typeof LocaleShareSlugIndexRoute
+  '/$locale/app/settings/notifications_/email-preview': typeof LocaleAppSettingsNotificationsEmailPreviewRoute
   '/$locale/app/sites/$siteSlug/browsers': typeof LocaleAppSitesSiteSlugBrowsersRoute
   '/$locale/app/sites/$siteSlug/campaigns': typeof LocaleAppSitesSiteSlugCampaignsRoute
   '/$locale/app/sites/$siteSlug/devices': typeof LocaleAppSitesSiteSlugDevicesRoute
@@ -456,17 +476,18 @@ export interface FileRouteTypes {
     | '/$locale'
     | '/$locale/app'
     | '/$locale/runtime-config-error'
-    | '/$locale/app/account'
     | '/$locale/app/inbox'
-    | '/$locale/app/notifications'
-    | '/$locale/app/public-links'
+    | '/$locale/app/settings'
     | '/$locale/share/$slug'
     | '/$locale/app/'
-    | '/$locale/app/manage/request-observation'
-    | '/$locale/app/manage/scheduled-tasks'
-    | '/$locale/app/manage/system-performance'
-    | '/$locale/app/manage/system-settings'
-    | '/$locale/app/notifications/email-preview'
+    | '/$locale/app/settings/account'
+    | '/$locale/app/settings/general'
+    | '/$locale/app/settings/notifications'
+    | '/$locale/app/settings/performance'
+    | '/$locale/app/settings/public-links'
+    | '/$locale/app/settings/request-observation'
+    | '/$locale/app/settings/scheduled-tasks'
+    | '/$locale/app/settings/sites'
     | '/$locale/app/sites/$siteSlug'
     | '/$locale/share/$slug/browsers'
     | '/$locale/share/$slug/campaigns'
@@ -476,8 +497,9 @@ export interface FileRouteTypes {
     | '/$locale/share/$slug/performance'
     | '/$locale/share/$slug/referrers'
     | '/$locale/share/$slug/retention'
-    | '/$locale/app/sites/'
+    | '/$locale/app/settings/'
     | '/$locale/share/$slug/'
+    | '/$locale/app/settings/notifications/email-preview'
     | '/$locale/app/sites/$siteSlug/browsers'
     | '/$locale/app/sites/$siteSlug/campaigns'
     | '/$locale/app/sites/$siteSlug/devices'
@@ -502,16 +524,16 @@ export interface FileRouteTypes {
     | '/'
     | '/$locale'
     | '/$locale/runtime-config-error'
-    | '/$locale/app/account'
     | '/$locale/app/inbox'
-    | '/$locale/app/notifications'
-    | '/$locale/app/public-links'
     | '/$locale/app'
-    | '/$locale/app/manage/request-observation'
-    | '/$locale/app/manage/scheduled-tasks'
-    | '/$locale/app/manage/system-performance'
-    | '/$locale/app/manage/system-settings'
-    | '/$locale/app/notifications/email-preview'
+    | '/$locale/app/settings/account'
+    | '/$locale/app/settings/general'
+    | '/$locale/app/settings/notifications'
+    | '/$locale/app/settings/performance'
+    | '/$locale/app/settings/public-links'
+    | '/$locale/app/settings/request-observation'
+    | '/$locale/app/settings/scheduled-tasks'
+    | '/$locale/app/settings/sites'
     | '/$locale/share/$slug/browsers'
     | '/$locale/share/$slug/campaigns'
     | '/$locale/share/$slug/devices'
@@ -520,8 +542,9 @@ export interface FileRouteTypes {
     | '/$locale/share/$slug/performance'
     | '/$locale/share/$slug/referrers'
     | '/$locale/share/$slug/retention'
-    | '/$locale/app/sites'
+    | '/$locale/app/settings'
     | '/$locale/share/$slug'
+    | '/$locale/app/settings/notifications/email-preview'
     | '/$locale/app/sites/$siteSlug/browsers'
     | '/$locale/app/sites/$siteSlug/campaigns'
     | '/$locale/app/sites/$siteSlug/devices'
@@ -547,17 +570,18 @@ export interface FileRouteTypes {
     | '/$locale'
     | '/$locale/app'
     | '/$locale/runtime-config-error'
-    | '/$locale/app/account'
     | '/$locale/app/inbox'
-    | '/$locale/app/notifications'
-    | '/$locale/app/public-links'
+    | '/$locale/app/settings'
     | '/$locale/share/$slug'
     | '/$locale/app/'
-    | '/$locale/app/manage/request-observation'
-    | '/$locale/app/manage/scheduled-tasks'
-    | '/$locale/app/manage/system-performance'
-    | '/$locale/app/manage/system-settings'
-    | '/$locale/app/notifications_/email-preview'
+    | '/$locale/app/settings/account'
+    | '/$locale/app/settings/general'
+    | '/$locale/app/settings/notifications'
+    | '/$locale/app/settings/performance'
+    | '/$locale/app/settings/public-links'
+    | '/$locale/app/settings/request-observation'
+    | '/$locale/app/settings/scheduled-tasks'
+    | '/$locale/app/settings/sites'
     | '/$locale/app/sites/$siteSlug'
     | '/$locale/share/$slug/browsers'
     | '/$locale/share/$slug/campaigns'
@@ -567,8 +591,9 @@ export interface FileRouteTypes {
     | '/$locale/share/$slug/performance'
     | '/$locale/share/$slug/referrers'
     | '/$locale/share/$slug/retention'
-    | '/$locale/app/sites/'
+    | '/$locale/app/settings/'
     | '/$locale/share/$slug/'
+    | '/$locale/app/settings/notifications_/email-preview'
     | '/$locale/app/sites/$siteSlug/browsers'
     | '/$locale/app/sites/$siteSlug/campaigns'
     | '/$locale/app/sites/$siteSlug/devices'
@@ -632,13 +657,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleAppIndexRouteImport
       parentRoute: typeof LocaleAppRoute
     }
-    '/$locale/app/account': {
-      id: '/$locale/app/account'
-      path: '/account'
-      fullPath: '/$locale/app/account'
-      preLoaderRoute: typeof LocaleAppAccountRouteImport
-      parentRoute: typeof LocaleAppRoute
-    }
     '/$locale/app/inbox': {
       id: '/$locale/app/inbox'
       path: '/inbox'
@@ -646,18 +664,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleAppInboxRouteImport
       parentRoute: typeof LocaleAppRoute
     }
-    '/$locale/app/notifications': {
-      id: '/$locale/app/notifications'
-      path: '/notifications'
-      fullPath: '/$locale/app/notifications'
-      preLoaderRoute: typeof LocaleAppNotificationsRouteImport
-      parentRoute: typeof LocaleAppRoute
-    }
-    '/$locale/app/public-links': {
-      id: '/$locale/app/public-links'
-      path: '/public-links'
-      fullPath: '/$locale/app/public-links'
-      preLoaderRoute: typeof LocaleAppPublicLinksRouteImport
+    '/$locale/app/settings': {
+      id: '/$locale/app/settings'
+      path: '/settings'
+      fullPath: '/$locale/app/settings'
+      preLoaderRoute: typeof LocaleAppSettingsRouteImport
       parentRoute: typeof LocaleAppRoute
     }
     '/$locale/share/$slug': {
@@ -667,47 +678,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleShareSlugRouteImport
       parentRoute: typeof LocaleRoute
     }
-    '/$locale/app/manage/request-observation': {
-      id: '/$locale/app/manage/request-observation'
-      path: '/manage/request-observation'
-      fullPath: '/$locale/app/manage/request-observation'
-      preLoaderRoute: typeof LocaleAppManageRequestObservationRouteImport
-      parentRoute: typeof LocaleAppRoute
+    '/$locale/app/settings/': {
+      id: '/$locale/app/settings/'
+      path: '/'
+      fullPath: '/$locale/app/settings/'
+      preLoaderRoute: typeof LocaleAppSettingsIndexRouteImport
+      parentRoute: typeof LocaleAppSettingsRoute
     }
-    '/$locale/app/manage/scheduled-tasks': {
-      id: '/$locale/app/manage/scheduled-tasks'
-      path: '/manage/scheduled-tasks'
-      fullPath: '/$locale/app/manage/scheduled-tasks'
-      preLoaderRoute: typeof LocaleAppManageScheduledTasksRouteImport
-      parentRoute: typeof LocaleAppRoute
+    '/$locale/app/settings/account': {
+      id: '/$locale/app/settings/account'
+      path: '/account'
+      fullPath: '/$locale/app/settings/account'
+      preLoaderRoute: typeof LocaleAppSettingsAccountRouteImport
+      parentRoute: typeof LocaleAppSettingsRoute
     }
-    '/$locale/app/manage/system-performance': {
-      id: '/$locale/app/manage/system-performance'
-      path: '/manage/system-performance'
-      fullPath: '/$locale/app/manage/system-performance'
-      preLoaderRoute: typeof LocaleAppManageSystemPerformanceRouteImport
-      parentRoute: typeof LocaleAppRoute
+    '/$locale/app/settings/general': {
+      id: '/$locale/app/settings/general'
+      path: '/general'
+      fullPath: '/$locale/app/settings/general'
+      preLoaderRoute: typeof LocaleAppSettingsGeneralRouteImport
+      parentRoute: typeof LocaleAppSettingsRoute
     }
-    '/$locale/app/manage/system-settings': {
-      id: '/$locale/app/manage/system-settings'
-      path: '/manage/system-settings'
-      fullPath: '/$locale/app/manage/system-settings'
-      preLoaderRoute: typeof LocaleAppManageSystemSettingsRouteImport
-      parentRoute: typeof LocaleAppRoute
+    '/$locale/app/settings/notifications': {
+      id: '/$locale/app/settings/notifications'
+      path: '/notifications'
+      fullPath: '/$locale/app/settings/notifications'
+      preLoaderRoute: typeof LocaleAppSettingsNotificationsRouteImport
+      parentRoute: typeof LocaleAppSettingsRoute
     }
-    '/$locale/app/notifications_/email-preview': {
-      id: '/$locale/app/notifications_/email-preview'
-      path: '/notifications/email-preview'
-      fullPath: '/$locale/app/notifications/email-preview'
-      preLoaderRoute: typeof LocaleAppNotificationsEmailPreviewRouteImport
-      parentRoute: typeof LocaleAppRoute
+    '/$locale/app/settings/performance': {
+      id: '/$locale/app/settings/performance'
+      path: '/performance'
+      fullPath: '/$locale/app/settings/performance'
+      preLoaderRoute: typeof LocaleAppSettingsPerformanceRouteImport
+      parentRoute: typeof LocaleAppSettingsRoute
     }
-    '/$locale/app/sites/': {
-      id: '/$locale/app/sites/'
+    '/$locale/app/settings/public-links': {
+      id: '/$locale/app/settings/public-links'
+      path: '/public-links'
+      fullPath: '/$locale/app/settings/public-links'
+      preLoaderRoute: typeof LocaleAppSettingsPublicLinksRouteImport
+      parentRoute: typeof LocaleAppSettingsRoute
+    }
+    '/$locale/app/settings/request-observation': {
+      id: '/$locale/app/settings/request-observation'
+      path: '/request-observation'
+      fullPath: '/$locale/app/settings/request-observation'
+      preLoaderRoute: typeof LocaleAppSettingsRequestObservationRouteImport
+      parentRoute: typeof LocaleAppSettingsRoute
+    }
+    '/$locale/app/settings/scheduled-tasks': {
+      id: '/$locale/app/settings/scheduled-tasks'
+      path: '/scheduled-tasks'
+      fullPath: '/$locale/app/settings/scheduled-tasks'
+      preLoaderRoute: typeof LocaleAppSettingsScheduledTasksRouteImport
+      parentRoute: typeof LocaleAppSettingsRoute
+    }
+    '/$locale/app/settings/sites': {
+      id: '/$locale/app/settings/sites'
       path: '/sites'
-      fullPath: '/$locale/app/sites/'
-      preLoaderRoute: typeof LocaleAppSitesIndexRouteImport
-      parentRoute: typeof LocaleAppRoute
+      fullPath: '/$locale/app/settings/sites'
+      preLoaderRoute: typeof LocaleAppSettingsSitesRouteImport
+      parentRoute: typeof LocaleAppSettingsRoute
     }
     '/$locale/app/sites/$siteSlug': {
       id: '/$locale/app/sites/$siteSlug'
@@ -778,6 +810,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/share/$slug/retention'
       preLoaderRoute: typeof LocaleShareSlugRetentionRouteImport
       parentRoute: typeof LocaleShareSlugRoute
+    }
+    '/$locale/app/settings/notifications_/email-preview': {
+      id: '/$locale/app/settings/notifications_/email-preview'
+      path: '/notifications/email-preview'
+      fullPath: '/$locale/app/settings/notifications/email-preview'
+      preLoaderRoute: typeof LocaleAppSettingsNotificationsEmailPreviewRouteImport
+      parentRoute: typeof LocaleAppSettingsRoute
     }
     '/$locale/app/sites/$siteSlug/': {
       id: '/$locale/app/sites/$siteSlug/'
@@ -915,6 +954,37 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface LocaleAppSettingsRouteChildren {
+  LocaleAppSettingsAccountRoute: typeof LocaleAppSettingsAccountRoute
+  LocaleAppSettingsGeneralRoute: typeof LocaleAppSettingsGeneralRoute
+  LocaleAppSettingsNotificationsRoute: typeof LocaleAppSettingsNotificationsRoute
+  LocaleAppSettingsPerformanceRoute: typeof LocaleAppSettingsPerformanceRoute
+  LocaleAppSettingsPublicLinksRoute: typeof LocaleAppSettingsPublicLinksRoute
+  LocaleAppSettingsRequestObservationRoute: typeof LocaleAppSettingsRequestObservationRoute
+  LocaleAppSettingsScheduledTasksRoute: typeof LocaleAppSettingsScheduledTasksRoute
+  LocaleAppSettingsSitesRoute: typeof LocaleAppSettingsSitesRoute
+  LocaleAppSettingsIndexRoute: typeof LocaleAppSettingsIndexRoute
+  LocaleAppSettingsNotificationsEmailPreviewRoute: typeof LocaleAppSettingsNotificationsEmailPreviewRoute
+}
+
+const LocaleAppSettingsRouteChildren: LocaleAppSettingsRouteChildren = {
+  LocaleAppSettingsAccountRoute: LocaleAppSettingsAccountRoute,
+  LocaleAppSettingsGeneralRoute: LocaleAppSettingsGeneralRoute,
+  LocaleAppSettingsNotificationsRoute: LocaleAppSettingsNotificationsRoute,
+  LocaleAppSettingsPerformanceRoute: LocaleAppSettingsPerformanceRoute,
+  LocaleAppSettingsPublicLinksRoute: LocaleAppSettingsPublicLinksRoute,
+  LocaleAppSettingsRequestObservationRoute:
+    LocaleAppSettingsRequestObservationRoute,
+  LocaleAppSettingsScheduledTasksRoute: LocaleAppSettingsScheduledTasksRoute,
+  LocaleAppSettingsSitesRoute: LocaleAppSettingsSitesRoute,
+  LocaleAppSettingsIndexRoute: LocaleAppSettingsIndexRoute,
+  LocaleAppSettingsNotificationsEmailPreviewRoute:
+    LocaleAppSettingsNotificationsEmailPreviewRoute,
+}
+
+const LocaleAppSettingsRouteWithChildren =
+  LocaleAppSettingsRoute._addFileChildren(LocaleAppSettingsRouteChildren)
+
 interface LocaleAppSitesSiteSlugRouteChildren {
   LocaleAppSitesSiteSlugBrowsersRoute: typeof LocaleAppSitesSiteSlugBrowsersRoute
   LocaleAppSitesSiteSlugCampaignsRoute: typeof LocaleAppSitesSiteSlugCampaignsRoute
@@ -970,35 +1040,17 @@ const LocaleAppSitesSiteSlugRouteWithChildren =
   )
 
 interface LocaleAppRouteChildren {
-  LocaleAppAccountRoute: typeof LocaleAppAccountRoute
   LocaleAppInboxRoute: typeof LocaleAppInboxRoute
-  LocaleAppNotificationsRoute: typeof LocaleAppNotificationsRoute
-  LocaleAppPublicLinksRoute: typeof LocaleAppPublicLinksRoute
+  LocaleAppSettingsRoute: typeof LocaleAppSettingsRouteWithChildren
   LocaleAppIndexRoute: typeof LocaleAppIndexRoute
-  LocaleAppManageRequestObservationRoute: typeof LocaleAppManageRequestObservationRoute
-  LocaleAppManageScheduledTasksRoute: typeof LocaleAppManageScheduledTasksRoute
-  LocaleAppManageSystemPerformanceRoute: typeof LocaleAppManageSystemPerformanceRoute
-  LocaleAppManageSystemSettingsRoute: typeof LocaleAppManageSystemSettingsRoute
-  LocaleAppNotificationsEmailPreviewRoute: typeof LocaleAppNotificationsEmailPreviewRoute
   LocaleAppSitesSiteSlugRoute: typeof LocaleAppSitesSiteSlugRouteWithChildren
-  LocaleAppSitesIndexRoute: typeof LocaleAppSitesIndexRoute
 }
 
 const LocaleAppRouteChildren: LocaleAppRouteChildren = {
-  LocaleAppAccountRoute: LocaleAppAccountRoute,
   LocaleAppInboxRoute: LocaleAppInboxRoute,
-  LocaleAppNotificationsRoute: LocaleAppNotificationsRoute,
-  LocaleAppPublicLinksRoute: LocaleAppPublicLinksRoute,
+  LocaleAppSettingsRoute: LocaleAppSettingsRouteWithChildren,
   LocaleAppIndexRoute: LocaleAppIndexRoute,
-  LocaleAppManageRequestObservationRoute:
-    LocaleAppManageRequestObservationRoute,
-  LocaleAppManageScheduledTasksRoute: LocaleAppManageScheduledTasksRoute,
-  LocaleAppManageSystemPerformanceRoute: LocaleAppManageSystemPerformanceRoute,
-  LocaleAppManageSystemSettingsRoute: LocaleAppManageSystemSettingsRoute,
-  LocaleAppNotificationsEmailPreviewRoute:
-    LocaleAppNotificationsEmailPreviewRoute,
   LocaleAppSitesSiteSlugRoute: LocaleAppSitesSiteSlugRouteWithChildren,
-  LocaleAppSitesIndexRoute: LocaleAppSitesIndexRoute,
 }
 
 const LocaleAppRouteWithChildren = LocaleAppRoute._addFileChildren(

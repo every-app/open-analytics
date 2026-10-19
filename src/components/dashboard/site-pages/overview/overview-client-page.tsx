@@ -24,6 +24,7 @@ import {
 } from "./overview-filter-model";
 import { OverviewPagesSection } from "./pages-section";
 import { type OverviewClientPageProps } from "./types";
+import { WaitingForDataCard } from "./waiting-for-data-card";
 export function OverviewClientPage({
   locale,
   messages,
@@ -90,9 +91,12 @@ export function OverviewClientPage({
 
   return (
     <div className="space-y-6">
-      <PageHeading
-        title={messages.overview.title}
-        subtitle={messages.overview.subtitle}
+      <PageHeading title={messages.overview.title} />
+      <WaitingForDataCard
+        messages={messages}
+        siteId={siteId}
+        siteDomain={siteDomain}
+        settingsHref={`${livePathname.replace(/\/$/, "")}/settings`}
       />
       <OverviewMetricsSection
         locale={locale}
