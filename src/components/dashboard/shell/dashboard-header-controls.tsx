@@ -104,7 +104,6 @@ import {
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { formatI18nTemplate } from "@/lib/i18n/template";
-import { isRealtimeMockEnabled } from "@/lib/realtime/client";
 import { usePathname } from "@/lib/router";
 import { cn } from "@/lib/utils";
 
@@ -138,7 +137,6 @@ interface DashboardHeaderControlsProps {
   resolvedScope?: FilterScope;
   showRealtimeBadge?: boolean;
 }
-const USE_REALTIME_MOCK = isRealtimeMockEnabled();
 function FilterTrigger({
   activeFilterCount,
   className,
@@ -387,12 +385,9 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
         uiFilterDsl ?? "",
       ),
     );
-  const realtimeSiteId =
-    siteId || (USE_REALTIME_MOCK ? "local-mock-site" : undefined);
+  const realtimeSiteId = siteId || undefined;
   const showRealtimeBadge =
-    shouldShowRealtimeBadge &&
-    showFilterSheet &&
-    (Boolean(siteId) || USE_REALTIME_MOCK);
+    shouldShowRealtimeBadge && showFilterSheet && Boolean(siteId);
   const realtimeEnabled = showControls && showRealtimeBadge;
   const realtimeHeaderState = useRealtimeChannelSelector(
     realtimeSiteId,

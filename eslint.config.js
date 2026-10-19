@@ -12,6 +12,8 @@ export default [
   {
     ignores: [
       ".cache/**",
+      ".cloudflare/**",
+      ".everyapp/**",
       ".output/**",
       ".playwright-cli/**",
       ".tanstack/**",

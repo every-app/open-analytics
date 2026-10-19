@@ -1,14 +1,9 @@
-import type { PublicAnalyticsEngineConfig } from "@/lib/analytics-engine-config";
-import type { AdminPublicLoginTurnstileConfig } from "@/lib/auth/login-turnstile-config";
 import type { NotificationPreferencesData } from "@/lib/dashboard-api/client/edge";
 import type {
-  AccountUserData,
-  ApiKeyData,
   MemberData,
   NotificationMessageData,
   NotificationRuleData,
   SiteData,
-  TeamData,
 } from "@/lib/dashboard-api/contract/types";
 import type { PublicNotificationEmailConfig } from "@/lib/notifications/email-config";
 import type { PageResult } from "@/lib/pagination";
@@ -84,28 +79,6 @@ export type SerializableScheduledTasksData = Omit<
     items: SerializableScheduledTaskRunLog[];
   };
 };
-export interface TeamInviteData {
-  id: string;
-  email: string;
-  payload: {
-    teamRole?: "member" | "admin";
-    siteIds?: string[];
-  };
-  code?: string;
-  url?: string;
-  createdByUserId: string;
-  createdAt: number;
-  expiresAt: number;
-  usedAt: number | null;
-  usedByUserId: string;
-  revokedAt: number | null;
-  status: "active" | "used" | "revoked" | "expired";
-}
-export type SafeTeamInviteData = Omit<TeamInviteData, "code" | "url">;
-export interface CreatedTeamInviteData {
-  invite: TeamInviteData;
-  url: string;
-}
 export interface ScriptSnippetData {
   siteId: string;
   src: string;
@@ -115,16 +88,6 @@ export interface SiteSettingsInitialData {
   config: SiteSettingsConfig;
   scriptSnippet: string;
   origin: string;
-  fetchedAt: number;
-}
-export interface TeamManagementInitialData {
-  members: MemberData[];
-  sites: SiteData[];
-  invites: SafeTeamInviteData[];
-  fetchedAt: number;
-}
-export interface ApiKeysInitialData {
-  keys: ApiKeyData[];
   fetchedAt: number;
 }
 export interface TeamNotificationsInitialData {
@@ -143,17 +106,7 @@ export interface AccountNotificationPreferencesInitialData {
   preferences: NotificationPreferencesData;
   fetchedAt: number;
 }
-export interface AdminTeamsInitialData {
-  teams: TeamData[];
-  fetchedAt: number;
-}
-export interface AdminUsersInitialData {
-  users: AccountUserData[];
-  fetchedAt: number;
-}
 export interface SystemSettingsInitialData {
-  analyticsEngine: PublicAnalyticsEngineConfig;
-  loginTurnstile: AdminPublicLoginTurnstileConfig;
   notificationEmail: PublicNotificationEmailConfig;
   scheduledTaskRetention: ScheduledTaskRetentionConfig;
   fetchedAt: number;

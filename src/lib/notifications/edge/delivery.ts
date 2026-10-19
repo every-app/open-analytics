@@ -224,12 +224,7 @@ export async function deliverNotificationMessage(
 
     const sendResult = await sendResendEmailWithRetry({
       apiKey,
-      apiUrl:
-        env.INSIGHTFLARE_E2E === "1"
-          ? env.INSIGHTFLARE_E2E_RESEND_API_URL
-          : undefined,
       fetchImpl: context.fetchImpl,
-      requireApiUrl: env.INSIGHTFLARE_E2E === "1",
       body: {
         from: buildResendFromAddress(config),
         to: [user.email],

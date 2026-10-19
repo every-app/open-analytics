@@ -19,10 +19,9 @@ export type SiteSection =
 
 export function buildSitePath(
   locale: Locale,
-  teamSlug: string,
   siteSlug: string,
   section?: SiteSection,
 ): string {
-  const base = `/${locale}/app/${teamSlug}/${siteSlug}`;
+  const base = `/${locale}/app/sites/${siteSlug}`;
   return section ? `${base}/${section}` : base;
 }

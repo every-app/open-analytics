@@ -1,12 +1,11 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
 import { AccountSettingsClient } from "@/components/dashboard/admin/account-settings-client";
 import { loadAccountNotificationPreferences } from "@/lib/dashboard/route-data";
 import { dashboardPageTitle } from "@/lib/page-title";
 
 export const Route = createFileRoute("/$locale/app/account")({
-  beforeLoad: async ({ context }) => {
-    if (!context.dashboardRoot) throw notFound();
+  beforeLoad: async () => {
     return {
       accountNotificationPreferencesInitialData:
         await loadAccountNotificationPreferences(),
@@ -28,15 +27,14 @@ function Page() {
   const {
     locale,
     messages,
-    dashboardRoot,
+    teamContext,
     accountNotificationPreferencesInitialData,
   } = Route.useRouteContext();
-  if (!dashboardRoot) throw notFound();
   return (
     <AccountSettingsClient
       locale={locale}
       messages={messages}
-      user={dashboardRoot.user}
+      user={teamContext.user}
       initialData={accountNotificationPreferencesInitialData}
     />
   );

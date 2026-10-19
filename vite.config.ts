@@ -5,7 +5,7 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig } from "vite";
 import { parse } from "yaml";
 
 import packageJson from "./package.json" with { type: "json" };
@@ -17,7 +17,8 @@ const DEV_WATCH_IGNORED = [
   "**/node_modules/**",
   "**/.git/**",
   "**/.wrangler/**",
-  "**/.wrangler-xdg/**",
+  "**/.cloudflare/**",
+  "**/.everyapp/**",
   "**/.pnpm-store/**",
   "**/.cache/**",
   "**/.tanstack/**",
@@ -92,58 +93,26 @@ function ssrMapStubs() {
   };
 }
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "");
-  const isE2E = process.env.INSIGHTFLARE_E2E === "1";
-  const e2eGithubApiBase = process.env.INSIGHTFLARE_E2E_GITHUB_API_BASE;
-  if (isE2E && !e2eGithubApiBase) {
-    throw new Error("INSIGHTFLARE_E2E_GITHUB_API_BASE is required for E2E.");
-  }
-  const demoMode =
-    !isE2E &&
-    (mode === "demo" || (process.env.DEMO_MODE ?? env.DEMO_MODE) === "1")
-      ? "1"
-      : "0";
-  const configPath =
-    process.env.CLOUDFLARE_VITE_WRANGLER_CONFIG_PATH ||
-    (demoMode === "1"
-      ? "./wrangler.demo.toml"
-      : mode === "local" || mode === "development"
-        ? "./wrangler.dev.toml"
-        : "./wrangler.toml");
-  const persistencePath = process.env.INSIGHTFLARE_LOCAL_PERSISTENCE_PATH;
-  const persistState = persistencePath
-    ? { path: persistencePath }
-    : demoMode === "1"
-      ? false
-      : true;
-  const port = Number(process.env.INSIGHTFLARE_PORT || "3000");
-
+export default defineConfig(() => {
   return {
     define: {
       "import.meta.env.VITE_APP_VERSION": JSON.stringify(packageJson.version),
       "import.meta.env.VITE_COMMIT_SHA": JSON.stringify(resolveCommitSha()),
-      "import.meta.env.VITE_DEMO_MODE": JSON.stringify(demoMode),
-      "import.meta.env.VITE_GITHUB_API_BASE": JSON.stringify(
-        e2eGithubApiBase || "https://api.github.com",
-      ),
-      "import.meta.env.VITE_GITHUB_RELEASES_RAW_BASE": JSON.stringify(
-        e2eGithubApiBase ||
-          env.VITE_GITHUB_RELEASES_RAW_BASE ||
-          "https://raw.githubusercontent.com/RavelloH/InsightFlare/main",
-      ),
-      "import.meta.env.VITE_INSIGHTFLARE_ANALYTICS_ENGINE_DISABLED":
-        JSON.stringify("0"),
     },
     resolve: {
       alias: {
         "@": path.resolve(import.meta.dirname, "./src"),
       },
     },
+    // Source maps for the Worker bundle only: "hidden" leaves no
+    // sourceMappingURL and keeps maps out of the public assets.
+    environments: {
+      ssr: { build: { sourcemap: "hidden" as const } },
+    },
     plugins: [
       {
         name: "yaml-as-json",
-        transform(code, id) {
+        transform(code: string, id: string) {
           if (!/\.ya?ml$/.test(id)) return null;
           return {
             code: `export default ${JSON.stringify(parse(code))};`,
@@ -152,19 +121,20 @@ export default defineConfig(({ mode }) => {
         },
       },
       ssrMapStubs(),
+      // Reads cloudflare.config.ts. Local dev never touches remote resources.
       cloudflare({
-        configPath,
-        persistState,
+        inspectorPort: false,
         viteEnvironment: { name: "ssr" },
+        remoteBindings: false,
       }),
       tanstackStart(),
       react(),
       tailwindcss(),
     ],
     server: {
-      host: process.env.INSIGHTFLARE_HOST || "127.0.0.1",
-      hmr: isE2E ? false : undefined,
-      port: Number.isInteger(port) && port > 0 ? port : 3000,
+      // `everyapp dev` passes the port in PORT and puts its gateway in front.
+      host: "127.0.0.1",
+      port: Number(process.env.PORT ?? 3000),
       strictPort: true,
       watch: {
         ignored: DEV_WATCH_IGNORED,

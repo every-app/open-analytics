@@ -1510,6 +1510,7 @@ export interface AppMessages {
     };
   };
   accountSettings: {
+    emailManagedByGateway: string;
     title: string;
     subtitle: string;
     profileTitle: string;
@@ -2832,9 +2833,7 @@ export interface AppMessages {
     failed: string;
   };
   sidebarFooter: {
-    loggingOut: string;
-    logoutSuccess: string;
-    logoutFailed: string;
+    gateway: string;
   };
   teamEntry: {
     title: string;
@@ -4590,6 +4589,7 @@ const enMessages = {
     },
   },
   accountSettings: {
+    emailManagedByGateway: "Your email comes from your Every App account.",
     title: "Account Settings",
     subtitle:
       "Manage your personal details, login password, and dashboard time zone.",
@@ -6009,9 +6009,7 @@ const enMessages = {
     failed: "Failed to sign out. Please try again.",
   },
   sidebarFooter: {
-    loggingOut: "Signing out...",
-    logoutSuccess: "Signed out.",
-    logoutFailed: "Failed to sign out. Please try again.",
+    gateway: "Back to Every App",
   },
   teamEntry: {
     title: "Choose a Team",
@@ -7718,6 +7716,7 @@ const zhMessages = {
     },
   },
   accountSettings: {
+    emailManagedByGateway: "邮箱来自你的 Every App 账户。",
     title: "账户设置",
     subtitle: "管理你的个人信息、登录密码和仪表盘时区。",
     profileTitle: "个人信息",
@@ -9096,9 +9095,7 @@ const zhMessages = {
     failed: "退出登录失败，请稍后重试。",
   },
   sidebarFooter: {
-    loggingOut: "退出中...",
-    logoutSuccess: "已退出登录。",
-    logoutFailed: "退出登录失败，请稍后重试。",
+    gateway: "返回 Every App",
   },
   teamEntry: {
     title: "选择团队",
@@ -10805,6 +10802,7 @@ const zhTwMessages = {
     },
   },
   accountSettings: {
+    emailManagedByGateway: "電子郵件來自你的 Every App 帳戶。",
     title: "帳戶設定",
     subtitle: "管理你的個人資訊、登入密碼和儀表盤時區。",
     profileTitle: "個人資訊",
@@ -12183,9 +12181,7 @@ const zhTwMessages = {
     failed: "登出失敗，請稍後重試。",
   },
   sidebarFooter: {
-    loggingOut: "退出中...",
-    logoutSuccess: "已登出。",
-    logoutFailed: "登出失敗，請稍後重試。",
+    gateway: "返回 Every App",
   },
   teamEntry: {
     title: "選擇團隊",
@@ -13943,6 +13939,8 @@ const jaMessages = {
     },
   },
   accountSettings: {
+    emailManagedByGateway:
+      "メールアドレスは Every App のアカウントのものです。",
     title: "アカウント設定",
     subtitle:
       "個人情報、ログインパスワード、ダッシュボードのタイムゾーンを管理します。",
@@ -15361,9 +15359,7 @@ const jaMessages = {
     failed: "サインアウトできません。もう一度お試しください。",
   },
   sidebarFooter: {
-    loggingOut: "サインアウト中...",
-    logoutSuccess: "サインアウトしました。",
-    logoutFailed: "サインアウトできません。もう一度お試しください。",
+    gateway: "Every App に戻る",
   },
   teamEntry: {
     title: "チームを選択",

@@ -22,7 +22,6 @@ export interface TeamNotificationsClientProps {
   locale: Locale;
   messages: AppMessages;
   teamId: string;
-  teamSlug: string;
   currentUserId: string;
   initialData?: TeamNotificationsInitialData | null;
 }
@@ -311,7 +310,7 @@ export function recipientLabel(
 }
 export function memberName(member: MemberData | undefined): string {
   if (!member) return "";
-  return member.name || member.username || member.email || member.userId;
+  return member.name || member.email || member.userId;
 }
 function userIdsFromRecipient(recipient: Record<string, unknown>): string[] {
   return Array.isArray(recipient.userIds)

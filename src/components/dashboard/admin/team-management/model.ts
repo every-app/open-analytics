@@ -1,12 +1,9 @@
-import type { TeamInviteData } from "@/lib/dashboard/management-data";
 import {
   type AdminServiceHttpMethod,
   requestAdminService,
 } from "@/lib/dashboard-api/client/admin-service";
-import type { MemberData, SiteData } from "@/lib/dashboard-api/client/edge";
+import type { SiteData } from "@/lib/dashboard-api/client/edge";
 import type { AdminServiceRoute } from "@/lib/dashboard-api/contract/admin-service";
-import type { Locale } from "@/lib/i18n/config";
-import type { AppMessages } from "@/lib/i18n/messages";
 
 import type { SiteMetricChangeRates } from "./types";
 export function emptyOverviewMetrics() {
@@ -93,70 +90,7 @@ export function sortSitesForInitialOrder<
     return left.id.localeCompare(right.id);
   });
 }
-export function buildSitePath(
-  locale: Locale,
-  teamSlug: string,
-  siteSlug: string,
-): string {
-  return `/${locale}/app/${teamSlug}/${siteSlug}`;
-}
 export const SITE_CARD_MAX_TREND_POINTS = 120;
-export function normalizeSiteIds(input: unknown): string[] {
-  const raw = Array.isArray(input) ? input : [];
-  const out: string[] = [];
-  for (const value of raw) {
-    const siteId = String(value || "").trim();
-    if (!siteId || out.includes(siteId)) continue;
-    out.push(siteId);
-  }
-  return out;
-}
-export function formatCountTemplate(template: string, count: number): string {
-  return template.replace("{count}", String(count));
-}
-export function siteAccessSummary(
-  siteIds: string[],
-  sites: Array<Pick<SiteData, "id" | "name" | "domain">>,
-  copy: AppMessages["teamManagement"]["members"],
-): string {
-  if (siteIds.length === 0) return copy.siteAccessAll;
-  const knownIds = new Set(sites.map((site) => site.id));
-  const selectedCount =
-    knownIds.size === 0
-      ? siteIds.length
-      : siteIds.filter((siteId) => knownIds.has(siteId)).length;
-  return formatCountTemplate(
-    copy.siteAccessSelected,
-    Math.max(selectedCount, siteIds.length),
-  );
-}
-export async function fetchTeamMembers(
-  teamId: string,
-  signal?: AbortSignal,
-): Promise<MemberData[]> {
-  return requestAdminService<MemberData[]>("members", {
-    params: { teamId },
-    signal,
-  });
-}
-export async function fetchTeamSites(
-  teamId: string,
-  signal?: AbortSignal,
-): Promise<SiteData[]> {
-  return requestAdminService<SiteData[]>("sites", {
-    params: { teamId },
-    signal,
-  });
-}
-export async function fetchTeamInvites(
-  teamId: string,
-  signal?: AbortSignal,
-): Promise<TeamInviteData[]> {
-  return requestAdminService<TeamInviteData[]>("team-invites", {
-    params: { teamId },
-    signal,
-  });
-}
 export async function postJson<T>(
   route: AdminServiceRoute,
   body: Record<string, unknown>,

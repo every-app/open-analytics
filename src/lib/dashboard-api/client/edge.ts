@@ -1,6 +1,4 @@
-import { getSessionToken } from "@/lib/auth";
 import { DEFAULT_EDGE_BASE_URL } from "@/lib/constants";
-import type { TeamRole } from "@/lib/dashboard/permissions";
 import { adminServicePath } from "@/lib/dashboard-api/contract/admin-service";
 import type {
   AccountUserData,
@@ -14,7 +12,6 @@ import type {
   QueryFilters,
   ReferrersData,
   ScriptSnippetData,
-  SessionTeamGroups,
   SiteConfigData,
   SiteData,
   TeamData,
@@ -106,15 +103,6 @@ export async function fetchEdgeJson<T>(options: FetchEdgeOptions): Promise<T> {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
       );
       headers.set("referer", `${url.origin}/`);
-    }
-  } else {
-    try {
-      const sessionToken = await getSessionToken();
-      if (sessionToken) {
-        headers.set("authorization", `Bearer ${sessionToken}`);
-      }
-    } catch {
-      // Ignore when session is unavailable outside request scope.
     }
   }
   if (method !== "GET") {
@@ -231,69 +219,6 @@ export async function fetchPublicReferrers(
     isPublic: true,
   });
 }
-export async function fetchAdminTeams(userId?: string): Promise<TeamData[]> {
-  const res = await fetchEdgeJson<{ ok: boolean; data: TeamData[] }>({
-    path: adminServicePath("teams"),
-    params: userId ? { userId } : undefined,
-  });
-  return res.data;
-}
-export async function createAdminTeam(input: {
-  name: string;
-  slug?: string;
-}): Promise<TeamData> {
-  const res = await fetchEdgeJson<{ ok: boolean; data: TeamData }>({
-    method: "POST",
-    path: adminServicePath("teams"),
-    body: input,
-  });
-  return res.data;
-}
-export async function updateAdminTeam(input: {
-  teamId: string;
-  name?: string;
-  slug?: string;
-}): Promise<TeamData> {
-  const res = await fetchEdgeJson<{ ok: boolean; data: TeamData }>({
-    method: "PATCH",
-    path: adminServicePath("teams"),
-    body: input,
-  });
-  return res.data;
-}
-export async function removeAdminTeam(input: {
-  teamId: string;
-}): Promise<{ teamId: string; removed: boolean }> {
-  const res = await fetchEdgeJson<{
-    ok: boolean;
-    data: { teamId: string; removed: boolean };
-  }>({
-    method: "PATCH",
-    path: adminServicePath("teams"),
-    body: {
-      ...input,
-      intent: "remove",
-    },
-  });
-  return res.data;
-}
-export async function transferAdminTeamOwner(input: {
-  teamId: string;
-  newOwnerUserId: string;
-}): Promise<TeamData & { transferred: boolean }> {
-  const res = await fetchEdgeJson<{
-    ok: boolean;
-    data: TeamData & { transferred: boolean };
-  }>({
-    method: "PATCH",
-    path: adminServicePath("teams"),
-    body: {
-      ...input,
-      intent: "transfer_owner",
-    },
-  });
-  return res.data;
-}
 export async function fetchAdminSites(
   teamId: string,
   options?: { signal?: AbortSignal },
@@ -361,64 +286,6 @@ export async function fetchAdminMembers(
   });
   return res.data;
 }
-export async function addAdminMember(input: {
-  teamId: string;
-  identifier: string;
-  userId?: string;
-  role?: TeamRole;
-  siteIds?: string[];
-}): Promise<MemberData> {
-  const res = await fetchEdgeJson<{ ok: boolean; data: MemberData }>({
-    method: "POST",
-    path: adminServicePath("members"),
-    body: input,
-  });
-  return res.data;
-}
-export async function updateAdminMemberRole(input: {
-  teamId: string;
-  userId: string;
-  role: TeamRole;
-}): Promise<{ teamId: string; userId: string; role: TeamRole }> {
-  const res = await fetchEdgeJson<{
-    ok: boolean;
-    data: { teamId: string; userId: string; role: TeamRole };
-  }>({
-    method: "PATCH",
-    path: adminServicePath("members"),
-    body: { ...input, intent: "update_role" },
-  });
-  return res.data;
-}
-export async function updateAdminMemberSiteAccess(input: {
-  teamId: string;
-  userId: string;
-  siteIds: string[];
-}): Promise<{ teamId: string; userId: string; siteIds: string[] }> {
-  const res = await fetchEdgeJson<{
-    ok: boolean;
-    data: { teamId: string; userId: string; siteIds: string[] };
-  }>({
-    method: "PATCH",
-    path: adminServicePath("members"),
-    body: { ...input, intent: "update_site_access" },
-  });
-  return res.data;
-}
-export async function removeAdminMember(input: {
-  teamId: string;
-  userId: string;
-}): Promise<{ teamId: string; userId: string; removed: boolean }> {
-  const res = await fetchEdgeJson<{
-    ok: boolean;
-    data: { teamId: string; userId: string; removed: boolean };
-  }>({
-    method: "PATCH",
-    path: adminServicePath("members"),
-    body: input,
-  });
-  return res.data;
-}
 export async function fetchAdminSiteConfig(
   siteId: string,
 ): Promise<SiteSettingsConfig> {
@@ -449,93 +316,18 @@ export async function fetchAdminScriptSnippet(
   });
   return res.data;
 }
-export async function loginAdminAccount(input: {
-  username: string;
-  password: string;
-}): Promise<{
-  user: AccountUserData;
-  teams: TeamData[];
-}> {
-  const res = await fetchEdgeJson<{
-    ok: boolean;
-    data: {
-      user: AccountUserData;
-      teams: TeamData[];
-    };
-  }>({
-    method: "POST",
-    path: "/api/public/session",
-    body: input,
-  });
-  return res.data;
-}
 export async function fetchAdminMe(): Promise<{
   user: AccountUserData;
   teams: TeamData[];
-  teamGroups?: SessionTeamGroups;
 }> {
   const res = await fetchEdgeJson<{
     ok: boolean;
     data: {
       user: AccountUserData;
       teams: TeamData[];
-      teamGroups?: SessionTeamGroups;
     };
   }>({
     path: adminServicePath("session"),
-  });
-  return res.data;
-}
-export async function fetchAdminUsers(): Promise<AccountUserData[]> {
-  const res = await fetchEdgeJson<{ ok: boolean; data: AccountUserData[] }>({
-    path: adminServicePath("users"),
-  });
-  return res.data;
-}
-export async function createAdminUser(input: {
-  username: string;
-  email: string;
-  name?: string;
-  password: string;
-  systemRole?: "admin" | "user";
-  teamName?: string;
-  teamSlug?: string;
-}): Promise<AccountUserData> {
-  const res = await fetchEdgeJson<{ ok: boolean; data: AccountUserData }>({
-    method: "POST",
-    path: adminServicePath("users"),
-    body: input,
-  });
-  return res.data;
-}
-export async function updateAdminUser(input: {
-  userId: string;
-  username?: string;
-  email?: string;
-  name?: string;
-  password?: string;
-  systemRole?: "admin" | "user";
-}): Promise<AccountUserData> {
-  const res = await fetchEdgeJson<{ ok: boolean; data: AccountUserData }>({
-    method: "PATCH",
-    path: adminServicePath("users"),
-    body: input,
-  });
-  return res.data;
-}
-export async function removeAdminUser(input: {
-  userId: string;
-}): Promise<{ userId: string; removed: boolean }> {
-  const res = await fetchEdgeJson<{
-    ok: boolean;
-    data: { userId: string; removed: boolean };
-  }>({
-    method: "PATCH",
-    path: adminServicePath("users"),
-    body: {
-      ...input,
-      intent: "remove",
-    },
   });
   return res.data;
 }
@@ -712,18 +504,8 @@ export async function fetchNotificationEmailPreview(input: {
     new URL(adminServicePath("notification-email-preview"), baseUrl),
     input,
   );
-  const headers = new Headers();
-  try {
-    const sessionToken = await getSessionToken();
-    if (sessionToken) {
-      headers.set("authorization", `Bearer ${sessionToken}`);
-    }
-  } catch {
-    // Ignore when session is unavailable outside request scope.
-  }
   const res = await fetch(url.toString(), {
     method: "GET",
-    headers,
     cache: "no-store",
   });
   if (!res.ok) {

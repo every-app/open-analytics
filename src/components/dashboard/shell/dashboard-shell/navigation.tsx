@@ -1,27 +1,18 @@
 import { PERSISTENT_VERTICAL_SCROLLBAR_OPTIONS } from "@insightflare/ui/overlay-scrollbar";
 import {
-  RiApps2Line,
   RiBarChartBoxLine,
   RiCalendarScheduleLine,
-  RiFileInfoLine,
   RiGlobalLine,
-  RiGroupLine,
-  RiKey2Line,
   RiLinksLine,
   RiNotification3Line,
   RiRobot2Line,
   RiSettings3Line,
-  RiShieldUserLine,
   RiSpeedUpLine,
   RiTeamLine,
-  RiUser3Line,
-  RiUserSettingsLine,
-  RiVipCrownLine,
   RiWindow2Line,
 } from "@remixicon/react";
 
-import { type SiteData, type TeamData } from "@/lib/dashboard-api/client/edge";
-import type { Locale } from "@/lib/i18n/config";
+import { type SiteData } from "@/lib/dashboard-api/client/edge";
 import type { AppMessages } from "@/lib/i18n/messages";
 export interface TeamSectionNavItem {
   key: string;
@@ -91,43 +82,27 @@ export function analyticsTabLabel(
   return messages.navigation[item.key as keyof typeof messages.navigation];
 }
 export interface SidebarRouteState {
-  mode: "root" | "team" | "site";
-  activeRootSectionKey?: string;
+  mode: "team" | "site";
   activeTeamSectionKey?: string;
   activeManagementSectionKey?: string;
   activeSiteSlug?: string;
+  /** Within a site: the analytics section, and a detail sub-page. */
+  siteSection?: string;
+  siteSubSection?: string;
 }
 export function getTeamSectionIcon(key: string) {
   if (key === "sites") return RiBarChartBoxLine;
   if (key === "site-management") return RiWindow2Line;
-  if (key === "widgets") return RiApps2Line;
   if (key === "notifications") return RiNotification3Line;
   if (key === "public-links") return RiLinksLine;
-  if (key === "api-keys") return RiKey2Line;
-  if (key === "settings") return RiUserSettingsLine;
   return RiGlobalLine;
 }
 export function getManagementSectionIcon(key: string) {
-  if (key === "manage-users") return RiUser3Line;
-  if (key === "version-updates") return RiFileInfoLine;
   if (key === "scheduled-tasks") return RiCalendarScheduleLine;
   if (key === "request-observation") return RiRobot2Line;
   if (key === "system-settings") return RiSettings3Line;
   if (key === "system-performance") return RiSpeedUpLine;
   return RiTeamLine;
-}
-export function getTeamRoleIcon(role: string | undefined) {
-  if (role === "owner") return RiVipCrownLine;
-  if (role === "admin") return RiShieldUserLine;
-  return RiGroupLine;
-}
-export function getTeamRoleLabel(
-  messages: AppMessages,
-  role: string | undefined,
-) {
-  if (role === "owner") return messages.teamManagement.members.roleLabels.owner;
-  if (role === "admin") return messages.teamManagement.members.roleLabels.admin;
-  return messages.teamManagement.members.roleLabels.member;
 }
 export function normalizeLocalePath(pathname: string): string {
   const cleaned = pathname || "";
@@ -162,191 +137,35 @@ export function toSidebarSite(site: SiteData): SidebarSite {
     iconPath: site.iconPath,
   };
 }
-export function parseActiveTeamSlugFromPath(
-  pathname: string,
-  teams: TeamData[],
-): string {
+
+/**
+ * Where the sidebar is, from the path: one of the organization's pages
+ * (`/app`, `/app/sites`, `/app/notifications`, `/app/manage/...`), or a site
+ * (`/app/sites/<slug>/<section>`).
+ */
+export function parseSidebarRouteState(pathname: string): SidebarRouteState {
   const segments = pathname.split("/").filter((segment) => segment.length > 0);
   const appIndex = segments.findIndex((segment) => segment === "app");
-  const candidate = appIndex >= 0 ? segments[appIndex + 1] || "" : "";
-  if (!candidate || ["account", "inbox", "manage"].includes(candidate)) {
-    return "";
-  }
-  return teams.some((team) => team.slug === candidate) ? candidate : "";
-}
-export function buildSitePath(
-  locale: Locale,
-  teamSlug: string,
-  siteSlug: string,
-  section?:
-    | "realtime"
-    | "pages"
-    | "referrers"
-    | "sessions"
-    | "events"
-    | "visitors"
-    | "geo"
-    | "devices"
-    | "browsers"
-    | "performance"
-    | "settings",
-): string {
-  const base = `/${locale}/app/${teamSlug}/${siteSlug}`;
-  if (!section) return base;
-  return `${base}/${section}`;
-}
-export function parseSidebarRouteState(
-  pathname: string,
-  activeTeamSlug?: string,
-): SidebarRouteState {
-  const segments = pathname.split("/").filter((segment) => segment.length > 0);
-  const appIndex = segments.findIndex((segment) => segment === "app");
-  const appLocalPath = appIndex >= 0 ? segments.slice(appIndex + 1) : [];
+  const local = appIndex >= 0 ? segments.slice(appIndex + 1) : [];
 
-  if (!activeTeamSlug) {
-    if (appLocalPath[0] === "inbox") {
-      return {
-        mode: "root",
-        activeRootSectionKey: "inbox",
-      };
-    }
-    if (appLocalPath[0] === "account") {
-      return {
-        mode: "root",
-        activeRootSectionKey: "account",
-      };
-    }
-    if (appLocalPath[0] === "manage") {
-      const managementKeyByPath: Record<string, string> = {
-        users: "manage-users",
-        teams: "manage-teams",
-        "version-updates": "version-updates",
-        "scheduled-tasks": "scheduled-tasks",
-        "request-observation": "request-observation",
-        "system-performance": "system-performance",
-        "system-settings": "system-settings",
-      };
-      return {
-        mode: "root",
-        activeManagementSectionKey: managementKeyByPath[appLocalPath[1] || ""],
-      };
-    }
+  if (local[0] === "sites" && local[1]) {
     return {
-      mode: "root",
+      mode: "site",
+      activeSiteSlug: local[1],
+      siteSection: local[2] || "",
+      siteSubSection: local[3] || "",
     };
   }
-
-  const teamIndex = segments.findIndex(
-    (segment, index) =>
-      segment === activeTeamSlug && index > 0 && segments[index - 1] === "app",
-  );
-  const localPath = teamIndex >= 0 ? segments.slice(teamIndex + 1) : [];
-
-  if (localPath.length === 0) {
-    return {
-      mode: "team",
-      activeTeamSectionKey: "sites",
-    };
+  if (local.length === 0)
+    return { mode: "team", activeTeamSectionKey: "sites" };
+  if (local[0] === "sites") {
+    return { mode: "team", activeTeamSectionKey: "site-management" };
   }
-
-  if (localPath[0] === "settings") {
-    return {
-      mode: "team",
-      activeTeamSectionKey: "settings",
-    };
+  if (local[0] === "notifications" || local[0] === "public-links") {
+    return { mode: "team", activeTeamSectionKey: local[0] };
   }
-
-  if (localPath[0] === "public-links") {
-    return {
-      mode: "team",
-      activeTeamSectionKey: "public-links",
-    };
+  if (local[0] === "manage") {
+    return { mode: "team", activeManagementSectionKey: local[1] };
   }
-
-  if (localPath[0] === "api-keys") {
-    return {
-      mode: "team",
-      activeTeamSectionKey: "api-keys",
-    };
-  }
-
-  if (localPath[0] === "notifications") {
-    return {
-      mode: "team",
-      activeTeamSectionKey: "notifications",
-    };
-  }
-
-  if (localPath[0] === "members") {
-    return {
-      mode: "team",
-      activeTeamSectionKey: "settings",
-    };
-  }
-
-  if (localPath[0] === "account") {
-    return {
-      mode: "team",
-    };
-  }
-
-  if (localPath[0] === "manage") {
-    if (localPath[1] === "users") {
-      return {
-        mode: "team",
-        activeManagementSectionKey: "manage-users",
-      };
-    }
-    if (localPath[1] === "sites") {
-      return {
-        mode: "team",
-        activeTeamSectionKey: "site-management",
-      };
-    }
-    if (localPath[1] === "teams") {
-      return {
-        mode: "team",
-        activeManagementSectionKey: "manage-teams",
-      };
-    }
-    if (localPath[1] === "system-performance") {
-      return {
-        mode: "team",
-        activeManagementSectionKey: "system-performance",
-      };
-    }
-    if (localPath[1] === "system-settings") {
-      return {
-        mode: "team",
-        activeManagementSectionKey: "system-settings",
-      };
-    }
-    if (localPath[1] === "version-updates") {
-      return {
-        mode: "team",
-        activeManagementSectionKey: "version-updates",
-      };
-    }
-    if (localPath[1] === "scheduled-tasks") {
-      return {
-        mode: "team",
-        activeManagementSectionKey: "scheduled-tasks",
-      };
-    }
-    return {
-      mode: "team",
-    };
-  }
-
-  if (localPath[0] === "widgets") {
-    return {
-      mode: "team",
-      activeTeamSectionKey: "widgets",
-    };
-  }
-
-  return {
-    mode: "site",
-    activeSiteSlug: localPath[0],
-  };
+  return { mode: "team" };
 }

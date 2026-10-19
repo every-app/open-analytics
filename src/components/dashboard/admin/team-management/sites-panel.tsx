@@ -21,11 +21,11 @@ import {
   numberFormat,
   percentFormat,
 } from "@/lib/dashboard/format";
+import { buildSitePath } from "@/lib/dashboard/paths";
 import Link from "@/lib/router";
 
 import { useTeamManagementContext } from "./context";
 import {
-  buildSitePath,
   changeRateClass,
   formatChangeRate,
   SITE_CARD_MAX_TREND_POINTS,
@@ -64,8 +64,6 @@ function DeferredSiteChart({ children }: { children: ReactNode }) {
 
 export function TeamManagementSitesPanel() {
   const {
-    activeTab,
-    activeTeam,
     aggregateChartRenderData,
     aggregateChartSites,
     copy,
@@ -97,7 +95,7 @@ export function TeamManagementSitesPanel() {
     );
   }
 
-  return activeTab === "sites" ? (
+  return (
     <div className="space-y-4">
       <Card className="overflow-visible">
         <CardHeader>
@@ -139,7 +137,7 @@ export function TeamManagementSitesPanel() {
             ({ site, overview, pagesPerSession, changeRates, trend }) => (
               <Link
                 key={site.id}
-                href={buildSitePath(locale, activeTeam.slug, site.slug)}
+                href={buildSitePath(locale, site.slug)}
                 className="group block h-full cursor-pointer outline-none transition-transform hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-1 focus-visible:ring-ring/60"
                 aria-label={`${copy.sites.openAnalytics}: ${site.name}`}
               >
@@ -254,5 +252,5 @@ export function TeamManagementSitesPanel() {
         </div>
       ) : null}
     </div>
-  ) : null;
+  );
 }

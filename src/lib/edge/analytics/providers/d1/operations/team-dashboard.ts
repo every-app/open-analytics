@@ -15,7 +15,6 @@ import type { EdgeSessionClaims } from "@/lib/edge/auth/session-auth";
 import { requireSession } from "@/lib/edge/auth/session-auth";
 import { resolvePrivateTeamForSession } from "@/lib/edge/auth/site-access";
 import type { Env } from "@/lib/edge/types";
-const isDemoBuild = import.meta.env.VITE_DEMO_MODE === "1";
 export interface TeamDashboardScope {
   readonly session: EdgeSessionClaims;
   readonly teamId: string;
@@ -37,31 +36,17 @@ export interface ReadTeamDashboardInput {
   readonly preloadedSites?: readonly TeamSiteRow[];
   readonly diagnostics?: D1ReadDiagnostics;
 }
-/**
- * Resolves a dashboard session for the active build target. Demo credentials
- * never reach the production session verifier.
- */
+/** The signed-in person behind a dashboard request (session-auth.ts). */
 export async function resolveDashboardSession(
   request: Request,
   env: Env,
 ): Promise<EdgeSessionClaims | null> {
-  if (isDemoBuild) {
-    const { resolveDemoDashboardSession } =
-      await import("../../mock/team-dashboard-demo");
-    return resolveDemoDashboardSession(request);
-  }
   return requireSession(request, env);
 }
 /** Resolves team ACLs through the same runtime selected for data reads. */
 export async function resolveTeamDashboardScope(
   input: ResolveTeamDashboardScopeInput,
 ): Promise<TeamDashboardScope | Response> {
-  if (isDemoBuild) {
-    const { resolveDemoTeamDashboardScope } =
-      await import("../../mock/team-dashboard-demo");
-    return resolveDemoTeamDashboardScope(input);
-  }
-
   const session =
     input.session ?? (await resolveDashboardSession(input.request, input.env));
   if (!session) return new Response("Unauthorized", { status: 401 });
@@ -89,11 +74,6 @@ export async function resolveTeamDashboardScope(
 export async function readTeamDashboard(
   input: ReadTeamDashboardInput,
 ): Promise<TeamDashboardQueryResult> {
-  if (isDemoBuild) {
-    const { readDemoTeamDashboard } =
-      await import("../../mock/team-dashboard-demo");
-    return readDemoTeamDashboard(input);
-  }
   if (input.preloadedSites !== undefined) {
     return queryTeamDashboardForTeam(
       input.env,

@@ -1,30 +1,17 @@
 export interface Env {
   DB: D1Database;
   INGEST_DO: DurableObjectNamespace;
-  REQUEST_ANALYTICS?: AnalyticsEngineDataset;
-  TRAFFIC_ANALYTICS?: AnalyticsEngineDataset;
-  EVENT_ANALYTICS?: AnalyticsEngineDataset;
-  ARCHIVE_BUCKET?: R2Bucket;
+  SITE_SETTINGS_KV?: KVNamespace;
   MAIN_SECRET?: string;
   DAILY_SALT_SECRET?: string;
-  DEMO_MODE?: string;
   DISABLE_CRON_TASKS?: string;
-  ADMIN_WS_TOKEN?: string;
-  PARQUET_WASM_URL?: string;
   MAP_RELAY_BASE_URL?: string;
-  BOOTSTRAP_ADMIN_PASSWORD?: string;
   SESSION_WINDOW_MINUTES?: string;
   SCRIPT_CACHE_TTL_SECONDS?: string;
-  SITE_SETTINGS_KV?: KVNamespace;
-  INSIGHTFLARE_LOGIN_TURNSTILE_DISABLED?: string;
-  INSIGHTFLARE_ANALYTICS_ENGINE_DISABLED?: string;
-  INSIGHTFLARE_E2E?: string;
-  INSIGHTFLARE_E2E_NOW?: string;
-  INSIGHTFLARE_E2E_CONTROL_TOKEN?: string;
-  INSIGHTFLARE_E2E_TEST_SITE_URL?: string;
-  INSIGHTFLARE_E2E_CLOUDFLARE_API_URL?: string;
-  INSIGHTFLARE_E2E_RESEND_API_URL?: string;
-  INSIGHTFLARE_E2E_TURNSTILE_SITEVERIFY_URL?: string;
+  /** The organization a deployment is pinned to (everyAppWorker). */
+  EVERY_APP_ORG_ID?: string;
+  /** The Every App gateway's URL (everyAppWorker). */
+  GATEWAY_URL?: string;
 }
 
 export interface SerializedRequestPayload {

@@ -1,3 +1,4 @@
+import { everyApp, type EveryAppUser } from "@every-app/sdk/server";
 import handler from "@tanstack/react-start/server-entry";
 
 import { sweepIngestAlarms } from "@/lib/edge/ingest/alarm-sweep";
@@ -8,12 +9,11 @@ import {
   errorLogData,
   runWithInvocationLogger,
 } from "@/lib/edge/observability/logger";
-import { initializeE2eClock } from "@/lib/edge/runtime/e2e-clock";
 import { dispatchInternalScheduledTasks } from "@/lib/edge/scheduled-tasks/dispatcher";
 import type { Env } from "@/lib/edge/types";
 import apiApp from "@/lib/hono/app";
 import { shouldUseHono } from "@/lib/hono/path-match";
-import { localeCookie, resolvePageRequest } from "@/middleware";
+import { resolvePageRequest } from "@/middleware";
 export interface AppServerContext {
   env: Env;
   executionCtx: ExecutionContext;
@@ -26,21 +26,17 @@ declare module "@tanstack/react-router" {
   }
 }
 export class IngestDurableObject extends BaseIngestDurableObject {}
-function withPageHeaders(
-  response: Response,
-  pathname: string,
-  locale: string | null,
-  demoMode: boolean,
-  e2eTestSiteURL?: string,
-): Response {
+function withPageHeaders(response: Response, pathname: string): Response {
   const headers = new Headers(response.headers);
   headers.set("x-pathname", pathname);
-  if (locale) headers.append("set-cookie", localeCookie(locale));
+  // The gateway strips every cookie before a request reaches the app, so
+  // nothing set here could be read back (and must not shadow the gateway's).
+  headers.delete("set-cookie");
   headers.set(
     "Strict-Transport-Security",
     "max-age=31536000; includeSubDomains",
   );
-  headers.set("X-Frame-Options", demoMode ? "SAMEORIGIN" : "DENY");
+  headers.set("X-Frame-Options", "DENY");
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   headers.set(
@@ -48,19 +44,12 @@ function withPageHeaders(
     "camera=(), microphone=(), geolocation=(), payment=()",
   );
   const connectSources = ["'self'", "https:", "wss:"];
-  if (e2eTestSiteURL) {
-    try {
-      connectSources.push(new URL(e2eTestSiteURL).origin);
-    } catch {
-      // Keep the production CSP when the optional E2E URL is malformed.
-    }
-  }
   headers.set(
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://ajax.cloudflare.com https://challenges.cloudflare.com https://insight.ravelloh.com https://static.cloudflareinsights.com",
-      "script-src-elem 'self' 'unsafe-inline' https://ajax.cloudflare.com https://challenges.cloudflare.com https://insight.ravelloh.com https://static.cloudflareinsights.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "script-src-elem 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
@@ -80,7 +69,7 @@ function withPageHeaders(
   });
 }
 function shouldSkipScheduledTasks(env: Env): boolean {
-  return env.DISABLE_CRON_TASKS === "1" || env.DEMO_MODE === "1";
+  return env.DISABLE_CRON_TASKS === "1";
 }
 function isServerFunctionRequest(pathname: string): boolean {
   return pathname === "/_serverFn" || pathname.startsWith("/_serverFn/");
@@ -88,84 +77,54 @@ function isServerFunctionRequest(pathname: string): boolean {
 function pageRouteForLog(pathname: string): string {
   return isServerFunctionRequest(pathname) ? "server_function" : "page";
 }
-function markInternalPageRequest(request: Request): Request {
-  const headers = new Headers(request.headers);
-  headers.set("x-insightflare-internal-page-request", "1");
-  return new Request(request, { headers });
+/**
+ * Pages a visitor without a gateway identity may load: share links, the
+ * locale redirects in front of them, and the setup error. Everything else
+ * the gateway only forwards with a signed-in member (everyapp.config.ts).
+ */
+function isPublicPage(pathname: string): boolean {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length <= 1) return true;
+  if (segments[0] === "share") return true;
+  return segments[1] === "share" || segments[1] === "runtime-config-error";
 }
-export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    initializeE2eClock(env);
-    const pathname = new URL(request.url).pathname;
-    if (shouldUseHono(pathname)) {
-      return apiApp.fetch(request, env, ctx);
-    }
+async function serveRequest(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+  user: EveryAppUser | null,
+): Promise<Response> {
+  const pathname = new URL(request.url).pathname;
+  // The tracker, the collector and the API answer for themselves: private
+  // API routes check the gateway identity (session-auth.ts).
+  if (shouldUseHono(pathname)) {
+    return apiApp.fetch(request, env, ctx);
+  }
+  if (!user && !isPublicPage(pathname)) {
+    return new Response("Not found", { status: 404 });
+  }
 
-    const logger = createInvocationLogger({
-      source: "worker",
-      trigger: "request",
-    });
-    logger.info("request.started");
-    const instrumentedEnv = instrumentEnv(env, logger);
+  const logger = createInvocationLogger({
+    source: "worker",
+    trigger: "request",
+  });
+  logger.info("request.started");
+  const instrumentedEnv = instrumentEnv(env, logger);
 
-    try {
-      return await runWithInvocationLogger(logger, async () => {
-        // Server functions are protocol requests, not localized page navigations.
-        // Let Start see the original /_serverFn path before page middleware can
-        // redirect it beneath a locale segment.
-        if (isServerFunctionRequest(pathname)) {
-          const response = await logger.measure(
-            "server_function.handler",
-            async () =>
-              handler.fetch(request, {
-                context: { env: instrumentedEnv, executionCtx: ctx },
-              }),
-          );
-          const result = withPageHeaders(
-            response,
-            pathname,
-            null,
-            env.DEMO_MODE === "1",
-            env.INSIGHTFLARE_E2E_TEST_SITE_URL,
-          );
-          logger.setRequest({
-            route: pageRouteForLog(pathname),
-            method: request.method,
-            status: result.status,
-            outcome: result.status >= 400 ? "error" : "ok",
-          });
-          return result;
-        }
-
-        const decision = await logger.measure("page.middleware", () =>
-          resolvePageRequest(request, env, async (internalRequest) =>
-            apiApp.fetch(
-              markInternalPageRequest(internalRequest),
-              instrumentedEnv,
-              ctx,
-            ),
-          ),
+  try {
+    return await runWithInvocationLogger(logger, async () => {
+      // Server functions are protocol requests, not localized page navigations.
+      // Let Start see the original /_serverFn path before page middleware can
+      // redirect it beneath a locale segment.
+      if (isServerFunctionRequest(pathname)) {
+        const response = await logger.measure(
+          "server_function.handler",
+          async () =>
+            handler.fetch(request, {
+              context: { env: instrumentedEnv, executionCtx: ctx },
+            }),
         );
-        const result = decision.response
-          ? withPageHeaders(
-              decision.response,
-              new URL(decision.response.headers.get("location") || request.url)
-                .pathname,
-              decision.locale,
-              env.DEMO_MODE === "1",
-              env.INSIGHTFLARE_E2E_TEST_SITE_URL,
-            )
-          : withPageHeaders(
-              await logger.measure("page.handler", async () =>
-                handler.fetch(request, {
-                  context: { env: instrumentedEnv, executionCtx: ctx },
-                }),
-              ),
-              pathname,
-              decision.locale,
-              env.DEMO_MODE === "1",
-              env.INSIGHTFLARE_E2E_TEST_SITE_URL,
-            );
+        const result = withPageHeaders(response, pathname);
         logger.setRequest({
           route: pageRouteForLog(pathname),
           method: request.method,
@@ -173,21 +132,55 @@ export default {
           outcome: result.status >= 400 ? "error" : "ok",
         });
         return result;
-      });
-    } catch (error) {
-      logger.error("request.unhandled_error", errorLogData(error));
+      }
+
+      const decision = resolvePageRequest(request, env);
+      const result = decision.response
+        ? withPageHeaders(
+            decision.response,
+            new URL(decision.response.headers.get("location") || request.url)
+              .pathname,
+          )
+        : withPageHeaders(
+            await logger.measure("page.handler", async () =>
+              handler.fetch(request, {
+                context: { env: instrumentedEnv, executionCtx: ctx },
+              }),
+            ),
+            pathname,
+          );
       logger.setRequest({
         route: pageRouteForLog(pathname),
         method: request.method,
-        status: 500,
-        outcome: "error",
+        status: result.status,
+        outcome: result.status >= 400 ? "error" : "ok",
       });
-      throw error;
-    } finally {
-      logger.info("request.completed");
-      logger.emit();
-    }
-  },
+      return result;
+    });
+  } catch (error) {
+    logger.error("request.unhandled_error", errorLogData(error));
+    logger.setRequest({
+      route: pageRouteForLog(pathname),
+      method: request.method,
+      status: 500,
+      outcome: "error",
+    });
+    throw error;
+  } finally {
+    logger.info("request.completed");
+    logger.emit();
+  }
+}
+
+// everyApp() verifies the identity the Every App gateway signs onto every
+// request before any app code runs (`user` is null only on a route
+// everyapp.config.ts declares public), and answers the gateway's tool calls.
+const app = everyApp<Env>((request, env, ctx, user) =>
+  serveRequest(request, env, ctx, user),
+);
+
+export default {
+  fetch: app.fetch,
 
   async scheduled(
     controller: ScheduledController,

@@ -1,23 +1,16 @@
 import type { TeamRole } from "@/lib/dashboard/permissions";
 import type { Locale } from "@/lib/i18n/config";
 
+/** The organization's workspace: every site belongs to it (viewer.ts). */
 export interface TeamData {
   id: string;
   name: string;
   slug: string;
-  ownerUserId: string;
   createdAt: number;
   updatedAt?: number;
   siteCount: number;
-  memberCount: number;
+  /** The viewer's gateway role in the organization. */
   membershipRole?: TeamRole;
-}
-
-export interface SessionTeamGroups {
-  created: TeamData[];
-  managed: TeamData[];
-  member: TeamData[];
-  system: TeamData[];
 }
 
 export interface SiteData {
@@ -32,56 +25,26 @@ export interface SiteData {
   updatedAt: number;
 }
 
+/** Someone in the organization who has opened the app (viewer.ts). */
 export interface MemberData {
   teamId: string;
   userId: string;
   role: TeamRole;
-  siteIds: string[];
-  joinedAt: number;
-  username: string;
   email: string;
   name: string | null;
+  lastSeenAt: number;
 }
 
 export interface AccountUserData {
   id: string;
-  username: string;
   email: string;
   name: string;
+  /** "admin" for organization owners and admins. */
   systemRole: "admin" | "user";
   timeZone?: string;
   preferredLocale: "" | Locale;
   createdAt: number;
   updatedAt: number;
-  teamCount?: number;
-  ownedTeamCount?: number;
-}
-
-export type ApiKeyScope =
-  | "analytics:read"
-  | "analysis:read"
-  | "analysis:write"
-  | "site:read"
-  | "site:write"
-  | "site_config:read"
-  | "site_config:write";
-
-export interface ApiKeyData {
-  id: string;
-  teamId: string;
-  name: string;
-  prefix: string;
-  scopes: ApiKeyScope[];
-  siteIds: string[];
-  createdByUserId: string;
-  expiresAt: number | null;
-  revokedAt: number | null;
-  revokedByUserId: string;
-  rotatedFromKeyId: string;
-  lastUsedAt: number | null;
-  createdAt: number;
-  updatedAt: number;
-  status: "active" | "expired" | "revoked";
 }
 
 export type NotificationDeliveryStatus =

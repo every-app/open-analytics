@@ -28,14 +28,7 @@ import { formatI18nTemplate } from "@/lib/i18n/template";
 export interface SiteSettingsClientPageProps {
   locale: Locale;
   messages: AppMessages;
-  teamSlug: string;
-  activeTeamId: string;
   siteSlug: string;
-  teams: Array<{
-    id: string;
-    slug: string;
-    name: string;
-  }>;
   site: Pick<
     SiteData,
     "id" | "name" | "domain" | "publicEnabled" | "publicSlug"

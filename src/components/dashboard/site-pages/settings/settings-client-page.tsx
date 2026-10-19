@@ -43,7 +43,6 @@ import {
 import { Slider } from "@insightflare/ui/slider";
 import { Spinner } from "@insightflare/ui/spinner";
 import {
-  RiArrowRightLine,
   RiBarChartBoxLine,
   RiCloseLine,
   RiCodeLine,
@@ -68,6 +67,7 @@ import {
   type BlockingRuleSyntaxError,
   validateBlockingRules,
 } from "@/lib/blocking";
+import { buildSitePath } from "@/lib/dashboard/paths";
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
 import type { SiteData } from "@/lib/dashboard-api/client/edge";
 import { navigateWithTransition } from "@/lib/page-transition";
@@ -133,10 +133,7 @@ function SettingsSection({
 export function SettingsClientPage({
   locale,
   messages,
-  teamSlug,
-  activeTeamId,
   siteSlug,
-  teams,
   site,
   initialData = null,
 }: SiteSettingsClientPageProps) {
@@ -170,11 +167,9 @@ export function SettingsClientPage({
     useState(false);
   const [savingBlockingField, setSavingBlockingField] =
     useState<BlockingFieldId | null>(null);
-  const [transferring, setTransferring] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [currentSiteSlug, setCurrentSiteSlug] = useState(siteSlug);
-  const [transferTeamId, setTransferTeamId] = useState(activeTeamId);
   const [trackingStrength, setTrackingStrength] = useState<TrackingStrength>(
     initialTrackerSettings.trackingStrength,
   );
@@ -393,7 +388,7 @@ export function SettingsClientPage({
         setCurrentSiteSlug(nextSlug);
         navigateWithTransition(
           router,
-          `/${locale}/app/${teamSlug}/${nextSlug}/settings`,
+          buildSitePath(locale, nextSlug, "settings"),
         );
       } else {
         router.refresh();
@@ -439,7 +434,7 @@ export function SettingsClientPage({
         setCurrentSiteSlug(nextSlug);
         navigateWithTransition(
           router,
-          `/${locale}/app/${teamSlug}/${nextSlug}/settings`,
+          buildSitePath(locale, nextSlug, "settings"),
         );
       } else {
         router.refresh();
@@ -614,7 +609,7 @@ export function SettingsClientPage({
       );
       toast.success(copy.toasts.deleted);
       setDeleteDialogOpen(false);
-      navigateWithTransition(router, `/${locale}/app/${teamSlug}`);
+      navigateWithTransition(router, `/${locale}/app`);
       router.refresh();
     } catch (error) {
       const message =
@@ -622,42 +617,6 @@ export function SettingsClientPage({
       toast.error(message || copy.toasts.deleteFailed);
     } finally {
       setDeleting(false);
-    }
-  }
-
-  async function handleTransfer() {
-    if (!transferTeamId || transferTeamId === activeTeamId) return;
-
-    const targetTeam = teams.find((team) => team.id === transferTeamId);
-    if (!targetTeam) {
-      toast.error(copy.toasts.transferFailed);
-      return;
-    }
-
-    setTransferring(true);
-    try {
-      const updated = await postJson<SiteData>(
-        "sites",
-        {
-          intent: "update",
-          siteId: site.id,
-          teamId: targetTeam.id,
-        },
-        "PATCH",
-      );
-      toast.success(copy.toasts.transferred);
-      const nextSlug = resolveSiteSlug(updated);
-      navigateWithTransition(
-        router,
-        `/${locale}/app/${targetTeam.slug}/${nextSlug}`,
-      );
-      router.refresh();
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : copy.toasts.transferFailed;
-      toast.error(message || copy.toasts.transferFailed);
-    } finally {
-      setTransferring(false);
     }
   }
 
@@ -720,11 +679,7 @@ export function SettingsClientPage({
                   onChange={(event) => setName(event.target.value)}
                   minLength={2}
                   disabled={
-                    saving ||
-                    trackingSaving ||
-                    transferring ||
-                    deleting ||
-                    loadingSettings
+                    saving || trackingSaving || deleting || loadingSettings
                   }
                   required
                 />
@@ -738,11 +693,7 @@ export function SettingsClientPage({
                   onChange={(event) => setDomain(event.target.value)}
                   minLength={3}
                   disabled={
-                    saving ||
-                    trackingSaving ||
-                    transferring ||
-                    deleting ||
-                    loadingSettings
+                    saving || trackingSaving || deleting || loadingSettings
                   }
                   required
                 />
@@ -754,7 +705,6 @@ export function SettingsClientPage({
                 disabled={
                   saving ||
                   trackingSaving ||
-                  transferring ||
                   deleting ||
                   loadingSettings ||
                   !hasSiteInfoChanges
@@ -807,11 +757,7 @@ export function SettingsClientPage({
                   }
                 }}
                 disabled={
-                  saving ||
-                  savingPublicSharing ||
-                  trackingSaving ||
-                  transferring ||
-                  deleting
+                  saving || savingPublicSharing || trackingSaving || deleting
                 }
               >
                 <SelectTrigger
@@ -837,11 +783,7 @@ export function SettingsClientPage({
                 placeholder={copy.publicSlugPlaceholder}
                 onChange={(event) => setPublicSlug(event.target.value)}
                 disabled={
-                  saving ||
-                  savingPublicSharing ||
-                  trackingSaving ||
-                  transferring ||
-                  deleting
+                  saving || savingPublicSharing || trackingSaving || deleting
                 }
               />
               <p className="text-xs text-muted-foreground">
@@ -908,7 +850,6 @@ export function SettingsClientPage({
                 saving ||
                 savingPublicSharing ||
                 trackingSaving ||
-                transferring ||
                 deleting ||
                 !hasPublicSharingChanges
               }
@@ -1015,13 +956,7 @@ export function SettingsClientPage({
               onValueChange={(value) => {
                 setTrackingStrength(value as TrackingStrength);
               }}
-              disabled={
-                saving ||
-                trackingSaving ||
-                transferring ||
-                deleting ||
-                loadingSettings
-              }
+              disabled={saving || trackingSaving || deleting || loadingSettings}
               className="gap-2"
             >
               {[
@@ -1079,7 +1014,6 @@ export function SettingsClientPage({
               disabled={
                 saving ||
                 trackingSaving ||
-                transferring ||
                 deleting ||
                 loadingSettings ||
                 !hasTrackingStrengthChanges
@@ -1127,11 +1061,7 @@ export function SettingsClientPage({
                   setTrackQueryParams(value === "true");
                 }}
                 disabled={
-                  saving ||
-                  trackingSaving ||
-                  transferring ||
-                  deleting ||
-                  loadingSettings
+                  saving || trackingSaving || deleting || loadingSettings
                 }
               >
                 <SelectTrigger
@@ -1156,11 +1086,7 @@ export function SettingsClientPage({
                   setTrackHash(value === "true");
                 }}
                 disabled={
-                  saving ||
-                  trackingSaving ||
-                  transferring ||
-                  deleting ||
-                  loadingSettings
+                  saving || trackingSaving || deleting || loadingSettings
                 }
               >
                 <SelectTrigger id="site-settings-track-hash" className="w-full">
@@ -1182,11 +1108,7 @@ export function SettingsClientPage({
                   setIgnoreDoNotTrack(value === "true");
                 }}
                 disabled={
-                  saving ||
-                  trackingSaving ||
-                  transferring ||
-                  deleting ||
-                  loadingSettings
+                  saving || trackingSaving || deleting || loadingSettings
                 }
               >
                 <SelectTrigger id="site-settings-ignore-dnt" className="w-full">
@@ -1207,7 +1129,6 @@ export function SettingsClientPage({
               disabled={
                 saving ||
                 trackingSaving ||
-                transferring ||
                 deleting ||
                 loadingSettings ||
                 !hasQueryHashChanges
@@ -1255,11 +1176,7 @@ export function SettingsClientPage({
                   setAutoTrackOutboundLinks(value === "true");
                 }}
                 disabled={
-                  saving ||
-                  trackingSaving ||
-                  transferring ||
-                  deleting ||
-                  loadingSettings
+                  saving || trackingSaving || deleting || loadingSettings
                 }
               >
                 <SelectTrigger
@@ -1286,7 +1203,6 @@ export function SettingsClientPage({
               disabled={
                 saving ||
                 trackingSaving ||
-                transferring ||
                 deleting ||
                 loadingSettings ||
                 !hasAutoTrackingChanges
@@ -1346,11 +1262,7 @@ export function SettingsClientPage({
                 }}
                 aria-label={copy.performanceSampleRateLabel}
                 disabled={
-                  saving ||
-                  trackingSaving ||
-                  transferring ||
-                  deleting ||
-                  loadingSettings
+                  saving || trackingSaving || deleting || loadingSettings
                 }
               />
               <div className="flex items-center justify-between text-[11px] text-muted-foreground">
@@ -1370,7 +1282,6 @@ export function SettingsClientPage({
               disabled={
                 saving ||
                 trackingSaving ||
-                transferring ||
                 deleting ||
                 loadingSettings ||
                 !hasPerformanceTrackingChanges
@@ -1415,13 +1326,7 @@ export function SettingsClientPage({
             dialogCopy={copy.blockingRulesDialogs}
             value={blockingInputs[field]}
             errors={blockingValidation[field]}
-            disabled={
-              saving ||
-              trackingSaving ||
-              transferring ||
-              deleting ||
-              loadingSettings
-            }
+            disabled={saving || trackingSaving || deleting || loadingSettings}
             saving={savingBlockingField === field}
             changed={blockingInputs[field] !== persistedBlockingInputs[field]}
             onChange={(value) => {
@@ -1466,11 +1371,7 @@ export function SettingsClientPage({
                   setBotProtectionEnabled(value === "true");
                 }}
                 disabled={
-                  saving ||
-                  trackingSaving ||
-                  transferring ||
-                  deleting ||
-                  loadingSettings
+                  saving || trackingSaving || deleting || loadingSettings
                 }
               >
                 <SelectTrigger
@@ -1494,7 +1395,6 @@ export function SettingsClientPage({
               disabled={
                 saving ||
                 trackingSaving ||
-                transferring ||
                 deleting ||
                 loadingSettings ||
                 !hasBotProtectionChanges
@@ -1550,11 +1450,7 @@ export function SettingsClientPage({
                   setHostingProxyBlockingEnabled(value === "true");
                 }}
                 disabled={
-                  saving ||
-                  trackingSaving ||
-                  transferring ||
-                  deleting ||
-                  loadingSettings
+                  saving || trackingSaving || deleting || loadingSettings
                 }
               >
                 <SelectTrigger
@@ -1578,7 +1474,6 @@ export function SettingsClientPage({
               disabled={
                 saving ||
                 trackingSaving ||
-                transferring ||
                 deleting ||
                 loadingSettings ||
                 !hasHostingProxyBlockingChanges
@@ -1614,81 +1509,6 @@ export function SettingsClientPage({
         description={copy.sections.danger.description}
         danger
       >
-        <Card className="h-full">
-          <CardHeader>
-            <CardTitle className="inline-flex items-center gap-2">
-              <RiArrowRightLine className="size-4" />
-              {copy.transferTitle}
-            </CardTitle>
-            <CardDescription>{copy.transferSubtitle}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex h-full flex-col">
-            <form
-              className="flex h-full flex-col gap-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void handleTransfer();
-              }}
-            >
-              <div className="space-y-2">
-                <Label htmlFor="site-settings-transfer-team">
-                  {copy.transferTeamLabel}
-                </Label>
-                <Select
-                  value={transferTeamId}
-                  onValueChange={setTransferTeamId}
-                >
-                  <SelectTrigger
-                    id="site-settings-transfer-team"
-                    className="w-full"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teams.map((team) => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                type="submit"
-                className="mt-auto self-start"
-                disabled={
-                  saving ||
-                  trackingSaving ||
-                  transferring ||
-                  deleting ||
-                  transferTeamId === activeTeamId
-                }
-              >
-                <AutoTransition className="inline-flex items-center gap-[var(--button-content-gap)]">
-                  {transferring ? (
-                    <span
-                      key="transferring"
-                      className="inline-flex items-center gap-[var(--button-content-gap)]"
-                    >
-                      <Spinner data-icon="inline-start" />
-                      {copy.transferring}
-                    </span>
-                  ) : (
-                    <span
-                      key="transfer"
-                      className="inline-flex items-center gap-[var(--button-content-gap)]"
-                    >
-                      <RiArrowRightLine data-icon="inline-start" />
-                      {copy.transfer}
-                    </span>
-                  )}
-                </AutoTransition>
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
         <AlertDialog
           open={deleteDialogOpen}
           onOpenChange={(open) => {
@@ -1709,9 +1529,7 @@ export function SettingsClientPage({
                 <Button
                   type="button"
                   variant="destructive"
-                  disabled={
-                    saving || trackingSaving || transferring || deleting
-                  }
+                  disabled={saving || trackingSaving || deleting}
                 >
                   <AutoTransition className="inline-flex items-center gap-[var(--button-content-gap)]">
                     {deleting ? (
@@ -1747,15 +1565,13 @@ export function SettingsClientPage({
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel
-                disabled={trackingSaving || transferring || deleting}
-              >
+              <AlertDialogCancel disabled={trackingSaving || deleting}>
                 <RiCloseLine className="size-4" />
                 <span>{messages.teamSelect.cancel}</span>
               </AlertDialogCancel>
               <AlertDialogAction
                 variant="destructive"
-                disabled={trackingSaving || transferring || deleting}
+                disabled={trackingSaving || deleting}
                 onClick={(event) => {
                   event.preventDefault();
                   void handleDelete();

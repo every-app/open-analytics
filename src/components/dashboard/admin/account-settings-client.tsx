@@ -30,7 +30,6 @@ import { Spinner } from "@insightflare/ui/spinner";
 import {
   RiComputerLine,
   RiGlobalLine,
-  RiLockPasswordLine,
   RiNotification3Line,
   RiSave3Line,
   RiUserSettingsLine,
@@ -101,17 +100,11 @@ export function AccountSettingsClient({
   } = useReportingTimeZone();
   const [profileUser, setProfileUser] = useState(user);
   const [profileName, setProfileName] = useState(user.name || "");
-  const [profileUsername, setProfileUsername] = useState(user.username || "");
-  const [profileEmail, setProfileEmail] = useState(user.email || "");
   const [preferredLocale, setPreferredLocale] = useState<PreferredLocale>(
     user.preferredLocale || "",
   );
   const [preferredLocaleSaving, setPreferredLocaleSaving] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [nextPassword, setNextPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordSaving, setPasswordSaving] = useState(false);
   const [notificationPreferences, setNotificationPreferences] =
     useState<NotificationPreferencesData | null>(
       initialData?.preferences ?? null,
@@ -145,23 +138,8 @@ export function AccountSettingsClient({
   const [saving, setSaving] = useState(false);
   const timeZoneOptionTimestamp = useMemo(() => Date.now(), []);
   const normalizedProfileName = profileName.trim();
-  const normalizedProfileUsername = profileUsername.trim();
-  const normalizedProfileEmail = profileEmail.trim();
-  const profileChanged =
-    normalizedProfileName !== (profileUser.name || "") ||
-    normalizedProfileUsername !== profileUser.username ||
-    normalizedProfileEmail !== profileUser.email;
-  const canSaveProfile =
-    !profileSaving &&
-    profileChanged &&
-    normalizedProfileUsername.length >= 3 &&
-    normalizedProfileEmail.length >= 3 &&
-    normalizedProfileEmail.includes("@");
-  const canSavePassword =
-    !passwordSaving &&
-    currentPassword.length > 0 &&
-    nextPassword.length >= 8 &&
-    confirmPassword.length > 0;
+  const profileChanged = normalizedProfileName !== (profileUser.name || "");
+  const canSaveProfile = !profileSaving && profileChanged;
   const canSaveNotificationPreferences =
     !notificationPreferencesLoading &&
     !notificationPreferencesSaving &&
@@ -198,8 +176,6 @@ export function AccountSettingsClient({
   useEffect(() => {
     setProfileUser(user);
     setProfileName(user.name || "");
-    setProfileUsername(user.username || "");
-    setProfileEmail(user.email || "");
     setPreferredLocale(user.preferredLocale || "");
   }, [user]);
 
@@ -264,8 +240,6 @@ export function AccountSettingsClient({
   function applySavedUser(savedUser: AccountUserData) {
     setProfileUser(savedUser);
     setProfileName(savedUser.name || "");
-    setProfileUsername(savedUser.username || "");
-    setProfileEmail(savedUser.email || "");
     setPreferredLocale(savedUser.preferredLocale || "");
   }
 
@@ -291,25 +265,12 @@ export function AccountSettingsClient({
   async function handleProfileSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (profileSaving) return;
-    if (
-      normalizedProfileUsername.length < 3 ||
-      !/^[a-z0-9._@-]+$/i.test(normalizedProfileUsername) ||
-      normalizedProfileEmail.length < 3 ||
-      !normalizedProfileEmail.includes("@")
-    ) {
-      toast.error(copy.invalidProfile);
-      return;
-    }
 
     setProfileSaving(true);
     try {
       const data = await requestAdminService<AccountUserData>("profile", {
         method: "POST",
-        body: {
-          username: normalizedProfileUsername,
-          email: normalizedProfileEmail,
-          name: normalizedProfileName,
-        },
+        body: { name: normalizedProfileName },
       });
       applySavedUser(data);
       toast.success(copy.profileSaved);
@@ -320,46 +281,6 @@ export function AccountSettingsClient({
       );
     } finally {
       setProfileSaving(false);
-    }
-  }
-
-  async function handlePasswordSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (passwordSaving) return;
-    if (!currentPassword) {
-      toast.error(copy.currentPasswordRequired);
-      return;
-    }
-    if (nextPassword.length < 8) {
-      toast.error(copy.passwordTooShort);
-      return;
-    }
-    if (nextPassword !== confirmPassword) {
-      toast.error(copy.passwordMismatch);
-      return;
-    }
-
-    setPasswordSaving(true);
-    try {
-      const data = await requestAdminService<AccountUserData>("profile", {
-        method: "POST",
-        body: {
-          currentPassword,
-          password: nextPassword,
-        },
-      });
-      applySavedUser(data);
-      setCurrentPassword("");
-      setNextPassword("");
-      setConfirmPassword("");
-      toast.success(copy.passwordSaved);
-      router.refresh();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : copy.passwordSaveFailed,
-      );
-    } finally {
-      setPasswordSaving(false);
     }
   }
 
@@ -453,7 +374,7 @@ export function AccountSettingsClient({
       <PageHeading title={copy.title} subtitle={copy.subtitle} />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="h-full">
+        <Card className="h-full lg:col-span-2">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
               <RiUserSettingsLine className="size-4" />
@@ -482,39 +403,19 @@ export function AccountSettingsClient({
                   />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="account-profile-username">
-                    {copy.usernameLabel}
-                  </FieldLabel>
-                  <Input
-                    id="account-profile-username"
-                    value={profileUsername}
-                    minLength={3}
-                    maxLength={80}
-                    autoComplete="username"
-                    placeholder={copy.usernamePlaceholder}
-                    onChange={(event) => setProfileUsername(event.target.value)}
-                    disabled={profileSaving}
-                    required
-                  />
-                </Field>
-                <Field className="sm:col-span-2">
                   <FieldLabel htmlFor="account-profile-email">
                     {copy.emailLabel}
                   </FieldLabel>
                   <Input
                     id="account-profile-email"
                     type="email"
-                    value={profileEmail}
-                    maxLength={200}
-                    autoComplete="email"
-                    placeholder={copy.emailPlaceholder}
-                    onChange={(event) => setProfileEmail(event.target.value)}
-                    disabled={profileSaving}
-                    required
+                    value={profileUser.email}
+                    readOnly
+                    disabled
                   />
                 </Field>
               </div>
-              <FieldDescription>{copy.usernameDescription}</FieldDescription>
+              <FieldDescription>{copy.emailManagedByGateway}</FieldDescription>
 
               <div className="mt-auto flex justify-start">
                 <Button type="submit" disabled={!canSaveProfile}>
@@ -534,93 +435,6 @@ export function AccountSettingsClient({
                       >
                         <RiSave3Line data-icon="inline-start" />
                         {copy.profileSave}
-                      </span>
-                    )}
-                  </AutoTransition>
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card className="h-full">
-          <CardHeader>
-            <CardTitle className="inline-flex items-center gap-2">
-              <RiLockPasswordLine className="size-4" />
-              {copy.passwordTitle}
-            </CardTitle>
-            <CardDescription>{copy.passwordDescription}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex h-full flex-col">
-            <form
-              className="flex h-full flex-col gap-5"
-              onSubmit={handlePasswordSubmit}
-            >
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field className="sm:col-span-2">
-                  <FieldLabel htmlFor="account-current-password">
-                    {copy.currentPasswordLabel}
-                  </FieldLabel>
-                  <Input
-                    id="account-current-password"
-                    type="password"
-                    value={currentPassword}
-                    autoComplete="current-password"
-                    onChange={(event) => setCurrentPassword(event.target.value)}
-                    disabled={passwordSaving}
-                    required
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="account-new-password">
-                    {copy.newPasswordLabel}
-                  </FieldLabel>
-                  <Input
-                    id="account-new-password"
-                    type="password"
-                    value={nextPassword}
-                    minLength={8}
-                    autoComplete="new-password"
-                    onChange={(event) => setNextPassword(event.target.value)}
-                    disabled={passwordSaving}
-                    required
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="account-confirm-password">
-                    {copy.confirmPasswordLabel}
-                  </FieldLabel>
-                  <Input
-                    id="account-confirm-password"
-                    type="password"
-                    value={confirmPassword}
-                    minLength={8}
-                    autoComplete="new-password"
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    disabled={passwordSaving}
-                    required
-                  />
-                </Field>
-              </div>
-
-              <div className="mt-auto flex justify-start">
-                <Button type="submit" disabled={!canSavePassword}>
-                  <AutoTransition className="inline-flex items-center gap-[var(--button-content-gap)]">
-                    {passwordSaving ? (
-                      <span
-                        key="password-saving"
-                        className="inline-flex items-center gap-[var(--button-content-gap)]"
-                      >
-                        <Spinner data-icon="inline-start" />
-                        {copy.passwordSaving}
-                      </span>
-                    ) : (
-                      <span
-                        key="password-save"
-                        className="inline-flex items-center gap-[var(--button-content-gap)]"
-                      >
-                        <RiSave3Line data-icon="inline-start" />
-                        {copy.passwordSave}
                       </span>
                     )}
                   </AutoTransition>

@@ -5,22 +5,13 @@
  */
 export type AdminServiceRoute =
   | "session"
-  | "account-links"
-  | "users"
   | "profile"
-  | "teams"
-  | "team-invites"
   | "sites"
   | "members"
   | "site-config"
   | "script-snippet"
-  | "api-keys"
   | "notification-email"
   | "notification-email/test"
-  | "login-turnstile"
-  | "login-turnstile/test"
-  | "analytics-engine-config"
-  | "request-observation"
   | "notification-email-preview"
   | "notification-rules"
   | "notification-rules/preview"
@@ -29,29 +20,19 @@ export type AdminServiceRoute =
   | "system-performance"
   | "scheduled-tasks"
   | "do-diagnostic"
-  | "e2e/flush"
   | "notifications"
   | "notifications/preferences"
   | "notifications/read-all"
   | `notifications/${string}`;
 
 const STATIC_ADMIN_SERVICE_ROUTES = new Set<AdminServiceRoute>([
-  "account-links",
-  "users",
   "profile",
-  "teams",
-  "team-invites",
   "sites",
   "members",
   "site-config",
   "script-snippet",
-  "api-keys",
   "notification-email",
   "notification-email/test",
-  "login-turnstile",
-  "login-turnstile/test",
-  "analytics-engine-config",
-  "request-observation",
   "notification-email-preview",
   "notification-rules",
   "notification-rules/preview",
@@ -60,7 +41,6 @@ const STATIC_ADMIN_SERVICE_ROUTES = new Set<AdminServiceRoute>([
   "system-performance",
   "scheduled-tasks",
   "do-diagnostic",
-  "e2e/flush",
 ]);
 
 export function adminServicePath(route: AdminServiceRoute): string {

@@ -6,15 +6,12 @@ import {
   compileD1Query,
   createD1DatabaseClient,
   deleteFrom,
-  distinct,
   eq,
   filter,
   inList,
   insert,
-  inSubquery,
   isNotNull,
   isNull,
-  join,
   limit,
   lte,
   neq,
@@ -244,7 +241,7 @@ async function requireCanManageRuleScope(
   actor: Actor,
   input: { teamId: string; siteId?: string | null },
 ): Promise<boolean> {
-  if (!(await canManageTeam(env, actor, input.teamId))) return false;
+  if (!canManageTeam(actor, input.teamId)) return false;
   if (input.siteId && !(await canManageSite(env, actor, input.siteId))) {
     return false;
   }
@@ -300,33 +297,14 @@ export async function listNotificationRules(
   const rules = notificationRuleRows();
   const where = [];
   if (filters.teamId) {
-    if (!(await canManageTeam(env, actor, filters.teamId))) {
+    if (!canManageTeam(actor, filters.teamId)) {
       throw new Error("Forbidden");
     }
     where.push(eq(rules.columns.teamId, param(filters.teamId)));
-  } else if (!actor.isAdmin) {
-    const members = scan(schema.team_members);
-    const teams = scan(schema.teams);
-    const joined = join(
-      members,
-      teams,
-      eq(members.columns.team_id, teams.columns.id),
-      "left",
-    );
-    const manageableMemberships = filter(
-      joined,
-      and(
-        eq(joined.columns.left_user_id, param(actor.user.id)),
-        or(
-          inList(joined.columns.left_role, ["owner", "admin"]),
-          eq(joined.columns.right_owner_user_id, param(actor.user.id)),
-        ),
-      ),
-    );
-    const manageableTeamIds = project(manageableMemberships, {
-      team_id: manageableMemberships.columns.left_team_id,
-    });
-    where.push(inSubquery(rules.columns.teamId, manageableTeamIds));
+  } else {
+    // Only owners and admins manage the organization's rules.
+    if (!actor.isAdmin) return [];
+    where.push(eq(rules.columns.teamId, param(actor.teamId)));
   }
   if (filters.siteId) {
     where.push(eq(rules.columns.siteId, param(filters.siteId)));
@@ -628,61 +606,29 @@ export async function resolveNotificationRecipients(
     }
     return recipients;
   }
-  const users = notificationRecipientRows();
-  const members = scan(schema.team_members);
-  const teams = scan(schema.teams);
+  // Everyone who has opened the app is in the organization this deployment
+  // serves (viewer.ts); their role is the one the gateway gave them then.
   const userRecords = scan(schema.users);
-  const recipientsWithUserRecord = join(
-    users,
-    userRecords,
-    eq(users.columns.id, userRecords.columns.id),
-  );
-  const userMemberships = join(
-    recipientsWithUserRecord,
-    members,
-    eq(recipientsWithUserRecord.columns.left_id, members.columns.user_id),
-  );
-  const teamUserMemberships = join(
-    userMemberships,
-    teams,
-    eq(userMemberships.columns.right_team_id, teams.columns.id),
-  );
-  const teamCondition = eq(
-    teamUserMemberships.columns.left_right_team_id,
-    param(rule.teamId),
-  );
-  const matching = filter(
-    teamUserMemberships,
+  const audience =
     rule.recipient.mode === "team_admins"
-      ? and(
-          teamCondition,
-          or(
-            inList(teamUserMemberships.columns.left_right_role, [
-              "owner",
-              "admin",
-            ]),
-            eq(
-              teamUserMemberships.columns.right_owner_user_id,
-              teamUserMemberships.columns.left_left_left_id,
-            ),
-          ),
+      ? filter(
+          userRecords,
+          inList(userRecords.columns.org_role, ["owner", "admin"]),
         )
-      : teamCondition,
-  );
-  const withOrdering = project(matching, {
-    id: matching.columns.left_left_left_id,
-    email: matching.columns.left_left_left_email,
-    preferencesJson: matching.columns.left_left_left_preferencesJson,
-    preferredLocale: matching.columns.left_left_left_preferredLocale,
-    timeZone: matching.columns.left_left_left_timeZone,
-    createdAt: matching.columns.left_left_right_created_at,
+      : userRecords;
+  const withOrdering = project(audience, {
+    id: audience.columns.id,
+    email: audience.columns.email,
+    preferencesJson: audience.columns.notification_preferences_json,
+    preferredLocale: audience.columns.preferred_locale,
+    timeZone: audience.columns.timezone,
+    createdAt: audience.columns.created_at,
   });
-  const uniqueRecipients = distinct(withOrdering);
-  const orderedDistinct = sort(uniqueRecipients, [
-    { expression: uniqueRecipients.columns.createdAt, direction: "ASC" },
+  const ordered = sort(withOrdering, [
+    { expression: withOrdering.columns.createdAt, direction: "ASC" },
   ]);
   const rows = await database.all(
-    compileD1Query(orderedDistinct, { tag: "notifications.users.all" }),
+    compileD1Query(ordered, { tag: "notifications.users.all" }),
   );
   return rows.results.map((row) => {
     const { createdAt: _createdAt, ...recipient } = row;

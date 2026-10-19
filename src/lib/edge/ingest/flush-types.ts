@@ -1,9 +1,5 @@
 import { createDatabaseRuntime } from "@/lib/db";
 import type {
-  TrafficSessionEndedInput,
-  TrafficVisitFinalizedInput,
-} from "@/lib/edge/analytics-engine/traffic-writer";
-import type {
   InvocationLogger,
   InvocationPerformanceCounter,
 } from "@/lib/edge/observability/logger";
@@ -22,8 +18,6 @@ export interface IngestFlushContext extends SqlWriter {
   insertBufferedVisitRow(row: BufferedVisitRow): void;
   hasOpenVisitsForVisitor(siteId: string, visitorId: string): boolean;
   pushRealtimeRecord(record: RealtimeSnapshotRecord): Promise<void>;
-  writeTrafficVisitFinalizedFact?: (input: TrafficVisitFinalizedInput) => void;
-  writeTrafficSessionEndedFact?: (input: TrafficSessionEndedInput) => void;
   getVisitCleanupDueAt?: () => number | null | undefined;
   setVisitCleanupDueAt?: (dueAt: number | null) => void;
   /**

@@ -1,13 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 
 import { createDatabaseRuntime } from "@/lib/db";
-import {
-  type TrafficVisitSnapshot,
-  writeEventAnalyticsPoint,
-  writeTrafficPageviewFact,
-  writeTrafficSessionEndedFact,
-  writeTrafficVisitFinalizedFact,
-} from "@/lib/edge/analytics-engine/index";
 import { instrumentEnv } from "@/lib/edge/observability/bindings";
 import {
   createInvocationLogger,
@@ -54,7 +47,6 @@ import {
   flushTimeouts as flushTimeoutsInFlushStore,
 } from "./flush";
 import { jsonResponse, type RealtimeSnapshotRecord } from "./normalize";
-import { pageviewTrafficSnapshot } from "./pageview-snapshot";
 import {
   pushInitialRealtimeSnapshot,
   pushRealtimeRecordToSockets,
@@ -79,7 +71,6 @@ import {
   hasOpenVisitsForVisitor,
   readVisitCleanupDueAt,
 } from "./visit-cleanup-query";
-import { readTrafficVisitSnapshot as readTrafficVisitSnapshotFromDatabase } from "./visit-snapshot-reader";
 import {
   getDurableObjectWebSockets,
   WEBSOCKET_ATTACHMENT_VERSION,
@@ -117,13 +108,6 @@ export class IngestDurableObject extends DurableObject {
 
   private sqlRun(query: string, ...bindings: SqlBinding[]): number {
     return this.sql.sqlRun(query, ...bindings);
-  }
-
-  private readTrafficVisitSnapshot(
-    siteId: string,
-    visitId: string,
-  ): TrafficVisitSnapshot | null {
-    return readTrafficVisitSnapshotFromDatabase(this.sql, siteId, visitId);
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -194,11 +178,8 @@ export class IngestDurableObject extends DurableObject {
     }
 
     if (url.pathname === "/flush" && request.method === "POST") {
-      const force =
-        this.doEnv.INSIGHTFLARE_E2E === "1" &&
-        url.searchParams.get("force") === "1";
       logger.info("do.flush.manual_started");
-      await this.runMaintenance(logger, force);
+      await this.runMaintenance(logger);
       await this.reconcileAlarm(logger, true);
       logger.info("do.flush.manual_completed");
       return jsonResponse({ ok: true });
@@ -602,10 +583,6 @@ export class IngestDurableObject extends DurableObject {
     logger: InvocationLogger,
   ): Promise<void> {
     const now = toUnixSeconds(record.receivedAt);
-    const previousVisit =
-      record.previousVisitId && record.previousVisitStartedAt !== null
-        ? this.readTrafficVisitSnapshot(record.siteId, record.previousVisitId)
-        : null;
 
     if (record.previousVisitId && record.previousVisitStartedAt !== null) {
       const flushDueAt = record.receivedAt + D1_FLUSH_INTERVAL_MS;
@@ -648,24 +625,6 @@ export class IngestDurableObject extends DurableObject {
         record.previousVisitId,
       );
       if (closedPrevious > 0) {
-        writeTrafficVisitFinalizedFact(
-          this.doEnv,
-          {
-            visit:
-              previousVisit ??
-              pageviewTrafficSnapshot(
-                record,
-                record.previousVisitId,
-                record.previousVisitStartedAt,
-              ),
-            receivedAt: record.receivedAt,
-            endedAt: record.startedAt,
-            durationMs,
-            durationSource: "server",
-            exitReason: "route_change",
-          },
-          logger,
-        );
         logger.info("do.ingest.previous_visit_closed");
       }
     }
@@ -676,9 +635,8 @@ export class IngestDurableObject extends DurableObject {
       return;
     }
     logger.info("do.ingest.pageview_buffered");
-    let sessionPageIndex = 1;
     try {
-      const sessionState = advanceAnalyticsSession(this.bufferStoreContext(), {
+      advanceAnalyticsSession(this.bufferStoreContext(), {
         siteId: record.siteId,
         sessionId: record.sessionId,
         visitorId: record.visitorId,
@@ -687,15 +645,9 @@ export class IngestDurableObject extends DurableObject {
         visitId: record.visitId,
         sessionWindowMs: resolveSessionWindowMinutes(this.doEnv) * 60 * 1000,
       });
-      sessionPageIndex = sessionState.pageCount;
     } catch {
       logger.warn("do.ingest.session_state_failed");
     }
-    writeTrafficPageviewFact(
-      this.doEnv,
-      { record, sessionPageIndex, sessionViewCount: sessionPageIndex },
-      logger,
-    );
     await this.advanceWaitingCustomEvents(record.siteId, record.visitId);
     await this.pushRealtimeRecord({
       id: record.visitId,
@@ -749,7 +701,7 @@ export class IngestDurableObject extends DurableObject {
       latitude: record.latitude,
       longitude: record.longitude,
     });
-    await this.pushBufferedCustomEventsForVisit(record, logger);
+    await this.pushBufferedCustomEventsForVisit(record);
   }
 
   private async advanceWaitingCustomEvents(
@@ -797,7 +749,6 @@ export class IngestDurableObject extends DurableObject {
 
   private async pushBufferedCustomEventsForVisit(
     record: NormalizedPageview,
-    logger?: InvocationLogger,
   ): Promise<void> {
     const pendingEvents = this.sql.sqlAll<{
       eventId: string;
@@ -826,21 +777,6 @@ export class IngestDurableObject extends DurableObject {
     );
 
     for (const pending of pendingEvents) {
-      writeEventAnalyticsPoint(
-        this.doEnv,
-        {
-          ...record,
-          kind: "custom_event",
-          eventId: pending.eventId,
-          sequence: pending.sequence,
-          receivedAt: pending.receivedAt,
-          eventAt: pending.eventAt,
-          eventName: pending.eventName,
-          eventDataJson: pending.eventDataJson,
-          userId: pending.userId || record.userId,
-        },
-        logger,
-      );
       if (getDurableObjectWebSockets(this.doState).length === 0) continue;
       await this.pushRealtimeRecord({
         id: pending.eventId,
@@ -1074,61 +1010,6 @@ export class IngestDurableObject extends DurableObject {
       logger.info("do.ingest.leave_ignored");
       return;
     }
-
-    writeTrafficVisitFinalizedFact(
-      this.doEnv,
-      {
-        visit: {
-          siteId: visit.siteId,
-          visitId: visit.visitId,
-          visitorId: visit.visitorId,
-          sessionId: visit.sessionId,
-          startedAt: visit.startedAt,
-          pathname: visit.pathname,
-          queryString: visit.queryString,
-          hashFragment: visit.hash,
-          title: visit.title,
-          hostname: visit.hostname,
-          referrerUrl: visit.referrerUrl,
-          referrerHost: visit.referrerHost,
-          utmSource: visit.utmSource,
-          utmMedium: visit.utmMedium,
-          utmCampaign: visit.utmCampaign,
-          utmTerm: visit.utmTerm,
-          utmContent: visit.utmContent,
-          region: visit.region,
-          city: visit.city,
-          continent: visit.continent,
-          country: visit.country,
-          regionCode: visit.regionCode,
-          postalCode: visit.postalCode,
-          metroCode: visit.metroCode,
-          timezone: visit.timezone,
-          asOrganization: visit.organization,
-          browser: visit.browser,
-          browserVersion: visit.browserVersion,
-          os: visit.os,
-          osVersion: visit.osVersion,
-          deviceType: visit.deviceType,
-          language: visit.language,
-          latitude: visit.latitude,
-          longitude: visit.longitude,
-          screenWidth: visit.screenWidth,
-          screenHeight: visit.screenHeight,
-          perfTtfbMs: record.performance?.ttfb ?? visit.perfTtfbMs,
-          perfFcpMs: record.performance?.fcp ?? visit.perfFcpMs,
-          perfLcpMs: record.performance?.lcp ?? visit.perfLcpMs,
-          perfCls: record.performance?.cls ?? visit.perfCls,
-          perfInpMs: record.performance?.inp ?? visit.perfInpMs,
-        },
-        receivedAt: record.receivedAt,
-        endedAt: closedLeaveAt,
-        durationMs: closedDurationMs,
-        durationSource: closedDurationSource,
-        exitReason: closedExitReason,
-      },
-      logger,
-    );
 
     if (!hasOpenVisitsForVisitor(this.sql, visit.siteId, visit.visitorId)) {
       await this.pushRealtimeRecord({
@@ -1421,7 +1302,6 @@ export class IngestDurableObject extends DurableObject {
       return;
     }
     logger.info("do.ingest.custom_event_buffered");
-    writeEventAnalyticsPoint(this.doEnv, record, logger);
     await this.updateOpenVisitActivity(record.visitId, record.eventAt);
     await this.pushRealtimeRecord({
       id: record.eventId,
@@ -1866,12 +1746,6 @@ export class IngestDurableObject extends DurableObject {
       hasOpenVisitsForVisitor: (siteId: string, visitorId: string) =>
         hasOpenVisitsForVisitor(this.sql, siteId, visitorId),
       pushRealtimeRecord: this.pushRealtimeRecord.bind(this),
-      writeTrafficVisitFinalizedFact: (
-        input: Parameters<typeof writeTrafficVisitFinalizedFact>[1],
-      ) => writeTrafficVisitFinalizedFact(this.doEnv, input, logger),
-      writeTrafficSessionEndedFact: (
-        input: Parameters<typeof writeTrafficSessionEndedFact>[1],
-      ) => writeTrafficSessionEndedFact(this.doEnv, input, logger),
       observability: logger,
     };
   }

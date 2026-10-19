@@ -1,5 +1,4 @@
-import { memo, useState } from "react";
-import { AutoTransition } from "@insightflare/ui/auto-transition";
+import { memo } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,13 +7,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@insightflare/ui/dropdown-menu";
-import { Spinner } from "@insightflare/ui/spinner";
 import {
   RiLogoutBoxRLine,
   RiNotification3Line,
   RiSettings3Line,
 } from "@remixicon/react";
-import { toast } from "sonner";
 
 import {
   SIDEBAR_FOOTER_TRIGGER_BASE_CLASS,
@@ -22,9 +19,7 @@ import {
 } from "@/components/sidebar-appearance-menus";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
-import { navigateWithTransition } from "@/lib/page-transition";
 import Link from "@/lib/router";
-import { useRouter } from "@/lib/router";
 import { cn } from "@/lib/utils";
 
 interface SidebarFooterMenusProps {
@@ -36,8 +31,9 @@ interface SidebarFooterMenusProps {
   accountHref: string;
   notificationsHref: string;
   unreadAttentionCount?: number;
+  /** The Every App gateway, where people sign out and switch apps. */
+  gatewayUrl: string;
   user: {
-    username: string;
     name: string;
     email: string;
     systemRole: "admin" | "user";
@@ -45,8 +41,8 @@ interface SidebarFooterMenusProps {
   messages: AppMessages;
 }
 
-function userInitial(name: string, username: string): string {
-  const raw = String(name || username || "").trim();
+function userInitial(name: string, email: string): string {
+  const raw = String(name || email || "").trim();
   if (!raw) return "?";
   const first = Array.from(raw)[0];
   return first ? first.toUpperCase() : "?";
@@ -61,37 +57,14 @@ export const SidebarFooterMenus = memo(function SidebarFooterMenus({
   accountHref,
   notificationsHref,
   unreadAttentionCount = 0,
+  gatewayUrl,
   user,
   messages,
 }: SidebarFooterMenusProps) {
-  const router = useRouter();
-  const [loggingOut, setLoggingOut] = useState(false);
-  const initial = userInitial(user.name, user.username);
-  const displayName = String(user.name || user.username);
+  const initial = userInitial(user.name, user.email);
+  const displayName = String(user.name || user.email);
   const roleLabel =
     user.systemRole === "admin" ? messages.common.admin : messages.common.user;
-
-  async function handleLogout() {
-    if (loggingOut) return;
-    setLoggingOut(true);
-    try {
-      const response = await fetch("/api/public/session", {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error(messages.sidebarFooter.logoutFailed);
-      toast.success(messages.sidebarFooter.logoutSuccess);
-      navigateWithTransition(router, "/" + locale + "/login");
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : messages.sidebarFooter.logoutFailed;
-      toast.error(message || messages.sidebarFooter.logoutFailed);
-    } finally {
-      setLoggingOut(false);
-    }
-  }
 
   return (
     <SidebarAppearanceMenus
@@ -124,13 +97,12 @@ export const SidebarFooterMenus = memo(function SidebarFooterMenus({
             <div className="text-sm font-semibold text-foreground">
               {displayName}
             </div>
-            <div className="text-xs text-muted-foreground">
-              @{user.username}
-            </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuLabel className="space-y-1 font-normal">
-            <div className="text-xs text-muted-foreground">{user.email}</div>
+            {user.name ? (
+              <div className="text-xs text-muted-foreground">{user.email}</div>
+            ) : null}
             <div className="text-xs text-muted-foreground">
               {messages.common.role}: {roleLabel}
             </div>
@@ -154,28 +126,11 @@ export const SidebarFooterMenus = memo(function SidebarFooterMenus({
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            variant="destructive"
-            disabled={loggingOut}
-            onSelect={(event) => {
-              event.preventDefault();
-              void handleLogout();
-            }}
-          >
-            <RiLogoutBoxRLine />
-            <AutoTransition className="inline-flex items-center gap-2">
-              {loggingOut ? (
-                <span
-                  key="logging-out"
-                  className="inline-flex items-center gap-2"
-                >
-                  <Spinner className="size-4" />
-                  {messages.sidebarFooter.loggingOut}
-                </span>
-              ) : (
-                <span key="logout">{messages.actions.logout}</span>
-              )}
-            </AutoTransition>
+          <DropdownMenuItem asChild>
+            <a href={gatewayUrl}>
+              <RiLogoutBoxRLine />
+              <span>{messages.sidebarFooter.gateway}</span>
+            </a>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

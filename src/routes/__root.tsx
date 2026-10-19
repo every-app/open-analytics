@@ -36,8 +36,6 @@ import { getMessages } from "@/lib/i18n/messages";
 import Link from "@/lib/router";
 const THEME_INIT_SCRIPT = `(function(){try{var k='insightflare-theme';var t=localStorage.getItem(k)||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light'}catch(e){}})()`;
 const ESBUILD_NAME_HELPER_SCRIPT = `(function(){if(typeof globalThis.__name!=="function"){globalThis.__name=function(target){return target}}})()`;
-const DEMO_ANALYTICS_SCRIPT_SRC =
-  "https://insight.ravelloh.com/script.js?siteId=04de9d96-fcec-41b1-b259-56e0dbaa2c5e";
 export const Route = createRootRoute({
   head: () => ({
     meta: [
@@ -91,9 +89,6 @@ function RootDocument() {
             </AppQueryProvider>
           </LayerManagerProvider>
         </GlobalScrollbars>
-        {import.meta.env.VITE_DEMO_MODE === "1" ? (
-          <script defer src={DEMO_ANALYTICS_SCRIPT_SRC} />
-        ) : null}
         <Scripts />
       </body>
     </html>

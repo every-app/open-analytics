@@ -1,12 +1,8 @@
-import type { PublicAnalyticsEngineConfig } from "@/lib/analytics-engine-config";
-import type { AdminPublicLoginTurnstileConfig } from "@/lib/auth/login-turnstile-config";
 import type { ScriptSnippetData } from "@/lib/dashboard/management-data";
-import type { TeamInviteData } from "@/lib/dashboard/management-data";
 import type { NotificationPreferencesData } from "@/lib/dashboard-api/client/edge";
 import type { AdminServiceRoute } from "@/lib/dashboard-api/contract/admin-service";
 import type {
   AccountUserData,
-  ApiKeyData,
   MemberData,
   NotificationMessageData,
   NotificationRuleData,
@@ -37,12 +33,6 @@ export interface AdminServiceRequest {
 export interface AdminSessionData {
   readonly user: AccountUserData;
   readonly teams: TeamData[];
-  readonly teamGroups?: {
-    created: TeamData[];
-    managed: TeamData[];
-    member: TeamData[];
-    system: TeamData[];
-  };
 }
 export interface AdminNotificationsData {
   readonly messages: NotificationMessageData[];
@@ -51,19 +41,13 @@ export interface AdminNotificationsData {
 /** Read payloads used by SSR management loaders. */
 export interface AdminServiceReadMap {
   session: AdminSessionData;
-  teams: TeamData[];
   sites: SiteData[];
   members: MemberData[];
-  "team-invites": TeamInviteData[];
-  users: AccountUserData[];
   notifications: AdminNotificationsData;
   "site-config": SiteSettingsConfig;
   "script-snippet": ScriptSnippetData;
-  "api-keys": ApiKeyData[];
   "notification-rules": NotificationRuleData[];
   "notification-email": PublicNotificationEmailConfig;
-  "login-turnstile": AdminPublicLoginTurnstileConfig;
-  "analytics-engine-config": PublicAnalyticsEngineConfig;
   "notifications/preferences": NotificationPreferencesData;
   "scheduled-tasks": ScheduledTasksData;
   "system-performance": SystemPerformanceData;
@@ -71,12 +55,6 @@ export interface AdminServiceReadMap {
 export async function executeAdminService(
   input: AdminServiceRequest,
 ): Promise<Response> {
-  if (import.meta.env.VITE_DEMO_MODE === "1") {
-    const { executeDemoAdminService } =
-      await import("@/lib/demo/admin/service");
-    return executeDemoAdminService(input);
-  }
-
   const { executeRealAdminService } =
     await import("@/lib/edge/admin/service/real");
   return executeRealAdminService(input);

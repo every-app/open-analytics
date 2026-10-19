@@ -3,30 +3,20 @@ import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Button } from "@insightflare/ui/button";
 import { PageHeading } from "@insightflare/ui/page-heading";
 import { Spinner } from "@insightflare/ui/spinner";
-import { RiAddLine, RiGlobalLine, RiGroupLine } from "@remixicon/react";
+import { RiAddLine, RiGlobalLine } from "@remixicon/react";
 
 import Link from "@/lib/router";
 
 import { useTeamManagementContext } from "./context";
 import { TeamManagementCreateSiteDialog } from "./create-site-dialog";
-import {
-  TeamManagementMemberDialogs,
-  TeamManagementMembersPanel,
-} from "./members-panel";
-import { TeamManagementSettingsPanel } from "./settings-panel";
 import { TeamManagementSitesPanel } from "./sites-panel";
 export function TeamManagementPageContent() {
   const {
-    activeTeam,
     canManage,
     canManageSites,
     copy,
-    currentTeamName,
     isPageDataLoading,
     locale,
-    memberCount,
-    panelSubtitle,
-    panelTitle,
     setCreateSiteDialogOpen,
     setCreateSiteDomain,
     setCreateSiteError,
@@ -35,18 +25,16 @@ export function TeamManagementPageContent() {
     siteCount,
     siteCreateCopy,
   } = useTeamManagementContext();
-  const { activeTab } = useTeamManagementContext();
   return (
     <div className="space-y-6">
-      <TeamManagementMemberDialogs />
       <PageHeading
-        title={`${panelTitle} · ${currentTeamName}`}
-        subtitle={panelSubtitle}
+        title={copy.sites.title}
+        subtitle={copy.sites.subtitle}
         actions={
           canManage ? (
             <>
               <Button variant="outline" asChild>
-                <Link href={`/${locale}/app/${activeTeam.slug}/manage/sites`}>
+                <Link href={`/${locale}/app/sites`}>
                   <RiGlobalLine data-icon="inline-start" />
                   <span className="inline-flex items-center gap-[var(--button-content-gap)]">
                     {copy.stats.sites}:
@@ -75,37 +63,7 @@ export function TeamManagementPageContent() {
                   </span>
                 </Link>
               </Button>
-              <Button variant="outline" asChild>
-                <Link href={`/${locale}/app/${activeTeam.slug}/members`}>
-                  <RiGroupLine data-icon="inline-start" />
-                  <span className="inline-flex items-center gap-[var(--button-content-gap)]">
-                    {copy.stats.members}:
-                    <AutoResizer
-                      initial
-                      animateWidth
-                      animateHeight={false}
-                      className="inline-flex items-center"
-                    >
-                      <AutoTransition
-                        initial
-                        className="inline-flex items-center"
-                      >
-                        {isPageDataLoading ? (
-                          <span
-                            key="members-loading"
-                            className="inline-flex items-center"
-                          >
-                            <Spinner data-icon="inline-end" />
-                          </span>
-                        ) : (
-                          <span key="members-value">{memberCount}</span>
-                        )}
-                      </AutoTransition>
-                    </AutoResizer>
-                  </span>
-                </Link>
-              </Button>
-              {activeTab === "sites" && canManageSites ? (
+              {canManageSites ? (
                 <Button
                   type="button"
                   onClick={() => {
@@ -126,9 +84,7 @@ export function TeamManagementPageContent() {
       />
       <TeamManagementCreateSiteDialog />
       <div className="space-y-4">
-        {activeTab === "sites" ? <TeamManagementSitesPanel /> : null}
-        {activeTab === "settings" ? <TeamManagementSettingsPanel /> : null}
-        {activeTab === "members" ? <TeamManagementMembersPanel /> : null}
+        <TeamManagementSitesPanel />
       </div>
     </div>
   );

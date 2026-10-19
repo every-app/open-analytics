@@ -36,7 +36,6 @@ import {
 import { notFound } from "@/lib/edge/analytics/interfaces/dashboard/protocol/responses";
 import { operationForQueryRoute } from "@/lib/edge/analytics/interfaces/dashboard/protocol/router";
 import type { Env } from "@/lib/edge/types";
-const isDemoBuild = import.meta.env.VITE_DEMO_MODE === "1";
 export interface PrivateQueryAdapterInput {
   readonly env: Env;
   readonly siteId: string;
@@ -127,20 +126,6 @@ export function executePrivateQuery(
 ): Promise<Response> {
   const ctx = responseContext(input);
   const queryContext = siteQueryContext(input.siteId, "private-dashboard");
-  if (isDemoBuild) {
-    const operation = operationForQueryRoute(input.pathname);
-    return import("@/lib/edge/analytics/interfaces/mock").then(
-      ({ executeMockQuery }) =>
-        executeMockQuery({
-          operation,
-          request: input.request ?? new Request(input.url, { method: "GET" }),
-          url: input.url,
-          siteId: input.siteId,
-          queryContext,
-          context: ctx,
-        }),
-    );
-  }
   if (input.pathname === "overview") {
     return import("./protocol/overview").then(({ handleOverviewContract }) =>
       handleOverviewContract(

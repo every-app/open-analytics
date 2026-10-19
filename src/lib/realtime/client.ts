@@ -1,4 +1,3 @@
-import type { RealtimeSocketLike } from "@/lib/demo/realtime/socket";
 import { broadcastRealtimeMessage } from "@/lib/realtime/broadcast-store";
 import type {
   RealtimeChannelState,
@@ -26,11 +25,10 @@ const SOCKET_STATE = {
   CONNECTING: 0,
   OPEN: 1,
 } as const;
-const USE_REALTIME_MOCK = import.meta.env.VITE_DEMO_MODE === "1";
 interface ChannelContext {
   siteId: string;
   refCount: number;
-  socket: RealtimeSocketLike | null;
+  socket: WebSocket | null;
   reconnectTimer: ReturnType<typeof setTimeout> | null;
   cleanupTimer: ReturnType<typeof setInterval> | null;
   heartbeatTimer: ReturnType<typeof setInterval> | null;
@@ -45,9 +43,6 @@ interface ChannelContext {
   running: boolean;
 }
 const channels = new Map<string, ChannelContext>();
-export function isRealtimeMockEnabled(): boolean {
-  return USE_REALTIME_MOCK;
-}
 export function createIdleRealtimeChannelState(
   status: RealtimeConnectionState = "disconnected",
 ): RealtimeChannelState {
@@ -201,21 +196,8 @@ function connect(channel: ChannelContext): void {
 
   setChannelStatus(channel, "connecting");
 
-  if (USE_REALTIME_MOCK) {
-    import("@/lib/demo/realtime/socket").then(
-      ({ createMockRealtimeSocket }) => {
-        if (channel.refCount <= 0) return;
-        channel.socket = createMockRealtimeSocket({
-          siteId: channel.siteId,
-          activeWindowMs: ACTIVE_WINDOW_MS,
-        });
-        attachSocketHandlers(channel);
-      },
-    );
-  } else {
-    channel.socket = new WebSocket(toRealtimeWsUrl(channel.siteId));
-    attachSocketHandlers(channel);
-  }
+  channel.socket = new WebSocket(toRealtimeWsUrl(channel.siteId));
+  attachSocketHandlers(channel);
 }
 function attachSocketHandlers(channel: ChannelContext): void {
   if (!channel.socket) return;

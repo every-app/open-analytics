@@ -1700,6 +1700,7 @@ siteSettings:
     deleteFailed: Failed to delete site.
     invalidInput: Please provide a valid site name and domain.
 accountSettings:
+  emailManagedByGateway: Your email comes from your Every App account.
   title: Account Settings
   subtitle: Manage your personal details, login password, and dashboard time zone.
   profileTitle: Personal Details
@@ -3022,9 +3023,7 @@ logoutAction:
   success: Signed out.
   failed: Failed to sign out. Please try again.
 sidebarFooter:
-  loggingOut: Signing out...
-  logoutSuccess: Signed out.
-  logoutFailed: Failed to sign out. Please try again.
+  gateway: Back to Every App
 teamEntry:
   title: Choose a Team
   description: You have access to multiple teams. Choose where to continue.

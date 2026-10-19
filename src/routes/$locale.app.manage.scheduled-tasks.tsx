@@ -5,7 +5,7 @@ import { loadScheduledTasksInitialData } from "@/lib/dashboard/route-data";
 import { dashboardPageTitle } from "@/lib/page-title";
 export const Route = createFileRoute("/$locale/app/manage/scheduled-tasks")({
   beforeLoad: async ({ context }) => {
-    if (context.dashboardRoot?.user.systemRole !== "admin") throw notFound();
+    if (context.teamContext.user.systemRole !== "admin") throw notFound();
     return {
       scheduledTasksInitialData: await loadScheduledTasksInitialData(),
     };

@@ -1633,6 +1633,7 @@ siteSettings:
     deleteFailed: 删除站点失败。
     invalidInput: 请填写有效的站点名称和域名。
 accountSettings:
+  emailManagedByGateway: 邮箱来自你的 Every App 账户。
   title: 账户设置
   subtitle: 管理你的个人信息、登录密码和仪表盘时区。
   profileTitle: 个人信息
@@ -2891,9 +2892,7 @@ logoutAction:
   success: 已退出登录。
   failed: 退出登录失败，请稍后重试。
 sidebarFooter:
-  loggingOut: 退出中...
-  logoutSuccess: 已退出登录。
-  logoutFailed: 退出登录失败，请稍后重试。
+  gateway: 返回 Every App
 teamEntry:
   title: 选择团队
   description: 你当前可访问多个团队，请先选择要进入的团队。

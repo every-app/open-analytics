@@ -1642,6 +1642,7 @@ siteSettings:
     deleteFailed: サイトを削除できません。
     invalidInput: 有効なサイト名とドメインを入力してください。
 accountSettings:
+  emailManagedByGateway: メールアドレスは Every App のアカウントのものです。
   title: アカウント設定
   subtitle: 個人情報、ログインパスワード、ダッシュボードのタイムゾーンを管理します。
   profileTitle: 個人情報
@@ -2908,9 +2909,7 @@ logoutAction:
   success: サインアウトしました。
   failed: サインアウトできません。もう一度お試しください。
 sidebarFooter:
-  loggingOut: サインアウト中...
-  logoutSuccess: サインアウトしました。
-  logoutFailed: サインアウトできません。もう一度お試しください。
+  gateway: Every App に戻る
 teamEntry:
   title: チームを選択
   description: 複数のチームにアクセスできます。続行するチームを選択してください。

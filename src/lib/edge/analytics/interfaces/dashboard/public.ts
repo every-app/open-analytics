@@ -6,12 +6,8 @@ import {
   notFound,
   type ResponseContext,
 } from "@/lib/edge/analytics/interfaces/dashboard/protocol/responses";
-import {
-  applyPublicQueryPolicy,
-  operationForQueryRoute,
-} from "@/lib/edge/analytics/interfaces/dashboard/protocol/router";
+import { applyPublicQueryPolicy } from "@/lib/edge/analytics/interfaces/dashboard/protocol/router";
 import type { Env } from "@/lib/edge/types";
-const isDemoBuild = import.meta.env.VITE_DEMO_MODE === "1";
 export interface PublicQueryAdapterInput {
   readonly env: Env;
   readonly siteId: string;
@@ -106,21 +102,6 @@ export function executePublicQuery(
   const url = policy.url;
   const ctx = responseContext(input);
   const queryContext = siteQueryContext(input.siteId, "public-share");
-  if (isDemoBuild) {
-    const operation = operationForQueryRoute(input.pathname);
-    return import("@/lib/edge/analytics/interfaces/mock").then(
-      ({ executeMockQuery }) =>
-        executeMockQuery({
-          operation,
-          request: input.request ?? new Request(url, { method: "GET" }),
-          url,
-          siteId: input.siteId,
-          queryContext,
-          publicQuery: true,
-          context: ctx,
-        }),
-    );
-  }
   if (input.pathname === "overview") {
     return import("./protocol/overview").then(({ handleOverviewContract }) =>
       handleOverviewContract(input.env, input.siteId, url, ctx, queryContext),

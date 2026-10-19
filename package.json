@@ -1,5 +1,5 @@
 {
-  "name": "insightflare",
+  "name": "open-analytics",
   "version": "0.7.1",
   "private": true,
   "type": "module",
@@ -8,67 +8,29 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "pnpm run build:packages && tsx scripts/dev.ts",
-    "dev:ui": "pnpm run build:packages && vite dev --mode demo",
-    "dev:worker": "pnpm run build:packages && vite dev --mode development",
-    "dev:gallery": "pnpm run build:packages && vite dev --mode development",
-    "generate:openapi": "tsx scripts/generate-openapi.ts",
-    "generate:release-index": "tsx scripts/generate-release-index.ts",
-    "generate:skills": "tsx scripts/generate-skills.ts",
-    "verify:skills": "tsx scripts/check-skills.ts",
+    "dev": "everyapp dev",
     "generate:schema": "tsx scripts/generate-schema.ts",
-    "build": "tsx scripts/build.ts --target cf",
-    "build:cf": "tsx scripts/build.ts --target cf",
-    "build:local": "tsx scripts/build.ts --target local",
-    "build:demo": "tsx scripts/build.ts --target demo",
+    "build": "pnpm run build:packages && tsx scripts/build-tracker-sdk.ts && cf build",
     "build:packages": "pnpm run build:package:ui && pnpm run build:package:product-ui",
     "build:package:ui": "pnpm --filter @insightflare/ui build",
     "build:package:product-ui": "pnpm --filter @insightflare/product-ui build",
     "typecheck:packages": "pnpm --filter @insightflare/ui typecheck && pnpm --filter @insightflare/product-ui typecheck",
     "check:packages": "pnpm run typecheck:packages && pnpm run build:packages",
-    "pack:packages": "pnpm run build:packages && pnpm --filter @insightflare/ui pack && pnpm --filter @insightflare/product-ui pack",
-    "smoke:packages": "pnpm run build:packages && tsx scripts/smoke-packages.ts",
     "build:tracker-sdk": "tsx scripts/build-tracker-sdk.ts",
-    "build:start": "pnpm run build:packages && vite build",
-    "build:pre": "tsx scripts/prebuild.ts --target cf",
-    "build:pre:cf": "tsx scripts/prebuild.ts --target cf",
-    "build:pre:local": "tsx scripts/prebuild.ts --target local",
-    "build:pre:demo": "tsx scripts/prebuild.ts --target demo",
     "lint": "eslint --cache --cache-location .cache/eslint --max-warnings 0 .",
     "lint:fix": "eslint --cache --cache-location .cache/eslint --max-warnings 0 . --fix",
     "format": "prettier --cache --cache-location .cache/prettier --write \"**/*.{ts,tsx,js,jsx,css}\" --log-level warn",
     "format:check": "prettier --cache --cache-location .cache/prettier --check \"**/*.{ts,tsx,js,jsx,css}\" --log-level warn",
-    "check:openapi": "pnpm run generate:openapi && pnpm run generate:skills && pnpm run verify:skills && tsx scripts/check-openapi-contract.ts && git diff --exit-code docs/openapi.json docs/openapi.yaml docs/skills.json",
-    "check:openapi:fix": "pnpm run generate:openapi && pnpm run generate:skills && pnpm run verify:skills && tsx scripts/check-openapi-contract.ts",
-    "check:skills": "pnpm run verify:skills && tsx scripts/check-openapi-contract.ts",
     "check:schema": "pnpm run generate:schema && git diff --exit-code docs/schema.sql src/lib/db/schema/generated.ts",
     "check:schema:fix": "pnpm run generate:schema",
     "check": "tsx scripts/check.ts",
     "check:architecture": "tsx scripts/check-architecture.ts",
     "check:ui-contracts": "tsx scripts/check-ui-contracts.ts",
     "check:layer": "tsx scripts/check-layer-contract.ts",
-    "measure:db-bundle": "tsx scripts/measure-db-bundle.ts",
     "check:verify": "tsx scripts/check.ts --verify",
-    "check:e2e": "pnpm run check && pnpm run test:e2e",
     "check:verbose": "tsx scripts/check.ts --verbose",
-    "preview:local": "tsx scripts/preview.ts --target local",
     "prepare": "tsx scripts/build-tracker-sdk.ts && husky",
-    "deploy": "tsx scripts/deploy.ts --target cf",
-    "deploy:cf": "tsx scripts/deploy.ts --target cf",
-    "deploy:demo": "tsx scripts/deploy.ts --target demo",
-    "publish": "tsx scripts/publish.ts --target cf",
-    "publish:cf": "tsx scripts/publish.ts --target cf",
-    "publish:cf:dry-run": "tsx scripts/publish.ts --target cf --dry-run",
-    "publish:demo": "tsx scripts/publish.ts --target demo",
-    "publish:demo:dry-run": "tsx scripts/publish.ts --target demo --dry-run",
-    "maintainer:build": "tsx scripts/build.ts --target cf --env ravelloh --database DB",
-    "maintainer:deploy": "tsx scripts/deploy.ts --target cf --env ravelloh",
-    "ops:d1:create": "tsx scripts/ops.ts --target cf --action d1:create",
-    "ops:secret:main": "tsx scripts/ops.ts --target cf --action secret --name MAIN_SECRET",
-    "ops:secret:daily-salt": "tsx scripts/ops.ts --target cf --action secret --name DAILY_SALT_SECRET",
-    "ops:secret:bootstrap-admin-password": "tsx scripts/ops.ts --target cf --action secret --name BOOTSTRAP_ADMIN_PASSWORD",
-    "ops:tail": "tsx scripts/ops.ts --target cf --action tail",
-    "typecheck": "pnpm run build:packages && tsc --noEmit -p tsconfig.json",
+    "typecheck": "pnpm run build:packages && cf workers types && tsc --noEmit -p tsconfig.json",
     "check:i18n": "tsx scripts/check-i18n.ts",
     "watch:i18n": "tsx scripts/watch-i18n.ts",
     "test": "pnpm run build:packages && vitest run",
@@ -76,25 +38,20 @@
     "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=html --coverage.reportsDirectory=coverage/core",
     "test:coverage:tracker": "vitest run --config vitest.tracker.config.ts --coverage --coverage.reporter=text --coverage.reporter=html --coverage.reportsDirectory=coverage/tracker",
     "test:coverage:check": "pnpm run test:coverage -- --maxWorkers 16",
-    "test:e2e": "pnpm run build:packages && tsx scripts/e2e.ts",
-    "e2e:serve": "tsx scripts/e2e.ts --serve",
-    "test:e2e:show": "tsx scripts/e2e.ts --headed --workers=1",
-    "test:e2e:ui": "tsx scripts/e2e.ts --ui",
-    "test:e2e:debug": "tsx scripts/e2e.ts --debug",
-    "db:migrate:local": "tsx scripts/db.ts --target local --action migrate",
-    "db:migrate:cf": "tsx scripts/db.ts --target cf --action migrate",
-    "db:migration:create": "tsx scripts/db.ts --target local --action migration:create"
+    "db:migrate:local": "everyapp db migrate",
+    "dev:app": "tsx scripts/dev.ts",
+    "deploy": "everyapp deploy"
   },
   "dependencies": {
     "@deck.gl/core": "^9.3.10",
     "@deck.gl/layers": "^9.3.10",
     "@deck.gl/mapbox": "^9.3.10",
+    "@every-app/sdk": "link:../private-every-app/packages/sdk",
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@iconify-json/flagpack": "^1.2.7",
     "@iconify/react": "^6.0.2",
     "@insightflare/product-ui": "0.7.1",
     "@insightflare/ui": "0.7.1",
-    "@noble/hashes": "^2.4.0",
     "@number-flow/react": "^0.6.2",
     "@remixicon/react": "^4.9.0",
     "@tanstack/highlight": "^1.0.0",
@@ -126,10 +83,9 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.55.0",
+    "@cloudflare/vite-plugin": "2.0.0-beta.sha-91c870c02",
     "@cloudflare/workers-types": "5.20260917.1",
     "@eslint/js": "~9.39.5",
-    "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "^4.3.0",
     "@tailwindcss/vite": "4.3.3",
     "@types/geojson": "^7946.0.16",
@@ -138,6 +94,7 @@
     "@types/react-dom": "^19.2.5",
     "@vitejs/plugin-react": "6.1.1",
     "@vitest/coverage-v8": "^4.1.11",
+    "cf": "1.0.0-beta.14",
     "esbuild": "^0.28.1",
     "eslint": "~9.39.4",
     "eslint-config-prettier": "^10.1.8",
@@ -145,6 +102,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
+    "everyapp": "link:../private-every-app/packages/cli",
     "globals": "^16.5.0",
     "happy-dom": "^20.14.5",
     "husky": "^9.1.7",
@@ -159,30 +117,7 @@
     "typescript-eslint": "^8.70.0",
     "vite": "8.3.0",
     "vitest": "^4.1.11",
-    "wrangler": "4.134.0",
     "yaml": "^2.9.1"
-  },
-  "cloudflare": {
-    "bindings": {
-      "MAIN_SECRET": {
-        "description": "Enter a random string longer than 16 characters. InsightFlare derives visitor privacy salts, dashboard session signing keys, and API key hashing keys from this root secret. Generate one by visiting [https://random.ravelloh.com/str/32](https://random.ravelloh.com/str/32) and copy-pasting the result here."
-      },
-      "BOOTSTRAP_ADMIN_PASSWORD": {
-        "description": "Password for the default admin account. The default username is `admin`."
-      },
-      "DB": {
-        "description": "D1 database used for analytics data, account data, and migrations."
-      },
-      "SITE_SETTINGS_KV": {
-        "description": "KV namespace used for site tracking configuration read by `/script.js`."
-      },
-      "INGEST_DO": {
-        "description": "Durable Object namespace used for ingest buffering, realtime state, and batched D1 writes."
-      },
-      "ARCHIVE_BUCKET": {
-        "description": "Optional R2 bucket for cold archive storage. Leave it unbound unless you want to enable archive-to-R2."
-      }
-    }
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [

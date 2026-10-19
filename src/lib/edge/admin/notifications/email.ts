@@ -199,12 +199,7 @@ export async function handleNotificationEmailTestAdmin(
 
   const result = await sendResendEmailWithRetry({
     apiKey,
-    apiUrl:
-      env.INSIGHTFLARE_E2E === "1"
-        ? env.INSIGHTFLARE_E2E_RESEND_API_URL
-        : undefined,
     body: emailBody,
-    requireApiUrl: env.INSIGHTFLARE_E2E === "1",
     ...options,
   });
 

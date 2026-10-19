@@ -8,19 +8,20 @@
     "allowJs": false,
     "incremental": true,
     "isolatedModules": true,
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx"
   },
   "include": [
+    "everyapp.config.ts",
+    "cloudflare.config.ts",
     "vite.config.ts",
     "vitest.config.ts",
     "vitest.tracker.config.ts",
-    "playwright.config.ts",
     "src/routeTree.gen.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
     "scripts/**/*.ts",
-    "scripts/**/*.mts",
-    "e2e/**/*.ts"
+    "scripts/**/*.mts"
   ],
   "exclude": ["node_modules", "src/tracker"]
 }

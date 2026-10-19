@@ -308,9 +308,6 @@ export function instrumentEnv(env: Env, logger: InvocationLogger): Env {
       if (property === "SITE_SETTINGS_KV" && target.SITE_SETTINGS_KV) {
         return wrapAsyncBinding(target.SITE_SETTINGS_KV, logger, "kv");
       }
-      if (property === "ARCHIVE_BUCKET" && target.ARCHIVE_BUCKET) {
-        return wrapAsyncBinding(target.ARCHIVE_BUCKET, logger, "r2");
-      }
       return Reflect.get(target, property, receiver);
     },
   }) as Env;

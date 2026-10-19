@@ -78,7 +78,7 @@ function savedFilterProjection(
     siteId: relation.columns.left_site_id,
     ownerUserId: relation.columns.left_owner_user_id,
     authorDisplayName: relation.columns.right_name,
-    authorUsername: relation.columns.right_username,
+    authorEmail: relation.columns.right_email,
     visibility: relation.columns.left_visibility,
     scopePreference: relation.columns.left_scope_preference,
     name: relation.columns.left_name,
@@ -116,8 +116,8 @@ function savedFilterRow(row: SavedFilterQueryRow): SavedFilterRow {
     authorName:
       typeof row.authorDisplayName === "string" && row.authorDisplayName !== ""
         ? row.authorDisplayName
-        : typeof row.authorUsername === "string" && row.authorUsername !== ""
-          ? row.authorUsername
+        : typeof row.authorEmail === "string" && row.authorEmail !== ""
+          ? row.authorEmail
           : "Unknown",
     visibility: row.visibility as SavedFilterVisibility,
     scopePreference: scopePreference as SavedFilterScopePreference,

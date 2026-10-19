@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from "hono";
 
-import { methodNotAllowed } from "@/lib/api-v1";
 import type { AppEnv } from "@/lib/hono/types";
+import { na as methodNotAllowed } from "@/lib/response";
 
 export function requireMethodMiddleware(
   method: string,

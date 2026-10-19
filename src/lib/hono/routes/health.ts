@@ -8,12 +8,11 @@ function healthResponse(env: AppEnv["Bindings"]): Response {
   return new Response(
     JSON.stringify({
       ok: true,
-      service: "insightflare",
+      service: "open-analytics",
       now: new Date().toISOString(),
       bindings: {
         d1: Boolean(env.DB),
         durableObject: Boolean(env.INGEST_DO),
-        r2Archive: Boolean(env.ARCHIVE_BUCKET),
       },
     }),
     {

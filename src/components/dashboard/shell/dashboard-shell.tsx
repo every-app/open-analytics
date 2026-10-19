@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useMemo } from "react";
 import { AutoResizer } from "@insightflare/ui/auto-resizer";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
 import {
@@ -23,17 +23,11 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from "@insightflare/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@insightflare/ui/tooltip";
 import { VerticalScrollMask } from "@insightflare/ui/vertical-scroll-mask";
 import { RiArrowLeftLine } from "@remixicon/react";
 
 import { AppShellLayout } from "@/components/app-shell-layout";
 import { AppSidebarBrand } from "@/components/app-sidebar-brand";
-import { TeamSelect } from "@/components/dashboard/admin/team-select";
 import { AnalyticsTabs } from "@/components/dashboard/common/analytics-tabs";
 import { DashboardHeaderControls } from "@/components/dashboard/shell/dashboard-header-controls";
 import { DashboardQueryProvider } from "@/components/dashboard/shell/dashboard-query-provider";
@@ -41,18 +35,14 @@ import { SidebarFooterMenus } from "@/components/dashboard/shell/sidebar-footer-
 import { SidebarMenuStage } from "@/components/dashboard/shell/sidebar-menu-stage";
 import { SidebarSiteDetails } from "@/components/dashboard/shell/sidebar-site-details";
 import { useAccountTimeZonePreference } from "@/components/time-zone-provider";
+import { buildSitePath } from "@/lib/dashboard/paths";
 import { canManageTeam } from "@/lib/dashboard/permissions";
 import {
   parseFilterDocumentFromSearchParams,
   type TimeWindow,
 } from "@/lib/dashboard/query-state";
 import { buildTeamSections } from "@/lib/dashboard/team-sections";
-import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
-import {
-  type SessionTeamGroups,
-  type SiteData,
-  type TeamData,
-} from "@/lib/dashboard-api/client/edge";
+import { type TeamData } from "@/lib/dashboard-api/client/edge";
 import {
   type FilterScope,
   parseFilterScopePreference,
@@ -69,18 +59,12 @@ import type {
 } from "./dashboard-shell/navigation";
 import {
   analyticsTabLabel,
-  buildSitePath,
   getManagementSectionIcon,
-  getTeamRoleIcon,
-  getTeamRoleLabel,
   getTeamSectionIcon,
   normalizeLocalePath,
-  parseActiveTeamSlugFromPath,
   parseSidebarRouteState,
   SIDEBAR_COLLAPSE_MARGIN_CLASS,
-  SIDEBAR_COLLAPSE_SECTION_CLASS,
   SIDEBAR_COLLAPSE_SEPARATOR_CLASS,
-  toSidebarSite,
   VALID_ANALYTICS_SECTIONS,
 } from "./dashboard-shell/navigation";
 interface DashboardShellProps {
@@ -88,18 +72,16 @@ interface DashboardShellProps {
   pathname: string;
   messages: AppMessages;
   user: {
-    username: string;
     name: string;
     email: string;
     systemRole: "admin" | "user";
     timeZone?: string;
   };
-  teams: TeamData[];
-  teamGroups?: SessionTeamGroups;
-  activeTeamSlug?: string;
-  sites?: SidebarSite[];
+  /** The organization's workspace. */
+  team: TeamData;
+  gatewayUrl: string;
+  sites: SidebarSite[];
   unreadAttentionCount?: number;
-  teamSections?: TeamSectionNavItem[];
   managementSections?: TeamSectionNavItem[];
   initialQueryWindow?: TimeWindow;
   children: ReactNode;
@@ -109,90 +91,41 @@ export function DashboardShell({
   pathname,
   messages,
   user,
-  teams,
-  teamGroups,
-  activeTeamSlug,
-  sites = [],
+  team,
+  gatewayUrl,
+  sites,
   unreadAttentionCount = 0,
-  teamSections,
   managementSections,
   initialQueryWindow,
   children,
 }: DashboardShellProps) {
   useAccountTimeZonePreference(user.timeZone);
-  const [clientSitesByTeam, setClientSitesByTeam] = useState<
-    Record<string, SidebarSite[]>
-  >({});
   const livePathname = usePathname() || pathname;
   const routeSearchParams = useSearchParams();
   const initialFilters = parseFilterDocumentFromSearchParams(routeSearchParams);
   const initialScopePreference = parseFilterScopePreference(routeSearchParams);
-  const liveActiveTeamSlug =
-    activeTeamSlug || parseActiveTeamSlugFromPath(livePathname, teams);
-  const activeTeam = liveActiveTeamSlug
-    ? teams.find((team) => team.slug === liveActiveTeamSlug)
-    : undefined;
-  const activeTeamId = activeTeam?.id || "";
-  const resolvedSites =
-    sites.length > 0
-      ? sites
-      : activeTeamId
-        ? (clientSitesByTeam[activeTeamId] ?? [])
-        : [];
-  const isSidebarSitesLoading = Boolean(
-    activeTeamId &&
-    sites.length === 0 &&
-    !Object.prototype.hasOwnProperty.call(clientSitesByTeam, activeTeamId),
+  const canManage = canManageTeam(team.membershipRole, user.systemRole);
+  const teamSections = useMemo(
+    () => buildTeamSections(locale, messages, canManage),
+    [canManage, locale, messages],
   );
-  const resolvedTeamSections = useMemo(() => {
-    if (teamSections) return teamSections;
-    if (!liveActiveTeamSlug || !activeTeam) return undefined;
-    return buildTeamSections(
-      locale,
-      liveActiveTeamSlug,
-      messages,
-      canManageTeam(activeTeam.membershipRole, user.systemRole),
-    );
-  }, [
-    activeTeam,
-    liveActiveTeamSlug,
-    locale,
-    messages,
-    teamSections,
-    user.systemRole,
-  ]);
   const routeState = useMemo(
-    () => parseSidebarRouteState(livePathname, liveActiveTeamSlug),
-    [liveActiveTeamSlug, livePathname],
+    () => parseSidebarRouteState(livePathname),
+    [livePathname],
   );
-  const activeTeamLocalPath = useMemo(() => {
-    if (!liveActiveTeamSlug) return [];
-    const segments = livePathname.split("/").filter((s) => s.length > 0);
-    const teamIndex = segments.findIndex(
-      (segment, index) =>
-        segment === liveActiveTeamSlug &&
-        index > 0 &&
-        segments[index - 1] === "app",
-    );
-    return teamIndex >= 0 ? segments.slice(teamIndex + 1) : [];
-  }, [liveActiveTeamSlug, livePathname]);
-  const mainSiteSection = activeTeamLocalPath[1] || "";
-  const mainSiteSubSection = activeTeamLocalPath[2] || "";
+  const mainSiteSection = routeState.siteSection || "";
+  const mainSiteSubSection = routeState.siteSubSection || "";
 
-  const currentAnalyticsSection = (() => {
-    if (routeState.mode !== "site" || !routeState.activeSiteSlug)
-      return undefined;
-    const section = activeTeamLocalPath[1] || "";
-    return VALID_ANALYTICS_SECTIONS.has(section) ? section : undefined;
-  })();
+  const currentAnalyticsSection =
+    routeState.mode === "site" && VALID_ANALYTICS_SECTIONS.has(mainSiteSection)
+      ? mainSiteSection
+      : undefined;
   const hasManagementSections = Boolean(
     managementSections && managementSections.length > 0,
   );
   const resolvedActiveSiteSlug = routeState.activeSiteSlug || "";
   const hasActiveSite =
-    Boolean(liveActiveTeamSlug) &&
-    routeState.mode === "site" &&
-    resolvedActiveSiteSlug.length > 0;
+    routeState.mode === "site" && resolvedActiveSiteSlug.length > 0;
   const dashboardFilterResolvedScope: FilterScope | undefined =
     currentAnalyticsSection === "sessions"
       ? "session"
@@ -203,13 +136,9 @@ export function DashboardShell({
           : hasActiveSite
             ? "event"
             : undefined;
-  const activeSiteBase =
-    hasActiveSite && liveActiveTeamSlug
-      ? buildSitePath(locale, liveActiveTeamSlug, resolvedActiveSiteSlug)
-      : null;
-  const canManageActiveTeam = Boolean(
-    activeTeam && canManageTeam(activeTeam.membershipRole, user.systemRole),
-  );
+  const activeSiteBase = hasActiveSite
+    ? buildSitePath(locale, resolvedActiveSiteSlug)
+    : null;
 
   const analyticsSections = useMemo<
     Array<{
@@ -239,7 +168,7 @@ export function DashboardShell({
             { key: "devices", href: `${activeSiteBase}/devices` },
             { key: "browsers", href: `${activeSiteBase}/browsers` },
             { key: "performance", href: `${activeSiteBase}/performance` },
-            ...(canManageActiveTeam
+            ...(canManage
               ? [
                   {
                     key: "settings" as const,
@@ -249,7 +178,7 @@ export function DashboardShell({
               : []),
           ]
         : [],
-    [activeSiteBase, canManageActiveTeam, hasActiveSite],
+    [activeSiteBase, canManage, hasActiveSite],
   );
   const localeSuffix = normalizeLocalePath(livePathname);
   const switchToEn = `/en${localeSuffix}`;
@@ -258,22 +187,14 @@ export function DashboardShell({
   const switchToJa = `/ja${localeSuffix}`;
   const accountHref = `/${locale}/app/account`;
   const notificationsHref = `/${locale}/app/inbox`;
-  const appRootHref = `/${locale}/app`;
-  const teamRootHref = liveActiveTeamSlug
-    ? `/${locale}/app/${liveActiveTeamSlug}`
-    : appRootHref;
+  const teamRootHref = `/${locale}/app`;
   const backToTeamLabel = messages.common.backToTeam;
-  const activeTeamName = liveActiveTeamSlug
-    ? activeTeam?.name || liveActiveTeamSlug
-    : "";
-  const activeSiteName = hasActiveSite
-    ? resolvedSites.find((site) => site.slug === resolvedActiveSiteSlug)
-        ?.name || resolvedActiveSiteSlug
-    : "";
-  const activeSiteId = hasActiveSite
-    ? resolvedSites.find((site) => site.slug === resolvedActiveSiteSlug)?.id ||
-      ""
-    : "";
+  const activeTeamName = messages.appName;
+  const activeSite = hasActiveSite
+    ? sites.find((site) => site.slug === resolvedActiveSiteSlug)
+    : undefined;
+  const activeSiteName = activeSite?.name || resolvedActiveSiteSlug;
+  const activeSiteId = activeSite?.id || "";
   const isRealtimeRoute = Boolean(
     hasActiveSite && activeSiteBase && mainSiteSection === "realtime",
   );
@@ -282,60 +203,9 @@ export function DashboardShell({
     "sessions",
     "visitors",
   ].includes(mainSiteSection);
-  const isRequestObservationRoute = Boolean(
-    !liveActiveTeamSlug &&
-    normalizeLocalePath(livePathname) === "/app/manage/request-observation",
-  );
-  const requestObservationBase = `/${locale}/app/manage/request-observation`;
-  const requestObservationSections = useMemo<
-    Array<{
-      key: AnalyticsNavKey;
-      href: string;
-      label: string;
-      queryKey: string;
-      queryValue: string;
-      queryDefault?: boolean;
-    }>
-  >(
-    () =>
-      isRequestObservationRoute
-        ? [
-            {
-              key: "request-overview",
-              href: requestObservationBase,
-              label: messages.requestObservation.tabs.overview,
-              queryKey: "requestTab",
-              queryValue: "overview",
-              queryDefault: true,
-            },
-            {
-              key: "request-abnormal",
-              href: `${requestObservationBase}?requestTab=blocked`,
-              label: messages.requestObservation.tabs.blocked,
-              queryKey: "requestTab",
-              queryValue: "blocked",
-            },
-            {
-              key: "request-normal",
-              href: `${requestObservationBase}?requestTab=included`,
-              label: messages.requestObservation.tabs.included,
-              queryKey: "requestTab",
-              queryValue: "included",
-            },
-          ]
-        : [],
-    [
-      isRequestObservationRoute,
-      messages.requestObservation.tabs.blocked,
-      messages.requestObservation.tabs.included,
-      messages.requestObservation.tabs.overview,
-      requestObservationBase,
-    ],
-  );
-  const topbarSections =
-    analyticsSections.length > 0
-      ? analyticsSections
-      : requestObservationSections;
+  const isRequestObservationRoute =
+    routeState.activeManagementSectionKey === "request-observation";
+  const topbarSections = analyticsSections;
   const isGeoRoute = Boolean(
     hasActiveSite && activeSiteBase && mainSiteSection === "geo",
   );
@@ -353,63 +223,12 @@ export function DashboardShell({
   );
   const contentContainerClassName = isGeoRoute
     ? "flex min-h-0 flex-1 min-w-0 w-full flex-col md:overflow-hidden [&>[data-page-transition]]:flex [&>[data-page-transition]]:h-full [&>[data-page-transition]]:min-h-0 [&>[data-page-transition]]:flex-1 [&>[data-page-transition]]:flex-col"
-    : isRealtimeRoute ||
-        isRequestObservationRoute ||
-        isSessionDetailRoute ||
-        isVisitorDetailRoute
+    : isRealtimeRoute || isSessionDetailRoute || isVisitorDetailRoute
       ? "min-w-0 w-full"
       : "mx-auto min-w-0 w-full max-w-[1400px] p-4 md:p-6";
   const mobileCurrentLevelName = hasActiveSite
     ? activeSiteName
-    : activeTeamName || messages.appName;
-  const teamOptions = useMemo(
-    () =>
-      teams.map((team) => ({
-        slug: team.slug,
-        name: team.name,
-        href: `/${locale}/app/${team.slug}`,
-      })),
-    [locale, teams],
-  );
-  const teamOptionGroups = useMemo(
-    () =>
-      teamGroups
-        ? {
-            created: teamGroups.created.map((team) => ({
-              slug: team.slug,
-              name: team.name,
-              href: `/${locale}/app/${team.slug}`,
-            })),
-            managed: teamGroups.managed.map((team) => ({
-              slug: team.slug,
-              name: team.name,
-              href: `/${locale}/app/${team.slug}`,
-            })),
-            member: teamGroups.member.map((team) => ({
-              slug: team.slug,
-              name: team.name,
-              href: `/${locale}/app/${team.slug}`,
-            })),
-            system: teamGroups.system.map((team) => ({
-              slug: team.slug,
-              name: team.name,
-              href: `/${locale}/app/${team.slug}`,
-            })),
-          }
-        : undefined,
-    [locale, teamGroups],
-  );
-  const sidebarSites = useMemo(
-    () =>
-      resolvedSites.map((site) => ({
-        id: site.id,
-        slug: site.slug,
-        name: site.name,
-        domain: site.domain,
-        iconPath: site.iconPath,
-      })),
-    [resolvedSites],
-  );
+    : activeTeamName;
   const sidebarLabels = useMemo(
     () => ({
       views: messages.common.views,
@@ -417,54 +236,10 @@ export function DashboardShell({
     }),
     [messages.common.visitors, messages.common.views],
   );
-  const sidebarContextMode = routeState.mode === "root" ? "root" : "team";
-  const teamSelector = liveActiveTeamSlug ? (
-    <SidebarGroup className={SIDEBAR_COLLAPSE_SECTION_CLASS}>
-      <SidebarGroupContent>
-        <TeamSelect
-          locale={locale}
-          messages={messages}
-          options={teamOptions}
-          groups={teamOptionGroups}
-          activeTeamSlug={liveActiveTeamSlug}
-        />
-      </SidebarGroupContent>
-    </SidebarGroup>
-  ) : null;
-
-  useEffect(() => {
-    if (!activeTeamId || sites.length > 0 || clientSitesByTeam[activeTeamId]) {
-      return;
-    }
-
-    let active = true;
-    requestAdminService<SiteData[]>("sites", {
-      params: { teamId: activeTeamId },
-    })
-      .then((nextSites) => {
-        if (!active) return;
-        setClientSitesByTeam((current) => ({
-          ...current,
-          [activeTeamId]: nextSites.map(toSidebarSite),
-        }));
-      })
-      .catch(() => {
-        if (!active) return;
-        setClientSitesByTeam((current) => ({
-          ...current,
-          [activeTeamId]: [],
-        }));
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [activeTeamId, clientSitesByTeam, sites.length]);
 
   return (
     <DashboardQueryProvider
       scopeKey={activeSiteId}
-      maxRangeDays={isRequestObservationRoute ? 90 : undefined}
       initialWindow={initialQueryWindow}
       initialFilters={initialFilters}
       initialScopePreference={initialScopePreference}
@@ -473,17 +248,10 @@ export function DashboardShell({
         sidebar={
           <Sidebar variant="inset" collapsible="icon">
             <SidebarHeader>
-              <AppSidebarBrand
-                href="https://github.com/RavelloH/InsightFlare"
-                target="_black"
-                appName={messages.appName}
-                suffix={import.meta.env.VITE_DEMO_MODE === "1" ? "Demo" : "v1"}
-              />
+              <AppSidebarBrand href={teamRootHref} appName={messages.appName} />
             </SidebarHeader>
 
             <div className="shrink-0">
-              {teamSelector}
-
               {routeState.mode === "site" ? (
                 <>
                   <SidebarGroup>
@@ -514,48 +282,34 @@ export function DashboardShell({
               className="min-h-0 flex-1"
               contentClassName="flex min-h-0 flex-col"
               maskClassName="from-sidebar via-sidebar/80 to-transparent"
-              syncKey={`${routeState.mode}:${liveActiveTeamSlug ?? "root"}:${resolvedSites.length}`}
+              syncKey={`${routeState.mode}:${sites.length}`}
             >
               <SidebarContent className="flex-none overflow-hidden">
-                <SidebarMenuStage mode={sidebarContextMode}>
-                  {routeState.mode === "root" ? (
+                <SidebarMenuStage
+                  mode={routeState.mode}
+                  storageKey="open-analytics-sidebar-mode"
+                >
+                  {routeState.mode === "team" ? (
                     <>
                       <SidebarGroup>
                         <SidebarGroupLabel>
-                          {messages.common.team}
+                          {messages.appName}
                         </SidebarGroupLabel>
                         <SidebarGroupContent>
                           <SidebarMenu>
-                            {teams.map((team) => {
-                              const RoleIcon = getTeamRoleIcon(
-                                team.membershipRole,
-                              );
-                              const roleLabel = getTeamRoleLabel(
-                                messages,
-                                team.membershipRole,
-                              );
+                            {teamSections.map((item) => {
+                              const isActive =
+                                routeState.activeTeamSectionKey === item.key;
+                              const SectionIcon = getTeamSectionIcon(item.key);
                               return (
-                                <SidebarMenuItem key={team.id}>
-                                  <SidebarMenuButton asChild>
-                                    <Link href={`/${locale}/app/${team.slug}`}>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <span
-                                            aria-label={roleLabel}
-                                            className={
-                                              team.membershipRole === "owner"
-                                                ? "text-primary"
-                                                : undefined
-                                            }
-                                          >
-                                            <RoleIcon aria-hidden="true" />
-                                          </span>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="right">
-                                          {roleLabel}
-                                        </TooltipContent>
-                                      </Tooltip>
-                                      <span>{team.name}</span>
+                                <SidebarMenuItem key={item.key}>
+                                  <SidebarMenuButton
+                                    asChild
+                                    isActive={isActive}
+                                  >
+                                    <Link href={item.href}>
+                                      <SectionIcon />
+                                      <span>{item.label}</span>
                                     </Link>
                                   </SidebarMenuButton>
                                 </SidebarMenuItem>
@@ -604,105 +358,23 @@ export function DashboardShell({
                       ) : null}
                     </>
                   ) : (
-                    <>
-                      <SidebarMenuStage
-                        mode={routeState.mode}
-                        storageKey="insightflare-sidebar-team-mode"
-                      >
-                        {routeState.mode === "team" ? (
-                          <>
-                            <SidebarGroup>
-                              <SidebarGroupLabel>
-                                {messages.common.team}
-                              </SidebarGroupLabel>
-                              <SidebarGroupContent>
-                                <SidebarMenu>
-                                  {resolvedTeamSections?.map((item) => {
-                                    const isActive =
-                                      routeState.activeTeamSectionKey ===
-                                      item.key;
-                                    const SectionIcon = getTeamSectionIcon(
-                                      item.key,
-                                    );
-                                    return (
-                                      <SidebarMenuItem key={item.key}>
-                                        <SidebarMenuButton
-                                          asChild
-                                          isActive={isActive}
-                                        >
-                                          <Link href={item.href}>
-                                            <SectionIcon />
-                                            <span>{item.label}</span>
-                                          </Link>
-                                        </SidebarMenuButton>
-                                      </SidebarMenuItem>
-                                    );
-                                  })}
-                                </SidebarMenu>
-                              </SidebarGroupContent>
-                            </SidebarGroup>
-
-                            {hasManagementSections ? (
-                              <>
-                                <SidebarSeparator
-                                  className={SIDEBAR_COLLAPSE_SEPARATOR_CLASS}
-                                />
-                                <SidebarGroup>
-                                  <SidebarGroupLabel>
-                                    {messages.common.management}
-                                  </SidebarGroupLabel>
-                                  <SidebarGroupContent>
-                                    <SidebarMenu>
-                                      {managementSections?.map((item) => {
-                                        const isActive =
-                                          routeState.activeManagementSectionKey ===
-                                          item.key;
-                                        const SectionIcon =
-                                          getManagementSectionIcon(item.key);
-                                        return (
-                                          <SidebarMenuItem key={item.key}>
-                                            <SidebarMenuButton
-                                              asChild
-                                              isActive={isActive}
-                                            >
-                                              <Link href={item.href}>
-                                                <SectionIcon />
-                                                <span>{item.label}</span>
-                                              </Link>
-                                            </SidebarMenuButton>
-                                          </SidebarMenuItem>
-                                        );
-                                      })}
-                                    </SidebarMenu>
-                                  </SidebarGroupContent>
-                                </SidebarGroup>
-                              </>
-                            ) : null}
-                          </>
-                        ) : (
-                          <>
-                            <SidebarGroup>
-                              <SidebarGroupLabel>
-                                {messages.common.site}
-                              </SidebarGroupLabel>
-                              <SidebarGroupContent>
-                                <SidebarSiteDetails
-                                  locale={locale}
-                                  teamId={activeTeamId}
-                                  teamSlug={liveActiveTeamSlug || ""}
-                                  activeSiteSlug={resolvedActiveSiteSlug}
-                                  currentSection={currentAnalyticsSection}
-                                  sites={sidebarSites}
-                                  loading={isSidebarSitesLoading}
-                                  loadingLabel={messages.common.loading}
-                                  labels={sidebarLabels}
-                                />
-                              </SidebarGroupContent>
-                            </SidebarGroup>
-                          </>
-                        )}
-                      </SidebarMenuStage>
-                    </>
+                    <SidebarGroup>
+                      <SidebarGroupLabel>
+                        {messages.common.site}
+                      </SidebarGroupLabel>
+                      <SidebarGroupContent>
+                        <SidebarSiteDetails
+                          locale={locale}
+                          teamId={team.id}
+                          activeSiteSlug={resolvedActiveSiteSlug}
+                          currentSection={currentAnalyticsSection}
+                          sites={sites}
+                          loading={false}
+                          loadingLabel={messages.common.loading}
+                          labels={sidebarLabels}
+                        />
+                      </SidebarGroupContent>
+                    </SidebarGroup>
                   )}
                 </SidebarMenuStage>
               </SidebarContent>
@@ -712,6 +384,7 @@ export function DashboardShell({
               <SidebarFooterMenus
                 locale={locale}
                 user={user}
+                gatewayUrl={gatewayUrl}
                 switchToEn={switchToEn}
                 switchToZh={switchToZh}
                 switchToZhTw={switchToZhTw}
@@ -752,13 +425,9 @@ export function DashboardShell({
                               {activeTeamName}
                             </Link>
                           </BreadcrumbLink>
-                        ) : activeTeamName ? (
-                          <BreadcrumbPage className="block max-w-[28vw] truncate">
-                            {activeTeamName}
-                          </BreadcrumbPage>
                         ) : (
                           <BreadcrumbPage className="block max-w-[28vw] truncate">
-                            {messages.appName}
+                            {activeTeamName}
                           </BreadcrumbPage>
                         )}
                       </BreadcrumbItem>
@@ -782,15 +451,13 @@ export function DashboardShell({
                     messages={messages}
                     siteId={activeSiteId}
                     resolvedScope={dashboardFilterResolvedScope}
-                    showControls={
-                      Boolean(liveActiveTeamSlug) || isRequestObservationRoute
-                    }
+                    showControls={!isRequestObservationRoute}
                     showFilterSheet={hasActiveSite}
                     comparisonDisabled={
                       hasActiveSite && isComparisonDisabledRoute
                     }
                     filterDisabled={isRealtimeRoute}
-                    showRealtimeBadge={!isRequestObservationRoute}
+                    showRealtimeBadge
                   />
                 </div>
               </div>

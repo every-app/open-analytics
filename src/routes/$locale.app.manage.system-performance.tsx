@@ -5,7 +5,7 @@ import { loadSystemPerformanceInitialData } from "@/lib/dashboard/route-data";
 import { dashboardPageTitle } from "@/lib/page-title";
 export const Route = createFileRoute("/$locale/app/manage/system-performance")({
   beforeLoad: async ({ context }) => {
-    if (context.dashboardRoot?.user.systemRole !== "admin") throw notFound();
+    if (context.teamContext.user.systemRole !== "admin") throw notFound();
     return {
       systemPerformanceInitialData: await loadSystemPerformanceInitialData(),
     };

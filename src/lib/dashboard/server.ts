@@ -5,7 +5,6 @@ import { getRequest } from "@tanstack/react-start/server";
 
 import {
   type AccountUserData,
-  type SessionTeamGroups,
   type SiteData,
   type TeamData,
 } from "@/lib/dashboard-api/contract/types";
@@ -18,27 +17,20 @@ export { buildSitePath } from "@/lib/dashboard/paths";
 export interface SiteWithSlug extends SiteData {
   slug: string;
 }
+/** The organization's workspace, its sites and the signed-in person. */
+export interface DashboardTeamContext {
+  user: AccountUserData;
+  activeTeam: TeamData;
+  sites: SiteWithSlug[];
+  unreadAttentionCount: number;
+  /** The Every App gateway's home, for leaving the app. */
+  gatewayUrl: string;
+}
 export interface DashboardContext {
   user: AccountUserData;
-  teams: TeamData[];
-  teamGroups: SessionTeamGroups;
   activeTeam: TeamData;
   sites: SiteWithSlug[];
   activeSite: SiteWithSlug;
-}
-export interface DashboardTeamContext {
-  user: AccountUserData;
-  teams: TeamData[];
-  teamGroups: SessionTeamGroups;
-  activeTeam: TeamData;
-  sites: SiteWithSlug[];
-  unreadAttentionCount: number;
-}
-export interface DashboardRootContext {
-  user: AccountUserData;
-  teams: TeamData[];
-  teamGroups: SessionTeamGroups;
-  unreadAttentionCount: number;
 }
 function safeSlug(value: string): string {
   return value
@@ -115,37 +107,9 @@ export async function readDashboardAdmin<K extends keyof AdminServiceReadMap>(
 ): Promise<AdminServiceReadMap[K] | null> {
   return readAdmin(route, params);
 }
-function teamGroupsForProfile(
-  me: Awaited<ReturnType<typeof readAdmin<"session">>>,
-) {
-  if (!me) return null;
-  return (
-    me.teamGroups ?? {
-      created: [],
-      managed: [],
-      member: me.teams,
-      system: [],
-    }
-  );
-}
 export const getDashboardProfile = cache(async () => {
   return getMe();
 });
-export const getDashboardRootContext = cache(
-  async (): Promise<DashboardRootContext | null> => {
-    const me = await getMe();
-    if (!me) return null;
-
-    const unreadAttentionCount = await getUnreadAttentionCount();
-
-    return {
-      user: me.user,
-      teams: me.teams,
-      teamGroups: teamGroupsForProfile(me)!,
-      unreadAttentionCount,
-    };
-  },
-);
 export const getDashboardTeamSites = cache(
   async (teamId: string): Promise<SiteWithSlug[]> => {
     try {
@@ -157,35 +121,31 @@ export const getDashboardTeamSites = cache(
     }
   },
 );
+/** Null without a signed-in person (a share page, or no identity). */
 export const getDashboardTeamContext = cache(
-  async (teamSlug: string): Promise<DashboardTeamContext | null> => {
+  async (): Promise<DashboardTeamContext | null> => {
     const me = await getMe();
-    if (!me) return null;
+    const activeTeam = me?.teams[0];
+    if (!me || !activeTeam) return null;
 
-    const activeTeam = me.teams.find((team) => team.slug === teamSlug);
-    if (!activeTeam) return null;
-
-    const [sites, unreadAttentionCount] = await Promise.all([
+    const [sites, unreadAttentionCount, runtime] = await Promise.all([
       getDashboardTeamSites(activeTeam.id),
       getUnreadAttentionCount(),
+      getAdminRuntime(),
     ]);
 
     return {
       user: me.user,
-      teams: me.teams,
-      teamGroups: teamGroupsForProfile(me)!,
       activeTeam,
       sites,
       unreadAttentionCount,
+      gatewayUrl: runtime.env.GATEWAY_URL || "/",
     };
   },
 );
 export const getTeamSiteContext = cache(
-  async (
-    teamSlug: string,
-    siteSlug: string,
-  ): Promise<DashboardContext | null> => {
-    const teamContext = await getDashboardTeamContext(teamSlug);
+  async (siteSlug: string): Promise<DashboardContext | null> => {
+    const teamContext = await getDashboardTeamContext();
     if (!teamContext) return null;
 
     const activeSite = findSiteBySlug(teamContext.sites, siteSlug);
@@ -193,47 +153,9 @@ export const getTeamSiteContext = cache(
 
     return {
       user: teamContext.user,
-      teams: teamContext.teams,
-      teamGroups: teamContext.teamGroups,
       activeTeam: teamContext.activeTeam,
       sites: teamContext.sites,
       activeSite,
-    };
-  },
-);
-export const getDefaultTeamSite = cache(
-  async (): Promise<{ teamSlug: string; siteSlug: string } | null> => {
-    const me = await getMe();
-    if (!me || me.teams.length === 0) return null;
-
-    const firstTeam = me.teams[0];
-    const sites = await getDashboardTeamSites(firstTeam.id);
-    if (sites.length === 0) {
-      return null;
-    }
-
-    return {
-      teamSlug: firstTeam.slug,
-      siteSlug: sites[0].slug,
-    };
-  },
-);
-export const getTeamDefaultSite = cache(
-  async (
-    teamSlug: string,
-  ): Promise<{ teamSlug: string; siteSlug: string } | null> => {
-    const me = await getMe();
-    if (!me) return null;
-
-    const activeTeam = me.teams.find((team) => team.slug === teamSlug);
-    if (!activeTeam) return null;
-
-    const sites = await getDashboardTeamSites(activeTeam.id);
-    if (sites.length === 0) return null;
-
-    return {
-      teamSlug: activeTeam.slug,
-      siteSlug: sites[0].slug,
     };
   },
 );

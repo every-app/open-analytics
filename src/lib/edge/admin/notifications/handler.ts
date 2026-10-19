@@ -75,7 +75,7 @@ function isPreviewType(value: string): value is NotificationEmailPreviewType {
 async function getManageableRule(env: Env, actor: Actor, ruleId: string) {
   const rule = await getNotificationRule(env, ruleId);
   if (!rule) throw new Error("Not Found");
-  if (!(await canManageTeam(env, actor, rule.teamId))) {
+  if (!canManageTeam(actor, rule.teamId)) {
     throw new Error("Forbidden");
   }
   if (rule.siteId && !(await canManageSite(env, actor, rule.siteId))) {
@@ -282,10 +282,7 @@ export async function handleNotifications(
   const limit = parseLimit(url);
 
   try {
-    if (
-      teamId &&
-      (actor.isAdmin || (await canManageTeam(env, actor, teamId)))
-    ) {
+    if (teamId && (actor.isAdmin || canManageTeam(actor, teamId))) {
       const messages = await listNotificationMessagesForTeam(env, {
         teamId,
         userId: requestedUserId || undefined,
@@ -397,15 +394,12 @@ export async function handleNotificationTestAdmin(
   const siteId = stringParam(body.siteId) || null;
   const requestedUserId = stringParam(body.userId) || actor.user.id;
   if (!teamId) return bad("teamId is required", undefined, req);
-  if (!(await canReadTeam(env, actor, teamId))) {
+  if (!canReadTeam(actor, teamId)) {
     return forb("Forbidden", undefined, req);
   }
   // Team readers may send a harmless test to themselves; sending to another
   // user requires team management permission.
-  if (
-    requestedUserId !== actor.user.id &&
-    !(await canManageTeam(env, actor, teamId))
-  ) {
+  if (requestedUserId !== actor.user.id && !canManageTeam(actor, teamId)) {
     return forb(
       "Only team managers can send test notifications to other users",
       undefined,

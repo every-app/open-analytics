@@ -4,12 +4,8 @@ import { getRequest } from "@tanstack/react-start/server";
 import { publicDashboardSiteId } from "@/lib/dashboard/client/request";
 import {
   type AccountNotificationPreferencesInitialData,
-  type AdminTeamsInitialData,
-  type AdminUsersInitialData,
-  type ApiKeysInitialData,
   type ManagementJsonObject,
   type NotificationCenterInitialData,
-  type SafeTeamInviteData,
   type ScheduledTasksInitialData,
   type SerializableNotificationMessageData,
   type SerializableNotificationRuleData,
@@ -17,13 +13,11 @@ import {
   type SiteSettingsInitialData,
   type SystemPerformanceInitialData,
   type SystemSettingsInitialData,
-  type TeamManagementInitialData,
   type TeamNotificationsInitialData,
 } from "@/lib/dashboard/management-data";
 import { resolveDashboardInitialWindow } from "@/lib/dashboard/query-preferences";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import {
-  getDashboardRootContext,
   getDashboardTeamContext,
   getDashboardTeamSites,
   getTeamSiteContext,
@@ -79,18 +73,16 @@ function serializeScheduledTasksData(
 ): SerializableScheduledTasksData {
   return JSON.parse(JSON.stringify(data)) as SerializableScheduledTasksData;
 }
-export const loadDashboardRoot = createServerFn({ method: "GET" }).handler(() =>
-  getDashboardRootContext(),
-);
 /** Provides the SSR-safe initial query window to the dashboard shell. */
 export const loadDashboardInitialWindow = createServerFn({
   method: "GET",
 }).handler((): TimeWindow =>
   resolveDashboardInitialWindow(getRequest().headers.get("cookie")),
 );
-export const loadDashboardTeam = createServerFn({ method: "GET" })
-  .validator((data: { teamSlug: string }) => data)
-  .handler(({ data }) => getDashboardTeamContext(data.teamSlug));
+/** The workspace, its sites and the signed-in person, for the app layout. */
+export const loadDashboardTeam = createServerFn({ method: "GET" }).handler(() =>
+  getDashboardTeamContext(),
+);
 /** Loads the first team-dashboard snapshot on the server for a stable hydrate. */
 export const loadTeamDashboardSnapshot = createServerFn({ method: "GET" })
   .validator((data: { teamId: string }) => data)
@@ -146,48 +138,6 @@ export const loadTeamDashboardSnapshot = createServerFn({ method: "GET" })
       fetchedAt: Date.now(),
     };
   });
-function safeInvite(invite: {
-  id: string;
-  email: string;
-  payload: SafeTeamInviteData["payload"];
-  createdByUserId: string;
-  createdAt: number;
-  expiresAt: number;
-  usedAt: number | null;
-  usedByUserId: string;
-  revokedAt: number | null;
-  status: SafeTeamInviteData["status"];
-}): SafeTeamInviteData {
-  return {
-    id: invite.id,
-    email: invite.email,
-    payload: invite.payload,
-    createdByUserId: invite.createdByUserId,
-    createdAt: invite.createdAt,
-    expiresAt: invite.expiresAt,
-    usedAt: invite.usedAt,
-    usedByUserId: invite.usedByUserId,
-    revokedAt: invite.revokedAt,
-    status: invite.status,
-  };
-}
-/** Loads the safe, non-secret read model used by team settings and members. */
-export const loadTeamManagementInitialData = createServerFn({ method: "GET" })
-  .validator((data: { teamId: string }) => data)
-  .handler(async ({ data }): Promise<TeamManagementInitialData | null> => {
-    const [members, sites, invites] = await Promise.all([
-      readDashboardAdmin("members", { teamId: data.teamId }),
-      readDashboardAdmin("sites", { teamId: data.teamId }),
-      readDashboardAdmin("team-invites", { teamId: data.teamId }),
-    ]);
-    if (!members || !sites || !invites) return null;
-    return {
-      members,
-      sites,
-      invites: invites.map(safeInvite),
-      fetchedAt: Date.now(),
-    };
-  });
 /** Loads tracker settings and the install snippet for site settings SSR. */
 export const loadSiteSettingsInitialData = createServerFn({ method: "GET" })
   .validator((data: { siteId: string }) => data)
@@ -203,13 +153,6 @@ export const loadSiteSettingsInitialData = createServerFn({ method: "GET" })
       origin: new URL(getRequest().url).origin,
       fetchedAt: Date.now(),
     };
-  });
-/** Loads the site list already used as the management table's first snapshot. */
-export const loadApiKeysInitialData = createServerFn({ method: "GET" })
-  .validator((data: { teamId: string }) => data)
-  .handler(async ({ data }): Promise<ApiKeysInitialData | null> => {
-    const keys = await readDashboardAdmin("api-keys", { teamId: data.teamId });
-    return keys ? { keys, fetchedAt: Date.now() } : null;
   });
 export const loadTeamNotificationsInitialData = createServerFn({
   method: "GET",
@@ -270,32 +213,15 @@ export const loadAccountNotificationPreferences = createServerFn({
       : null;
   },
 );
-export const loadAdminTeamsInitialData = createServerFn({
-  method: "GET",
-}).handler(async (): Promise<AdminTeamsInitialData | null> => {
-  const teams = await readDashboardAdmin("teams");
-  return teams ? { teams, fetchedAt: Date.now() } : null;
-});
-export const loadAdminUsersInitialData = createServerFn({
-  method: "GET",
-}).handler(async (): Promise<AdminUsersInitialData | null> => {
-  const users = await readDashboardAdmin("users");
-  return users ? { users, fetchedAt: Date.now() } : null;
-});
 export const loadSystemSettingsInitialData = createServerFn({
   method: "GET",
 }).handler(async (): Promise<SystemSettingsInitialData | null> => {
-  const [analyticsEngine, loginTurnstile, notificationEmail, scheduledTasks] =
-    await Promise.all([
-      readDashboardAdmin("analytics-engine-config"),
-      readDashboardAdmin("login-turnstile"),
-      readDashboardAdmin("notification-email"),
-      readDashboardAdmin("scheduled-tasks", { limit: 1 }),
-    ]);
-  if (!analyticsEngine || !loginTurnstile || !notificationEmail) return null;
+  const [notificationEmail, scheduledTasks] = await Promise.all([
+    readDashboardAdmin("notification-email"),
+    readDashboardAdmin("scheduled-tasks", { limit: 1 }),
+  ]);
+  if (!notificationEmail) return null;
   return {
-    analyticsEngine,
-    loginTurnstile,
     notificationEmail,
     scheduledTaskRetention:
       scheduledTasks?.retention ?? DEFAULT_RETENTION_CONFIG,
@@ -324,8 +250,8 @@ export const loadSystemPerformanceInitialData = createServerFn({
   return data ? { data, fetchedAt: Date.now() } : null;
 });
 export const loadDashboardSite = createServerFn({ method: "GET" })
-  .validator((data: { teamSlug: string; siteSlug: string }) => data)
-  .handler(({ data }) => getTeamSiteContext(data.teamSlug, data.siteSlug));
+  .validator((data: { siteSlug: string }) => data)
+  .handler(({ data }) => getTeamSiteContext(data.siteSlug));
 export const loadShareSite = createServerFn({ method: "GET" })
   .validator((data: { slug: string }) => data)
   .handler(async ({ data }) => {

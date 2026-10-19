@@ -23,11 +23,9 @@ import {
   canManageTeam,
   canReadSite,
   canReadTeam,
-  teamById,
-  teamMembershipAccess,
   toSlug,
 } from "@/lib/edge/admin/access";
-import { type Actor, requireActor } from "@/lib/edge/admin/auth";
+import { requireActor } from "@/lib/edge/admin/auth";
 import {
   bad,
   bool,
@@ -129,22 +127,6 @@ export async function createSiteWithDefaultSettings(
   }
   return siteId;
 }
-async function filterReadableSitesForActor<T extends { id: string }>(
-  env: Env,
-  actor: Actor,
-  teamId: string,
-  sites: T[],
-): Promise<T[]> {
-  if (actor.isAdmin) return sites;
-  const team = await teamById(env, teamId);
-  if (team?.ownerUserId === actor.user.id) return sites;
-  const membership = await teamMembershipAccess(env, teamId, actor.user.id);
-  if (!membership) return [];
-  if (membership.role === "owner" || membership.role === "admin") return sites;
-  if (membership.siteIds.length === 0) return sites;
-  const allowed = new Set(membership.siteIds);
-  return sites.filter((site) => allowed.has(site.id));
-}
 export async function deleteSiteData(env: Env, siteId: string): Promise<void> {
   const client = database(env);
   for (const mutation of siteDeletionMutations(siteId))
@@ -165,7 +147,7 @@ export async function handleSitesAdmin(
   if (req.method === "GET") {
     const teamId = clampString(url.searchParams.get("teamId") || "", 120);
     if (!teamId) return bad("Missing teamId", undefined, req);
-    if (!(await canReadTeam(env, a, teamId)))
+    if (!canReadTeam(a, teamId))
       return forb("Team access denied", undefined, req);
     const sites = scan(schema.sites);
     const matching = filter(sites, eq(sites.columns.team_id, param(teamId)));
@@ -193,7 +175,7 @@ export async function handleSitesAdmin(
     });
     return jsonResponseFor(req, {
       ok: true,
-      data: await filterReadableSitesForActor(env, a, teamId, siteRows),
+      data: siteRows,
     });
   }
   if (req.method === "POST") {
@@ -208,8 +190,8 @@ export async function handleSitesAdmin(
     );
     if (!teamId || !name || !domain)
       return bad("teamId, name and domain are required", undefined, req);
-    if (!(await canManageTeam(env, a, teamId)))
-      return forb("Only team owner can create sites", undefined, req);
+    if (!canManageTeam(a, teamId))
+      return forb("Only organization admins can create sites", undefined, req);
     if (pub && pubSlug && !(await ensurePublicSlugAvailable(env, pubSlug))) {
       return bad("Public slug already exists", undefined, req);
     }
@@ -251,19 +233,14 @@ export async function handleSitesAdmin(
       publicEnabled: existingRow.publicEnabled ?? 0,
       publicSlug: existingRow.publicSlug,
     };
-    if (!(await canManageTeam(env, a, e.teamId)))
-      return forb("Only team owner can update sites", undefined, req);
+    if (!canManageTeam(a, e.teamId))
+      return forb("Only organization admins can update sites", undefined, req);
     if (intent === "remove") {
       await deleteSiteData(env, siteId);
       return jsonResponseFor(req, {
         ok: true,
         data: { siteId, teamId: e.teamId, removed: true },
       });
-    }
-    const nextTeamId = clampString(String(body.teamId ?? e.teamId), 120);
-    if (!nextTeamId) return bad("teamId is required", undefined, req);
-    if (nextTeamId !== e.teamId && !(await canManageTeam(env, a, nextTeamId))) {
-      return forb("Only team owner can transfer sites", undefined, req);
     }
     const name = clampString(String(body.name ?? e.name), 120);
     const domain = clampString(String(body.domain ?? e.domain), 255);
@@ -280,7 +257,6 @@ export async function handleSitesAdmin(
       compileD1Mutation(
         update(schema.sites, (columns) => ({
           set: {
-            team_id: nextTeamId,
             name,
             domain,
             public_enabled: pub ? 1 : 0,
@@ -299,7 +275,7 @@ export async function handleSitesAdmin(
       ok: true,
       data: {
         id: siteId,
-        teamId: nextTeamId,
+        teamId: e.teamId,
         name,
         domain,
         publicEnabled: pub,

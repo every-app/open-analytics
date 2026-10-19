@@ -4,7 +4,7 @@ import Link from "@/lib/router";
 interface AppSidebarBrandProps {
   href: string;
   appName: string;
-  suffix: string;
+  suffix?: string;
   target?: string;
   rel?: string;
 }
@@ -26,7 +26,9 @@ export function AppSidebarBrand({
       <div className="absolute inset-y-0 left-0 flex items-center whitespace-nowrap transition-[opacity,transform] duration-[380ms] ease-[cubic-bezier(0.4,0,0.2,1)] group-data-[collapsible=icon]:-translate-x-2 group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none">
         <p className="flex items-center justify-center gap-2 text-xl text-primary md:justify-start">
           <span>{appName}</span>
-          <span className="text-muted-foreground">{suffix}</span>
+          {suffix ? (
+            <span className="text-muted-foreground">{suffix}</span>
+          ) : null}
         </p>
       </div>
       <div className="absolute inset-y-0 left-0 flex w-8 items-center justify-center opacity-0 transition-[opacity,transform] duration-[380ms] ease-[cubic-bezier(0.4,0,0.2,1)] group-data-[collapsible=icon]:opacity-100 motion-reduce:transition-none">

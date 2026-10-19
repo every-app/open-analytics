@@ -16,6 +16,7 @@ import {
 import { SiteBrandIcon } from "@/components/dashboard/common/site-brand-icon";
 import { useDashboardQuery } from "@/components/dashboard/shell/dashboard-query-provider";
 import { numberFormat } from "@/lib/dashboard/format";
+import { buildSitePath, type SiteSection } from "@/lib/dashboard/paths";
 import {
   buildTeamSiteTrends,
   teamDashboardQueryOptions,
@@ -34,7 +35,6 @@ interface SidebarSiteSummary {
 interface SidebarSiteDetailsProps {
   locale: Locale;
   teamId: string;
-  teamSlug: string;
   activeSiteSlug?: string;
   currentSection?: string;
   sites: SidebarSiteSummary[];
@@ -48,19 +48,8 @@ interface SidebarSiteDetailsProps {
 const SIDEBAR_EXPAND_CHART_DELAY_MS = 380;
 const SITE_ROW_DETAIL_CLASS =
   "grid min-w-0 max-w-[20rem] flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 overflow-hidden transition-[max-width,opacity,transform] duration-[380ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:translate-x-1 group-data-[collapsible=icon]:opacity-0";
-function buildSitePath(
-  locale: Locale,
-  teamSlug: string,
-  siteSlug: string,
-  section?: string,
-): string {
-  const base = `/${locale}/app/${teamSlug}/${siteSlug}`;
-  if (!section) return base;
-  return `${base}/${section}`;
-}
 interface SidebarSiteRowProps {
   locale: Locale;
-  teamSlug: string;
   activeSiteSlug?: string;
   currentSection?: string;
   site: SidebarSiteSummary;
@@ -78,7 +67,6 @@ interface SidebarSiteRowProps {
 }
 const SidebarSiteRow = memo(function SidebarSiteRow({
   locale,
-  teamSlug,
   activeSiteSlug,
   currentSection,
   site,
@@ -145,7 +133,13 @@ const SidebarSiteRow = memo(function SidebarSiteRow({
 
   const siteLink = (
     <SidebarMenuButton asChild isActive={isActive} className="h-8 rounded-none">
-      <Link href={buildSitePath(locale, teamSlug, site.slug, currentSection)}>
+      <Link
+        href={buildSitePath(
+          locale,
+          site.slug,
+          currentSection as SiteSection | undefined,
+        )}
+      >
         <SiteBrandIcon
           siteId={site.id}
           siteName={site.name}
@@ -201,7 +195,6 @@ const SidebarSiteRow = memo(function SidebarSiteRow({
 export const SidebarSiteDetails = memo(function SidebarSiteDetails({
   locale,
   teamId,
-  teamSlug,
   activeSiteSlug,
   currentSection,
   sites,
@@ -300,7 +293,6 @@ export const SidebarSiteDetails = memo(function SidebarSiteDetails({
                 <SidebarSiteRow
                   key={site.id}
                   locale={locale}
-                  teamSlug={teamSlug}
                   activeSiteSlug={activeSiteSlug}
                   currentSection={currentSection}
                   site={site}

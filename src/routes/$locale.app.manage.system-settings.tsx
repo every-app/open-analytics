@@ -1,15 +1,13 @@
 import { PageHeading } from "@insightflare/ui/page-heading";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 
-import { AnalyticsEngineSettingsClient } from "@/components/dashboard/system-settings/analytics-engine-settings-client";
-import { LoginTurnstileSettingsClient } from "@/components/dashboard/system-settings/login-turnstile-settings-client";
 import { NotificationEmailSettingsClient } from "@/components/dashboard/system-settings/notification-email-settings-client";
 import { ScheduledTaskRetentionSettingsClient } from "@/components/dashboard/system-settings/scheduled-task-retention-settings-client";
 import { loadSystemSettingsInitialData } from "@/lib/dashboard/route-data";
 import { dashboardPageTitle } from "@/lib/page-title";
 export const Route = createFileRoute("/$locale/app/manage/system-settings")({
   beforeLoad: async ({ context }) => {
-    if (context.dashboardRoot?.user.systemRole !== "admin") throw notFound();
+    if (context.teamContext.user.systemRole !== "admin") throw notFound();
     return {
       systemSettingsInitialData: await loadSystemSettingsInitialData(),
     };
@@ -27,27 +25,18 @@ export const Route = createFileRoute("/$locale/app/manage/system-settings")({
   component: Page,
 });
 function Page() {
-  const { locale, messages, dashboardRoot, systemSettingsInitialData } =
+  const { locale, messages, teamContext, systemSettingsInitialData } =
     Route.useRouteContext();
-  if (!dashboardRoot) throw notFound();
   return (
     <div className="space-y-4">
       <PageHeading
         title={messages.systemSettings.title}
         subtitle={messages.systemSettings.subtitle}
       />
-      <AnalyticsEngineSettingsClient
-        messages={messages}
-        initialData={systemSettingsInitialData}
-      />
-      <LoginTurnstileSettingsClient
-        messages={messages}
-        initialData={systemSettingsInitialData}
-      />
       <NotificationEmailSettingsClient
         locale={locale}
         messages={messages}
-        currentUserEmail={dashboardRoot.user.email}
+        currentUserEmail={teamContext.user.email}
         showHeading={false}
         initialData={systemSettingsInitialData}
       />

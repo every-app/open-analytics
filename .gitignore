@@ -20,3 +20,9 @@ playwright-report/
 test-results/
 .tmp/
 /AGENTS.md
+
+# cf build output, generated types and local dev state
+.cloudflare/
+
+# everyapp's local state
+.everyapp/

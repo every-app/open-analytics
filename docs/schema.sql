@@ -2,35 +2,6 @@
 
 -- Regenerates the current table structure by replaying migrations/.
 
-CREATE TABLE account_action_tokens (
-  id TEXT PRIMARY KEY,
-  type TEXT NOT NULL CHECK (type IN ('team_invite', 'password_reset')),
-  token_hash TEXT NOT NULL UNIQUE,
-  team_id TEXT,
-  user_id TEXT,
-  email TEXT,
-  payload_json TEXT NOT NULL DEFAULT '{}',
-  created_by_user_id TEXT,
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  expires_at INTEGER NOT NULL,
-  used_at INTEGER,
-  used_by_user_id TEXT,
-  revoked_at INTEGER,
-  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (used_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
-  FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
-);
-
-CREATE INDEX idx_account_action_tokens_email
-  ON account_action_tokens(email, type, created_at DESC);
-CREATE INDEX idx_account_action_tokens_expires
-  ON account_action_tokens(expires_at);
-CREATE INDEX idx_account_action_tokens_team
-  ON account_action_tokens(team_id, type, created_at DESC);
-CREATE INDEX idx_account_action_tokens_user
-  ON account_action_tokens(user_id, type, created_at DESC);
-
 CREATE TABLE analysis_definitions (
   id TEXT PRIMARY KEY,
   site_id TEXT NOT NULL,
@@ -48,48 +19,6 @@ CREATE INDEX idx_analysis_definitions_site_archived
   ON analysis_definitions(site_id, archived_at);
 CREATE INDEX idx_analysis_definitions_site_kind
   ON analysis_definitions(site_id, kind);
-
-CREATE TABLE api_keys (
-  id TEXT PRIMARY KEY,
-  team_id TEXT NOT NULL,
-  name TEXT NOT NULL,
-  key_prefix TEXT NOT NULL UNIQUE,
-  key_hash TEXT NOT NULL UNIQUE,
-  scopes_json TEXT NOT NULL DEFAULT '[]',
-  site_ids_json TEXT NOT NULL DEFAULT '[]',
-  created_by_user_id TEXT,
-  expires_at INTEGER,
-  revoked_at INTEGER,
-  revoked_by_user_id TEXT,
-  rotated_from_key_id TEXT,
-  last_used_at INTEGER,
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
-  FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
-  FOREIGN KEY (revoked_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
-  FOREIGN KEY (rotated_from_key_id) REFERENCES api_keys(id) ON DELETE SET NULL
-);
-
-CREATE INDEX idx_api_keys_active
-  ON api_keys(team_id, revoked_at, expires_at);
-
-CREATE TABLE archive_objects (
-  archive_key TEXT PRIMARY KEY,
-  site_id TEXT NOT NULL,
-  start_hour INTEGER NOT NULL,
-  end_hour INTEGER NOT NULL,
-  granularity TEXT NOT NULL,
-  format TEXT NOT NULL,
-  row_count INTEGER NOT NULL DEFAULT 0,
-  size_bytes INTEGER NOT NULL DEFAULT 0,
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk)
-);
-
-CREATE INDEX idx_archive_objects_site_pk_hour
-  ON archive_objects(site_pk, start_hour, end_hour);
 
 CREATE TABLE configs (
   config_key TEXT PRIMARY KEY,
@@ -408,47 +337,26 @@ CREATE TABLE sites (
 CREATE INDEX idx_sites_domain ON sites(domain);
 CREATE INDEX idx_sites_team ON sites(team_id);
 
-CREATE TABLE team_members (
-  team_id TEXT NOT NULL,
-  user_id TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'member',
-  joined_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  site_ids_json TEXT NOT NULL DEFAULT '[]',
-  PRIMARY KEY (team_id, user_id),
-  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_team_members_user ON team_members(user_id);
-CREATE UNIQUE INDEX idx_team_single_owner ON team_members(team_id)
-WHERE role = 'owner';
-
 CREATE TABLE teams (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
-  owner_user_id TEXT NOT NULL,
   created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  FOREIGN KEY (owner_user_id) REFERENCES users(id)
+  updated_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
 CREATE TABLE users (
   id TEXT PRIMARY KEY,
-  email TEXT NOT NULL UNIQUE,
+  email TEXT NOT NULL,
   name TEXT,
-  password_hash TEXT,
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  username TEXT,
-  system_role TEXT NOT NULL DEFAULT 'user',
+  org_role TEXT NOT NULL DEFAULT 'member',
+  last_seen_at INTEGER NOT NULL DEFAULT (unixepoch()),
   timezone TEXT NOT NULL DEFAULT '',
   notification_preferences_json TEXT NOT NULL DEFAULT '{}',
-  preferred_locale TEXT NOT NULL DEFAULT ''
+  preferred_locale TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  updated_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
-
-CREATE INDEX idx_users_system_role ON users(system_role);
-CREATE UNIQUE INDEX idx_users_username ON users(username);
 
 CREATE TABLE visit_hourly_aggregation_state (
   site_id TEXT NOT NULL,

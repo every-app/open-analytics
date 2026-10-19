@@ -1,4 +1,4 @@
-import type { SystemRole } from "@/lib/session";
+export type SystemRole = "admin" | "user";
 
 export type TeamRole = "owner" | "admin" | "member";
 
@@ -9,6 +9,7 @@ export function toTeamRole(value: unknown): TeamRole {
   return "member";
 }
 
+/** Organization owners and admins manage sites, notifications and settings. */
 export function canManageTeam(
   role: TeamRole | string | undefined | null,
   systemRole: SystemRole,
@@ -16,12 +17,4 @@ export function canManageTeam(
   if (systemRole === "admin") return true;
   const r = toTeamRole(role);
   return r === "owner" || r === "admin";
-}
-
-export function canAdministerTeam(
-  role: TeamRole | string | undefined | null,
-  systemRole: SystemRole,
-): boolean {
-  if (systemRole === "admin") return true;
-  return toTeamRole(role) === "owner";
 }

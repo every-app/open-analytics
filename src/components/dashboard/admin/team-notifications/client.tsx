@@ -92,7 +92,6 @@ export function TeamNotificationsClient({
   locale,
   messages,
   teamId,
-  teamSlug,
   currentUserId,
   initialData = null,
 }: TeamNotificationsClientProps) {
@@ -343,9 +342,7 @@ export function TeamNotificationsClient({
         actions={
           <>
             <Button type="button" variant="outline" asChild>
-              <Link
-                href={`/${locale}/app/${teamSlug}/notifications/email-preview`}
-              >
+              <Link href={`/${locale}/app/notifications/email-preview`}>
                 <RiMailSendLine data-icon="inline-start" />
                 <span>{copy.emailPreview}</span>
               </Link>
