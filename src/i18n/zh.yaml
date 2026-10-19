@@ -2391,6 +2391,7 @@ logoutAction: {}
 sidebarFooter:
   gateway: 返回 Every App
 appNav:
+  appearance: 外观
   mainNavigation: 主导航
   toggleSidebar: 切换侧边栏
   sources: 来源
@@ -2403,8 +2404,6 @@ appNav:
   switchSite: 切换站点
   siteSettings: 站点设置
   addSite: 添加站点
-  accountMenu: 打开账户菜单
-  accountSettings: 账户设置
   sections: 分区
 teamEntry: {}
 getStarted:

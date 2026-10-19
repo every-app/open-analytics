@@ -170,13 +170,11 @@ export function DashboardShell({
           <AppSidebar
             locale={locale}
             messages={messages}
-            pathname={livePathname}
             routeState={routeState}
             sites={sites}
             activeSite={activeSite}
             canManage={canManage}
             unreadAttentionCount={unreadAttentionCount}
-            user={user}
             gatewayUrl={gatewayUrl}
           />
         }

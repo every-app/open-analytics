@@ -2308,6 +2308,7 @@ export interface AppMessages {
     gateway: string;
   };
   appNav: {
+    appearance: string;
     mainNavigation: string;
     toggleSidebar: string;
     sources: string;
@@ -2320,8 +2321,6 @@ export interface AppMessages {
     switchSite: string;
     siteSettings: string;
     addSite: string;
-    accountMenu: string;
-    accountSettings: string;
     sections: string;
   };
   teamEntry: Record<string, never>;
@@ -4971,6 +4970,7 @@ const enMessages = {
     gateway: "Back to Every App",
   },
   appNav: {
+    appearance: "Appearance",
     mainNavigation: "Main navigation",
     toggleSidebar: "Toggle sidebar",
     sources: "Sources",
@@ -4983,8 +4983,6 @@ const enMessages = {
     switchSite: "Switch site",
     siteSettings: "Site settings",
     addSite: "Add site",
-    accountMenu: "Open account menu",
-    accountSettings: "Account settings",
     sections: "Sections",
   },
   teamEntry: {},
@@ -7572,6 +7570,7 @@ const zhMessages = {
     gateway: "返回 Every App",
   },
   appNav: {
+    appearance: "外观",
     mainNavigation: "主导航",
     toggleSidebar: "切换侧边栏",
     sources: "来源",
@@ -7584,8 +7583,6 @@ const zhMessages = {
     switchSite: "切换站点",
     siteSettings: "站点设置",
     addSite: "添加站点",
-    accountMenu: "打开账户菜单",
-    accountSettings: "账户设置",
     sections: "分区",
   },
   teamEntry: {},
@@ -10173,6 +10170,7 @@ const zhTwMessages = {
     gateway: "返回 Every App",
   },
   appNav: {
+    appearance: "外觀",
     mainNavigation: "主導覽",
     toggleSidebar: "切換側邊欄",
     sources: "來源",
@@ -10185,8 +10183,6 @@ const zhTwMessages = {
     switchSite: "切換站點",
     siteSettings: "站點設定",
     addSite: "新增站點",
-    accountMenu: "開啟帳戶選單",
-    accountSettings: "帳戶設定",
     sections: "分區",
   },
   teamEntry: {},
@@ -12840,6 +12836,7 @@ const jaMessages = {
     gateway: "Every App に戻る",
   },
   appNav: {
+    appearance: "外観",
     mainNavigation: "メインナビゲーション",
     toggleSidebar: "サイドバーを切り替え",
     sources: "流入元",
@@ -12852,8 +12849,6 @@ const jaMessages = {
     switchSite: "サイトを切り替え",
     siteSettings: "サイト設定",
     addSite: "サイトを追加",
-    accountMenu: "アカウントメニューを開く",
-    accountSettings: "アカウント設定",
     sections: "セクション",
   },
   teamEntry: {},

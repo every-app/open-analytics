@@ -2391,6 +2391,7 @@ logoutAction: {}
 sidebarFooter:
   gateway: 返回 Every App
 appNav:
+  appearance: 外觀
   mainNavigation: 主導覽
   toggleSidebar: 切換側邊欄
   sources: 來源
@@ -2403,8 +2404,6 @@ appNav:
   switchSite: 切換站點
   siteSettings: 站點設定
   addSite: 新增站點
-  accountMenu: 開啟帳戶選單
-  accountSettings: 帳戶設定
   sections: 分區
 teamEntry: {}
 getStarted:

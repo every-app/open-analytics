@@ -2402,6 +2402,7 @@ logoutAction: {}
 sidebarFooter:
   gateway: Every App に戻る
 appNav:
+  appearance: 外観
   mainNavigation: メインナビゲーション
   toggleSidebar: サイドバーを切り替え
   sources: 流入元
@@ -2414,8 +2415,6 @@ appNav:
   switchSite: サイトを切り替え
   siteSettings: サイト設定
   addSite: サイトを追加
-  accountMenu: アカウントメニューを開く
-  accountSettings: アカウント設定
   sections: セクション
 teamEntry: {}
 getStarted:

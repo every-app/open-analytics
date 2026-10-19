@@ -12,6 +12,7 @@ import { Switch } from "@insightflare/ui/switch";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { AppearanceSettings } from "@/components/settings/appearance-settings";
 import { SaveButton } from "@/components/settings/save-button";
 import {
   SettingsCard,
@@ -439,6 +440,8 @@ export function AccountSettingsClient({
           </SettingsCard>
         </form>
       </SettingsSection>
+
+      <AppearanceSettings locale={locale} messages={messages} />
 
       <SettingsSection title={notificationCopy.preferencesTitle}>
         {notificationPreferencesLoading || !draftNotificationPreferences ? (

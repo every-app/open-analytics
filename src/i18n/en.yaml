@@ -2473,6 +2473,7 @@ logoutAction: {}
 sidebarFooter:
   gateway: Back to Every App
 appNav:
+  appearance: Appearance
   mainNavigation: Main navigation
   toggleSidebar: Toggle sidebar
   sources: Sources
@@ -2485,8 +2486,6 @@ appNav:
   switchSite: Switch site
   siteSettings: Site settings
   addSite: Add site
-  accountMenu: Open account menu
-  accountSettings: Account settings
   sections: Sections
 teamEntry: {}
 getStarted:

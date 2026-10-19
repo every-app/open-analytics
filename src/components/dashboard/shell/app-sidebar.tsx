@@ -11,10 +11,10 @@ import {
   useSidebar,
 } from "@insightflare/ui/sidebar";
 import { VerticalScrollMask } from "@insightflare/ui/vertical-scroll-mask";
-import { InboxIcon, SettingsIcon } from "lucide-react";
+import { InboxIcon } from "lucide-react";
 
 import { SiteBrandIcon } from "@/components/dashboard/common/site-brand-icon";
-import { buildSettingsPath, buildSitePath } from "@/lib/dashboard/paths";
+import { buildSitePath } from "@/lib/dashboard/paths";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 import Link from "@/lib/router";
@@ -29,7 +29,7 @@ import {
   type SiteNavKey,
   useDashboardNavHref,
 } from "./dashboard-shell/navigation";
-import { AccountFooter } from "./account-footer";
+import { SidebarFootLinks } from "./sidebar-foot-links";
 import { SIDEBAR_NAV_BUTTON_CLASS, SidebarNavLink } from "./sidebar-nav";
 import { SiteSwitcher } from "./site-switcher";
 
@@ -38,29 +38,26 @@ const GROUP_LABEL_CLASS =
 
 /**
  * OpenSEO's sidebar: the wordmark and the site switcher, the site's pages
- * when one is open, the organization's pages, and the account menu.
+ * when one is open or the list of sites otherwise, then the way back to
+ * the gateway and Settings.
  */
 export function AppSidebar({
   locale,
   messages,
-  pathname,
   routeState,
   sites,
   activeSite,
   canManage,
   unreadAttentionCount,
-  user,
   gatewayUrl,
 }: {
   locale: Locale;
   messages: AppMessages;
-  pathname: string;
   routeState: ShellRouteState;
   sites: SidebarSite[];
   activeSite?: SidebarSite;
   canManage: boolean;
   unreadAttentionCount: number;
-  user: { name: string; email: string };
   gatewayUrl: string;
 }) {
   const { setOpenMobile } = useSidebar();
@@ -111,6 +108,21 @@ export function AppSidebar({
       >
         <SidebarContent className="flex-none">
           <nav aria-label={messages.appNav.mainNavigation}>
+            <SidebarGroup className="py-1">
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarNavLink
+                    href={`/${locale}/app/inbox`}
+                    icon={InboxIcon}
+                    label={messages.appNav.inbox}
+                    isActive={routeState.orgPage === "inbox"}
+                    badge={unreadAttentionCount}
+                    onNavigate={closeMobile}
+                  />
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
             {siteSlug ? (
               <SidebarGroup className="py-1">
                 <SidebarGroupContent>
@@ -169,31 +181,11 @@ export function AppSidebar({
         </SidebarContent>
       </VerticalScrollMask>
 
-      <AccountFooter
-        links={
-          <>
-            <SidebarNavLink
-              href={`/${locale}/app/inbox`}
-              icon={InboxIcon}
-              label={messages.appNav.inbox}
-              isActive={routeState.orgPage === "inbox"}
-              badge={unreadAttentionCount}
-              onNavigate={closeMobile}
-            />
-            <SidebarNavLink
-              href={buildSettingsPath(locale)}
-              icon={SettingsIcon}
-              label={messages.appNav.settings}
-              isActive={routeState.orgPage === "settings"}
-              onNavigate={closeMobile}
-            />
-          </>
-        }
+      <SidebarFootLinks
         locale={locale}
         messages={messages}
-        pathname={pathname}
-        user={user}
         gatewayUrl={gatewayUrl}
+        settingsActive={routeState.orgPage === "settings"}
         onNavigate={closeMobile}
       />
     </Sidebar>
