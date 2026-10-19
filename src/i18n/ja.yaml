@@ -1116,7 +1116,6 @@ retention:
   sizeDetail: コホート人数
 geo:
   title: 地域分析
-  subtitle: 地域別にトラフィックパフォーマンスを分析します。
   mapTitle: リクエスト地域分布
   countryLabel: 国 / 地域
   regionLabel: 地域

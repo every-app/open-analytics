@@ -440,12 +440,9 @@ export function GeoClientPage({
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-background via-background/70 to-transparent sm:h-40" />
 
       <div className="pointer-events-none absolute left-4 top-4 z-10 max-w-[min(26rem,calc(100%-2rem))] sm:max-w-[calc(100%-25.5rem)] md:left-6 md:top-6">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {messages.geo.title}
-          </h1>
-          <p className="text-sm text-foreground/75">{messages.geo.subtitle}</p>
-        </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          {messages.geo.title}
+        </h1>
       </div>
     </>
   );

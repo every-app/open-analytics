@@ -1113,7 +1113,6 @@ retention:
   sizeDetail: 人数
 geo:
   title: 位置分析
-  subtitle: 分析各地点的访问表现
   mapTitle: 请求地理分布
   countryLabel: 国家/地区
   regionLabel: 州/省

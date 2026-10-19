@@ -1129,7 +1129,6 @@ retention:
   sizeDetail: Cohort size
 geo:
   title: Location Analysis
-  subtitle: Analyze traffic performance by location.
   mapTitle: Request Geo Distribution
   countryLabel: Country / Region
   regionLabel: Region

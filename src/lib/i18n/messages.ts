@@ -1075,7 +1075,6 @@ export interface AppMessages {
   };
   geo: {
     title: string;
-    subtitle: string;
     mapTitle: string;
     countryLabel: string;
     regionLabel: string;
@@ -3592,7 +3591,6 @@ const enMessages = {
   },
   geo: {
     title: "Location Analysis",
-    subtitle: "Analyze traffic performance by location.",
     mapTitle: "Request Geo Distribution",
     countryLabel: "Country / Region",
     regionLabel: "Region",
@@ -6232,7 +6230,6 @@ const zhMessages = {
   },
   geo: {
     title: "位置分析",
-    subtitle: "分析各地点的访问表现",
     mapTitle: "请求地理分布",
     countryLabel: "国家/地区",
     regionLabel: "州/省",
@@ -8835,7 +8832,6 @@ const zhTwMessages = {
   },
   geo: {
     title: "位置分析",
-    subtitle: "分析各地點的造訪表現",
     mapTitle: "請求地理分佈",
     countryLabel: "國家/地區",
     regionLabel: "州/省",
@@ -11467,7 +11463,6 @@ const jaMessages = {
   },
   geo: {
     title: "地域分析",
-    subtitle: "地域別にトラフィックパフォーマンスを分析します。",
     mapTitle: "リクエスト地域分布",
     countryLabel: "国 / 地域",
     regionLabel: "地域",
