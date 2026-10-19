@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an improvement for InsightFlare
+about: Suggest an improvement for Open Analytics
 title: "[Feature]: "
 labels: enhancement
 assignees: ""

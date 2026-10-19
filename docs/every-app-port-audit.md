@@ -2,6 +2,19 @@
 
 Audited 2026-10-19 against InsightFlare v0.7.1 (`a4b67dd4`, cloned here as `open-analytics`) and `private-every-app` main (`666013dd`). Goal: a feature-complete replica of InsightFlare, open source, deployable as an app on an Every App gateway.
 
+## Outcome
+
+The port is done on the `every-app-port` branch. The plan below is kept as the record of what was weighed. Where the port differs from it:
+
+- **Tenancy** took the simpler alternative. One organization is one team, and roles come from `orgRole`: owners and admins manage, members read. Teams, invites, per-member site restrictions, passwords and sessions are gone. A `members` table mirrors who has visited, so notifications can reach them.
+- **Agent access** is MCP only. `/api/v1`, API keys, the OpenAPI spec and the skills spec are removed. `src/lib/mcp/tools.ts` defines 15 tools: read, write and destructive (destructive tools are hidden by the gateway). They call the private dashboard API in-process.
+- **Retention:** page views and events are kept 396 days by default (configurable), behind each site's hourly rollup watermark. There is no R2 archive.
+- **Request Observation** covers only requests the collector blocked, stored in D1 for 30 days with an IP prefix rather than an address. Analytics Engine is gone.
+- **Email** goes through the gateway's `sendEmail`. Resend and its settings are gone.
+- **External services:** the basemap is OpenFreeMap through a same-origin style relay, link previews are fetched by the Worker, and place-name translations come from a pinned jsDelivr copy of `iso-3166-2-locale`. Browser feature data still comes from `caniuse.ravelloh.com`; only feature names are sent.
+- **Removed:** the demo build, the e2e harness, the version-update page, site transfer between teams, and the upstream changelog, screenshots and translated READMEs.
+- **Gateway change:** the perimeter now passes `request.cf` to apps (private-every-app PR #339). Without it, location, EU mode, ASN blocking and bot signals are empty.
+
 ## Verdict
 
 The port is feasible, and most of the work is in the app, not the platform. InsightFlare already runs on the same stack as Every App apps: TanStack Start, the Cloudflare Vite plugin, and one Worker with a Durable Object, D1, KV and a cron. Every binding it needs is on the gateway's allowlist except Analytics Engine, and the code already tolerates Analytics Engine being absent.

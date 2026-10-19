@@ -97,35 +97,6 @@ jobs:
             coverage/tracker
           if-no-files-found: warn
 
-  spec:
-    name: OpenAPI & Skills Spec
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 10.33.0
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate and verify OpenAPI spec
-        run: pnpm run check:openapi
-
-      - name: Generate and verify Skills spec
-        run: pnpm run check:skills
-
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -149,5 +120,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # A production build only runs under `everyapp deploy`; this builds the
+      # same bundle without the gateway's deploy settings.
       - name: Build
-        run: pnpm run build:demo
+        run: pnpm run build:packages && pnpm run build:tracker-sdk && pnpm exec vite build --mode development

@@ -1,25 +1,25 @@
-# Contributing to InsightFlare
+# Contributing to Open Analytics
 
-Thanks for taking the time to improve InsightFlare.
+Thanks for taking the time to improve Open Analytics.
 
 This project is still early, so the most useful contributions are focused bug fixes, tests, documentation improvements, and small feature changes that are easy to review.
 
 ## Development Setup
 
-InsightFlare uses Node.js 24 and pnpm 10.33.0.
+Open Analytics uses Node.js 24 and pnpm 10.33.0.
 
 ```bash
 pnpm install --frozen-lockfile
 pnpm run dev
 ```
 
-For local Cloudflare-related development, copy the example environment file and fill in local values:
+`pnpm run dev` starts the app behind a local Every App gateway at `http://analytics.localhost:8787`, signed in as a development user. Copy the example environment file first:
 
 ```bash
 cp .dev.vars.example .dev.vars
 ```
 
-At minimum, local secret-backed flows need `MAIN_SECRET` and `BOOTSTRAP_ADMIN_PASSWORD`. Legacy `DAILY_SALT_SECRET` is still supported for migration tests, but new development should prefer `MAIN_SECRET`.
+`MAIN_SECRET` signs collect tokens and derives visitor hashes.
 
 ## Quality Checks
 
@@ -37,10 +37,10 @@ This runs the same core checks expected by CI:
 - i18n key validation
 - Vitest tests
 
-For build-related changes, also run:
+For build-related changes, also build the bundle:
 
 ```bash
-pnpm run build:demo
+pnpm exec vite build --mode development
 ```
 
 ## Pull Requests
@@ -65,7 +65,7 @@ pnpm run test:coverage
 
 ## Documentation
 
-User-facing behavior should be documented in the README or project docs when it affects installation, deployment, configuration, privacy behavior, APIs, or tracking behavior.
+User-facing behavior should be documented in the README or project docs when it affects installation, deployment, configuration, privacy behavior, MCP tools, or tracking behavior.
 
 ## Security Issues
 

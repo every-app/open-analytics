@@ -1,6 +1,6 @@
 # Security Policy
 
-InsightFlare handles analytics data and deployment secrets, so security reports are taken seriously.
+Open Analytics handles analytics data and deployment secrets, so security reports are taken seriously.
 
 ## Supported Versions
 
@@ -12,11 +12,7 @@ Use the latest release or the latest `main` branch unless a release note says ot
 
 Please do not report security vulnerabilities in public GitHub issues.
 
-Email reports to:
-
-```text
-contact@insightflare.net
-```
+Report them privately through GitHub: [open a security advisory](https://github.com/every-app/open-analytics/security/advisories/new).
 
 Include as much detail as possible:
 
@@ -32,11 +28,11 @@ We will acknowledge valid reports as soon as practical and coordinate a fix befo
 
 Security-sensitive areas include:
 
-- Authentication and dashboard sessions
+- Access control: organization scoping, roles and public share links
 - Analytics data ingestion and storage
-- Cloudflare Worker, D1, KV, R2, and Durable Object configuration
+- Cloudflare Worker, D1, KV, and Durable Object configuration
 - Deployment secrets and environment variables
-- GitHub App synchronization behavior
+- MCP tools exposed to agents
 - Privacy guarantees such as visitor identification and IP handling
 
 ## Public Disclosure

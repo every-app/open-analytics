@@ -1,6 +1,6 @@
 # Code of Conduct
 
-InsightFlare aims to be a practical, respectful open source project.
+Open Analytics aims to be a practical, respectful open source project.
 
 ## Expected Behavior
 
@@ -26,11 +26,7 @@ Unacceptable behavior includes:
 
 Maintainers may edit, hide, or remove comments, close issues or pull requests, or restrict participation when behavior is harmful to the project.
 
-To report a conduct issue, email:
-
-```text
-contact@insightflare.net
-```
+To report a conduct issue privately, [open a private advisory](https://github.com/every-app/open-analytics/security/advisories/new) and say it is a conduct report.
 
 Reports should include relevant links, screenshots, and context when possible.
 

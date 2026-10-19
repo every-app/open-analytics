@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a reproducible problem in InsightFlare
+about: Report a reproducible problem in Open Analytics
 title: "[Bug]: "
 labels: bug
 assignees: ""
@@ -18,7 +18,7 @@ Describe the bug and what you expected to happen.
 
 ## Environment
 
-- InsightFlare version or commit:
+- Open Analytics commit:
 - Deployment method:
 - Browser:
 - Cloudflare environment:

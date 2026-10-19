@@ -7,7 +7,7 @@ Describe what this PR changes and why.
 List the checks you ran.
 
 - [ ] `pnpm run check`
-- [ ] `pnpm run build:demo`
+- [ ] `pnpm exec vite build --mode development`
 
 ## Notes
 
