@@ -2310,10 +2310,9 @@ export interface AppMessages {
   appNav: {
     mainNavigation: string;
     toggleSidebar: string;
-    traffic: string;
+    sources: string;
     audience: string;
     conversions: string;
-    site: string;
     sites: string;
     allSites: string;
     inbox: string;
@@ -4974,10 +4973,9 @@ const enMessages = {
   appNav: {
     mainNavigation: "Main navigation",
     toggleSidebar: "Toggle sidebar",
-    traffic: "Traffic",
+    sources: "Sources",
     audience: "Audience",
     conversions: "Conversions",
-    site: "Site",
     sites: "Sites",
     allSites: "All sites",
     inbox: "Inbox",
@@ -7576,10 +7574,9 @@ const zhMessages = {
   appNav: {
     mainNavigation: "主导航",
     toggleSidebar: "切换侧边栏",
-    traffic: "流量",
+    sources: "来源",
     audience: "受众",
     conversions: "转化",
-    site: "站点",
     sites: "站点",
     allSites: "所有站点",
     inbox: "收件箱",
@@ -10178,10 +10175,9 @@ const zhTwMessages = {
   appNav: {
     mainNavigation: "主導覽",
     toggleSidebar: "切換側邊欄",
-    traffic: "流量",
+    sources: "來源",
     audience: "受眾",
     conversions: "轉換",
-    site: "站點",
     sites: "站點",
     allSites: "所有站點",
     inbox: "收件匣",
@@ -12846,10 +12842,9 @@ const jaMessages = {
   appNav: {
     mainNavigation: "メインナビゲーション",
     toggleSidebar: "サイドバーを切り替え",
-    traffic: "トラフィック",
+    sources: "流入元",
     audience: "オーディエンス",
     conversions: "コンバージョン",
-    site: "サイト",
     sites: "サイト",
     allSites: "すべてのサイト",
     inbox: "受信トレイ",

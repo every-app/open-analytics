@@ -146,6 +146,7 @@ export function TeamManagementSitesPanel() {
               messages={messages}
               axisDateFormat="regular"
               loading={dashboardQuery.isFetching}
+              className="h-[180px]"
             />
           </div>
         </CardContent>

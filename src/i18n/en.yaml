@@ -2475,10 +2475,9 @@ sidebarFooter:
 appNav:
   mainNavigation: Main navigation
   toggleSidebar: Toggle sidebar
-  traffic: Traffic
+  sources: Sources
   audience: Audience
   conversions: Conversions
-  site: Site
   sites: Sites
   allSites: All sites
   inbox: Inbox

@@ -2404,10 +2404,9 @@ sidebarFooter:
 appNav:
   mainNavigation: メインナビゲーション
   toggleSidebar: サイドバーを切り替え
-  traffic: トラフィック
+  sources: 流入元
   audience: オーディエンス
   conversions: コンバージョン
-  site: サイト
   sites: サイト
   allSites: すべてのサイト
   inbox: 受信トレイ

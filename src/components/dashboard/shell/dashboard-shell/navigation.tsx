@@ -1,22 +1,14 @@
 import { useCallback } from "react";
 import {
   ActivityIcon,
-  ChartColumnIcon,
   FileTextIcon,
   GaugeIcon,
   LayoutDashboardIcon,
-  ListFilterIcon,
   type LucideIcon,
-  MapPinIcon,
-  MegaphoneIcon,
-  MonitorIcon,
   MonitorSmartphoneIcon,
-  RepeatIcon,
-  SettingsIcon,
   ShareIcon,
   TargetIcon,
   UserRoundIcon,
-  ZapIcon,
 } from "lucide-react";
 
 import { useLiveSearchParams } from "@/lib/dashboard/client/history";
@@ -50,55 +42,67 @@ export type SiteNavKey =
   | "performance"
   | "settings";
 
-interface SiteNavGroup {
-  label: keyof AppMessages["appNav"];
-  items: readonly SiteNavKey[];
-}
+/**
+ * The sidebar's entries for a site, in order. An entry with several pages
+ * links to its first and shows the rest as tabs above the page.
+ */
+export const SITE_NAV_ITEMS = [
+  { key: "overview", sections: ["overview"] },
+  { key: "realtime", sections: ["realtime"] },
+  { key: "pages", sections: ["pages"] },
+  { key: "sources", sections: ["referrers", "campaigns"] },
+  { key: "audience", sections: ["visitors", "sessions", "retention", "geo"] },
+  { key: "devices", sections: ["devices", "browsers"] },
+  { key: "conversions", sections: ["events", "funnels", "goals"] },
+  { key: "performance", sections: ["performance"] },
+] as const satisfies readonly {
+  key: string;
+  sections: readonly SiteNavKey[];
+}[];
 
-/** The sidebar's groups of a site's pages, in order. */
-export const SITE_NAV_GROUPS: readonly SiteNavGroup[] = [
-  {
-    label: "traffic",
-    items: ["overview", "realtime", "pages", "referrers", "campaigns"],
-  },
-  {
-    label: "audience",
-    items: ["sessions", "visitors", "retention", "geo", "devices", "browsers"],
-  },
-  { label: "conversions", items: ["events", "funnels", "goals"] },
-  { label: "site", items: ["performance", "settings"] },
-];
+export type SiteNavItem = (typeof SITE_NAV_ITEMS)[number];
 
-const SITE_NAV_ICONS: Record<SiteNavKey, LucideIcon> = {
+const SITE_NAV_ITEM_ICONS: Record<SiteNavItem["key"], LucideIcon> = {
   overview: LayoutDashboardIcon,
   realtime: ActivityIcon,
   pages: FileTextIcon,
-  referrers: ShareIcon,
-  campaigns: MegaphoneIcon,
-  sessions: ChartColumnIcon,
-  visitors: UserRoundIcon,
-  retention: RepeatIcon,
-  geo: MapPinIcon,
+  sources: ShareIcon,
+  audience: UserRoundIcon,
   devices: MonitorSmartphoneIcon,
-  browsers: MonitorIcon,
-  events: ZapIcon,
-  funnels: ListFilterIcon,
-  goals: TargetIcon,
+  conversions: TargetIcon,
   performance: GaugeIcon,
-  settings: SettingsIcon,
 };
 
-export function siteNavIcon(key: SiteNavKey): LucideIcon {
-  return SITE_NAV_ICONS[key];
+export function siteNavItemIcon(item: SiteNavItem): LucideIcon {
+  return SITE_NAV_ITEM_ICONS[item.key];
+}
+
+/** A single-page entry is named after its page; a group after the group. */
+export function siteNavItemLabel(
+  item: SiteNavItem,
+  messages: AppMessages,
+): string {
+  if (item.key === "sources") return messages.appNav.sources;
+  if (item.key === "audience") return messages.appNav.audience;
+  if (item.key === "conversions") return messages.appNav.conversions;
+  return messages.navigation[item.key];
+}
+
+/** The sidebar entry a site page belongs to. */
+export function siteNavItemFor(section: SiteNavKey): SiteNavItem | undefined {
+  return SITE_NAV_ITEMS.find((item) =>
+    (item.sections as readonly SiteNavKey[]).includes(section),
+  );
 }
 
 export function siteNavLabel(key: SiteNavKey, messages: AppMessages): string {
   return messages.navigation[key];
 }
 
-const SITE_NAV_KEYS = new Set<string>(
-  SITE_NAV_GROUPS.flatMap((group) => group.items),
-);
+const SITE_NAV_KEYS = new Set<string>([
+  ...SITE_NAV_ITEMS.flatMap((item) => item.sections),
+  "settings",
+]);
 
 export function isSiteNavKey(value: string): value is SiteNavKey {
   return SITE_NAV_KEYS.has(value);

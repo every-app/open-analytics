@@ -6,6 +6,7 @@ import { SiteBrandIcon } from "@/components/dashboard/common/site-brand-icon";
 import { DashboardHeaderControls } from "@/components/dashboard/shell/dashboard-header-controls";
 import { DashboardQueryProvider } from "@/components/dashboard/shell/dashboard-query-provider";
 import { useAccountTimeZonePreference } from "@/components/time-zone-provider";
+import { buildSitePath } from "@/lib/dashboard/paths";
 import { canManageTeam } from "@/lib/dashboard/permissions";
 import {
   parseFilterDocumentFromSearchParams,
@@ -25,9 +26,13 @@ import {
   parseShellRouteState,
   type ShellRouteState,
   type SidebarSite,
+  siteNavItemFor,
+  siteNavItemLabel,
   siteNavLabel,
+  useDashboardNavHref,
 } from "./dashboard-shell/navigation";
 import { AppSidebar } from "./app-sidebar";
+import { NavTabs } from "./nav-tabs";
 
 interface DashboardShellProps {
   locale: Locale;
@@ -97,6 +102,28 @@ export function DashboardShell({
       )
     : undefined;
   const section = routeState.siteSection;
+  const navHref = useDashboardNavHref();
+  const navItem = section ? siteNavItemFor(section) : undefined;
+  // A sidebar entry with several pages shows them as tabs, except on a
+  // session's or visitor's detail page, which has its own way back.
+  const tabs =
+    navItem &&
+    navItem.sections.length > 1 &&
+    routeState.siteSlug &&
+    routeState.siteSubSection !== "detail"
+      ? navItem.sections.map((key) => ({
+          key,
+          label: siteNavLabel(key, messages),
+          href: navHref(
+            buildSitePath(
+              locale,
+              routeState.siteSlug!,
+              key === "overview" ? undefined : key,
+            ),
+          ),
+          active: key === section,
+        }))
+      : null;
   const contentClassName =
     section === "geo"
       ? "flex min-h-0 flex-1 min-w-0 w-full flex-col md:overflow-hidden [&>[data-page-transition]]:flex [&>[data-page-transition]]:h-full [&>[data-page-transition]]:min-h-0 [&>[data-page-transition]]:flex-1 [&>[data-page-transition]]:flex-col"
@@ -122,7 +149,10 @@ export function DashboardShell({
       </span>
       {section ? (
         <span className="hidden truncate text-muted-foreground sm:inline">
-          · {siteNavLabel(section, messages)}
+          ·{" "}
+          {navItem
+            ? siteNavItemLabel(navItem, messages)
+            : siteNavLabel(section, messages)}
         </span>
       ) : null}
     </>
@@ -163,28 +193,37 @@ export function DashboardShell({
         }
         header={
           routeState.usesDateRange ? (
-            <div className="flex min-w-0 items-center gap-3 px-4 py-2.5 md:px-6">
-              <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
-                {pageTitle}
+            <>
+              <div className="flex min-w-0 items-center gap-3 px-4 py-2.5 md:px-6">
+                <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
+                  {pageTitle}
+                </div>
+                <div className="min-w-0 shrink-0">
+                  <DashboardHeaderControls
+                    locale={locale}
+                    messages={messages}
+                    siteId={activeSite?.id ?? ""}
+                    resolvedScope={filterScopeFor(routeState)}
+                    showControls
+                    showFilterSheet={Boolean(routeState.siteSlug)}
+                    comparisonDisabled={
+                      section === "realtime" ||
+                      section === "sessions" ||
+                      section === "visitors"
+                    }
+                    filterDisabled={section === "realtime"}
+                    showRealtimeBadge
+                  />
+                </div>
               </div>
-              <div className="min-w-0 shrink-0">
-                <DashboardHeaderControls
-                  locale={locale}
-                  messages={messages}
-                  siteId={activeSite?.id ?? ""}
-                  resolvedScope={filterScopeFor(routeState)}
-                  showControls
-                  showFilterSheet={Boolean(routeState.siteSlug)}
-                  comparisonDisabled={
-                    section === "realtime" ||
-                    section === "sessions" ||
-                    section === "visitors"
-                  }
-                  filterDisabled={section === "realtime"}
-                  showRealtimeBadge
+              {tabs ? (
+                <NavTabs
+                  label={messages.appNav.sections}
+                  items={tabs}
+                  className="border-b-0 px-4 md:px-6"
                 />
-              </div>
-            </div>
+              ) : null}
+            </>
           ) : undefined
         }
         contentClassName={contentClassName}

@@ -2393,10 +2393,9 @@ sidebarFooter:
 appNav:
   mainNavigation: 主導覽
   toggleSidebar: 切換側邊欄
-  traffic: 流量
+  sources: 來源
   audience: 受眾
   conversions: 轉換
-  site: 站點
   sites: 站點
   allSites: 所有站點
   inbox: 收件匣

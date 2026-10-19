@@ -11,7 +11,7 @@ import {
   useSidebar,
 } from "@insightflare/ui/sidebar";
 import { VerticalScrollMask } from "@insightflare/ui/vertical-scroll-mask";
-import { InboxIcon, LayoutGridIcon, SettingsIcon } from "lucide-react";
+import { InboxIcon, SettingsIcon } from "lucide-react";
 
 import { SiteBrandIcon } from "@/components/dashboard/common/site-brand-icon";
 import { buildSettingsPath, buildSitePath } from "@/lib/dashboard/paths";
@@ -22,10 +22,11 @@ import Link from "@/lib/router";
 import {
   type ShellRouteState,
   type SidebarSite,
-  SITE_NAV_GROUPS,
-  siteNavIcon,
+  SITE_NAV_ITEMS,
+  siteNavItemFor,
+  siteNavItemIcon,
+  siteNavItemLabel,
   type SiteNavKey,
-  siteNavLabel,
   useDashboardNavHref,
 } from "./dashboard-shell/navigation";
 import { AccountFooter } from "./account-footer";
@@ -110,35 +111,27 @@ export function AppSidebar({
       >
         <SidebarContent className="flex-none">
           <nav aria-label={messages.appNav.mainNavigation}>
-            {siteSlug
-              ? SITE_NAV_GROUPS.map((group) => {
-                  const items = group.items.filter(
-                    (key) => key !== "settings" || canManage,
-                  );
-                  if (items.length === 0) return null;
-                  return (
-                    <SidebarGroup key={group.label} className="py-1">
-                      <SidebarGroupLabel className={GROUP_LABEL_CLASS}>
-                        {messages.appNav[group.label]}
-                      </SidebarGroupLabel>
-                      <SidebarGroupContent>
-                        <SidebarMenu>
-                          {items.map((key) => (
-                            <SidebarNavLink
-                              key={key}
-                              href={siteItemHref(key)}
-                              icon={siteNavIcon(key)}
-                              label={siteNavLabel(key, messages)}
-                              isActive={routeState.siteSection === key}
-                              onNavigate={closeMobile}
-                            />
-                          ))}
-                        </SidebarMenu>
-                      </SidebarGroupContent>
-                    </SidebarGroup>
-                  );
-                })
-              : null}
+            {siteSlug ? (
+              <SidebarGroup className="py-1">
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {SITE_NAV_ITEMS.map((item) => (
+                      <SidebarNavLink
+                        key={item.key}
+                        href={siteItemHref(item.sections[0])}
+                        icon={siteNavItemIcon(item)}
+                        label={siteNavItemLabel(item, messages)}
+                        isActive={
+                          routeState.siteSection !== undefined &&
+                          siteNavItemFor(routeState.siteSection) === item
+                        }
+                        onNavigate={closeMobile}
+                      />
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ) : null}
 
             {siteSlug ? null : (
               <SidebarGroup className="py-1">
@@ -179,13 +172,6 @@ export function AppSidebar({
       <AccountFooter
         links={
           <>
-            <SidebarNavLink
-              href={navHref(`/${locale}/app`)}
-              icon={LayoutGridIcon}
-              label={messages.appNav.allSites}
-              isActive={routeState.orgPage === "all-sites"}
-              onNavigate={closeMobile}
-            />
             <SidebarNavLink
               href={`/${locale}/app/inbox`}
               icon={InboxIcon}
