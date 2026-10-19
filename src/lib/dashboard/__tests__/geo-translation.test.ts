@@ -7,6 +7,7 @@ import {
   fetchGeoStateTranslationBundle,
   fetchGeoStateTranslationPayload,
   formatLocalizedGeoValue,
+  GEO_TRANSLATION_API_BASE_URL,
   isGeoLabelCountryMatch,
   isGeoRegionCountryMatch,
   isSameGeoLabel,
@@ -38,10 +39,10 @@ describe("Geographic Translation Utilities", () => {
 
     it("should build translation API URL correctly", () => {
       expect(buildGeoTranslationApiUrl("zh-CN", "CN", "GD")).toBe(
-        "https://locale.ravelloh.com/zh-CN/CN/GD/",
+        `${GEO_TRANSLATION_API_BASE_URL}/zh-CN/CN/GD/index.json`,
       );
       expect(buildGeoTranslationApiUrl("zh-CN")).toBe(
-        "https://locale.ravelloh.com/zh-CN",
+        `${GEO_TRANSLATION_API_BASE_URL}/zh-CN/index.json`,
       );
     });
   });
@@ -756,7 +757,7 @@ describe("Geographic Translation Utilities", () => {
 
     it("should resolve by locality when region mapping is missing", async () => {
       const mockFetch = vi.fn().mockImplementation((url: string) => {
-        if (url.endsWith("/LC/AA/")) {
+        if (url.endsWith("/LC/AA/index.json")) {
           return Promise.resolve({
             ok: true,
             json: () =>
@@ -766,7 +767,7 @@ describe("Geographic Translation Utilities", () => {
               }),
           });
         }
-        if (url.endsWith("/LC/BB/")) {
+        if (url.endsWith("/LC/BB/index.json")) {
           return Promise.resolve({
             ok: true,
             json: () =>
@@ -861,7 +862,7 @@ describe("Geographic Translation Utilities", () => {
 
     it("should revalidate a direct state code against the raw region label", async () => {
       const mockFetch = vi.fn().mockImplementation((url: string) => {
-        if (url.endsWith("/VN/26/")) {
+        if (url.endsWith("/VN/26/index.json")) {
           return Promise.resolve({
             ok: true,
             json: async () => ({
@@ -871,7 +872,7 @@ describe("Geographic Translation Utilities", () => {
             }),
           });
         }
-        if (url.endsWith("/VN/33/")) {
+        if (url.endsWith("/VN/33/index.json")) {
           return Promise.resolve({
             ok: true,
             json: async () => ({
@@ -907,7 +908,7 @@ describe("Geographic Translation Utilities", () => {
 
     it("should ignore a direct state when the raw region is the country label", async () => {
       const mockFetch = vi.fn().mockImplementation((url: string) => {
-        if (url.endsWith("/TW/04/")) {
+        if (url.endsWith("/TW/04/index.json")) {
           return Promise.resolve({
             ok: true,
             json: async () => ({
@@ -917,7 +918,7 @@ describe("Geographic Translation Utilities", () => {
             }),
           });
         }
-        if (url.endsWith("/TW/TPE/")) {
+        if (url.endsWith("/TW/TPE/index.json")) {
           return Promise.resolve({
             ok: true,
             json: async () => ({
@@ -984,7 +985,7 @@ describe("Geographic Translation Utilities", () => {
 
     it("should dedupe fallback region matches by usable state codes", async () => {
       const mockFetch = vi.fn().mockImplementation((url: string) => {
-        if (url.endsWith("/DD/AA/")) {
+        if (url.endsWith("/DD/AA/index.json")) {
           return Promise.resolve({
             ok: true,
             json: () =>
@@ -994,7 +995,7 @@ describe("Geographic Translation Utilities", () => {
               }),
           });
         }
-        if (url.endsWith("/DD/BB/")) {
+        if (url.endsWith("/DD/BB/index.json")) {
           return Promise.resolve({
             ok: true,
             json: () =>
@@ -1004,7 +1005,7 @@ describe("Geographic Translation Utilities", () => {
               }),
           });
         }
-        if (url.endsWith("/DD/CC/")) {
+        if (url.endsWith("/DD/CC/index.json")) {
           return Promise.resolve({
             ok: true,
             json: () =>
@@ -1038,7 +1039,7 @@ describe("Geographic Translation Utilities", () => {
 
     it("should leave ambiguous locality fallback unresolved", async () => {
       const mockFetch = vi.fn().mockImplementation((url: string) => {
-        if (url.endsWith("/AM/AA/")) {
+        if (url.endsWith("/AM/AA/index.json")) {
           return Promise.resolve({
             ok: true,
             json: () =>
@@ -1047,7 +1048,7 @@ describe("Geographic Translation Utilities", () => {
               }),
           });
         }
-        if (url.endsWith("/AM/BB/")) {
+        if (url.endsWith("/AM/BB/index.json")) {
           return Promise.resolve({
             ok: true,
             json: () =>
@@ -1057,7 +1058,7 @@ describe("Geographic Translation Utilities", () => {
               }),
           });
         }
-        if (url.endsWith("/AM/CC/")) {
+        if (url.endsWith("/AM/CC/index.json")) {
           return Promise.resolve({
             ok: true,
             json: () =>
@@ -1096,7 +1097,7 @@ describe("Geographic Translation Utilities", () => {
 
     it("should ignore locality fallback states with missing city arrays", async () => {
       const mockFetch = vi.fn().mockImplementation((url: string) => {
-        if (url.endsWith("/MC/AA/")) {
+        if (url.endsWith("/MC/AA/index.json")) {
           return Promise.resolve({
             ok: true,
             json: () =>
@@ -1132,7 +1133,7 @@ describe("Geographic Translation Utilities", () => {
 
     it("should fall back when direct state lookup has no state", async () => {
       const mockFetch = vi.fn().mockImplementation((url: string) => {
-        if (url.endsWith("/NS/AA/")) {
+        if (url.endsWith("/NS/AA/index.json")) {
           return Promise.resolve({
             ok: true,
             json: () =>
@@ -1168,7 +1169,7 @@ describe("Geographic Translation Utilities", () => {
 
     it("should reuse cached country state payloads during fallback resolution", async () => {
       const mockFetch = vi.fn().mockImplementation((url: string) => {
-        if (url.endsWith("/CS/AA/")) {
+        if (url.endsWith("/CS/AA/index.json")) {
           return Promise.resolve({
             ok: true,
             json: () =>

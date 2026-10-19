@@ -26,6 +26,7 @@ import {
   handleDoDiagnosticAdmin,
   handleSystemPerformanceAdmin,
 } from "@/lib/edge/admin/system/handler";
+import { handleRequestObservationAdmin } from "@/lib/edge/admin/system/request-observation";
 import {
   handleAuthMeAdmin,
   handleMembersAdmin,
@@ -68,6 +69,8 @@ export async function executeRealAdminService(
       return handleNotificationRuleRunAdmin(request, env);
     case "notification-test":
       return handleNotificationTestAdmin(request, env);
+    case "request-observation":
+      return handleRequestObservationAdmin(request, env, url);
     case "system-performance":
       return handleSystemPerformanceAdmin(request, env, url, requireActor);
     case "scheduled-tasks":

@@ -13,10 +13,9 @@ const resolveTeamDashboardScopeMock = vi.mocked(resolveTeamDashboardScope);
 const env = {} as Env;
 const session: EdgeSessionClaims = {
   userId: "user-1",
-  username: "dashboard-user",
-  displayName: "Dashboard User",
+  email: "user@example.test",
+  teamId: "team-1",
   systemRole: "user",
-  exp: 9_999_999_999,
 };
 
 function requestWithCookies(url: string, cookie?: string): Request {

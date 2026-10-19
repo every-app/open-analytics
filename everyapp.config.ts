@@ -21,10 +21,18 @@ export default {
     durableObjects: [{ name: "INGEST_DO", className: "IngestDurableObject" }],
   },
   migrations: { engine: "d1-sql", dir: "migrations", binding: "DB" },
-  // Builds the UI packages and the tracker bundles before `cf build`, and
-  // watches the translations while `cf dev` runs.
+  // Builds the UI packages and the tracker bundles before `vite build`, and
+  // watches the translations while `vite dev` runs (scripts/dev.ts).
   build: "pnpm run build",
   dev: "pnpm run dev:app",
+  // Notification reports and alerts go out as the gateway's mail
+  // (src/lib/notifications/edge/delivery.ts).
+  capabilities: {
+    email: {
+      access: "write",
+      why: "Emails scheduled reports and alerts to members who turned email notifications on.",
+    },
+  },
   // Every member of the organization can open the dashboards; owners and
   // admins manage sites and settings (src/lib/edge/auth/viewer.ts).
   access: "everyone",
@@ -45,6 +53,9 @@ export default {
     { path: "/assets/**", methods: ["GET"] },
     { path: "/images/**", methods: ["GET"] },
     { path: "/favicon.ico", methods: ["GET"] },
+    { path: "/site.webmanifest", methods: ["GET"] },
+    { path: "/android-chrome-192x192.png", methods: ["GET"] },
+    { path: "/android-chrome-512x512.png", methods: ["GET"] },
     // Says only whether the Worker and its bindings answer.
     { path: "/healthz", methods: ["GET"] },
   ],

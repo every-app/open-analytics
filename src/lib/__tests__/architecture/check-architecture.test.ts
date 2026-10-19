@@ -40,7 +40,6 @@ describe("architecture checker", () => {
     mkdirSync(path.join(root, "src/lib/edge/analytics/providers/d1"), {
       recursive: true,
     });
-    mkdirSync(path.join(root, "src/lib/edge/archive"), { recursive: true });
     mkdirSync(path.join(root, "src/lib/filter-contract"), {
       recursive: true,
     });
@@ -53,10 +52,6 @@ describe("architecture checker", () => {
       "export const reader = true;\n",
     );
     writeFileSync(
-      path.join(root, "src/lib/edge/archive/reader.ts"),
-      "export const archive = true;\n",
-    );
-    writeFileSync(
       path.join(root, "src/lib/filter-contract/types.ts"),
       "export const filter = true;\n",
     );
@@ -65,10 +60,9 @@ describe("architecture checker", () => {
       [
         'import { query } from "@/lib/db/query";',
         'import { reader } from "@/lib/edge/analytics/providers/d1/reader";',
-        'import { archive } from "@/lib/edge/archive/reader";',
         'import type { D1Database } from "cloudflare:workers";',
         'import { filter } from "@/lib/filter-contract/types";',
-        "export { query, reader, archive, filter, D1Database };",
+        "export { query, reader, filter, D1Database };",
         "",
       ].join("\n"),
     );
@@ -85,10 +79,6 @@ describe("architecture checker", () => {
       {
         rule: "analytics-engine-physical-isolation",
         specifier: "@/lib/edge/analytics/providers/d1/reader",
-      },
-      {
-        rule: "analytics-engine-physical-isolation",
-        specifier: "@/lib/edge/archive/reader",
       },
       {
         rule: "analytics-engine-physical-isolation",
@@ -131,11 +121,11 @@ describe("architecture checker", () => {
         "export const Button = () => null;\n",
       "packages/ui/src/query/use-query.ts":
         "export const useQuery = () => null;\n",
-      "src/lib/api-v1/client.ts": "export const client = true;\n",
+      "src/lib/mcp/client.ts": "export const client = true;\n",
       "src/lib/edge/runtime/worker.ts": "export const runtime = true;\n",
       "packages/product-ui/src/cards/site-card.tsx": [
         'import { Button } from "@insightflare/ui/components/button";',
-        'import "@/lib/api-v1/client";',
+        'import "@/lib/mcp/client";',
         'export { runtime } from "../../../../src/lib/edge/runtime/worker";',
         'const load = () => import("@tanstack/react-query");',
         'import { useQuery } from "@insightflare/ui/query/use-query";',
@@ -175,8 +165,8 @@ describe("architecture checker", () => {
       {
         rule: "product-ui-package-app-import",
         source: "packages/product-ui/src/cards/site-card.tsx",
-        specifier: "@/lib/api-v1/client",
-        target: "src/lib/api-v1/client.ts",
+        specifier: "@/lib/mcp/client",
+        target: "src/lib/mcp/client.ts",
       },
       {
         rule: "product-ui-package-app-import",
@@ -381,12 +371,6 @@ describe("architecture checker", () => {
       isGeneratedFile("src/routeTree.gen.ts", "// automatically generated"),
     ).toBe(true);
     expect(
-      isGeneratedFile(
-        "src/lib/api-v1/generated-client/index.ts",
-        "/* Generated from ApiV1RouteRegistry. */",
-      ),
-    ).toBe(true);
-    expect(
       detectForbiddenPrefixFiles([
         "src/lib/admin-users.ts",
         "src/lib/admin-sites.ts",
@@ -492,33 +476,6 @@ describe("architecture checker", () => {
     );
 
     expect(collectArchitectureViolations(root)).toEqual([]);
-  });
-
-  it("requires exact exceptions for demo-build dynamic imports", () => {
-    const root = fixture();
-    const files: Record<string, string> = {
-      "src/lib/demo/data/site-profiles.ts": "export const profiles = [];\n",
-      "src/lib/demo/admin/service.ts": "export const execute = () => null;\n",
-      "src/lib/edge/auth/site-access.ts":
-        'const isDemoBuild = true;\nexport const load = () => isDemoBuild ? import("@/lib/demo/data/site-profiles") : null;\n',
-      "src/lib/edge/admin/service/index.ts":
-        'export const dispatch = () => import("@/lib/demo/admin/service");\n',
-      "src/lib/edge/admin/reports.ts":
-        'export const load = () => import("@/lib/demo/data/site-profiles");\n',
-    };
-    for (const [relativePath, content] of Object.entries(files)) {
-      const absolutePath = path.join(root, relativePath);
-      mkdirSync(path.dirname(absolutePath), { recursive: true });
-      writeFileSync(absolutePath, content);
-    }
-
-    expect(collectArchitectureViolations(root)).toMatchObject([
-      {
-        rule: "production-demo-isolation",
-        source: "src/lib/edge/admin/reports.ts",
-        specifier: "@/lib/demo/data/site-profiles",
-      },
-    ]);
   });
 
   it("forbids direct D1 access through DB properties and local aliases", () => {

@@ -1,4 +1,3 @@
-import { execFileSync } from "node:child_process";
 import path from "node:path";
 
 import { cloudflare } from "@cloudflare/vite-plugin";
@@ -7,8 +6,6 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { parse } from "yaml";
-
-import packageJson from "./package.json" with { type: "json" };
 
 // Vite watches the project root. Keep generated state, reports, and repository
 // metadata out of chokidar so Cloudflare/TanStack SSR restarts do not traverse
@@ -40,21 +37,6 @@ const DEV_WATCH_IGNORED = [
   "**/docs/**",
   "**/migrations/**",
 ];
-
-function resolveCommitSha(): string {
-  const configured = process.env.COMMIT_SHA?.trim();
-  if (configured) return configured;
-
-  try {
-    return execFileSync("git", ["rev-parse", "HEAD"], {
-      cwd: import.meta.dirname,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
-  } catch {
-    return "";
-  }
-}
 
 function ssrMapStubs() {
   const stubPath = path.resolve(
@@ -95,10 +77,6 @@ function ssrMapStubs() {
 
 export default defineConfig(() => {
   return {
-    define: {
-      "import.meta.env.VITE_APP_VERSION": JSON.stringify(packageJson.version),
-      "import.meta.env.VITE_COMMIT_SHA": JSON.stringify(resolveCommitSha()),
-    },
     resolve: {
       alias: {
         "@": path.resolve(import.meta.dirname, "./src"),

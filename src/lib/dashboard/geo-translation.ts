@@ -1,6 +1,12 @@
 import type { Locale } from "@/lib/i18n/config";
 
-export const GEO_TRANSLATION_API_BASE_URL = "https://locale.ravelloh.com";
+/**
+ * Place-name translations: the MIT-licensed iso-3166-2-locale dataset's
+ * static files (data/<locale>/<country>/<state>/index.json), served from
+ * GitHub through jsDelivr at a pinned commit.
+ */
+export const GEO_TRANSLATION_API_BASE_URL =
+  "https://cdn.jsdelivr.net/gh/RavelloH/iso-3166-2-locale@bc90a98e6c50b774095ba3afea7c55e0ed006e73/data";
 export const GEO_TRANSLATION_DATA_LOCALE = "zh-CN";
 export const GEO_STATE_CODE_PATTERN = /^[A-Z0-9-]{1,16}$/;
 
@@ -157,8 +163,7 @@ export function buildGeoTranslationApiUrl(
     .map((segment) => encodeURIComponent(segment.trim()))
     .filter((segment) => segment.length > 0)
     .join("/");
-  const suffix = segments.length > 0 ? "/" : "";
-  return `${GEO_TRANSLATION_API_BASE_URL}/${path}${suffix}`;
+  return `${GEO_TRANSLATION_API_BASE_URL}/${path}/index.json`;
 }
 
 function asTrimmedString(value: unknown): string {

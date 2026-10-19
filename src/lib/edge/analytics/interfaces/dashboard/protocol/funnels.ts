@@ -21,7 +21,6 @@ import {
   type ResponseContext,
 } from "@/lib/edge/analytics/interfaces/dashboard/protocol/responses";
 import type { FunnelDefinitionResource } from "@/lib/edge/analytics/resources/funnels";
-import { appNow } from "@/lib/edge/runtime/e2e-clock";
 import type { Env } from "@/lib/edge/types";
 import { ONE_DAY_MS } from "@/lib/edge/utils";
 /** Read-only funnel protocol mapping. Create/delete remain commands outside
@@ -38,7 +37,7 @@ export async function handleFunnelAnalysisContract(
     // Definition listing has no analytic time range. Reproduce parseWindow's
     // no-param default window (now-24h -> now, timeZone falls back to UTC)
     // without requiring a throwaway URL.
-    const nowMs = appNow();
+    const nowMs = Date.now();
     const listWindow: QueryWindow = {
       startMs: Math.floor(nowMs - ONE_DAY_MS),
       endExclusiveMs: Math.floor(nowMs),

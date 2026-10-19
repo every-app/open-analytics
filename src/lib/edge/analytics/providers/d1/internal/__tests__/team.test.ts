@@ -397,10 +397,9 @@ describe("handleTeamDashboard", () => {
     const url = makeUrl("/api/private/team-dashboard", { teamId: "team-1" });
     const session = {
       userId: "user-1",
-      username: "user",
-      displayName: "User",
+      email: "user@example.test",
+      teamId: "team-1",
       systemRole: "user" as const,
-      exp: 9999999999,
     };
 
     const response = await handleTeamDashboardForSession(

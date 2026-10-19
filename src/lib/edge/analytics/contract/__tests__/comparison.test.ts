@@ -14,7 +14,7 @@ import {
   relativeComparisonDelta,
 } from "@/lib/edge/analytics/contract/comparison-metrics";
 
-const context = siteQueryContext("site-1", "api-v1");
+const context = siteQueryContext("site-1", "private-dashboard");
 const time = createQueryTime(
   Date.parse("2026-08-01T00:00:00.000Z"),
   Date.parse("2026-08-02T00:00:00.000Z"),

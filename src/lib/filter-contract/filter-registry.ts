@@ -157,12 +157,8 @@ export type AnalyticsFilterRegistryField = RegisteredFilterField;
 const PUBLIC_AUDIENCES = readonlySet<FilterAudience>([
   "private-dashboard",
   "public-share",
-  "api-v1",
 ]);
-const PRIVATE_AUDIENCES = readonlySet<FilterAudience>([
-  "private-dashboard",
-  "api-v1",
-]);
+const PRIVATE_AUDIENCES = readonlySet<FilterAudience>(["private-dashboard"]);
 const VISIT_AND_EVENT_OBSERVATIONS = readonlySet<FilterObservationKind>([
   "visit",
   "event",

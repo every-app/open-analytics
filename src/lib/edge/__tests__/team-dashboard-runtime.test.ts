@@ -27,10 +27,9 @@ const env = {} as never;
 const request = new Request("https://app.test/api/private/team-dashboard");
 const session: EdgeSessionClaims = {
   userId: "user-1",
-  username: "user",
-  displayName: "User",
+  email: "user@example.test",
+  teamId: "team-1",
   systemRole: "user",
-  exp: 1,
 };
 describe("team dashboard runtime", () => {
   beforeEach(() => {

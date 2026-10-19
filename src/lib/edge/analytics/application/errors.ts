@@ -1,8 +1,6 @@
 import type { QueryResultMeta } from "@/lib/edge/analytics/contract";
 import type { AnalyticsDomainError } from "@/lib/edge/analytics/contract";
 
-import type { AnalyticsOperationId } from "./operation-registry";
-
 export class AnalyticsProviderDomainError extends Error {
   constructor(readonly domainError: AnalyticsDomainError) {
     super(domainError.kind);
@@ -22,10 +20,6 @@ export type AnalyticsServiceError =
       }[];
     }
   | { readonly kind: "invalid-cursor"; readonly cursorKind: string }
-  | {
-      readonly kind: "operation-not-allowed";
-      readonly operation: AnalyticsOperationId;
-    }
   | {
       readonly kind: "domain-error";
       readonly error: AnalyticsDomainError;

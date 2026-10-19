@@ -59,10 +59,9 @@ class SqliteD1Database {
 
 const session = {
   userId: "user-1",
-  username: "owner",
-  displayName: "Owner",
+  email: "owner@example.test",
+  teamId: "team-1",
   systemRole: "user" as const,
-  exp: 9_999_999_999,
 };
 
 function request(method: string, body?: unknown, query = ""): Request {
@@ -85,16 +84,13 @@ function createEnv(): { env: Env; d1: SqliteD1Database } {
   d1.database.exec(`
     CREATE TABLE users (
       id TEXT PRIMARY KEY,
-      email TEXT NOT NULL UNIQUE,
+      email TEXT NOT NULL,
       name TEXT,
-      password_hash TEXT,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-      updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-      username TEXT UNIQUE,
-      system_role TEXT NOT NULL DEFAULT 'user',
       timezone TEXT NOT NULL DEFAULT '',
       notification_preferences_json TEXT NOT NULL DEFAULT '{}',
-      preferred_locale TEXT NOT NULL DEFAULT ''
+      preferred_locale TEXT NOT NULL DEFAULT '',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
     );
     CREATE TABLE saved_filters (
       id TEXT PRIMARY KEY,
@@ -113,9 +109,9 @@ function createEnv(): { env: Env; d1: SqliteD1Database } {
       ON saved_filters(site_id, owner_user_id, updated_at DESC, id DESC);
     CREATE INDEX idx_saved_filters_site_visibility_updated
       ON saved_filters(site_id, visibility, updated_at DESC, id DESC);
-    INSERT INTO users (id, email, username, name) VALUES
-      ('user-1', 'owner@example.test', 'owner', 'Owner'),
-      ('user-2', 'teammate@example.test', 'teammate', 'Teammate');
+    INSERT INTO users (id, email, name) VALUES
+      ('user-1', 'owner@example.test', 'Owner'),
+      ('user-2', 'teammate@example.test', 'Teammate');
     INSERT INTO saved_filters (
       id, site_id, owner_user_id, visibility, name, description, filter_dsl,
       filter_dsl_version, created_at, updated_at
@@ -467,9 +463,7 @@ describe("saved filters", () => {
   it("preserves author fallback and CRUD query counts and query plans", async () => {
     const { env, d1 } = context();
     d1.database
-      .prepare(
-        "UPDATE users SET name = '', username = 'fallback-user' WHERE id = ?",
-      )
+      .prepare("UPDATE users SET name = '' WHERE id = ?")
       .run("user-2");
     const shared = await handleSavedFilters(request("GET"), env, {
       siteId: "site-1",
@@ -477,7 +471,7 @@ describe("saved filters", () => {
       filterId: "team-shared",
     });
     await expect(shared.json()).resolves.toMatchObject({
-      filter: { authorName: "fallback-user" },
+      filter: { authorName: "teammate@example.test" },
     });
     expect(d1.operations).toHaveLength(1);
     expect(explain(d1, d1.operations[0]!).join(" ")).toMatch(
@@ -486,7 +480,7 @@ describe("saved filters", () => {
 
     d1.operations.length = 0;
     d1.database
-      .prepare("UPDATE users SET username = NULL WHERE id = ?")
+      .prepare("UPDATE users SET email = '' WHERE id = ?")
       .run("user-2");
     const noAuthorName = await handleSavedFilters(request("GET"), env, {
       siteId: "site-1",

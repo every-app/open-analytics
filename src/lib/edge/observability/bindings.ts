@@ -212,19 +212,17 @@ function wrapD1Database(
     },
   }) as D1Database;
 }
-function wrapAsyncBinding<T extends object>(
+function wrapKvBinding<T extends object>(
   binding: T,
   logger: InvocationLogger,
-  resource: "kv" | "r2",
 ): T {
   return new Proxy(binding, {
     get(target, property, receiver) {
       const value = Reflect.get(target, property, receiver);
       if (typeof value !== "function") return value;
       return (...args: unknown[]) => {
-        const operation = `${resource}.${String(property)}`;
-        const span = logger.startSpan(operation);
-        logger.increment(resource === "kv" ? "kvOperations" : "r2Operations");
+        const span = logger.startSpan(`kv.${String(property)}`);
+        logger.increment("kvOperations");
         try {
           const result = value.apply(target, args);
           if (!(result instanceof Promise)) {
@@ -306,7 +304,7 @@ export function instrumentEnv(env: Env, logger: InvocationLogger): Env {
         return wrapDurableObjectNamespace(target.INGEST_DO, logger);
       }
       if (property === "SITE_SETTINGS_KV" && target.SITE_SETTINGS_KV) {
-        return wrapAsyncBinding(target.SITE_SETTINGS_KV, logger, "kv");
+        return wrapKvBinding(target.SITE_SETTINGS_KV, logger);
       }
       return Reflect.get(target, property, receiver);
     },

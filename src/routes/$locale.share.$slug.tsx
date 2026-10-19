@@ -5,7 +5,7 @@ import { loadShareSite } from "@/lib/dashboard/route-data";
 
 export const Route = createFileRoute("/$locale/share/$slug")({
   beforeLoad: async ({ params }) => {
-    const shareContext = await loadShareSite({ data: { slug: params.slug } });
+    const shareContext = await loadShareSite(params.slug);
     if (!shareContext) throw notFound();
     return { shareContext };
   },

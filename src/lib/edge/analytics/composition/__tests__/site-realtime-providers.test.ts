@@ -29,7 +29,7 @@ vi.mock(
 const env = {} as Env;
 const time = createQueryTime(100, 200, "UTC", 200);
 const baseQuery = {
-  context: siteQueryContext("site-1", "api-v1"),
+  context: siteQueryContext("site-1", "private-dashboard"),
   time,
   filters: EMPTY_FILTER_DOCUMENT,
   siteId: "site-1",

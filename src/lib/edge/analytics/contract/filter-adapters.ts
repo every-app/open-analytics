@@ -3,11 +3,9 @@ import {
   parseFilterParams,
 } from "@/lib/filter-contract/filter-codec";
 import { analyticsFilterRegistry } from "@/lib/filter-contract/filter-registry";
-import { analyzeFilterDocument } from "@/lib/filter-contract/filter-semantics";
 import {
   assertFilterAudience,
   type FilterDocument,
-  normalizeFilterDocument,
 } from "@/lib/filter-contract/filters";
 import {
   attachFilterScopePreference,
@@ -44,17 +42,6 @@ function fromUrl(
   }
 }
 
-function fromJson(audience: QueryAudience, input: unknown): FilterDocument {
-  try {
-    const document = normalizeFilterDocument(input, analyticsFilterRegistry);
-    analyzeFilterDocument(document, analyticsFilterRegistry);
-    assertFilterAudience(document, analyticsFilterRegistry, audience);
-    return document;
-  } catch (error) {
-    throw new FilterAdapterError(audience, error);
-  }
-}
-
 /** Private dashboard protocol adapter. */
 export function parsePrivateFilterUrl(
   input: string | URL | URLSearchParams,
@@ -71,14 +58,6 @@ export function parsePublicFilterUrl(
   return fromUrl("public-share", input, options);
 }
 
-/** API v1 URL filter adapter. */
-export function parseApiV1FilterUrl(
-  input: string | URL | URLSearchParams,
-  options?: FilterCodecOptions,
-): FilterDocument {
-  return fromUrl("api-v1", input, options);
-}
-
 /** Selects one of the protocol adapters from the already-authorized audience. */
 export function parseFilterUrlForAudience(
   audience: QueryAudience,
@@ -86,11 +65,5 @@ export function parseFilterUrlForAudience(
   options?: FilterCodecOptions,
 ): FilterDocument {
   if (audience === "public-share") return parsePublicFilterUrl(input, options);
-  if (audience === "api-v1") return parseApiV1FilterUrl(input, options);
   return parsePrivateFilterUrl(input, options);
-}
-
-/** API v1 structured filter adapter for request bodies such as analytics/explore. */
-export function parseApiV1FilterDocument(input: unknown): FilterDocument {
-  return fromJson("api-v1", input);
 }

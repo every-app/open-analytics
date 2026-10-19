@@ -20,6 +20,7 @@ import type { InvocationLogger } from "@/lib/edge/observability/logger";
 import type { Env } from "@/lib/edge/types";
 import { runNotificationTick } from "@/lib/notifications/edge/notification-task";
 
+import { runAnalyticsRetention } from "./analytics-retention";
 import { runDatabaseMaintenance } from "./database-maintenance";
 import { runHourlyAggregation } from "./hourly-rollup";
 import { SCHEDULED_TASKS } from "./registry";
@@ -29,6 +30,7 @@ const TASK_ORDER = [
   "notification_tick",
   "visit_hourly_rollup",
   "database_maintenance",
+  "analytics_retention",
 ] as const;
 
 interface ScheduleStateRow {
@@ -195,6 +197,14 @@ async function executeTask(
         taskDefinition,
         scheduledTime,
         ({ logger }) => runHourlyAggregation(env, scheduledTime, { logger }),
+        observability,
+      );
+    } else if (taskKey === "analytics_retention") {
+      await runScheduledTask(
+        env,
+        taskDefinition,
+        scheduledTime,
+        runAnalyticsRetention,
         observability,
       );
     } else {

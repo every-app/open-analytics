@@ -17,20 +17,20 @@ describe("admin service client", () => {
   it("uses the shared management route contract", async () => {
     fetchEdgeJsonMock.mockResolvedValue({
       ok: true,
-      data: [{ id: "team-1" }],
+      data: [{ id: "site-1" }],
     });
     const controller = new AbortController();
 
     await expect(
-      requestAdminService<{ id: string }[]>("teams", {
-        params: { userId: "user-1", includeArchived: false },
+      requestAdminService<{ id: string }[]>("sites", {
+        params: { teamId: "team-1", includeArchived: false },
         signal: controller.signal,
       }),
-    ).resolves.toEqual([{ id: "team-1" }]);
+    ).resolves.toEqual([{ id: "site-1" }]);
 
     expect(fetchEdgeJsonMock).toHaveBeenCalledWith({
-      path: "/api/private/admin/teams",
-      params: { userId: "user-1", includeArchived: "false" },
+      path: "/api/private/admin/sites",
+      params: { teamId: "team-1", includeArchived: "false" },
       signal: controller.signal,
     });
   });
@@ -51,11 +51,11 @@ describe("admin service client", () => {
   it("raises the shared API error message for unsuccessful responses", async () => {
     fetchEdgeJsonMock.mockResolvedValue({
       ok: false,
-      error: { message: "Team access denied" },
+      error: { message: "Site access denied" },
     });
 
-    await expect(requestAdminService("teams")).rejects.toThrow(
-      "Team access denied",
+    await expect(requestAdminService("sites")).rejects.toThrow(
+      "Site access denied",
     );
   });
 });

@@ -1100,7 +1100,7 @@ describe("edge query core SQL helpers", () => {
       subject: { kind: "site", siteId: "site-1" },
       policy: {
         revision: "test",
-        audience: "api-v1",
+        audience: "private-dashboard",
         allowedOperations: new Set(),
         allowedDimensions: new Set(),
         allowedFilters: new Set(),

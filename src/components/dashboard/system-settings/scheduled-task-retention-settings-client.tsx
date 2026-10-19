@@ -38,12 +38,14 @@ const FIELDS: Array<{
     key: "notificationDefaultDays",
     label: "notificationDefaultDaysLabel",
   },
+  { key: "analyticsDetailDays", label: "analyticsDetailDaysLabel" },
 ];
 const DEFAULTS: ScheduledTaskRetentionConfig = {
   scheduledTaskLogsDays: 30,
   notificationTestDays: 30,
   notificationAttentionDays: 180,
   notificationDefaultDays: 120,
+  analyticsDetailDays: 396,
 };
 export function ScheduledTaskRetentionSettingsClient({
   messages,

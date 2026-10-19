@@ -10,9 +10,8 @@ import {
 } from "@/lib/db";
 import {
   byId,
-  listUsers,
+  listMembers,
   requireActor,
-  toOrgRoleOf,
   toPublicUser,
   workspaceFor,
 } from "@/lib/edge/admin/auth";
@@ -63,17 +62,10 @@ export async function handleMembersAdmin(
   if (!a.isAdmin) {
     return forb("Only organization admins can list members", undefined, req);
   }
-  const users = await listUsers(env);
+  const members = await listMembers(env, a.teamId);
   return jsonResponseFor(req, {
     ok: true,
-    data: users.map((user) => ({
-      teamId: a.teamId,
-      userId: user.id,
-      role: toOrgRoleOf(user),
-      email: user.email,
-      name: user.name,
-      lastSeenAt: user.last_seen_at,
-    })),
+    data: members.map((member) => ({ teamId: a.teamId, ...member })),
   });
 }
 

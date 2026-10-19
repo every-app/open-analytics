@@ -101,21 +101,21 @@ export function ShareHeader({
             <BreadcrumbItem className="shrink-0">
               <BreadcrumbLink asChild>
                 <Link
-                  href="https://github.com/RavelloH/InsightFlare"
+                  href="https://github.com/every-app/open-analytics"
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-2 text-foreground transition-colors hover:text-primary"
                 >
                   <Image
                     src="/android-chrome-192x192.png"
-                    alt="InsightFlare"
+                    alt="Open Analytics"
                     width={192}
                     height={192}
                     className="size-6 shrink-0"
                     priority
                   />
                   <span className="hidden max-w-[24vw] truncate text-sm font-semibold md:block xl:max-w-none">
-                    <span className="text-primary">InsightFlare</span>{" "}
+                    <span className="text-primary">Open Analytics</span>{" "}
                     <span className="text-muted-foreground">V1</span>
                   </span>
                 </Link>

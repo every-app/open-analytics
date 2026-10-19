@@ -11,6 +11,9 @@ vi.mock("@/lib/edge/analytics/interfaces/dashboard/saved-filters", () => ({
   handleSavedFilters: vi.fn(),
 }));
 
+// Site access imports the gateway SDK through the viewer, which can't load
+// under Node.
+vi.mock("@/lib/edge/auth/viewer", () => ({ resolveViewer: vi.fn() }));
 vi.mock("@/lib/edge/auth/site-access", async (importOriginal) => {
   const actual = await importOriginal<typeof SiteAccessModule>();
   return { ...actual, resolvePrivateSiteForSession: vi.fn() };
@@ -19,10 +22,9 @@ vi.mock("@/lib/edge/auth/site-access", async (importOriginal) => {
 const env = { DB: {} };
 const session = {
   userId: "user-1",
-  username: "owner",
-  displayName: "Owner",
+  email: "user@example.com",
+  teamId: "team-1",
   systemRole: "user" as const,
-  exp: 9_999_999_999,
 };
 const ctx = {
   passThroughOnException: vi.fn(),

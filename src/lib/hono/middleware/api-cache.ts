@@ -18,11 +18,7 @@ export function apiNoCacheMiddleware(): MiddlewareHandler<AppEnv> {
     if (shouldSkipHeaderMutation(path, c.res)) return;
 
     const shouldDisableCache =
-      path.startsWith("/api/private/") ||
-      path === "/api/private" ||
-      path.startsWith("/api/v1/") ||
-      path === "/api/v1" ||
-      path === "/api/public/session";
+      path.startsWith("/api/private/") || path === "/api/private";
     if (!shouldDisableCache) return;
     for (const [key, value] of Object.entries(API_NO_CACHE_HEADERS)) {
       c.res.headers.set(key, value);

@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  canAdministerTeam,
-  canManageTeam,
-  toTeamRole,
-} from "@/lib/dashboard/permissions";
+import { canManageTeam, toTeamRole } from "@/lib/dashboard/permissions";
 
 describe("Dashboard Permissions Authorization", () => {
   describe("toTeamRole", () => {
@@ -38,22 +34,6 @@ describe("Dashboard Permissions Authorization", () => {
       expect(canManageTeam("member", "user")).toBe(false);
       expect(canManageTeam("guest", "user")).toBe(false);
       expect(canManageTeam(null, "user")).toBe(false);
-    });
-  });
-
-  describe("canAdministerTeam", () => {
-    it("should always grant admin permission to system-level admins", () => {
-      expect(canAdministerTeam("member", "admin")).toBe(true);
-      expect(canAdministerTeam("guest", "admin")).toBe(true);
-      expect(canAdministerTeam(null, "admin")).toBe(true);
-    });
-
-    it("should grant administration permission only to team owners if not system admin", () => {
-      expect(canAdministerTeam("owner", "user")).toBe(true);
-      expect(canAdministerTeam("admin", "user")).toBe(false);
-      expect(canAdministerTeam("member", "user")).toBe(false);
-      expect(canAdministerTeam("guest", "user")).toBe(false);
-      expect(canAdministerTeam(null, "user")).toBe(false);
     });
   });
 });

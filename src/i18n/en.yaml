@@ -1,35 +1,6 @@
-appName: InsightFlare
+appName: Open Analytics
 uiGallery:
-  searchLabel: Search UI components
-  searchPlaceholder: Search components
-  backToApp: Back to InsightFlare
-  noSearchResults: No components match this search.
-  toggleNavigation: Toggle gallery navigation
-  library: UI Library
-  componentsCount: "{count} components"
-  statesCount: "{count} states"
-  designSystem: InsightFlare design system
-  pageTitle: UI Components
-  catalogSummary: "{components} components · {states} prop values"
-  categories:
-    inputs: Inputs
-    feedback: Feedback
-    foundations: Foundations
-    navigation: Navigation
-    data-display: Data display
-    overlays: Overlays
-    product-analytics: Product UI / Analytics
-    product-management: Product UI / Management
-    product-realtime: Product UI / Realtime
-  browseCategories: Browse by category
-  featuredComponents: Featured components
-  backToCatalog: UI Components
-  canonicalStates: Props and values
-  browseAllComponents: Browse all components
-  previewState: Open preview
-  resetPreview: Reset preview
-  expandCode: Expand code
-  collapseCode: Collapse code
+  categories: {}
 navigation:
   overview: Overview
   realtime: Real-time
@@ -388,8 +359,7 @@ filterBuilder:
   expressionHelpTitle: Filter expression syntax
   expressionHelpDescription: Available fields and operators are generated from the active filter contract.
   expressionHelpSyntax: Syntax
-  expressionHelpLogicDescription:
-    AND binds more tightly than OR. Use parentheses
+  expressionHelpLogicDescription: AND binds more tightly than OR. Use parentheses
     for nesting; AND(...) and OR(...) preserve an explicit one-condition group.
   expressionHelpValues: Values
   expressionHelpValuesDescription: Strings use JSON double quotes. Numbers and
@@ -402,7 +372,11 @@ filterBuilder:
   expressionHelpFieldOperators: Operators
   expressionHelpOtherFields: Other
   expressionHelpContextTitle: Occurrence time and context intrinsics
-  expressionHelpContextDescription: Lowercase dotted names are registered fields; uppercase PAGE, EVENT, SESSION, and VISITOR are entity collections. Inside an entity selector, $.member refers to its current entity, and -> explicitly projects a collection member. @ names a temporal anchor; Sequence and Period predicates also provide $span, $gap, and $items.
+  expressionHelpContextDescription: Lowercase dotted names are registered fields;
+    uppercase PAGE, EVENT, SESSION, and VISITOR are entity collections. Inside
+    an entity selector, $.member refers to its current entity, and -> explicitly
+    projects a collection member. @ names a temporal anchor; Sequence and Period
+    predicates also provide $span, $gap, and $items.
   expressionHelpContextExamples: |-
     time(last(PAGE)) gte @now-14d
     sequence([EVENT { $.name eq "signup" }, EVENT { $.name eq "purchase" }]) {
@@ -697,7 +671,6 @@ realtime:
   eventTime: Event time
   eventKind: Event kind
   eventName: Event name
-  siteId: Site ID
   traceId: Trace ID
   receivedAt: Received at
   startedAt: Started at
@@ -758,7 +731,6 @@ pages:
   empty: No page data matches the current filters.
   loadError: Failed to load page data. Please try again later.
   loadMoreError: Failed to load more pages.
-  retry: Retry
   trendTitle: Page Traffic Trend
   otherPages: Other Pages
   hashTab: Anchor
@@ -860,8 +832,7 @@ sessionDetail:
   customEvent: Custom event
   eventTitleSeparator: ": "
   visitDetailsTitle: Visit details
-  visitDetailsSubtitle:
-    Session start, pageviews, exits, and custom events in the
+  visitDetailsSubtitle: Session start, pageviews, exits, and custom events in the
     order they happened.
   location: Location
   visitorId: Visitor ID
@@ -950,8 +921,7 @@ funnels:
   title: Funnels
   subtitle: Measure conversion through multi-step user journeys.
   listTitle: Funnel definitions
-  listSubtitle:
-    Build a reusable sequence, then inspect conversion for the current
+  listSubtitle: Build a reusable sequence, then inspect conversion for the current
     dashboard window.
   conversionRecords: Conversion records
   converted: Converted
@@ -1042,8 +1012,7 @@ goals:
   creating: Creating...
   delete: Delete
   deleteTitle: Delete goal
-  deleteDescription:
-    This removes the saved goal definition. Historical analytics
+  deleteDescription: This removes the saved goal definition. Historical analytics
     data is not deleted.
   deleteConfirm: Delete goal
   empty: No goals yet.
@@ -1157,8 +1126,7 @@ retention:
   legendHigh: High
   periodZero: Initial
   empty: Not enough return data in this time range.
-  emptyHint:
-    Use a wider range or choose a coarser interval from the top selector
+  emptyHint: Use a wider range or choose a coarser interval from the top selector
     to reveal the retention shape sooner.
   loadError: Unable to load retention data.
   unavailableCell: This cohort has not reached this period yet.
@@ -1290,8 +1258,7 @@ performance:
   lcp: Largest Contentful Paint
   cls: Cumulative Layout Shift
   inp: Interaction to Next Paint
-  ttfbDescription:
-    Measures how long the browser waits before receiving the first
+  ttfbDescription: Measures how long the browser waits before receiving the first
     byte from the server. It reflects backend latency, network delay, and cache
     effectiveness.
   fcpDescription: Measures when the first text or image is painted. It reflects
@@ -1300,15 +1267,13 @@ performance:
     rendering. It is the main loading speed signal for perceived page readiness.
   clsDescription: Measures unexpected layout movement during the page lifecycle.
     Lower values mean the page is visually stable.
-  inpDescription:
-    Measures the latency of user interactions before the next paint.
+  inpDescription: Measures the latency of user interactions before the next paint.
     It reflects how responsive the page feels after loading.
   msUnit: ms
   secondsUnit: s
   clsUnit: score
   score: Experience Score
-  scoreDescription:
-    Combines P75 loading, stability, and interaction metrics into
+  scoreDescription: Combines P75 loading, stability, and interaction metrics into
     a 0 to 100 experience score. Higher is better.
   great: Great
   needsImprovement: Needs Improvement
@@ -1342,8 +1307,7 @@ siteSettings:
       description: Filter collection by request context before events reach storage.
     protection:
       title: Request Protection
-      description:
-        Control how detected bots and hosting or proxy traffic are handled
+      description: Control how detected bots and hosting or proxy traffic are handled
         before requests enter analytics.
     danger:
       title: Danger Zone
@@ -1376,8 +1340,7 @@ siteSettings:
     count the same visitor multiple times across visits and make retention
     impossible.
   botProtectionEnabledLabel: Block detected bots
-  botProtectionEnabledHint:
-    High-confidence bot requests are blocked when this is
+  botProtectionEnabledHint: High-confidence bot requests are blocked when this is
     enabled; otherwise they remain included in statistics.
   hostingProxyBlockingEnabledLabel: Block hosting and proxy traffic
   hostingProxyBlockingEnabledHint: Block suspected bot requests from hosting or
@@ -1408,8 +1371,7 @@ siteSettings:
     syntaxTitle: Syntax
     examplesTitle: Example configuration
     actionsTitle: Rule actions
-    actionsDescription:
-      A normal line blocks a match. Prefix a rule with - to allow
+    actionsDescription: A normal line blocks a match. Prefix a rule with - to allow
       it. If multiple lines match, the last matching line wins.
     actionBlock: Blocks when {example} matches
     actionAllow: Allows when {example} matches
@@ -1423,8 +1385,7 @@ siteSettings:
     errorTooManyLines: Too many rule lines.
     errorInvalidPattern: Line {line} has an invalid rule pattern.
     testTitle: Test Rules
-    testDescription:
-      Enter a request value to evaluate the current contents of this
+    testDescription: Enter a request value to evaluate the current contents of this
       card. Unsaved edits are included.
     testRun: Run Test
     testClose: Close
@@ -1457,8 +1418,7 @@ siteSettings:
         - "-example.com"
         - "-*.example.com"
         - "admin.example.com"
-      exampleDescription:
-        This configuration first blocks every domain, then allows
+      exampleDescription: This configuration first blocks every domain, then allows
         example.com and its subdomains, and finally blocks the exact
         admin.example.com domain again.
       testLabel: Hostname
@@ -1481,8 +1441,7 @@ siteSettings:
         - "/admin/*"
         - "/checkout/*/confirm"
         - "-/admin/health"
-      exampleDescription:
-        This configuration blocks paths under /admin/ and paths
+      exampleDescription: This configuration blocks paths under /admin/ and paths
         matching /checkout/*/confirm, while allowing /admin/health.
       testLabel: URL path
       testPlaceholder: /admin/settings
@@ -1504,8 +1463,7 @@ siteSettings:
         - "utm_*"
         - "utm_source=*"
         - "-utm_source=trusted"
-      exampleDescription:
-        This configuration blocks keys beginning with utm_ and any
+      exampleDescription: This configuration blocks keys beginning with utm_ and any
         value of utm_source, while allowing utm_source=trusted.
       testLabel: Query string
       testPlaceholder: utm_source=internal&utm_campaign=spring
@@ -1549,8 +1507,7 @@ siteSettings:
         - "*bot*"
         - "Mozilla/*"
         - "-Googlebot"
-      exampleDescription:
-        This configuration blocks User-Agent values containing bot
+      exampleDescription: This configuration blocks User-Agent values containing bot
         and values beginning with Mozilla/, while allowing Googlebot.
       testLabel: User-Agent
       testPlaceholder: Mozilla/5.0 (compatible; ExampleBot/1.0)
@@ -1599,8 +1556,7 @@ siteSettings:
         - "64500"
         - "*"
         - "-64501"
-      exampleDescription:
-        This configuration blocks ASN 64500 and any ASN, while the
+      exampleDescription: This configuration blocks ASN 64500 and any ASN, while the
         final rule allows ASN 64501.
       testLabel: ASN
       testPlaceholder: "64500"
@@ -1622,8 +1578,7 @@ siteSettings:
         - "DE"
         - "*"
         - "-US"
-      exampleDescription:
-        This configuration blocks DE and any country, while the
+      exampleDescription: This configuration blocks DE and any country, while the
         final rule allows US.
       testLabel: Country code
       testPlaceholder: DE
@@ -1645,8 +1600,7 @@ siteSettings:
         - "DE-BE"
         - "*"
         - "-US-CA"
-      exampleDescription:
-        This configuration blocks DE-BE and any region, while the
+      exampleDescription: This configuration blocks DE-BE and any region, while the
         final rule allows US-CA.
       testLabel: Region code
       testPlaceholder: US-CA
@@ -1660,8 +1614,7 @@ siteSettings:
   performanceGroupTitle: Performance Tracking
   performanceGroupDescription: Control Web performance metric collection with a sampling rate.
   performanceSampleRateLabel: Performance Sample Rate (%)
-  performanceSampleRateHint:
-    A sampled visit records TTFB, FCP, LCP, CLS, and INP
+  performanceSampleRateHint: A sampled visit records TTFB, FCP, LCP, CLS, and INP
     on leave. Use 0 to disable sampling or 100 for full coverage.
   booleanOn: On
   booleanOff: Off
@@ -1670,11 +1623,6 @@ siteSettings:
   savingTracking: Saving Tracking Settings...
   save: Save Changes
   saving: Saving...
-  transferTitle: Transfer to Another Team
-  transferSubtitle: Move this site to another team you can manage.
-  transferTeamLabel: Target Team
-  transfer: Transfer Site
-  transferring: Transferring...
   scriptTitle: Install Tracking Script
   scriptSubtitle: Add this script to your website to start collecting analytics.
   scriptHint: Recommended before </head>; if needed you can place it before
@@ -1691,8 +1639,6 @@ siteSettings:
   toasts:
     saved: Site settings saved.
     saveFailed: Failed to save site settings.
-    transferred: Site transferred.
-    transferFailed: Failed to transfer site.
     scriptLoadFailed: Failed to load script snippet.
     settingsLoadFailed: Failed to load script settings.
     settingsPropagationHint: Global propagation to edge nodes may take up to 1 hour.
@@ -1702,33 +1648,16 @@ siteSettings:
 accountSettings:
   emailManagedByGateway: Your email comes from your Every App account.
   title: Account Settings
-  subtitle: Manage your personal details, login password, and dashboard time zone.
+  subtitle: Manage your display name, notifications and dashboard time zone.
   profileTitle: Personal Details
-  profileDescription: Update your display name, username, and email.
+  profileDescription: Update the name the dashboard shows for you.
   nicknameLabel: Display name
   nicknamePlaceholder: e.g. Product Analyst
-  usernameLabel: Username
-  usernamePlaceholder: e.g. alex
-  usernameDescription: Username can also be used to sign in.
   emailLabel: Email
-  emailPlaceholder: name@example.com
-  invalidProfile: Enter a valid username and email.
   profileSave: Save details
   profileSaving: Saving...
   profileSaved: Personal details saved.
   profileSaveFailed: Failed to save personal details.
-  passwordTitle: Login Password
-  passwordDescription: Change the password for your current account.
-  currentPasswordLabel: Current password
-  newPasswordLabel: New password
-  confirmPasswordLabel: Confirm new password
-  currentPasswordRequired: Enter your current password.
-  passwordTooShort: New password must be at least 8 characters.
-  passwordMismatch: New passwords do not match.
-  passwordSave: Change password
-  passwordSaving: Changing...
-  passwordSaved: Password changed.
-  passwordSaveFailed: Failed to change password.
   preferredLanguageTitle: Notification Language
   preferredLanguageDescription: Choose the language used for scheduled notification emails.
   preferredLanguageLabel: Email language
@@ -1740,8 +1669,7 @@ accountSettings:
   preferredLanguageSaved: Notification language saved.
   preferredLanguageSaveFailed: Failed to save notification language.
   timeZoneTitle: Reporting Time Zone
-  timeZoneDescription:
-    Calendar ranges and aggregation buckets use this time zone
+  timeZoneDescription: Calendar ranges and aggregation buckets use this time zone
     across the dashboard.
   activeTimeZone: Active time zone
   browserTimeZone: Browser time zone
@@ -1836,8 +1764,7 @@ notificationCenter:
   allTypes: All types
   allSeverities: All severities
   preferencesTitle: Notification preferences
-  preferencesDescription:
-    These settings control email delivery and which messages
+  preferencesDescription: These settings control email delivery and which messages
     remain unread for attention.
   emailNotificationsLabel: Email notifications
   emailNotificationsDescription: Send email when a rule triggers.
@@ -1852,7 +1779,7 @@ notificationCenter:
   detailFields: {}
 notificationEmail:
   common:
-    brand: InsightFlare
+    brand: Open Analytics
     date: Date
     coreMetrics: Core metrics
     topPages: Top pages
@@ -1875,8 +1802,8 @@ notificationEmail:
     never: Never
     noPageData: No page data yet.
     noReferrerData: No referrer data yet.
-    footer: This email was sent by the InsightFlare notification system.
-    fallbackSubject: InsightFlare notification
+    footer: This email was sent by the Open Analytics notification system.
+    fallbackSubject: Open Analytics notification
     trackingHint: Check whether the tracking script is installed correctly or
       whether the site still has traffic.
     severity:
@@ -1885,12 +1812,11 @@ notificationEmail:
       warning: Warning
       critical: Critical
   test:
-    subject: InsightFlare notification test
-    title: InsightFlare notification test
-    summary: This is a test notification from InsightFlare.
-    body:
-      This is a test notification from InsightFlare. If email is configured and
-      enabled, it also verifies Resend delivery.
+    subject: Open Analytics notification test
+    title: Open Analytics notification test
+    summary: This is a test notification from Open Analytics.
+    body: This is a test notification from Open Analytics. If email is set up on the
+      Every App gateway, it also checks email delivery.
   report:
     subject: "{site} {periodLabel} traffic report"
     title: "{site} {periodLabel} traffic report"
@@ -1920,8 +1846,7 @@ notificationEmail:
   health:
     subject: "{site} has not received traffic data for {hours} hours"
     title: "{site} has not received traffic data for {hours} hours"
-    noHistory:
-      No historical traffic data is available. Check whether the tracking
+    noHistory: No historical traffic data is available. Check whether the tracking
       script is installed correctly.
   change:
     subject: "{site} traffic change alert"
@@ -1930,82 +1855,33 @@ notificationEmail:
 runtimeConfigError:
   title: Runtime configuration required
   eyebrow: Deployment paused
-  heading: InsightFlare needs one runtime secret before the dashboard can load.
-  description:
-    The app has started, but the current runtime environment could not
+  heading: Open Analytics needs one runtime secret before the dashboard can load.
+  description: The app has started, but the current runtime environment could not
     read the required root secret, so dashboard access is temporarily blocked.
   requiredTitle: Required runtime secret
   requiredDescription: Set at least one of the following values in your Cloudflare runtime secrets.
-  secretHint:
-    MAIN_SECRET is recommended. Existing deployments can continue using
+  secretHint: MAIN_SECRET is recommended. Existing deployments can continue using
     DAILY_SALT_SECRET.
   commandTitle: Cloudflare command
   commandDescription: Use the project helper command to write the recommended
     secret, then redeploy.
-  quickStartHint:
-    Or see the Quick Start section in the GitHub README to configure
+  quickStartHint: Or see the Quick Start section in the GitHub README to configure
     this variable.
   docsLabel: Open GitHub
   homeLabel: Retry dashboard
-login:
-  title: Sign in
-  subtitle: Use your InsightFlare account.
-  username: Username or Email
-  password: Password
-  signIn: Sign in
-  invalidCredentials: Invalid username or password.
+login: {}
 accountLinks:
   invite:
-    title: Team invitation
-    subtitle: Accept the invitation to join this team.
-    loading: Loading invitation...
-    missingToken: Invitation token is missing.
-    loadFailed: Failed to load invitation.
-    accept: Accept invitation
-    accepting: Accepting...
-    accepted: Invitation accepted.
-    acceptFailed: Failed to accept invitation.
-    signIn: Sign in to accept
-    signedInNotice: You are signed in. Accepting will add your account to this team.
-    teamLabel: Team
-    roleLabel: Role
-    emailLabel: Invite email
-    accountEmailLabel: Account email
-    anyEmail: Any email address
-    expiresLabel: Expires
-    usernameLabel: Username
-    nameLabel: Display name
-    passwordLabel: Password
-    roles:
-      admin: Admin
-      member: Member
-  resetPassword:
-    title: Reset password
-    subtitle: Set a new password for this account.
-    loading: Loading reset link...
-    missingToken: Reset token is missing.
-    loadFailed: Failed to load reset link.
-    reset: Reset password
-    resetting: Resetting...
-    resetDone: Password reset. Sign in with the new password.
-    resetFailed: Failed to reset password.
-    signIn: Back to sign in
-    accountLabel: Account
-    emailLabel: Email
-    expiresLabel: Expires
-    passwordLabel: New password
-    confirmPasswordLabel: Confirm password
-    passwordTooShort: Password must be at least 8 characters.
-    passwordMismatch: Passwords do not match.
-empty:
-  noTeams: No team available yet.
+    roles: {}
+  resetPassword: {}
+empty: {}
 errorPage:
   notFoundEyebrow: Page not found
   notFoundTitle: We couldn't find that page
   notFoundDescription: The address may be incorrect, or the page may have moved.
   errorEyebrow: Application error
   errorTitle: Something went wrong
-  errorDescription: InsightFlare couldn't complete this request. The diagnostic
+  errorDescription: Open Analytics couldn't complete this request. The diagnostic
     details below can help us investigate.
   statusLabel: Status
   reasonLabel: Reason
@@ -2020,7 +1896,6 @@ errorPage:
   reportAction: Report on GitHub
   reportHint: The report opens a pre-filled GitHub issue. Review it before submitting.
 actions:
-  logout: Logout
   switchToEnglish: English
   switchToChinese: Simplified Chinese
   switchToTraditionalChinese: Traditional Chinese
@@ -2028,70 +1903,25 @@ actions:
   switchToLight: Light
   switchToDark: Dark
 teamSelect:
-  groupLabel: Team
-  groups:
-    created: Created teams
-    managed: Managed teams
-    member: Member teams
-    system: System teams
-  createHint: Create team
-  createTitle: Create Team
-  createDescription: You will be switched to the new team after creation.
-  nameLabel: Team Name
-  namePlaceholder: e.g. Growth Team
-  slugLabel: Team Slug (optional)
-  slugPlaceholder: e.g. growth-team
-  create: Create
-  creating: Creating...
+  groups: {}
   cancel: Cancel
-  invalidName: Team name must be at least 2 characters.
-  createFailed: Failed to create team. Please try again.
-  createSuccess: Team created.
 teamManagement:
-  stats:
-    sites: Sites
-    members: Members
-  toasts:
-    teamSaved: Team settings saved.
-    teamSaveFailed: Failed to save team settings.
-    teamDeleted: Team deleted.
-    teamDeleteFailed: Failed to delete team.
-    memberRemoved: Member removed.
-    memberRemoveFailed: Failed to remove member.
-    roleChanged: Member role updated.
-    roleChangeFailed: Failed to update member role.
-    siteAccessChanged: Member site access updated.
-    siteAccessChangeFailed: Failed to update site access.
-    invalidTeamName: Team name must be at least 2 characters.
-    inviteCreated: Invite link created.
-    inviteCreateFailed: Failed to create invite link.
-    inviteRevoked: Invite revoked.
-    inviteRevokeFailed: Failed to revoke invite.
-    inviteCopied: Invite link copied.
-    inviteCopyFailed: Failed to copy invite link.
-    invalidInviteEmail: Please provide a valid invite email.
-    invalidInviteExpiry: Invite expiry must be at least 1 hour.
-    ownerTransferred: Ownership transferred.
-    ownerTransferFailed: Failed to transfer ownership.
-    invalidTransferTarget: Please choose a new owner.
+  stats: {}
+  toasts: {}
   sites:
-    title: Site Dashboard
     subtitle: Aggregated traffic view across all sites in this team.
     aggregateTitle: Total Visits
-    pagesPerSession: Pages / Session
     noSites: No site is available under this team.
     openAnalytics: Open analytics
-  widgets:
-    title: Widgets
-    subtitle: Widget functionality is being built.
-    underConstruction: Under construction
+    title: Site Dashboard
+    pagesPerSession: Pages / Session
+  widgets: {}
   notifications:
     title: Notification Rules
     subtitle: Manage notification rules for this team.
     empty: This team has no notification rules yet.
     forbiddenTitle: Notification rules are managed by team admins
-    forbiddenDescription:
-      You can still view your own notifications and update your
+    forbiddenDescription: You can still view your own notifications and update your
       personal notification preferences.
     rulesTitle: Notification Rules
     enabledCount: "{count} enabled rules in this team."
@@ -2292,8 +2122,7 @@ teamManagement:
       yesterday: Yesterday
     emailPreviewPage:
       title: Notification email preview
-      subtitle: Render notification emails without creating messages or sending
-        through Resend.
+      subtitle: Render notification emails without creating messages or sending them.
       typeLabel: Preview type
       localeLabel: Preview locale
       formatLabel: Preview format
@@ -2321,192 +2150,24 @@ teamManagement:
       status: Status
       action: Action
   apiKeys:
-    title: API Keys
-    subtitle: Manage API access keys for this team.
-    empty: This team has no API keys yet.
-    create: Create key
-    creating: Creating...
-    createTitle: Create API key
-    createSubtitle: Choose the least privileges this integration needs.
-    nameLabel: Key name
-    namePlaceholder: Production sync
-    scopesTitle: Permissions
-    scopesDescription: API keys can never manage members, users, ownership, or other keys.
-    siteScopeTitle: Site access
-    siteScopeDescription: No selection means every current and future site in this team.
-    allSites: All sites
-    expirationLabel: Expires
-    expiration30: 30 days
-    expiration90: 90 days
-    expiration180: 180 days
-    expiration365: 365 days
-    expirationNever: Never
-    oneTimeSecretTitle: Copy this key now
-    oneTimeSecretDescription: This full key is shown once. Store it before closing this dialog.
-    copySecret: Copy key
-    revoke: Revoke
-    rotate: Rotate
-    revokeConfirm: Revoke this API key immediately?
-    rotateConfirm: Rotate this API key? The old key will be revoked immediately.
-    neverExpires: Never expires
-    notUsed: Not used
-    loading: Loading API keys...
-    loadFailed: Failed to load API keys.
-    invalidInput: Enter a name and choose at least one permission.
-    createFailed: Failed to create API key.
-    revokeFailed: Failed to revoke API key.
-    rotateFailed: Failed to rotate API key.
-    copied: Copied
-    status:
-      active: Active
-      expired: Expired
-      revoked: Revoked
-    scopes:
-      analyticsRead: Analytics read
-      analysisRead: Analysis definitions read
-      analysisWrite: Analysis definitions write
-      siteRead: Site read
-      siteWrite: Site write
-      siteConfigRead: Config read
-      siteConfigWrite: Config write
-    scopeDescriptions:
-      analyticsRead: View visits, visitors, page views, and other analytics data
-      analysisRead: View shared saved filters and funnel definitions
-      analysisWrite: Create, update, or delete funnel definitions
-      siteRead: View site list and site details
-      siteWrite: Create, update, or delete sites
-      siteConfigRead: View site settings like tracking code and domain whitelist
-      siteConfigWrite: Modify site settings like tracking strength and path blacklist
-    scopeGroups:
-      analytics: Analytics
-      analysis: Analysis definitions
-      site: Site
-      siteConfig: Site Configuration
-    columns:
-      name: Name
-      scopes: Permissions
-      sites: Sites
-      expires: Expires
-      lastUsed: Last used
-      status: Status
-      action: Action
-  settings:
-    title: Settings
-    subtitle: Update this team's display name and slug.
-    nameLabel: Team Display Name
-    slugLabel: Team Slug
-    save: Save settings
-    saving: Saving...
-    delete: Delete team
-    deleting: Deleting...
-    deleteConfirm: Delete this team and all its data? This action cannot be undone.
-    transferTitle: Transfer Ownership
-    transferSubtitle:
-      Transfer team ownership to another member. The current owner
-      will be demoted to admin.
-    transferTargetLabel: New Owner
-    transferTargetPlaceholder: Choose a team member
-    transfer: Transfer ownership
-    transferring: Transferring...
-    transferConfirm:
-      This action cannot be undone. You will lose ownership but keep
-      admin access. Continue?
-    noTransferableMembers: No other members are available to transfer to. Add a member first.
+    status: {}
+    scopes: {}
+    scopeDescriptions: {}
+    scopeGroups: {}
+    columns: {}
+  settings: {}
   members:
-    title: Members
-    subtitle: Invite members or remove existing members.
-    remove: Remove member
-    removeMemberAction: Remove member "{target}"
-    removeMemberConfirm: Remove "{target}" from this team? They will lose access immediately.
-    noMembers: No members found for this team.
-    invitesTitle: Create invite link
-    invitesSubtitle: Users join this team only after accepting an invite.
-    inviteEmailLabel: Email restriction (optional)
-    inviteEmailPlaceholder: user@example.com
-    inviteExpiresLabel: Expires in hours
-    createInvite: Create invite link
-    creatingInvite: Creating...
-    copyInvite: Copy invite link
-    inviteLinksTitle: Invite links
-    inviteLinksSubtitle: Review invite status and revoke active links.
-    noInvites: This team has no invite links yet.
-    anyEmail: Any email
-    revokeInvite: Revoke invite
-    revokeInviteAction: Revoke invite for "{target}"
-    revokeInviteConfirm: Revoke the invite for "{target}"? The link will stop working.
-    siteAccessLabel: Site access
-    siteAccessAll: All sites
-    siteAccessRestricted: Restricted
-    siteAccessSelected: "Selected {count} sites"
-    siteAccessDescription:
-      Leave this set to all sites, or choose the specific sites
-      this member can access.
-    siteAccessAdmins: Admins can access every site in this team.
-    siteAccessDialogTitle: Edit site access
-    saveSiteAccess: Save access
-    cancelSiteAccess: Cancel
-    noSitesForAccess: This team has no sites yet.
-    inviteStatuses:
-      active: Active
-      used: Used
-      revoked: Revoked
-      expired: Expired
-    columns:
-      name: Name
-      username: Username
-      email: Email
-      inviteCode: Invite token
-      role: Role
-      siteAccess: Site access
-      joinedAt: Joined
-      createdAt: Created
-      expiresAt: Expires
-      usedAt: Used
-      status: Status
-      action: Action
-    roleLabels:
-      owner: Owner
-      admin: Admin
-      member: Member
+    inviteStatuses: {}
+    columns: {}
+    roleLabels: {}
 managementNav:
-  users: User Management
   sites: Site Management
-  teams: Team Management
-  versionUpdates: Version Updates
   scheduledTasks: Scheduled Tasks
   requestObservation: Request Observability
   systemPerformance: System Performance
   systemSettings: System Settings
 managementPages:
-  versionUpdates:
-    subtitle: Review published InsightFlare releases and the running build.
-    empty: No version update records yet.
-    currentVersion: Current version
-    latestVersion: Latest release
-    currentCommit: Current commit
-    releaseCount: Releases
-    publishedAt: Published
-    author: Author
-    commit: Commit
-    statusStable: Stable
-    statusPrerelease: Prerelease
-    statusDraft: Draft
-    currentVersionBadge: Current version
-    releaseNotes: Release notes
-    openRelease: Open release
-    viewDetails: View detailed changes
-    detailsTitle: Detailed changes
-    detailsDescription: Commits included in {range}.
-    detailsLoading: Loading detailed changes...
-    detailsEmpty: No previous release is available for this version yet.
-    detailsFailed: Failed to load detailed changes.
-    currentCommitBadge: Current deployment
-    openCompare: Open compare
-    openCommit: Open commit
-    commitCount: Commits
-    source: Data source
-    loadFailed: Failed to load the release index.
-    unknown: Unknown
+  versionUpdates: {}
   scheduledTasks:
     subtitle: View and manage system scheduled tasks.
     empty: No scheduled tasks yet.
@@ -2573,8 +2234,7 @@ managementPages:
     taskDefinitions:
       visit_hourly_rollup:
         name: Hourly visit aggregation
-        description:
-          Aggregates closed visit rows into hourly rollups for dashboard
+        description: Aggregates closed visit rows into hourly rollups for dashboard
           counters and trends.
         schedule: Every hour
       notification_tick:
@@ -2583,55 +2243,11 @@ managementPages:
         schedule: Every 30 minutes
       database_maintenance:
         name: Database maintenance
-        description:
-          Removes expired run data and notifications, and optimizes D1 query
+        description: Removes expired run data and notifications, and optimizes D1 query
           statistics.
         schedule: Every day
 adminUsers:
-  title: User Management
-  subtitle: Only system admins can create and manage dashboard users.
-  createTitle: Create User
-  createTeamNotice:
-    Creating a user here will also create a new Team owned by that
-    user. To add someone to an existing team, create an invite link from that
-    team's settings.
-  username: Username
-  email: Email
-  name: Display Name (optional)
-  password: Password (min 8 chars)
-  role: System Role
-  teamName: Team Name
-  teamSlug: Team Slug (optional)
-  defaultTeamName: "{name}'s team"
-  create: Create User
-  creating: Creating...
-  delete: Delete
-  deleting: Deleting...
-  deleteConfirm: Delete this user account?
-  deleteSuccess: User deleted.
-  deleteFailed: Failed to delete user.
-  generateResetLink: Generate password reset link
-  resetLinkCreated: Password reset link generated.
-  resetLinkCreateFailed: Failed to generate password reset link.
-  resetLinkCopied: Password reset link copied.
-  resetLinkCopyFailed: Failed to copy password reset link.
-  copyResetLink: Copy link
-  resetLinkExpiresAt: Expires
-  listTitle: Users
-  listSubtitle: All users in the system.
-  noData: No users found.
-  loadFailed: Failed to load users.
-  createSuccess: User created.
-  createFailed: Failed to create user.
-  invalidInput: Please provide valid username, email and password.
-  columns:
-    name: Name
-    username: Username
-    email: Email
-    role: Role
-    teams: Teams
-    created: Created
-    action: Action
+  columns: {}
 adminSites:
   title: Site Management
   subtitle: Manage sites under the current team.
@@ -2658,83 +2274,32 @@ adminSites:
     created: Created
     action: Action
 adminTeams:
-  title: Team Management
-  subtitle: Only system admins can create and view all teams.
-  createTitle: Create Team
-  createSubtitle: After creation, you can manage settings and members.
-  name: Team Name
-  slug: Team Slug (optional)
-  create: Create Team
-  creating: Creating...
-  listTitle: Teams
-  listSubtitle: All teams in the system.
-  noData: No teams found.
-  loadFailed: Failed to load teams.
-  createSuccess: Team created.
-  createFailed: Failed to create team.
-  invalidInput: Team name must be at least 2 characters.
-  open: Open team
-  settings: Settings
-  columns:
-    name: Name
-    slug: Slug
-    sites: Sites
-    members: Members
-    created: Created
-    action: Action
+  columns: {}
 requestObservation:
   title: Request Observability
-  tabs:
-    overview: Overview
-    blocked: Blocked Requests
-    included: Included Requests
+  subtitle: "Recent requests the collector refused: custom block rules, bots and
+    hosting networks."
+  blockedTotal: "Blocked requests"
+  retentionNote: "Kept for 30 days. Allowed traffic is in each site's dashboards."
+  topReasons: "Reasons"
+  recentTitle: "Latest blocked requests"
+  categoryLabels:
+    custom_block: "Block rule"
+    bot: "Bot"
+    suspected_bot: "Hosting network"
+  tabs: {}
   refresh: Refresh
   loadFailed: Failed to load request observability data.
-  notConfiguredTitle: Analytics Engine reader is not configured
-  notConfiguredDescription: Add a Cloudflare Account ID and API token in System
-    Settings to read the request-observation Analytics Engine datasets.
-  analyticsEngineDisabledTitle: Analytics Engine is not enabled
-  analyticsEngineDisabledDescription: This deployment was published without the
-    Analytics Engine binding because the Cloudflare account has not enabled
-    Analytics Engine. Enable it in Cloudflare, then redeploy to collect
-    request-observation data.
-  openAnalyticsEngine: Open Analytics Engine
-  openSettings: Open settings
-  affectedSites: Affected Sites
-  uniqueCountries: Countries / Regions
   noData: No request data in this window.
-  trendTitle: Routing Trend
-  client: Client
-  edge: Edge
-  identifiers: Identifiers
-  fullUserAgent: Full User-Agent
-  id: ID
-  metadata: Metadata
   time: Time
   site: Site
   location: Location
   network: Network
   reason: Reason
-  request: Request
-  ip: IP
   userAgent: User agent
-  category: Category
   emptyValue: Unknown
-  kind: Type
-  botScore: Bot Score
-  botScoreBucket: Bot Score Bucket
-  verifiedBotCategory: Verified Bot Category
-  hostname: Hostname
   pathname: Path
-  origin: Origin
-  asOrganization: ASN Organization
-  asn: ASN
   country: Country / Region
-  region: Region
-  city: City
-  colo: Colo
-  userAgentLengthBucket: User-Agent Length
-  userAgentLength: User-Agent Length (exact)
   ipPrefix: IP Prefix
   botReasonLabels:
     missing_ua: Missing User-Agent
@@ -2759,43 +2324,13 @@ requestObservation:
     blocked_asns: Blocked ASNs
     blocked_countries: Blocked countries
     blocked_regions: Blocked regions
-  requestKindLabels:
-    pageview: Pageview
-    custom_event: Custom Event
-    request: Request
-    visibility: Visibility
-    leave: Leave
-    identify: Identify
+  requestKindLabels: {}
   overviewLabels:
-    p50Latency: P50 Worker processing time
-    p75Latency: P75 Worker processing time
-    p99Latency: P99 Worker processing time
-    p95Latency: P95 Worker processing time
-    avgLatency: Average Worker processing time
-    pageviews: Pageviews
-    customEvents: Custom events
-    overviewTrendTitle: Request routing trend
-    trafficCompositionTitle: Business request composition
-    trafficCompositionDescription: Counts normal collection events by type over
-      time, including pageviews, leaves, visibility changes, custom events, and
-      identifications.
-    categoryShareTitle: Request category breakdown
-    latencyTitle: Worker processing time trend
-    latencyDescription:
-      P50 / P75 / P95 / P99 Worker processing time recorded when
-      normal requests are written to AE.
-    requests: Requests
     windowDays: "Last {days} days"
-    latencyMilliseconds: "{value} ms"
-  normalDetail:
-    requestMethod: Request method
-    edgeLatency: Worker processing time
-    eventAt: Event time
-    receivedAt: Received at
-    continent: Continent
+  normalDetail: {}
 systemSettings:
   title: System Settings
-  subtitle: Manage instance-wide configuration for this InsightFlare deployment.
+  subtitle: Manage instance-wide configuration for this Open Analytics deployment.
   guide: Guide
   analyticsEngineTitle: Analytics Engine
   analyticsEngineDescription: Configure the Cloudflare credentials used to read
@@ -2814,8 +2349,8 @@ systemSettings:
   analyticsEngineDisabledTitle: Analytics Engine is not enabled
   analyticsEngineDisabledDescription: This deployment automatically disabled the
     Analytics Engine binding because the Cloudflare account has not enabled
-    Analytics Engine. Enable Analytics Engine in Cloudflare, then redeploy
-    InsightFlare to activate related analysis features.
+    Analytics Engine. Enable Analytics Engine in Cloudflare, then redeploy Open
+    Analytics to activate related analysis features.
   analyticsEngineDisabledHint: Analytics Engine settings are locked until
     Analytics Engine is enabled and the Worker is redeployed.
   analyticsEngineOpenCloudflare: Open Cloudflare Analytics Engine
@@ -2832,10 +2367,14 @@ systemSettings:
       account.
     - Copy the token, then enter the Account ID and API token here.
   notificationEmailTitle: Email Notifications
-  notificationEmailDescription: Configure the email service used for reports, alerts, and test messages.
+  notificationEmailDescription: "Reports, alerts and test messages are sent by
+    email through the Every App gateway."
+  emailGatewayReady: "The Every App gateway sends notification email."
+  emailGatewayNotReady: "The Every App gateway has no email sender set up yet. Its
+    operator sets EMAIL_FROM and Email Sending, then notification email starts."
+  emailSenderLabel: "Sender"
   notificationEmailGuideTitle: Get Resend email settings
-  notificationEmailGuideDescription:
-    To send system email through Resend, prepare
+  notificationEmailGuideDescription: To send system email through Resend, prepare
     a verified sender domain and an API key.
   notificationEmailGuideSteps:
     - Open the Resend Dashboard and confirm the sender domain has passed DNS
@@ -2846,13 +2385,15 @@ systemSettings:
     - Enter the sender name, sender email, Reply-To, and Resend API key here.
     - Save the configuration, then send a test email to confirm delivery works.
   retentionTitle: Operational data retention
-  retentionDescription:
-    Configure how long task runs, task logs, and notification
-    messages remain available. Changes affect new records only.
+  retentionDescription: Configure how long task runs, task logs, notification
+    messages and detailed analytics remain available. Task and notification
+    changes affect new records only; detailed analytics older than the new limit
+    are deleted on the next daily run.
   scheduledTaskLogsDaysLabel: Scheduled task logs and runs (days)
   notificationTestDaysLabel: Test notifications (days)
   notificationAttentionDaysLabel: Warning and critical notifications (days)
   notificationDefaultDaysLabel: Other notifications (days)
+  analyticsDetailDaysLabel: "Detailed analytics: page views and events (days; hourly totals are kept)"
   retentionRangeHint: Enter an integer from 1 to 3650 days.
   retentionSave: Save retention settings
   retentionSaving: Saving...
@@ -2888,7 +2429,7 @@ systemSettings:
   loginTurnstileGuideSteps:
     - Open the Cloudflare Dashboard and go to Turnstile.
     - Create a new widget and choose Invisible mode.
-    - Add the current InsightFlare login domain to the allowed hostnames.
+    - Add the current Open Analytics login domain to the allowed hostnames.
     - Copy the Site Key and Secret Key after the widget is created.
     - Enter the Site Key and Secret Key here, run the verification test, then
       save the configuration.
@@ -2922,7 +2463,7 @@ systemSettings:
   loadFailed: Failed to load email configuration.
 systemPerformance:
   title: System Performance
-  subtitle: Monitor InsightFlare collection, buffering, and write health from
+  subtitle: Monitor Open Analytics collection, buffering, and write health from
     existing analytics rows.
   refresh: Refresh
   loadFailed: Failed to load system performance data.
@@ -2951,8 +2492,7 @@ systemPerformance:
   customEvents: Custom Events
   anomalyBucket: Anomaly bucket
   openVisitHealth: Open Visit Backlog
-  openVisitHealthDescription:
-    Open rows that have not been closed by leave, route
+  openVisitHealthDescription: Open rows that have not been closed by leave, route
     change, or timeout finalization.
   open: Open
   stale: Stale
@@ -3010,20 +2550,8 @@ systemPerformance:
   doDiagnosticThresholdsHint: Thresholds — stale {stale}, timeout {timeout},
     hardAged {hardAged}, stuck flush_attempts ≥ {stuck}
   doDiagnosticHealthy: No abnormal buffered rows detected.
-loginForm:
-  signingIn: Signing in...
-  verifyingSecurity: Verifying security...
-  securityVerificationTitle: Security verification failed
-  securityVerificationFailed: Security verification failed. Please try again.
-  retrySecurityVerification: Retry verification
-  redirecting: Redirecting...
-  failed: Sign in failed. Please try again.
-logoutAction:
-  pending: Signing out...
-  success: Signed out.
-  failed: Failed to sign out. Please try again.
+loginForm: {}
+logoutAction: {}
 sidebarFooter:
   gateway: Back to Every App
-teamEntry:
-  title: Choose a Team
-  description: You have access to multiple teams. Choose where to continue.
+teamEntry: {}

@@ -142,6 +142,14 @@ CREATE INDEX idx_custom_events_site_pk_time
 CREATE INDEX idx_custom_events_site_pk_visit_time
   ON custom_events(site_pk, visit_id, occurred_at, event_pk);
 
+CREATE TABLE members (
+  team_id TEXT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL DEFAULT 'member',
+  last_seen_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  PRIMARY KEY (team_id, user_id)
+);
+
 CREATE TABLE notification_messages (
   id TEXT PRIMARY KEY,
   team_id TEXT NOT NULL,
@@ -226,6 +234,28 @@ CREATE INDEX idx_notification_rules_team
   ON notification_rules(team_id, enabled, updated_at DESC);
 CREATE INDEX idx_notification_rules_type
   ON notification_rules(type, enabled);
+
+CREATE TABLE request_observations (
+  id INTEGER PRIMARY KEY,
+  site_id TEXT NOT NULL,
+  received_at INTEGER NOT NULL,
+  category TEXT NOT NULL,
+  reasons TEXT NOT NULL DEFAULT '',
+  kind TEXT NOT NULL DEFAULT '',
+  country TEXT NOT NULL DEFAULT '',
+  region TEXT NOT NULL DEFAULT '',
+  city TEXT NOT NULL DEFAULT '',
+  asn INTEGER,
+  as_organization TEXT NOT NULL DEFAULT '',
+  ip_prefix TEXT NOT NULL DEFAULT '',
+  user_agent TEXT NOT NULL DEFAULT '',
+  hostname TEXT NOT NULL DEFAULT '',
+  pathname TEXT NOT NULL DEFAULT '',
+  origin TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX idx_request_observations_received_at
+  ON request_observations(received_at);
 
 CREATE TABLE saved_filters (
   id TEXT PRIMARY KEY,
@@ -349,8 +379,6 @@ CREATE TABLE users (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL,
   name TEXT,
-  org_role TEXT NOT NULL DEFAULT 'member',
-  last_seen_at INTEGER NOT NULL DEFAULT (unixepoch()),
   timezone TEXT NOT NULL DEFAULT '',
   notification_preferences_json TEXT NOT NULL DEFAULT '{}',
   preferred_locale TEXT NOT NULL DEFAULT '',

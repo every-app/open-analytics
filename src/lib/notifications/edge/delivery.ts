@@ -1,23 +1,14 @@
-import { decryptNotificationSecret } from "@/lib/edge/auth/secret-encryption";
+import { GatewayRefusalError, sendEmail } from "@every-app/sdk/server";
+
 import type { ScheduledTaskLogger } from "@/lib/edge/scheduled-tasks/runner";
-import { readConfig } from "@/lib/edge/system-config";
 import type { Env } from "@/lib/edge/types";
 import { renderNotificationEmail } from "@/lib/notifications/edge/email-renderer";
-import {
-  isValidEmail,
-  normalizeNotificationEmailConfig,
-  SYSTEM_NOTIFICATION_EMAIL_CONFIG_KEY,
-} from "@/lib/notifications/email-config";
+import { isValidEmail } from "@/lib/notifications/email-config";
 import { resolveNotificationMessageLocale } from "@/lib/notifications/locale";
 import type { NotificationMessage } from "@/lib/notifications/message";
 
 import { updateNotificationDeliveryResult } from "./message-store";
-import type { NotificationInvocationCache } from "./notification-cache";
 import { normalizeNotificationPreferences } from "./preferences";
-import {
-  buildResendFromAddress,
-  sendResendEmailWithRetry,
-} from "./resend-client";
 type NotificationDeliveryLogger = Pick<
   ScheduledTaskLogger,
   "info" | "warn" | "error"
@@ -29,6 +20,7 @@ export interface NotificationDeliveryUser {
   preferredLocale?: string | null;
   timeZone?: string | null;
 }
+const PROVIDER = "every-app";
 function maskEmail(value: string): string {
   const [local = "", domain = ""] = value.split("@");
   if (!local || !domain) return "";
@@ -40,51 +32,40 @@ function fallbackRenderedEmail(message: NotificationMessage) {
     text:
       message.bodyText ||
       message.summary ||
-      "You have a new InsightFlare notification.",
+      "You have a new Open Analytics notification.",
     html: message.bodyHtml || undefined,
   };
 }
-async function loadNotificationEmailConfig(
-  env: Env,
-  cache?: NotificationInvocationCache,
-) {
-  if (!cache) {
-    return normalizeNotificationEmailConfig(
-      await readConfig(env, SYSTEM_NOTIFICATION_EMAIL_CONFIG_KEY),
-    );
-  }
-  if (!cache.emailConfig) {
-    const promise = readConfig(env, SYSTEM_NOTIFICATION_EMAIL_CONFIG_KEY).then(
-      normalizeNotificationEmailConfig,
-    );
-    cache.emailConfig = promise;
-    void promise.catch(() => {
-      if (cache.emailConfig === promise) cache.emailConfig = null;
-    });
-  }
-  return cache.emailConfig;
-}
+/**
+ * Records the in-app message as delivered and, when the person wants email,
+ * sends it through the Every App gateway's email capability: its sender,
+ * within its daily budgets. A gateway without email set up skips the email.
+ */
 export async function deliverNotificationMessage(
   env: Env,
   message: NotificationMessage,
   user: NotificationDeliveryUser,
-  context: {
-    logger?: NotificationDeliveryLogger;
-    fetchImpl?: typeof fetch;
-    cache?: NotificationInvocationCache;
-  },
+  context: { logger?: NotificationDeliveryLogger },
 ): Promise<NotificationMessage | null> {
   const preferences = normalizeNotificationPreferences(user.preferencesJson);
   const channels = { inApp: true, email: preferences.email };
   const results: Record<string, unknown> = {
     inApp: { status: "sent" },
   };
+  const finish = (
+    status: "sent" | "failed",
+    errorMessage?: string,
+  ): Promise<NotificationMessage | null> =>
+    updateNotificationDeliveryResult(env, {
+      messageId: message.id,
+      status,
+      channels,
+      deliveryResults: results,
+      ...(errorMessage ? { errorMessage } : {}),
+    });
 
   if (!preferences.email) {
-    results.email = {
-      status: "skipped",
-      reason: "user_preference_disabled",
-    };
+    results.email = { status: "skipped", reason: "user_preference_disabled" };
     await context.logger?.info(
       "notification_delivery_skipped",
       "Email delivery skipped by user preference",
@@ -95,50 +76,11 @@ export async function deliverNotificationMessage(
         reason: "user_preference_disabled",
       },
     );
-    return updateNotificationDeliveryResult(env, {
-      messageId: message.id,
-      status: "sent",
-      channels,
-      deliveryResults: results,
-    });
-  }
-
-  const config = await loadNotificationEmailConfig(env, context.cache);
-  if (
-    !config.enabled ||
-    config.provider !== "resend" ||
-    !config.fromEmail ||
-    !config.resend.configured ||
-    !config.resend.apiKeyEncrypted
-  ) {
-    results.email = {
-      status: "skipped",
-      reason: "system_email_unconfigured",
-    };
-    await context.logger?.info(
-      "notification_delivery_skipped",
-      "Email delivery skipped because system email is not configured",
-      {
-        messageId: message.id,
-        userId: user.id,
-        channel: "email",
-        provider: "resend",
-        reason: "system_email_unconfigured",
-      },
-    );
-    return updateNotificationDeliveryResult(env, {
-      messageId: message.id,
-      status: "sent",
-      channels,
-      deliveryResults: results,
-    });
+    return finish("sent");
   }
 
   if (!isValidEmail(user.email)) {
-    results.email = {
-      status: "skipped",
-      reason: "recipient_email_invalid",
-    };
+    results.email = { status: "skipped", reason: "recipient_email_invalid" };
     await context.logger?.warn(
       "notification_delivery_skipped",
       "Email delivery skipped because recipient email is invalid",
@@ -146,135 +88,59 @@ export async function deliverNotificationMessage(
         messageId: message.id,
         userId: user.id,
         channel: "email",
-        provider: "resend",
         reason: "recipient_email_invalid",
       },
     );
-    return updateNotificationDeliveryResult(env, {
-      messageId: message.id,
-      status: "sent",
-      channels,
-      deliveryResults: results,
-    });
+    return finish("sent");
   }
 
-  let apiKey = "";
+  let rendered = fallbackRenderedEmail(message);
   try {
-    apiKey = await decryptNotificationSecret(
-      env,
-      config.resend.apiKeyEncrypted,
-    );
-  } catch {
-    results.email = {
-      status: "skipped",
-      reason: "secret_decryption_failed",
-    };
+    rendered = await renderNotificationEmail({
+      message,
+      locale: resolveNotificationMessageLocale({
+        messageLocale: message.data.locale,
+        userLocale: user.preferredLocale,
+      }),
+      timeZone: user.timeZone,
+    });
+  } catch (error) {
     await context.logger?.warn(
-      "notification_delivery_skipped",
-      "Email delivery skipped because saved credentials cannot be decrypted",
+      "notification_email_render_failed",
+      "Notification email render failed; falling back to plain text delivery",
       {
         messageId: message.id,
         userId: user.id,
         channel: "email",
-        provider: "resend",
-        reason: "secret_decryption_failed",
+        error: error instanceof Error ? error.message : String(error),
       },
     );
-    return updateNotificationDeliveryResult(env, {
-      messageId: message.id,
-      status: "sent",
-      channels,
-      deliveryResults: results,
-    });
   }
 
   await context.logger?.info("notification_delivery_attempt", "Sending email", {
     messageId: message.id,
     userId: user.id,
     channel: "email",
-    provider: "resend",
+    provider: PROVIDER,
     recipient: maskEmail(user.email),
   });
-
   try {
-    let rendered = fallbackRenderedEmail(message);
-    try {
-      const locale = resolveNotificationMessageLocale({
-        messageLocale: message.data.locale,
-        userLocale: user.preferredLocale,
-      });
-      rendered = await renderNotificationEmail({
-        message,
-        locale,
-        timeZone: user.timeZone,
-      });
-    } catch (error) {
-      await context.logger?.warn(
-        "notification_email_render_failed",
-        "Notification email render failed; falling back to plain text delivery",
-        {
-          messageId: message.id,
-          userId: user.id,
-          channel: "email",
-          provider: "resend",
-          error: error instanceof Error ? error.message : String(error),
-        },
-      );
-    }
-
-    const sendResult = await sendResendEmailWithRetry({
-      apiKey,
-      fetchImpl: context.fetchImpl,
-      body: {
-        from: buildResendFromAddress(config),
-        to: [user.email],
+    const sent = await sendEmail({
+      env,
+      // No person started this send: it's the organization's.
+      for: { background: true, organizationId: message.teamId },
+      message: {
+        to: user.email,
         subject: rendered.subject,
         text: rendered.text,
-        html: rendered.html,
-        reply_to: config.replyTo || undefined,
+        ...(rendered.html ? { html: rendered.html } : {}),
       },
     });
-
-    if (!sendResult.ok) {
-      results.email = {
-        status: "failed",
-        provider: "resend",
-        reason: sendResult.reason,
-        errorMessage: sendResult.errorMessage,
-        durationMs: sendResult.durationMs,
-        attempts: sendResult.attempts,
-        retryCount: sendResult.retryCount,
-      };
-      await context.logger?.error(
-        "notification_delivery_failed",
-        "Email delivery failed",
-        {
-          messageId: message.id,
-          userId: user.id,
-          channel: "email",
-          provider: "resend",
-          recipient: maskEmail(user.email),
-          errorMessage: sendResult.errorMessage,
-          durationMs: sendResult.durationMs,
-          attempts: sendResult.attempts,
-          retryCount: sendResult.retryCount,
-        },
-      );
-      return updateNotificationDeliveryResult(env, {
-        messageId: message.id,
-        status: "failed",
-        channels,
-        deliveryResults: results,
-        errorMessage: sendResult.errorMessage,
-      });
-    }
     results.email = {
       status: "sent",
-      provider: "resend",
-      messageId: sendResult.providerMessageId,
-      durationMs: sendResult.durationMs,
-      attempts: sendResult.attempts,
-      retryCount: sendResult.retryCount,
+      provider: PROVIDER,
+      messageId: sent.messageId,
+      deliveryStatus: sent.status,
     };
     await context.logger?.info(
       "notification_delivery_success",
@@ -283,30 +149,41 @@ export async function deliverNotificationMessage(
         messageId: message.id,
         userId: user.id,
         channel: "email",
-        provider: "resend",
+        provider: PROVIDER,
         recipient: maskEmail(user.email),
-        providerMessageId: sendResult.providerMessageId,
-        durationMs: sendResult.durationMs,
-        attempts: sendResult.attempts,
-        retryCount: sendResult.retryCount,
       },
     );
-    return updateNotificationDeliveryResult(env, {
-      messageId: message.id,
-      status: "sent",
-      channels,
-      deliveryResults: results,
-    });
-  } catch {
-    const errorMessage = "Unable to reach Resend email API";
+    return finish("sent");
+  } catch (error) {
+    if (
+      error instanceof GatewayRefusalError &&
+      error.code === "integration_not_configured"
+    ) {
+      results.email = {
+        status: "skipped",
+        reason: "system_email_unconfigured",
+      };
+      await context.logger?.info(
+        "notification_delivery_skipped",
+        "Email delivery skipped because the gateway has no email set up",
+        {
+          messageId: message.id,
+          userId: user.id,
+          channel: "email",
+          reason: "system_email_unconfigured",
+        },
+      );
+      return finish("sent");
+    }
+    const reason =
+      error instanceof GatewayRefusalError ? error.code : "send_failed";
+    const errorMessage =
+      error instanceof Error ? error.message : "Email delivery failed";
     results.email = {
       status: "failed",
-      provider: "resend",
-      reason: "network_failed",
+      provider: PROVIDER,
+      reason,
       errorMessage,
-      durationMs: 0,
-      attempts: 0,
-      retryCount: 0,
     };
     await context.logger?.error(
       "notification_delivery_failed",
@@ -315,18 +192,12 @@ export async function deliverNotificationMessage(
         messageId: message.id,
         userId: user.id,
         channel: "email",
-        provider: "resend",
+        provider: PROVIDER,
         recipient: maskEmail(user.email),
+        reason,
         errorMessage,
-        durationMs: 0,
       },
     );
-    return updateNotificationDeliveryResult(env, {
-      messageId: message.id,
-      status: "failed",
-      channels,
-      deliveryResults: results,
-      errorMessage,
-    });
+    return finish("failed", errorMessage);
   }
 }

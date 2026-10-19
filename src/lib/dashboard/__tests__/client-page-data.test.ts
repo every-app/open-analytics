@@ -9,7 +9,6 @@ import { dashboardFilterDocumentFromPresentation } from "@/lib/dashboard/filter-
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 describe("dashboard client page data helpers", () => {
   const realFetch = globalThis.fetch;
-  const realDemoMode = process.env.VITE_DEMO_MODE;
   const window: TimeWindow = {
     preset: "7d",
     from: 1000,
@@ -20,11 +19,6 @@ describe("dashboard client page data helpers", () => {
 
   afterEach(() => {
     globalThis.fetch = realFetch;
-    if (realDemoMode == null) {
-      delete process.env.VITE_DEMO_MODE;
-    } else {
-      process.env.VITE_DEMO_MODE = realDemoMode;
-    }
     vi.restoreAllMocks();
   });
 
@@ -52,7 +46,6 @@ describe("dashboard client page data helpers", () => {
   }
 
   it("serializes page dashboard defaults, options, and filters", async () => {
-    delete process.env.VITE_DEMO_MODE;
     const fetchMock = vi
       .fn()
       .mockImplementation(() =>
@@ -90,7 +83,6 @@ describe("dashboard client page data helpers", () => {
   });
 
   it("builds page share trend with an Other series when totals exceed top pages", async () => {
-    delete process.env.VITE_DEMO_MODE;
     const fetchMock = vi.fn((url: string) => {
       if (url.includes("/api/private/pages-dashboard")) {
         return Promise.resolve(
@@ -165,7 +157,6 @@ describe("dashboard client page data helpers", () => {
   });
 
   it("builds page share trend without Other when top page totals cover the trend", async () => {
-    delete process.env.VITE_DEMO_MODE;
     const fetchMock = vi.fn((url: string) => {
       if (url.includes("/api/private/pages-dashboard")) {
         return Promise.resolve(
@@ -230,7 +221,6 @@ describe("dashboard client page data helpers", () => {
   });
 
   it("merges duplicate page buckets and fills Other from total-only buckets", async () => {
-    delete process.env.VITE_DEMO_MODE;
     const fetchMock = vi.fn((url: string) => {
       if (url.includes("/api/private/pages-dashboard")) {
         return Promise.resolve(
@@ -332,7 +322,6 @@ describe("dashboard client page data helpers", () => {
   });
 
   it("uses total trend data when the page dashboard request falls back", async () => {
-    delete process.env.VITE_DEMO_MODE;
     const fetchMock = vi.fn((url: string) => {
       if (url.includes("/api/private/pages-dashboard")) {
         return Promise.reject(new Error("pages unavailable"));
@@ -385,7 +374,6 @@ describe("dashboard client page data helpers", () => {
   });
 
   it("keeps page trend data when the total trend request falls back", async () => {
-    delete process.env.VITE_DEMO_MODE;
     const fetchMock = vi.fn((url: string) => {
       if (url.includes("/api/private/pages-dashboard")) {
         return Promise.resolve(
@@ -439,7 +427,6 @@ describe("dashboard client page data helpers", () => {
   });
 
   it("falls back to empty page share trend data when both source requests fail", async () => {
-    delete process.env.VITE_DEMO_MODE;
     globalThis.fetch = vi.fn().mockRejectedValue(new Error("offline"));
 
     await expect(
@@ -453,7 +440,6 @@ describe("dashboard client page data helpers", () => {
   });
 
   it("returns page card tabs when present and empty tabs when omitted", async () => {
-    delete process.env.VITE_DEMO_MODE;
     const tabs = {
       path: [{ label: "/docs", views: 3 }],
       title: [{ label: "Docs", views: 2 }],

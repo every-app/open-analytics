@@ -1,8 +1,8 @@
-import { readFileSync } from "node:fs";
-import { DatabaseSync } from "node:sqlite";
+import type { DatabaseSync } from "node:sqlite";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMigratedDatabase } from "@/../scripts/schema/database";
 import { executePrivateTeamDashboard } from "@/lib/edge/analytics/interfaces/dashboard/private";
 import { handleRetentionContract as handleRetention } from "@/lib/edge/analytics/interfaces/dashboard/protocol/analysis";
 import { parseWindow } from "@/lib/edge/analytics/interfaces/dashboard/protocol/parsers";
@@ -38,22 +38,6 @@ function addSiteIdentityFixture(
   database: DatabaseSync,
   siteIds: readonly string[],
 ): void {
-  database.exec(`
-    CREATE TABLE site_identities (
-      site_pk INTEGER PRIMARY KEY,
-      site_id TEXT NOT NULL UNIQUE
-    );
-    ALTER TABLE visits ADD COLUMN site_pk INTEGER;
-    CREATE INDEX idx_visits_site_pk_started_at
-      ON visits(site_pk, started_at);
-    CREATE TRIGGER test_visits_site_pk
-    AFTER INSERT ON visits
-    BEGIN
-      UPDATE visits
-      SET site_pk = (SELECT site_pk FROM site_identities WHERE site_id = NEW.site_id)
-      WHERE visit_id = NEW.visit_id;
-    END;
-  `);
   const insertIdentity = database.prepare(
     "INSERT INTO site_identities (site_pk, site_id) VALUES (?, ?)",
   );
@@ -74,10 +58,9 @@ const window = {
 };
 const adminSession: EdgeSessionClaims = {
   userId: "admin-1",
-  username: "admin",
-  displayName: "Admin",
+  email: "admin@example.test",
+  teamId: "team-1",
   systemRole: "admin",
-  exp: 9_999_999_999,
 };
 function createD1Env(resultSets: D1Row[][], firstRows: D1Row[] = []) {
   const calls: QueryCall[] = [];
@@ -266,15 +249,7 @@ describe("edge team query coverage", () => {
   });
 
   it("materializes the narrow team overview source once", async () => {
-    const database = new DatabaseSync(":memory:");
-    for (const migration of [
-      "migrations/0008_rebuild_analytics.sql",
-      "migrations/0013_add_visit_performance_metrics.sql",
-      "migrations/0017_structured_custom_events.sql",
-      "migrations/0019_add_user_identity.sql",
-    ]) {
-      database.exec(readFileSync(migration, "utf8"));
-    }
+    const database = createMigratedDatabase();
     addSiteIdentityFixture(database, ["site-a", "site-b"]);
     const calls: Array<{ sql: string; bindings: QueryBinding[] }> = [];
     const env = {
@@ -295,8 +270,9 @@ describe("edge team query coverage", () => {
     const insert = database.prepare(`
       INSERT INTO visits (
         visit_id, site_id, visitor_id, session_id, status, started_at,
-        last_activity_at, pathname, hostname, duration_ms
-      ) VALUES (?, ?, ?, ?, 'closed', ?, ?, '/', 'example.test', ?)
+        last_activity_at, pathname, hostname, duration_ms, site_pk
+      ) VALUES (?1, ?2, ?3, ?4, 'closed', ?5, ?6, '/', 'example.test', ?7,
+        (SELECT site_pk FROM site_identities WHERE site_id = ?2))
     `);
 
     try {
@@ -405,61 +381,58 @@ describe("edge team query coverage", () => {
 
   it("shapes team dashboard payloads with previous comparisons and grouped trends", async () => {
     requireSessionMock.mockResolvedValue(adminSession);
-    const { env, calls } = createD1Env(
+    const { env, calls } = createD1Env([
       [
-        [
-          {
-            id: "site-a",
-            teamId: "team-1",
-            name: "Alpha",
-            domain: "alpha.example",
-            publicEnabled: 1,
-            publicSlug: "alpha",
-            createdAt: 10,
-            updatedAt: 20,
-          },
-          {
-            id: "site-b",
-            teamId: "team-1",
-            name: "Beta",
-            domain: "beta.example",
-            publicEnabled: 0,
-            publicSlug: null,
-            createdAt: 8,
-            updatedAt: 18,
-          },
-        ],
-        [],
-        [],
-        [
-          {
-            siteId: "site-a",
-            views: 10,
-            sessions: 5,
-            visitors: 4,
-            bounces: 1,
-            totalDuration: 20000,
-            durationViews: 5,
-          },
-        ],
-        [
-          {
-            siteId: "site-a",
-            views: 5,
-            sessions: 5,
-            visitors: 2,
-            bounces: 2,
-            totalDuration: 5000,
-            durationViews: 5,
-          },
-        ],
-        [
-          { siteId: "site-b", bucket: 1, views: 3, visitors: 2 },
-          { siteId: "site-a", bucket: 0, views: 6, visitors: 3 },
-        ],
+        {
+          id: "site-a",
+          teamId: "team-1",
+          name: "Alpha",
+          domain: "alpha.example",
+          publicEnabled: 1,
+          publicSlug: "alpha",
+          createdAt: 10,
+          updatedAt: 20,
+        },
+        {
+          id: "site-b",
+          teamId: "team-1",
+          name: "Beta",
+          domain: "beta.example",
+          publicEnabled: 0,
+          publicSlug: null,
+          createdAt: 8,
+          updatedAt: 18,
+        },
       ],
-      [{ id: "team-1" }],
-    );
+      [],
+      [],
+      [
+        {
+          siteId: "site-a",
+          views: 10,
+          sessions: 5,
+          visitors: 4,
+          bounces: 1,
+          totalDuration: 20000,
+          durationViews: 5,
+        },
+      ],
+      [
+        {
+          siteId: "site-a",
+          views: 5,
+          sessions: 5,
+          visitors: 2,
+          bounces: 2,
+          totalDuration: 5000,
+          durationViews: 5,
+        },
+      ],
+      [
+        { siteId: "site-b", bucket: 1, views: 3, visitors: 2 },
+        { siteId: "site-a", bucket: 0, views: 6, visitors: 3 },
+      ],
+    ]);
 
     const response = await handleTeamDashboard(
       new Request("https://edge.test/api/private/team-dashboard"),
@@ -527,12 +500,12 @@ describe("edge team query coverage", () => {
       },
     });
     expect(calls[0]).toMatchObject({
-      kind: "first",
-      bindings: ["team-1", 1],
+      kind: "all",
+      bindings: ["team-1"],
     });
     expect(calls[1]).toMatchObject({
       kind: "all",
-      bindings: ["team-1"],
+      bindings: ["site-a", "site-b"],
     });
     expect(calls[2]).toMatchObject({
       kind: "all",
@@ -540,13 +513,9 @@ describe("edge team query coverage", () => {
     });
     expect(calls[3]).toMatchObject({
       kind: "all",
-      bindings: ["site-a", "site-b"],
-    });
-    expect(calls[4]).toMatchObject({
-      kind: "all",
       bindings: ["site-a", "site-b", window.startMs, window.endExclusiveMs],
     });
-    expect(calls[5]).toMatchObject({
+    expect(calls[4]).toMatchObject({
       kind: "all",
       bindings: [
         "site-a",
@@ -555,10 +524,10 @@ describe("edge team query coverage", () => {
         window.startMs,
       ],
     });
-    expect(calls[6]).toMatchObject({
+    expect(calls[5]).toMatchObject({
       kind: "all",
     });
-    expect(calls[6].bindings.slice(0, 4)).toEqual([
+    expect(calls[5].bindings.slice(0, 4)).toEqual([
       "site-a",
       "site-b",
       window.startMs,
@@ -612,13 +581,13 @@ describe("edge team query coverage", () => {
 
   it("returns an empty team dashboard when the resolved team has no sites", async () => {
     requireSessionMock.mockResolvedValue(adminSession);
-    const { env, calls } = createD1Env([[]], [{ id: "team-empty" }]);
+    const { env, calls } = createD1Env([[]]);
 
     const response = await handleTeamDashboard(
       new Request("https://edge.test/api/private/team-dashboard"),
       env,
       url("/api/private/team-dashboard", {
-        teamId: "team-empty",
+        teamId: "team-1",
         from: window.startMs,
         to: window.endExclusiveMs,
       }),
@@ -632,33 +601,20 @@ describe("edge team query coverage", () => {
         trend: [],
       },
     });
-    expect(calls).toHaveLength(2);
-    expect(calls[0]).toMatchObject({
-      kind: "first",
-      bindings: ["team-empty", 1],
-    });
-    expect(calls[1]).toMatchObject({
-      kind: "all",
-      bindings: ["team-empty"],
-    });
+    expect(calls).toEqual([
+      expect.objectContaining({ kind: "all", bindings: ["team-1"] }),
+    ]);
   });
 
   it("propagates database errors from team site listing", async () => {
     requireSessionMock.mockResolvedValue(adminSession);
     const failingEnv = {
       DB: {
-        prepare: vi
-          .fn()
-          .mockReturnValueOnce({
-            bind: vi.fn().mockReturnValue({
-              first: vi.fn().mockResolvedValue({ id: "team-1" }),
-            }),
-          })
-          .mockReturnValueOnce({
-            bind: vi.fn().mockReturnValue({
-              all: vi.fn().mockRejectedValue(new Error("sites unavailable")),
-            }),
+        prepare: vi.fn().mockReturnValueOnce({
+          bind: vi.fn().mockReturnValue({
+            all: vi.fn().mockRejectedValue(new Error("sites unavailable")),
           }),
+        }),
       } as unknown as D1Database,
       DAILY_SALT_SECRET: "test-secret",
       INGEST_DO: {} as DurableObjectNamespace,
@@ -748,23 +704,7 @@ describe("edge journey retention coverage", () => {
   });
 
   it("materializes retention visits once while preserving cohort results", async () => {
-    const database = new DatabaseSync(":memory:");
-    database.exec(
-      readFileSync("migrations/0008_rebuild_analytics.sql", "utf8"),
-    );
-    database.exec(
-      readFileSync("migrations/0013_add_visit_performance_metrics.sql", "utf8"),
-    );
-    database.exec(
-      readFileSync("migrations/0017_structured_custom_events.sql", "utf8"),
-    );
-    database.exec(
-      readFileSync("migrations/0019_add_user_identity.sql", "utf8"),
-    );
-    database.exec(`
-      ALTER TABLE custom_event_names ADD COLUMN site_pk INTEGER;
-      ALTER TABLE custom_events ADD COLUMN site_pk INTEGER;
-    `);
+    const database = createMigratedDatabase();
     addSiteIdentityFixture(database, [siteId]);
     const calls: Array<{ sql: string; bindings: QueryBinding[] }> = [];
     const env = {
@@ -784,8 +724,9 @@ describe("edge journey retention coverage", () => {
     const insert = database.prepare(`
       INSERT INTO visits (
         visit_id, site_id, visitor_id, session_id, status, started_at,
-        last_activity_at, pathname, hostname
-      ) VALUES (?, ?, ?, ?, 'closed', ?, ?, '/', 'example.test')
+        last_activity_at, pathname, hostname, site_pk
+      ) VALUES (?1, ?2, ?3, ?4, 'closed', ?5, ?6, '/', 'example.test',
+        (SELECT site_pk FROM site_identities WHERE site_id = ?2))
     `);
 
     try {

@@ -2,21 +2,11 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  handlePrivateArchive,
-  handlePrivateArchiveFile,
-  handlePrivateArchiveManifest,
-} from "@/lib/edge/admin/archive-query";
-import { handleReleasesCompareRequest } from "@/lib/edge/admin/system/releases-compare";
-import { handleUsersAdmin } from "@/lib/edge/admin/users/handlers";
+import { handleMembersAdmin } from "@/lib/edge/admin/users/handlers";
 import { handleAdminWs } from "@/lib/edge/admin/ws";
 import { handleOverviewContract } from "@/lib/edge/analytics/interfaces/dashboard/protocol/overview";
 import type * as QueryRouterModule from "@/lib/edge/analytics/interfaces/dashboard/protocol/router";
-import { authenticateApiKey } from "@/lib/edge/auth/api-key-auth";
-import {
-  handleLegacyAuthLogin,
-  handleLegacyAuthLogout,
-} from "@/lib/edge/auth/legacy-auth";
+import { requireSession } from "@/lib/edge/auth/session-auth";
 import type * as SiteAccessModule from "@/lib/edge/auth/site-access";
 import {
   fetchPublicSite,
@@ -34,27 +24,14 @@ import apiApp from "@/lib/hono/app";
 vi.mock("@/lib/edge/admin/ws", () => ({
   handleAdminWs: vi.fn(),
 }));
-vi.mock("@/lib/edge/admin/archive-query", () => ({
-  handlePrivateArchiveFile: vi.fn(),
-  handlePrivateArchive: vi.fn(),
-  handlePrivateArchiveManifest: vi.fn(),
-}));
 vi.mock("@/lib/edge/admin/users/handlers", () => ({
-  handleAuthLoginAdmin: vi.fn(),
   handleAuthMeAdmin: vi.fn(),
+  handleMembersAdmin: vi.fn(),
   handleProfileAdmin: vi.fn(),
-  handleUsersAdmin: vi.fn(),
 }));
 vi.mock("@/lib/edge/collector/collect", () => ({
   handleCollectOptionsRequest: vi.fn(),
   handleCollectRequest: vi.fn(),
-}));
-vi.mock("@/lib/edge/auth/legacy-auth", () => ({
-  handleLegacyAuthLogin: vi.fn(),
-  handleLegacyAuthLogout: vi.fn(),
-}));
-vi.mock("@/lib/edge/admin/system/releases-compare", () => ({
-  handleReleasesCompareRequest: vi.fn(),
 }));
 vi.mock("@/lib/edge/auth/site-access", async (importOriginal) => {
   const actual = await importOriginal<typeof SiteAccessModule>();
@@ -81,9 +58,6 @@ vi.mock("@/lib/edge/analytics/interfaces/dashboard/protocol/pages", () => ({
   handlePagesContract: vi.fn(),
   handleReferrersContract: vi.fn(),
 }));
-vi.mock("@/lib/edge/auth/api-key-auth", () => ({
-  authenticateApiKey: vi.fn(),
-}));
 vi.mock("@/lib/edge/collector/script-endpoint", () => ({
   handleTrackerScriptRequest: vi.fn(),
 }));
@@ -99,17 +73,18 @@ vi.mock("@/lib/edge/resources/wiki-summary", () => ({
 vi.mock("@/lib/edge/auth/session-auth", () => ({
   requireSession: vi.fn(),
 }));
-const { requireSession } = await import("@/lib/edge/auth/session-auth");
-const env = { DB: {}, INGEST_DO: {}, ARCHIVE_BUCKET: {} };
+// Site access imports the gateway SDK through the viewer, which can't load
+// under Node.
+vi.mock("@/lib/edge/auth/viewer", () => ({ resolveViewer: vi.fn() }));
+const env = { DB: {}, INGEST_DO: {} };
 const dispatchQueryRoute = vi.fn();
 const ctx = { waitUntil: vi.fn(), passThroughOnException: vi.fn() };
 const executionCtx = ctx as unknown as ExecutionContext;
 const session = {
   userId: "user-1",
-  username: "user",
-  displayName: "User",
+  email: "user@example.com",
+  teamId: "team-1",
   systemRole: "admin" as const,
-  exp: 9999999999,
 };
 function request(path: string, init?: RequestInit): Request {
   return new Request(`https://app.test${path}`, init);
@@ -142,18 +117,8 @@ describe("Hono API app routing", () => {
     );
     vi.mocked(handleMapRelayRequest).mockResolvedValue(new Response("map"));
     vi.mocked(handleWikiSummaryRequest).mockResolvedValue(new Response("wiki"));
-    vi.mocked(handleReleasesCompareRequest).mockResolvedValue(
-      new Response("compare"),
-    );
-    vi.mocked(handleUsersAdmin).mockResolvedValue(new Response("admin"));
+    vi.mocked(handleMembersAdmin).mockResolvedValue(new Response("admin"));
     vi.mocked(requireSession).mockResolvedValue(session);
-    vi.mocked(handlePrivateArchive).mockResolvedValue(new Response("archive"));
-    vi.mocked(handlePrivateArchiveFile).mockResolvedValue(
-      new Response("archive-file"),
-    );
-    vi.mocked(handlePrivateArchiveManifest).mockResolvedValue(
-      new Response("archive"),
-    );
     vi.mocked(resolvePrivateSiteForSession).mockResolvedValue({
       id: "site-1",
       name: "Site",
@@ -170,19 +135,6 @@ describe("Hono API app routing", () => {
     vi.mocked(handleOverviewContract).mockResolvedValue(
       new Response("private-query"),
     );
-    vi.mocked(authenticateApiKey).mockResolvedValue({
-      keyId: "key-1",
-      teamId: "team-1",
-      prefix: "if_123",
-      scopes: ["analytics:read"],
-      siteIds: ["site-1"],
-    });
-    vi.mocked(handleLegacyAuthLogin).mockResolvedValue(
-      new Response("legacy-login"),
-    );
-    vi.mocked(handleLegacyAuthLogout).mockResolvedValue(
-      new Response("legacy-logout"),
-    );
     vi.mocked(handleAdminWs).mockResolvedValue(new Response("ws"));
   });
 
@@ -197,102 +149,9 @@ describe("Hono API app routing", () => {
     expect(response.status).toBe(200);
     expect(body).toMatchObject({
       ok: true,
-      service: "insightflare",
-      bindings: { d1: true, durableObject: true, r2Archive: true },
+      service: "open-analytics",
+      bindings: { d1: true, durableObject: true },
     });
-  });
-
-  it("serves dynamic well-known OpenAPI with forwarded host", async () => {
-    const response = await apiApp.fetch(
-      request("/.well-known/openapi.json", {
-        headers: {
-          "x-forwarded-host": "edge.example.test",
-          "x-forwarded-proto": "https",
-        },
-      }),
-      env as any,
-      executionCtx,
-    );
-    const body = (await response.json()) as {
-      servers: Array<{ url: string }>;
-    };
-
-    expect(response.headers.get("access-control-allow-origin")).toBe("*");
-    expect(body.servers[0].url).toBe("https://edge.example.test");
-  });
-
-  it("serves well-known HEAD and dynamic metadata variants", async () => {
-    const openapiHead = await apiApp.fetch(
-      request("/.well-known/openapi.json", { method: "HEAD" }),
-      env as any,
-      executionCtx,
-    );
-    const skills = await apiApp.fetch(
-      request("/.well-known/skills.json", {
-        headers: {
-          "x-forwarded-host": "skills.example.test",
-          "x-forwarded-proto": "http",
-        },
-      }),
-      env as any,
-      executionCtx,
-    );
-    const skillsHead = await apiApp.fetch(
-      request("/.well-known/skills.json", { method: "HEAD" }),
-      env as any,
-      executionCtx,
-    );
-    const security = await apiApp.fetch(
-      request("/.well-known/security.txt"),
-      env as any,
-      executionCtx,
-    );
-    const securityHead = await apiApp.fetch(
-      request("/.well-known/security.txt", { method: "HEAD" }),
-      env as any,
-      executionCtx,
-    );
-
-    expect(openapiHead.status).toBe(200);
-    expect(await openapiHead.text()).toBe("");
-    expect(skills.headers.get("content-type")).toContain("application/json");
-    expect(skills.headers.get("access-control-allow-origin")).toBe("*");
-    expect(skills.headers.get("cache-control")).toContain("max-age=3600");
-    expect(await skills.text()).toContain("http://skills.example.test");
-    expect(skillsHead.status).toBe(200);
-    expect(security.status).toBe(200);
-    expect(await security.text()).toContain("contact@insightflare.net");
-    expect(securityHead.status).toBe(200);
-  });
-
-  it("redirects well-known helpers using the request origin fallback", async () => {
-    const changePassword = await apiApp.fetch(
-      request("/.well-known/change-password"),
-      env as any,
-      executionCtx,
-    );
-    const changePasswordHead = await apiApp.fetch(
-      request("/.well-known/change-password", { method: "HEAD" }),
-      env as any,
-      executionCtx,
-    );
-    const health = await apiApp.fetch(
-      request("/.well-known/health"),
-      env as any,
-      executionCtx,
-    );
-    const healthHead = await apiApp.fetch(
-      request("/.well-known/health", { method: "HEAD" }),
-      env as any,
-      executionCtx,
-    );
-
-    expect(changePassword.status).toBe(302);
-    expect(changePassword.headers.get("location")).toBe("https://app.test/app");
-    expect(changePasswordHead.status).toBe(200);
-    expect(health.status).toBe(302);
-    expect(health.headers.get("location")).toBe("https://app.test/healthz");
-    expect(healthHead.status).toBe(200);
   });
 
   it("routes edge endpoints to their shared handlers", async () => {
@@ -328,14 +187,9 @@ describe("Hono API app routing", () => {
     expect(handleAdminWs).toHaveBeenCalledWith(expect.any(Request), env);
   });
 
-  it("routes private, public, and v1 API groups through Hono", async () => {
+  it("routes private and public API groups through Hono", async () => {
     await apiApp.fetch(
-      request("/api/private/admin/users"),
-      env as any,
-      executionCtx,
-    );
-    await apiApp.fetch(
-      request("/api/private/archive/manifest"),
+      request("/api/private/admin/members"),
       env as any,
       executionCtx,
     );
@@ -349,15 +203,8 @@ describe("Hono API app routing", () => {
       env as any,
       executionCtx,
     );
-    await apiApp.fetch(
-      request("/api/v1/capabilities"),
-      env as any,
-      executionCtx,
-    );
 
-    expect(handleUsersAdmin).toHaveBeenCalled();
-    expect(handlePrivateArchiveManifest).toHaveBeenCalled();
-    expect(handlePrivateArchive).not.toHaveBeenCalled();
+    expect(handleMembersAdmin).toHaveBeenCalled();
     expect(resolvePrivateSiteForSession).toHaveBeenCalled();
     expect(handleOverviewContract).toHaveBeenCalledWith(
       env,
@@ -413,22 +260,9 @@ describe("Hono API app routing", () => {
     logSpy.mockRestore();
   });
 
-  it("redirects the bare API root to API v1 without applying API no-cache defaults", async () => {
+  it("adds no-cache headers to private API responses", async () => {
     const response = await apiApp.fetch(
-      request("/api"),
-      env as any,
-      executionCtx,
-    );
-
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("/api/v1");
-    expect(response.headers.get("cache-control")).toBeNull();
-    expect(response.headers.get("pragma")).toBeNull();
-  });
-
-  it("adds no-cache headers to API v1 responses", async () => {
-    const response = await apiApp.fetch(
-      request("/api/v1"),
+      request("/api/private/overview"),
       env as any,
       executionCtx,
     );
@@ -450,27 +284,7 @@ describe("Hono API app routing", () => {
     expect(response.headers.get("pragma")).toBeNull();
   });
 
-  it("routes public session and resource endpoints through Hono", async () => {
-    await apiApp.fetch(
-      request("/api/public/session", { method: "POST" }),
-      env as any,
-      executionCtx,
-    );
-    await apiApp.fetch(
-      request("/api/public/session", { method: "DELETE" }),
-      env as any,
-      executionCtx,
-    );
-    expect(handleLegacyAuthLogin).toHaveBeenCalled();
-    expect(handleLegacyAuthLogout).toHaveBeenCalled();
-  });
-
   it("routes private endpoints only after session authentication", async () => {
-    await apiApp.fetch(
-      request("/api/private/archive/file?key=a", { method: "HEAD" }),
-      env as any,
-      executionCtx,
-    );
     await apiApp.fetch(
       request("/api/private/realtime/ws?siteId=site-1"),
       env as any,
@@ -478,7 +292,6 @@ describe("Hono API app routing", () => {
     );
 
     expect(requireSession).toHaveBeenCalled();
-    expect(handlePrivateArchiveFile).toHaveBeenCalled();
     expect(handleAdminWs).toHaveBeenCalled();
   });
 
@@ -504,13 +317,13 @@ describe("Hono API app routing", () => {
     vi.mocked(requireSession).mockResolvedValueOnce(null);
 
     const response = await apiApp.fetch(
-      request("/api/private/admin/users"),
+      request("/api/private/admin/members"),
       env as any,
       executionCtx,
     );
 
     expect(response.status).toBe(401);
-    expect(handleUsersAdmin).not.toHaveBeenCalled();
+    expect(handleMembersAdmin).not.toHaveBeenCalled();
   });
 
   it("does not mount legacy private API aliases", async () => {
@@ -575,14 +388,5 @@ describe("Hono API app routing", () => {
       original,
       expect.anything(),
     );
-  });
-
-  it("routes release comparison through Hono", async () => {
-    const original = request("/api/private/releases/compare?head=v2&base=v1");
-
-    const response = await apiApp.fetch(original, env as any, executionCtx);
-
-    expect(await response.text()).toBe("compare");
-    expect(handleReleasesCompareRequest).toHaveBeenCalledWith(original, env);
   });
 });

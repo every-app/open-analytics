@@ -7,15 +7,9 @@ import {
 } from "@/lib/dashboard/client/request";
 describe("dashboard client request helpers", () => {
   const realFetch = globalThis.fetch;
-  const realDemoMode = process.env.VITE_DEMO_MODE;
 
   afterEach(() => {
     globalThis.fetch = realFetch;
-    if (realDemoMode == null) {
-      delete process.env.VITE_DEMO_MODE;
-    } else {
-      process.env.VITE_DEMO_MODE = realDemoMode;
-    }
     vi.restoreAllMocks();
   });
 
@@ -27,7 +21,6 @@ describe("dashboard client request helpers", () => {
   }
 
   it("dedupes concurrent GET requests by URL and clears the entry after settlement", async () => {
-    delete process.env.VITE_DEMO_MODE;
     const fetchMock = vi
       .fn()
       .mockImplementation(() =>
@@ -55,7 +48,6 @@ describe("dashboard client request helpers", () => {
   });
 
   it("skips dedupe when disabled or when a signal is provided", async () => {
-    delete process.env.VITE_DEMO_MODE;
     const fetchMock = vi
       .fn()
       .mockImplementation(() =>
@@ -104,7 +96,6 @@ describe("dashboard client request helpers", () => {
   });
 
   it("rewrites public dashboard GET requests and omits credentials", async () => {
-    delete process.env.VITE_DEMO_MODE;
     const fetchMock = vi
       .fn()
       .mockImplementation(() =>
@@ -130,38 +121,7 @@ describe("dashboard client request helpers", () => {
     expect(String(fetchMock.mock.calls[0][0])).not.toContain("siteId=");
   });
 
-  it("uses fetch for public and private dashboard GET requests in demo mode", async () => {
-    process.env.VITE_DEMO_MODE = "1";
-    const fetchMock = vi
-      .fn()
-      .mockImplementationOnce(() =>
-        Promise.resolve(jsonResponse({ value: "private" })),
-      )
-      .mockImplementationOnce(() =>
-        Promise.resolve(jsonResponse({ value: "public" })),
-      );
-    globalThis.fetch = fetchMock;
-
-    await expect(
-      fetchPrivateJson("/api/private/overview", { siteId: "site-1" }),
-    ).resolves.toEqual({ value: "private" });
-    await expect(
-      fetchPrivateJson("/api/private/overview", {
-        siteId: publicDashboardSiteId("site-1"),
-      }),
-    ).resolves.toEqual({ value: "public" });
-
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock.mock.calls[0][0]).toBe(
-      "/api/private/overview?siteId=site-1",
-    );
-    expect(fetchMock.mock.calls[1][0]).toBe(
-      "/api/public/share/site-1/overview",
-    );
-  });
-
   it("keeps public and private request dedupe keys separate", async () => {
-    delete process.env.VITE_DEMO_MODE;
     const fetchMock = vi
       .fn()
       .mockImplementation(() =>
@@ -192,7 +152,6 @@ describe("dashboard client request helpers", () => {
   });
 
   it("throws AbortError before issuing a request when the signal is already aborted", async () => {
-    delete process.env.VITE_DEMO_MODE;
     const fetchMock = vi.fn();
     globalThis.fetch = fetchMock;
     const controller = new AbortController();
@@ -210,7 +169,6 @@ describe("dashboard client request helpers", () => {
   });
 
   it("includes response text in GET and mutate errors", async () => {
-    delete process.env.VITE_DEMO_MODE;
     globalThis.fetch = vi
       .fn()
       .mockResolvedValueOnce(new Response("get failed", { status: 503 }))
@@ -227,7 +185,6 @@ describe("dashboard client request helpers", () => {
   });
 
   it("serializes mutation params and optional JSON bodies", async () => {
-    delete process.env.VITE_DEMO_MODE;
     const fetchMock = vi
       .fn()
       .mockImplementation(() =>
@@ -259,32 +216,6 @@ describe("dashboard client request helpers", () => {
       method: "DELETE",
       credentials: "include",
       cache: "no-store",
-    });
-  });
-
-  it("uses fetch for mutations in demo mode", async () => {
-    process.env.VITE_DEMO_MODE = "1";
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(jsonResponse({ ok: true, saved: true }));
-    globalThis.fetch = fetchMock;
-
-    await expect(
-      fetchPrivateJsonMutate(
-        "/api/private/sites",
-        "POST",
-        { siteId: "site-1" },
-        {
-          name: "Demo",
-        },
-      ),
-    ).resolves.toEqual({ ok: true, saved: true });
-    expect(fetchMock).toHaveBeenCalledWith("/api/private/sites?siteId=site-1", {
-      method: "POST",
-      credentials: "include",
-      cache: "no-store",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: "Demo" }),
     });
   });
 });

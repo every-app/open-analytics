@@ -19,12 +19,8 @@ import {
 } from "@/lib/edge/analytics/contract";
 import { parseFilterDsl } from "@/lib/filter-contract";
 
-const allAudiences = new Set([
-  "private-dashboard",
-  "public-share",
-  "api-v1",
-] as const);
-const privateAudiences = new Set(["private-dashboard", "api-v1"] as const);
+const allAudiences = new Set(["private-dashboard", "public-share"] as const);
+const privateAudiences = new Set(["private-dashboard"] as const);
 const registryEntries: readonly (readonly [string, FilterFieldDefinition])[] = [
   [
     "page.path",
@@ -192,7 +188,7 @@ describe("typed filter contract", () => {
       assertFilterAudience(
         privateEventDocument,
         analyticsFilterRegistry,
-        "api-v1",
+        "private-dashboard",
       ),
     ).not.toThrow();
   });
@@ -1077,7 +1073,7 @@ describe("typed filter contract", () => {
       assertFilterAudience(privateOnly, registry, "public-share"),
     ).toThrow(/not allowed/);
     expect(() =>
-      assertFilterAudience(privateOnly, registry, "api-v1"),
+      assertFilterAudience(privateOnly, registry, "private-dashboard"),
     ).not.toThrow();
   });
 });

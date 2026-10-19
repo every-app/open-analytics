@@ -126,8 +126,8 @@ const rule = (overrides: Record<string, unknown> = {}): NotificationRuleData =>
   }) as unknown as NotificationRuleData;
 
 const members = [
-  { userId: "u1", name: "Ada", username: "ada", email: "ada@example.test" },
-  { userId: "u2", name: "", username: "grace", email: "grace@example.test" },
+  { userId: "u1", name: "Ada", email: "ada@example.test" },
+  { userId: "u2", name: null, email: "grace@example.test" },
 ] as MemberData[];
 
 const sites = [
@@ -214,15 +214,10 @@ describe("team notification rule model", () => {
 
     expect(memberName(undefined)).toBe("");
     expect(memberName(members[0])).toBe("Ada");
-    expect(memberName(members[1])).toBe("grace");
+    expect(memberName(members[1])).toBe("grace@example.test");
     expect(
-      memberName({
-        userId: "u3",
-        name: "",
-        username: "",
-        email: "e@x",
-      } as MemberData),
-    ).toBe("e@x");
+      memberName({ userId: "u3", name: "", email: "" } as MemberData),
+    ).toBe("u3");
     expect(defaultRecipientUserIds(members, "u2")).toEqual(["u2"]);
     expect(defaultRecipientUserIds(members, "missing")).toEqual(["u1"]);
     expect(defaultRecipientUserIds([], "missing")).toEqual([]);

@@ -29,18 +29,9 @@ const TO = FROM + 2 * 60 * 60 * 1000;
 
 const adminSession: EdgeSessionClaims = {
   userId: "admin-1",
-  username: "admin",
-  displayName: "Admin",
+  email: "admin@example.test",
+  teamId: "team-1",
   systemRole: "admin",
-  exp: 9_999_999_999,
-};
-
-const memberSession: EdgeSessionClaims = {
-  userId: "user-1",
-  username: "member",
-  displayName: "Member",
-  systemRole: "user",
-  exp: 9_999_999_999,
 };
 
 function createD1Env(resultSets: D1Row[][], firstRows: Array<D1Row | null>) {
@@ -98,7 +89,6 @@ async function handleTeamDashboard(
 describe("edge team query low branch coverage", () => {
   beforeEach(() => {
     vi.useFakeTimers({ now: NOW });
-    requireSessionMock.mockReset();
   });
 
   afterEach(() => {
@@ -144,65 +134,14 @@ describe("edge team query low branch coverage", () => {
     expect(calls[0].sql).toContain("ORDER BY created_at DESC");
   });
 
-  it("rejects missing team ids after session validation without querying D1", async () => {
+  it("refuses another organization's team before listing sites", async () => {
     requireSessionMock.mockResolvedValue(adminSession);
     const { env, prepare } = createD1Env([], []);
 
     const response = await handleTeamDashboard(
       new Request("https://edge.test/api/private/team-dashboard"),
       env,
-      url({ from: FROM, to: TO }),
-    );
-
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toMatchObject({
-      ok: false,
-      error: { message: "teamId is required" },
-    });
-    expect(requireSessionMock).toHaveBeenCalledTimes(1);
-    expect(prepare).not.toHaveBeenCalled();
-  });
-
-  it("uses membership-aware team resolution for non-admin sessions", async () => {
-    requireSessionMock.mockResolvedValue(memberSession);
-    const { env, calls } = createD1Env(
-      [[]],
-      [
-        {
-          id: "team-1",
-          ownerUserId: "owner-1",
-          role: "member",
-          siteIdsJson: "[]",
-        },
-      ],
-    );
-
-    const response = await handleTeamDashboard(
-      new Request("https://edge.test/api/private/team-dashboard"),
-      env,
-      url({ teamId: " team-1 ", from: FROM, to: TO }),
-    );
-
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({
-      ok: true,
-      data: { sites: [], trend: [] },
-    });
-    expect(calls[0]).toMatchObject({
-      kind: "first",
-      bindings: ["user-1", "team-1", 1],
-    });
-    expect(calls[0].sql).toContain('FROM "team_members"');
-  });
-
-  it("passes through team not found responses before listing sites", async () => {
-    requireSessionMock.mockResolvedValue(adminSession);
-    const { env, calls } = createD1Env([], [null]);
-
-    const response = await handleTeamDashboard(
-      new Request("https://edge.test/api/private/team-dashboard"),
-      env,
-      url({ teamId: "missing-team", from: FROM, to: TO }),
+      url({ teamId: "other-team", from: FROM, to: TO }),
     );
 
     expect(response.status).toBe(404);
@@ -210,11 +149,7 @@ describe("edge team query low branch coverage", () => {
       ok: false,
       error: { message: "Team not found" },
     });
-    expect(calls).toHaveLength(1);
-    expect(calls[0]).toMatchObject({
-      kind: "first",
-      bindings: ["missing-team", 1],
-    });
+    expect(prepare).not.toHaveBeenCalled();
   });
 
   it("defaults team trend interval to day when interval is omitted", async () => {
@@ -239,7 +174,7 @@ describe("edge team query low branch coverage", () => {
         [],
         [{ siteId: "site-1", bucket: 0, views: 3, visitors: 2 }],
       ],
-      [{ id: "team-1" }],
+      [],
     );
 
     const response = await handleTeamDashboard(
@@ -273,8 +208,8 @@ describe("edge team query low branch coverage", () => {
         ],
       },
     });
-    expect(calls).toHaveLength(7);
-    expect(calls[6].sql).toContain(
+    expect(calls).toHaveLength(6);
+    expect(calls[5].sql).toContain(
       `started_at >= ${FROM} AND started_at < ${FROM + 24 * 60 * 60 * 1000}`,
     );
   });

@@ -1,32 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import type { BotEvent } from "@/components/dashboard/admin/request-observation/model";
-import {
-  BOT_EVENT_DETAIL_SKELETON_DATA,
-  isInvalidRequestObservationCursorError,
-  latencyFormat,
-  nestedMessage,
-  NORMAL_REQUEST_DETAIL_SKELETON_DATA,
-  normalizeRequestObservationCategory,
-  normalizeRequestObservationEvent,
-  normalizeRequestObservationTab,
-  type RequestObservationData,
-  requestObservationDetailId,
-  requestObservationUiLabels,
-  shortId,
-  withRequestObservabilityDefaults,
-} from "@/components/dashboard/admin/request-observation/model";
 import {
   changeRateClass,
   emptyOverviewMetrics,
   emptySiteMetricChangeRates,
   epochSecondsToMs,
   formatChangeRate,
-  formatCountTemplate,
   getSiteSlug,
-  normalizeSiteIds,
   safeSlug,
-  siteAccessSummary,
   sortSitesForInitialOrder,
   withSiteSlug,
 } from "@/components/dashboard/admin/team-management/model";
@@ -559,7 +540,7 @@ describe("dashboard domain model helpers", () => {
     ).toHaveLength(2);
   });
 
-  it("covers site-management metric, slug, sorting, and access helpers", () => {
+  it("covers site-management metric, slug, and sorting helpers", () => {
     expect(emptyOverviewMetrics().views).toBe(0);
     expect(emptySiteMetricChangeRates().views).toBeNull();
     expect(formatChangeRate(null)).toBeNull();
@@ -583,23 +564,6 @@ describe("dashboard domain model helpers", () => {
         { id: "c", name: "Zed", overview: { views: 1, visitors: 5 } },
       ]).map((item) => item.id),
     ).toEqual(["a", "b", "c"]);
-    expect(normalizeSiteIds(["a", " a ", null, "", 2, "b"])).toEqual([
-      "a",
-      "2",
-      "b",
-    ]);
-    expect(normalizeSiteIds(null)).toEqual([]);
-    expect(formatCountTemplate("{count} sites", 3)).toBe("3 sites");
-    expect(siteAccessSummary([], [], { siteAccessAll: "all" } as never)).toBe(
-      "all",
-    );
-    expect(
-      siteAccessSummary(
-        ["a", "missing"],
-        [{ id: "a", name: "Alpha", domain: "a.test" }],
-        { siteAccessSelected: "{count} selected" } as never,
-      ),
-    ).toBe("2 selected");
   });
 
   it("normalizes overview geo filters, breadcrumbs, and page paths", () => {
@@ -966,126 +930,5 @@ describe("dashboard domain model helpers", () => {
         unknownLabel: "Unknown",
       }),
     ).toBeNull();
-  });
-
-  it("normalizes request-observation legacy data and localizes its UI labels", () => {
-    expect(normalizeRequestObservationTab("abnormal")).toBe("blocked");
-    expect(normalizeRequestObservationTab("normal")).toBe("included");
-    expect(normalizeRequestObservationTab("other")).toBe("overview");
-    expect(normalizeRequestObservationCategory(" MEDIUM_THREAT ")).toBe(
-      "suspected_bot",
-    );
-    expect(normalizeRequestObservationCategory("high_threat")).toBe("bot");
-    expect(normalizeRequestObservationCategory("normal")).toBe("normal");
-    expect(normalizeRequestObservationCategory("custom_block")).toBe(
-      "custom_block",
-    );
-    expect(normalizeRequestObservationCategory("unknown")).toBe("");
-    const event = normalizeRequestObservationEvent(
-      {
-        ...BOT_EVENT_DETAIL_SKELETON_DATA,
-        category: "high_threat",
-        disposition: "invalid",
-        reasons: ["rule", 1],
-        ip: null,
-        userAgent: 2,
-        verifiedBotCategory: false,
-        botScore: "bad",
-      } as unknown as BotEvent,
-      "blocked",
-    );
-    expect(event).toMatchObject({
-      category: "bot",
-      disposition: "blocked",
-      reasons: ["rule"],
-      ip: "",
-      userAgent: "",
-      verifiedBotCategory: "",
-      botScore: null,
-    });
-    expect(NORMAL_REQUEST_DETAIL_SKELETON_DATA.disposition).toBe("");
-    expect(shortId("short-id")).toBe("short-id");
-    expect(shortId("123456789012345")).toBe("123456789...");
-    expect(requestObservationDetailId({ traceId: "trace", rayId: "ray" })).toBe(
-      "trace",
-    );
-    expect(requestObservationDetailId({ traceId: "", rayId: "ray" })).toBe(
-      "ray",
-    );
-    expect(requestObservationDetailId({ traceId: "", rayId: "" })).toBe("");
-    const latencyCopy = {
-      overviewLabels: { latencyMilliseconds: "{value} ms" },
-    } as never;
-    expect(latencyFormat("en", latencyCopy, null)).toBe("--");
-    expect(latencyFormat("en", latencyCopy, 12.5)).toBe("12.5 ms");
-    expect(latencyFormat("en", latencyCopy, 1250)).not.toBe("--");
-    expect(nestedMessage({ a: { b: "value" } }, ["a", "b"], "fallback")).toBe(
-      "value",
-    );
-    expect(nestedMessage({}, ["a"], "fallback")).toBe("fallback");
-    expect(nestedMessage({ a: " " }, ["a"], "fallback")).toBe("fallback");
-    expect(requestObservationUiLabels("en", {} as never).blocked).toBe(
-      "Blocked requests",
-    );
-    expect(requestObservationUiLabels("zh", {} as never).blocked).toBe(
-      "拦截请求",
-    );
-    expect(requestObservationUiLabels("ja", {} as never).blocked).toBe(
-      "ブロック済みリクエスト",
-    );
-    expect(
-      requestObservationUiLabels("en", {
-        tabs: { blocked: "Custom blocked" },
-      } as never).blocked,
-    ).toBe("Custom blocked");
-    expect(
-      isInvalidRequestObservationCursorError(
-        new Error("request_observation_invalid_cursor"),
-      ),
-    ).toBe(true);
-    expect(
-      isInvalidRequestObservationCursorError(
-        new Error("Invalid request observation page cursor"),
-      ),
-    ).toBe(true);
-    expect(isInvalidRequestObservationCursorError(new Error("other"))).toBe(
-      false,
-    );
-    expect(isInvalidRequestObservationCursorError("other")).toBe(false);
-
-    const normalized = withRequestObservabilityDefaults({
-      trend: [
-        {
-          timestampMs: 10,
-          abnormalCount: 8,
-          normalCount: 4,
-          botCount: 2,
-          customBlockedCount: 1,
-          avgLatencyMs: 25,
-        },
-      ],
-      summary: { total: 0, baselineRequests: 0, affectedSites: 1 },
-      events: [BOT_EVENT_DETAIL_SKELETON_DATA],
-      normalEvents: [NORMAL_REQUEST_DETAIL_SKELETON_DATA],
-      mapPoints: [{ latitude: 1, longitude: 2 }],
-      reasons: [],
-      countries: [],
-      asns: [],
-    } as unknown as RequestObservationData);
-    expect(normalized.trend[0]).toMatchObject({
-      totalCount: 12,
-      includedCount: 4,
-      blockedCount: 8,
-      suspectedBotCount: 5,
-      botCount: 2,
-      customBlockedCount: 1,
-      latencySampleWeight: 4,
-      avgLatencyMs: 25,
-    });
-    expect(normalized.overview!.totalRequests).toBeGreaterThan(0);
-    expect(normalized.blocked!.events[0]?.disposition).toBe("blocked");
-    expect(normalized.included!.events[0]?.disposition).toBe("included");
-    expect(normalized.mapPoints).toHaveLength(1);
-    expect(normalized.included!.pagination!.limit).toBeGreaterThan(0);
   });
 });

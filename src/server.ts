@@ -13,6 +13,7 @@ import { dispatchInternalScheduledTasks } from "@/lib/edge/scheduled-tasks/dispa
 import type { Env } from "@/lib/edge/types";
 import apiApp from "@/lib/hono/app";
 import { shouldUseHono } from "@/lib/hono/path-match";
+import { tools } from "@/lib/mcp/tools";
 import { resolvePageRequest } from "@/middleware";
 export interface AppServerContext {
   env: Env;
@@ -174,9 +175,11 @@ async function serveRequest(
 
 // everyApp() verifies the identity the Every App gateway signs onto every
 // request before any app code runs (`user` is null only on a route
-// everyapp.config.ts declares public), and answers the gateway's tool calls.
-const app = everyApp<Env>((request, env, ctx, user) =>
-  serveRequest(request, env, ctx, user),
+// everyapp.config.ts declares public), and answers the gateway's tool calls
+// for the agent tools (src/lib/mcp/tools.ts).
+const app = everyApp<Env>(
+  (request, env, ctx, user) => serveRequest(request, env, ctx, user),
+  { tools },
 );
 
 export default {

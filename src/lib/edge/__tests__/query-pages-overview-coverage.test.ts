@@ -1,8 +1,8 @@
-import { readFileSync } from "node:fs";
-import { DatabaseSync } from "node:sqlite";
+import type { DatabaseSync } from "node:sqlite";
 
 import { describe, expect, it, vi } from "vitest";
 
+import { createMigratedDatabase } from "@/../scripts/schema/database";
 import {
   createQueryTime,
   EMPTY_FILTER_DOCUMENT,
@@ -56,7 +56,6 @@ import {
 import type { Env } from "@/lib/edge/types";
 
 import { filterFixture } from "./filter-fixtures";
-import { installVisitSiteIdentityFixture } from "./site-identity-fixture";
 type D1Row = Record<string, unknown>;
 type QueryBinding = string | number | null;
 interface QueryCall {
@@ -103,67 +102,19 @@ function createD1Env(
     prepare,
   };
 }
-function installDirectEventFilterTables(database: DatabaseSync): void {
-  const columns = database
-    .prepare("PRAGMA table_info(custom_events)")
-    .all() as Array<{ name?: string }>;
-  if (columns.some((column) => column.name === "event_pk")) return;
-  database.exec(`
-    DROP TABLE IF EXISTS custom_events;
-    DROP TABLE IF EXISTS custom_event_names;
-    CREATE TABLE custom_event_names (
-      id INTEGER PRIMARY KEY,
-      site_id TEXT NOT NULL,
-      name TEXT NOT NULL
-    );
-    CREATE TABLE custom_events (
-      event_pk INTEGER PRIMARY KEY,
-      event_id TEXT NOT NULL,
-      site_id TEXT NOT NULL,
-      site_pk INTEGER NOT NULL DEFAULT 1,
-      visit_id TEXT NOT NULL,
-      event_name_id INTEGER NOT NULL,
-      occurred_at INTEGER NOT NULL
-    );
-  `);
+function createAnalyticsDatabase(): DatabaseSync {
+  const database = createMigratedDatabase();
+  database
+    .prepare("INSERT INTO site_identities (site_pk, site_id) VALUES (1, ?)")
+    .run(siteId);
+  return database;
 }
 function createScopedOverviewSqliteEnv(): {
   env: Env;
   database: DatabaseSync;
   close: () => void;
 } {
-  const database = new DatabaseSync(":memory:");
-  for (const migration of [
-    "migrations/0008_rebuild_analytics.sql",
-    "migrations/0013_add_visit_performance_metrics.sql",
-    "migrations/0017_structured_custom_events.sql",
-    "migrations/0019_add_user_identity.sql",
-  ]) {
-    database.exec(readFileSync(migration, "utf8"));
-  }
-  installVisitSiteIdentityFixture(database);
-  database.exec(`
-    ALTER TABLE custom_event_names ADD COLUMN site_pk INTEGER;
-    ALTER TABLE custom_events ADD COLUMN site_pk INTEGER;
-
-    CREATE TRIGGER test_custom_event_names_site_pk
-    AFTER INSERT ON custom_event_names
-    WHEN NEW.site_pk IS NULL
-    BEGIN
-      UPDATE custom_event_names
-      SET site_pk = (SELECT site_pk FROM site_identities WHERE site_id = NEW.site_id)
-      WHERE id = NEW.id;
-    END;
-
-    CREATE TRIGGER test_custom_events_site_pk
-    AFTER INSERT ON custom_events
-    WHEN NEW.site_pk IS NULL
-    BEGIN
-      UPDATE custom_events
-      SET site_pk = (SELECT site_pk FROM site_identities WHERE site_id = NEW.site_id)
-      WHERE event_pk = NEW.event_pk;
-    END;
-  `);
+  const database = createAnalyticsDatabase();
   const env = {
     DB: {
       prepare: (sql: string) => ({
@@ -343,9 +294,9 @@ describe("edge pages D1 queries", () => {
     const { env, database, close } = createScopedOverviewSqliteEnv();
     const insert = database.prepare(`
       INSERT INTO visits (
-        visit_id, site_id, visitor_id, session_id, status, started_at,
+        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
         last_activity_at, pathname, hostname, title, query_string, hash_fragment
-      ) VALUES (?, ?, ?, ?, 'closed', ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, ?, ?, ?, ?)
     `);
 
     try {
@@ -466,9 +417,9 @@ describe("edge pages D1 queries", () => {
     const { env, database, close } = createScopedOverviewSqliteEnv();
     const insert = database.prepare(`
       INSERT INTO visits (
-        visit_id, site_id, visitor_id, session_id, status, started_at,
+        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
         last_activity_at, pathname, hostname, title, query_string, hash_fragment
-      ) VALUES (?, ?, ?, ?, 'closed', ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, ?, ?, ?, ?)
     `);
 
     try {
@@ -669,16 +620,7 @@ describe("edge pages D1 queries", () => {
   });
 
   it("materializes page-card visits once while preserving path-level bounces", async () => {
-    const database = new DatabaseSync(":memory:");
-    for (const migration of [
-      "migrations/0008_rebuild_analytics.sql",
-      "migrations/0013_add_visit_performance_metrics.sql",
-      "migrations/0019_add_user_identity.sql",
-    ]) {
-      database.exec(readFileSync(migration, "utf8"));
-    }
-    installVisitSiteIdentityFixture(database);
-    installDirectEventFilterTables(database);
+    const database = createAnalyticsDatabase();
     const calls: QueryCall[] = [];
     const env = {
       DB: {
@@ -697,9 +639,9 @@ describe("edge pages D1 queries", () => {
     } as Env;
     const insert = database.prepare(`
       INSERT INTO visits (
-        visit_id, site_id, visitor_id, session_id, status, started_at,
+        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
         last_activity_at, pathname, hostname, duration_ms
-      ) VALUES (?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?)
+      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?)
     `);
 
     try {
@@ -2292,16 +2234,7 @@ describe("edge overview D1 queries and handlers", () => {
   });
 
   it("materializes filtered overview visits once while preserving aggregates", async () => {
-    const database = new DatabaseSync(":memory:");
-    for (const migration of [
-      "migrations/0008_rebuild_analytics.sql",
-      "migrations/0013_add_visit_performance_metrics.sql",
-      "migrations/0019_add_user_identity.sql",
-    ]) {
-      database.exec(readFileSync(migration, "utf8"));
-    }
-    installVisitSiteIdentityFixture(database);
-    installDirectEventFilterTables(database);
+    const database = createAnalyticsDatabase();
     const calls: QueryCall[] = [];
     const env = {
       DB: {
@@ -2320,9 +2253,9 @@ describe("edge overview D1 queries and handlers", () => {
     } as Env;
     const insert = database.prepare(`
       INSERT INTO visits (
-        visit_id, site_id, visitor_id, session_id, status, started_at,
+        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
         last_activity_at, pathname, hostname, country, browser, duration_ms
-      ) VALUES (?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?, ?, ?)
+      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?, ?, ?)
     `);
 
     try {
@@ -2417,9 +2350,9 @@ describe("edge overview D1 queries and handlers", () => {
         .prepare(
           `
           INSERT INTO visits (
-            visit_id, site_id, visitor_id, session_id, status, started_at,
+            site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
             last_activity_at, pathname, hostname
-          ) VALUES (?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test')
+          ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test')
         `,
         )
         .run(
@@ -2433,16 +2366,16 @@ describe("edge overview D1 queries and handlers", () => {
         );
       sqlite.database
         .prepare(
-          "INSERT INTO custom_event_names (id, site_id, name, last_seen_at) VALUES (?, ?, ?, ?)",
+          "INSERT INTO custom_event_names (site_pk, id, site_id, name, last_seen_at) VALUES (1, ?, ?, ?, ?)",
         )
         .run(1, siteId, "signup", eventAt);
       sqlite.database
         .prepare(
           `
           INSERT INTO custom_events (
-            event_pk, event_id, site_id, visit_id, event_name_id, occurred_at,
+            site_pk, event_pk, event_id, site_id, visit_id, event_name_id, occurred_at,
             received_at, sequence, node_count, value_count
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
         )
         .run(
@@ -2503,16 +2436,7 @@ describe("edge overview D1 queries and handlers", () => {
   });
 
   it("filters overview visits by each session's entry path", async () => {
-    const database = new DatabaseSync(":memory:");
-    for (const migration of [
-      "migrations/0008_rebuild_analytics.sql",
-      "migrations/0013_add_visit_performance_metrics.sql",
-      "migrations/0019_add_user_identity.sql",
-    ]) {
-      database.exec(readFileSync(migration, "utf8"));
-    }
-    installVisitSiteIdentityFixture(database);
-    installDirectEventFilterTables(database);
+    const database = createAnalyticsDatabase();
     const calls: QueryCall[] = [];
     const env = {
       DB: {
@@ -2531,9 +2455,9 @@ describe("edge overview D1 queries and handlers", () => {
     } as Env;
     const insert = database.prepare(`
       INSERT INTO visits (
-        visit_id, site_id, visitor_id, session_id, status, started_at,
+        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
         last_activity_at, pathname, hostname, duration_ms
-      ) VALUES (?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?)
+      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?)
     `);
 
     try {
@@ -2609,16 +2533,7 @@ describe("edge overview D1 queries and handlers", () => {
   });
 
   it("uses filtered visits to select retention visitors, then counts their later visits", async () => {
-    const database = new DatabaseSync(":memory:");
-    for (const migration of [
-      "migrations/0008_rebuild_analytics.sql",
-      "migrations/0013_add_visit_performance_metrics.sql",
-      "migrations/0019_add_user_identity.sql",
-    ]) {
-      database.exec(readFileSync(migration, "utf8"));
-    }
-    installVisitSiteIdentityFixture(database);
-    installDirectEventFilterTables(database);
+    const database = createAnalyticsDatabase();
     const env = {
       DB: {
         prepare: (sql: string) => ({
@@ -2632,9 +2547,9 @@ describe("edge overview D1 queries and handlers", () => {
     } as Env;
     const insert = database.prepare(`
       INSERT INTO visits (
-        visit_id, site_id, visitor_id, session_id, status, started_at,
+        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
         last_activity_at, pathname, hostname
-      ) VALUES (?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test')
+      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test')
     `);
 
     try {
@@ -2760,16 +2675,7 @@ describe("edge overview D1 queries and handlers", () => {
   });
 
   it("materializes filtered trend visits once while preserving bucket metrics", async () => {
-    const database = new DatabaseSync(":memory:");
-    for (const migration of [
-      "migrations/0008_rebuild_analytics.sql",
-      "migrations/0013_add_visit_performance_metrics.sql",
-      "migrations/0019_add_user_identity.sql",
-    ]) {
-      database.exec(readFileSync(migration, "utf8"));
-    }
-    installVisitSiteIdentityFixture(database);
-    installDirectEventFilterTables(database);
+    const database = createAnalyticsDatabase();
     const calls: QueryCall[] = [];
     const env = {
       DB: {
@@ -2788,9 +2694,9 @@ describe("edge overview D1 queries and handlers", () => {
     } as Env;
     const insert = database.prepare(`
       INSERT INTO visits (
-        visit_id, site_id, visitor_id, session_id, status, started_at,
+        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
         last_activity_at, pathname, hostname, country, duration_ms
-      ) VALUES (?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?, ?)
+      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?, ?)
     `);
 
     try {

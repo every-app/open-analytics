@@ -655,11 +655,7 @@ export async function sendNotificationTest(input: {
   return res.data;
 }
 export async function updateMyProfile(input: {
-  username?: string;
-  email?: string;
   name?: string;
-  currentPassword?: string;
-  password?: string;
   timeZone?: string;
   preferredLocale?: AccountUserData["preferredLocale"];
 }): Promise<AccountUserData> {

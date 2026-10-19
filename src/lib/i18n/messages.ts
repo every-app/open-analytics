@@ -4,37 +4,7 @@ import type { Locale } from "./config";
 export interface AppMessages {
   appName: string;
   uiGallery: {
-    searchLabel: string;
-    searchPlaceholder: string;
-    backToApp: string;
-    noSearchResults: string;
-    toggleNavigation: string;
-    library: string;
-    componentsCount: string;
-    statesCount: string;
-    designSystem: string;
-    pageTitle: string;
-    catalogSummary: string;
-    categories: {
-      inputs: string;
-      feedback: string;
-      foundations: string;
-      navigation: string;
-      "data-display": string;
-      overlays: string;
-      "product-analytics": string;
-      "product-management": string;
-      "product-realtime": string;
-    };
-    browseCategories: string;
-    featuredComponents: string;
-    backToCatalog: string;
-    canonicalStates: string;
-    browseAllComponents: string;
-    previewState: string;
-    resetPreview: string;
-    expandCode: string;
-    collapseCode: string;
+    categories: Record<string, never>;
   };
   navigation: {
     overview: string;
@@ -644,7 +614,6 @@ export interface AppMessages {
     eventTime: string;
     eventKind: string;
     eventName: string;
-    siteId: string;
     traceId: string;
     receivedAt: string;
     startedAt: string;
@@ -708,7 +677,6 @@ export interface AppMessages {
     empty: string;
     loadError: string;
     loadMoreError: string;
-    retry: string;
     trendTitle: string;
     otherPages: string;
     hashTab: string;
@@ -1479,11 +1447,6 @@ export interface AppMessages {
     savingTracking: string;
     save: string;
     saving: string;
-    transferTitle: string;
-    transferSubtitle: string;
-    transferTeamLabel: string;
-    transfer: string;
-    transferring: string;
     scriptTitle: string;
     scriptSubtitle: string;
     scriptHint: string;
@@ -1499,8 +1462,6 @@ export interface AppMessages {
     toasts: {
       saved: string;
       saveFailed: string;
-      transferred: string;
-      transferFailed: string;
       scriptLoadFailed: string;
       settingsLoadFailed: string;
       settingsPropagationHint: string;
@@ -1517,28 +1478,11 @@ export interface AppMessages {
     profileDescription: string;
     nicknameLabel: string;
     nicknamePlaceholder: string;
-    usernameLabel: string;
-    usernamePlaceholder: string;
-    usernameDescription: string;
     emailLabel: string;
-    emailPlaceholder: string;
-    invalidProfile: string;
     profileSave: string;
     profileSaving: string;
     profileSaved: string;
     profileSaveFailed: string;
-    passwordTitle: string;
-    passwordDescription: string;
-    currentPasswordLabel: string;
-    newPasswordLabel: string;
-    confirmPasswordLabel: string;
-    currentPasswordRequired: string;
-    passwordTooShort: string;
-    passwordMismatch: string;
-    passwordSave: string;
-    passwordSaving: string;
-    passwordSaved: string;
-    passwordSaveFailed: string;
     preferredLanguageTitle: string;
     preferredLanguageDescription: string;
     preferredLanguageLabel: string;
@@ -1764,64 +1708,14 @@ export interface AppMessages {
     docsLabel: string;
     homeLabel: string;
   };
-  login: {
-    title: string;
-    subtitle: string;
-    username: string;
-    password: string;
-    signIn: string;
-    invalidCredentials: string;
-  };
+  login: Record<string, never>;
   accountLinks: {
     invite: {
-      title: string;
-      subtitle: string;
-      loading: string;
-      missingToken: string;
-      loadFailed: string;
-      accept: string;
-      accepting: string;
-      accepted: string;
-      acceptFailed: string;
-      signIn: string;
-      signedInNotice: string;
-      teamLabel: string;
-      roleLabel: string;
-      emailLabel: string;
-      accountEmailLabel: string;
-      anyEmail: string;
-      expiresLabel: string;
-      usernameLabel: string;
-      nameLabel: string;
-      passwordLabel: string;
-      roles: {
-        admin: string;
-        member: string;
-      };
+      roles: Record<string, never>;
     };
-    resetPassword: {
-      title: string;
-      subtitle: string;
-      loading: string;
-      missingToken: string;
-      loadFailed: string;
-      reset: string;
-      resetting: string;
-      resetDone: string;
-      resetFailed: string;
-      signIn: string;
-      accountLabel: string;
-      emailLabel: string;
-      expiresLabel: string;
-      passwordLabel: string;
-      confirmPasswordLabel: string;
-      passwordTooShort: string;
-      passwordMismatch: string;
-    };
+    resetPassword: Record<string, never>;
   };
-  empty: {
-    noTeams: string;
-  };
+  empty: Record<string, never>;
   errorPage: {
     notFoundEyebrow: string;
     notFoundTitle: string;
@@ -1843,7 +1737,6 @@ export interface AppMessages {
     reportHint: string;
   };
   actions: {
-    logout: string;
     switchToEnglish: string;
     switchToChinese: string;
     switchToTraditionalChinese: string;
@@ -1852,69 +1745,21 @@ export interface AppMessages {
     switchToDark: string;
   };
   teamSelect: {
-    groupLabel: string;
-    groups: {
-      created: string;
-      managed: string;
-      member: string;
-      system: string;
-    };
-    createHint: string;
-    createTitle: string;
-    createDescription: string;
-    nameLabel: string;
-    namePlaceholder: string;
-    slugLabel: string;
-    slugPlaceholder: string;
-    create: string;
-    creating: string;
+    groups: Record<string, never>;
     cancel: string;
-    invalidName: string;
-    createFailed: string;
-    createSuccess: string;
   };
   teamManagement: {
-    stats: {
-      sites: string;
-      members: string;
-    };
-    toasts: {
-      teamSaved: string;
-      teamSaveFailed: string;
-      teamDeleted: string;
-      teamDeleteFailed: string;
-      memberRemoved: string;
-      memberRemoveFailed: string;
-      roleChanged: string;
-      roleChangeFailed: string;
-      siteAccessChanged: string;
-      siteAccessChangeFailed: string;
-      invalidTeamName: string;
-      inviteCreated: string;
-      inviteCreateFailed: string;
-      inviteRevoked: string;
-      inviteRevokeFailed: string;
-      inviteCopied: string;
-      inviteCopyFailed: string;
-      invalidInviteEmail: string;
-      invalidInviteExpiry: string;
-      ownerTransferred: string;
-      ownerTransferFailed: string;
-      invalidTransferTarget: string;
-    };
+    stats: Record<string, never>;
+    toasts: Record<string, never>;
     sites: {
-      title: string;
       subtitle: string;
       aggregateTitle: string;
-      pagesPerSession: string;
       noSites: string;
       openAnalytics: string;
-    };
-    widgets: {
       title: string;
-      subtitle: string;
-      underConstruction: string;
+      pagesPerSession: string;
     };
+    widgets: Record<string, never>;
     notifications: {
       title: string;
       subtitle: string;
@@ -2158,200 +2003,28 @@ export interface AppMessages {
       };
     };
     apiKeys: {
-      title: string;
-      subtitle: string;
-      empty: string;
-      create: string;
-      creating: string;
-      createTitle: string;
-      createSubtitle: string;
-      nameLabel: string;
-      namePlaceholder: string;
-      scopesTitle: string;
-      scopesDescription: string;
-      siteScopeTitle: string;
-      siteScopeDescription: string;
-      allSites: string;
-      expirationLabel: string;
-      expiration30: string;
-      expiration90: string;
-      expiration180: string;
-      expiration365: string;
-      expirationNever: string;
-      oneTimeSecretTitle: string;
-      oneTimeSecretDescription: string;
-      copySecret: string;
-      revoke: string;
-      rotate: string;
-      revokeConfirm: string;
-      rotateConfirm: string;
-      neverExpires: string;
-      notUsed: string;
-      loading: string;
-      loadFailed: string;
-      invalidInput: string;
-      createFailed: string;
-      revokeFailed: string;
-      rotateFailed: string;
-      copied: string;
-      status: {
-        active: string;
-        expired: string;
-        revoked: string;
-      };
-      scopes: {
-        analyticsRead: string;
-        analysisRead: string;
-        analysisWrite: string;
-        siteRead: string;
-        siteWrite: string;
-        siteConfigRead: string;
-        siteConfigWrite: string;
-      };
-      scopeDescriptions: {
-        analyticsRead: string;
-        analysisRead: string;
-        analysisWrite: string;
-        siteRead: string;
-        siteWrite: string;
-        siteConfigRead: string;
-        siteConfigWrite: string;
-      };
-      scopeGroups: {
-        analytics: string;
-        analysis: string;
-        site: string;
-        siteConfig: string;
-      };
-      columns: {
-        name: string;
-        scopes: string;
-        sites: string;
-        expires: string;
-        lastUsed: string;
-        status: string;
-        action: string;
-      };
+      status: Record<string, never>;
+      scopes: Record<string, never>;
+      scopeDescriptions: Record<string, never>;
+      scopeGroups: Record<string, never>;
+      columns: Record<string, never>;
     };
-    settings: {
-      title: string;
-      subtitle: string;
-      nameLabel: string;
-      slugLabel: string;
-      save: string;
-      saving: string;
-      delete: string;
-      deleting: string;
-      deleteConfirm: string;
-      transferTitle: string;
-      transferSubtitle: string;
-      transferTargetLabel: string;
-      transferTargetPlaceholder: string;
-      transfer: string;
-      transferring: string;
-      transferConfirm: string;
-      noTransferableMembers: string;
-    };
+    settings: Record<string, never>;
     members: {
-      title: string;
-      subtitle: string;
-      remove: string;
-      removeMemberAction: string;
-      removeMemberConfirm: string;
-      noMembers: string;
-      invitesTitle: string;
-      invitesSubtitle: string;
-      inviteEmailLabel: string;
-      inviteEmailPlaceholder: string;
-      inviteExpiresLabel: string;
-      createInvite: string;
-      creatingInvite: string;
-      copyInvite: string;
-      inviteLinksTitle: string;
-      inviteLinksSubtitle: string;
-      noInvites: string;
-      anyEmail: string;
-      revokeInvite: string;
-      revokeInviteAction: string;
-      revokeInviteConfirm: string;
-      siteAccessLabel: string;
-      siteAccessAll: string;
-      siteAccessRestricted: string;
-      siteAccessSelected: string;
-      siteAccessDescription: string;
-      siteAccessAdmins: string;
-      siteAccessDialogTitle: string;
-      saveSiteAccess: string;
-      cancelSiteAccess: string;
-      noSitesForAccess: string;
-      inviteStatuses: {
-        active: string;
-        used: string;
-        revoked: string;
-        expired: string;
-      };
-      columns: {
-        name: string;
-        username: string;
-        email: string;
-        inviteCode: string;
-        role: string;
-        siteAccess: string;
-        joinedAt: string;
-        createdAt: string;
-        expiresAt: string;
-        usedAt: string;
-        status: string;
-        action: string;
-      };
-      roleLabels: {
-        owner: string;
-        admin: string;
-        member: string;
-      };
+      inviteStatuses: Record<string, never>;
+      columns: Record<string, never>;
+      roleLabels: Record<string, never>;
     };
   };
   managementNav: {
-    users: string;
     sites: string;
-    teams: string;
-    versionUpdates: string;
     scheduledTasks: string;
     requestObservation: string;
     systemPerformance: string;
     systemSettings: string;
   };
   managementPages: {
-    versionUpdates: {
-      subtitle: string;
-      empty: string;
-      currentVersion: string;
-      latestVersion: string;
-      currentCommit: string;
-      releaseCount: string;
-      publishedAt: string;
-      author: string;
-      commit: string;
-      statusStable: string;
-      statusPrerelease: string;
-      statusDraft: string;
-      currentVersionBadge: string;
-      releaseNotes: string;
-      openRelease: string;
-      viewDetails: string;
-      detailsTitle: string;
-      detailsDescription: string;
-      detailsLoading: string;
-      detailsEmpty: string;
-      detailsFailed: string;
-      currentCommitBadge: string;
-      openCompare: string;
-      openCommit: string;
-      commitCount: string;
-      source: string;
-      loadFailed: string;
-      unknown: string;
-    };
+    versionUpdates: Record<string, never>;
     scheduledTasks: {
       subtitle: string;
       empty: string;
@@ -2436,48 +2109,7 @@ export interface AppMessages {
     };
   };
   adminUsers: {
-    title: string;
-    subtitle: string;
-    createTitle: string;
-    createTeamNotice: string;
-    username: string;
-    email: string;
-    name: string;
-    password: string;
-    role: string;
-    teamName: string;
-    teamSlug: string;
-    defaultTeamName: string;
-    create: string;
-    creating: string;
-    delete: string;
-    deleting: string;
-    deleteConfirm: string;
-    deleteSuccess: string;
-    deleteFailed: string;
-    generateResetLink: string;
-    resetLinkCreated: string;
-    resetLinkCreateFailed: string;
-    resetLinkCopied: string;
-    resetLinkCopyFailed: string;
-    copyResetLink: string;
-    resetLinkExpiresAt: string;
-    listTitle: string;
-    listSubtitle: string;
-    noData: string;
-    loadFailed: string;
-    createSuccess: string;
-    createFailed: string;
-    invalidInput: string;
-    columns: {
-      name: string;
-      username: string;
-      email: string;
-      role: string;
-      teams: string;
-      created: string;
-      action: string;
-    };
+    columns: Record<string, never>;
   };
   adminSites: {
     title: string;
@@ -2507,82 +2139,33 @@ export interface AppMessages {
     };
   };
   adminTeams: {
-    title: string;
-    subtitle: string;
-    createTitle: string;
-    createSubtitle: string;
-    name: string;
-    slug: string;
-    create: string;
-    creating: string;
-    listTitle: string;
-    listSubtitle: string;
-    noData: string;
-    loadFailed: string;
-    createSuccess: string;
-    createFailed: string;
-    invalidInput: string;
-    open: string;
-    settings: string;
-    columns: {
-      name: string;
-      slug: string;
-      sites: string;
-      members: string;
-      created: string;
-      action: string;
-    };
+    columns: Record<string, never>;
   };
   requestObservation: {
     title: string;
-    tabs: {
-      overview: string;
-      blocked: string;
-      included: string;
+    subtitle: string;
+    blockedTotal: string;
+    retentionNote: string;
+    topReasons: string;
+    recentTitle: string;
+    categoryLabels: {
+      custom_block: string;
+      bot: string;
+      suspected_bot: string;
     };
+    tabs: Record<string, never>;
     refresh: string;
     loadFailed: string;
-    notConfiguredTitle: string;
-    notConfiguredDescription: string;
-    analyticsEngineDisabledTitle: string;
-    analyticsEngineDisabledDescription: string;
-    openAnalyticsEngine: string;
-    openSettings: string;
-    affectedSites: string;
-    uniqueCountries: string;
     noData: string;
-    trendTitle: string;
-    client: string;
-    edge: string;
-    identifiers: string;
-    fullUserAgent: string;
-    id: string;
-    metadata: string;
     time: string;
     site: string;
     location: string;
     network: string;
     reason: string;
-    request: string;
-    ip: string;
     userAgent: string;
-    category: string;
     emptyValue: string;
-    kind: string;
-    botScore: string;
-    botScoreBucket: string;
-    verifiedBotCategory: string;
-    hostname: string;
     pathname: string;
-    origin: string;
-    asOrganization: string;
-    asn: string;
     country: string;
-    region: string;
-    city: string;
-    colo: string;
-    userAgentLengthBucket: string;
-    userAgentLength: string;
     ipPrefix: string;
     botReasonLabels: {
       missing_ua: string;
@@ -2608,39 +2191,11 @@ export interface AppMessages {
       blocked_countries: string;
       blocked_regions: string;
     };
-    requestKindLabels: {
-      pageview: string;
-      custom_event: string;
-      request: string;
-      visibility: string;
-      leave: string;
-      identify: string;
-    };
+    requestKindLabels: Record<string, never>;
     overviewLabels: {
-      p50Latency: string;
-      p75Latency: string;
-      p99Latency: string;
-      p95Latency: string;
-      avgLatency: string;
-      pageviews: string;
-      customEvents: string;
-      overviewTrendTitle: string;
-      trafficCompositionTitle: string;
-      trafficCompositionDescription: string;
-      categoryShareTitle: string;
-      latencyTitle: string;
-      latencyDescription: string;
-      requests: string;
       windowDays: string;
-      latencyMilliseconds: string;
     };
-    normalDetail: {
-      requestMethod: string;
-      edgeLatency: string;
-      eventAt: string;
-      receivedAt: string;
-      continent: string;
-    };
+    normalDetail: Record<string, never>;
   };
   systemSettings: {
     title: string;
@@ -2665,6 +2220,9 @@ export interface AppMessages {
     analyticsEngineGuideSteps: string[];
     notificationEmailTitle: string;
     notificationEmailDescription: string;
+    emailGatewayReady: string;
+    emailGatewayNotReady: string;
+    emailSenderLabel: string;
     notificationEmailGuideTitle: string;
     notificationEmailGuideDescription: string;
     notificationEmailGuideSteps: string[];
@@ -2674,6 +2232,7 @@ export interface AppMessages {
     notificationTestDaysLabel: string;
     notificationAttentionDaysLabel: string;
     notificationDefaultDaysLabel: string;
+    analyticsDetailDaysLabel: string;
     retentionRangeHint: string;
     retentionSave: string;
     retentionSaving: string;
@@ -2818,63 +2377,18 @@ export interface AppMessages {
     doDiagnosticThresholdsHint: string;
     doDiagnosticHealthy: string;
   };
-  loginForm: {
-    signingIn: string;
-    verifyingSecurity: string;
-    securityVerificationTitle: string;
-    securityVerificationFailed: string;
-    retrySecurityVerification: string;
-    redirecting: string;
-    failed: string;
-  };
-  logoutAction: {
-    pending: string;
-    success: string;
-    failed: string;
-  };
+  loginForm: Record<string, never>;
+  logoutAction: Record<string, never>;
   sidebarFooter: {
     gateway: string;
   };
-  teamEntry: {
-    title: string;
-    description: string;
-  };
+  teamEntry: Record<string, never>;
 }
 
 const enMessages = {
-  appName: "InsightFlare",
+  appName: "Open Analytics",
   uiGallery: {
-    searchLabel: "Search UI components",
-    searchPlaceholder: "Search components",
-    backToApp: "Back to InsightFlare",
-    noSearchResults: "No components match this search.",
-    toggleNavigation: "Toggle gallery navigation",
-    library: "UI Library",
-    componentsCount: "{count} components",
-    statesCount: "{count} states",
-    designSystem: "InsightFlare design system",
-    pageTitle: "UI Components",
-    catalogSummary: "{components} components · {states} prop values",
-    categories: {
-      inputs: "Inputs",
-      feedback: "Feedback",
-      foundations: "Foundations",
-      navigation: "Navigation",
-      "data-display": "Data display",
-      overlays: "Overlays",
-      "product-analytics": "Product UI / Analytics",
-      "product-management": "Product UI / Management",
-      "product-realtime": "Product UI / Realtime",
-    },
-    browseCategories: "Browse by category",
-    featuredComponents: "Featured components",
-    backToCatalog: "UI Components",
-    canonicalStates: "Props and values",
-    browseAllComponents: "Browse all components",
-    previewState: "Open preview",
-    resetPreview: "Reset preview",
-    expandCode: "Expand code",
-    collapseCode: "Collapse code",
+    categories: {},
   },
   navigation: {
     overview: "Overview",
@@ -3617,7 +3131,6 @@ const enMessages = {
     eventTime: "Event time",
     eventKind: "Event kind",
     eventName: "Event name",
-    siteId: "Site ID",
     traceId: "Trace ID",
     receivedAt: "Received at",
     startedAt: "Started at",
@@ -3681,7 +3194,6 @@ const enMessages = {
     empty: "No page data matches the current filters.",
     loadError: "Failed to load page data. Please try again later.",
     loadMoreError: "Failed to load more pages.",
-    retry: "Retry",
     trendTitle: "Page Traffic Trend",
     otherPages: "Other Pages",
     hashTab: "Anchor",
@@ -4555,11 +4067,6 @@ const enMessages = {
     savingTracking: "Saving Tracking Settings...",
     save: "Save Changes",
     saving: "Saving...",
-    transferTitle: "Transfer to Another Team",
-    transferSubtitle: "Move this site to another team you can manage.",
-    transferTeamLabel: "Target Team",
-    transfer: "Transfer Site",
-    transferring: "Transferring...",
     scriptTitle: "Install Tracking Script",
     scriptSubtitle:
       "Add this script to your website to start collecting analytics.",
@@ -4577,8 +4084,6 @@ const enMessages = {
     toasts: {
       saved: "Site settings saved.",
       saveFailed: "Failed to save site settings.",
-      transferred: "Site transferred.",
-      transferFailed: "Failed to transfer site.",
       scriptLoadFailed: "Failed to load script snippet.",
       settingsLoadFailed: "Failed to load script settings.",
       settingsPropagationHint:
@@ -4592,33 +4097,16 @@ const enMessages = {
     emailManagedByGateway: "Your email comes from your Every App account.",
     title: "Account Settings",
     subtitle:
-      "Manage your personal details, login password, and dashboard time zone.",
+      "Manage your display name, notifications and dashboard time zone.",
     profileTitle: "Personal Details",
-    profileDescription: "Update your display name, username, and email.",
+    profileDescription: "Update the name the dashboard shows for you.",
     nicknameLabel: "Display name",
     nicknamePlaceholder: "e.g. Product Analyst",
-    usernameLabel: "Username",
-    usernamePlaceholder: "e.g. alex",
-    usernameDescription: "Username can also be used to sign in.",
     emailLabel: "Email",
-    emailPlaceholder: "name@example.com",
-    invalidProfile: "Enter a valid username and email.",
     profileSave: "Save details",
     profileSaving: "Saving...",
     profileSaved: "Personal details saved.",
     profileSaveFailed: "Failed to save personal details.",
-    passwordTitle: "Login Password",
-    passwordDescription: "Change the password for your current account.",
-    currentPasswordLabel: "Current password",
-    newPasswordLabel: "New password",
-    confirmPasswordLabel: "Confirm new password",
-    currentPasswordRequired: "Enter your current password.",
-    passwordTooShort: "New password must be at least 8 characters.",
-    passwordMismatch: "New passwords do not match.",
-    passwordSave: "Change password",
-    passwordSaving: "Changing...",
-    passwordSaved: "Password changed.",
-    passwordSaveFailed: "Failed to change password.",
     preferredLanguageTitle: "Notification Language",
     preferredLanguageDescription:
       "Choose the language used for scheduled notification emails.",
@@ -4753,7 +4241,7 @@ const enMessages = {
   },
   notificationEmail: {
     common: {
-      brand: "InsightFlare",
+      brand: "Open Analytics",
       date: "Date",
       coreMetrics: "Core metrics",
       topPages: "Top pages",
@@ -4776,8 +4264,8 @@ const enMessages = {
       never: "Never",
       noPageData: "No page data yet.",
       noReferrerData: "No referrer data yet.",
-      footer: "This email was sent by the InsightFlare notification system.",
-      fallbackSubject: "InsightFlare notification",
+      footer: "This email was sent by the Open Analytics notification system.",
+      fallbackSubject: "Open Analytics notification",
       trackingHint:
         "Check whether the tracking script is installed correctly or whether the site still has traffic.",
       severity: {
@@ -4788,10 +4276,10 @@ const enMessages = {
       },
     },
     test: {
-      subject: "InsightFlare notification test",
-      title: "InsightFlare notification test",
-      summary: "This is a test notification from InsightFlare.",
-      body: "This is a test notification from InsightFlare. If email is configured and enabled, it also verifies Resend delivery.",
+      subject: "Open Analytics notification test",
+      title: "Open Analytics notification test",
+      summary: "This is a test notification from Open Analytics.",
+      body: "This is a test notification from Open Analytics. If email is set up on the Every App gateway, it also checks email delivery.",
     },
     report: {
       subject: "{site} {periodLabel} traffic report",
@@ -4842,7 +4330,7 @@ const enMessages = {
     title: "Runtime configuration required",
     eyebrow: "Deployment paused",
     heading:
-      "InsightFlare needs one runtime secret before the dashboard can load.",
+      "Open Analytics needs one runtime secret before the dashboard can load.",
     description:
       "The app has started, but the current runtime environment could not read the required root secret, so dashboard access is temporarily blocked.",
     requiredTitle: "Required runtime secret",
@@ -4858,65 +4346,14 @@ const enMessages = {
     docsLabel: "Open GitHub",
     homeLabel: "Retry dashboard",
   },
-  login: {
-    title: "Sign in",
-    subtitle: "Use your InsightFlare account.",
-    username: "Username or Email",
-    password: "Password",
-    signIn: "Sign in",
-    invalidCredentials: "Invalid username or password.",
-  },
+  login: {},
   accountLinks: {
     invite: {
-      title: "Team invitation",
-      subtitle: "Accept the invitation to join this team.",
-      loading: "Loading invitation...",
-      missingToken: "Invitation token is missing.",
-      loadFailed: "Failed to load invitation.",
-      accept: "Accept invitation",
-      accepting: "Accepting...",
-      accepted: "Invitation accepted.",
-      acceptFailed: "Failed to accept invitation.",
-      signIn: "Sign in to accept",
-      signedInNotice:
-        "You are signed in. Accepting will add your account to this team.",
-      teamLabel: "Team",
-      roleLabel: "Role",
-      emailLabel: "Invite email",
-      accountEmailLabel: "Account email",
-      anyEmail: "Any email address",
-      expiresLabel: "Expires",
-      usernameLabel: "Username",
-      nameLabel: "Display name",
-      passwordLabel: "Password",
-      roles: {
-        admin: "Admin",
-        member: "Member",
-      },
+      roles: {},
     },
-    resetPassword: {
-      title: "Reset password",
-      subtitle: "Set a new password for this account.",
-      loading: "Loading reset link...",
-      missingToken: "Reset token is missing.",
-      loadFailed: "Failed to load reset link.",
-      reset: "Reset password",
-      resetting: "Resetting...",
-      resetDone: "Password reset. Sign in with the new password.",
-      resetFailed: "Failed to reset password.",
-      signIn: "Back to sign in",
-      accountLabel: "Account",
-      emailLabel: "Email",
-      expiresLabel: "Expires",
-      passwordLabel: "New password",
-      confirmPasswordLabel: "Confirm password",
-      passwordTooShort: "Password must be at least 8 characters.",
-      passwordMismatch: "Passwords do not match.",
-    },
+    resetPassword: {},
   },
-  empty: {
-    noTeams: "No team available yet.",
-  },
+  empty: {},
   errorPage: {
     notFoundEyebrow: "Page not found",
     notFoundTitle: "We couldn't find that page",
@@ -4925,7 +4362,7 @@ const enMessages = {
     errorEyebrow: "Application error",
     errorTitle: "Something went wrong",
     errorDescription:
-      "InsightFlare couldn't complete this request. The diagnostic details below can help us investigate.",
+      "Open Analytics couldn't complete this request. The diagnostic details below can help us investigate.",
     statusLabel: "Status",
     reasonLabel: "Reason",
     requestLabel: "Request path",
@@ -4941,7 +4378,6 @@ const enMessages = {
       "The report opens a pre-filled GitHub issue. Review it before submitting.",
   },
   actions: {
-    logout: "Logout",
     switchToEnglish: "English",
     switchToChinese: "Simplified Chinese",
     switchToTraditionalChinese: "Traditional Chinese",
@@ -4950,69 +4386,21 @@ const enMessages = {
     switchToDark: "Dark",
   },
   teamSelect: {
-    groupLabel: "Team",
-    groups: {
-      created: "Created teams",
-      managed: "Managed teams",
-      member: "Member teams",
-      system: "System teams",
-    },
-    createHint: "Create team",
-    createTitle: "Create Team",
-    createDescription: "You will be switched to the new team after creation.",
-    nameLabel: "Team Name",
-    namePlaceholder: "e.g. Growth Team",
-    slugLabel: "Team Slug (optional)",
-    slugPlaceholder: "e.g. growth-team",
-    create: "Create",
-    creating: "Creating...",
+    groups: {},
     cancel: "Cancel",
-    invalidName: "Team name must be at least 2 characters.",
-    createFailed: "Failed to create team. Please try again.",
-    createSuccess: "Team created.",
   },
   teamManagement: {
-    stats: {
-      sites: "Sites",
-      members: "Members",
-    },
-    toasts: {
-      teamSaved: "Team settings saved.",
-      teamSaveFailed: "Failed to save team settings.",
-      teamDeleted: "Team deleted.",
-      teamDeleteFailed: "Failed to delete team.",
-      memberRemoved: "Member removed.",
-      memberRemoveFailed: "Failed to remove member.",
-      roleChanged: "Member role updated.",
-      roleChangeFailed: "Failed to update member role.",
-      siteAccessChanged: "Member site access updated.",
-      siteAccessChangeFailed: "Failed to update site access.",
-      invalidTeamName: "Team name must be at least 2 characters.",
-      inviteCreated: "Invite link created.",
-      inviteCreateFailed: "Failed to create invite link.",
-      inviteRevoked: "Invite revoked.",
-      inviteRevokeFailed: "Failed to revoke invite.",
-      inviteCopied: "Invite link copied.",
-      inviteCopyFailed: "Failed to copy invite link.",
-      invalidInviteEmail: "Please provide a valid invite email.",
-      invalidInviteExpiry: "Invite expiry must be at least 1 hour.",
-      ownerTransferred: "Ownership transferred.",
-      ownerTransferFailed: "Failed to transfer ownership.",
-      invalidTransferTarget: "Please choose a new owner.",
-    },
+    stats: {},
+    toasts: {},
     sites: {
-      title: "Site Dashboard",
       subtitle: "Aggregated traffic view across all sites in this team.",
       aggregateTitle: "Total Visits",
-      pagesPerSession: "Pages / Session",
       noSites: "No site is available under this team.",
       openAnalytics: "Open analytics",
+      title: "Site Dashboard",
+      pagesPerSession: "Pages / Session",
     },
-    widgets: {
-      title: "Widgets",
-      subtitle: "Widget functionality is being built.",
-      underConstruction: "Under construction",
-    },
+    widgets: {},
     notifications: {
       title: "Notification Rules",
       subtitle: "Manage notification rules for this team.",
@@ -5234,7 +4622,7 @@ const enMessages = {
       emailPreviewPage: {
         title: "Notification email preview",
         subtitle:
-          "Render notification emails without creating messages or sending through Resend.",
+          "Render notification emails without creating messages or sending them.",
         typeLabel: "Preview type",
         localeLabel: "Preview locale",
         formatLabel: "Preview format",
@@ -5267,214 +4655,28 @@ const enMessages = {
       },
     },
     apiKeys: {
-      title: "API Keys",
-      subtitle: "Manage API access keys for this team.",
-      empty: "This team has no API keys yet.",
-      create: "Create key",
-      creating: "Creating...",
-      createTitle: "Create API key",
-      createSubtitle: "Choose the least privileges this integration needs.",
-      nameLabel: "Key name",
-      namePlaceholder: "Production sync",
-      scopesTitle: "Permissions",
-      scopesDescription:
-        "API keys can never manage members, users, ownership, or other keys.",
-      siteScopeTitle: "Site access",
-      siteScopeDescription:
-        "No selection means every current and future site in this team.",
-      allSites: "All sites",
-      expirationLabel: "Expires",
-      expiration30: "30 days",
-      expiration90: "90 days",
-      expiration180: "180 days",
-      expiration365: "365 days",
-      expirationNever: "Never",
-      oneTimeSecretTitle: "Copy this key now",
-      oneTimeSecretDescription:
-        "This full key is shown once. Store it before closing this dialog.",
-      copySecret: "Copy key",
-      revoke: "Revoke",
-      rotate: "Rotate",
-      revokeConfirm: "Revoke this API key immediately?",
-      rotateConfirm:
-        "Rotate this API key? The old key will be revoked immediately.",
-      neverExpires: "Never expires",
-      notUsed: "Not used",
-      loading: "Loading API keys...",
-      loadFailed: "Failed to load API keys.",
-      invalidInput: "Enter a name and choose at least one permission.",
-      createFailed: "Failed to create API key.",
-      revokeFailed: "Failed to revoke API key.",
-      rotateFailed: "Failed to rotate API key.",
-      copied: "Copied",
-      status: {
-        active: "Active",
-        expired: "Expired",
-        revoked: "Revoked",
-      },
-      scopes: {
-        analyticsRead: "Analytics read",
-        analysisRead: "Analysis definitions read",
-        analysisWrite: "Analysis definitions write",
-        siteRead: "Site read",
-        siteWrite: "Site write",
-        siteConfigRead: "Config read",
-        siteConfigWrite: "Config write",
-      },
-      scopeDescriptions: {
-        analyticsRead:
-          "View visits, visitors, page views, and other analytics data",
-        analysisRead: "View shared saved filters and funnel definitions",
-        analysisWrite: "Create, update, or delete funnel definitions",
-        siteRead: "View site list and site details",
-        siteWrite: "Create, update, or delete sites",
-        siteConfigRead:
-          "View site settings like tracking code and domain whitelist",
-        siteConfigWrite:
-          "Modify site settings like tracking strength and path blacklist",
-      },
-      scopeGroups: {
-        analytics: "Analytics",
-        analysis: "Analysis definitions",
-        site: "Site",
-        siteConfig: "Site Configuration",
-      },
-      columns: {
-        name: "Name",
-        scopes: "Permissions",
-        sites: "Sites",
-        expires: "Expires",
-        lastUsed: "Last used",
-        status: "Status",
-        action: "Action",
-      },
+      status: {},
+      scopes: {},
+      scopeDescriptions: {},
+      scopeGroups: {},
+      columns: {},
     },
-    settings: {
-      title: "Settings",
-      subtitle: "Update this team's display name and slug.",
-      nameLabel: "Team Display Name",
-      slugLabel: "Team Slug",
-      save: "Save settings",
-      saving: "Saving...",
-      delete: "Delete team",
-      deleting: "Deleting...",
-      deleteConfirm:
-        "Delete this team and all its data? This action cannot be undone.",
-      transferTitle: "Transfer Ownership",
-      transferSubtitle:
-        "Transfer team ownership to another member. The current owner will be demoted to admin.",
-      transferTargetLabel: "New Owner",
-      transferTargetPlaceholder: "Choose a team member",
-      transfer: "Transfer ownership",
-      transferring: "Transferring...",
-      transferConfirm:
-        "This action cannot be undone. You will lose ownership but keep admin access. Continue?",
-      noTransferableMembers:
-        "No other members are available to transfer to. Add a member first.",
-    },
+    settings: {},
     members: {
-      title: "Members",
-      subtitle: "Invite members or remove existing members.",
-      remove: "Remove member",
-      removeMemberAction: 'Remove member "{target}"',
-      removeMemberConfirm:
-        'Remove "{target}" from this team? They will lose access immediately.',
-      noMembers: "No members found for this team.",
-      invitesTitle: "Create invite link",
-      invitesSubtitle: "Users join this team only after accepting an invite.",
-      inviteEmailLabel: "Email restriction (optional)",
-      inviteEmailPlaceholder: "user@example.com",
-      inviteExpiresLabel: "Expires in hours",
-      createInvite: "Create invite link",
-      creatingInvite: "Creating...",
-      copyInvite: "Copy invite link",
-      inviteLinksTitle: "Invite links",
-      inviteLinksSubtitle: "Review invite status and revoke active links.",
-      noInvites: "This team has no invite links yet.",
-      anyEmail: "Any email",
-      revokeInvite: "Revoke invite",
-      revokeInviteAction: 'Revoke invite for "{target}"',
-      revokeInviteConfirm:
-        'Revoke the invite for "{target}"? The link will stop working.',
-      siteAccessLabel: "Site access",
-      siteAccessAll: "All sites",
-      siteAccessRestricted: "Restricted",
-      siteAccessSelected: "Selected {count} sites",
-      siteAccessDescription:
-        "Leave this set to all sites, or choose the specific sites this member can access.",
-      siteAccessAdmins: "Admins can access every site in this team.",
-      siteAccessDialogTitle: "Edit site access",
-      saveSiteAccess: "Save access",
-      cancelSiteAccess: "Cancel",
-      noSitesForAccess: "This team has no sites yet.",
-      inviteStatuses: {
-        active: "Active",
-        used: "Used",
-        revoked: "Revoked",
-        expired: "Expired",
-      },
-      columns: {
-        name: "Name",
-        username: "Username",
-        email: "Email",
-        inviteCode: "Invite token",
-        role: "Role",
-        siteAccess: "Site access",
-        joinedAt: "Joined",
-        createdAt: "Created",
-        expiresAt: "Expires",
-        usedAt: "Used",
-        status: "Status",
-        action: "Action",
-      },
-      roleLabels: {
-        owner: "Owner",
-        admin: "Admin",
-        member: "Member",
-      },
+      inviteStatuses: {},
+      columns: {},
+      roleLabels: {},
     },
   },
   managementNav: {
-    users: "User Management",
     sites: "Site Management",
-    teams: "Team Management",
-    versionUpdates: "Version Updates",
     scheduledTasks: "Scheduled Tasks",
     requestObservation: "Request Observability",
     systemPerformance: "System Performance",
     systemSettings: "System Settings",
   },
   managementPages: {
-    versionUpdates: {
-      subtitle: "Review published InsightFlare releases and the running build.",
-      empty: "No version update records yet.",
-      currentVersion: "Current version",
-      latestVersion: "Latest release",
-      currentCommit: "Current commit",
-      releaseCount: "Releases",
-      publishedAt: "Published",
-      author: "Author",
-      commit: "Commit",
-      statusStable: "Stable",
-      statusPrerelease: "Prerelease",
-      statusDraft: "Draft",
-      currentVersionBadge: "Current version",
-      releaseNotes: "Release notes",
-      openRelease: "Open release",
-      viewDetails: "View detailed changes",
-      detailsTitle: "Detailed changes",
-      detailsDescription: "Commits included in {range}.",
-      detailsLoading: "Loading detailed changes...",
-      detailsEmpty: "No previous release is available for this version yet.",
-      detailsFailed: "Failed to load detailed changes.",
-      currentCommitBadge: "Current deployment",
-      openCompare: "Open compare",
-      openCommit: "Open commit",
-      commitCount: "Commits",
-      source: "Data source",
-      loadFailed: "Failed to load the release index.",
-      unknown: "Unknown",
-    },
+    versionUpdates: {},
     scheduledTasks: {
       subtitle: "View and manage system scheduled tasks.",
       empty: "No scheduled tasks yet.",
@@ -5562,49 +4764,7 @@ const enMessages = {
     },
   },
   adminUsers: {
-    title: "User Management",
-    subtitle: "Only system admins can create and manage dashboard users.",
-    createTitle: "Create User",
-    createTeamNotice:
-      "Creating a user here will also create a new Team owned by that user. To add someone to an existing team, create an invite link from that team's settings.",
-    username: "Username",
-    email: "Email",
-    name: "Display Name (optional)",
-    password: "Password (min 8 chars)",
-    role: "System Role",
-    teamName: "Team Name",
-    teamSlug: "Team Slug (optional)",
-    defaultTeamName: "{name}'s team",
-    create: "Create User",
-    creating: "Creating...",
-    delete: "Delete",
-    deleting: "Deleting...",
-    deleteConfirm: "Delete this user account?",
-    deleteSuccess: "User deleted.",
-    deleteFailed: "Failed to delete user.",
-    generateResetLink: "Generate password reset link",
-    resetLinkCreated: "Password reset link generated.",
-    resetLinkCreateFailed: "Failed to generate password reset link.",
-    resetLinkCopied: "Password reset link copied.",
-    resetLinkCopyFailed: "Failed to copy password reset link.",
-    copyResetLink: "Copy link",
-    resetLinkExpiresAt: "Expires",
-    listTitle: "Users",
-    listSubtitle: "All users in the system.",
-    noData: "No users found.",
-    loadFailed: "Failed to load users.",
-    createSuccess: "User created.",
-    createFailed: "Failed to create user.",
-    invalidInput: "Please provide valid username, email and password.",
-    columns: {
-      name: "Name",
-      username: "Username",
-      email: "Email",
-      role: "Role",
-      teams: "Teams",
-      created: "Created",
-      action: "Action",
-    },
+    columns: {},
   },
   adminSites: {
     title: "Site Management",
@@ -5634,84 +4794,35 @@ const enMessages = {
     },
   },
   adminTeams: {
-    title: "Team Management",
-    subtitle: "Only system admins can create and view all teams.",
-    createTitle: "Create Team",
-    createSubtitle: "After creation, you can manage settings and members.",
-    name: "Team Name",
-    slug: "Team Slug (optional)",
-    create: "Create Team",
-    creating: "Creating...",
-    listTitle: "Teams",
-    listSubtitle: "All teams in the system.",
-    noData: "No teams found.",
-    loadFailed: "Failed to load teams.",
-    createSuccess: "Team created.",
-    createFailed: "Failed to create team.",
-    invalidInput: "Team name must be at least 2 characters.",
-    open: "Open team",
-    settings: "Settings",
-    columns: {
-      name: "Name",
-      slug: "Slug",
-      sites: "Sites",
-      members: "Members",
-      created: "Created",
-      action: "Action",
-    },
+    columns: {},
   },
   requestObservation: {
     title: "Request Observability",
-    tabs: {
-      overview: "Overview",
-      blocked: "Blocked Requests",
-      included: "Included Requests",
+    subtitle:
+      "Recent requests the collector refused: custom block rules, bots and hosting networks.",
+    blockedTotal: "Blocked requests",
+    retentionNote:
+      "Kept for 30 days. Allowed traffic is in each site's dashboards.",
+    topReasons: "Reasons",
+    recentTitle: "Latest blocked requests",
+    categoryLabels: {
+      custom_block: "Block rule",
+      bot: "Bot",
+      suspected_bot: "Hosting network",
     },
+    tabs: {},
     refresh: "Refresh",
     loadFailed: "Failed to load request observability data.",
-    notConfiguredTitle: "Analytics Engine reader is not configured",
-    notConfiguredDescription:
-      "Add a Cloudflare Account ID and API token in System Settings to read the request-observation Analytics Engine datasets.",
-    analyticsEngineDisabledTitle: "Analytics Engine is not enabled",
-    analyticsEngineDisabledDescription:
-      "This deployment was published without the Analytics Engine binding because the Cloudflare account has not enabled Analytics Engine. Enable it in Cloudflare, then redeploy to collect request-observation data.",
-    openAnalyticsEngine: "Open Analytics Engine",
-    openSettings: "Open settings",
-    affectedSites: "Affected Sites",
-    uniqueCountries: "Countries / Regions",
     noData: "No request data in this window.",
-    trendTitle: "Routing Trend",
-    client: "Client",
-    edge: "Edge",
-    identifiers: "Identifiers",
-    fullUserAgent: "Full User-Agent",
-    id: "ID",
-    metadata: "Metadata",
     time: "Time",
     site: "Site",
     location: "Location",
     network: "Network",
     reason: "Reason",
-    request: "Request",
-    ip: "IP",
     userAgent: "User agent",
-    category: "Category",
     emptyValue: "Unknown",
-    kind: "Type",
-    botScore: "Bot Score",
-    botScoreBucket: "Bot Score Bucket",
-    verifiedBotCategory: "Verified Bot Category",
-    hostname: "Hostname",
     pathname: "Path",
-    origin: "Origin",
-    asOrganization: "ASN Organization",
-    asn: "ASN",
     country: "Country / Region",
-    region: "Region",
-    city: "City",
-    colo: "Colo",
-    userAgentLengthBucket: "User-Agent Length",
-    userAgentLength: "User-Agent Length (exact)",
     ipPrefix: "IP Prefix",
     botReasonLabels: {
       missing_ua: "Missing User-Agent",
@@ -5737,46 +4848,16 @@ const enMessages = {
       blocked_countries: "Blocked countries",
       blocked_regions: "Blocked regions",
     },
-    requestKindLabels: {
-      pageview: "Pageview",
-      custom_event: "Custom Event",
-      request: "Request",
-      visibility: "Visibility",
-      leave: "Leave",
-      identify: "Identify",
-    },
+    requestKindLabels: {},
     overviewLabels: {
-      p50Latency: "P50 Worker processing time",
-      p75Latency: "P75 Worker processing time",
-      p99Latency: "P99 Worker processing time",
-      p95Latency: "P95 Worker processing time",
-      avgLatency: "Average Worker processing time",
-      pageviews: "Pageviews",
-      customEvents: "Custom events",
-      overviewTrendTitle: "Request routing trend",
-      trafficCompositionTitle: "Business request composition",
-      trafficCompositionDescription:
-        "Counts normal collection events by type over time, including pageviews, leaves, visibility changes, custom events, and identifications.",
-      categoryShareTitle: "Request category breakdown",
-      latencyTitle: "Worker processing time trend",
-      latencyDescription:
-        "P50 / P75 / P95 / P99 Worker processing time recorded when normal requests are written to AE.",
-      requests: "Requests",
       windowDays: "Last {days} days",
-      latencyMilliseconds: "{value} ms",
     },
-    normalDetail: {
-      requestMethod: "Request method",
-      edgeLatency: "Worker processing time",
-      eventAt: "Event time",
-      receivedAt: "Received at",
-      continent: "Continent",
-    },
+    normalDetail: {},
   },
   systemSettings: {
     title: "System Settings",
     subtitle:
-      "Manage instance-wide configuration for this InsightFlare deployment.",
+      "Manage instance-wide configuration for this Open Analytics deployment.",
     guide: "Guide",
     analyticsEngineTitle: "Analytics Engine",
     analyticsEngineDescription:
@@ -5794,7 +4875,7 @@ const enMessages = {
       "Delete the Analytics Engine read credentials? Features that depend on Analytics Engine will show configuration required until the credentials are restored.",
     analyticsEngineDisabledTitle: "Analytics Engine is not enabled",
     analyticsEngineDisabledDescription:
-      "This deployment automatically disabled the Analytics Engine binding because the Cloudflare account has not enabled Analytics Engine. Enable Analytics Engine in Cloudflare, then redeploy InsightFlare to activate related analysis features.",
+      "This deployment automatically disabled the Analytics Engine binding because the Cloudflare account has not enabled Analytics Engine. Enable Analytics Engine in Cloudflare, then redeploy Open Analytics to activate related analysis features.",
     analyticsEngineDisabledHint:
       "Analytics Engine settings are locked until Analytics Engine is enabled and the Worker is redeployed.",
     analyticsEngineOpenCloudflare: "Open Cloudflare Analytics Engine",
@@ -5810,7 +4891,11 @@ const enMessages = {
     ],
     notificationEmailTitle: "Email Notifications",
     notificationEmailDescription:
-      "Configure the email service used for reports, alerts, and test messages.",
+      "Reports, alerts and test messages are sent by email through the Every App gateway.",
+    emailGatewayReady: "The Every App gateway sends notification email.",
+    emailGatewayNotReady:
+      "The Every App gateway has no email sender set up yet. Its operator sets EMAIL_FROM and Email Sending, then notification email starts.",
+    emailSenderLabel: "Sender",
     notificationEmailGuideTitle: "Get Resend email settings",
     notificationEmailGuideDescription:
       "To send system email through Resend, prepare a verified sender domain and an API key.",
@@ -5823,11 +4908,13 @@ const enMessages = {
     ],
     retentionTitle: "Operational data retention",
     retentionDescription:
-      "Configure how long task runs, task logs, and notification messages remain available. Changes affect new records only.",
+      "Configure how long task runs, task logs, notification messages and detailed analytics remain available. Task and notification changes affect new records only; detailed analytics older than the new limit are deleted on the next daily run.",
     scheduledTaskLogsDaysLabel: "Scheduled task logs and runs (days)",
     notificationTestDaysLabel: "Test notifications (days)",
     notificationAttentionDaysLabel: "Warning and critical notifications (days)",
     notificationDefaultDaysLabel: "Other notifications (days)",
+    analyticsDetailDaysLabel:
+      "Detailed analytics: page views and events (days; hourly totals are kept)",
     retentionRangeHint: "Enter an integer from 1 to 3650 days.",
     retentionSave: "Save retention settings",
     retentionSaving: "Saving...",
@@ -5866,7 +4953,7 @@ const enMessages = {
     loginTurnstileGuideSteps: [
       "Open the Cloudflare Dashboard and go to Turnstile.",
       "Create a new widget and choose Invisible mode.",
-      "Add the current InsightFlare login domain to the allowed hostnames.",
+      "Add the current Open Analytics login domain to the allowed hostnames.",
       "Copy the Site Key and Secret Key after the widget is created.",
       "Enter the Site Key and Secret Key here, run the verification test, then save the configuration.",
     ],
@@ -5902,7 +4989,7 @@ const enMessages = {
   systemPerformance: {
     title: "System Performance",
     subtitle:
-      "Monitor InsightFlare collection, buffering, and write health from existing analytics rows.",
+      "Monitor Open Analytics collection, buffering, and write health from existing analytics rows.",
     refresh: "Refresh",
     loadFailed: "Failed to load system performance data.",
     noData: "No system performance data in this window.",
@@ -5993,64 +5080,18 @@ const enMessages = {
       "Thresholds — stale {stale}, timeout {timeout}, hardAged {hardAged}, stuck flush_attempts ≥ {stuck}",
     doDiagnosticHealthy: "No abnormal buffered rows detected.",
   },
-  loginForm: {
-    signingIn: "Signing in...",
-    verifyingSecurity: "Verifying security...",
-    securityVerificationTitle: "Security verification failed",
-    securityVerificationFailed:
-      "Security verification failed. Please try again.",
-    retrySecurityVerification: "Retry verification",
-    redirecting: "Redirecting...",
-    failed: "Sign in failed. Please try again.",
-  },
-  logoutAction: {
-    pending: "Signing out...",
-    success: "Signed out.",
-    failed: "Failed to sign out. Please try again.",
-  },
+  loginForm: {},
+  logoutAction: {},
   sidebarFooter: {
     gateway: "Back to Every App",
   },
-  teamEntry: {
-    title: "Choose a Team",
-    description: "You have access to multiple teams. Choose where to continue.",
-  },
+  teamEntry: {},
 } as AppMessages;
 
 const zhMessages = {
-  appName: "InsightFlare",
+  appName: "Open Analytics",
   uiGallery: {
-    searchLabel: "搜索 UI 组件",
-    searchPlaceholder: "搜索组件",
-    backToApp: "返回 InsightFlare",
-    noSearchResults: "没有符合搜索条件的组件。",
-    toggleNavigation: "切换组件库导航",
-    library: "UI 组件库",
-    componentsCount: "{count} 个组件",
-    statesCount: "{count} 个状态",
-    designSystem: "InsightFlare 设计系统",
-    pageTitle: "UI 组件",
-    catalogSummary: "{components} 个组件 · {states} 个属性取值",
-    categories: {
-      inputs: "输入控件",
-      feedback: "反馈",
-      foundations: "基础",
-      navigation: "导航",
-      "data-display": "数据展示",
-      overlays: "浮层",
-      "product-analytics": "产品 UI / 分析",
-      "product-management": "产品 UI / 管理",
-      "product-realtime": "产品 UI / 实时",
-    },
-    browseCategories: "按分类浏览",
-    featuredComponents: "精选组件",
-    backToCatalog: "UI 组件",
-    canonicalStates: "Props 与取值",
-    browseAllComponents: "浏览全部组件",
-    previewState: "打开预览",
-    resetPreview: "重置预览",
-    expandCode: "展开代码",
-    collapseCode: "收起代码",
+    categories: {},
   },
   navigation: {
     overview: "总览",
@@ -6777,7 +5818,6 @@ const zhMessages = {
     eventTime: "事件时间",
     eventKind: "事件种类",
     eventName: "事件名称",
-    siteId: "站点 ID",
     traceId: "追踪 ID",
     receivedAt: "接收时间",
     startedAt: "开始时间",
@@ -6841,7 +5881,6 @@ const zhMessages = {
     empty: "当前筛选条件下暂无页面数据。",
     loadError: "页面数据加载失败，请稍后重试。",
     loadMoreError: "加载更多页面失败。",
-    retry: "重试",
     trendTitle: "页面访问趋势",
     otherPages: "其他页面",
     hashTab: "锚点",
@@ -7684,11 +6723,6 @@ const zhMessages = {
     savingTracking: "正在保存跟踪设置…",
     save: "保存修改",
     saving: "保存中...",
-    transferTitle: "转移到其他团队",
-    transferSubtitle: "将当前站点迁移到你可管理的其他团队。",
-    transferTeamLabel: "目标团队",
-    transfer: "转移站点",
-    transferring: "转移中...",
     scriptTitle: "安装统计脚本",
     scriptSubtitle: "将此脚本添加到你的网站后即可开始采集分析数据。",
     scriptHint:
@@ -7705,8 +6739,6 @@ const zhMessages = {
     toasts: {
       saved: "站点设置已保存。",
       saveFailed: "站点设置保存失败。",
-      transferred: "站点已转移。",
-      transferFailed: "站点转移失败。",
       scriptLoadFailed: "加载脚本片段失败。",
       settingsLoadFailed: "加载脚本设置失败。",
       settingsPropagationHint: "设置分发到全球节点可能需要最多 1 小时。",
@@ -7718,33 +6750,16 @@ const zhMessages = {
   accountSettings: {
     emailManagedByGateway: "邮箱来自你的 Every App 账户。",
     title: "账户设置",
-    subtitle: "管理你的个人信息、登录密码和仪表盘时区。",
+    subtitle: "管理你的昵称、通知和仪表盘时区。",
     profileTitle: "个人信息",
-    profileDescription: "更新昵称、用户名和邮箱。",
+    profileDescription: "更新仪表盘中显示的昵称。",
     nicknameLabel: "昵称",
     nicknamePlaceholder: "例如：产品分析师",
-    usernameLabel: "用户名",
-    usernamePlaceholder: "例如：alex",
-    usernameDescription: "用户名也可用于登录。",
     emailLabel: "邮箱",
-    emailPlaceholder: "name@example.com",
-    invalidProfile: "请填写有效的用户名和邮箱。",
     profileSave: "保存个人信息",
     profileSaving: "保存中...",
     profileSaved: "个人信息已保存。",
     profileSaveFailed: "保存个人信息失败。",
-    passwordTitle: "登录密码",
-    passwordDescription: "修改当前账号的登录密码。",
-    currentPasswordLabel: "当前密码",
-    newPasswordLabel: "新密码",
-    confirmPasswordLabel: "确认新密码",
-    currentPasswordRequired: "请输入当前密码。",
-    passwordTooShort: "新密码至少需要 8 个字符。",
-    passwordMismatch: "两次输入的新密码不一致。",
-    passwordSave: "修改密码",
-    passwordSaving: "修改中...",
-    passwordSaved: "密码已修改。",
-    passwordSaveFailed: "修改密码失败。",
     preferredLanguageTitle: "通知语言",
     preferredLanguageDescription: "选择定时通知邮件使用的语言。",
     preferredLanguageLabel: "邮件语言",
@@ -7876,7 +6891,7 @@ const zhMessages = {
   },
   notificationEmail: {
     common: {
-      brand: "InsightFlare",
+      brand: "Open Analytics",
       date: "日期",
       coreMetrics: "核心指标",
       topPages: "热门页面",
@@ -7899,8 +6914,8 @@ const zhMessages = {
       never: "从未收到",
       noPageData: "暂无页面数据。",
       noReferrerData: "暂无来源数据。",
-      footer: "这封邮件由 InsightFlare 通知系统发送。",
-      fallbackSubject: "InsightFlare 通知",
+      footer: "这封邮件由 Open Analytics 通知系统发送。",
+      fallbackSubject: "Open Analytics 通知",
       trackingHint: "请检查统计脚本是否正常安装，或确认站点是否仍有流量。",
       severity: {
         info: "信息",
@@ -7910,10 +6925,10 @@ const zhMessages = {
       },
     },
     test: {
-      subject: "InsightFlare 通知测试",
-      title: "InsightFlare 通知测试",
-      summary: "这是一条来自 InsightFlare 的测试通知。",
-      body: "这是一条来自 InsightFlare 的测试通知。如果邮件已配置并启用，它也会验证 Resend 投递是否正常。",
+      subject: "Open Analytics 通知测试",
+      title: "Open Analytics 通知测试",
+      summary: "这是一条来自 Open Analytics 的测试通知。",
+      body: "这是一条来自 Open Analytics 的测试通知。如果邮件已配置并启用，它也会验证 Resend 投递是否正常。",
     },
     report: {
       subject: "{site} {periodLabel}访问报告",
@@ -7961,7 +6976,7 @@ const zhMessages = {
   runtimeConfigError: {
     title: "需要运行时配置",
     eyebrow: "部署已暂停",
-    heading: "InsightFlare 需要一个运行时密钥后才能加载控制台。",
+    heading: "Open Analytics 需要一个运行时密钥后才能加载控制台。",
     description:
       "应用已经启动，但当前运行环境没有读取到必需的 root secret，因此暂时阻止进入控制台。",
     requiredTitle: "必需的运行时密钥",
@@ -7974,64 +6989,14 @@ const zhMessages = {
     docsLabel: "打开 GitHub",
     homeLabel: "重试控制台",
   },
-  login: {
-    title: "登录",
-    subtitle: "使用 InsightFlare 账号登录。",
-    username: "用户名或邮箱",
-    password: "密码",
-    signIn: "登录",
-    invalidCredentials: "用户名或密码错误。",
-  },
+  login: {},
   accountLinks: {
     invite: {
-      title: "团队邀请",
-      subtitle: "接受邀请后加入该团队。",
-      loading: "正在加载邀请...",
-      missingToken: "缺少邀请 token。",
-      loadFailed: "加载邀请失败。",
-      accept: "接受邀请",
-      accepting: "正在接受...",
-      accepted: "已接受邀请。",
-      acceptFailed: "接受邀请失败。",
-      signIn: "登录后接受",
-      signedInNotice: "当前已登录。接受后会将当前账号加入该团队。",
-      teamLabel: "团队",
-      roleLabel: "角色",
-      emailLabel: "邀请邮箱",
-      accountEmailLabel: "账号邮箱",
-      anyEmail: "任意邮箱",
-      expiresLabel: "过期时间",
-      usernameLabel: "用户名",
-      nameLabel: "显示名称",
-      passwordLabel: "密码",
-      roles: {
-        admin: "管理员",
-        member: "成员",
-      },
+      roles: {},
     },
-    resetPassword: {
-      title: "重置密码",
-      subtitle: "为该账号设置新密码。",
-      loading: "正在加载重置链接...",
-      missingToken: "缺少重置 token。",
-      loadFailed: "加载重置链接失败。",
-      reset: "重置密码",
-      resetting: "正在重置...",
-      resetDone: "密码已重置，请使用新密码登录。",
-      resetFailed: "重置密码失败。",
-      signIn: "返回登录",
-      accountLabel: "账号",
-      emailLabel: "邮箱",
-      expiresLabel: "过期时间",
-      passwordLabel: "新密码",
-      confirmPasswordLabel: "确认密码",
-      passwordTooShort: "密码至少 8 个字符。",
-      passwordMismatch: "两次输入的密码不一致。",
-    },
+    resetPassword: {},
   },
-  empty: {
-    noTeams: "当前账号还没有可访问的团队。",
-  },
+  empty: {},
   errorPage: {
     notFoundEyebrow: "页面未找到",
     notFoundTitle: "找不到这个页面",
@@ -8039,7 +7004,7 @@ const zhMessages = {
     errorEyebrow: "应用错误",
     errorTitle: "页面出现了问题",
     errorDescription:
-      "InsightFlare 无法完成这次请求。下面的诊断信息可以帮助我们定位问题。",
+      "Open Analytics 无法完成这次请求。下面的诊断信息可以帮助我们定位问题。",
     statusLabel: "状态",
     reasonLabel: "原因",
     requestLabel: "请求路径",
@@ -8054,7 +7019,6 @@ const zhMessages = {
     reportHint: "将打开一个已预填内容的 GitHub Issue，提交前请先检查信息。",
   },
   actions: {
-    logout: "退出登录",
     switchToEnglish: "English",
     switchToChinese: "简体中文",
     switchToTraditionalChinese: "繁體中文",
@@ -8063,69 +7027,21 @@ const zhMessages = {
     switchToDark: "深色",
   },
   teamSelect: {
-    groupLabel: "团队",
-    groups: {
-      created: "创建的团队",
-      managed: "管理的团队",
-      member: "所属的团队",
-      system: "系统中的全部团队",
-    },
-    createHint: "新建团队",
-    createTitle: "新建团队",
-    createDescription: "创建后会自动切换到新团队。",
-    nameLabel: "团队名称",
-    namePlaceholder: "例如：增长团队",
-    slugLabel: "团队 Slug（可选）",
-    slugPlaceholder: "例如：growth-team",
-    create: "创建",
-    creating: "创建中...",
+    groups: {},
     cancel: "取消",
-    invalidName: "团队名称至少 2 个字符。",
-    createFailed: "创建失败，请稍后重试。",
-    createSuccess: "团队已创建。",
   },
   teamManagement: {
-    stats: {
-      sites: "站点",
-      members: "成员",
-    },
-    toasts: {
-      teamSaved: "团队设置已保存。",
-      teamSaveFailed: "团队设置保存失败。",
-      teamDeleted: "团队已删除。",
-      teamDeleteFailed: "删除团队失败。",
-      memberRemoved: "成员已移除。",
-      memberRemoveFailed: "移除成员失败。",
-      roleChanged: "成员角色已更新。",
-      roleChangeFailed: "更新成员角色失败。",
-      siteAccessChanged: "成员站点权限已更新。",
-      siteAccessChangeFailed: "更新站点权限失败。",
-      invalidTeamName: "团队名称至少 2 个字符。",
-      inviteCreated: "邀请链接已创建。",
-      inviteCreateFailed: "创建邀请链接失败。",
-      inviteRevoked: "邀请已撤销。",
-      inviteRevokeFailed: "撤销邀请失败。",
-      inviteCopied: "邀请链接已复制。",
-      inviteCopyFailed: "复制邀请链接失败。",
-      invalidInviteEmail: "请输入有效的邀请邮箱。",
-      invalidInviteExpiry: "邀请有效期至少为 1 小时。",
-      ownerTransferred: "所有权已转移。",
-      ownerTransferFailed: "转移所有权失败。",
-      invalidTransferTarget: "请选择新的所有者。",
-    },
+    stats: {},
+    toasts: {},
     sites: {
-      title: "站点仪表盘",
       subtitle: "聚合查看该团队下所有站点的访问表现。",
       aggregateTitle: "总访问量",
-      pagesPerSession: "每会话页面数",
       noSites: "当前团队还没有站点。",
       openAnalytics: "查看分析",
+      title: "站点仪表盘",
+      pagesPerSession: "每会话页面数",
     },
-    widgets: {
-      title: "小组件",
-      subtitle: "小组件功能正在开发中。",
-      underConstruction: "正在开发中",
-    },
+    widgets: {},
     notifications: {
       title: "通知规则",
       subtitle: "管理当前团队的通知规则。",
@@ -8373,204 +7289,28 @@ const zhMessages = {
       },
     },
     apiKeys: {
-      title: "API 密钥",
-      subtitle: "管理当前团队用于接口访问的密钥。",
-      empty: "当前团队还没有 API 密钥。",
-      create: "创建密钥",
-      creating: "创建中...",
-      createTitle: "创建 API 密钥",
-      createSubtitle: "只授予这个集成真正需要的最小权限。",
-      nameLabel: "密钥名称",
-      namePlaceholder: "生产同步任务",
-      scopesTitle: "权限",
-      scopesDescription: "API 密钥永远不能管理成员、用户、所有权或其他密钥。",
-      siteScopeTitle: "站点范围",
-      siteScopeDescription: "不选择站点表示当前团队所有现有和未来站点。",
-      allSites: "全部站点",
-      expirationLabel: "过期时间",
-      expiration30: "30 天",
-      expiration90: "90 天",
-      expiration180: "180 天",
-      expiration365: "365 天",
-      expirationNever: "永不过期",
-      oneTimeSecretTitle: "立即复制这个密钥",
-      oneTimeSecretDescription: "完整密钥只显示一次，关闭弹窗后无法再次查看。",
-      copySecret: "复制密钥",
-      revoke: "撤销",
-      rotate: "轮换",
-      revokeConfirm: "确认立即撤销这个 API 密钥吗？",
-      rotateConfirm: "确认轮换这个 API 密钥吗？旧密钥会被立即撤销。",
-      neverExpires: "永不过期",
-      notUsed: "未使用",
-      loading: "正在加载 API 密钥...",
-      loadFailed: "API 密钥加载失败。",
-      invalidInput: "请输入名称并至少选择一个权限。",
-      createFailed: "API 密钥创建失败。",
-      revokeFailed: "API 密钥撤销失败。",
-      rotateFailed: "API 密钥轮换失败。",
-      copied: "已复制",
-      status: {
-        active: "有效",
-        expired: "已过期",
-        revoked: "已撤销",
-      },
-      scopes: {
-        analyticsRead: "读取分析",
-        analysisRead: "读取分析定义",
-        analysisWrite: "写入分析定义",
-        siteRead: "读取站点",
-        siteWrite: "写入站点",
-        siteConfigRead: "读取配置",
-        siteConfigWrite: "写入配置",
-      },
-      scopeDescriptions: {
-        analyticsRead: "查看访问量、访客、页面浏览等分析数据",
-        analysisRead: "查看团队共享的已保存筛选器和漏斗定义",
-        analysisWrite: "创建、更新或删除漏斗定义",
-        siteRead: "查看站点列表和站点详情",
-        siteWrite: "创建、更新或删除站点",
-        siteConfigRead: "查看站点配置，如跟踪代码、域名白名单等",
-        siteConfigWrite: "修改站点配置，如跟踪强度、路径黑名单等",
-      },
-      scopeGroups: {
-        analytics: "分析",
-        analysis: "分析定义",
-        site: "站点",
-        siteConfig: "站点配置",
-      },
-      columns: {
-        name: "名称",
-        scopes: "权限",
-        sites: "站点",
-        expires: "过期",
-        lastUsed: "最近使用",
-        status: "状态",
-        action: "操作",
-      },
+      status: {},
+      scopes: {},
+      scopeDescriptions: {},
+      scopeGroups: {},
+      columns: {},
     },
-    settings: {
-      title: "团队设置",
-      subtitle: "更新团队显示名和 slug。",
-      nameLabel: "团队显示名",
-      slugLabel: "团队 Slug",
-      save: "保存设置",
-      saving: "保存中...",
-      delete: "删除团队",
-      deleting: "删除中...",
-      deleteConfirm: "确认删除该团队及其所有数据吗？此操作不可撤销。",
-      transferTitle: "转移所有权",
-      transferSubtitle:
-        "将团队所有权转移给另一位成员。当前所有者会自动降为管理员。",
-      transferTargetLabel: "新的所有者",
-      transferTargetPlaceholder: "选择团队成员",
-      transfer: "转移所有权",
-      transferring: "转移中...",
-      transferConfirm:
-        "此操作不可撤销，你将失去对该团队的所有权（仍保留管理员权限）。确认继续吗？",
-      noTransferableMembers: "当前团队没有其他可转移的成员，请先添加成员。",
-    },
+    settings: {},
     members: {
-      title: "成员管理",
-      subtitle: "创建邀请链接或移除现有成员。",
-      remove: "移除成员",
-      removeMemberAction: "移除成员「{target}」",
-      removeMemberConfirm:
-        "确认将「{target}」从该团队移除吗？移除后将立即失去访问权限。",
-      noMembers: "当前团队暂无成员。",
-      invitesTitle: "创建邀请链接",
-      invitesSubtitle: "用户接受邀请后才会加入此团队。",
-      inviteEmailLabel: "邮箱限制（可选）",
-      inviteEmailPlaceholder: "user@example.com",
-      inviteExpiresLabel: "有效期（小时）",
-      createInvite: "创建邀请链接",
-      creatingInvite: "创建中...",
-      copyInvite: "复制邀请链接",
-      inviteLinksTitle: "邀请链接",
-      inviteLinksSubtitle: "查看邀请状态并撤销有效链接。",
-      noInvites: "当前团队暂无邀请链接。",
-      anyEmail: "任意邮箱",
-      revokeInvite: "撤销邀请",
-      revokeInviteAction: "撤销「{target}」的邀请",
-      revokeInviteConfirm:
-        "确认撤销「{target}」的邀请吗？该邀请链接将立即失效。",
-      siteAccessLabel: "站点权限",
-      siteAccessAll: "全部站点",
-      siteAccessRestricted: "限定站点",
-      siteAccessSelected: "已选择 {count} 个站点",
-      siteAccessDescription: "保持为全部站点，或选择此成员可以访问的具体站点。",
-      siteAccessAdmins: "管理员可以访问此团队内的全部站点。",
-      siteAccessDialogTitle: "编辑站点权限",
-      saveSiteAccess: "保存权限",
-      cancelSiteAccess: "取消",
-      noSitesForAccess: "当前团队暂无站点。",
-      inviteStatuses: {
-        active: "有效",
-        used: "已使用",
-        revoked: "已撤销",
-        expired: "已过期",
-      },
-      columns: {
-        name: "名称",
-        username: "用户名",
-        email: "邮箱",
-        inviteCode: "邀请码",
-        role: "角色",
-        siteAccess: "站点权限",
-        joinedAt: "加入时间",
-        createdAt: "创建时间",
-        expiresAt: "过期时间",
-        usedAt: "使用时间",
-        status: "状态",
-        action: "操作",
-      },
-      roleLabels: {
-        owner: "所有者",
-        admin: "管理员",
-        member: "成员",
-      },
+      inviteStatuses: {},
+      columns: {},
+      roleLabels: {},
     },
   },
   managementNav: {
-    users: "用户管理",
     sites: "站点管理",
-    teams: "团队管理",
-    versionUpdates: "版本更新",
     scheduledTasks: "定时任务",
     requestObservation: "请求观测",
     systemPerformance: "系统性能",
     systemSettings: "系统设置",
   },
   managementPages: {
-    versionUpdates: {
-      subtitle: "查看 InsightFlare 已发布版本与当前运行构建。",
-      empty: "暂无版本更新记录。",
-      currentVersion: "当前版本",
-      latestVersion: "最新版本",
-      currentCommit: "当前提交",
-      releaseCount: "发布数",
-      publishedAt: "发布时间",
-      author: "发布者",
-      commit: "提交",
-      statusStable: "正式版",
-      statusPrerelease: "预发布",
-      statusDraft: "草稿",
-      currentVersionBadge: "当前版本",
-      releaseNotes: "更新说明",
-      openRelease: "打开 Release",
-      viewDetails: "查看详细变更",
-      detailsTitle: "详细变更",
-      detailsDescription: "{range} 包含的提交。",
-      detailsLoading: "正在加载详细变更...",
-      detailsEmpty: "这个版本暂无可对比的上一个发布版本。",
-      detailsFailed: "加载详细变更失败。",
-      currentCommitBadge: "当前部署",
-      openCompare: "打开对比",
-      openCommit: "打开提交",
-      commitCount: "提交数",
-      source: "数据来源",
-      loadFailed: "加载版本索引失败。",
-      unknown: "未知",
-    },
+    versionUpdates: {},
     scheduledTasks: {
       subtitle: "查看和管理系统定时任务。",
       empty: "暂无定时任务。",
@@ -8656,49 +7396,7 @@ const zhMessages = {
     },
   },
   adminUsers: {
-    title: "用户管理",
-    subtitle: "仅系统管理员可创建和管理后台用户。",
-    createTitle: "新建用户",
-    createTeamNotice:
-      "在这里创建用户会同时创建一个由该用户拥有的新团队。如果只是想把用户加入现有团队，请前往对应团队设置中创建邀请链接。",
-    username: "用户名",
-    email: "邮箱",
-    name: "名称（可选）",
-    password: "密码（至少 8 位）",
-    role: "系统角色",
-    teamName: "团队名称",
-    teamSlug: "团队 Slug（可选）",
-    defaultTeamName: "{name} 的团队",
-    create: "创建用户",
-    creating: "创建中...",
-    delete: "删除",
-    deleting: "删除中...",
-    deleteConfirm: "确认删除该用户账号吗？",
-    deleteSuccess: "用户已删除。",
-    deleteFailed: "删除用户失败。",
-    generateResetLink: "生成重置密码链接",
-    resetLinkCreated: "重置密码链接已生成。",
-    resetLinkCreateFailed: "生成重置密码链接失败。",
-    resetLinkCopied: "重置密码链接已复制。",
-    resetLinkCopyFailed: "复制重置密码链接失败。",
-    copyResetLink: "复制链接",
-    resetLinkExpiresAt: "过期时间",
-    listTitle: "用户列表",
-    listSubtitle: "当前系统内所有用户。",
-    noData: "暂无用户数据。",
-    loadFailed: "加载用户列表失败。",
-    createSuccess: "用户创建成功。",
-    createFailed: "用户创建失败。",
-    invalidInput: "请填写有效的用户名、邮箱和密码。",
-    columns: {
-      name: "名称",
-      username: "用户名",
-      email: "邮箱",
-      role: "角色",
-      teams: "团队数",
-      created: "创建时间",
-      action: "操作",
-    },
+    columns: {},
   },
   adminSites: {
     title: "站点管理",
@@ -8728,84 +7426,33 @@ const zhMessages = {
     },
   },
   adminTeams: {
-    title: "团队管理",
-    subtitle: "仅系统管理员可创建与查看所有团队。",
-    createTitle: "新建团队",
-    createSubtitle: "创建后可进入团队配置与成员管理。",
-    name: "团队名称",
-    slug: "团队 Slug（可选）",
-    create: "创建团队",
-    creating: "创建中...",
-    listTitle: "团队列表",
-    listSubtitle: "系统中所有团队。",
-    noData: "暂无团队数据。",
-    loadFailed: "加载团队失败。",
-    createSuccess: "团队创建成功。",
-    createFailed: "团队创建失败。",
-    invalidInput: "团队名称至少 2 个字符。",
-    open: "进入团队",
-    settings: "设置",
-    columns: {
-      name: "名称",
-      slug: "Slug",
-      sites: "站点数",
-      members: "成员数",
-      created: "创建时间",
-      action: "操作",
-    },
+    columns: {},
   },
   requestObservation: {
     title: "请求观测",
-    tabs: {
-      overview: "总览",
-      blocked: "拦截请求",
-      included: "统计请求",
+    subtitle: "收集器近期拒绝的请求：自定义拦截规则、机器人和托管网络。",
+    blockedTotal: "已拦截请求",
+    retentionNote: "保留 30 天。放行的流量见各站点的仪表盘。",
+    topReasons: "原因",
+    recentTitle: "最近拦截的请求",
+    categoryLabels: {
+      custom_block: "拦截规则",
+      bot: "机器人",
+      suspected_bot: "托管网络",
     },
+    tabs: {},
     refresh: "刷新",
     loadFailed: "加载请求观测数据失败。",
-    notConfiguredTitle: "尚未配置 Analytics Engine 读取凭据",
-    notConfiguredDescription:
-      "请先在系统设置中填写 Cloudflare Account ID 和 API Token，用于读取请求观测 Analytics Engine 数据集。",
-    analyticsEngineDisabledTitle: "Analytics Engine 尚未启用",
-    analyticsEngineDisabledDescription:
-      "当前部署未绑定 Analytics Engine，因为 Cloudflare 账户尚未启用 Analytics Engine。请先在 Cloudflare 中启用，然后重新部署以采集请求观测数据。",
-    openAnalyticsEngine: "打开 Analytics Engine",
-    openSettings: "打开设置",
-    affectedSites: "受影响站点",
-    uniqueCountries: "国家/地区",
     noData: "当前时间窗口内没有请求数据。",
-    trendTitle: "分流趋势",
-    client: "客户端",
-    edge: "边缘",
-    identifiers: "标识符",
-    fullUserAgent: "完整 User-Agent",
-    id: "ID",
-    metadata: "元数据",
     time: "时间",
     site: "站点",
     location: "位置",
     network: "网络",
     reason: "原因",
-    request: "请求",
-    ip: "IP",
     userAgent: "User-Agent",
-    category: "分类",
     emptyValue: "未知",
-    kind: "类型",
-    botScore: "Bot 分数",
-    botScoreBucket: "Bot Score 区间",
-    verifiedBotCategory: "验证机器人类别",
-    hostname: "主机名",
     pathname: "路径",
-    origin: "Origin",
-    asOrganization: "ASN 组织",
-    asn: "ASN",
     country: "国家/地区",
-    region: "州/省",
-    city: "城市",
-    colo: "数据中心",
-    userAgentLengthBucket: "User-Agent 长度",
-    userAgentLength: "User-Agent 长度（精确）",
     ipPrefix: "IP 前缀",
     botReasonLabels: {
       missing_ua: "缺少 User-Agent",
@@ -8831,45 +7478,15 @@ const zhMessages = {
       blocked_countries: "命中国家/地区屏蔽规则",
       blocked_regions: "命中区域屏蔽规则",
     },
-    requestKindLabels: {
-      pageview: "页面浏览",
-      custom_event: "自定义事件",
-      request: "请求",
-      visibility: "可见性",
-      leave: "离开",
-      identify: "用户识别",
-    },
+    requestKindLabels: {},
     overviewLabels: {
-      p50Latency: "P50 Worker 处理耗时",
-      p75Latency: "P75 Worker 处理耗时",
-      p99Latency: "P99 Worker 处理耗时",
-      p95Latency: "P95 Worker 处理耗时",
-      avgLatency: "平均 Worker 处理耗时",
-      pageviews: "页面浏览",
-      customEvents: "自定义事件",
-      overviewTrendTitle: "请求分流趋势",
-      trafficCompositionTitle: "业务请求构成",
-      trafficCompositionDescription:
-        "按时间显示正常采集链路中页面浏览、离开、可见性、自定义事件和用户识别的数量。",
-      categoryShareTitle: "请求分类占比",
-      latencyTitle: "Worker 处理耗时趋势",
-      latencyDescription:
-        "正常请求写入 AE 时记录的 P50 / P75 / P95 / P99 Worker 处理耗时。",
-      requests: "请求数",
       windowDays: "最近 {days} 天",
-      latencyMilliseconds: "{value} 毫秒",
     },
-    normalDetail: {
-      requestMethod: "请求方法",
-      edgeLatency: "Worker 处理耗时",
-      eventAt: "事件时间",
-      receivedAt: "接收时间",
-      continent: "大洲",
-    },
+    normalDetail: {},
   },
   systemSettings: {
     title: "系统设置",
-    subtitle: "管理当前 InsightFlare 实例的全站配置。",
+    subtitle: "管理当前 Open Analytics 实例的全站配置。",
     guide: "教程",
     analyticsEngineTitle: "分析引擎",
     analyticsEngineDescription:
@@ -8885,7 +7502,7 @@ const zhMessages = {
       "确认删除分析引擎读取凭据吗？删除后，依赖 Analytics Engine 的功能将显示为未配置。",
     analyticsEngineDisabledTitle: "Analytics Engine 尚未启用",
     analyticsEngineDisabledDescription:
-      "当前部署已自动禁用 Analytics Engine 绑定，因为 Cloudflare 账户尚未启用 Analytics Engine。请先在 Cloudflare 中启用 Analytics Engine，然后重新部署 InsightFlare 以激活相关分析功能。",
+      "当前部署已自动禁用 Analytics Engine 绑定，因为 Cloudflare 账户尚未启用 Analytics Engine。请先在 Cloudflare 中启用 Analytics Engine，然后重新部署 Open Analytics 以激活相关分析功能。",
     analyticsEngineDisabledHint:
       "在启用 Analytics Engine 并重新部署 Worker 前，分析引擎设置不可修改。",
     analyticsEngineOpenCloudflare: "打开 Cloudflare Analytics Engine",
@@ -8901,7 +7518,11 @@ const zhMessages = {
     ],
     notificationEmailTitle: "邮件通知",
     notificationEmailDescription:
-      "配置系统用于发送报告、告警和测试邮件的邮件服务。",
+      "报告、提醒和测试消息通过 Every App 网关以邮件发送。",
+    emailGatewayReady: "Every App 网关负责发送通知邮件。",
+    emailGatewayNotReady:
+      "Every App 网关尚未配置邮件发件人。网关管理员设置 EMAIL_FROM 和 Email Sending 后即可发送通知邮件。",
+    emailSenderLabel: "发件人",
     notificationEmailGuideTitle: "获取 Resend 邮件配置",
     notificationEmailGuideDescription:
       "使用 Resend 发送系统邮件前，需要准备发件域名和 API Key。",
@@ -8914,11 +7535,13 @@ const zhMessages = {
     ],
     retentionTitle: "运行数据保留期",
     retentionDescription:
-      "配置任务运行记录、任务日志和通知消息的保留时间。修改只影响新建记录。",
+      "配置任务运行记录、任务日志、通知消息和详细分析数据的保留时间。任务和通知的修改只影响新建记录；超出新期限的详细分析数据会在下一次每日运行时删除。",
     scheduledTaskLogsDaysLabel: "计划任务运行记录和日志（天）",
     notificationTestDaysLabel: "测试通知（天）",
     notificationAttentionDaysLabel: "警告和严重通知（天）",
     notificationDefaultDaysLabel: "其他通知（天）",
+    analyticsDetailDaysLabel:
+      "详细分析数据：页面浏览和事件（天；保留每小时汇总）",
     retentionRangeHint: "请输入 1 到 3650 之间的整数天数。",
     retentionSave: "保存保留期配置",
     retentionSaving: "保存中...",
@@ -8954,7 +7577,7 @@ const zhMessages = {
     loginTurnstileGuideSteps: [
       "打开 Cloudflare Dashboard，进入 Turnstile。",
       "新建一个 widget，并选择 Invisible 模式。",
-      "添加当前 InsightFlare 登录域名到允许的主机名列表。",
+      "添加当前 Open Analytics 登录域名到允许的主机名列表。",
       "创建后复制 Site Key 和 Secret Key。",
       "回到这里填写 Site Key 和 Secret Key，先运行测试验证，再保存配置。",
     ],
@@ -8989,7 +7612,7 @@ const zhMessages = {
   },
   systemPerformance: {
     title: "系统性能",
-    subtitle: "基于现有分析行监控 InsightFlare 的采集、缓冲和写入健康度。",
+    subtitle: "基于现有分析行监控 Open Analytics 的采集、缓冲和写入健康度。",
     refresh: "刷新",
     loadFailed: "加载系统性能数据失败。",
     noData: "当前时间窗口内暂无系统性能数据。",
@@ -9080,63 +7703,18 @@ const zhMessages = {
       "阈值：stale {stale}，timeout {timeout}，hardAged {hardAged}，stuck flush_attempts ≥ {stuck}",
     doDiagnosticHealthy: "当前未发现异常缓冲行。",
   },
-  loginForm: {
-    signingIn: "登录中...",
-    verifyingSecurity: "正在安全验证...",
-    securityVerificationTitle: "安全验证失败",
-    securityVerificationFailed: "安全验证失败，请重试。",
-    retrySecurityVerification: "重试验证",
-    redirecting: "正在跳转...",
-    failed: "登录失败，请稍后重试。",
-  },
-  logoutAction: {
-    pending: "退出中...",
-    success: "已退出登录。",
-    failed: "退出登录失败，请稍后重试。",
-  },
+  loginForm: {},
+  logoutAction: {},
   sidebarFooter: {
     gateway: "返回 Every App",
   },
-  teamEntry: {
-    title: "选择团队",
-    description: "你当前可访问多个团队，请先选择要进入的团队。",
-  },
+  teamEntry: {},
 } as AppMessages;
 
 const zhTwMessages = {
-  appName: "InsightFlare",
+  appName: "Open Analytics",
   uiGallery: {
-    searchLabel: "搜尋 UI 元件",
-    searchPlaceholder: "搜尋元件",
-    backToApp: "返回 InsightFlare",
-    noSearchResults: "沒有符合搜尋條件的元件。",
-    toggleNavigation: "切換元件庫導航",
-    library: "UI 元件庫",
-    componentsCount: "{count} 個元件",
-    statesCount: "{count} 個狀態",
-    designSystem: "InsightFlare 設計系統",
-    pageTitle: "UI 元件",
-    catalogSummary: "{components} 個元件 · {states} 個屬性取值",
-    categories: {
-      inputs: "輸入控制元件",
-      feedback: "反饋",
-      foundations: "基礎",
-      navigation: "導航",
-      "data-display": "資料展示",
-      overlays: "浮層",
-      "product-analytics": "產品 UI / 分析",
-      "product-management": "產品 UI / 管理",
-      "product-realtime": "產品 UI / 即時",
-    },
-    browseCategories: "按分類瀏覽",
-    featuredComponents: "精選元件",
-    backToCatalog: "UI 元件",
-    canonicalStates: "Props 與取值",
-    browseAllComponents: "瀏覽全部元件",
-    previewState: "開啟預覽",
-    resetPreview: "重設預覽",
-    expandCode: "展開程式碼",
-    collapseCode: "收起程式碼",
+    categories: {},
   },
   navigation: {
     overview: "總覽",
@@ -9863,7 +8441,6 @@ const zhTwMessages = {
     eventTime: "事件時間",
     eventKind: "事件種類",
     eventName: "事件名稱",
-    siteId: "站點 ID",
     traceId: "追蹤 ID",
     receivedAt: "接收時間",
     startedAt: "開始時間",
@@ -9927,7 +8504,6 @@ const zhTwMessages = {
     empty: "目前篩選條件下暫無頁面資料。",
     loadError: "頁面資料載入失敗，請稍後重試。",
     loadMoreError: "載入更多頁面失敗。",
-    retry: "重試",
     trendTitle: "頁面造訪趨勢",
     otherPages: "其他頁面",
     hashTab: "錨點",
@@ -10770,11 +9346,6 @@ const zhTwMessages = {
     savingTracking: "正在儲存追蹤設定…",
     save: "儲存修改",
     saving: "儲存中...",
-    transferTitle: "轉移到其他團隊",
-    transferSubtitle: "將目前站點遷移到你可管理的其他團隊。",
-    transferTeamLabel: "目標團隊",
-    transfer: "轉移站點",
-    transferring: "轉移中...",
     scriptTitle: "安裝統計指令碼",
     scriptSubtitle: "將此指令碼新增到你的網站後即可開始採集分析資料。",
     scriptHint:
@@ -10791,8 +9362,6 @@ const zhTwMessages = {
     toasts: {
       saved: "站點設定已儲存。",
       saveFailed: "站點設定儲存失敗。",
-      transferred: "站點已轉移。",
-      transferFailed: "站點轉移失敗。",
       scriptLoadFailed: "載入指令碼片段失敗。",
       settingsLoadFailed: "載入指令碼設定失敗。",
       settingsPropagationHint: "設定分發到全球節點可能需要最多 1 小時。",
@@ -10804,33 +9373,16 @@ const zhTwMessages = {
   accountSettings: {
     emailManagedByGateway: "電子郵件來自你的 Every App 帳戶。",
     title: "帳戶設定",
-    subtitle: "管理你的個人資訊、登入密碼和儀表盤時區。",
+    subtitle: "管理你的暱稱、通知和儀表盤時區。",
     profileTitle: "個人資訊",
-    profileDescription: "更新暱稱、使用者名稱和電子郵件。",
+    profileDescription: "更新儀表盤中顯示的暱稱。",
     nicknameLabel: "暱稱",
     nicknamePlaceholder: "例如：產品分析師",
-    usernameLabel: "使用者名稱",
-    usernamePlaceholder: "例如：alex",
-    usernameDescription: "使用者名稱也可用於登入。",
     emailLabel: "電子郵件",
-    emailPlaceholder: "name@example.com",
-    invalidProfile: "請填寫有效的使用者名稱和電子郵件。",
     profileSave: "儲存個人資訊",
     profileSaving: "儲存中...",
     profileSaved: "個人資訊已儲存。",
     profileSaveFailed: "儲存個人資訊失敗。",
-    passwordTitle: "登入密碼",
-    passwordDescription: "修改目前帳號的登入密碼。",
-    currentPasswordLabel: "目前密碼",
-    newPasswordLabel: "新密碼",
-    confirmPasswordLabel: "確認新密碼",
-    currentPasswordRequired: "請輸入目前密碼。",
-    passwordTooShort: "新密碼至少需要 8 個字元。",
-    passwordMismatch: "兩次輸入的新密碼不一致。",
-    passwordSave: "修改密碼",
-    passwordSaving: "修改中...",
-    passwordSaved: "密碼已修改。",
-    passwordSaveFailed: "修改密碼失敗。",
     preferredLanguageTitle: "通知語言",
     preferredLanguageDescription: "選擇定時通知郵件使用的語言。",
     preferredLanguageLabel: "郵件語言",
@@ -10962,7 +9514,7 @@ const zhTwMessages = {
   },
   notificationEmail: {
     common: {
-      brand: "InsightFlare",
+      brand: "Open Analytics",
       date: "日期",
       coreMetrics: "核心指標",
       topPages: "熱門頁面",
@@ -10985,8 +9537,8 @@ const zhTwMessages = {
       never: "從未收到",
       noPageData: "暫無頁面資料。",
       noReferrerData: "暫無來源資料。",
-      footer: "這封郵件由 InsightFlare 通知系統傳送。",
-      fallbackSubject: "InsightFlare 通知",
+      footer: "這封郵件由 Open Analytics 通知系統傳送。",
+      fallbackSubject: "Open Analytics 通知",
       trackingHint: "請檢查統計指令碼是否正常安裝，或確認站點是否仍有流量。",
       severity: {
         info: "資訊",
@@ -10996,10 +9548,10 @@ const zhTwMessages = {
       },
     },
     test: {
-      subject: "InsightFlare 通知測試",
-      title: "InsightFlare 通知測試",
-      summary: "這是一條來自 InsightFlare 的測試通知。",
-      body: "這是一條來自 InsightFlare 的測試通知。如果郵件已設定並啟用，它也會驗證 Resend 投遞是否正常。",
+      subject: "Open Analytics 通知測試",
+      title: "Open Analytics 通知測試",
+      summary: "這是一條來自 Open Analytics 的測試通知。",
+      body: "這是一條來自 Open Analytics 的測試通知。如果郵件已設定並啟用，它也會驗證 Resend 投遞是否正常。",
     },
     report: {
       subject: "{site} {periodLabel}造訪報告",
@@ -11047,7 +9599,7 @@ const zhTwMessages = {
   runtimeConfigError: {
     title: "需要執行時設定",
     eyebrow: "部署已暫停",
-    heading: "InsightFlare 需要一個執行時金鑰後才能載入控制台。",
+    heading: "Open Analytics 需要一個執行時金鑰後才能載入控制台。",
     description:
       "應用已經啟動，但目前執行環境沒有讀取到必需的 root secret，因此暫時阻止進入控制台。",
     requiredTitle: "必需的執行時金鑰",
@@ -11060,64 +9612,14 @@ const zhTwMessages = {
     docsLabel: "開啟 GitHub",
     homeLabel: "重試控制台",
   },
-  login: {
-    title: "登入",
-    subtitle: "使用 InsightFlare 帳號登入。",
-    username: "使用者名稱或電子郵件",
-    password: "密碼",
-    signIn: "登入",
-    invalidCredentials: "使用者名稱或密碼錯誤。",
-  },
+  login: {},
   accountLinks: {
     invite: {
-      title: "團隊邀請",
-      subtitle: "接受邀請後加入該團隊。",
-      loading: "正在載入邀請...",
-      missingToken: "缺少邀請 token。",
-      loadFailed: "載入邀請失敗。",
-      accept: "接受邀請",
-      accepting: "正在接受...",
-      accepted: "已接受邀請。",
-      acceptFailed: "接受邀請失敗。",
-      signIn: "登入後接受",
-      signedInNotice: "目前已登入。接受後會將目前帳號加入該團隊。",
-      teamLabel: "團隊",
-      roleLabel: "角色",
-      emailLabel: "邀請電子郵件",
-      accountEmailLabel: "帳號電子郵件",
-      anyEmail: "任意電子郵件",
-      expiresLabel: "過期時間",
-      usernameLabel: "使用者名稱",
-      nameLabel: "顯示名稱",
-      passwordLabel: "密碼",
-      roles: {
-        admin: "管理員",
-        member: "成員",
-      },
+      roles: {},
     },
-    resetPassword: {
-      title: "重設密碼",
-      subtitle: "為該帳號設定新密碼。",
-      loading: "正在載入重設連結...",
-      missingToken: "缺少重設 token。",
-      loadFailed: "載入重設連結失敗。",
-      reset: "重設密碼",
-      resetting: "正在重設...",
-      resetDone: "密碼已重設，請使用新密碼登入。",
-      resetFailed: "重設密碼失敗。",
-      signIn: "返回登入",
-      accountLabel: "帳號",
-      emailLabel: "電子郵件",
-      expiresLabel: "過期時間",
-      passwordLabel: "新密碼",
-      confirmPasswordLabel: "確認密碼",
-      passwordTooShort: "密碼至少 8 個字元。",
-      passwordMismatch: "兩次輸入的密碼不一致。",
-    },
+    resetPassword: {},
   },
-  empty: {
-    noTeams: "目前帳號還沒有可存取的團隊。",
-  },
+  empty: {},
   errorPage: {
     notFoundEyebrow: "頁面未找到",
     notFoundTitle: "找不到這個頁面",
@@ -11125,7 +9627,7 @@ const zhTwMessages = {
     errorEyebrow: "應用錯誤",
     errorTitle: "頁面出現了問題",
     errorDescription:
-      "InsightFlare 無法完成這次請求。下面的診斷資訊可以幫助我們定位問題。",
+      "Open Analytics 無法完成這次請求。下面的診斷資訊可以幫助我們定位問題。",
     statusLabel: "狀態",
     reasonLabel: "原因",
     requestLabel: "請求路徑",
@@ -11140,7 +9642,6 @@ const zhTwMessages = {
     reportHint: "將開啟一個已預填內容的 GitHub Issue，提交前請先檢查資訊。",
   },
   actions: {
-    logout: "登出",
     switchToEnglish: "English",
     switchToChinese: "簡體中文",
     switchToTraditionalChinese: "繁體中文",
@@ -11149,69 +9650,21 @@ const zhTwMessages = {
     switchToDark: "深色",
   },
   teamSelect: {
-    groupLabel: "團隊",
-    groups: {
-      created: "建立的團隊",
-      managed: "管理的團隊",
-      member: "所屬的團隊",
-      system: "系統中的全部團隊",
-    },
-    createHint: "新建團隊",
-    createTitle: "新建團隊",
-    createDescription: "建立後會自動切換到新團隊。",
-    nameLabel: "團隊名稱",
-    namePlaceholder: "例如：增長團隊",
-    slugLabel: "團隊 Slug（可選）",
-    slugPlaceholder: "例如：growth-team",
-    create: "建立",
-    creating: "建立中...",
+    groups: {},
     cancel: "取消",
-    invalidName: "團隊名稱至少 2 個字元。",
-    createFailed: "建立失敗，請稍後重試。",
-    createSuccess: "團隊已建立。",
   },
   teamManagement: {
-    stats: {
-      sites: "站點",
-      members: "成員",
-    },
-    toasts: {
-      teamSaved: "團隊設定已儲存。",
-      teamSaveFailed: "團隊設定儲存失敗。",
-      teamDeleted: "團隊已刪除。",
-      teamDeleteFailed: "刪除團隊失敗。",
-      memberRemoved: "成員已移除。",
-      memberRemoveFailed: "移除成員失敗。",
-      roleChanged: "成員角色已更新。",
-      roleChangeFailed: "更新成員角色失敗。",
-      siteAccessChanged: "成員站點權限已更新。",
-      siteAccessChangeFailed: "更新站點權限失敗。",
-      invalidTeamName: "團隊名稱至少 2 個字元。",
-      inviteCreated: "邀請連結已建立。",
-      inviteCreateFailed: "建立邀請連結失敗。",
-      inviteRevoked: "邀請已撤銷。",
-      inviteRevokeFailed: "撤銷邀請失敗。",
-      inviteCopied: "邀請連結已複製。",
-      inviteCopyFailed: "複製邀請連結失敗。",
-      invalidInviteEmail: "請輸入有效的邀請電子郵件。",
-      invalidInviteExpiry: "邀請有效期至少為 1 小時。",
-      ownerTransferred: "所有權已轉移。",
-      ownerTransferFailed: "轉移所有權失敗。",
-      invalidTransferTarget: "請選擇新的所有者。",
-    },
+    stats: {},
+    toasts: {},
     sites: {
-      title: "站點儀表盤",
       subtitle: "聚合檢視該團隊下所有站點的造訪表現。",
       aggregateTitle: "總造訪量",
-      pagesPerSession: "每工作階段頁面數",
       noSites: "目前團隊還沒有站點。",
       openAnalytics: "檢視分析",
+      title: "站點儀表盤",
+      pagesPerSession: "每工作階段頁面數",
     },
-    widgets: {
-      title: "小元件",
-      subtitle: "小元件功能正在開發中。",
-      underConstruction: "正在開發中",
-    },
+    widgets: {},
     notifications: {
       title: "通知規則",
       subtitle: "管理目前團隊的通知規則。",
@@ -11459,204 +9912,28 @@ const zhTwMessages = {
       },
     },
     apiKeys: {
-      title: "API 金鑰",
-      subtitle: "管理目前團隊用於介面存取的金鑰。",
-      empty: "目前團隊還沒有 API 金鑰。",
-      create: "建立金鑰",
-      creating: "建立中...",
-      createTitle: "建立 API 金鑰",
-      createSubtitle: "只授予這個整合真正需要的最小權限。",
-      nameLabel: "金鑰名稱",
-      namePlaceholder: "生產同步任務",
-      scopesTitle: "權限",
-      scopesDescription: "API 金鑰永遠不能管理成員、使用者、所有權或其他金鑰。",
-      siteScopeTitle: "站點範圍",
-      siteScopeDescription: "不選擇站點表示目前團隊所有現有和未來站點。",
-      allSites: "全部站點",
-      expirationLabel: "過期時間",
-      expiration30: "30 天",
-      expiration90: "90 天",
-      expiration180: "180 天",
-      expiration365: "365 天",
-      expirationNever: "永不過期",
-      oneTimeSecretTitle: "立即複製這個金鑰",
-      oneTimeSecretDescription: "完整金鑰只顯示一次，關閉彈窗後無法再次檢視。",
-      copySecret: "複製金鑰",
-      revoke: "撤銷",
-      rotate: "輪換",
-      revokeConfirm: "確認立即撤銷這個 API 金鑰嗎？",
-      rotateConfirm: "確認輪換這個 API 金鑰嗎？舊金鑰會被立即撤銷。",
-      neverExpires: "永不過期",
-      notUsed: "未使用",
-      loading: "正在載入 API 金鑰...",
-      loadFailed: "API 金鑰載入失敗。",
-      invalidInput: "請輸入名稱並至少選擇一個權限。",
-      createFailed: "API 金鑰建立失敗。",
-      revokeFailed: "API 金鑰撤銷失敗。",
-      rotateFailed: "API 金鑰輪換失敗。",
-      copied: "已複製",
-      status: {
-        active: "有效",
-        expired: "已過期",
-        revoked: "已撤銷",
-      },
-      scopes: {
-        analyticsRead: "讀取分析",
-        analysisRead: "讀取分析定義",
-        analysisWrite: "寫入分析定義",
-        siteRead: "讀取站點",
-        siteWrite: "寫入站點",
-        siteConfigRead: "讀取設定",
-        siteConfigWrite: "寫入設定",
-      },
-      scopeDescriptions: {
-        analyticsRead: "檢視造訪量、訪客、頁面瀏覽等分析資料",
-        analysisRead: "檢視團隊共享的已儲存篩選器和漏斗定義",
-        analysisWrite: "建立、更新或刪除漏斗定義",
-        siteRead: "檢視站點列表和站點詳情",
-        siteWrite: "建立、更新或刪除站點",
-        siteConfigRead: "檢視站點設定，如追蹤程式碼、網域允許清單等",
-        siteConfigWrite: "修改站點設定，如追蹤強度、路徑黑名單等",
-      },
-      scopeGroups: {
-        analytics: "分析",
-        analysis: "分析定義",
-        site: "站點",
-        siteConfig: "站點設定",
-      },
-      columns: {
-        name: "名稱",
-        scopes: "權限",
-        sites: "站點",
-        expires: "過期",
-        lastUsed: "最近使用",
-        status: "狀態",
-        action: "操作",
-      },
+      status: {},
+      scopes: {},
+      scopeDescriptions: {},
+      scopeGroups: {},
+      columns: {},
     },
-    settings: {
-      title: "團隊設定",
-      subtitle: "更新團隊顯示名和 slug。",
-      nameLabel: "團隊顯示名",
-      slugLabel: "團隊 Slug",
-      save: "儲存設定",
-      saving: "儲存中...",
-      delete: "刪除團隊",
-      deleting: "刪除中...",
-      deleteConfirm: "確認刪除該團隊及其所有資料嗎？此操作不可撤銷。",
-      transferTitle: "轉移所有權",
-      transferSubtitle:
-        "將團隊所有權轉移給另一位成員。目前所有者會自動降為管理員。",
-      transferTargetLabel: "新的所有者",
-      transferTargetPlaceholder: "選擇團隊成員",
-      transfer: "轉移所有權",
-      transferring: "轉移中...",
-      transferConfirm:
-        "此操作不可撤銷，你將失去對該團隊的所有權（仍保留管理員權限）。確認繼續嗎？",
-      noTransferableMembers: "目前團隊沒有其他可轉移的成員，請先新增成員。",
-    },
+    settings: {},
     members: {
-      title: "成員管理",
-      subtitle: "建立邀請連結或移除現有成員。",
-      remove: "移除成員",
-      removeMemberAction: "移除成員「{target}」",
-      removeMemberConfirm:
-        "確認將「{target}」從該團隊移除嗎？移除後將立即失去存取權限。",
-      noMembers: "目前團隊暫無成員。",
-      invitesTitle: "建立邀請連結",
-      invitesSubtitle: "使用者接受邀請後才會加入此團隊。",
-      inviteEmailLabel: "電子郵件限制（可選）",
-      inviteEmailPlaceholder: "user@example.com",
-      inviteExpiresLabel: "有效期（小時）",
-      createInvite: "建立邀請連結",
-      creatingInvite: "建立中...",
-      copyInvite: "複製邀請連結",
-      inviteLinksTitle: "邀請連結",
-      inviteLinksSubtitle: "檢視邀請狀態並撤銷有效連結。",
-      noInvites: "目前團隊暫無邀請連結。",
-      anyEmail: "任意電子郵件",
-      revokeInvite: "撤銷邀請",
-      revokeInviteAction: "撤銷「{target}」的邀請",
-      revokeInviteConfirm:
-        "確認撤銷「{target}」的邀請嗎？該邀請連結將立即失效。",
-      siteAccessLabel: "站點權限",
-      siteAccessAll: "全部站點",
-      siteAccessRestricted: "限定站點",
-      siteAccessSelected: "已選擇 {count} 個站點",
-      siteAccessDescription: "保持為全部站點，或選擇此成員可以存取的具體站點。",
-      siteAccessAdmins: "管理員可以存取此團隊內的全部站點。",
-      siteAccessDialogTitle: "編輯站點權限",
-      saveSiteAccess: "儲存權限",
-      cancelSiteAccess: "取消",
-      noSitesForAccess: "目前團隊暫無站點。",
-      inviteStatuses: {
-        active: "有效",
-        used: "已使用",
-        revoked: "已撤銷",
-        expired: "已過期",
-      },
-      columns: {
-        name: "名稱",
-        username: "使用者名稱",
-        email: "電子郵件",
-        inviteCode: "邀請碼",
-        role: "角色",
-        siteAccess: "站點權限",
-        joinedAt: "加入時間",
-        createdAt: "建立時間",
-        expiresAt: "過期時間",
-        usedAt: "使用時間",
-        status: "狀態",
-        action: "操作",
-      },
-      roleLabels: {
-        owner: "所有者",
-        admin: "管理員",
-        member: "成員",
-      },
+      inviteStatuses: {},
+      columns: {},
+      roleLabels: {},
     },
   },
   managementNav: {
-    users: "使用者管理",
     sites: "站點管理",
-    teams: "團隊管理",
-    versionUpdates: "版本更新",
     scheduledTasks: "排程任務",
     requestObservation: "請求觀測",
     systemPerformance: "系統效能",
     systemSettings: "系統設定",
   },
   managementPages: {
-    versionUpdates: {
-      subtitle: "檢視 InsightFlare 已釋出版本與目前執行中的建置版本。",
-      empty: "暫無版本更新記錄。",
-      currentVersion: "目前版本",
-      latestVersion: "最新版本",
-      currentCommit: "目前提交",
-      releaseCount: "釋出數",
-      publishedAt: "釋出時間",
-      author: "釋出者",
-      commit: "提交",
-      statusStable: "正式版",
-      statusPrerelease: "預釋出",
-      statusDraft: "草稿",
-      currentVersionBadge: "目前版本",
-      releaseNotes: "更新說明",
-      openRelease: "開啟 Release",
-      viewDetails: "檢視詳細變更",
-      detailsTitle: "詳細變更",
-      detailsDescription: "{range} 包含的提交。",
-      detailsLoading: "正在載入詳細變更...",
-      detailsEmpty: "這個版本暫無可對比的上一個釋出版本。",
-      detailsFailed: "載入詳細變更失敗。",
-      currentCommitBadge: "目前部署",
-      openCompare: "開啟對比",
-      openCommit: "開啟提交",
-      commitCount: "提交數",
-      source: "資料來源",
-      loadFailed: "載入版本索引失敗。",
-      unknown: "未知",
-    },
+    versionUpdates: {},
     scheduledTasks: {
       subtitle: "檢視和管理系統排程任務。",
       empty: "暫無排程任務。",
@@ -11742,49 +10019,7 @@ const zhTwMessages = {
     },
   },
   adminUsers: {
-    title: "使用者管理",
-    subtitle: "僅系統管理員可建立和管理後臺使用者。",
-    createTitle: "新建使用者",
-    createTeamNotice:
-      "在這裡建立使用者會同時建立一個由該使用者擁有的新團隊。如果只是想把使用者加入現有團隊，請前往對應團隊設定中建立邀請連結。",
-    username: "使用者名稱",
-    email: "電子郵件",
-    name: "名稱（可選）",
-    password: "密碼（至少 8 位）",
-    role: "系統角色",
-    teamName: "團隊名稱",
-    teamSlug: "團隊 Slug（可選）",
-    defaultTeamName: "{name} 的團隊",
-    create: "建立使用者",
-    creating: "建立中...",
-    delete: "刪除",
-    deleting: "刪除中...",
-    deleteConfirm: "確認刪除該使用者帳號嗎？",
-    deleteSuccess: "使用者已刪除。",
-    deleteFailed: "刪除使用者失敗。",
-    generateResetLink: "產生重設密碼連結",
-    resetLinkCreated: "重設密碼連結已產生。",
-    resetLinkCreateFailed: "產生重設密碼連結失敗。",
-    resetLinkCopied: "重設密碼連結已複製。",
-    resetLinkCopyFailed: "複製重設密碼連結失敗。",
-    copyResetLink: "複製連結",
-    resetLinkExpiresAt: "過期時間",
-    listTitle: "使用者列表",
-    listSubtitle: "目前系統內所有使用者。",
-    noData: "暫無使用者資料。",
-    loadFailed: "載入使用者列表失敗。",
-    createSuccess: "使用者建立成功。",
-    createFailed: "使用者建立失敗。",
-    invalidInput: "請填寫有效的使用者名稱、電子郵件和密碼。",
-    columns: {
-      name: "名稱",
-      username: "使用者名稱",
-      email: "電子郵件",
-      role: "角色",
-      teams: "團隊數",
-      created: "建立時間",
-      action: "操作",
-    },
+    columns: {},
   },
   adminSites: {
     title: "站點管理",
@@ -11814,84 +10049,33 @@ const zhTwMessages = {
     },
   },
   adminTeams: {
-    title: "團隊管理",
-    subtitle: "僅系統管理員可建立與檢視所有團隊。",
-    createTitle: "新建團隊",
-    createSubtitle: "建立後可進入團隊設定與成員管理。",
-    name: "團隊名稱",
-    slug: "團隊 Slug（可選）",
-    create: "建立團隊",
-    creating: "建立中...",
-    listTitle: "團隊列表",
-    listSubtitle: "系統中所有團隊。",
-    noData: "暫無團隊資料。",
-    loadFailed: "載入團隊失敗。",
-    createSuccess: "團隊建立成功。",
-    createFailed: "團隊建立失敗。",
-    invalidInput: "團隊名稱至少 2 個字元。",
-    open: "進入團隊",
-    settings: "設定",
-    columns: {
-      name: "名稱",
-      slug: "Slug",
-      sites: "站點數",
-      members: "成員數",
-      created: "建立時間",
-      action: "操作",
-    },
+    columns: {},
   },
   requestObservation: {
     title: "請求觀測",
-    tabs: {
-      overview: "總覽",
-      blocked: "攔截請求",
-      included: "統計請求",
+    subtitle: "收集器近期拒絕的請求：自訂封鎖規則、機器人和託管網路。",
+    blockedTotal: "已封鎖請求",
+    retentionNote: "保留 30 天。放行的流量見各站點的儀表板。",
+    topReasons: "原因",
+    recentTitle: "最近封鎖的請求",
+    categoryLabels: {
+      custom_block: "封鎖規則",
+      bot: "機器人",
+      suspected_bot: "託管網路",
     },
+    tabs: {},
     refresh: "重新整理",
     loadFailed: "載入請求觀測資料失敗。",
-    notConfiguredTitle: "尚未設定 Analytics Engine 讀取憑據",
-    notConfiguredDescription:
-      "請先在系統設定中填寫 Cloudflare Account ID 和 API Token，用於讀取請求觀測 Analytics Engine 資料集。",
-    analyticsEngineDisabledTitle: "Analytics Engine 尚未啟用",
-    analyticsEngineDisabledDescription:
-      "目前部署未繫結 Analytics Engine，因為 Cloudflare 帳戶尚未啟用 Analytics Engine。請先在 Cloudflare 中啟用，然後重新部署以採集請求觀測資料。",
-    openAnalyticsEngine: "開啟 Analytics Engine",
-    openSettings: "開啟設定",
-    affectedSites: "受影響站點",
-    uniqueCountries: "國家/地區",
     noData: "目前時間視窗內沒有請求資料。",
-    trendTitle: "分流趨勢",
-    client: "客戶端",
-    edge: "邊緣",
-    identifiers: "識別符號",
-    fullUserAgent: "完整 User-Agent",
-    id: "ID",
-    metadata: "中繼資料",
     time: "時間",
     site: "站點",
     location: "位置",
     network: "網路",
     reason: "原因",
-    request: "請求",
-    ip: "IP",
     userAgent: "User-Agent",
-    category: "分類",
     emptyValue: "未知",
-    kind: "型別",
-    botScore: "Bot 分數",
-    botScoreBucket: "Bot Score 區間",
-    verifiedBotCategory: "驗證機器人類別",
-    hostname: "主機名稱",
     pathname: "路徑",
-    origin: "Origin",
-    asOrganization: "ASN 組織",
-    asn: "ASN",
     country: "國家/地區",
-    region: "州/省",
-    city: "城市",
-    colo: "資料中心",
-    userAgentLengthBucket: "User-Agent 長度",
-    userAgentLength: "User-Agent 長度（精確）",
     ipPrefix: "IP 字首",
     botReasonLabels: {
       missing_ua: "缺少 User-Agent",
@@ -11917,45 +10101,15 @@ const zhTwMessages = {
       blocked_countries: "命中國家/地區遮蔽規則",
       blocked_regions: "命中區域遮蔽規則",
     },
-    requestKindLabels: {
-      pageview: "頁面瀏覽",
-      custom_event: "自訂事件",
-      request: "請求",
-      visibility: "可見性",
-      leave: "離開",
-      identify: "使用者識別",
-    },
+    requestKindLabels: {},
     overviewLabels: {
-      p50Latency: "P50 Worker 處理耗時",
-      p75Latency: "P75 Worker 處理耗時",
-      p99Latency: "P99 Worker 處理耗時",
-      p95Latency: "P95 Worker 處理耗時",
-      avgLatency: "平均 Worker 處理耗時",
-      pageviews: "頁面瀏覽",
-      customEvents: "自訂事件",
-      overviewTrendTitle: "請求分流趨勢",
-      trafficCompositionTitle: "業務請求構成",
-      trafficCompositionDescription:
-        "按時間顯示正常採集鏈路中頁面瀏覽、離開、可見性、自訂事件和使用者識別的數量。",
-      categoryShareTitle: "請求分類佔比",
-      latencyTitle: "Worker 處理耗時趨勢",
-      latencyDescription:
-        "正常請求寫入 AE 時記錄的 P50 / P75 / P95 / P99 Worker 處理耗時。",
-      requests: "請求數",
       windowDays: "最近 {days} 天",
-      latencyMilliseconds: "{value} 毫秒",
     },
-    normalDetail: {
-      requestMethod: "請求方法",
-      edgeLatency: "Worker 處理耗時",
-      eventAt: "事件時間",
-      receivedAt: "接收時間",
-      continent: "大洲",
-    },
+    normalDetail: {},
   },
   systemSettings: {
     title: "系統設定",
-    subtitle: "管理目前 InsightFlare 例項的全站設定。",
+    subtitle: "管理目前 Open Analytics 例項的全站設定。",
     guide: "教程",
     analyticsEngineTitle: "分析引擎",
     analyticsEngineDescription:
@@ -11971,7 +10125,7 @@ const zhTwMessages = {
       "確認刪除分析引擎讀取憑據嗎？刪除後，依賴 Analytics Engine 的功能將顯示為未設定。",
     analyticsEngineDisabledTitle: "Analytics Engine 尚未啟用",
     analyticsEngineDisabledDescription:
-      "目前部署已自動停用 Analytics Engine 繫結，因為 Cloudflare 帳戶尚未啟用 Analytics Engine。請先在 Cloudflare 中啟用 Analytics Engine，然後重新部署 InsightFlare 以啟用相關分析功能。",
+      "目前部署已自動停用 Analytics Engine 繫結，因為 Cloudflare 帳戶尚未啟用 Analytics Engine。請先在 Cloudflare 中啟用 Analytics Engine，然後重新部署 Open Analytics 以啟用相關分析功能。",
     analyticsEngineDisabledHint:
       "在啟用 Analytics Engine 並重新部署 Worker 前，分析引擎設定不可修改。",
     analyticsEngineOpenCloudflare: "開啟 Cloudflare Analytics Engine",
@@ -11987,7 +10141,11 @@ const zhTwMessages = {
     ],
     notificationEmailTitle: "郵件通知",
     notificationEmailDescription:
-      "設定系統用於傳送報告、告警和測試郵件的郵件服務。",
+      "報告、提醒和測試訊息透過 Every App 閘道以電子郵件寄送。",
+    emailGatewayReady: "Every App 閘道負責寄送通知郵件。",
+    emailGatewayNotReady:
+      "Every App 閘道尚未設定郵件寄件人。閘道管理員設定 EMAIL_FROM 和 Email Sending 後即可寄送通知郵件。",
+    emailSenderLabel: "寄件人",
     notificationEmailGuideTitle: "取得 Resend 郵件設定",
     notificationEmailGuideDescription:
       "使用 Resend 傳送系統郵件前，需要準備寄件網域和 API Key。",
@@ -12000,11 +10158,13 @@ const zhTwMessages = {
     ],
     retentionTitle: "執行資料保留期",
     retentionDescription:
-      "設定任務執行記錄、任務日誌和通知訊息的保留時間。修改只影響新建記錄。",
+      "設定任務執行記錄、任務日誌、通知訊息和詳細分析資料的保留時間。任務和通知的修改只影響新建記錄；超出新期限的詳細分析資料會在下一次每日執行時刪除。",
     scheduledTaskLogsDaysLabel: "排程任務執行記錄和日誌（天）",
     notificationTestDaysLabel: "測試通知（天）",
     notificationAttentionDaysLabel: "警告和嚴重通知（天）",
     notificationDefaultDaysLabel: "其他通知（天）",
+    analyticsDetailDaysLabel:
+      "詳細分析資料：頁面瀏覽和事件（天；保留每小時彙總）",
     retentionRangeHint: "請輸入 1 到 3650 之間的整數天數。",
     retentionSave: "儲存保留期設定",
     retentionSaving: "儲存中...",
@@ -12040,7 +10200,7 @@ const zhTwMessages = {
     loginTurnstileGuideSteps: [
       "開啟 Cloudflare Dashboard，進入 Turnstile。",
       "建立 widget，並選擇 Invisible 模式。",
-      "將目前 InsightFlare 登入網域加入允許的主機名稱清單。",
+      "將目前 Open Analytics 登入網域加入允許的主機名稱清單。",
       "建立後複製 Site Key 和 Secret Key。",
       "回到這裡填寫 Site Key 和 Secret Key，先執行測試驗證，再儲存設定。",
     ],
@@ -12075,7 +10235,7 @@ const zhTwMessages = {
   },
   systemPerformance: {
     title: "系統效能",
-    subtitle: "基於現有分析行監控 InsightFlare 的採集、緩衝和寫入健康度。",
+    subtitle: "基於現有分析行監控 Open Analytics 的採集、緩衝和寫入健康度。",
     refresh: "重新整理",
     loadFailed: "載入系統效能資料失敗。",
     noData: "目前時間視窗內暫無系統效能資料。",
@@ -12166,63 +10326,18 @@ const zhTwMessages = {
       "閾值：stale {stale}，timeout {timeout}，hardAged {hardAged}，stuck flush_attempts ≥ {stuck}",
     doDiagnosticHealthy: "目前未發現異常緩衝行。",
   },
-  loginForm: {
-    signingIn: "登入中...",
-    verifyingSecurity: "正在安全驗證...",
-    securityVerificationTitle: "安全驗證失敗",
-    securityVerificationFailed: "安全驗證失敗，請重試。",
-    retrySecurityVerification: "重試驗證",
-    redirecting: "正在跳轉...",
-    failed: "登入失敗，請稍後重試。",
-  },
-  logoutAction: {
-    pending: "退出中...",
-    success: "已登出。",
-    failed: "登出失敗，請稍後重試。",
-  },
+  loginForm: {},
+  logoutAction: {},
   sidebarFooter: {
     gateway: "返回 Every App",
   },
-  teamEntry: {
-    title: "選擇團隊",
-    description: "你目前可存取多個團隊，請先選擇要進入的團隊。",
-  },
+  teamEntry: {},
 } as AppMessages;
 
 const jaMessages = {
-  appName: "InsightFlare",
+  appName: "Open Analytics",
   uiGallery: {
-    searchLabel: "UI コンポーネントを検索",
-    searchPlaceholder: "コンポーネントを検索",
-    backToApp: "InsightFlare に戻る",
-    noSearchResults: "検索に一致するコンポーネントはありません。",
-    toggleNavigation: "ライブラリナビゲーションを切り替え",
-    library: "UI ライブラリ",
-    componentsCount: "{count} 個のコンポーネント",
-    statesCount: "{count} 個の状態",
-    designSystem: "InsightFlare デザインシステム",
-    pageTitle: "UI コンポーネント",
-    catalogSummary: "{components} 個のコンポーネント · {states} 個の prop 値",
-    categories: {
-      inputs: "入力",
-      feedback: "フィードバック",
-      foundations: "基礎",
-      navigation: "ナビゲーション",
-      "data-display": "データ表示",
-      overlays: "オーバーレイ",
-      "product-analytics": "プロダクト UI / 分析",
-      "product-management": "プロダクト UI / 管理",
-      "product-realtime": "プロダクト UI / リアルタイム",
-    },
-    browseCategories: "カテゴリーから探す",
-    featuredComponents: "注目のコンポーネント",
-    backToCatalog: "UI コンポーネント",
-    canonicalStates: "Props と値",
-    browseAllComponents: "すべてのコンポーネントを見る",
-    previewState: "プレビューを開く",
-    resetPreview: "プレビューをリセット",
-    expandCode: "コードを展開",
-    collapseCode: "コードを折りたたむ",
+    categories: {},
   },
   navigation: {
     overview: "概要",
@@ -12966,7 +11081,6 @@ const jaMessages = {
     eventTime: "イベント時刻",
     eventKind: "イベント種別",
     eventName: "イベント名",
-    siteId: "サイト ID",
     traceId: "トレース ID",
     receivedAt: "受信時刻",
     startedAt: "開始時刻",
@@ -13031,7 +11145,6 @@ const jaMessages = {
     loadError:
       "ページデータを読み込めませんでした。後でもう一度お試しください。",
     loadMoreError: "追加のページを読み込めませんでした。",
-    retry: "再試行",
     trendTitle: "ページトラフィック推移",
     otherPages: "その他のページ",
     hashTab: "アンカー",
@@ -13905,11 +12018,6 @@ const jaMessages = {
     savingTracking: "トラッキング設定を保存中...",
     save: "変更を保存",
     saving: "保存中...",
-    transferTitle: "別のチームへ移管",
-    transferSubtitle: "このサイトを管理可能な別チームへ移動します。",
-    transferTeamLabel: "移管先チーム",
-    transfer: "サイトを移管",
-    transferring: "移管中...",
     scriptTitle: "トラッキングスクリプトを設置",
     scriptSubtitle:
       "分析収集を開始するには、このスクリプトを Web サイトに追加してください。",
@@ -13927,8 +12035,6 @@ const jaMessages = {
     toasts: {
       saved: "サイト設定を保存しました。",
       saveFailed: "サイト設定を保存できません。",
-      transferred: "サイトを移管しました。",
-      transferFailed: "サイトを移管できません。",
       scriptLoadFailed: "スクリプトスニペットを読み込めません。",
       settingsLoadFailed: "スクリプト設定を読み込めません。",
       settingsPropagationHint:
@@ -13942,34 +12048,16 @@ const jaMessages = {
     emailManagedByGateway:
       "メールアドレスは Every App のアカウントのものです。",
     title: "アカウント設定",
-    subtitle:
-      "個人情報、ログインパスワード、ダッシュボードのタイムゾーンを管理します。",
+    subtitle: "表示名、通知、ダッシュボードのタイムゾーンを管理します。",
     profileTitle: "個人情報",
-    profileDescription: "表示名、ユーザー名、メールアドレスを更新します。",
+    profileDescription: "ダッシュボードに表示される名前を更新します。",
     nicknameLabel: "表示名",
     nicknamePlaceholder: "例: プロダクトアナリスト",
-    usernameLabel: "ユーザー名",
-    usernamePlaceholder: "例: alex",
-    usernameDescription: "ユーザー名はログインにも使用できます。",
     emailLabel: "メール",
-    emailPlaceholder: "name@example.com",
-    invalidProfile: "有効なユーザー名とメールアドレスを入力してください。",
     profileSave: "詳細を保存",
     profileSaving: "保存中...",
     profileSaved: "個人情報を保存しました。",
     profileSaveFailed: "個人情報を保存できません。",
-    passwordTitle: "ログインパスワード",
-    passwordDescription: "現在のアカウントのパスワードを変更します。",
-    currentPasswordLabel: "現在のパスワード",
-    newPasswordLabel: "新しいパスワード",
-    confirmPasswordLabel: "新しいパスワードの確認",
-    currentPasswordRequired: "現在のパスワードを入力してください。",
-    passwordTooShort: "新しいパスワードは 8 文字以上にしてください。",
-    passwordMismatch: "新しいパスワードが一致しません。",
-    passwordSave: "パスワードを変更",
-    passwordSaving: "変更中...",
-    passwordSaved: "パスワードを変更しました。",
-    passwordSaveFailed: "パスワードを変更できません。",
     preferredLanguageTitle: "通知言語",
     preferredLanguageDescription: "定期通知メールで使用する言語を選択します。",
     preferredLanguageLabel: "メール言語",
@@ -14103,7 +12191,7 @@ const jaMessages = {
   },
   notificationEmail: {
     common: {
-      brand: "InsightFlare",
+      brand: "Open Analytics",
       date: "日付",
       coreMetrics: "主要指標",
       topPages: "上位ページ",
@@ -14126,8 +12214,8 @@ const jaMessages = {
       never: "未受信",
       noPageData: "ページデータはありません。",
       noReferrerData: "参照元データはありません。",
-      footer: "このメールは InsightFlare の通知システムから送信されました。",
-      fallbackSubject: "InsightFlare 通知",
+      footer: "このメールは Open Analytics の通知システムから送信されました。",
+      fallbackSubject: "Open Analytics 通知",
       trackingHint:
         "トラッキングスクリプトが正しく設置されているか、またはサイトに引き続きトラフィックがあるかを確認してください。",
       severity: {
@@ -14138,10 +12226,10 @@ const jaMessages = {
       },
     },
     test: {
-      subject: "InsightFlare 通知テスト",
-      title: "InsightFlare 通知テスト",
-      summary: "これは InsightFlare からのテスト通知です。",
-      body: "これは InsightFlare からのテスト通知です。メールが設定され有効になっている場合、このメッセージは Resend の配信も確認します。",
+      subject: "Open Analytics 通知テスト",
+      title: "Open Analytics 通知テスト",
+      summary: "これは Open Analytics からのテスト通知です。",
+      body: "これは Open Analytics からのテスト通知です。メールが設定され有効になっている場合、このメッセージは Resend の配信も確認します。",
     },
     report: {
       subject: "{site} の{periodLabel}トラフィックレポート",
@@ -14193,7 +12281,7 @@ const jaMessages = {
     title: "ランタイム設定が必要です",
     eyebrow: "デプロイを一時停止中",
     heading:
-      "UI を読み込む前に、InsightFlare にはランタイムシークレットが 1 つ必要です。",
+      "UI を読み込む前に、Open Analytics にはランタイムシークレットが 1 つ必要です。",
     description:
       "アプリは起動していますが、現在のランタイム環境で必須の root secret を取得できないため、ダッシュボードへのアクセスを一時的にブロックしています。",
     requiredTitle: "必須のランタイムシークレット",
@@ -14209,66 +12297,14 @@ const jaMessages = {
     docsLabel: "GitHub を開く",
     homeLabel: "ダッシュボードを再試行",
   },
-  login: {
-    title: "サインイン",
-    subtitle: "InsightFlare アカウントを使用します。",
-    username: "ユーザー名またはメール",
-    password: "パスワード",
-    signIn: "サインイン",
-    invalidCredentials: "ユーザー名またはパスワードが正しくありません。",
-  },
+  login: {},
   accountLinks: {
     invite: {
-      title: "チーム招待",
-      subtitle: "招待を承認してこのチームに参加します。",
-      loading: "招待を読み込み中...",
-      missingToken: "招待トークンがありません。",
-      loadFailed: "招待を読み込めません。",
-      accept: "招待を承認",
-      accepting: "承認中...",
-      accepted: "招待を承認しました。",
-      acceptFailed: "招待を承認できません。",
-      signIn: "承認するにはサインイン",
-      signedInNotice:
-        "サインイン済みです。承認すると、このチームにあなたのアカウントが追加されます。",
-      teamLabel: "チーム",
-      roleLabel: "権限",
-      emailLabel: "招待先メール",
-      accountEmailLabel: "アカウントメール",
-      anyEmail: "任意のメールアドレス",
-      expiresLabel: "有効期限",
-      usernameLabel: "ユーザー名",
-      nameLabel: "表示名",
-      passwordLabel: "パスワード",
-      roles: {
-        admin: "管理者",
-        member: "メンバー",
-      },
+      roles: {},
     },
-    resetPassword: {
-      title: "パスワードをリセット",
-      subtitle: "このアカウントの新しいパスワードを設定します。",
-      loading: "リセットリンクを読み込み中...",
-      missingToken: "リセットトークンがありません。",
-      loadFailed: "リセットリンクを読み込めません。",
-      reset: "パスワードをリセット",
-      resetting: "リセット中...",
-      resetDone:
-        "パスワードをリセットしました。新しいパスワードでサインインしてください。",
-      resetFailed: "パスワードをリセットできません。",
-      signIn: "サインインへ戻る",
-      accountLabel: "アカウント",
-      emailLabel: "メール",
-      expiresLabel: "有効期限",
-      passwordLabel: "新しいパスワード",
-      confirmPasswordLabel: "パスワード確認",
-      passwordTooShort: "パスワードは 8 文字以上にしてください。",
-      passwordMismatch: "パスワードが一致しません。",
-    },
+    resetPassword: {},
   },
-  empty: {
-    noTeams: "利用可能なチームはまだありません。",
-  },
+  empty: {},
   errorPage: {
     notFoundEyebrow: "ページが見つかりません",
     notFoundTitle: "お探しのページが見つかりません",
@@ -14277,7 +12313,7 @@ const jaMessages = {
     errorEyebrow: "アプリケーションエラー",
     errorTitle: "問題が発生しました",
     errorDescription:
-      "InsightFlare はリクエストを完了できませんでした。以下の診断情報が調査に役立ちます。",
+      "Open Analytics はリクエストを完了できませんでした。以下の診断情報が調査に役立ちます。",
     statusLabel: "ステータス",
     reasonLabel: "原因",
     requestLabel: "リクエストパス",
@@ -14292,7 +12328,6 @@ const jaMessages = {
     reportHint: "内容を確認できるよう、入力済みの GitHub Issue が開きます。",
   },
   actions: {
-    logout: "ログアウト",
     switchToEnglish: "English",
     switchToChinese: "簡体字中国語",
     switchToTraditionalChinese: "繁体字中国語",
@@ -14301,69 +12336,21 @@ const jaMessages = {
     switchToDark: "ダーク",
   },
   teamSelect: {
-    groupLabel: "チーム",
-    groups: {
-      created: "作成したチーム",
-      managed: "管理中のチーム",
-      member: "所属チーム",
-      system: "システムチーム",
-    },
-    createHint: "チームを作成",
-    createTitle: "チームを作成",
-    createDescription: "作成後、新しいチームに切り替わります。",
-    nameLabel: "チーム名",
-    namePlaceholder: "例: Growth Team",
-    slugLabel: "チームスラッグ（任意）",
-    slugPlaceholder: "例: growth-team",
-    create: "作成",
-    creating: "作成中...",
+    groups: {},
     cancel: "キャンセル",
-    invalidName: "チーム名は 2 文字以上にしてください。",
-    createFailed: "チームを作成できません。もう一度お試しください。",
-    createSuccess: "チームを作成しました。",
   },
   teamManagement: {
-    stats: {
-      sites: "サイト",
-      members: "メンバー",
-    },
-    toasts: {
-      teamSaved: "チーム設定を保存しました。",
-      teamSaveFailed: "チーム設定を保存できません。",
-      teamDeleted: "チームを削除しました。",
-      teamDeleteFailed: "チームを削除できません。",
-      memberRemoved: "メンバーを削除しました。",
-      memberRemoveFailed: "メンバーを削除できません。",
-      roleChanged: "メンバー権限を更新しました。",
-      roleChangeFailed: "メンバー権限を更新できません。",
-      siteAccessChanged: "メンバーのサイト権限を更新しました。",
-      siteAccessChangeFailed: "サイト権限を更新できません。",
-      invalidTeamName: "チーム名は 2 文字以上にしてください。",
-      inviteCreated: "招待リンクを作成しました。",
-      inviteCreateFailed: "招待リンクを作成できません。",
-      inviteRevoked: "招待を取り消しました。",
-      inviteRevokeFailed: "招待を取り消せません。",
-      inviteCopied: "招待リンクをコピーしました。",
-      inviteCopyFailed: "招待リンクをコピーできません。",
-      invalidInviteEmail: "有効な招待メールを入力してください。",
-      invalidInviteExpiry: "招待の有効期限は 1 時間以上にしてください。",
-      ownerTransferred: "所有権を移譲しました。",
-      ownerTransferFailed: "所有権を移譲できません。",
-      invalidTransferTarget: "新しい所有者を選択してください。",
-    },
+    stats: {},
+    toasts: {},
     sites: {
-      title: "サイトダッシュボード",
       subtitle: "このチーム内すべてのサイトを集計したトラフィックビューです。",
       aggregateTitle: "総訪問数",
-      pagesPerSession: "ページ / セッション",
       noSites: "このチームには利用可能なサイトがありません。",
       openAnalytics: "アナリティクスを開く",
+      title: "サイトダッシュボード",
+      pagesPerSession: "ページ / セッション",
     },
-    widgets: {
-      title: "ウィジェット",
-      subtitle: "ウィジェット機能を開発中です。",
-      underConstruction: "準備中",
-    },
+    widgets: {},
     notifications: {
       title: "通知ルール",
       subtitle: "このチームの通知ルールを管理します。",
@@ -14617,215 +12604,28 @@ const jaMessages = {
       },
     },
     apiKeys: {
-      title: "API キー",
-      subtitle: "このチームの API アクセスキーを管理します。",
-      empty: "このチームには API キーがありません。",
-      create: "キーを作成",
-      creating: "作成中...",
-      createTitle: "API キーを作成",
-      createSubtitle: "この連携に必要な最小権限を選択してください。",
-      nameLabel: "キー名",
-      namePlaceholder: "本番同期",
-      scopesTitle: "権限",
-      scopesDescription:
-        "API キーでメンバー、ユーザー、所有権、他のキーを管理することはできません。",
-      siteScopeTitle: "サイトアクセス",
-      siteScopeDescription:
-        "未選択の場合、このチームの現在および将来のすべてのサイトが対象です。",
-      allSites: "すべてのサイト",
-      expirationLabel: "有効期限",
-      expiration30: "30 日",
-      expiration90: "90 日",
-      expiration180: "180 日",
-      expiration365: "365 日",
-      expirationNever: "無期限",
-      oneTimeSecretTitle: "今すぐこのキーをコピー",
-      oneTimeSecretDescription:
-        "完全なキーは一度だけ表示されます。このダイアログを閉じる前に保存してください。",
-      copySecret: "キーをコピー",
-      revoke: "取り消し",
-      rotate: "ローテーション",
-      revokeConfirm: "この API キーを今すぐ取り消しますか？",
-      rotateConfirm:
-        "この API キーをローテーションしますか？古いキーは直ちに取り消されます。",
-      neverExpires: "有効期限なし",
-      notUsed: "未使用",
-      loading: "API キーを読み込み中...",
-      loadFailed: "API キーを読み込めません。",
-      invalidInput: "名前を入力し、少なくとも 1 つの権限を選択してください。",
-      createFailed: "API キーを作成できません。",
-      revokeFailed: "API キーを取り消せません。",
-      rotateFailed: "API キーをローテーションできません。",
-      copied: "コピーしました",
-      status: {
-        active: "有効",
-        expired: "期限切れ",
-        revoked: "取り消し済み",
-      },
-      scopes: {
-        analyticsRead: "分析の読み取り",
-        analysisRead: "分析定義の読み取り",
-        analysisWrite: "分析定義の書き込み",
-        siteRead: "サイトの読み取り",
-        siteWrite: "サイトの書き込み",
-        siteConfigRead: "設定の読み取り",
-        siteConfigWrite: "設定の書き込み",
-      },
-      scopeDescriptions: {
-        analyticsRead: "訪問、訪問者、ページビュー、その他の分析データを表示",
-        analysisRead: "共有保存フィルターとファネル定義を表示",
-        analysisWrite: "ファネル定義を作成、更新、削除",
-        siteRead: "サイト一覧とサイト詳細を表示",
-        siteWrite: "サイトを作成、更新、削除",
-        siteConfigRead:
-          "トラッキングコードやドメイン許可リストなどのサイト設定を表示",
-        siteConfigWrite:
-          "トラッキング強度やパスブロックリストなどのサイト設定を変更",
-      },
-      scopeGroups: {
-        analytics: "分析",
-        analysis: "分析定義",
-        site: "サイト",
-        siteConfig: "サイト設定",
-      },
-      columns: {
-        name: "名前",
-        scopes: "権限",
-        sites: "サイト",
-        expires: "有効期限",
-        lastUsed: "最終使用",
-        status: "ステータス",
-        action: "操作",
-      },
+      status: {},
+      scopes: {},
+      scopeDescriptions: {},
+      scopeGroups: {},
+      columns: {},
     },
-    settings: {
-      title: "設定",
-      subtitle: "このチームの表示名とスラッグを更新します。",
-      nameLabel: "チーム表示名",
-      slugLabel: "チームスラッグ",
-      save: "設定を保存",
-      saving: "保存中...",
-      delete: "チームを削除",
-      deleting: "削除中...",
-      deleteConfirm:
-        "このチームとすべてのデータを削除しますか？この操作は元に戻せません。",
-      transferTitle: "所有権を移譲",
-      transferSubtitle:
-        "チーム所有権を別のメンバーへ移譲します。現在の所有者は管理者に降格されます。",
-      transferTargetLabel: "新しい所有者",
-      transferTargetPlaceholder: "チームメンバーを選択",
-      transfer: "所有権を移譲",
-      transferring: "移譲中...",
-      transferConfirm:
-        "この操作は元に戻せません。所有権は失いますが、管理者権限は残ります。続行しますか？",
-      noTransferableMembers:
-        "移譲先にできる他のメンバーがいません。まずメンバーを追加してください。",
-    },
+    settings: {},
     members: {
-      title: "メンバー",
-      subtitle: "メンバーを招待、または既存メンバーを削除します。",
-      remove: "メンバーを削除",
-      removeMemberAction: '"{target}" をメンバーから削除',
-      removeMemberConfirm:
-        '"{target}" をこのチームから削除しますか？直ちにアクセスできなくなります。',
-      noMembers: "このチームにはメンバーがいません。",
-      invitesTitle: "招待リンクを作成",
-      invitesSubtitle:
-        "ユーザーは招待を承認した後にのみこのチームへ参加します。",
-      inviteEmailLabel: "メール制限（任意）",
-      inviteEmailPlaceholder: "user@example.com",
-      inviteExpiresLabel: "有効期限（時間）",
-      createInvite: "招待リンクを作成",
-      creatingInvite: "作成中...",
-      copyInvite: "招待リンクをコピー",
-      inviteLinksTitle: "招待リンク",
-      inviteLinksSubtitle:
-        "招待ステータスを確認し、有効なリンクを取り消します。",
-      noInvites: "このチームには招待リンクがありません。",
-      anyEmail: "任意のメールアドレス",
-      revokeInvite: "招待を取り消し",
-      revokeInviteAction: '"{target}" の招待を取り消し',
-      revokeInviteConfirm:
-        '"{target}" の招待を取り消しますか？このリンクは使用できなくなります。',
-      siteAccessLabel: "サイト権限",
-      siteAccessAll: "全サイト",
-      siteAccessRestricted: "制限付き",
-      siteAccessSelected: "{count} サイト選択済み",
-      siteAccessDescription:
-        "全サイトのままにするか、このメンバーがアクセスできるサイトを選択します。",
-      siteAccessAdmins: "管理者はこのチームの全サイトにアクセスできます。",
-      siteAccessDialogTitle: "サイト権限を編集",
-      saveSiteAccess: "権限を保存",
-      cancelSiteAccess: "キャンセル",
-      noSitesForAccess: "このチームにはまだサイトがありません。",
-      inviteStatuses: {
-        active: "有効",
-        used: "使用済み",
-        revoked: "取り消し済み",
-        expired: "期限切れ",
-      },
-      columns: {
-        name: "名前",
-        username: "ユーザー名",
-        email: "メール",
-        inviteCode: "招待トークン",
-        role: "権限",
-        siteAccess: "サイト権限",
-        joinedAt: "参加日時",
-        createdAt: "作成日時",
-        expiresAt: "有効期限",
-        usedAt: "使用日時",
-        status: "ステータス",
-        action: "操作",
-      },
-      roleLabels: {
-        owner: "所有者",
-        admin: "管理者",
-        member: "メンバー",
-      },
+      inviteStatuses: {},
+      columns: {},
+      roleLabels: {},
     },
   },
   managementNav: {
-    users: "ユーザー管理",
     sites: "サイト管理",
-    teams: "チーム管理",
-    versionUpdates: "バージョン更新",
     scheduledTasks: "スケジュールタスク",
     requestObservation: "リクエスト監視",
     systemPerformance: "システムパフォーマンス",
     systemSettings: "システム設定",
   },
   managementPages: {
-    versionUpdates: {
-      subtitle: "公開済み InsightFlare リリースと稼働中ビルドを確認します。",
-      empty: "バージョン更新記録はまだありません。",
-      currentVersion: "現在のバージョン",
-      latestVersion: "最新リリース",
-      currentCommit: "現在のコミット",
-      releaseCount: "リリース",
-      publishedAt: "公開日時",
-      author: "作成者",
-      commit: "コミット",
-      statusStable: "安定版",
-      statusPrerelease: "プレリリース",
-      statusDraft: "下書き",
-      currentVersionBadge: "現在のバージョン",
-      releaseNotes: "リリースノート",
-      openRelease: "リリースを開く",
-      viewDetails: "詳細な変更を表示",
-      detailsTitle: "詳細な変更",
-      detailsDescription: "{range} に含まれるコミット。",
-      detailsLoading: "詳細な変更を読み込み中...",
-      detailsEmpty: "このバージョンに対する前回リリースはまだありません。",
-      detailsFailed: "詳細な変更を読み込めません。",
-      currentCommitBadge: "現在のデプロイ",
-      openCompare: "比較を開く",
-      openCommit: "コミットを開く",
-      commitCount: "コミット",
-      source: "データソース",
-      loadFailed: "リリース一覧を読み込めません。",
-      unknown: "不明",
-    },
+    versionUpdates: {},
     scheduledTasks: {
       subtitle: "システムのスケジュールタスクを表示・管理します。",
       empty: "スケジュールタスクはまだありません。",
@@ -14913,50 +12713,7 @@ const jaMessages = {
     },
   },
   adminUsers: {
-    title: "ユーザー管理",
-    subtitle:
-      "システム管理者のみがダッシュボードユーザーを作成・管理できます。",
-    createTitle: "ユーザーを作成",
-    createTeamNotice:
-      "ここでユーザーを作成すると、そのユーザーが所有する新しいチームも作成されます。既存チームに追加する場合は、そのチームの設定から招待リンクを作成してください。",
-    username: "ユーザー名",
-    email: "メール",
-    name: "表示名（任意）",
-    password: "パスワード（8 文字以上）",
-    role: "システム権限",
-    teamName: "チーム名",
-    teamSlug: "チームスラッグ（任意）",
-    defaultTeamName: "{name} のチーム",
-    create: "ユーザーを作成",
-    creating: "作成中...",
-    delete: "削除",
-    deleting: "削除中...",
-    deleteConfirm: "このユーザーアカウントを削除しますか？",
-    deleteSuccess: "ユーザーを削除しました。",
-    deleteFailed: "ユーザーを削除できません。",
-    generateResetLink: "パスワードリセットリンクを生成",
-    resetLinkCreated: "パスワードリセットリンクを生成しました。",
-    resetLinkCreateFailed: "パスワードリセットリンクを生成できません。",
-    resetLinkCopied: "パスワードリセットリンクをコピーしました。",
-    resetLinkCopyFailed: "パスワードリセットリンクをコピーできません。",
-    copyResetLink: "リンクをコピー",
-    resetLinkExpiresAt: "有効期限",
-    listTitle: "ユーザー",
-    listSubtitle: "システム内のすべてのユーザーです。",
-    noData: "ユーザーが見つかりません。",
-    loadFailed: "ユーザーを読み込めません。",
-    createSuccess: "ユーザーを作成しました。",
-    createFailed: "ユーザーを作成できません。",
-    invalidInput: "有効なユーザー名、メール、パスワードを入力してください。",
-    columns: {
-      name: "名前",
-      username: "ユーザー名",
-      email: "メール",
-      role: "権限",
-      teams: "チーム",
-      created: "作成日時",
-      action: "操作",
-    },
+    columns: {},
   },
   adminSites: {
     title: "サイト管理",
@@ -14986,84 +12743,35 @@ const jaMessages = {
     },
   },
   adminTeams: {
-    title: "チーム管理",
-    subtitle: "システム管理者のみがすべてのチームを作成・表示できます。",
-    createTitle: "チームを作成",
-    createSubtitle: "作成後、設定とメンバーを管理できます。",
-    name: "チーム名",
-    slug: "チームスラッグ（任意）",
-    create: "チームを作成",
-    creating: "作成中...",
-    listTitle: "チーム",
-    listSubtitle: "システム内のすべてのチームです。",
-    noData: "チームが見つかりません。",
-    loadFailed: "チームを読み込めません。",
-    createSuccess: "チームを作成しました。",
-    createFailed: "チームを作成できません。",
-    invalidInput: "チーム名は 2 文字以上にしてください。",
-    open: "チームを開く",
-    settings: "設定",
-    columns: {
-      name: "名前",
-      slug: "スラッグ",
-      sites: "サイト",
-      members: "メンバー",
-      created: "作成日時",
-      action: "操作",
-    },
+    columns: {},
   },
   requestObservation: {
     title: "リクエスト監視",
-    tabs: {
-      overview: "概要",
-      blocked: "ブロック済みリクエスト",
-      included: "統計対象リクエスト",
+    subtitle:
+      "コレクターが最近拒否したリクエスト：カスタムブロックルール、ボット、ホスティングネットワーク。",
+    blockedTotal: "ブロックしたリクエスト",
+    retentionNote:
+      "30 日間保持します。許可されたトラフィックは各サイトのダッシュボードにあります。",
+    topReasons: "理由",
+    recentTitle: "最近ブロックしたリクエスト",
+    categoryLabels: {
+      custom_block: "ブロックルール",
+      bot: "ボット",
+      suspected_bot: "ホスティングネットワーク",
     },
+    tabs: {},
     refresh: "更新",
     loadFailed: "リクエスト監視データを読み込めません。",
-    notConfiguredTitle: "Analytics Engine リーダーが設定されていません",
-    notConfiguredDescription:
-      "リクエスト監視用の Analytics Engine データセットを読むには、システム設定で Cloudflare Account ID と API トークンを追加してください。",
-    analyticsEngineDisabledTitle: "Analytics Engine が有効ではありません",
-    analyticsEngineDisabledDescription:
-      "Cloudflare アカウントで Analytics Engine が有効化されていないため、このデプロイは Analytics Engine バインディングなしで公開されました。Cloudflare で有効化してから再デプロイすると、リクエスト監視データを収集できます。",
-    openAnalyticsEngine: "Analytics Engine を開く",
-    openSettings: "設定を開く",
-    affectedSites: "影響サイト",
-    uniqueCountries: "国 / 地域",
     noData: "この期間にリクエストデータはありません。",
-    trendTitle: "ルーティング推移",
-    client: "クライアント",
-    edge: "エッジ",
-    identifiers: "識別子",
-    fullUserAgent: "完全な User-Agent",
-    id: "ID",
-    metadata: "メタデータ",
     time: "時刻",
     site: "サイト",
     location: "地域",
     network: "ネットワーク",
     reason: "理由",
-    request: "リクエスト",
-    ip: "IP",
     userAgent: "User-Agent",
-    category: "カテゴリ",
     emptyValue: "不明",
-    kind: "種別",
-    botScore: "Bot スコア",
-    botScoreBucket: "Bot スコア分類",
-    verifiedBotCategory: "認証済み Bot カテゴリ",
-    hostname: "ホスト名",
     pathname: "パス",
-    origin: "オリジン",
-    asOrganization: "ASN 組織",
-    asn: "ASN",
     country: "国 / 地域",
-    region: "地域",
-    city: "都市",
-    colo: "データセンター",
-    userAgentLengthBucket: "User-Agent 長",
-    userAgentLength: "User-Agent 長（正確）",
     ipPrefix: "IP プレフィックス",
     botReasonLabels: {
       missing_ua: "User-Agent なし",
@@ -15089,45 +12797,15 @@ const jaMessages = {
       blocked_countries: "ブロック対象国",
       blocked_regions: "ブロック対象地域",
     },
-    requestKindLabels: {
-      pageview: "ページビュー",
-      custom_event: "カスタムイベント",
-      request: "リクエスト",
-      visibility: "可視性",
-      leave: "離脱",
-      identify: "ユーザー識別",
-    },
+    requestKindLabels: {},
     overviewLabels: {
-      p50Latency: "P50 Worker 処理時間",
-      p75Latency: "P75 Worker 処理時間",
-      p99Latency: "P99 Worker 処理時間",
-      p95Latency: "P95 Worker 処理時間",
-      avgLatency: "平均 Worker 処理時間",
-      pageviews: "ページビュー",
-      customEvents: "カスタムイベント",
-      overviewTrendTitle: "リクエストルーティング推移",
-      trafficCompositionTitle: "ビジネスリクエスト構成",
-      trafficCompositionDescription:
-        "ページビュー、離脱、可視性の変化、カスタムイベント、ユーザー識別など、通常の収集イベントを種類別に時系列で表示します。",
-      categoryShareTitle: "リクエストカテゴリの内訳",
-      latencyTitle: "Worker 処理時間の推移",
-      latencyDescription:
-        "通常リクエストが AE に書き込まれる際に記録された P50 / P75 / P95 / P99 Worker 処理時間です。",
-      requests: "リクエスト数",
       windowDays: "過去 {days} 日",
-      latencyMilliseconds: "{value} ミリ秒",
     },
-    normalDetail: {
-      requestMethod: "リクエストメソッド",
-      edgeLatency: "Worker 処理時間",
-      eventAt: "イベント時刻",
-      receivedAt: "受信時刻",
-      continent: "大陸",
-    },
+    normalDetail: {},
   },
   systemSettings: {
     title: "システム設定",
-    subtitle: "この InsightFlare デプロイ全体の設定を管理します。",
+    subtitle: "この Open Analytics デプロイ全体の設定を管理します。",
     guide: "ガイド",
     analyticsEngineTitle: "Analytics Engine",
     analyticsEngineDescription:
@@ -15144,7 +12822,7 @@ const jaMessages = {
       "Analytics Engine の読み取り用認証情報を削除しますか？依存する機能は認証情報が復元されるまで設定が必要な状態になります。",
     analyticsEngineDisabledTitle: "Analytics Engine が有効ではありません",
     analyticsEngineDisabledDescription:
-      "Cloudflare アカウントで Analytics Engine が有効化されていないため、このデプロイでは Analytics Engine バインディングが自動的に無効化されました。Cloudflare で Analytics Engine を有効化し、InsightFlare を再デプロイすると関連分析機能が有効になります。",
+      "Cloudflare アカウントで Analytics Engine が有効化されていないため、このデプロイでは Analytics Engine バインディングが自動的に無効化されました。Cloudflare で Analytics Engine を有効化し、Open Analytics を再デプロイすると関連分析機能が有効になります。",
     analyticsEngineDisabledHint:
       "Analytics Engine が有効化され Worker が再デプロイされるまで、Analytics Engine 設定はロックされます。",
     analyticsEngineOpenCloudflare: "Cloudflare Analytics Engine を開く",
@@ -15160,7 +12838,11 @@ const jaMessages = {
     ],
     notificationEmailTitle: "メール通知",
     notificationEmailDescription:
-      "レポート、アラート、テストメッセージで使用するメールサービスを設定します。",
+      "レポート、アラート、テストメッセージは Every App ゲートウェイ経由でメール送信されます。",
+    emailGatewayReady: "通知メールは Every App ゲートウェイが送信します。",
+    emailGatewayNotReady:
+      "Every App ゲートウェイにメール送信者がまだ設定されていません。運用者が EMAIL_FROM と Email Sending を設定すると通知メールが送信されます。",
+    emailSenderLabel: "送信者",
     notificationEmailGuideTitle: "Resend メール設定を取得",
     notificationEmailGuideDescription:
       "Resend 経由でシステムメールを送るには、検証済み送信ドメインと API キーを用意してください。",
@@ -15173,11 +12855,13 @@ const jaMessages = {
     ],
     retentionTitle: "運用データの保持期間",
     retentionDescription:
-      "タスク実行、タスクログ、通知メッセージの保持期間を設定します。変更は新しいレコードにのみ適用されます。",
+      "タスク実行、タスクログ、通知メッセージ、詳細な分析データの保持期間を設定します。タスクと通知の変更は新しいレコードにのみ適用されます。新しい期間より古い詳細な分析データは、次回の日次実行で削除されます。",
     scheduledTaskLogsDaysLabel: "スケジュールタスクの実行とログ（日）",
     notificationTestDaysLabel: "テスト通知（日）",
     notificationAttentionDaysLabel: "警告・重大通知（日）",
     notificationDefaultDaysLabel: "その他の通知（日）",
+    analyticsDetailDaysLabel:
+      "詳細な分析データ：ページビューとイベント（日数。時間ごとの集計は保持）",
     retentionRangeHint: "1〜3650 の整数日を入力してください。",
     retentionSave: "保持期間を保存",
     retentionSaving: "保存中...",
@@ -15216,7 +12900,7 @@ const jaMessages = {
     loginTurnstileGuideSteps: [
       "Cloudflare Dashboard を開き、Turnstile に移動します。",
       "新しいウィジェットを作成し、Invisible モードを選択します。",
-      "現在の InsightFlare ログインドメインを許可ホスト名に追加します。",
+      "現在の Open Analytics ログインドメインを許可ホスト名に追加します。",
       "ウィジェット作成後に Site Key と Secret Key をコピーします。",
       "ここに Site Key と Secret Key を入力し、検証テストを実行してから設定を保存します。",
     ],
@@ -15252,7 +12936,7 @@ const jaMessages = {
   systemPerformance: {
     title: "システムパフォーマンス",
     subtitle:
-      "既存の分析行から InsightFlare の収集、バッファリング、書き込みの健全性を監視します。",
+      "既存の分析行から Open Analytics の収集、バッファリング、書き込みの健全性を監視します。",
     refresh: "更新",
     loadFailed: "システムパフォーマンスデータを読み込めません。",
     noData: "この期間にシステムパフォーマンスデータはありません。",
@@ -15343,29 +13027,12 @@ const jaMessages = {
       "しきい値：stale {stale}、timeout {timeout}、hardAged {hardAged}、stuck flush_attempts ≥ {stuck}",
     doDiagnosticHealthy: "異常なバッファ行は検出されませんでした。",
   },
-  loginForm: {
-    signingIn: "サインイン中...",
-    verifyingSecurity: "セキュリティ検証中...",
-    securityVerificationTitle: "セキュリティ検証に失敗しました",
-    securityVerificationFailed:
-      "セキュリティ検証に失敗しました。もう一度お試しください。",
-    retrySecurityVerification: "検証を再試行",
-    redirecting: "リダイレクト中...",
-    failed: "サインインに失敗しました。もう一度お試しください。",
-  },
-  logoutAction: {
-    pending: "サインアウト中...",
-    success: "サインアウトしました。",
-    failed: "サインアウトできません。もう一度お試しください。",
-  },
+  loginForm: {},
+  logoutAction: {},
   sidebarFooter: {
     gateway: "Every App に戻る",
   },
-  teamEntry: {
-    title: "チームを選択",
-    description:
-      "複数のチームにアクセスできます。続行するチームを選択してください。",
-  },
+  teamEntry: {},
 } as AppMessages;
 
 const DICTIONARIES: Record<Locale, AppMessages> = {

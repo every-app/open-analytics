@@ -1835,18 +1835,16 @@ describe("event detail D1 SQL", () => {
     seedFilterSemanticsTruthFixture(d1);
 
     try {
-      const pageResults = (
-        ["private-dashboard", "api-v1", "public-share"] as const
-      ).map((audience) =>
-        readTruthRelationIds(
-          d1,
-          truthCondition("page.path", "/pricing"),
-          "event",
-          audience,
-        ),
+      const pageResults = (["private-dashboard", "public-share"] as const).map(
+        (audience) =>
+          readTruthRelationIds(
+            d1,
+            truthCondition("page.path", "/pricing"),
+            "event",
+            audience,
+          ),
       );
       expect(pageResults[1]).toEqual(pageResults[0]);
-      expect(pageResults[2]).toEqual(pageResults[0]);
       expect(
         pageResults.map(({ visits, events, sessions, visitors }) => ({
           visits: visits.length,
@@ -1857,23 +1855,7 @@ describe("event detail D1 SQL", () => {
       ).toEqual([
         { visits: 4, events: 1, sessions: 5, visitors: 5 },
         { visits: 4, events: 1, sessions: 5, visitors: 5 },
-        { visits: 4, events: 1, sessions: 5, visitors: 5 },
       ]);
-
-      const privateEvent = readTruthRelationIds(
-        d1,
-        truthCondition("event.name", "truth_purchase"),
-        "event",
-        "private-dashboard",
-      );
-      expect(
-        readTruthRelationIds(
-          d1,
-          truthCondition("event.name", "truth_purchase"),
-          "event",
-          "api-v1",
-        ),
-      ).toEqual(privateEvent);
     } finally {
       d1.close();
     }

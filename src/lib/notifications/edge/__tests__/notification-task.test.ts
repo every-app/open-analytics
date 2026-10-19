@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { setE2eClock } from "@/lib/edge/runtime/e2e-clock";
 import type { ScheduledTaskContext } from "@/lib/edge/scheduled-tasks/runner";
 import {
   createManualTestNotification,
@@ -17,10 +16,6 @@ const applyNotificationRuleManualRunResult = vi.hoisted(() => vi.fn());
 const evaluateNotificationRule = vi.hoisted(() => vi.fn());
 const createNotificationMessage = vi.hoisted(() => vi.fn());
 const deliverNotificationMessage = vi.hoisted(() => vi.fn());
-const CLOCK_KEY = "__insightflare_e2e_clock__";
-afterEach(() => {
-  Reflect.deleteProperty(globalThis, CLOCK_KEY);
-});
 vi.mock("@/lib/notifications/edge/rule-store", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   listDueNotificationRules,
@@ -190,18 +185,6 @@ describe("notification task", () => {
     );
     expect(ctx.events).toContain("notification_rule_checked");
     expect(ctx.events).toContain("notification_rule_triggered");
-  });
-
-  it("uses the controlled E2E clock for due rules and evaluations", async () => {
-    setE2eClock(1_700_000_000_000);
-    listDueNotificationRules.mockResolvedValue([]);
-
-    await runNotificationTick(context());
-
-    expect(listDueNotificationRules).toHaveBeenCalledWith(
-      expect.anything(),
-      1_700_000_000,
-    );
   });
 
   it("advances checked rules without creating messages", async () => {

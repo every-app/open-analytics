@@ -7,15 +7,11 @@ describe("shouldUseHono", () => {
     "/api",
     "/api/private/overview",
     "/api/public/share/demo/site",
-    "/api/v1/capabilities",
     "/api/public/resources/world-countries",
     "/api/public/resources/map/v1/styles/light/style.json",
     "/collect",
     "/script.js",
     "/healthz",
-    "/notification-email-preview",
-    "/.well-known/openapi.json",
-    "/.well-known/security.txt",
     "/api/private/realtime/ws",
     "/api/private/realtime/ws/extra",
   ])("routes %s through the Hono app", (pathname) => {
@@ -32,6 +28,8 @@ describe("shouldUseHono", () => {
     "/collect/",
     "/admin/ws",
     "/admin/users",
+    "/notification-email-preview",
+    "/.well-known/security.txt",
   ])("leaves %s on the application router path", (pathname) => {
     expect(shouldUseHono(pathname)).toBe(false);
   });

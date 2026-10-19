@@ -5,80 +5,62 @@ import {
 import type { Env } from "@/lib/edge/types";
 import { requireSameOrigin } from "@/lib/edge/utils";
 import { isValidLocale, type Locale } from "@/lib/i18n/config";
-const DEFAULT_MAP_RELAY_BASE_URL = "https://maprelay.ravelloh.com";
-const MAP_RESOURCE_PREFIX = "/api/public/resources/map";
-const MAP_RELAY_CLIENT = "insightflare-backend-v1";
-const MAP_LOCALE_QUERY_PARAM = "locale";
-const MAP_RELAY_LOCALE_QUERY_PARAM = "if_locale";
-const MAP_RELAY_LOCALE_HEADER = "x-insightflare-locale";
-const INSTANCE_SCOPED_RELAY_PATH =
-  /^\/v1\/(?:styles\/(?:light|dark)\/style\.json|sources\/carto\.streets\/v1\/tiles\.json)$/;
-const ALLOWED_MAP_PATH =
-  /^\/v1\/(?:styles\/(?:light|dark)\/style\.json|sources\/carto\.streets\/v1\/tiles\.json|tiles\/carto\.streets\/v1\/\d+\/\d+\/\d+\.mvt|fonts\/[^/]+\/[^/]+\.pbf|sprites\/(?:light|dark)\/sprite(?:@2x)?\.(?:json|png))$/;
-const FORWARDED_RESPONSE_HEADERS = [
-  "cache-control",
-  "cloudflare-cdn-cache-control",
-  "content-encoding",
-  "content-language",
-  "content-type",
-  "etag",
-  "expires",
-  "last-modified",
-  "vary",
-  "x-content-type-options",
-] as const;
-function resolveMapRelayOrigin(env?: Env): string {
-  const configured = env?.MAP_RELAY_BASE_URL?.trim();
-  if (!configured) return DEFAULT_MAP_RELAY_BASE_URL;
 
+/**
+ * The dashboard maps' basemap: OpenFreeMap's open vector styles (OpenMapTiles
+ * schema, no key). The Worker serves the style with its labels in the
+ * dashboard's language; tiles, fonts and sprites load from OpenFreeMap.
+ * MAP_STYLE_BASE_URL points at another OpenMapTiles style host (its `light`
+ * and `dark` styles are `<base>/positron` and `<base>/dark`).
+ */
+const DEFAULT_MAP_STYLE_BASE_URL = "https://tiles.openfreemap.org/styles";
+const STYLE_PATH =
+  /^\/api\/public\/resources\/map\/v1\/styles\/(light|dark)\/style\.json$/;
+const STYLE_NAMES = { light: "positron", dark: "dark" } as const;
+const CACHE_CONTROL = "public, max-age=3600, s-maxage=86400";
+
+/** OpenMapTiles name fields per dashboard language, best first. */
+const NAME_FIELDS: Record<Locale, readonly string[]> = {
+  en: ["name:en"],
+  zh: ["name:zh"],
+  "zh-tw": ["name:zh-Hant", "name:zh"],
+  ja: ["name:ja"],
+};
+
+function styleBaseUrl(env?: Env): string {
+  const configured = env?.MAP_STYLE_BASE_URL?.trim();
+  if (!configured) return DEFAULT_MAP_STYLE_BASE_URL;
   try {
     const url = new URL(configured);
-    if (url.protocol !== "https:") return DEFAULT_MAP_RELAY_BASE_URL;
-    return url.origin;
+    return url.protocol === "https:"
+      ? url.toString().replace(/\/$/, "")
+      : DEFAULT_MAP_STYLE_BASE_URL;
   } catch {
-    return DEFAULT_MAP_RELAY_BASE_URL;
+    return DEFAULT_MAP_STYLE_BASE_URL;
   }
 }
-function getInsightFlareVersion(): string {
-  return import.meta.env?.VITE_APP_VERSION || "unknown";
-}
-function getInsightFlareCommit(): string {
-  return import.meta.env?.VITE_COMMIT_SHA || "unknown";
-}
-function getRequestHost(request: Request): string {
-  return request.headers.get("host") || new URL(request.url).host;
-}
-function getRequestedLocale(requestUrl: URL): Locale | null {
-  const value = requestUrl.searchParams.get(MAP_LOCALE_QUERY_PARAM);
-  return isValidLocale(value) ? value : null;
-}
-function getRelayPath(request: Request): string | null {
-  const pathname = new URL(request.url).pathname;
-  if (!pathname.startsWith(`${MAP_RESOURCE_PREFIX}/`)) return null;
 
-  const relayPath = pathname.slice(MAP_RESOURCE_PREFIX.length);
-  return ALLOWED_MAP_PATH.test(relayPath) ? relayPath : null;
-}
-function copyRelayResponse(response: Response): Response {
-  const headers = new Headers();
-  for (const name of FORWARDED_RESPONSE_HEADERS) {
-    const value = response.headers.get(name);
-    if (value) headers.set(name, value);
+type StyleLayer = { layout?: Record<string, unknown> };
+
+/** Prefers the locale's own name on every place, road and water label. */
+function localizeStyleLabels(
+  style: { layers?: StyleLayer[] },
+  locale: Locale,
+): void {
+  const preferred = NAME_FIELDS[locale].map((field) => ["get", field]);
+  for (const layer of style.layers ?? []) {
+    const textField = layer.layout?.["text-field"];
+    if (!textField || !JSON.stringify(textField).includes('"name')) continue;
+    layer.layout!["text-field"] = ["coalesce", ...preferred, textField];
   }
-
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
 }
+
 export async function handleMapRelayRequest(
   request: Request,
   env?: Env,
 ): Promise<Response> {
   const sameOriginError = requireSameOrigin(request);
   if (sameOriginError) return sameOriginError;
-
   if (request.method !== "GET") {
     return new Response("Method Not Allowed", {
       status: 405,
@@ -86,46 +68,32 @@ export async function handleMapRelayRequest(
     });
   }
 
-  const relayPath = getRelayPath(request);
-  if (!relayPath) return new Response("Not Found", { status: 404 });
+  const url = new URL(request.url);
+  const theme = STYLE_PATH.exec(url.pathname)?.[1] as
+    keyof typeof STYLE_NAMES | undefined;
+  if (!theme) return new Response("Not Found", { status: 404 });
+  const requestedLocale = url.searchParams.get("locale");
+  const locale: Locale = isValidLocale(requestedLocale)
+    ? requestedLocale
+    : "en";
 
-  const requestUrl = new URL(request.url);
-  const relayUrl = new URL(relayPath, `${resolveMapRelayOrigin(env)}/`);
-  const locale = getRequestedLocale(requestUrl);
-  if (INSTANCE_SCOPED_RELAY_PATH.test(relayPath)) {
-    relayUrl.searchParams.set("if_origin", requestUrl.origin);
-    if (locale) relayUrl.searchParams.set(MAP_RELAY_LOCALE_QUERY_PARAM, locale);
-  }
-  const relayRequestHeaders = new Headers({
-    "x-insightflare-client": MAP_RELAY_CLIENT,
-    "x-insightflare-version": getInsightFlareVersion(),
-    "x-insightflare-commit": getInsightFlareCommit(),
-    "x-insightflare-host": getRequestHost(request),
-    "x-insightflare-protocol": requestUrl.protocol.replace(":", ""),
-  });
-  if (locale) relayRequestHeaders.set(MAP_RELAY_LOCALE_HEADER, locale);
   const logger = env ? getInvocationLogger(env) : undefined;
-
   try {
     const response = await measureExternalFetch(
       logger,
-      "external_fetch.map_relay",
-      () =>
-        fetch(relayUrl, {
-          method: "GET",
-          headers: relayRequestHeaders,
-        }),
+      "external_fetch.map_style",
+      () => fetch(`${styleBaseUrl(env)}/${STYLE_NAMES[theme]}`),
     );
-    logger?.info("map_relay.response", {
-      path: relayPath,
-      status: response.status,
+    if (!response.ok) {
+      return new Response("Map style unavailable", { status: 502 });
+    }
+    const style = (await response.json()) as { layers?: StyleLayer[] };
+    localizeStyleLabels(style, locale);
+    return Response.json(style, {
+      headers: { "cache-control": CACHE_CONTROL },
     });
-    return copyRelayResponse(response);
   } catch {
-    logger?.info("map_relay.response", {
-      path: relayPath,
-      status: 502,
-    });
-    return new Response("Map relay unavailable", { status: 502 });
+    logger?.info("map_style.unavailable", { theme });
+    return new Response("Map style unavailable", { status: 502 });
   }
 }

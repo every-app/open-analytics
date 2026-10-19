@@ -13,6 +13,7 @@ export type AdminServiceRoute =
   | "notification-email"
   | "notification-email/test"
   | "notification-email-preview"
+  | "request-observation"
   | "notification-rules"
   | "notification-rules/preview"
   | "notification-rules/run"
@@ -34,6 +35,7 @@ const STATIC_ADMIN_SERVICE_ROUTES = new Set<AdminServiceRoute>([
   "notification-email",
   "notification-email/test",
   "notification-email-preview",
+  "request-observation",
   "notification-rules",
   "notification-rules/preview",
   "notification-rules/run",

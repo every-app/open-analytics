@@ -60,4 +60,8 @@ privateAdminRoutes.all(
   adminServiceRoute("scheduled-tasks"),
 );
 privateAdminRoutes.all("/do-diagnostic", adminServiceRoute("do-diagnostic"));
+privateAdminRoutes.all(
+  "/request-observation",
+  adminServiceRoute("request-observation"),
+);
 privateAdminRoutes.all("/*", () => nf());

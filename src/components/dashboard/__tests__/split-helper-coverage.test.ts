@@ -280,8 +280,8 @@ describe("recently split dashboard helpers", () => {
       method: "POST",
       body: { teamId: "team-1" },
     });
-    await postJson("teams", { teamId: "team-1" }, "PATCH");
-    expect(requestAdminService).toHaveBeenLastCalledWith("teams", {
+    await postJson("sites", { teamId: "team-1" }, "PATCH");
+    expect(requestAdminService).toHaveBeenLastCalledWith("sites", {
       method: "PATCH",
       body: { teamId: "team-1" },
     });

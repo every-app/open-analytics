@@ -1,19 +1,14 @@
 import { type Handler, Hono, type MiddlewareHandler } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createMigratedDatabase } from "@/../scripts/schema/database";
+import { withDashboardCache } from "@/lib/edge/analytics/composition/dashboard-cache";
+import { requireSession } from "@/lib/edge/auth/session-auth";
 import {
-  createSqliteD1Database,
-  type SqliteD1Trace,
-} from "@/lib/db/__tests__/sqlite-d1";
-import type { ApiKeyPrincipal } from "@/lib/edge/auth/api-key-auth";
-import type * as ApiKeyAuthModule from "@/lib/edge/auth/api-key-auth";
+  fetchPublicSite,
+  resolvePrivateSiteForSession,
+} from "@/lib/edge/auth/site-access";
 import type { Env } from "@/lib/edge/types";
 import { apiNoCacheMiddleware } from "@/lib/hono/middleware/api-cache";
-import {
-  authenticateApiKeyMiddleware,
-  requireApiScopeMiddleware,
-} from "@/lib/hono/middleware/api-key";
 import { dashboardCacheMiddleware } from "@/lib/hono/middleware/dashboard-cache";
 import {
   errorBoundaryMiddleware,
@@ -26,20 +21,12 @@ import {
 import { requestIdMiddleware } from "@/lib/hono/middleware/request-id";
 import { requireSessionMiddleware } from "@/lib/hono/middleware/session";
 import {
-  resolveApiSiteMiddleware,
   resolvePrivateSiteMiddleware,
   resolvePublicSiteMiddleware,
 } from "@/lib/hono/middleware/site";
 import type { AppEnv } from "@/lib/hono/types";
 import { responseContext } from "@/lib/hono/utils/context";
 import { internalServerError } from "@/lib/hono/utils/response";
-vi.mock("@/lib/edge/auth/api-key-auth", async (importOriginal) => {
-  const actual = await importOriginal<typeof ApiKeyAuthModule>();
-  return {
-    ...actual,
-    authenticateApiKey: vi.fn(),
-  };
-});
 vi.mock("@/lib/edge/analytics/composition/dashboard-cache", () => ({
   withDashboardCache: vi.fn(
     async (
@@ -56,29 +43,15 @@ vi.mock("@/lib/edge/auth/site-access", () => ({
 vi.mock("@/lib/edge/auth/session-auth", () => ({
   requireSession: vi.fn(),
 }));
-const { authenticateApiKey } = await import("@/lib/edge/auth/api-key-auth");
-const { withDashboardCache } =
-  await import("@/lib/edge/analytics/composition/dashboard-cache");
-const { fetchPublicSite, resolvePrivateSiteForSession } =
-  await import("@/lib/edge/auth/site-access");
-const { requireSession } = await import("@/lib/edge/auth/session-auth");
 const ctx = {
   passThroughOnException: vi.fn(),
   waitUntil: vi.fn(),
 } as unknown as ExecutionContext;
-const principal: ApiKeyPrincipal = {
-  keyId: "key-1",
-  teamId: "team-1",
-  prefix: "if_123",
-  scopes: ["analytics:read"],
-  siteIds: ["site-1"],
-};
 const session = {
   userId: "user-1",
-  username: "user",
-  displayName: "User",
+  email: "user@example.com",
+  teamId: "team-1",
   systemRole: "user" as const,
-  exp: 9999999999,
 };
 function request(path: string, init?: RequestInit): Request {
   return new Request(`https://app.test${path}`, init);
@@ -102,16 +75,8 @@ function createPrivateSiteApp(handler: Handler<AppEnv>) {
   app.all("*", handler);
   return app;
 }
-function createEnv(first: unknown = null): Env {
-  return {
-    DB: {
-      prepare: vi.fn(() => ({
-        bind: vi.fn(() => ({
-          first: vi.fn(async () => first),
-        })),
-      })),
-    },
-  } as unknown as Env;
+function createEnv(): Env {
+  return {} as Env;
 }
 function responseWithThrowingHeaderSet(): Response {
   const response = new Response("upgraded");
@@ -222,7 +187,7 @@ describe("Hono middleware foundation", () => {
     );
   });
 
-  it("guards exact and grouped methods with the API v1 response shape", async () => {
+  it("guards exact and grouped methods with the shared 405 response", async () => {
     const exact = createApp(requireMethodMiddleware("POST"), () =>
       Response.json({ ok: true }),
     );
@@ -231,12 +196,12 @@ describe("Hono middleware foundation", () => {
     );
 
     const exactResponse = await exact.fetch(
-      request("/api/v1/sites", { method: "GET" }),
+      request("/api/private/overview", { method: "GET" }),
       createEnv(),
       ctx,
     );
     const groupedResponse = await grouped.fetch(
-      request("/api/v1/sites", { method: "POST" }),
+      request("/api/private/overview", { method: "POST" }),
       createEnv(),
       ctx,
     );
@@ -257,12 +222,12 @@ describe("Hono middleware foundation", () => {
     );
 
     const exactResponse = await exact.fetch(
-      request("/api/v1/sites", { method: "POST" }),
+      request("/api/private/overview", { method: "POST" }),
       createEnv(),
       ctx,
     );
     const groupedResponse = await grouped.fetch(
-      request("/api/v1/sites", { method: "HEAD" }),
+      request("/api/private/overview", { method: "HEAD" }),
       createEnv(),
       ctx,
     );
@@ -272,19 +237,13 @@ describe("Hono middleware foundation", () => {
   });
 
   it("stores authenticated session claims", async () => {
-    vi.mocked(requireSession).mockResolvedValue({
-      userId: "user-1",
-      username: "user",
-      displayName: "User",
-      systemRole: "user",
-      exp: 1,
-    });
+    vi.mocked(requireSession).mockResolvedValue(session);
     const app = createApp(requireSessionMiddleware(), (c) =>
       c.json({ userId: c.get("session")?.userId }),
     );
 
     const response = await app.fetch(
-      request("/api/private/admin/users"),
+      request("/api/private/overview"),
       createEnv(),
       ctx,
     );
@@ -299,7 +258,7 @@ describe("Hono middleware foundation", () => {
     );
 
     const response = await app.fetch(
-      request("/api/private/admin/users"),
+      request("/api/private/overview"),
       createEnv(),
       ctx,
     );
@@ -310,89 +269,7 @@ describe("Hono middleware foundation", () => {
     });
   });
 
-  it("stores API key principals and reuses the shared scope checks", async () => {
-    vi.mocked(authenticateApiKey).mockResolvedValue(principal);
-    const app = createApp(authenticateApiKeyMiddleware(), (c) =>
-      c.json({ teamId: c.get("apiPrincipal")?.teamId }),
-    );
-
-    const response = await app.fetch(
-      request("/api/v1/sites"),
-      createEnv(),
-      ctx,
-    );
-
-    await expect(response.json()).resolves.toEqual({ teamId: "team-1" });
-  });
-
-  it("short-circuits invalid API keys and insufficient API scopes", async () => {
-    vi.mocked(authenticateApiKey).mockResolvedValueOnce(
-      new Response("invalid", { status: 401 }),
-    );
-    const authApp = createApp(authenticateApiKeyMiddleware(), () =>
-      Response.json({ ok: true }),
-    );
-    const deniedApp = createApp(requireApiScopeMiddleware("site:write"), () =>
-      Response.json({ ok: true }),
-    );
-
-    const authResponse = await authApp.fetch(
-      request("/api/v1/sites"),
-      createEnv(),
-      ctx,
-    );
-    vi.mocked(authenticateApiKey).mockResolvedValueOnce(principal);
-    const deniedResponse = await deniedApp.fetch(
-      request("/api/v1/sites"),
-      createEnv(),
-      ctx,
-    );
-
-    expect(authResponse.status).toBe(401);
-    await expect(authResponse.text()).resolves.toBe("invalid");
-    expect(deniedResponse.status).toBe(403);
-    await expect(deniedResponse.json()).resolves.toMatchObject({
-      error: { code: "insufficient_scope" },
-    });
-  });
-
-  it("short-circuits API scope checks when authentication fails", async () => {
-    vi.mocked(authenticateApiKey).mockResolvedValueOnce(
-      new Response("invalid", { status: 401 }),
-    );
-    const app = createApp(requireApiScopeMiddleware("analytics:read"), () =>
-      Response.json({ ok: true }),
-    );
-
-    const response = await app.fetch(
-      request("/api/v1/sites"),
-      createEnv(),
-      ctx,
-    );
-
-    expect(response.status).toBe(401);
-    await expect(response.text()).resolves.toBe("invalid");
-  });
-
-  it("continues API scope middleware when a principal is already available", async () => {
-    const app = new Hono<AppEnv>();
-    app.use("*", async (c, next) => {
-      c.set("apiPrincipal", principal);
-      await next();
-    });
-    app.use("*", requireApiScopeMiddleware("analytics:read"));
-    app.get("*", (c) => c.json({ teamId: c.get("apiPrincipal")?.teamId }));
-
-    const response = await app.fetch(
-      request("/api/v1/sites"),
-      createEnv(),
-      ctx,
-    );
-
-    await expect(response.json()).resolves.toEqual({ teamId: "team-1" });
-  });
-
-  it("resolves private, public, and API site context", async () => {
+  it("resolves private and public site context", async () => {
     vi.mocked(resolvePrivateSiteForSession).mockResolvedValue({
       id: "private-site",
       name: "Private Site",
@@ -412,13 +289,6 @@ describe("Hono middleware foundation", () => {
     publicApp.get("/:slug/site", (c) =>
       c.json({ slug: c.get("publicSite")?.slug }),
     );
-    const apiApp = new Hono<AppEnv>();
-    apiApp.use("*", async (c, next) => {
-      c.set("apiPrincipal", principal);
-      await next();
-    });
-    apiApp.use("/sites/:siteId/*", resolveApiSiteMiddleware());
-    apiApp.get("/sites/:siteId/overview", (c) => c.json(c.get("apiSite")));
 
     const privateResponse = await privateApp.fetch(
       request("/api/private/overview"),
@@ -428,20 +298,6 @@ describe("Hono middleware foundation", () => {
     const publicResponse = await publicApp.fetch(
       request("/demo/site"),
       createEnv(),
-      ctx,
-    );
-    const apiResponse = await apiApp.fetch(
-      request("/sites/site-1/overview"),
-      createEnv({
-        id: "site-1",
-        teamId: "team-1",
-        name: "API Site",
-        domain: "api.test",
-        publicEnabled: 0,
-        publicSlug: null,
-        createdAt: 1,
-        updatedAt: 2,
-      }),
       ctx,
     );
 
@@ -455,16 +311,6 @@ describe("Hono middleware foundation", () => {
       session,
     );
     await expect(publicResponse.json()).resolves.toEqual({ slug: "demo" });
-    await expect(apiResponse.json()).resolves.toEqual({
-      id: "site-1",
-      teamId: "team-1",
-      name: "API Site",
-      domain: "api.test",
-      publicEnabled: 0,
-      publicSlug: null,
-      createdAt: 1,
-      updatedAt: 2,
-    });
   });
 
   it("passes through site resolver response failures", async () => {
@@ -494,129 +340,6 @@ describe("Hono middleware foundation", () => {
     await expect(privateResponse.text()).resolves.toBe("private-denied");
     expect(publicResponse.status).toBe(404);
     await expect(publicResponse.text()).resolves.toBe("public-missing");
-  });
-
-  it("returns not found when API site context is absent or inaccessible", async () => {
-    const app = new Hono<AppEnv>();
-    app.use("/sites/:siteId/*", resolveApiSiteMiddleware());
-    app.get("/sites/:siteId/overview", () => Response.json({ ok: true }));
-
-    const response = await app.fetch(
-      request("/sites/site-1/overview"),
-      createEnv(),
-      ctx,
-    );
-
-    expect(response.status).toBe(404);
-    await expect(response.json()).resolves.toMatchObject({
-      error: { code: "site_not_found" },
-    });
-  });
-
-  it("returns not found when API site lookup misses", async () => {
-    const app = new Hono<AppEnv>();
-    app.use("*", async (c, next) => {
-      c.set("apiPrincipal", principal);
-      await next();
-    });
-    app.use("/sites/:siteId/*", resolveApiSiteMiddleware());
-    app.get("/sites/:siteId/overview", () => Response.json({ ok: true }));
-
-    const response = await app.fetch(
-      request("/sites/site-1/overview"),
-      createEnv(null),
-      ctx,
-    );
-
-    expect(response.status).toBe(404);
-    await expect(response.json()).resolves.toMatchObject({
-      error: { code: "site_not_found" },
-    });
-  });
-
-  it("matches the legacy API site row through a typed D1 lookup", async () => {
-    const database = createMigratedDatabase();
-    try {
-      database
-        .prepare(
-          "INSERT INTO users (id,email,name,username) VALUES ('owner-1','owner@example.test','Owner','owner')",
-        )
-        .run();
-      database
-        .prepare(
-          "INSERT INTO teams (id,name,slug,owner_user_id) VALUES ('team-1','Team','team','owner-1')",
-        )
-        .run();
-      database
-        .prepare(
-          "INSERT INTO sites (id,team_id,name,domain,public_slug) VALUES ('site-1','team-1','Site','site.test','public-site')",
-        )
-        .run();
-      const legacyRow = database
-        .prepare(
-          `SELECT id,team_id AS teamId,name,domain,
-                  public_enabled AS publicEnabled,
-                  public_slug AS publicSlug,
-                  created_at AS createdAt,updated_at AS updatedAt
-           FROM sites WHERE id=? AND team_id=? LIMIT 1`,
-        )
-        .get("site-1", "team-1");
-      const trace: SqliteD1Trace = { preparedSql: [], bindings: [] };
-      const app = new Hono<AppEnv>();
-      app.use("*", async (c, next) => {
-        c.set("apiPrincipal", principal);
-        await next();
-      });
-      app.use("/sites/:siteId/*", resolveApiSiteMiddleware());
-      app.get("/sites/:siteId/overview", (c) => c.json(c.get("apiSite")));
-
-      const response = await app.fetch(
-        request("/sites/site-1/overview"),
-        {
-          DB: createSqliteD1Database(database, trace),
-        } as unknown as Env,
-        ctx,
-      );
-
-      expect(response.status).toBe(200);
-      await expect(response.json()).resolves.toEqual(legacyRow);
-      expect(trace.preparedSql).toHaveLength(1);
-      expect(trace.bindings[0]).toEqual(["site-1", "team-1", 1]);
-    } finally {
-      database.close();
-    }
-  });
-
-  it("returns not found when API site ID is missing or outside key access", async () => {
-    const missingIdApp = new Hono<AppEnv>();
-    missingIdApp.use("*", async (c, next) => {
-      c.set("apiPrincipal", principal);
-      await next();
-    });
-    missingIdApp.use("*", resolveApiSiteMiddleware());
-    missingIdApp.get("*", () => Response.json({ ok: true }));
-
-    const deniedApp = new Hono<AppEnv>();
-    deniedApp.use("*", async (c, next) => {
-      c.set("apiPrincipal", { ...principal, siteIds: ["other-site"] });
-      await next();
-    });
-    deniedApp.use("/sites/:siteId/*", resolveApiSiteMiddleware());
-    deniedApp.get("/sites/:siteId/overview", () => Response.json({ ok: true }));
-
-    const missingIdResponse = await missingIdApp.fetch(
-      request("/overview"),
-      createEnv(),
-      ctx,
-    );
-    const deniedResponse = await deniedApp.fetch(
-      request("/sites/site-1/overview"),
-      createEnv(),
-      ctx,
-    );
-
-    expect(missingIdResponse.status).toBe(404);
-    expect(deniedResponse.status).toBe(404);
   });
 
   it("wraps responses with dashboard cache middleware", async () => {

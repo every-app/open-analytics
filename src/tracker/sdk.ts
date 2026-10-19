@@ -1,5 +1,5 @@
 /* eslint-disable */
-// InsightFlare browser tracker SDK
+// Open Analytics browser tracker SDK
 // Compiled at build time; the script endpoint injects this config immediately
 // before the SDK. Do not turn these values into build-time string placeholders:
 // minifiers may constant-fold privacy branches before injection happens.
@@ -9,7 +9,7 @@ import { createPerformanceTracker } from "./performance";
 import type { UaClientHintsResult } from "./ua-client-hints";
 import { readUaClientHints, withUaClientHints } from "./ua-client-hints";
 
-const TRACKER_RUNTIME_CONFIG_KEY = "__insightflare_tracker_runtime_config__";
+const TRACKER_RUNTIME_CONFIG_KEY = "__openanalytics_tracker_runtime_config__";
 
 interface TrackerRuntimeConfig {
   siteId: string;
@@ -29,7 +29,7 @@ function takeRuntimeConfig(): TrackerRuntimeConfig {
   delete configHost[TRACKER_RUNTIME_CONFIG_KEY];
 
   if (!rawConfig || typeof rawConfig !== "object" || Array.isArray(rawConfig)) {
-    throw new Error("InsightFlare: runtime configuration is missing");
+    throw new Error("Open Analytics: runtime configuration is missing");
   }
 
   const config = rawConfig as Partial<TrackerRuntimeConfig>;
@@ -44,14 +44,14 @@ function takeRuntimeConfig(): TrackerRuntimeConfig {
     typeof config.sessionWindowMs !== "number" ||
     typeof config.collectToken !== "string"
   ) {
-    throw new Error("InsightFlare: runtime configuration is invalid");
+    throw new Error("Open Analytics: runtime configuration is invalid");
   }
 
   return config as TrackerRuntimeConfig;
 }
 
 // ── Static constants ──
-const INSTALL_KEY = "__insightflare_tracker_v6__";
+const INSTALL_KEY = "__openanalytics_tracker_v6__";
 const ROUTE_SETTLE_DELAY_MS = 300;
 const UA_CLIENT_HINT_TIMEOUT_MS = 200;
 
@@ -86,11 +86,11 @@ let uaClientHintsSettled = false;
 // ── Entry guard ──
 const scriptEl = document.currentScript;
 if (!scriptEl || !(scriptEl instanceof HTMLScriptElement) || !scriptEl.src) {
-  throw new Error("InsightFlare: script element not found");
+  throw new Error("Open Analytics: script element not found");
 }
 
 if ((window as any)[INSTALL_KEY]) {
-  throw new Error("InsightFlare: already installed");
+  throw new Error("Open Analytics: already installed");
 }
 
 const runtimeConfig = takeRuntimeConfig();
@@ -103,14 +103,14 @@ const AUTO_TRACK_OUTBOUND_LINKS = runtimeConfig.autoTrackOutboundLinks;
 const PERFORMANCE_SAMPLE_RATE = runtimeConfig.performanceSampleRate;
 const SESSION_WINDOW_MS = runtimeConfig.sessionWindowMs;
 const COLLECT_TOKEN = runtimeConfig.collectToken;
-const VISITOR_KEY = "__insightflare_visitor_" + SITE_ID + "__";
+const VISITOR_KEY = "__openanalytics_visitor_" + SITE_ID + "__";
 
 if (!IGNORE_DO_NOT_TRACK) {
   const dnt = String(navigator.doNotTrack || "")
     .trim()
     .toLowerCase();
   if (dnt === "1" || dnt === "yes") {
-    throw new Error("InsightFlare: Do Not Track enabled");
+    throw new Error("Open Analytics: Do Not Track enabled");
   }
 }
 
@@ -208,17 +208,19 @@ function send(payload: any, useBeacon: boolean): void {
   } catch {
     return;
   }
+  // text/plain keeps the request CORS-simple: no preflight, so the collector
+  // answers one request per event (and OPTIONS needn't be public).
   if (useBeacon && typeof navigator.sendBeacon === "function") {
     navigator.sendBeacon(
       collectUrl,
-      new Blob([body], { type: "application/json" }),
+      new Blob([body], { type: "text/plain;charset=UTF-8" }),
     );
     return;
   }
 
   fetch(collectUrl, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "text/plain;charset=UTF-8" },
     body,
     mode: "cors",
     credentials: "omit",
@@ -266,7 +268,7 @@ function startVisit(
 
   if (debugEnabled) {
     console.log(
-      "[InsightFlare]",
+      "[Open Analytics]",
       "pageview:",
       new URL(currentVisit.href, window.location.href).pathname || "/",
     );
@@ -445,7 +447,7 @@ function identify(userId: string, opts?: { name?: string }): void {
   if (!currentVisit) return;
   if (debugEnabled) {
     console.log(
-      "[InsightFlare]",
+      "[Open Analytics]",
       "identify:",
       JSON.stringify(id),
       name ? JSON.stringify(name) : "",
@@ -505,7 +507,7 @@ function track(eventName: string, eventData?: unknown): void {
   if (!normalizedName || !currentVisit) return;
   if (debugEnabled) {
     console.log(
-      "[InsightFlare]",
+      "[Open Analytics]",
       "track:",
       JSON.stringify(normalizedName),
       JSON.stringify(
@@ -605,4 +607,4 @@ const api = {
   debug,
 };
 (window as any)[INSTALL_KEY] = api;
-(window as any).insightflare = api;
+(window as any).openAnalytics = api;

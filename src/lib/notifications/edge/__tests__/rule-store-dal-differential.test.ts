@@ -61,50 +61,27 @@ function createFixture() {
   const trace: SqliteD1Trace = { preparedSql: [], bindings: [] };
 
   const insertUser = database.prepare(
-    "INSERT INTO users (id, email, username, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+    "INSERT INTO users (id, email, created_at, updated_at) VALUES (?, ?, ?, ?)",
   );
-  insertUser.run("owner-1", "owner-1@example.test", "owner-1", 10, 10);
-  insertUser.run("owner-2", "owner-2@example.test", "owner-2", 20, 20);
-  insertUser.run("member-1", "member-1@example.test", "member-1", 30, 30);
-  insertUser.run("admin-1", "admin-1@example.test", "admin-1", 40, 40);
-  insertUser.run(
-    "restricted-1",
-    "restricted-1@example.test",
-    "restricted-1",
-    50,
-    50,
-  );
-  insertUser.run("role-owner", "role-owner@example.test", "role-owner", 60, 60);
-  insertUser.run(
-    "unrelated-1",
-    "unrelated@example.test",
-    "unrelated-1",
-    70,
-    70,
-  );
+  insertUser.run("owner-1", "owner-1@example.test", 10, 10);
+  insertUser.run("member-1", "member-1@example.test", 20, 20);
+  insertUser.run("admin-1", "admin-1@example.test", 30, 30);
+  insertUser.run("other-1", "other-1@example.test", 40, 40);
 
   const insertTeam = database.prepare(
-    "INSERT INTO teams (id, name, slug, owner_user_id, created_at) VALUES (?, ?, ?, ?, ?)",
+    "INSERT INTO teams (id, name, slug, created_at) VALUES (?, ?, ?, ?)",
   );
-  insertTeam.run("team-1", "Team One", "team-one", "owner-1", 1);
-  insertTeam.run("team-2", "Team Two", "team-two", "owner-2", 2);
-  insertTeam.run("team-3", "Team Three", "team-three", "owner-2", 3);
+  insertTeam.run("team-1", "Team One", "team-one", 1);
+  insertTeam.run("team-2", "Team Two", "team-two", 2);
 
-  const insertMembership = database.prepare(
-    "INSERT INTO team_members (team_id, user_id, role, site_ids_json) VALUES (?, ?, ?, ?)",
+  const insertMember = database.prepare(
+    "INSERT INTO members (team_id, user_id, role) VALUES (?, ?, ?)",
   );
-  // Team owner is included by the legacy owner_user_id branch even with a
-  // non-admin membership role.
-  insertMembership.run("team-1", "owner-1", "member", "[]");
-  insertMembership.run("team-2", "owner-1", "admin", "[]");
-  insertMembership.run("team-3", "owner-1", "member", "[]");
-  insertMembership.run("team-1", "role-owner", "owner", "[]");
-  insertMembership.run("team-1", "admin-1", "admin", "[]");
-  insertMembership.run("team-1", "member-1", "member", "[]");
-  insertMembership.run("team-1", "restricted-1", "member", '["site-other"]');
-  // One user has memberships in separate teams; resolving team-1 must not
-  // duplicate or leak that user's team-2 membership.
-  insertMembership.run("team-2", "admin-1", "member", "[]");
+  insertMember.run("team-1", "owner-1", "owner");
+  insertMember.run("team-1", "member-1", "member");
+  insertMember.run("team-1", "admin-1", "admin");
+  // Another organization's admin is never a team-1 recipient.
+  insertMember.run("team-2", "other-1", "admin");
 
   database
     .prepare(
@@ -259,28 +236,21 @@ function legacyUserRecipients(
     .all(...userIds) as unknown as LegacyRecipientRow[];
 }
 
-function legacyTeamRecipients(
+function legacyRoleRecipients(
   database: DatabaseSync,
-  teamId: string,
   mode: "team_admins" | "all_team_members",
 ): LegacyRecipientRow[] {
   const adminClause =
-    mode === "team_admins"
-      ? "AND (tm.role IN ('owner', 'admin') OR t.owner_user_id = u.id)"
-      : "";
+    mode === "team_admins" ? "AND m.role IN ('owner', 'admin')" : "";
   return database
     .prepare(
-      `SELECT DISTINCT u.id, u.email,
-              u.notification_preferences_json AS preferencesJson,
-              u.preferred_locale AS preferredLocale,
-              u.timezone AS timeZone
-       FROM users u
-       INNER JOIN team_members tm ON tm.user_id = u.id
-       INNER JOIN teams t ON t.id = tm.team_id
-       WHERE tm.team_id = ? ${adminClause}
+      `SELECT u.id, u.email, u.notification_preferences_json AS preferencesJson,
+              u.preferred_locale AS preferredLocale, u.timezone AS timeZone
+       FROM members m JOIN users u ON u.id = m.user_id
+       WHERE m.team_id = 'team-1' ${adminClause}
        ORDER BY u.created_at ASC`,
     )
-    .all(teamId) as unknown as LegacyRecipientRow[];
+    .all() as unknown as LegacyRecipientRow[];
 }
 
 function expectSameRule(
@@ -319,7 +289,11 @@ afterEach(() => {
 describe("notification rule Typed DAL differential checks", () => {
   it("matches legacy rule CRUD, listing, due selection, state, and schedule updates", async () => {
     const { database, env, trace } = createFixture();
-    const actor = { user: { id: "owner-1" }, isAdmin: true } as never;
+    const actor = {
+      user: { id: "owner-1" },
+      teamId: "team-1",
+      isAdmin: true,
+    } as never;
     const nowSeconds = 1_800_000_000;
     vi.spyOn(Date, "now").mockReturnValue(nowSeconds * 1000);
     vi.spyOn(crypto, "randomUUID").mockReturnValue(
@@ -363,11 +337,6 @@ describe("notification rule Typed DAL differential checks", () => {
       updatedAt: 304,
     });
     insertLegacyRule(database, {
-      id: "member-only-team-rule",
-      teamId: "team-3",
-      updatedAt: 305,
-    });
-    insertLegacyRule(database, {
       id: "site-filter-rule",
       siteId: "site-1",
       updatedAt: 306,
@@ -388,12 +357,17 @@ describe("notification rule Typed DAL differential checks", () => {
       legacyGet(database, "created-rule"),
     );
 
-    const legacyAdminList = legacyList(database);
+    const legacyAdminList = legacyList(database, "WHERE team_id = ?", [
+      "team-1",
+    ]);
     const beforeList = trace.preparedSql.length;
     const typedAdminList = await listNotificationRules(env, actor);
     expect(trace.preparedSql).toHaveLength(beforeList + 1);
     expect(typedAdminList.map((rule) => rule.id)).toEqual(
       legacyAdminList.map((rule) => rule.id),
+    );
+    expect(typedAdminList.map((rule) => rule.id)).not.toContain(
+      "managed-team-rule",
     );
 
     const typedTeamList = await listNotificationRules(env, actor, {
@@ -408,31 +382,11 @@ describe("notification rule Typed DAL differential checks", () => {
       siteId: "site-1",
     });
     expect(typedSiteList.map((rule) => rule.id)).toEqual(
-      legacyList(database, "WHERE site_id = ?", ["site-1"]).map(
-        (rule) => rule.id,
-      ),
+      legacyList(database, "WHERE team_id = ? AND site_id = ?", [
+        "team-1",
+        "site-1",
+      ]).map((rule) => rule.id),
     );
-
-    const legacyOwnerList = legacyList(
-      database,
-      `WHERE team_id IN (
-         SELECT tm.team_id FROM team_members tm
-         LEFT JOIN teams t ON t.id = tm.team_id
-         WHERE tm.user_id = ?
-           AND (tm.role IN ('owner', 'admin') OR t.owner_user_id = ?)
-       )`,
-      ["owner-1", "owner-1"],
-    );
-    const ownerList = await listNotificationRules(env, {
-      user: { id: "owner-1" },
-      isAdmin: false,
-    } as never);
-    expect(ownerList.map((rule) => rule.id)).toEqual(
-      legacyOwnerList.map((rule) => rule.id),
-    );
-    expect(ownerList.map((rule) => rule.teamId)).not.toContain("team-3");
-    expect(ownerList.map((rule) => rule.teamId)).toContain("team-1");
-    expect(ownerList.map((rule) => rule.teamId)).toContain("team-2");
 
     const legacyDueRows = legacyDue(database, 1_000);
     const beforeDue = trace.preparedSql.length;
@@ -603,16 +557,10 @@ describe("notification rule Typed DAL differential checks", () => {
       env,
       makeRecipientRule({ mode: "team_admins" }),
     );
-    const legacyAdmins = legacyTeamRecipients(
-      database,
-      "team-1",
-      "team_admins",
-    );
-    expect(typedAdmins).toEqual(legacyAdmins);
+    expect(typedAdmins).toEqual(legacyRoleRecipients(database, "team_admins"));
     expect(typedAdmins.map((recipient) => recipient.id)).toEqual([
       "owner-1",
       "admin-1",
-      "role-owner",
     ]);
     // The Typed DAL compiler wraps each logical relation in an output alias.
     // Keep sorting as the terminal relation operation so no projection sits
@@ -628,31 +576,23 @@ describe("notification rule Typed DAL differential checks", () => {
       env,
       makeRecipientRule({ mode: "all_team_members" }),
     );
-    const legacyMembers = legacyTeamRecipients(
-      database,
-      "team-1",
-      "all_team_members",
+    expect(typedMembers).toEqual(
+      legacyRoleRecipients(database, "all_team_members"),
     );
-    expect(typedMembers).toEqual(legacyMembers);
     expect(typedMembers.map((recipient) => recipient.id)).toEqual([
       "owner-1",
       "member-1",
       "admin-1",
-      "restricted-1",
-      "role-owner",
     ]);
-    expect(typedMembers.map((recipient) => recipient.id)).not.toContain(
-      "unrelated-1",
-    );
     expect(trace.preparedSql).toHaveLength(membersBefore + 1);
 
     const normalizedUsers = normalizeNotificationRecipientConfig({
       mode: "users",
-      userIds: [" owner-1 ", "unrelated-1", "owner-1", "missing-user"],
+      userIds: [" owner-1 ", "member-1", "owner-1", "missing-user"],
     });
     expect(normalizedUsers).toEqual({
       mode: "users",
-      userIds: ["owner-1", "unrelated-1", "missing-user"],
+      userIds: ["owner-1", "member-1", "missing-user"],
     });
     if (normalizedUsers.mode !== "users") {
       throw new Error("normalized_users_mode_expected");
@@ -678,17 +618,11 @@ describe("notification rule Typed DAL differential checks", () => {
     expect(trace.preparedSql).toHaveLength(emptyUsersBefore);
 
     const insertUser = database.prepare(
-      "INSERT INTO users (id, email, username, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO users (id, email, created_at, updated_at) VALUES (?, ?, ?, ?)",
     );
     const requestedIds = Array.from({ length: 200 }, (_, index) => {
       const id = `chunk-user-${index}`;
-      insertUser.run(
-        id,
-        `${id}@example.test`,
-        id,
-        1_000 + index,
-        1_000 + index,
-      );
+      insertUser.run(id, `${id}@example.test`, 1_000 + index, 1_000 + index);
       return id;
     });
     const cappedConfig = normalizeNotificationRecipientConfig({

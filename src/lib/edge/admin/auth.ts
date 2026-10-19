@@ -6,6 +6,7 @@ import {
   createD1DatabaseClient,
   eq,
   filter,
+  join,
   limit,
   param,
   project,
@@ -22,8 +23,6 @@ export type UserRow = {
   id: string;
   email: string;
   name: string | null;
-  org_role: string;
-  last_seen_at: number;
   timezone: string;
   preferred_locale?: string | null;
   created_at: number;
@@ -51,18 +50,11 @@ function userQuery() {
     id: users.columns.id,
     email: users.columns.email,
     name: users.columns.name,
-    org_role: users.columns.org_role,
-    last_seen_at: users.columns.last_seen_at,
     timezone: users.columns.timezone,
     preferred_locale: users.columns.preferred_locale,
     created_at: users.columns.created_at,
     updated_at: users.columns.updated_at,
   });
-}
-
-/** The role the gateway gave the person when they last opened the app. */
-export function toOrgRoleOf(user: Pick<UserRow, "org_role">): OrgRole {
-  return toOrgRole(user.org_role);
 }
 
 /** The name people see: the one they set, or their email. */
@@ -91,14 +83,47 @@ export async function byId(env: Env, id: string): Promise<UserRow | null> {
   return { ...row, id: row.id };
 }
 
-/** Everyone who has opened the app, for recipient pickers. */
-export async function listUsers(env: Env): Promise<UserRow[]> {
-  const rows = await database(env).all(
-    compileD1Query(userQuery(), { tag: "admin.users.all" }),
+export interface MemberRow {
+  userId: string;
+  email: string;
+  name: string | null;
+  role: OrgRole;
+  lastSeenAt: number;
+}
+
+/** Everyone in the organization who has opened the app, for recipient pickers. */
+export async function listMembers(
+  env: Env,
+  teamId: string,
+): Promise<MemberRow[]> {
+  const members = scan(schema.members);
+  const users = scan(schema.users);
+  const joined = join(
+    members,
+    users,
+    eq(members.columns.user_id, users.columns.id),
   );
-  return rows.results
-    .filter((row) => row.id !== null)
-    .map((row) => ({ ...row, id: row.id as string }));
+  const matching = filter(
+    joined,
+    eq(joined.columns.left_team_id, param(teamId)),
+  );
+  const rows = await database(env).all(
+    compileD1Query(
+      project(matching, {
+        userId: matching.columns.left_user_id,
+        email: matching.columns.right_email,
+        name: matching.columns.right_name,
+        role: matching.columns.left_role,
+        lastSeenAt: matching.columns.left_last_seen_at,
+      }),
+      { tag: "admin.members.all" },
+    ),
+  );
+  return rows.results.map((row) => ({
+    ...row,
+    email: row.email ?? "",
+    role: toOrgRole(row.role),
+  }));
 }
 
 export async function requireActor(

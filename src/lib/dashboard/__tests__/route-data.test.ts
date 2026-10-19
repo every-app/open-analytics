@@ -2,7 +2,6 @@ import type * as ReactStartModule from "@tanstack/react-start";
 import type * as ReactStartServerModule from "@tanstack/react-start/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type * as DashboardServerModule from "@/lib/dashboard/server";
 const { teamDashboardExecute } = vi.hoisted(() => ({
   teamDashboardExecute: vi.fn(),
 }));
@@ -53,7 +52,6 @@ vi.mock("@tanstack/react-start/server", async (importOriginal) => {
   return { ...actual, getRequest: vi.fn() };
 });
 vi.mock("@/lib/dashboard/server", () => ({
-  getDashboardRootContext: vi.fn(),
   getDashboardTeamSites: vi.fn(),
   getDashboardTeamContext: vi.fn(),
   getTeamSiteContext: vi.fn(),
@@ -77,6 +75,9 @@ vi.mock("@/lib/dashboard-api/client/edge", () => ({
   fetchPublicSite: vi.fn(),
   normalizeNotificationPreferencesData: vi.fn((value: unknown) => value),
 }));
+vi.mock("@/lib/dashboard/share-site-server", () => ({
+  readShareSite: vi.fn(),
+}));
 vi.mock("@/lib/dashboard/client/request", () => ({
   publicDashboardSiteId: vi.fn((slug: string) => `public-${slug}`),
 }));
@@ -85,11 +86,7 @@ import { getRequest } from "@tanstack/react-start/server";
 import { resolveDashboardInitialWindow } from "@/lib/dashboard/query-preferences";
 import {
   loadAccountNotificationPreferences,
-  loadAdminTeamsInitialData,
-  loadAdminUsersInitialData,
-  loadApiKeysInitialData,
   loadDashboardInitialWindow,
-  loadDashboardRoot,
   loadDashboardSite,
   loadDashboardTeam,
   loadNotificationCenterInitialData,
@@ -100,20 +97,20 @@ import {
   loadSystemPerformanceInitialData,
   loadSystemSettingsInitialData,
   loadTeamDashboardSnapshot,
-  loadTeamManagementInitialData,
   loadTeamNotificationsInitialData,
 } from "@/lib/dashboard/route-data";
 import {
+  getDashboardTeamContext,
   getDashboardTeamSites,
+  getTeamSiteContext,
   readDashboardAdmin,
 } from "@/lib/dashboard/server";
 import { resolveTeamDashboardRequest } from "@/lib/dashboard/server/query";
-import {
-  fetchPublicSite,
-  normalizeNotificationPreferencesData,
-} from "@/lib/dashboard-api/client/edge";
+import { readShareSite } from "@/lib/dashboard/share-site-server";
+import { normalizeNotificationPreferencesData } from "@/lib/dashboard-api/client/edge";
 import { createTeamDashboardQueryRuntime } from "@/lib/edge/analytics/composition/ssr-query-runtime";
 import { resolveEdgeRuntime } from "@/lib/edge/runtime";
+import { DEFAULT_RETENTION_CONFIG } from "@/lib/retention";
 function headersOf(init: Record<string, string>, url = "https://app.test/") {
   return {
     url,
@@ -136,11 +133,6 @@ describe("Dashboard route data loaders", () => {
     vi.mocked(getRequest).mockReturnValue(
       headersOf({ host: "app.test" }) as never,
     );
-    vi.mocked(fetchPublicSite).mockResolvedValue({
-      id: "site-1",
-      name: "Site",
-      domain: "app.test",
-    } as never);
     vi.mocked(resolveEdgeRuntime).mockResolvedValue({
       env: { DB: {} },
     } as never);
@@ -220,22 +212,28 @@ describe("Dashboard route data loaders", () => {
   });
 
   describe("loadShareSite", () => {
+    // Without the Start compiler, an isomorphic function runs its server
+    // implementation.
     it("returns the site and public id on success", async () => {
-      const result = (await loadShareSite({
-        data: { slug: "demo" },
-      } as never)) as {
-        site: unknown;
-        publicSiteId: string;
+      const site = {
+        id: "site-1",
+        slug: "demo",
+        name: "Site",
+        domain: "app.test",
       };
-      expect(result).toMatchObject({ publicSiteId: "public-demo" });
-      expect(fetchPublicSite).toHaveBeenCalledWith("demo");
+      vi.mocked(readShareSite).mockResolvedValueOnce(site);
+
+      await expect(loadShareSite("demo")).resolves.toEqual({
+        site,
+        publicSiteId: "public-demo",
+      });
+      expect(readShareSite).toHaveBeenCalledWith("demo");
     });
 
     it("returns null when the site cannot be resolved", async () => {
-      vi.mocked(fetchPublicSite).mockRejectedValueOnce(new Error("nope"));
-      await expect(
-        loadShareSite({ data: { slug: "missing" } } as never),
-      ).resolves.toBeNull();
+      vi.mocked(readShareSite).mockResolvedValueOnce(null);
+
+      await expect(loadShareSite("missing")).resolves.toBeNull();
     });
   });
 
@@ -325,79 +323,23 @@ describe("Dashboard route data loaders", () => {
       );
     });
 
-    it("loads the dashboard root context", async () => {
-      const server =
-        (await import("@/lib/dashboard/server")) as typeof DashboardServerModule;
-      vi.mocked(server.getDashboardRootContext).mockResolvedValue({
-        ok: true,
-      } as never);
-      await expect(loadDashboardRoot()).resolves.toEqual({ ok: true });
-    });
-
-    it("loads the team context with the team slug", async () => {
-      const server =
-        (await import("@/lib/dashboard/server")) as typeof DashboardServerModule;
-      vi.mocked(server.getDashboardTeamContext).mockResolvedValue({
+    it("loads the workspace context", async () => {
+      vi.mocked(getDashboardTeamContext).mockResolvedValue({
         team: "t",
       } as never);
-      await expect(
-        loadDashboardTeam({ data: { teamSlug: "acme" } } as never),
-      ).resolves.toEqual({ team: "t" });
-      expect(server.getDashboardTeamContext).toHaveBeenCalledWith("acme");
+      await expect(loadDashboardTeam()).resolves.toEqual({ team: "t" });
     });
 
-    it("loads the site context with team and site slugs", async () => {
-      const server =
-        (await import("@/lib/dashboard/server")) as typeof DashboardServerModule;
-      vi.mocked(server.getTeamSiteContext).mockResolvedValue({
-        site: "s",
-      } as never);
+    it("loads the site context by site slug", async () => {
+      vi.mocked(getTeamSiteContext).mockResolvedValue({ site: "s" } as never);
       await expect(
-        loadDashboardSite({
-          data: { teamSlug: "acme", siteSlug: "web" },
-        } as never),
+        loadDashboardSite({ data: { siteSlug: "web" } } as never),
       ).resolves.toEqual({ site: "s" });
-      expect(server.getTeamSiteContext).toHaveBeenCalledWith("acme", "web");
+      expect(getTeamSiteContext).toHaveBeenCalledWith("web");
     });
   });
 
   describe("management initial data loaders", () => {
-    it("loads team management data without exposing invite secrets", async () => {
-      mockAdminReads({
-        members: [{ id: "member-1" }],
-        sites: [{ id: "site-1" }],
-        "team-invites": [
-          {
-            id: "invite-1",
-            email: "member@example.com",
-            payload: { teamRole: "member" },
-            code: "secret-code",
-            url: "https://app.test/invite/secret-code",
-            createdByUserId: "user-1",
-            createdAt: 1,
-            expiresAt: 2,
-            usedAt: null,
-            usedByUserId: "",
-            revokedAt: null,
-            status: "active",
-          },
-        ],
-      });
-
-      const result = await loadTeamManagementInitialData({
-        data: { teamId: "team-1" },
-      } as never);
-
-      expect(result).toMatchObject({
-        members: [{ id: "member-1" }],
-        sites: [{ id: "site-1" }],
-        invites: [{ id: "invite-1", email: "member@example.com" }],
-        fetchedAt: expect.any(Number),
-      });
-      expect(result?.invites[0]).not.toHaveProperty("code");
-      expect(result?.invites[0]).not.toHaveProperty("url");
-    });
-
     it("loads normalized site settings and the install snippet", async () => {
       vi.mocked(getRequest).mockReturnValue({
         ...headersOf({}),
@@ -429,28 +371,6 @@ describe("Dashboard route data loaders", () => {
         },
         scriptSnippet: "<script data-test />",
         origin: "https://edge.example",
-        fetchedAt: expect.any(Number),
-      });
-    });
-
-    it("loads API keys, teams, and users snapshots", async () => {
-      mockAdminReads({ "api-keys": [{ id: "key-1" }] });
-      await expect(
-        loadApiKeysInitialData({ data: { teamId: "team-1" } } as never),
-      ).resolves.toMatchObject({
-        keys: [{ id: "key-1" }],
-        fetchedAt: expect.any(Number),
-      });
-
-      mockAdminReads({ teams: [{ id: "team-1" }] });
-      await expect(loadAdminTeamsInitialData()).resolves.toMatchObject({
-        teams: [{ id: "team-1" }],
-        fetchedAt: expect.any(Number),
-      });
-
-      mockAdminReads({ users: [{ id: "user-1" }] });
-      await expect(loadAdminUsersInitialData()).resolves.toMatchObject({
-        users: [{ id: "user-1" }],
         fetchedAt: expect.any(Number),
       });
     });
@@ -555,15 +475,10 @@ describe("Dashboard route data loaders", () => {
         preferences,
       );
 
-      mockAdminReads({
-        "analytics-engine-config": { enabled: true },
-        "login-turnstile": { enabled: true },
-        "notification-email": { enabled: true },
-      });
-      await expect(loadSystemSettingsInitialData()).resolves.toMatchObject({
-        analyticsEngine: { enabled: true },
-        loginTurnstile: { enabled: true },
+      mockAdminReads({ "notification-email": { enabled: true } });
+      await expect(loadSystemSettingsInitialData()).resolves.toEqual({
         notificationEmail: { enabled: true },
+        scheduledTaskRetention: DEFAULT_RETENTION_CONFIG,
         fetchedAt: expect.any(Number),
       });
     });

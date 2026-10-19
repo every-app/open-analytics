@@ -9,17 +9,11 @@ import type { AppMessages } from "@/lib/i18n/messages";
 const messages = {
   teamManagement: {
     sites: { title: "Sites" },
-    widgets: { title: "Widgets" },
     notifications: { title: "Notifications" },
     publicLinks: { title: "Public links" },
-    apiKeys: { title: "API keys" },
-    settings: { title: "Settings" },
   },
   managementNav: {
     sites: "Site management",
-    users: "Users",
-    teams: "Teams",
-    versionUpdates: "Version updates",
     scheduledTasks: "Scheduled tasks",
     requestObservation: "Request observation",
     systemPerformance: "System performance",
@@ -28,57 +22,35 @@ const messages = {
 } as AppMessages;
 
 describe("dashboard team section builders", () => {
-  it("returns only the sites section for members without manage access", () => {
-    expect(buildTeamSections("en", "acme", messages, false)).toEqual([
-      {
-        key: "sites",
-        label: "Sites",
-        href: "/en/app/acme",
-      },
+  it("returns only the sites overview for members without manage access", () => {
+    expect(buildTeamSections("en", messages, false)).toEqual([
+      { key: "sites", label: "Sites", href: "/en/app" },
     ]);
   });
 
-  it("returns team management sections in navigation order for managers", () => {
-    expect(buildTeamSections("zh", "team-1", messages, true)).toEqual([
-      { key: "sites", label: "Sites", href: "/zh/app/team-1" },
-      { key: "widgets", label: "Widgets", href: "/zh/app/team-1/widgets" },
+  it("returns workspace sections in navigation order for managers", () => {
+    expect(buildTeamSections("zh", messages, true)).toEqual([
+      { key: "sites", label: "Sites", href: "/zh/app" },
       {
         key: "notifications",
         label: "Notifications",
-        href: "/zh/app/team-1/notifications",
+        href: "/zh/app/notifications",
       },
       {
         key: "public-links",
         label: "Public links",
-        href: "/zh/app/team-1/public-links",
+        href: "/zh/app/public-links",
       },
-      { key: "api-keys", label: "API keys", href: "/zh/app/team-1/api-keys" },
       {
         key: "site-management",
         label: "Site management",
-        href: "/zh/app/team-1/manage/sites",
+        href: "/zh/app/sites",
       },
-      { key: "settings", label: "Settings", href: "/zh/app/team-1/settings" },
     ]);
   });
 
   it("returns management sections in navigation order", () => {
     expect(buildManagementSections("en", messages)).toEqual([
-      {
-        key: "manage-users",
-        label: "Users",
-        href: "/en/app/manage/users",
-      },
-      {
-        key: "manage-teams",
-        label: "Teams",
-        href: "/en/app/manage/teams",
-      },
-      {
-        key: "version-updates",
-        label: "Version updates",
-        href: "/en/app/manage/version-updates",
-      },
       {
         key: "scheduled-tasks",
         label: "Scheduled tasks",

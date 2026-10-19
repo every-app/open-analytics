@@ -25,7 +25,7 @@ function defaultLogFile(): string {
 }
 
 function issueUrl(): string {
-  return "https://github.com/RavelloH/InsightFlare/issues";
+  return "https://github.com/every-app/open-analytics/issues";
 }
 
 function printIssueHint(rlog: Rlog, logFilePath: string | undefined): void {

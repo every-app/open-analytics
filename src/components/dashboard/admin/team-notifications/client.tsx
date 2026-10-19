@@ -141,11 +141,7 @@ export function TeamNotificationsClient({
         rules,
         sites,
         members,
-        emailConfigured:
-          emailConfig?.enabled &&
-          emailConfig.provider === "resend" &&
-          Boolean(emailConfig.fromEmail) &&
-          emailConfig.resend.configured,
+        emailConfigured: Boolean(emailConfig?.enabled),
       };
     },
     initialData: initialData

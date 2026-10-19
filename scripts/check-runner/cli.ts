@@ -146,12 +146,7 @@ function createTasks(fix: boolean): CheckTask[] {
     {
       name: "Spec",
       dependsOn: fix ? ["Lint"] : undefined,
-      parallelSteps: true,
       steps: [
-        {
-          name: "OpenAPI spec",
-          args: ["run", fix ? "check:openapi:fix" : "check:openapi"],
-        },
         {
           name: "Schema spec",
           args: ["run", fix ? "check:schema:fix" : "check:schema"],
@@ -166,7 +161,9 @@ function createTasks(fix: boolean): CheckTask[] {
       steps: [
         {
           name: "Build",
-          args: ["run", "build:demo", "--", "--skip-sdk"],
+          // A production build only runs under `everyapp deploy`, which
+          // supplies the gateway's deploy settings; this checks the same bundle.
+          args: ["exec", "vite", "build", "--mode", "development"],
         },
       ],
     },

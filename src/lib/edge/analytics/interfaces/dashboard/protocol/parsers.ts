@@ -16,7 +16,6 @@ import {
   DEFAULT_SESSION_LIST_SORT,
   DEFAULT_VISITOR_LIST_SORT,
 } from "@/lib/edge/analytics/contract";
-import { appNow } from "@/lib/edge/runtime/e2e-clock";
 import { coerceNumber, ONE_DAY_MS } from "@/lib/edge/utils";
 type FilterOptionKey = Exclude<AnalyticsFilterFieldId, "event.payload">;
 export function parseClientDimensionKey(
@@ -45,7 +44,7 @@ export function parseUtmDimensionKey(
     : null;
 }
 export function parseWindow(url: URL): QueryWindow | null {
-  const nowMs = appNow();
+  const nowMs = Date.now();
   const defaultFrom = nowMs - ONE_DAY_MS;
   const rawFrom = url.searchParams.get("from");
   const rawTo = url.searchParams.get("to");

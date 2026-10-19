@@ -3,9 +3,11 @@ interface AutoTrackOptions {
   track(eventName: string, eventData?: unknown): void;
 }
 
+// data-open-analytics-event-<key> attributes, as dataset keys.
+const DATASET_PREFIX = "openAnalyticsEvent";
 function extractEventData(el: Element): Record<string, unknown> {
   let data: Record<string, unknown> = {};
-  const rawData = el.getAttribute("data-insightflare-event-data");
+  const rawData = el.getAttribute("data-open-analytics-event-data");
   if (rawData) {
     try {
       const parsed = JSON.parse(rawData);
@@ -20,8 +22,8 @@ function extractEventData(el: Element): Record<string, unknown> {
   if (ds) {
     for (const key in ds) {
       if (!Object.prototype.hasOwnProperty.call(ds, key)) continue;
-      if (key.indexOf("insightflareEvent") !== 0) continue;
-      const suffix = key.slice(17);
+      if (key.indexOf(DATASET_PREFIX) !== 0) continue;
+      const suffix = key.slice(DATASET_PREFIX.length);
       if (!suffix || suffix === "Trigger" || suffix === "Data") continue;
       const dataKey = suffix.charAt(0).toLowerCase() + suffix.slice(1);
       data[dataKey] = ds[key];
@@ -34,12 +36,12 @@ export function initAutoTrack(options: AutoTrackOptions): void {
   document.addEventListener(
     "click",
     (e) => {
-      const el = (e.target as Element).closest("[data-insightflare-event]");
+      const el = (e.target as Element).closest("[data-open-analytics-event]");
       if (!el) return;
       const trigger =
-        el.getAttribute("data-insightflare-event-trigger") || "click";
+        el.getAttribute("data-open-analytics-event-trigger") || "click";
       if (trigger !== "click") return;
-      const eventName = el.getAttribute("data-insightflare-event");
+      const eventName = el.getAttribute("data-open-analytics-event");
       if (!eventName) return;
       options.track(eventName, extractEventData(el));
     },
@@ -77,10 +79,10 @@ export function initAutoTrack(options: AutoTrackOptions): void {
     "submit",
     (e) => {
       const form = (e.target as Element).closest(
-        '[data-insightflare-event][data-insightflare-event-trigger="submit"]',
+        '[data-open-analytics-event][data-open-analytics-event-trigger="submit"]',
       );
       if (!form) return;
-      const eventName = form.getAttribute("data-insightflare-event");
+      const eventName = form.getAttribute("data-open-analytics-event");
       if (!eventName) return;
       options.track(eventName, extractEventData(form));
     },

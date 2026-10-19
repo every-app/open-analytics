@@ -397,45 +397,47 @@ describe("typed D1 query compiler", () => {
   it("selects direct Scan projection columns without changing DAL row semantics", () => {
     const db = createMigratedDatabase();
     try {
-      for (const [id, email] of [
+      for (const [id, name] of [
         ["projection-match-1", "shared-site"],
         ["projection-match-2", "shared-site"],
         ["projection-unmatched", "missing-site"],
         ["projection-null", null],
       ] as const)
-        db.prepare(
-          "INSERT INTO account_action_tokens (id, type, token_hash, email, expires_at) VALUES (?, 'team_invite', ?, ?, 2000000000)",
-        ).run(id, `hash-${id}`, email);
+        db.prepare("INSERT INTO users (id, email, name) VALUES (?, ?, ?)").run(
+          id,
+          `${id}@example.test`,
+          name,
+        );
       db.prepare("INSERT INTO site_identities (site_id) VALUES (?)").run(
         "shared-site",
       );
 
-      const tokenRows = scan(schema.account_action_tokens);
-      const namedTokens = project(tokenRows, {
-        tokenKey: tokenRows.columns.email,
-        tokenId: tokenRows.columns.id,
-        repeatedTokenKey: tokenRows.columns.email,
-        kind: tokenRows.columns.type,
+      const userRows = scan(schema.users);
+      const namedUsers = project(userRows, {
+        nameKey: userRows.columns.name,
+        userId: userRows.columns.id,
+        repeatedNameKey: userRows.columns.name,
+        locale: userRows.columns.preferred_locale,
       });
-      const filteredTokens = filter(
-        namedTokens,
-        eq(namedTokens.columns.kind, param("team_invite")),
+      const filteredUsers = filter(
+        namedUsers,
+        eq(namedUsers.columns.locale, param("")),
       );
       const siteRows = scan(schema.site_identities);
       const namedSites = project(siteRows, {
         lookupKey: siteRows.columns.site_id,
       });
       const joined = join(
-        filteredTokens,
+        filteredUsers,
         namedSites,
-        eq(filteredTokens.columns.tokenKey, namedSites.columns.lookupKey),
+        eq(filteredUsers.columns.nameKey, namedSites.columns.lookupKey),
         "left",
       );
       const relation = project(joined, {
         matchedSite: joined.columns.right_lookupKey,
-        email: joined.columns.left_tokenKey,
-        tokenId: joined.columns.left_tokenId,
-        duplicateEmail: joined.columns.left_repeatedTokenKey,
+        name: joined.columns.left_nameKey,
+        userId: joined.columns.left_userId,
+        duplicateName: joined.columns.left_repeatedNameKey,
       });
 
       const physical = lowerLogicalPlan(relation);
@@ -443,13 +445,13 @@ describe("typed D1 query compiler", () => {
         physical.directScanProjections.map(({ sqlColumnNames }) => [
           ...sqlColumnNames,
         ]),
-      ).toEqual([["email", "id", "email", "type"], ["site_id"]]);
+      ).toEqual([["name", "id", "name", "preferred_locale"], ["site_id"]]);
       const optimized = compileD1Query(physical);
       const mechanical = compileD1QueryUnoptimizedForTest(relation);
       expect(optimized.sql).not.toBe(mechanical.sql);
-      expect(optimized.sql).not.toContain('"token_hash"');
-      expect(optimized.sql).not.toContain('"payload_json"');
-      expect(mechanical.sql).toContain('"token_hash"');
+      expect(optimized.sql).not.toContain('"email"');
+      expect(optimized.sql).not.toContain('"notification_preferences_json"');
+      expect(mechanical.sql).toContain('"email"');
       expect(optimized.bindings).toEqual(mechanical.bindings);
 
       const run = (query: { sql: string; bindings?: readonly unknown[] }) =>
@@ -457,56 +459,56 @@ describe("typed D1 query compiler", () => {
           .prepare(query.sql)
           .all(...((query.bindings ?? []) as SQLInputValue[]));
       const optimizedRows = run(optimized).sort((left, right) =>
-        String(left.tokenId).localeCompare(String(right.tokenId)),
+        String(left.userId).localeCompare(String(right.userId)),
       );
       const mechanicalRows = run(mechanical).sort((left, right) =>
-        String(left.tokenId).localeCompare(String(right.tokenId)),
+        String(left.userId).localeCompare(String(right.userId)),
       );
       expect(optimizedRows).toEqual(mechanicalRows);
       expect(optimizedRows).toEqual([
         {
           matchedSite: "shared-site",
-          email: "shared-site",
-          tokenId: "projection-match-1",
-          duplicateEmail: "shared-site",
+          name: "shared-site",
+          userId: "projection-match-1",
+          duplicateName: "shared-site",
         },
         {
           matchedSite: "shared-site",
-          email: "shared-site",
-          tokenId: "projection-match-2",
-          duplicateEmail: "shared-site",
+          name: "shared-site",
+          userId: "projection-match-2",
+          duplicateName: "shared-site",
         },
         {
           matchedSite: null,
-          email: null,
-          tokenId: "projection-null",
-          duplicateEmail: null,
+          name: null,
+          userId: "projection-null",
+          duplicateName: null,
         },
         {
           matchedSite: null,
-          email: "missing-site",
-          tokenId: "projection-unmatched",
-          duplicateEmail: "missing-site",
+          name: "missing-site",
+          userId: "projection-unmatched",
+          duplicateName: "missing-site",
         },
       ]);
 
-      const duplicateProjection = project(tokenRows, {
-        onlyEmail: tokenRows.columns.email,
+      const duplicateProjection = project(userRows, {
+        onlyName: userRows.columns.name,
       });
       const duplicateOptimizedRows = run(
         compileD1Query(duplicateProjection),
       ).sort((left, right) =>
-        String(left.onlyEmail).localeCompare(String(right.onlyEmail)),
+        String(left.onlyName).localeCompare(String(right.onlyName)),
       );
       const duplicateMechanicalRows = run(
         compileD1QueryUnoptimizedForTest(duplicateProjection),
       ).sort((left, right) =>
-        String(left.onlyEmail).localeCompare(String(right.onlyEmail)),
+        String(left.onlyName).localeCompare(String(right.onlyName)),
       );
       expect(duplicateOptimizedRows).toEqual(duplicateMechanicalRows);
       expect(duplicateOptimizedRows).toHaveLength(4);
       expect(
-        duplicateOptimizedRows.filter((row) => row.onlyEmail === "shared-site"),
+        duplicateOptimizedRows.filter((row) => row.onlyName === "shared-site"),
       ).toHaveLength(2);
 
       const forged = {
@@ -516,10 +518,7 @@ describe("typed D1 query compiler", () => {
             index === 0
               ? {
                   ...choice,
-                  sqlColumnNames: [
-                    "token_hash",
-                    ...choice.sqlColumnNames.slice(1),
-                  ],
+                  sqlColumnNames: ["email", ...choice.sqlColumnNames.slice(1)],
                 }
               : choice,
         ),
@@ -897,23 +896,24 @@ describe("typed D1 query compiler", () => {
       expect(emptyMembership.sql).toContain("(0)");
       expect(emptyMembership.bindings).toEqual([]);
 
-      const nullableTable = schema.account_action_tokens;
-      for (const [id, email] of [
-        ["null-email", null],
-        ["outside-email", "outside"],
-        ["inside-email", "inside"],
+      for (const [id, name] of [
+        ["null-name", null],
+        ["outside-name", "outside"],
+        ["inside-name", "inside"],
       ] as const)
-        db.prepare(
-          "INSERT INTO account_action_tokens (id, type, token_hash, email, expires_at) VALUES (?, 'team_invite', ?, ?, 2000000000)",
-        ).run(id, `hash-${id}`, email);
-      const nullableTokens = scan(nullableTable);
+        db.prepare("INSERT INTO users (id, email, name) VALUES (?, ?, ?)").run(
+          id,
+          `${id}@example.test`,
+          name,
+        );
+      const nullableUsers = scan(schema.users);
       const nullableValues = [
         "inside",
-        ...Array.from({ length: 127 }, (_, index) => `email-${index}`),
+        ...Array.from({ length: 127 }, (_, index) => `name-${index}`),
       ];
       const nullableOutside = filter(
-        nullableTokens,
-        not(inList(nullableTokens.columns.email, nullableValues)),
+        nullableUsers,
+        not(inList(nullableUsers.columns.name, nullableValues)),
       );
       const notIn = compileD1Query(
         project(nullableOutside, { id: nullableOutside.columns.id }),
@@ -921,7 +921,7 @@ describe("typed D1 query compiler", () => {
       expect(notIn.sql).toContain("NOT (");
       expect(notIn.sql).toContain("json_each(?)");
       expect(notIn.bindings).toEqual([JSON.stringify(nullableValues)]);
-      expect(executeAll(db, notIn)).toEqual([{ id: "outside-email" }]);
+      expect(executeAll(db, notIn)).toEqual([{ id: "outside-name" }]);
 
       const listA = values.slice(0, 40);
       const listB = values.slice(40, 70);

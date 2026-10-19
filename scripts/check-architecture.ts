@@ -28,12 +28,6 @@ interface LegacyAllowlistEntry {
   readonly todo: string;
 }
 
-interface DemoDynamicImportEntry {
-  readonly source: string;
-  readonly specifier: string;
-  readonly reason: string;
-}
-
 interface UnsafeDatabaseImportEntry {
   readonly source: string;
   readonly specifier: string;
@@ -69,22 +63,6 @@ const LEGACY_ALLOWLIST: readonly LegacyAllowlistEntry[] = [
   },
 ];
 
-// These imports are reached only from explicit demo-build branches. Keep the
-// exception exact so new Edge-to-Demo dependencies still fail the check.
-const DEMO_DYNAMIC_IMPORT_ALLOWLIST: readonly DemoDynamicImportEntry[] = [
-  {
-    source: "src/lib/edge/auth/site-access.ts",
-    specifier: "@/lib/demo/data/site-profiles",
-    reason: "Private-site lookup is selected only in the demo build branch.",
-  },
-  {
-    source: "src/lib/edge/admin/service/index.ts",
-    specifier: "@/lib/demo/admin/service",
-    reason:
-      "Admin service dispatches to Demo only when VITE_DEMO_MODE is enabled.",
-  },
-];
-
 // Add only exact operational adapters here. Application services and request
 // handlers must use the typed database client instead of the raw escape hatch.
 const UNSAFE_DATABASE_IMPORT_ALLOWLIST: readonly UnsafeDatabaseImportEntry[] =
@@ -95,7 +73,6 @@ const FORBIDDEN_TOP_LEVEL_FILE_PREFIXES = [
   "ingest-",
   "client-",
   "filter-",
-  "demo-",
 ] as const;
 
 const LEGACY_PREFIX_FILES = new Set<string>();
@@ -637,7 +614,6 @@ function ruleViolations(
   const sourceDashboard =
     isWithin(source, "src/lib/dashboard") ||
     isWithin(source, "src/components/dashboard");
-  const apiV1 = isWithin(target, "src/lib/api-v1");
   const edgeImplementation =
     isWithin(target, "src/lib/edge") &&
     !isWithin(target, `${analytics}/contract`) &&
@@ -663,7 +639,6 @@ function ruleViolations(
   const analyticsPhysicalDependency =
     isWithin(target, "src/lib/db") ||
     isWithin(target, `${analytics}/providers/d1`) ||
-    /(?:^|\/)(?:archive|r2)(?:\/|\.|$)/iu.test(target) ||
     ANALYTICS_PHYSICAL_PACKAGES.some(
       (packageName) => target === `__package__:${packageName}`,
     );
@@ -672,7 +647,7 @@ function ruleViolations(
     findings.push({
       rule: "analytics-engine-physical-isolation",
       message:
-        "Analytics engine must remain independent of database, D1 provider, Cloudflare D1, Archive, and R2 implementations.",
+        "Analytics engine must remain independent of database, D1 provider, and Cloudflare D1 implementations.",
     });
 
   if (
@@ -699,7 +674,6 @@ function ruleViolations(
       interfaceLayer ||
       composition ||
       targetDashboard ||
-      apiV1 ||
       hono ||
       ui ||
       reactRuntime ||
@@ -711,7 +685,7 @@ function ruleViolations(
       findings.push({
         rule: "analytics-contract-direction",
         message:
-          "Analytics contract must stay independent of application, interfaces, providers, composition, API v1, Dashboard, HTTP, and UI.",
+          "Analytics contract must stay independent of application, interfaces, providers, composition, Dashboard, HTTP, and UI.",
       });
   }
 
@@ -720,7 +694,6 @@ function ruleViolations(
       interfaceLayer ||
       composition ||
       provider ||
-      apiV1 ||
       hono ||
       targetDashboard ||
       ui ||
@@ -733,14 +706,13 @@ function ruleViolations(
       findings.push({
         rule: "analytics-application-direction",
         message:
-          "Analytics application may depend on the contract, not interfaces, composition, API v1, Hono, Dashboard, UI, or concrete providers.",
+          "Analytics application may depend on the contract, not interfaces, composition, Hono, Dashboard, UI, or concrete providers.",
       });
   }
 
   if (isWithin(source, `${analytics}/providers`)) {
     if (
       targetDashboard ||
-      apiV1 ||
       interfaceLayer ||
       composition ||
       hono ||
@@ -753,25 +725,7 @@ function ruleViolations(
       findings.push({
         rule: "analytics-provider-direction",
         message:
-          "Analytics providers must not depend on Dashboard, API v1, inbound interfaces, UI, or Tracker.",
-      });
-  }
-
-  if (
-    isWithin(source, "src/lib/api-v1/analytics") ||
-    isWithin(source, "src/lib/api-v1")
-  ) {
-    if (isWithin(target, `${analytics}/application/provider-registry`))
-      findings.push({
-        rule: "api-v1-provider-registry",
-        message:
-          "API v1 must execute canonical queries through the Analytics runtime instead of importing its provider registry.",
-      });
-    if (provider)
-      findings.push({
-        rule: "api-v1-concrete-provider",
-        message:
-          "API v1 must use Analytics composition/application boundaries instead of concrete provider modules.",
+          "Analytics providers must not depend on Dashboard, inbound interfaces, UI, or Tracker.",
       });
   }
 
@@ -841,16 +795,6 @@ function ruleViolations(
         rule: "edge-ui-isolation",
         message: "Edge implementation must not depend on React UI.",
       });
-    if (
-      isWithin(source, "src/lib/edge") &&
-      !isWithin(source, `${analytics}/providers/mock`) &&
-      isWithin(target, "src/lib/demo")
-    )
-      findings.push({
-        rule: "production-demo-isolation",
-        message:
-          "Production Edge code must not depend on Demo or mock implementations.",
-      });
   }
 
   return findings;
@@ -864,18 +808,6 @@ function isAllowlisted(violation: ArchitectureViolation): boolean {
       entry.specifier === violation.specifier &&
       entry.reason.trim().length > 0 &&
       entry.todo.trim().length > 0,
-  );
-}
-
-function isAllowlistedDemoDynamicImport(
-  source: string,
-  specifier: string,
-): boolean {
-  return DEMO_DYNAMIC_IMPORT_ALLOWLIST.some(
-    (entry) =>
-      entry.source === source &&
-      entry.specifier === specifier &&
-      entry.reason.trim().length > 0,
   );
 }
 
@@ -980,19 +912,6 @@ export function collectArchitectureViolations(
       });
     };
 
-    if (isWithin(relative, "src/lib/api-v1")) {
-      addSourceRuleViolation(
-        "api-v1-provider-registry",
-        /\bAnalyticsProviderRegistry\b/u,
-        "API v1 must use the Analytics query executor and must not reference AnalyticsProviderRegistry.",
-      );
-      addSourceRuleViolation(
-        "api-v1-local-provider-selection",
-        /\b(?:create\w*ProviderRegistry|typedQueryProvider)\b/u,
-        "API v1 must not assemble provider registries or select concrete providers.",
-      );
-    }
-
     if (isWithin(relative, "src/lib/edge/analytics/interfaces")) {
       addSourceRuleViolation(
         "analytics-interface-local-provider-registry",
@@ -1002,11 +921,6 @@ export function collectArchitectureViolations(
     }
 
     if (isWithin(relative, "src/lib/edge/analytics/composition")) {
-      addSourceRuleViolation(
-        "analytics-provider-audience-selection",
-        /audience\s*===\s*["']api-v1["'][\s\S]{0,240}(?:provider|registry)|(?:provider|registry)[\s\S]{0,240}audience\s*===\s*["']api-v1["']/u,
-        "Canonical provider selection must not depend on the API v1 audience.",
-      );
       addSourceRuleViolation(
         "analytics-untyped-query-variant",
         /\bqueryMode\b/u,
@@ -1097,8 +1011,7 @@ export function collectArchitectureViolations(
         });
       }
       if (
-        (isWithin(relative, "src/lib/api-v1") ||
-          isWithin(relative, "src/lib/edge/analytics/interfaces/dashboard")) &&
+        isWithin(relative, "src/lib/edge/analytics/interfaces/dashboard") &&
         /src\/lib\/edge\/analytics\/(?:composition\/d1\/(?:goals|funnels)|providers\/d1\/(?:internal|resources)\/(?:goals|funnels))/u.test(
           resolved,
         )
@@ -1110,16 +1023,10 @@ export function collectArchitectureViolations(
           target: resolved,
           line: imported.line,
           message:
-            "API v1 and Dashboard interfaces must access Goal/Funnel definitions through analytics resources composed by the runtime.",
+            "Dashboard interfaces must access Goal/Funnel definitions through analytics resources composed by the runtime.",
         });
       }
       for (const finding of ruleViolations(relative, resolved)) {
-        if (
-          finding.rule === "production-demo-isolation" &&
-          imported.kind === "dynamic" &&
-          isAllowlistedDemoDynamicImport(relative, imported.specifier)
-        )
-          continue;
         violations.push({
           ...finding,
           source: relative,

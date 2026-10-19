@@ -4,7 +4,7 @@ import { dashboardPageTitle } from "@/lib/page-title";
 
 describe("dashboardPageTitle", () => {
   it("matches the former root metadata template", () => {
-    expect(dashboardPageTitle("Sign in", {})).toBe("Sign in - InsightFlare");
+    expect(dashboardPageTitle("Sign in", {})).toBe("Sign in - Open Analytics");
   });
 
   it("matches the former team metadata template", () => {
@@ -12,7 +12,7 @@ describe("dashboardPageTitle", () => {
       dashboardPageTitle("Sites", {
         teamContext: { activeTeam: { name: "Product" } },
       }),
-    ).toBe("Sites · Product - InsightFlare");
+    ).toBe("Sites · Product - Open Analytics");
   });
 
   it("matches the former site metadata template", () => {
@@ -23,6 +23,6 @@ describe("dashboardPageTitle", () => {
           activeTeam: { name: "Product" },
         },
       }),
-    ).toBe("Overview · Docs · Product - InsightFlare");
+    ).toBe("Overview · Docs · Product - Open Analytics");
   });
 });

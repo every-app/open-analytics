@@ -7,8 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SDK_MIN as fullSdk } from "../sdk.min";
 import { SDK_MIN as noPerfSdk } from "../sdk.no-perf.min";
 
-const installKey = "__insightflare_tracker_v6__";
-const runtimeConfigKey = "__insightflare_tracker_runtime_config__";
+const installKey = "__openanalytics_tracker_v6__";
+const runtimeConfigKey = "__openanalytics_tracker_runtime_config__";
 const sdkSourcePath = path.resolve(process.cwd(), "src/tracker/sdk.ts");
 let configuredSdkImportCounter = 0;
 
@@ -109,8 +109,8 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
   beforeEach(() => {
     // Reset browser storage and global states to isolate installations
-    delete (window as any).__insightflare_tracker_v6__;
-    delete (window as any).insightflare;
+    delete (window as any).__openanalytics_tracker_v6__;
+    delete (window as any).openAnalytics;
     delete (navigator as any).userAgentData;
     (navigator as any).sendBeacon = undefined;
     Object.defineProperty(navigator, "doNotTrack", {
@@ -239,9 +239,9 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await import("../sdk");
 
     // The SDK registers an install key in window containing the exported public APIs object
-    expect((window as any).__insightflare_tracker_v6__).toBeDefined();
-    expect((window as any).__insightflare_tracker_v6__).toBeTypeOf("object");
-    expect((window as any).__insightflare_tracker_v6__.track).toBeTypeOf(
+    expect((window as any).__openanalytics_tracker_v6__).toBeDefined();
+    expect((window as any).__openanalytics_tracker_v6__).toBeTypeOf("object");
+    expect((window as any).__openanalytics_tracker_v6__.track).toBeTypeOf(
       "function",
     );
   });
@@ -254,20 +254,20 @@ describe("Tracker Browser SDK Integration Suite", () => {
       );
 
     for (const sdk of [fullSdk, noPerfSdk]) {
-      delete (window as any).__insightflare_tracker_v6__;
-      delete (window as any).insightflare;
+      delete (window as any).__openanalytics_tracker_v6__;
+      delete (window as any).openAnalytics;
       window.localStorage.clear();
       fetchSpy.mockClear();
 
       await executeGeneratedSdk(sdk, { siteId: "generated-site" });
       const body = decodeFetchBody(fetchSpy);
       expect(body.visitorId).toBe(
-        window.localStorage.getItem("__insightflare_visitor_generated-site__"),
+        window.localStorage.getItem("__openanalytics_visitor_generated-site__"),
       );
       expect(body.visitorId).not.toBe("");
 
-      delete (window as any).__insightflare_tracker_v6__;
-      delete (window as any).insightflare;
+      delete (window as any).__openanalytics_tracker_v6__;
+      delete (window as any).openAnalytics;
       window.localStorage.clear();
       fetchSpy.mockClear();
 
@@ -288,11 +288,11 @@ describe("Tracker Browser SDK Integration Suite", () => {
     });
 
     for (const sdk of [fullSdk, noPerfSdk]) {
-      delete (window as any).__insightflare_tracker_v6__;
-      delete (window as any).insightflare;
+      delete (window as any).__openanalytics_tracker_v6__;
+      delete (window as any).openAnalytics;
       setRuntimeConfig({ ignoreDoNotTrack: false });
       expect(() => new Function(sdk)()).toThrow(
-        "InsightFlare: Do Not Track enabled",
+        "Open Analytics: Do Not Track enabled",
       );
     }
   });
@@ -307,7 +307,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     // Asset the loader crashes safely during bootstrap, preventing invalid script mounts
     await expect(import("../sdk")).rejects.toThrow(
-      "InsightFlare: script element not found",
+      "Open Analytics: script element not found",
     );
   });
 
@@ -319,7 +319,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     });
 
     await expect(import("../sdk")).rejects.toThrow(
-      "InsightFlare: script element not found",
+      "Open Analytics: script element not found",
     );
   });
 
@@ -354,7 +354,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     await expect(
       importConfiguredSdk({ ignoreDoNotTrack: false }),
-    ).rejects.toThrow("InsightFlare: Do Not Track enabled");
+    ).rejects.toThrow("Open Analytics: Do Not Track enabled");
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -368,7 +368,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await expect(
       importConfiguredSdk({ ignoreDoNotTrack: false }),
     ).resolves.toBeDefined();
-    expect((window as any).__insightflare_tracker_v6__).toBeDefined();
+    expect((window as any).__openanalytics_tracker_v6__).toBeDefined();
   });
 
   it("should fall back to standard POST fetch when sendBeacon is unsupported", async () => {
@@ -395,7 +395,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect(calledUrl).toContain("/collect");
     expect(calledOptions.method).toBe("POST");
     expect(calledOptions.headers).toEqual({
-      "content-type": "application/json",
+      "content-type": "text/plain;charset=UTF-8",
     });
 
     // Restore
@@ -435,18 +435,18 @@ describe("Tracker Browser SDK Integration Suite", () => {
   it("should reject re-installation when an SDK instance is already mounted on window", async () => {
     // First successful boot
     await import("../sdk");
-    expect((window as any).__insightflare_tracker_v6__).toBeDefined();
+    expect((window as any).__openanalytics_tracker_v6__).toBeDefined();
 
     // Re-import to simulate duplicate script tag — install key is still on window
     vi.resetModules();
     await expect(import("../sdk")).rejects.toThrow(
-      "InsightFlare: already installed",
+      "Open Analytics: already installed",
     );
   });
 
   it("should expose stable public API surface on window install key", async () => {
     await import("../sdk");
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     expect(api.version).toBe("6");
     expect(api.track).toBeTypeOf("function");
     expect(api.identify).toBeTypeOf("function");
@@ -470,7 +470,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
       );
 
     await import("../sdk");
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
 
     api.identify("  alice  ", { name: "  Alice  " });
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -506,13 +506,13 @@ describe("Tracker Browser SDK Integration Suite", () => {
       );
 
     await import("../sdk");
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.identify("alice", { name: "Alice" });
     api.reset();
 
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(
-      window.localStorage.getItem("__insightflare_visitor_configured-site__"),
+      window.localStorage.getItem("__openanalytics_visitor_configured-site__"),
     ).toBe("visitor-after-reset");
 
     Object.defineProperty(document, "readyState", {
@@ -547,9 +547,9 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     await import("../sdk");
     await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     const oldVisitorId = window.localStorage.getItem(
-      "__insightflare_visitor_configured-site__",
+      "__openanalytics_visitor_configured-site__",
     );
 
     fetchSpy.mockClear();
@@ -579,7 +579,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect(bodies[2].userId).toBeUndefined();
     expect(bodies[2].userName).toBeUndefined();
     expect(
-      window.localStorage.getItem("__insightflare_visitor_configured-site__"),
+      window.localStorage.getItem("__openanalytics_visitor_configured-site__"),
     ).toBe("visitor-2");
     expect(randomUuidSpy).toHaveBeenCalledTimes(4);
   });
@@ -598,7 +598,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     await import("../sdk");
     await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     fetchSpy.mockClear();
 
     api.identify("alice", { name: "Alice" });
@@ -621,7 +621,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
       aliceBodies.every((body) => body.visitorId === "visitor-alice"),
     ).toBe(true);
     expect(
-      window.localStorage.getItem("__insightflare_visitor_configured-site__"),
+      window.localStorage.getItem("__openanalytics_visitor_configured-site__"),
     ).toBe("visitor-bob");
   });
 
@@ -634,9 +634,9 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     await import("../sdk");
     await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     const visitorId = window.localStorage.getItem(
-      "__insightflare_visitor_configured-site__",
+      "__openanalytics_visitor_configured-site__",
     );
     fetchSpy.mockClear();
 
@@ -659,7 +659,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
       visitorId,
     });
     expect(
-      window.localStorage.getItem("__insightflare_visitor_configured-site__"),
+      window.localStorage.getItem("__openanalytics_visitor_configured-site__"),
     ).toBe(visitorId);
   });
 
@@ -674,7 +674,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     setRuntimeConfig({ isEuMode: true });
     await import("../sdk");
     await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     fetchSpy.mockClear();
 
     api.reset();
@@ -703,7 +703,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await import("../sdk");
     fetchSpy.mockClear(); // ignore initial pageview
 
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.track("button_click", { color: "blue" });
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
@@ -725,7 +725,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await import("../sdk");
     fetchSpy.mockClear();
 
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.track("");
     api.track("   ");
 
@@ -742,7 +742,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await import("../sdk");
     fetchSpy.mockClear();
 
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.trackOnce("first_paint");
     api.trackOnce("first_paint");
     api.trackOnce("first_paint", { ignored: true });
@@ -760,7 +760,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await import("../sdk");
     fetchSpy.mockClear();
 
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.trackOnce("");
     api.trackOnce("   ");
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -774,7 +774,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
       );
 
     await import("../sdk");
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.setGlobalProperties({ plan: "pro", region: "us" });
     fetchSpy.mockClear();
     api.track("checkout_view", { amount: 99 });
@@ -792,7 +792,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
       );
 
     await import("../sdk");
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.setGlobalProperties({ plan: "pro" });
     api.clearGlobalProperties();
     fetchSpy.mockClear();
@@ -804,7 +804,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
   it("should ignore non-object/array inputs in setGlobalProperties()", async () => {
     await import("../sdk");
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     expect(() => api.setGlobalProperties(null)).not.toThrow();
     expect(() => api.setGlobalProperties(undefined)).not.toThrow();
     expect(() => api.setGlobalProperties("string")).not.toThrow();
@@ -821,7 +821,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await import("../sdk");
     fetchSpy.mockClear();
 
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.identify("user-123", { name: "Alice" });
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
@@ -841,7 +841,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await import("../sdk");
     fetchSpy.mockClear();
 
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.identify("user-only");
 
     const body = JSON.parse(fetchSpy.mock.calls[0][1].body as string);
@@ -859,7 +859,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await import("../sdk");
     fetchSpy.mockClear();
 
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.identify("");
     api.identify("   ");
 
@@ -874,7 +874,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
       );
 
     await import("../sdk");
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.identify("user-789", { name: "Bob" });
     fetchSpy.mockClear();
     api.track("page_action");
@@ -894,7 +894,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await import("../sdk");
     fetchSpy.mockClear();
 
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     const long = "a".repeat(500);
     api.identify(long, { name: long });
 
@@ -903,7 +903,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect(body.userName.length).toBe(255);
   });
 
-  it("should fire auto-track on a clicked element with data-insightflare-event", async () => {
+  it("should fire auto-track on a clicked element with data-open-analytics-event", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockImplementation(() =>
@@ -914,9 +914,9 @@ describe("Tracker Browser SDK Integration Suite", () => {
     fetchSpy.mockClear();
 
     const button = document.createElement("button");
-    button.setAttribute("data-insightflare-event", "cta_click");
+    button.setAttribute("data-open-analytics-event", "cta_click");
     button.setAttribute(
-      "data-insightflare-event-data",
+      "data-open-analytics-event-data",
       JSON.stringify({ position: "hero" }),
     );
     document.body.appendChild(button);
@@ -942,9 +942,9 @@ describe("Tracker Browser SDK Integration Suite", () => {
     fetchSpy.mockClear();
 
     const el = document.createElement("button");
-    el.setAttribute("data-insightflare-event", "nav_click");
-    el.setAttribute("data-insightflare-event-link", "/pricing");
-    el.setAttribute("data-insightflare-event-section", "header");
+    el.setAttribute("data-open-analytics-event", "nav_click");
+    el.setAttribute("data-open-analytics-event-link", "/pricing");
+    el.setAttribute("data-open-analytics-event-section", "header");
     document.body.appendChild(el);
     el.click();
 
@@ -955,7 +955,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     el.remove();
   });
 
-  it("should not fire auto-track when invalid JSON sits in data-insightflare-event-data", async () => {
+  it("should not fire auto-track when invalid JSON sits in data-open-analytics-event-data", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockImplementation(() =>
@@ -966,8 +966,8 @@ describe("Tracker Browser SDK Integration Suite", () => {
     fetchSpy.mockClear();
 
     const el = document.createElement("button");
-    el.setAttribute("data-insightflare-event", "broken_json");
-    el.setAttribute("data-insightflare-event-data", "{invalid json}");
+    el.setAttribute("data-open-analytics-event", "broken_json");
+    el.setAttribute("data-open-analytics-event-data", "{invalid json}");
     document.body.appendChild(el);
     el.click();
 
@@ -990,8 +990,8 @@ describe("Tracker Browser SDK Integration Suite", () => {
     fetchSpy.mockClear();
 
     const el = document.createElement("button");
-    el.setAttribute("data-insightflare-event", "submit_only");
-    el.setAttribute("data-insightflare-event-trigger", "submit");
+    el.setAttribute("data-open-analytics-event", "submit_only");
+    el.setAttribute("data-open-analytics-event-trigger", "submit");
     document.body.appendChild(el);
     el.click();
 
@@ -1010,8 +1010,8 @@ describe("Tracker Browser SDK Integration Suite", () => {
     fetchSpy.mockClear();
 
     const form = document.createElement("form");
-    form.setAttribute("data-insightflare-event", "form_submit");
-    form.setAttribute("data-insightflare-event-trigger", "submit");
+    form.setAttribute("data-open-analytics-event", "form_submit");
+    form.setAttribute("data-open-analytics-event-trigger", "submit");
     document.body.appendChild(form);
 
     const submitEvent = new Event("submit", {
@@ -1174,13 +1174,13 @@ describe("Tracker Browser SDK Integration Suite", () => {
       );
 
     await import("../sdk");
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.debug();
     fetchSpy.mockClear();
     api.track("debug_event", { key: "val" });
 
     expect(logSpy).toHaveBeenCalledWith(
-      "[InsightFlare]",
+      "[Open Analytics]",
       "track:",
       JSON.stringify("debug_event"),
       expect.any(String),
@@ -1195,12 +1195,12 @@ describe("Tracker Browser SDK Integration Suite", () => {
     );
 
     await import("../sdk");
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.debug();
     api.identify("dbg-user", { name: "Dbg" });
 
     expect(logSpy).toHaveBeenCalledWith(
-      "[InsightFlare]",
+      "[Open Analytics]",
       "identify:",
       JSON.stringify("dbg-user"),
       JSON.stringify("Dbg"),
@@ -1308,7 +1308,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     history.pushState({}, "", "/will-be-flushed");
     await new Promise((r) => setTimeout(r, 0));
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.track("manual_event");
 
     // The custom_event must always fire regardless of happy-dom routing quirks
@@ -1350,7 +1350,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await new Promise((r) => setTimeout(r, 0));
 
     fetchSpy.mockClear();
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.track("after_ua_settled");
 
     const body = JSON.parse(fetchSpy.mock.calls[0][1].body as string);
@@ -1380,7 +1380,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await new Promise((r) => setTimeout(r, 0));
 
     fetchSpy.mockClear();
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.track("low_entropy_only");
     const body = JSON.parse(fetchSpy.mock.calls[0][1].body as string);
     expect(body.uaClientHints).toBeDefined();
@@ -1409,7 +1409,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await new Promise((r) => setTimeout(r, 0));
 
     fetchSpy.mockClear();
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.track("rejection_swallowed");
     const body = JSON.parse(fetchSpy.mock.calls[0][1].body as string);
     expect(body.uaClientHints).toBeDefined();
@@ -1429,16 +1429,16 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await new Promise((r) => setTimeout(r, 0));
 
     fetchSpy.mockClear();
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.track("no_ua_data");
     const body = JSON.parse(fetchSpy.mock.calls[0][1].body as string);
     expect(body.uaClientHints).toBeUndefined();
   });
 
-  it("should expose the API on window.insightflare as well as the install key", async () => {
+  it("should expose the API on window.openAnalytics as well as the install key", async () => {
     await import("../sdk");
-    expect((window as any).insightflare).toBe((window as any)[installKey]);
-    expect((window as any).insightflare.siteId).toBe("configured-site");
+    expect((window as any).openAnalytics).toBe((window as any)[installKey]);
+    expect((window as any).openAnalytics.siteId).toBe("configured-site");
   });
 
   it("should reuse existing visitor ids without sending SDK session ids", async () => {
@@ -1446,15 +1446,15 @@ describe("Tracker Browser SDK Integration Suite", () => {
       .spyOn(globalThis.crypto, "randomUUID")
       .mockReturnValue("new-visit");
     window.localStorage.setItem(
-      "__insightflare_visitor_configured-site__",
+      "__openanalytics_visitor_configured-site__",
       "existing-visitor",
     );
     window.sessionStorage.setItem(
-      "__insightflare_session_configured-site__",
+      "__openanalytics_session_configured-site__",
       "legacy-session",
     );
     window.sessionStorage.setItem(
-      "__insightflare_session_activity_configured-site__",
+      "__openanalytics_session_activity_configured-site__",
       String(Date.now() - 1_000),
     );
 
@@ -1471,7 +1471,9 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect(body.sessionId).toBeUndefined();
     expect(body.visitId).toBe("new-visit");
     expect(
-      window.sessionStorage.getItem("__insightflare_session_configured-site__"),
+      window.sessionStorage.getItem(
+        "__openanalytics_session_configured-site__",
+      ),
     ).toBe("legacy-session");
     expect(randomUuidSpy).toHaveBeenCalledTimes(1);
   });
@@ -1482,15 +1484,15 @@ describe("Tracker Browser SDK Integration Suite", () => {
       .mockReturnValueOnce("new-visit");
     const legacyActivityAt = String(Date.now() - 60_000);
     window.localStorage.setItem(
-      "__insightflare_visitor_configured-site__",
+      "__openanalytics_visitor_configured-site__",
       "existing-visitor",
     );
     window.sessionStorage.setItem(
-      "__insightflare_session_configured-site__",
+      "__openanalytics_session_configured-site__",
       "expired-session",
     );
     window.sessionStorage.setItem(
-      "__insightflare_session_activity_configured-site__",
+      "__openanalytics_session_activity_configured-site__",
       legacyActivityAt,
     );
     const fetchSpy = vi
@@ -1506,11 +1508,13 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect(body.sessionId).toBeUndefined();
     expect(body.visitId).toBe("new-visit");
     expect(
-      window.sessionStorage.getItem("__insightflare_session_configured-site__"),
+      window.sessionStorage.getItem(
+        "__openanalytics_session_configured-site__",
+      ),
     ).toBe("expired-session");
     expect(
       window.sessionStorage.getItem(
-        "__insightflare_session_activity_configured-site__",
+        "__openanalytics_session_activity_configured-site__",
       ),
     ).toBe(legacyActivityAt);
     expect(randomUuidSpy).toHaveBeenCalledTimes(1);
@@ -1561,7 +1565,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     await expect(
       importConfiguredSdk({ ignoreDoNotTrack: false }),
-    ).rejects.toThrow("InsightFlare: Do Not Track enabled");
+    ).rejects.toThrow("Open Analytics: Do Not Track enabled");
   });
 
   it("should not register outbound link listener when outbound auto-track is disabled", async () => {
@@ -1609,7 +1613,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     await import("../sdk");
     fetchSpy.mockClear();
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     const circular: Record<string, unknown> = {};
     circular.self = circular;
 
@@ -1626,7 +1630,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     await import("../sdk");
     fetchSpy.mockClear();
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.track("  spaced_event  ");
     api.track("next_event");
 
@@ -1646,7 +1650,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     await import("../sdk");
     fetchSpy.mockClear();
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     const props = Object.create({ inherited: "ignored" });
     props.owned = "kept";
     api.setGlobalProperties(props);
@@ -1667,7 +1671,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     fetchSpy.mockClear();
 
     const form = document.createElement("form");
-    form.setAttribute("data-insightflare-event-trigger", "submit");
+    form.setAttribute("data-open-analytics-event-trigger", "submit");
     document.body.appendChild(form);
     form.dispatchEvent(
       new Event("submit", { bubbles: true, cancelable: true }),
@@ -1687,7 +1691,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     fetchSpy.mockClear();
 
     const button = document.createElement("button");
-    button.setAttribute("data-insightflare-event-trigger", "click");
+    button.setAttribute("data-open-analytics-event-trigger", "click");
     document.body.appendChild(button);
     button.click();
 
@@ -1703,7 +1707,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await new Promise((r) => setTimeout(r, 0));
 
     expect(fetchSpy).toHaveBeenCalled();
-    expect((window as any).__insightflare_tracker_v6__).toBeDefined();
+    expect((window as any).__openanalytics_tracker_v6__).toBeDefined();
   });
 
   it("should flush pending route changes before manual tracking and log pageviews in debug mode", async () => {
@@ -1716,7 +1720,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     await import("../sdk");
     await new Promise((r) => queueMicrotask(r));
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.debug();
     fetchSpy.mockClear();
 
@@ -1738,7 +1742,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect(bodies[1].navigation).toBeUndefined();
     expect(bodies[1].previousVisitId).toBeUndefined();
     expect(logSpy).toHaveBeenCalledWith(
-      "[InsightFlare]",
+      "[Open Analytics]",
       "pageview:",
       "/flushed-route",
     );
@@ -1764,7 +1768,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await new Promise((r) => queueMicrotask(r));
     expect(routeCallbacks).toHaveLength(1);
 
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.track("flush_stale_route");
     fetchSpy.mockClear();
 
@@ -1789,7 +1793,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     history.pushState({}, "", "/zero-timer-route");
     await new Promise((r) => queueMicrotask(r));
 
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.track("zero_timer_flush");
 
     expect(clearTimeoutSpy).not.toHaveBeenCalled();
@@ -1851,13 +1855,13 @@ describe("Tracker Browser SDK Integration Suite", () => {
     fetchSpy.mockClear();
 
     const button = document.createElement("button");
-    button.setAttribute("data-insightflare-event", "");
+    button.setAttribute("data-open-analytics-event", "");
     document.body.appendChild(button);
     button.click();
 
     const form = document.createElement("form");
-    form.setAttribute("data-insightflare-event", "");
-    form.setAttribute("data-insightflare-event-trigger", "submit");
+    form.setAttribute("data-open-analytics-event", "");
+    form.setAttribute("data-open-analytics-event-trigger", "submit");
     document.body.appendChild(form);
     form.dispatchEvent(
       new Event("submit", { bubbles: true, cancelable: true }),
@@ -1877,14 +1881,14 @@ describe("Tracker Browser SDK Integration Suite", () => {
     fetchSpy.mockClear();
 
     const button = document.createElement("button");
-    button.setAttribute("data-insightflare-event", "dataset_edge");
+    button.setAttribute("data-open-analytics-event", "dataset_edge");
     Object.defineProperty(button, "dataset", {
       configurable: true,
       value: Object.assign(
-        Object.create({ insightflareEventInherited: "ignored" }),
+        Object.create({ openAnalyticsEventInherited: "ignored" }),
         {
           otherKey: "ignored",
-          insightflareEventLabel: "kept",
+          openAnalyticsEventLabel: "kept",
         },
       ),
     });
@@ -1925,7 +1929,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await new Promise((r) => setTimeout(r, 0));
 
     fetchSpy.mockClear();
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.track("malformed_ua");
 
     const body = decodeFetchBody(fetchSpy);
@@ -1960,7 +1964,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await new Promise((r) => setTimeout(r, 0));
 
     fetchSpy.mockClear();
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.track("empty_ua");
 
     const body = decodeFetchBody(fetchSpy);
@@ -2042,19 +2046,19 @@ describe("Tracker Browser SDK Integration Suite", () => {
     );
 
     await import("../sdk");
-    const api = (window as any).__insightflare_tracker_v6__;
+    const api = (window as any).__openanalytics_tracker_v6__;
     api.debug();
     api.identify("debug-no-name");
     api.track("debug-no-data");
 
     expect(logSpy).toHaveBeenCalledWith(
-      "[InsightFlare]",
+      "[Open Analytics]",
       "identify:",
       JSON.stringify("debug-no-name"),
       "",
     );
     expect(logSpy).toHaveBeenCalledWith(
-      "[InsightFlare]",
+      "[Open Analytics]",
       "track:",
       JSON.stringify("debug-no-data"),
       JSON.stringify({}),
@@ -2070,7 +2074,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     await import("../sdk");
 
-    expect((window as any).__insightflare_tracker_v6__).toBeDefined();
+    expect((window as any).__openanalytics_tracker_v6__).toBeDefined();
     expect(history.pushState).toBeUndefined();
   });
 
@@ -2085,9 +2089,9 @@ describe("Tracker Browser SDK Integration Suite", () => {
     fetchSpy.mockClear();
 
     const button = document.createElement("button");
-    button.setAttribute("data-insightflare-event", "dataset_missing");
+    button.setAttribute("data-open-analytics-event", "dataset_missing");
     button.setAttribute(
-      "data-insightflare-event-data",
+      "data-open-analytics-event-data",
       JSON.stringify({ source: "json-only" }),
     );
     Object.defineProperty(button, "dataset", {

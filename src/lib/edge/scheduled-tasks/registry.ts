@@ -30,6 +30,16 @@ export const SCHEDULED_TASKS: ScheduledTaskDefinitionInfo[] = [
     enabled: true,
     internalSchedule: { kind: "daily", timezone: "UTC" },
   },
+  {
+    key: "analytics_retention",
+    name: "Analytics retention",
+    description:
+      "Deletes page views and custom events older than the detail retention; hourly totals stay.",
+    schedule: "Every day",
+    trigger: "cron",
+    enabled: true,
+    internalSchedule: { kind: "daily", timezone: "UTC" },
+  },
 ];
 
 export function getScheduledTaskDefinition(

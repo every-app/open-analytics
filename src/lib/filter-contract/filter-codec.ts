@@ -431,7 +431,7 @@ function prepareSelectorReferences(
   const rewritten = replaceSelectorReferencesOutsideStrings(
     source,
     (reference) => {
-      let marker = `__insightflare_filter_url_ref_${index}__`;
+      let marker = `__openanalytics_filter_url_ref_${index}__`;
       while (source.includes(marker)) marker += "_";
       markers.set(marker, reference);
       index += 1;

@@ -49,8 +49,11 @@ const time: QueryTime = createQueryTime(
   "UTC",
   Date.parse("2026-08-03T00:00:00.000Z"),
 );
-const siteContext = siteQueryContext("site-1", "api-v1");
-const teamContext = teamQueryContext("team-1", "api-v1", ["site-1", "site-2"]);
+const siteContext = siteQueryContext("site-1", "private-dashboard");
+const teamContext = teamQueryContext("team-1", "private-dashboard", [
+  "site-1",
+  "site-2",
+]);
 
 function overviewMetrics(seed: number) {
   return {

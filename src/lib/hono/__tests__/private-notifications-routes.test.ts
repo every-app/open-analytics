@@ -16,6 +16,9 @@ vi.mock("@/lib/edge/admin/notifications/handler", () => ({
   handleNotificationPreferences: vi.fn(),
   handleNotificationsReadAll: vi.fn(),
 }));
+// The admin service imports the gateway SDK through the viewer, which can't
+// load under Node.
+vi.mock("@/lib/edge/auth/viewer", () => ({ resolveViewer: vi.fn() }));
 vi.mock("@/lib/edge/admin/response", () => ({
   nf: vi.fn(() => new Response("not found", { status: 404 })),
 }));

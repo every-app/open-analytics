@@ -1,35 +1,6 @@
-appName: InsightFlare
+appName: Open Analytics
 uiGallery:
-  searchLabel: UI コンポーネントを検索
-  searchPlaceholder: コンポーネントを検索
-  backToApp: InsightFlare に戻る
-  noSearchResults: 検索に一致するコンポーネントはありません。
-  toggleNavigation: ライブラリナビゲーションを切り替え
-  library: UI ライブラリ
-  componentsCount: "{count} 個のコンポーネント"
-  statesCount: "{count} 個の状態"
-  designSystem: InsightFlare デザインシステム
-  pageTitle: UI コンポーネント
-  catalogSummary: "{components} 個のコンポーネント · {states} 個の prop 値"
-  categories:
-    inputs: 入力
-    feedback: フィードバック
-    foundations: 基礎
-    navigation: ナビゲーション
-    data-display: データ表示
-    overlays: オーバーレイ
-    product-analytics: プロダクト UI / 分析
-    product-management: プロダクト UI / 管理
-    product-realtime: プロダクト UI / リアルタイム
-  browseCategories: カテゴリーから探す
-  featuredComponents: 注目のコンポーネント
-  backToCatalog: UI コンポーネント
-  canonicalStates: Props と値
-  browseAllComponents: すべてのコンポーネントを見る
-  previewState: プレビューを開く
-  resetPreview: プレビューをリセット
-  expandCode: コードを展開
-  collapseCode: コードを折りたたむ
+  categories: {}
 navigation:
   overview: 概要
   realtime: リアルタイム
@@ -390,8 +361,7 @@ filterBuilder:
   expressionHelpSyntax: 構文
   expressionHelpLogicDescription: AND は OR より優先されます。ネストには括弧を使用し、AND(...) と OR(...) は明示的な単一条件グループを保持します。
   expressionHelpValues: 値
-  expressionHelpValuesDescription:
-    文字列は JSON の二重引用符を使います。数値と真偽値は引用しません。集合には [値, 値]
+  expressionHelpValuesDescription: 文字列は JSON の二重引用符を使います。数値と真偽値は引用しません。集合には [値, 値]
     を使い、between には順序付きの値を 2 つ指定します。
   expressionHelpOperators: 利用可能な演算子
   expressionHelpUnaryOperators: 値を取らない演算子
@@ -400,7 +370,10 @@ filterBuilder:
   expressionHelpFieldOperators: 演算子
   expressionHelpOtherFields: その他
   expressionHelpContextTitle: 発生時刻とコンテキスト組み込み値
-  expressionHelpContextDescription: 小文字のドット区切り名は登録済みフィールド、大文字の PAGE、EVENT、SESSION、VISITOR はエンティティ集合です。エンティティセレクター内の $.member は現在のエンティティを参照し、-> は集合メンバーを明示的に射影します。@ は時間アンカーで、Sequence と Period の条件には $span、$gap、$items もあります。
+  expressionHelpContextDescription: 小文字のドット区切り名は登録済みフィールド、大文字の
+    PAGE、EVENT、SESSION、VISITOR はエンティティ集合です。エンティティセレクター内の $.member
+    は現在のエンティティを参照し、-> は集合メンバーを明示的に射影します。@ は時間アンカーで、Sequence と Period の条件には
+    $span、$gap、$items もあります。
   expressionHelpContextExamples: |-
     time(last(PAGE)) gte @now-14d
     sequence([EVENT { $.name eq "signup" }, EVENT { $.name eq "purchase" }]) {
@@ -694,7 +667,6 @@ realtime:
   eventTime: イベント時刻
   eventKind: イベント種別
   eventName: イベント名
-  siteId: サイト ID
   traceId: トレース ID
   receivedAt: 受信時刻
   startedAt: 開始時刻
@@ -755,7 +727,6 @@ pages:
   empty: 現在のフィルターに一致するページデータはありません。
   loadError: ページデータを読み込めませんでした。後でもう一度お試しください。
   loadMoreError: 追加のページを読み込めませんでした。
-  retry: 再試行
   trendTitle: ページトラフィック推移
   otherPages: その他のページ
   hashTab: アンカー
@@ -1288,8 +1259,7 @@ performance:
   poor: 不良
   datasetTitle: データセット概要
   interpretationTitle: 現在の読み取り
-  currentReading:
-    "{metric} の P75 は {value}、{samples} 件のサンプルに基づく体験スコアは {score}
+  currentReading: "{metric} の P75 は {value}、{samples} 件のサンプルに基づく体験スコアは {score}
     です。現在の判定：{status}。"
   metricThresholdText: "良好：{good} 以下、要改善：{good} から {poor}、不良：{poor} 超。"
   scoreThresholdText: "良好：90 超、要改善：50 から 90、不良：50 未満。"
@@ -1417,8 +1387,7 @@ siteSettings:
         - "-example.com"
         - "-*.example.com"
         - "admin.example.com"
-      exampleDescription:
-        この設定はすべてのドメインをブロックし、example.com とそのサブドメインを許可した後、完全一致する
+      exampleDescription: この設定はすべてのドメインをブロックし、example.com とそのサブドメインを許可した後、完全一致する
         admin.example.com を再びブロックします。
       testLabel: ホスト名
       testPlaceholder: www.example.com
@@ -1482,8 +1451,7 @@ siteSettings:
         - "*.example.com"
         - "social.example.com"
         - "-trusted.example.com"
-      exampleDescription:
-        この設定は example.com の参照元ドメインと social.example.com
+      exampleDescription: この設定は example.com の参照元ドメインと social.example.com
         をブロックし、trusted.example.com を許可します。
       testLabel: 参照元
       testPlaceholder: https://social.example.com/article
@@ -1613,11 +1581,6 @@ siteSettings:
   savingTracking: トラッキング設定を保存中...
   save: 変更を保存
   saving: 保存中...
-  transferTitle: 別のチームへ移管
-  transferSubtitle: このサイトを管理可能な別チームへ移動します。
-  transferTeamLabel: 移管先チーム
-  transfer: サイトを移管
-  transferring: 移管中...
   scriptTitle: トラッキングスクリプトを設置
   scriptSubtitle: 分析収集を開始するには、このスクリプトを Web サイトに追加してください。
   scriptHint: </head> の前を推奨します。必要なら </body> の前にも配置できますが、各ページで 1 回だけ読み込まれるようにしてください。
@@ -1633,8 +1596,6 @@ siteSettings:
   toasts:
     saved: サイト設定を保存しました。
     saveFailed: サイト設定を保存できません。
-    transferred: サイトを移管しました。
-    transferFailed: サイトを移管できません。
     scriptLoadFailed: スクリプトスニペットを読み込めません。
     settingsLoadFailed: スクリプト設定を読み込めません。
     settingsPropagationHint: エッジノードへのグローバル反映には最大 1 時間かかる場合があります。
@@ -1644,33 +1605,16 @@ siteSettings:
 accountSettings:
   emailManagedByGateway: メールアドレスは Every App のアカウントのものです。
   title: アカウント設定
-  subtitle: 個人情報、ログインパスワード、ダッシュボードのタイムゾーンを管理します。
+  subtitle: 表示名、通知、ダッシュボードのタイムゾーンを管理します。
   profileTitle: 個人情報
-  profileDescription: 表示名、ユーザー名、メールアドレスを更新します。
+  profileDescription: ダッシュボードに表示される名前を更新します。
   nicknameLabel: 表示名
   nicknamePlaceholder: "例: プロダクトアナリスト"
-  usernameLabel: ユーザー名
-  usernamePlaceholder: "例: alex"
-  usernameDescription: ユーザー名はログインにも使用できます。
   emailLabel: メール
-  emailPlaceholder: name@example.com
-  invalidProfile: 有効なユーザー名とメールアドレスを入力してください。
   profileSave: 詳細を保存
   profileSaving: 保存中...
   profileSaved: 個人情報を保存しました。
   profileSaveFailed: 個人情報を保存できません。
-  passwordTitle: ログインパスワード
-  passwordDescription: 現在のアカウントのパスワードを変更します。
-  currentPasswordLabel: 現在のパスワード
-  newPasswordLabel: 新しいパスワード
-  confirmPasswordLabel: 新しいパスワードの確認
-  currentPasswordRequired: 現在のパスワードを入力してください。
-  passwordTooShort: 新しいパスワードは 8 文字以上にしてください。
-  passwordMismatch: 新しいパスワードが一致しません。
-  passwordSave: パスワードを変更
-  passwordSaving: 変更中...
-  passwordSaved: パスワードを変更しました。
-  passwordSaveFailed: パスワードを変更できません。
   preferredLanguageTitle: 通知言語
   preferredLanguageDescription: 定期通知メールで使用する言語を選択します。
   preferredLanguageLabel: メール言語
@@ -1789,7 +1733,7 @@ notificationCenter:
   detailFields: {}
 notificationEmail:
   common:
-    brand: InsightFlare
+    brand: Open Analytics
     date: 日付
     coreMetrics: 主要指標
     topPages: 上位ページ
@@ -1812,8 +1756,8 @@ notificationEmail:
     never: 未受信
     noPageData: ページデータはありません。
     noReferrerData: 参照元データはありません。
-    footer: このメールは InsightFlare の通知システムから送信されました。
-    fallbackSubject: InsightFlare 通知
+    footer: このメールは Open Analytics の通知システムから送信されました。
+    fallbackSubject: Open Analytics 通知
     trackingHint: トラッキングスクリプトが正しく設置されているか、またはサイトに引き続きトラフィックがあるかを確認してください。
     severity:
       info: 情報
@@ -1821,10 +1765,10 @@ notificationEmail:
       warning: 警告
       critical: 重大
   test:
-    subject: InsightFlare 通知テスト
-    title: InsightFlare 通知テスト
-    summary: これは InsightFlare からのテスト通知です。
-    body: これは InsightFlare からのテスト通知です。メールが設定され有効になっている場合、このメッセージは Resend の配信も確認します。
+    subject: Open Analytics 通知テスト
+    title: Open Analytics 通知テスト
+    summary: これは Open Analytics からのテスト通知です。
+    body: これは Open Analytics からのテスト通知です。メールが設定され有効になっている場合、このメッセージは Resend の配信も確認します。
   report:
     subject: "{site} の{periodLabel}トラフィックレポート"
     title: "{site} の{periodLabel}トラフィックレポート"
@@ -1862,9 +1806,8 @@ notificationEmail:
 runtimeConfigError:
   title: ランタイム設定が必要です
   eyebrow: デプロイを一時停止中
-  heading: UI を読み込む前に、InsightFlare にはランタイムシークレットが 1 つ必要です。
-  description:
-    アプリは起動していますが、現在のランタイム環境で必須の root secret
+  heading: UI を読み込む前に、Open Analytics にはランタイムシークレットが 1 つ必要です。
+  description: アプリは起動していますが、現在のランタイム環境で必須の root secret
     を取得できないため、ダッシュボードへのアクセスを一時的にブロックしています。
   requiredTitle: 必須のランタイムシークレット
   requiredDescription: Cloudflare のランタイムシークレットに、次の値のいずれかを少なくとも 1 つ設定してください。
@@ -1874,65 +1817,19 @@ runtimeConfigError:
   quickStartHint: または、GitHub README の Quick Start セクションを参照してこの変数を設定してください。
   docsLabel: GitHub を開く
   homeLabel: ダッシュボードを再試行
-login:
-  title: サインイン
-  subtitle: InsightFlare アカウントを使用します。
-  username: ユーザー名またはメール
-  password: パスワード
-  signIn: サインイン
-  invalidCredentials: ユーザー名またはパスワードが正しくありません。
+login: {}
 accountLinks:
   invite:
-    title: チーム招待
-    subtitle: 招待を承認してこのチームに参加します。
-    loading: 招待を読み込み中...
-    missingToken: 招待トークンがありません。
-    loadFailed: 招待を読み込めません。
-    accept: 招待を承認
-    accepting: 承認中...
-    accepted: 招待を承認しました。
-    acceptFailed: 招待を承認できません。
-    signIn: 承認するにはサインイン
-    signedInNotice: サインイン済みです。承認すると、このチームにあなたのアカウントが追加されます。
-    teamLabel: チーム
-    roleLabel: 権限
-    emailLabel: 招待先メール
-    accountEmailLabel: アカウントメール
-    anyEmail: 任意のメールアドレス
-    expiresLabel: 有効期限
-    usernameLabel: ユーザー名
-    nameLabel: 表示名
-    passwordLabel: パスワード
-    roles:
-      admin: 管理者
-      member: メンバー
-  resetPassword:
-    title: パスワードをリセット
-    subtitle: このアカウントの新しいパスワードを設定します。
-    loading: リセットリンクを読み込み中...
-    missingToken: リセットトークンがありません。
-    loadFailed: リセットリンクを読み込めません。
-    reset: パスワードをリセット
-    resetting: リセット中...
-    resetDone: パスワードをリセットしました。新しいパスワードでサインインしてください。
-    resetFailed: パスワードをリセットできません。
-    signIn: サインインへ戻る
-    accountLabel: アカウント
-    emailLabel: メール
-    expiresLabel: 有効期限
-    passwordLabel: 新しいパスワード
-    confirmPasswordLabel: パスワード確認
-    passwordTooShort: パスワードは 8 文字以上にしてください。
-    passwordMismatch: パスワードが一致しません。
-empty:
-  noTeams: 利用可能なチームはまだありません。
+    roles: {}
+  resetPassword: {}
+empty: {}
 errorPage:
   notFoundEyebrow: ページが見つかりません
   notFoundTitle: お探しのページが見つかりません
   notFoundDescription: アドレスが正しくないか、ページが移動した可能性があります。
   errorEyebrow: アプリケーションエラー
   errorTitle: 問題が発生しました
-  errorDescription: InsightFlare はリクエストを完了できませんでした。以下の診断情報が調査に役立ちます。
+  errorDescription: Open Analytics はリクエストを完了できませんでした。以下の診断情報が調査に役立ちます。
   statusLabel: ステータス
   reasonLabel: 原因
   requestLabel: リクエストパス
@@ -1946,7 +1843,6 @@ errorPage:
   reportAction: GitHub で報告
   reportHint: 内容を確認できるよう、入力済みの GitHub Issue が開きます。
 actions:
-  logout: ログアウト
   switchToEnglish: English
   switchToChinese: 簡体字中国語
   switchToTraditionalChinese: 繁体字中国語
@@ -1954,63 +1850,19 @@ actions:
   switchToLight: ライト
   switchToDark: ダーク
 teamSelect:
-  groupLabel: チーム
-  groups:
-    created: 作成したチーム
-    managed: 管理中のチーム
-    member: 所属チーム
-    system: システムチーム
-  createHint: チームを作成
-  createTitle: チームを作成
-  createDescription: 作成後、新しいチームに切り替わります。
-  nameLabel: チーム名
-  namePlaceholder: "例: Growth Team"
-  slugLabel: チームスラッグ（任意）
-  slugPlaceholder: "例: growth-team"
-  create: 作成
-  creating: 作成中...
+  groups: {}
   cancel: キャンセル
-  invalidName: チーム名は 2 文字以上にしてください。
-  createFailed: チームを作成できません。もう一度お試しください。
-  createSuccess: チームを作成しました。
 teamManagement:
-  stats:
-    sites: サイト
-    members: メンバー
-  toasts:
-    teamSaved: チーム設定を保存しました。
-    teamSaveFailed: チーム設定を保存できません。
-    teamDeleted: チームを削除しました。
-    teamDeleteFailed: チームを削除できません。
-    memberRemoved: メンバーを削除しました。
-    memberRemoveFailed: メンバーを削除できません。
-    roleChanged: メンバー権限を更新しました。
-    roleChangeFailed: メンバー権限を更新できません。
-    siteAccessChanged: メンバーのサイト権限を更新しました。
-    siteAccessChangeFailed: サイト権限を更新できません。
-    invalidTeamName: チーム名は 2 文字以上にしてください。
-    inviteCreated: 招待リンクを作成しました。
-    inviteCreateFailed: 招待リンクを作成できません。
-    inviteRevoked: 招待を取り消しました。
-    inviteRevokeFailed: 招待を取り消せません。
-    inviteCopied: 招待リンクをコピーしました。
-    inviteCopyFailed: 招待リンクをコピーできません。
-    invalidInviteEmail: 有効な招待メールを入力してください。
-    invalidInviteExpiry: 招待の有効期限は 1 時間以上にしてください。
-    ownerTransferred: 所有権を移譲しました。
-    ownerTransferFailed: 所有権を移譲できません。
-    invalidTransferTarget: 新しい所有者を選択してください。
+  stats: {}
+  toasts: {}
   sites:
-    title: サイトダッシュボード
     subtitle: このチーム内すべてのサイトを集計したトラフィックビューです。
     aggregateTitle: 総訪問数
-    pagesPerSession: ページ / セッション
     noSites: このチームには利用可能なサイトがありません。
     openAnalytics: アナリティクスを開く
-  widgets:
-    title: ウィジェット
-    subtitle: ウィジェット機能を開発中です。
-    underConstruction: 準備中
+    title: サイトダッシュボード
+    pagesPerSession: ページ / セッション
+  widgets: {}
   notifications:
     title: 通知ルール
     subtitle: このチームの通知ルールを管理します。
@@ -2242,186 +2094,24 @@ teamManagement:
       status: ステータス
       action: 操作
   apiKeys:
-    title: API キー
-    subtitle: このチームの API アクセスキーを管理します。
-    empty: このチームには API キーがありません。
-    create: キーを作成
-    creating: 作成中...
-    createTitle: API キーを作成
-    createSubtitle: この連携に必要な最小権限を選択してください。
-    nameLabel: キー名
-    namePlaceholder: 本番同期
-    scopesTitle: 権限
-    scopesDescription: API キーでメンバー、ユーザー、所有権、他のキーを管理することはできません。
-    siteScopeTitle: サイトアクセス
-    siteScopeDescription: 未選択の場合、このチームの現在および将来のすべてのサイトが対象です。
-    allSites: すべてのサイト
-    expirationLabel: 有効期限
-    expiration30: 30 日
-    expiration90: 90 日
-    expiration180: 180 日
-    expiration365: 365 日
-    expirationNever: 無期限
-    oneTimeSecretTitle: 今すぐこのキーをコピー
-    oneTimeSecretDescription: 完全なキーは一度だけ表示されます。このダイアログを閉じる前に保存してください。
-    copySecret: キーをコピー
-    revoke: 取り消し
-    rotate: ローテーション
-    revokeConfirm: この API キーを今すぐ取り消しますか？
-    rotateConfirm: この API キーをローテーションしますか？古いキーは直ちに取り消されます。
-    neverExpires: 有効期限なし
-    notUsed: 未使用
-    loading: API キーを読み込み中...
-    loadFailed: API キーを読み込めません。
-    invalidInput: 名前を入力し、少なくとも 1 つの権限を選択してください。
-    createFailed: API キーを作成できません。
-    revokeFailed: API キーを取り消せません。
-    rotateFailed: API キーをローテーションできません。
-    copied: コピーしました
-    status:
-      active: 有効
-      expired: 期限切れ
-      revoked: 取り消し済み
-    scopes:
-      analyticsRead: 分析の読み取り
-      analysisRead: 分析定義の読み取り
-      analysisWrite: 分析定義の書き込み
-      siteRead: サイトの読み取り
-      siteWrite: サイトの書き込み
-      siteConfigRead: 設定の読み取り
-      siteConfigWrite: 設定の書き込み
-    scopeDescriptions:
-      analyticsRead: 訪問、訪問者、ページビュー、その他の分析データを表示
-      analysisRead: 共有保存フィルターとファネル定義を表示
-      analysisWrite: ファネル定義を作成、更新、削除
-      siteRead: サイト一覧とサイト詳細を表示
-      siteWrite: サイトを作成、更新、削除
-      siteConfigRead: トラッキングコードやドメイン許可リストなどのサイト設定を表示
-      siteConfigWrite: トラッキング強度やパスブロックリストなどのサイト設定を変更
-    scopeGroups:
-      analytics: 分析
-      analysis: 分析定義
-      site: サイト
-      siteConfig: サイト設定
-    columns:
-      name: 名前
-      scopes: 権限
-      sites: サイト
-      expires: 有効期限
-      lastUsed: 最終使用
-      status: ステータス
-      action: 操作
-  settings:
-    title: 設定
-    subtitle: このチームの表示名とスラッグを更新します。
-    nameLabel: チーム表示名
-    slugLabel: チームスラッグ
-    save: 設定を保存
-    saving: 保存中...
-    delete: チームを削除
-    deleting: 削除中...
-    deleteConfirm: このチームとすべてのデータを削除しますか？この操作は元に戻せません。
-    transferTitle: 所有権を移譲
-    transferSubtitle: チーム所有権を別のメンバーへ移譲します。現在の所有者は管理者に降格されます。
-    transferTargetLabel: 新しい所有者
-    transferTargetPlaceholder: チームメンバーを選択
-    transfer: 所有権を移譲
-    transferring: 移譲中...
-    transferConfirm: この操作は元に戻せません。所有権は失いますが、管理者権限は残ります。続行しますか？
-    noTransferableMembers: 移譲先にできる他のメンバーがいません。まずメンバーを追加してください。
+    status: {}
+    scopes: {}
+    scopeDescriptions: {}
+    scopeGroups: {}
+    columns: {}
+  settings: {}
   members:
-    title: メンバー
-    subtitle: メンバーを招待、または既存メンバーを削除します。
-    remove: メンバーを削除
-    removeMemberAction: '"{target}" をメンバーから削除'
-    removeMemberConfirm: '"{target}" をこのチームから削除しますか？直ちにアクセスできなくなります。'
-    noMembers: このチームにはメンバーがいません。
-    invitesTitle: 招待リンクを作成
-    invitesSubtitle: ユーザーは招待を承認した後にのみこのチームへ参加します。
-    inviteEmailLabel: メール制限（任意）
-    inviteEmailPlaceholder: user@example.com
-    inviteExpiresLabel: 有効期限（時間）
-    createInvite: 招待リンクを作成
-    creatingInvite: 作成中...
-    copyInvite: 招待リンクをコピー
-    inviteLinksTitle: 招待リンク
-    inviteLinksSubtitle: 招待ステータスを確認し、有効なリンクを取り消します。
-    noInvites: このチームには招待リンクがありません。
-    anyEmail: 任意のメールアドレス
-    revokeInvite: 招待を取り消し
-    revokeInviteAction: '"{target}" の招待を取り消し'
-    revokeInviteConfirm: '"{target}" の招待を取り消しますか？このリンクは使用できなくなります。'
-    siteAccessLabel: サイト権限
-    siteAccessAll: 全サイト
-    siteAccessRestricted: 制限付き
-    siteAccessSelected: "{count} サイト選択済み"
-    siteAccessDescription: 全サイトのままにするか、このメンバーがアクセスできるサイトを選択します。
-    siteAccessAdmins: 管理者はこのチームの全サイトにアクセスできます。
-    siteAccessDialogTitle: サイト権限を編集
-    saveSiteAccess: 権限を保存
-    cancelSiteAccess: キャンセル
-    noSitesForAccess: このチームにはまだサイトがありません。
-    inviteStatuses:
-      active: 有効
-      used: 使用済み
-      revoked: 取り消し済み
-      expired: 期限切れ
-    columns:
-      name: 名前
-      username: ユーザー名
-      email: メール
-      inviteCode: 招待トークン
-      role: 権限
-      siteAccess: サイト権限
-      joinedAt: 参加日時
-      createdAt: 作成日時
-      expiresAt: 有効期限
-      usedAt: 使用日時
-      status: ステータス
-      action: 操作
-    roleLabels:
-      owner: 所有者
-      admin: 管理者
-      member: メンバー
+    inviteStatuses: {}
+    columns: {}
+    roleLabels: {}
 managementNav:
-  users: ユーザー管理
   sites: サイト管理
-  teams: チーム管理
-  versionUpdates: バージョン更新
   scheduledTasks: スケジュールタスク
   requestObservation: リクエスト監視
   systemPerformance: システムパフォーマンス
   systemSettings: システム設定
 managementPages:
-  versionUpdates:
-    subtitle: 公開済み InsightFlare リリースと稼働中ビルドを確認します。
-    empty: バージョン更新記録はまだありません。
-    currentVersion: 現在のバージョン
-    latestVersion: 最新リリース
-    currentCommit: 現在のコミット
-    releaseCount: リリース
-    publishedAt: 公開日時
-    author: 作成者
-    commit: コミット
-    statusStable: 安定版
-    statusPrerelease: プレリリース
-    statusDraft: 下書き
-    currentVersionBadge: 現在のバージョン
-    releaseNotes: リリースノート
-    openRelease: リリースを開く
-    viewDetails: 詳細な変更を表示
-    detailsTitle: 詳細な変更
-    detailsDescription: "{range} に含まれるコミット。"
-    detailsLoading: 詳細な変更を読み込み中...
-    detailsEmpty: このバージョンに対する前回リリースはまだありません。
-    detailsFailed: 詳細な変更を読み込めません。
-    currentCommitBadge: 現在のデプロイ
-    openCompare: 比較を開く
-    openCommit: コミットを開く
-    commitCount: コミット
-    source: データソース
-    loadFailed: リリース一覧を読み込めません。
-    unknown: 不明
+  versionUpdates: {}
   scheduledTasks:
     subtitle: システムのスケジュールタスクを表示・管理します。
     empty: スケジュールタスクはまだありません。
@@ -2499,47 +2189,7 @@ managementPages:
         description: 期限切れの実行データと通知を削除し、D1 の統計情報を最適化します。
         schedule: 毎日
 adminUsers:
-  title: ユーザー管理
-  subtitle: システム管理者のみがダッシュボードユーザーを作成・管理できます。
-  createTitle: ユーザーを作成
-  createTeamNotice: ここでユーザーを作成すると、そのユーザーが所有する新しいチームも作成されます。既存チームに追加する場合は、そのチームの設定から招待リンクを作成してください。
-  username: ユーザー名
-  email: メール
-  name: 表示名（任意）
-  password: パスワード（8 文字以上）
-  role: システム権限
-  teamName: チーム名
-  teamSlug: チームスラッグ（任意）
-  defaultTeamName: "{name} のチーム"
-  create: ユーザーを作成
-  creating: 作成中...
-  delete: 削除
-  deleting: 削除中...
-  deleteConfirm: このユーザーアカウントを削除しますか？
-  deleteSuccess: ユーザーを削除しました。
-  deleteFailed: ユーザーを削除できません。
-  generateResetLink: パスワードリセットリンクを生成
-  resetLinkCreated: パスワードリセットリンクを生成しました。
-  resetLinkCreateFailed: パスワードリセットリンクを生成できません。
-  resetLinkCopied: パスワードリセットリンクをコピーしました。
-  resetLinkCopyFailed: パスワードリセットリンクをコピーできません。
-  copyResetLink: リンクをコピー
-  resetLinkExpiresAt: 有効期限
-  listTitle: ユーザー
-  listSubtitle: システム内のすべてのユーザーです。
-  noData: ユーザーが見つかりません。
-  loadFailed: ユーザーを読み込めません。
-  createSuccess: ユーザーを作成しました。
-  createFailed: ユーザーを作成できません。
-  invalidInput: 有効なユーザー名、メール、パスワードを入力してください。
-  columns:
-    name: 名前
-    username: ユーザー名
-    email: メール
-    role: 権限
-    teams: チーム
-    created: 作成日時
-    action: 操作
+  columns: {}
 adminSites:
   title: サイト管理
   subtitle: 現在のチーム配下のサイトを管理します。
@@ -2566,83 +2216,31 @@ adminSites:
     created: 作成日時
     action: 操作
 adminTeams:
-  title: チーム管理
-  subtitle: システム管理者のみがすべてのチームを作成・表示できます。
-  createTitle: チームを作成
-  createSubtitle: 作成後、設定とメンバーを管理できます。
-  name: チーム名
-  slug: チームスラッグ（任意）
-  create: チームを作成
-  creating: 作成中...
-  listTitle: チーム
-  listSubtitle: システム内のすべてのチームです。
-  noData: チームが見つかりません。
-  loadFailed: チームを読み込めません。
-  createSuccess: チームを作成しました。
-  createFailed: チームを作成できません。
-  invalidInput: チーム名は 2 文字以上にしてください。
-  open: チームを開く
-  settings: 設定
-  columns:
-    name: 名前
-    slug: スラッグ
-    sites: サイト
-    members: メンバー
-    created: 作成日時
-    action: 操作
+  columns: {}
 requestObservation:
   title: リクエスト監視
-  tabs:
-    overview: 概要
-    blocked: ブロック済みリクエスト
-    included: 統計対象リクエスト
+  subtitle: "コレクターが最近拒否したリクエスト：カスタムブロックルール、ボット、ホスティングネットワーク。"
+  blockedTotal: "ブロックしたリクエスト"
+  retentionNote: "30 日間保持します。許可されたトラフィックは各サイトのダッシュボードにあります。"
+  topReasons: "理由"
+  recentTitle: "最近ブロックしたリクエスト"
+  categoryLabels:
+    custom_block: "ブロックルール"
+    bot: "ボット"
+    suspected_bot: "ホスティングネットワーク"
+  tabs: {}
   refresh: 更新
   loadFailed: リクエスト監視データを読み込めません。
-  notConfiguredTitle: Analytics Engine リーダーが設定されていません
-  notConfiguredDescription:
-    リクエスト監視用の Analytics Engine データセットを読むには、システム設定で
-    Cloudflare Account ID と API トークンを追加してください。
-  analyticsEngineDisabledTitle: Analytics Engine が有効ではありません
-  analyticsEngineDisabledDescription: Cloudflare アカウントで Analytics Engine
-    が有効化されていないため、このデプロイは Analytics Engine バインディングなしで公開されました。Cloudflare
-    で有効化してから再デプロイすると、リクエスト監視データを収集できます。
-  openAnalyticsEngine: Analytics Engine を開く
-  openSettings: 設定を開く
-  affectedSites: 影響サイト
-  uniqueCountries: 国 / 地域
   noData: この期間にリクエストデータはありません。
-  trendTitle: ルーティング推移
-  client: クライアント
-  edge: エッジ
-  identifiers: 識別子
-  fullUserAgent: 完全な User-Agent
-  id: ID
-  metadata: メタデータ
   time: 時刻
   site: サイト
   location: 地域
   network: ネットワーク
   reason: 理由
-  request: リクエスト
-  ip: IP
   userAgent: User-Agent
-  category: カテゴリ
   emptyValue: 不明
-  kind: 種別
-  botScore: Bot スコア
-  botScoreBucket: Bot スコア分類
-  verifiedBotCategory: 認証済み Bot カテゴリ
-  hostname: ホスト名
   pathname: パス
-  origin: オリジン
-  asOrganization: ASN 組織
-  asn: ASN
   country: 国 / 地域
-  region: 地域
-  city: 都市
-  colo: データセンター
-  userAgentLengthBucket: User-Agent 長
-  userAgentLength: User-Agent 長（正確）
   ipPrefix: IP プレフィックス
   botReasonLabels:
     missing_ua: User-Agent なし
@@ -2667,39 +2265,13 @@ requestObservation:
     blocked_asns: ブロック対象 ASN
     blocked_countries: ブロック対象国
     blocked_regions: ブロック対象地域
-  requestKindLabels:
-    pageview: ページビュー
-    custom_event: カスタムイベント
-    request: リクエスト
-    visibility: 可視性
-    leave: 離脱
-    identify: ユーザー識別
+  requestKindLabels: {}
   overviewLabels:
-    p50Latency: P50 Worker 処理時間
-    p75Latency: P75 Worker 処理時間
-    p99Latency: P99 Worker 処理時間
-    p95Latency: P95 Worker 処理時間
-    avgLatency: 平均 Worker 処理時間
-    pageviews: ページビュー
-    customEvents: カスタムイベント
-    overviewTrendTitle: リクエストルーティング推移
-    trafficCompositionTitle: ビジネスリクエスト構成
-    trafficCompositionDescription: ページビュー、離脱、可視性の変化、カスタムイベント、ユーザー識別など、通常の収集イベントを種類別に時系列で表示します。
-    categoryShareTitle: リクエストカテゴリの内訳
-    latencyTitle: Worker 処理時間の推移
-    latencyDescription: 通常リクエストが AE に書き込まれる際に記録された P50 / P75 / P95 / P99 Worker 処理時間です。
-    requests: リクエスト数
     windowDays: 過去 {days} 日
-    latencyMilliseconds: "{value} ミリ秒"
-  normalDetail:
-    requestMethod: リクエストメソッド
-    edgeLatency: Worker 処理時間
-    eventAt: イベント時刻
-    receivedAt: 受信時刻
-    continent: 大陸
+  normalDetail: {}
 systemSettings:
   title: システム設定
-  subtitle: この InsightFlare デプロイ全体の設定を管理します。
+  subtitle: この Open Analytics デプロイ全体の設定を管理します。
   guide: ガイド
   analyticsEngineTitle: Analytics Engine
   analyticsEngineDescription: リクエスト監視と将来のトラフィック・イベント分析で使用する Analytics Engine の Cloudflare 認証情報を設定します。
@@ -2714,7 +2286,7 @@ systemSettings:
   analyticsEngineDisabledTitle: Analytics Engine が有効ではありません
   analyticsEngineDisabledDescription: Cloudflare アカウントで Analytics Engine
     が有効化されていないため、このデプロイでは Analytics Engine バインディングが自動的に無効化されました。Cloudflare で
-    Analytics Engine を有効化し、InsightFlare を再デプロイすると関連分析機能が有効になります。
+    Analytics Engine を有効化し、Open Analytics を再デプロイすると関連分析機能が有効になります。
   analyticsEngineDisabledHint: Analytics Engine が有効化され Worker が再デプロイされるまで、Analytics Engine 設定はロックされます。
   analyticsEngineOpenCloudflare: Cloudflare Analytics Engine を開く
   analyticsEngineGuideTitle: Analytics Engine 認証情報を取得
@@ -2728,7 +2300,11 @@ systemSettings:
     - トークンに Account Analytics の読み取り権限を付与し、現在のアカウントにスコープします。
     - トークンをコピーし、ここに Account ID と API トークンを入力します。
   notificationEmailTitle: メール通知
-  notificationEmailDescription: レポート、アラート、テストメッセージで使用するメールサービスを設定します。
+  notificationEmailDescription: "レポート、アラート、テストメッセージは Every App ゲートウェイ経由でメール送信されます。"
+  emailGatewayReady: "通知メールは Every App ゲートウェイが送信します。"
+  emailGatewayNotReady: "Every App ゲートウェイにメール送信者がまだ設定されていません。運用者が EMAIL_FROM と
+    Email Sending を設定すると通知メールが送信されます。"
+  emailSenderLabel: "送信者"
   notificationEmailGuideTitle: Resend メール設定を取得
   notificationEmailGuideDescription: Resend 経由でシステムメールを送るには、検証済み送信ドメインと API キーを用意してください。
   notificationEmailGuideSteps:
@@ -2738,19 +2314,19 @@ systemSettings:
     - ここに送信者名、送信者メール、Reply-To、Resend API キーを入力します。
     - 設定を保存し、テストメールを送信して配信を確認します。
   retentionTitle: 運用データの保持期間
-  retentionDescription: タスク実行、タスクログ、通知メッセージの保持期間を設定します。変更は新しいレコードにのみ適用されます。
+  retentionDescription: タスク実行、タスクログ、通知メッセージ、詳細な分析データの保持期間を設定します。タスクと通知の変更は新しいレコードにのみ適用されます。新しい期間より古い詳細な分析データは、次回の日次実行で削除されます。
   scheduledTaskLogsDaysLabel: スケジュールタスクの実行とログ（日）
   notificationTestDaysLabel: テスト通知（日）
   notificationAttentionDaysLabel: 警告・重大通知（日）
   notificationDefaultDaysLabel: その他の通知（日）
+  analyticsDetailDaysLabel: 詳細な分析データ：ページビューとイベント（日数。時間ごとの集計は保持）
   retentionRangeHint: 1〜3650 の整数日を入力してください。
   retentionSave: 保持期間を保存
   retentionSaving: 保存中...
   retentionSaved: 保持期間を保存しました。
   retentionSaveFailed: 保持期間を保存できません。
   loginTurnstileTitle: ログイン Turnstile 保護
-  loginTurnstileDescription:
-    有効にすると、ログインページはバックグラウンドで Cloudflare Turnstile
+  loginTurnstileDescription: 有効にすると、ログインページはバックグラウンドで Cloudflare Turnstile
     Invisible 検証を実行し、サーバー側のサインイン処理で強制します。
   loginTurnstileEnabledLabel: ログイン保護を有効化
   loginTurnstileSiteKeyLabel: Site Key
@@ -2778,7 +2354,7 @@ systemSettings:
   loginTurnstileGuideSteps:
     - Cloudflare Dashboard を開き、Turnstile に移動します。
     - 新しいウィジェットを作成し、Invisible モードを選択します。
-    - 現在の InsightFlare ログインドメインを許可ホスト名に追加します。
+    - 現在の Open Analytics ログインドメインを許可ホスト名に追加します。
     - ウィジェット作成後に Site Key と Secret Key をコピーします。
     - ここに Site Key と Secret Key を入力し、検証テストを実行してから設定を保存します。
   enabledLabel: メール送信を有効化
@@ -2810,7 +2386,7 @@ systemSettings:
   loadFailed: メール設定を読み込めません。
 systemPerformance:
   title: システムパフォーマンス
-  subtitle: 既存の分析行から InsightFlare の収集、バッファリング、書き込みの健全性を監視します。
+  subtitle: 既存の分析行から Open Analytics の収集、バッファリング、書き込みの健全性を監視します。
   refresh: 更新
   loadFailed: システムパフォーマンスデータを読み込めません。
   noData: この期間にシステムパフォーマンスデータはありません。
@@ -2892,24 +2468,11 @@ systemPerformance:
   doDiagnosticSiteNextDueHidden: 非表示フォールバック
   doDiagnosticSiteNextDueTimeout: 訪問タイムアウト
   doDiagnosticSiteResponseMs: 応答時間
-  doDiagnosticThresholdsHint:
-    "しきい値：stale {stale}、timeout {timeout}、hardAged
+  doDiagnosticThresholdsHint: "しきい値：stale {stale}、timeout {timeout}、hardAged
     {hardAged}、stuck flush_attempts ≥ {stuck}"
   doDiagnosticHealthy: 異常なバッファ行は検出されませんでした。
-loginForm:
-  signingIn: サインイン中...
-  verifyingSecurity: セキュリティ検証中...
-  securityVerificationTitle: セキュリティ検証に失敗しました
-  securityVerificationFailed: セキュリティ検証に失敗しました。もう一度お試しください。
-  retrySecurityVerification: 検証を再試行
-  redirecting: リダイレクト中...
-  failed: サインインに失敗しました。もう一度お試しください。
-logoutAction:
-  pending: サインアウト中...
-  success: サインアウトしました。
-  failed: サインアウトできません。もう一度お試しください。
+loginForm: {}
+logoutAction: {}
 sidebarFooter:
   gateway: Every App に戻る
-teamEntry:
-  title: チームを選択
-  description: 複数のチームにアクセスできます。続行するチームを選択してください。
+teamEntry: {}

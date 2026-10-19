@@ -23,7 +23,7 @@ describe("channels query contract", () => {
 
     await expect(
       executeChannels(reader, {
-        context: siteQueryContext("site-1", "api-v1"),
+        context: siteQueryContext("site-1", "private-dashboard"),
         time,
         filters: { version: 1, root: null },
         limit: 20,

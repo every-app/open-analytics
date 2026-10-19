@@ -441,7 +441,7 @@ describe("admin notification handlers", () => {
 
   it("denies preview and manual run when the actor cannot manage the rule", async () => {
     getNotificationRule.mockResolvedValue(rule());
-    canManageTeam.mockResolvedValue(false);
+    canManageTeam.mockReturnValue(false);
 
     const preview = await handleNotificationRulePreviewAdmin(
       request("/api/private/admin/notification-rules/preview", {
@@ -465,7 +465,7 @@ describe("admin notification handlers", () => {
 
   it("previews and manually runs manageable rules", async () => {
     getNotificationRule.mockResolvedValue(rule());
-    canManageTeam.mockResolvedValue(true);
+    canManageTeam.mockReturnValue(true);
     canManageSite.mockResolvedValue(true);
 
     const preview = await handleNotificationRulePreviewAdmin(
@@ -500,7 +500,7 @@ describe("admin notification handlers", () => {
 
   it("previews site-less rules and marks failed manual runs as partial", async () => {
     getNotificationRule.mockResolvedValue({ ...rule(), siteId: null });
-    canManageTeam.mockResolvedValue(true);
+    canManageTeam.mockReturnValue(true);
     runNotificationRuleManually.mockResolvedValueOnce({
       summary: { emailFailed: 1 },
       messageCount: 1,
@@ -535,7 +535,7 @@ describe("admin notification handlers", () => {
 
   it("maps unmanaged rule sites to forbidden responses", async () => {
     getNotificationRule.mockResolvedValue(rule());
-    canManageTeam.mockResolvedValue(true);
+    canManageTeam.mockReturnValue(true);
     canManageSite.mockResolvedValue(false);
 
     const preview = await handleNotificationRulePreviewAdmin(
@@ -572,7 +572,7 @@ describe("admin notification handlers", () => {
   });
 
   it("lists notifications through team or user scoped paths", async () => {
-    canManageTeam.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    canManageTeam.mockReturnValueOnce(true).mockReturnValueOnce(false);
     const teamUrl = new URL(
       "https://edge.test/api/private/notifications?teamId=team-1&userId=user-2&siteId=site-1&type=report&severity=warning&unread=1&before=120.7&limit=200",
     );
@@ -885,8 +885,8 @@ describe("admin notification handlers", () => {
   });
 
   it("sends manual test notifications with permission checks", async () => {
-    canReadTeam.mockResolvedValue(true);
-    canManageTeam.mockResolvedValue(false);
+    canReadTeam.mockReturnValue(true);
+    canManageTeam.mockReturnValue(false);
 
     const self = await handleNotificationTestAdmin(
       request("/api/private/admin/notification-test", { teamId: "team-1" }),
@@ -899,7 +899,7 @@ describe("admin notification handlers", () => {
       }),
       {} as never,
     );
-    canManageTeam.mockResolvedValue(true);
+    canManageTeam.mockReturnValue(true);
     const otherUser = await handleNotificationTestAdmin(
       request("/api/private/admin/notification-test", {
         teamId: "team-1",
@@ -926,13 +926,13 @@ describe("admin notification handlers", () => {
       request("/api/private/admin/notification-test", {}),
       {} as never,
     );
-    canReadTeam.mockResolvedValueOnce(false);
+    canReadTeam.mockReturnValueOnce(false);
     const unreadableTeam = await handleNotificationTestAdmin(
       request("/api/private/admin/notification-test", { teamId: "team-1" }),
       {} as never,
     );
-    canReadTeam.mockResolvedValue(true);
-    canManageTeam.mockResolvedValue(true);
+    canReadTeam.mockReturnValue(true);
+    canManageTeam.mockReturnValue(true);
     createManualTestNotification.mockResolvedValueOnce({
       message: { id: "msg-test", deliveryStatus: "failed" },
       summary: { messagesCreated: 1 },

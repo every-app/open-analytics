@@ -20,7 +20,6 @@ import {
   update,
 } from "@/lib/db";
 import { schema } from "@/lib/db/schema";
-import { appNow } from "@/lib/edge/runtime/e2e-clock";
 import type { Env } from "@/lib/edge/types";
 import { clampString } from "@/lib/edge/utils";
 import { safeJsonStringify, safeParseRecord } from "@/lib/notifications/json";
@@ -101,7 +100,7 @@ function messageByIdQuery(
         identityPredicate,
         messageHasNotExpired(
           messages.columns.expiresAt,
-          Math.trunc(options.now ?? appNow() / 1000),
+          Math.trunc(options.now ?? Date.now() / 1000),
         ),
       );
   const matching = filter(messages, predicate);
@@ -311,7 +310,7 @@ export async function listNotificationMessagesForUser(
   input: ListNotificationMessagesInput & { userId: string },
 ): Promise<NotificationMessage[]> {
   const limit = Math.max(1, Math.min(100, Math.trunc(input.limit ?? 50)));
-  const now = Math.trunc(appNow() / 1000);
+  const now = Math.trunc(Date.now() / 1000);
   const rows = await createD1DatabaseClient(env.DB).all<MessageRow>(
     compileD1Query(
       createListQuery({
@@ -333,7 +332,7 @@ export async function listNotificationMessagesForTeam(
   input: ListNotificationMessagesInput & { teamId: string },
 ): Promise<NotificationMessage[]> {
   const limit = Math.max(1, Math.min(100, Math.trunc(input.limit ?? 50)));
-  const now = Math.trunc(appNow() / 1000);
+  const now = Math.trunc(Date.now() / 1000);
   const rows = await createD1DatabaseClient(env.DB).all<MessageRow>(
     compileD1Query(
       createListQuery({
@@ -364,7 +363,7 @@ export async function countUnreadAttentionMessages(
       isNull(messages.columns.archivedAt),
       messageHasNotExpired(
         messages.columns.expiresAt,
-        Math.trunc(appNow() / 1000),
+        Math.trunc(Date.now() / 1000),
       ),
     ),
   );

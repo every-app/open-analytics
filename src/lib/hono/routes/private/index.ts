@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 
+import { handleLinkMetadata } from "@/lib/edge/resources/link-metadata";
 import { requireSessionMiddleware } from "@/lib/hono/middleware/session";
 import type { AppEnv } from "@/lib/hono/types";
 
@@ -15,6 +16,7 @@ export const privateRoutes = new Hono<AppEnv>();
 privateRoutes.use("/*", requireSessionMiddleware());
 privateRoutes.route("/session", privateSessionRoutes);
 privateRoutes.route("/admin", privateAdminRoutes);
+privateRoutes.get("/link-metadata", (c) => handleLinkMetadata(c.req.raw));
 privateRoutes.route("/notifications", privateNotificationRoutes);
 privateRoutes.route("/realtime", privateRealtimeRoutes);
 privateRoutes.route("/saved-filters", privateSavedFilterRoutes);

@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createIsomorphicFn, createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 
 import { publicDashboardSiteId } from "@/lib/dashboard/client/request";
@@ -170,12 +170,7 @@ export const loadTeamNotificationsInitialData = createServerFn({
       rules: rules.map(serializeNotificationRule),
       sites,
       members,
-      emailConfigured: Boolean(
-        emailConfig?.enabled &&
-        emailConfig.provider === "resend" &&
-        emailConfig.fromEmail &&
-        emailConfig.resend.configured,
-      ),
+      emailConfigured: Boolean(emailConfig?.enabled),
       fetchedAt: Date.now(),
     };
   });
@@ -252,12 +247,21 @@ export const loadSystemPerformanceInitialData = createServerFn({
 export const loadDashboardSite = createServerFn({ method: "GET" })
   .validator((data: { siteSlug: string }) => data)
   .handler(({ data }) => getTeamSiteContext(data.siteSlug));
-export const loadShareSite = createServerFn({ method: "GET" })
-  .validator((data: { slug: string }) => data)
-  .handler(async ({ data }) => {
+/**
+ * The shared site behind a public link. Not a server function: an anonymous
+ * viewer can't reach /_serverFn through the gateway, so the browser reads the
+ * public share API and the server answers in-process.
+ */
+export const loadShareSite = createIsomorphicFn()
+  .server(async (slug: string) => {
+    const { readShareSite } = await import("@/lib/dashboard/share-site-server");
+    const site = await readShareSite(slug);
+    return site ? { site, publicSiteId: publicDashboardSiteId(slug) } : null;
+  })
+  .client(async (slug: string) => {
     try {
-      const site = await fetchPublicSite(data.slug);
-      return { site, publicSiteId: publicDashboardSiteId(data.slug) };
+      const site = await fetchPublicSite(slug);
+      return { site, publicSiteId: publicDashboardSiteId(slug) };
     } catch {
       return null;
     }

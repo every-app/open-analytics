@@ -1,5 +1,4 @@
 import type { queryOverviewAggregate } from "@/lib/edge/analytics/providers/d1/internal/overview";
-import type { NotificationEmailConfig } from "@/lib/notifications/email-config";
 
 import type {
   MetricValueResult,
@@ -30,7 +29,6 @@ export interface NotificationInvocationCache {
   previousMetrics: Map<string, Promise<MetricValueResult>>;
   cumulativeMetrics: Map<string, Promise<number>>;
   lastSeenAt: Map<string, Promise<number | null>>;
-  emailConfig: Promise<NotificationEmailConfig> | null;
 }
 
 export function createNotificationInvocationCache(): NotificationInvocationCache {
@@ -42,7 +40,6 @@ export function createNotificationInvocationCache(): NotificationInvocationCache
     previousMetrics: new Map(),
     cumulativeMetrics: new Map(),
     lastSeenAt: new Map(),
-    emailConfig: null,
   };
 }
 

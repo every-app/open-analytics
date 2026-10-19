@@ -198,11 +198,7 @@ describe("query contract boundary coverage", () => {
       ).root,
     ).toMatchObject({ operator: "eq" });
     expect(filterExpressionFingerprint(source.root!)).toContain("page.path");
-    for (const audience of [
-      "private-dashboard",
-      "public-share",
-      "api-v1",
-    ] as const) {
+    for (const audience of ["private-dashboard", "public-share"] as const) {
       expect(
         parseFilterUrlForAudience(audience, "filter[page.path]=/docs"),
       ).toMatchObject({ version: 1 });
@@ -443,7 +439,7 @@ describe("query contract boundary coverage", () => {
   });
 
   it("handles custom typed fields and rejects invalid canonical values", () => {
-    const all = new Set(["private-dashboard", "api-v1"] as const);
+    const all = new Set(["private-dashboard"] as const);
     const definition = (
       id: string,
       valueKind: FilterFieldDefinition["valueKind"],
@@ -777,7 +773,7 @@ describe("query contract boundary coverage", () => {
   it("rejects non-integral time ranges and invalid timezone fallbacks", () => {
     expect(() => createTimeRange(0.5, 2)).toThrow(/safe integer/i);
     expect(normalizeReportingTimeZone("bad/zone", "also/bad")).toBe("UTC");
-    expect(new FilterAdapterError("api-v1", "invalid").message).toBe(
+    expect(new FilterAdapterError("private-dashboard", "invalid").message).toBe(
       "Invalid filter input.",
     );
   });

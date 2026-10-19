@@ -3,11 +3,6 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { analyticsOperationRegistry } from "@/lib/edge/analytics/application/operation-registry";
-import {
-  API_V1_QUERY_OPERATION_MAP,
-  canonicalQueryOperationFor,
-} from "@/lib/edge/analytics/application/query-operation-map";
 const projectRoot = process.cwd();
 const srcRoot = path.join(projectRoot, "src");
 const edgeRoot = path.join(srcRoot, "lib", "edge");
@@ -35,7 +30,6 @@ describe("analytics architecture", () => {
       "contract/index.ts",
       "contract/operations/index.ts",
       "application/service.ts",
-      "application/operation-registry.ts",
       "application/provider-registry.ts",
       "application/query-validation.ts",
       "application/planner.ts",
@@ -44,13 +38,10 @@ describe("analytics architecture", () => {
       "application/errors.ts",
       "providers/d1/index.ts",
       "providers/realtime/index.ts",
-      "providers/mock/index.ts",
-      "interfaces/mock.ts",
       "interfaces/dashboard/private.ts",
       "interfaces/dashboard/public.ts",
       "interfaces/dashboard/protocol/overview.ts",
       "composition/site-realtime-providers.ts",
-      "composition/mock-runtime.ts",
       "composition/comparison-query-providers.ts",
       "composition/site-runtime.ts",
       "composition/team-runtime.ts",
@@ -154,56 +145,9 @@ describe("analytics architecture", () => {
         /create(?:TypedQuery(?:Result)?|SsrTeamDashboard)ProviderRegistry|createReaderProviderRegistry|createTeamDashboardQueryRuntime|new AnalyticsProviderRegistry/u,
       );
     }
-  });
-
-  it("keeps API v1 consumers on the query executor boundary", () => {
-    for (const file of productionFiles("src/lib/api-v1")) {
-      const content = readFileSync(file, "utf8");
-      expect(content, `${file} imports the provider registry`).not.toContain(
-        "AnalyticsProviderRegistry",
-      );
-      expect(
-        content,
-        `${file} imports a concrete analytics provider`,
-      ).not.toMatch(/analytics\/providers(?:\/|["'])/u);
-    }
-    for (const file of productionFiles("src/lib/api-v1")) {
-      expect(readFileSync(file, "utf8")).not.toContain(
-        "createCallbackProviderRegistry",
-      );
-    }
-    expect(source("src/lib/hono/routes/v1/index.ts")).toContain(
-      "registerV1SiteAnalyticsRoutes",
-    );
-    expect(source("src/lib/hono/routes/v1/index.ts")).toContain(
-      "registerV1TeamAnalyticsRoutes",
-    );
-    expect(
-      existsSync(
-        path.join(analyticsRoot, "composition", "api-v1-provider-registry.ts"),
-      ),
-    ).toBe(false);
-    const queryApplication = source(
-      "src/lib/api-v1/analytics/query-application.ts",
-    );
-    expect(queryApplication).toContain("canonicalQueryOperationFor");
-    expect(queryApplication).toContain("invocation.executor.execute");
-    expect(queryApplication).not.toContain("AnalyticsProviderRegistry");
     expect(source("src/lib/dashboard/route-data.ts")).toContain(
       "createTeamDashboardQueryRuntime",
     );
-    expect(source("src/lib/edge/analytics/interfaces/mock.ts")).toContain(
-      "createMockAnalyticsQueryRuntime",
-    );
-  });
-
-  it("maps every public API v1 operation to the canonical query vocabulary", () => {
-    for (const descriptor of analyticsOperationRegistry) {
-      expect(API_V1_QUERY_OPERATION_MAP[descriptor.id]).toBeDefined();
-      expect(canonicalQueryOperationFor(descriptor.id)).toBe(
-        API_V1_QUERY_OPERATION_MAP[descriptor.id],
-      );
-    }
   });
 
   it("does not allow legacy query module imports", () => {
@@ -239,7 +183,6 @@ describe("analytics architecture", () => {
 
   it("keeps filter compilation behind the canonical application and dataset layers", () => {
     const boundaryFiles = [
-      ...productionFiles("src/lib/api-v1"),
       ...productionFiles("src/lib/hono/routes"),
       ...productionFiles("src/lib/edge/analytics/interfaces"),
     ];
@@ -339,9 +282,7 @@ describe("analytics architecture", () => {
     expect(registry).toMatch(/Map<\s*QueryOperation/u);
   });
 
-  it("routes API v1 queries through complete site and team runtimes", () => {
-    const siteRoutes = source("src/lib/hono/routes/v1/site-analytics.ts");
-    const teamRoutes = source("src/lib/hono/routes/v1/team-analytics.ts");
+  it("builds edge site and team runtimes from complete provider registries", () => {
     const edgeRuntime = source(
       "src/lib/edge/analytics/composition/edge-runtime.ts",
     );
@@ -351,32 +292,11 @@ describe("analytics architecture", () => {
     const teamRuntime = source(
       "src/lib/edge/analytics/composition/team-runtime.ts",
     );
-    expect(siteRoutes).toContain("createEdgeSiteAnalyticsRuntime");
-    expect(teamRoutes).toContain("createEdgeTeamAnalyticsRuntime");
     expect(edgeRuntime).toContain("createD1SiteProviderRegistry");
     expect(edgeRuntime).toContain("registerSiteRealtimeProviders");
     expect(edgeRuntime).toContain("registerComparisonQueryProviders");
     expect(siteRuntime).not.toMatch(/\bD1[A-Za-z]*Options\b/u);
     expect(teamRuntime).not.toMatch(/\bD1[A-Za-z]*Options\b/u);
-    for (const content of [siteRoutes, teamRoutes]) {
-      expect(content).not.toContain("providerRegistry");
-      expect(content).not.toContain("AnalyticsProviderRegistry");
-      expect(content).not.toContain("createApiV1ProviderRegistry");
-      expect(content).not.toContain("createComparisonRuntime");
-      expect(content).not.toMatch(/analytics\/providers(?:\/|["'])/u);
-      expect(content).not.toContain("readSite");
-      expect(content).not.toContain("readTeam");
-    }
-  });
-
-  it("never selects canonical providers from API v1 audience", () => {
-    const composition = productionFiles("src/lib/edge/analytics/composition")
-      .map((file) => readFileSync(file, "utf8"))
-      .join("\n");
-    expect(composition).not.toMatch(
-      /audience\s*===\s*["']api-v1["'][\s\S]{0,240}(?:provider|registry)|(?:provider|registry)[\s\S]{0,240}audience\s*===\s*["']api-v1["']/u,
-    );
-    expect(composition).not.toContain("queryMode");
   });
 
   it("keeps the D1 provider free of application policy context", () => {
@@ -424,10 +344,7 @@ describe("analytics architecture", () => {
   it("runs analytics-specific runtime boundary rules in the architecture check", () => {
     const checker = source("scripts/check-architecture.ts");
     for (const rule of [
-      "analytics-provider-audience-selection",
       "analytics-untyped-query-variant",
-      "api-v1-provider-registry",
-      "api-v1-local-provider-selection",
       "analytics-interface-local-provider-registry",
       "analytics-interface-concrete-provider",
       "canonical-operation-map-missing-coverage-check",
@@ -451,19 +368,16 @@ describe("analytics architecture", () => {
       /readonly\s*\[\s*key\s*:\s*string\s*\]\s*:\s*unknown/u,
     );
 
-    for (const directory of [
-      "src/lib/api-v1",
+    for (const file of productionFiles(
       "src/lib/edge/analytics/interfaces/dashboard",
-    ]) {
-      for (const file of productionFiles(directory)) {
-        const content = readFileSync(file, "utf8");
-        expect(
-          content,
-          `${file} imports a Goal/Funnel D1 repository`,
-        ).not.toMatch(
-          /(?:composition\/d1\/(?:goals|funnels)|providers\/d1\/(?:internal|resources)\/(?:goals|funnels))/u,
-        );
-      }
+    )) {
+      const content = readFileSync(file, "utf8");
+      expect(
+        content,
+        `${file} imports a Goal/Funnel D1 repository`,
+      ).not.toMatch(
+        /(?:composition\/d1\/(?:goals|funnels)|providers\/d1\/(?:internal|resources)\/(?:goals|funnels))/u,
+      );
     }
   });
 

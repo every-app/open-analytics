@@ -52,7 +52,6 @@ export interface InvocationPerformance {
   doAlarmSets?: number;
   doAlarmDeletes?: number;
   kvOperations?: number;
-  r2Operations?: number;
   doCalls?: number;
   externalFetches?: number;
   failedExternalFetches?: number;
@@ -83,7 +82,6 @@ export type InvocationPerformanceCounter =
   | "doAlarmSets"
   | "doAlarmDeletes"
   | "kvOperations"
-  | "r2Operations"
   | "doCalls"
   | "externalFetches"
   | "failedExternalFetches";

@@ -6,7 +6,6 @@ import {
   limit,
   param,
 } from "@/lib/db";
-import { appNow } from "@/lib/edge/runtime/e2e-clock";
 import type {
   ScheduledTaskContext,
   ScheduledTaskOutcome,
@@ -28,10 +27,7 @@ import {
   type NotificationRuleEvaluationResult,
 } from "./evaluator";
 import { createNotificationMessage } from "./message-store";
-import {
-  createNotificationInvocationCache,
-  type NotificationInvocationCache,
-} from "./notification-cache";
+import { createNotificationInvocationCache } from "./notification-cache";
 import {
   normalizeNotificationPreferences,
   shouldCreateUnreadAttention,
@@ -125,11 +121,9 @@ async function createAndDeliverMessages(input: {
   draft: NotificationMessageDraft;
   triggeredAt: number;
   summary: NotificationTaskSummary;
-  cache: NotificationInvocationCache;
   retention: ScheduledTaskRetentionConfig;
 }): Promise<NotificationMessage[]> {
-  const { env, context, rule, draft, triggeredAt, summary, cache, retention } =
-    input;
+  const { env, context, rule, draft, triggeredAt, summary, retention } = input;
   const recipients = await resolveNotificationRecipients(env, rule);
   if (recipients.length === 0) {
     summary.rulesSkipped += 1;
@@ -204,8 +198,6 @@ async function createAndDeliverMessages(input: {
     );
     const delivered = await deliverNotificationMessage(env, message, user, {
       logger: context.logger,
-      fetchImpl: context.externalFetch,
-      cache,
     });
     collectDeliveryStats(summary, delivered);
     if (delivered) messages.push(delivered);
@@ -216,7 +208,7 @@ export async function runNotificationTick(
   context: ScheduledTaskContext,
 ): Promise<ScheduledTaskOutcome> {
   const { env, logger, startedAt } = context;
-  const now = Math.floor(appNow() / 1000);
+  const now = Math.floor(Date.now() / 1000);
   const summary = emptySummary(startedAt);
   const cache = createNotificationInvocationCache();
   const retention = context.retention ?? DEFAULT_RETENTION_CONFIG;
@@ -235,7 +227,7 @@ export async function runNotificationTick(
   );
 
   for (const rule of rules) {
-    const checkedAt = Math.floor(appNow() / 1000);
+    const checkedAt = Math.floor(Date.now() / 1000);
     try {
       await logger.info(
         "notification_rule_checked",
@@ -294,7 +286,6 @@ export async function runNotificationTick(
         draft: evaluation.message,
         triggeredAt: checkedAt,
         summary,
-        cache,
         retention,
       });
 
@@ -335,7 +326,7 @@ export async function createNotificationRulePreview(
   return evaluateNotificationRule(
     env,
     rule,
-    Math.floor(appNow() / 1000),
+    Math.floor(Date.now() / 1000),
     createNotificationInvocationCache(),
   );
 }
@@ -350,7 +341,7 @@ export async function runNotificationRuleManually(input: {
   summary: NotificationTaskSummary;
 }> {
   const { env, context, rule } = input;
-  const checkedAt = Math.floor(appNow() / 1000);
+  const checkedAt = Math.floor(Date.now() / 1000);
   const summary = emptySummary(context.startedAt);
   const cache = createNotificationInvocationCache();
   const retention = context.retention ?? DEFAULT_RETENTION_CONFIG;
@@ -415,7 +406,6 @@ export async function runNotificationRuleManually(input: {
     draft: evaluation.message,
     triggeredAt: checkedAt,
     summary,
-    cache,
     retention,
   });
   await applyNotificationRuleManualRunResult(env, {
@@ -445,9 +435,8 @@ export async function createManualTestNotification(input: {
 }> {
   const { env, context, teamId, siteId, userId } = input;
   const summary = emptySummary(context.startedAt);
-  const cache = createNotificationInvocationCache();
   const retention = context.retention ?? DEFAULT_RETENTION_CONFIG;
-  const now = Math.floor(appNow() / 1000);
+  const now = Math.floor(Date.now() / 1000);
   const users = notificationRecipientRows();
   const matchingUser = filter(users, eq(users.columns.id, param(userId)));
   const userQuery = limit(matchingUser, 1);
@@ -472,10 +461,10 @@ export async function createManualTestNotification(input: {
       type: "test",
       severity: "info",
       requiresAttention: false,
-      title: "InsightFlare notification test",
-      summary: "This is a test notification from InsightFlare.",
+      title: "Open Analytics notification test",
+      summary: "This is a test notification from Open Analytics.",
       bodyText:
-        "This is a test notification from InsightFlare. If email is configured and enabled, this message also verifies Resend delivery.",
+        "This is a test notification from Open Analytics. If email is set up on the Every App gateway, this message also checks email delivery.",
       data: { source: "manual_test" },
     },
     locale,
@@ -507,8 +496,6 @@ export async function createManualTestNotification(input: {
   );
   const delivered = await deliverNotificationMessage(env, message, user, {
     logger: context.logger,
-    fetchImpl: context.externalFetch,
-    cache,
   });
   collectDeliveryStats(summary, delivered);
   summary.durationMs = Date.now() - context.startedAt;

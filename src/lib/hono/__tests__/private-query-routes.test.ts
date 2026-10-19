@@ -21,6 +21,9 @@ vi.mock("@/lib/edge/analytics/composition/dashboard-cache", () => ({
     ) => loader(),
   ),
 }));
+// Site access imports the gateway SDK through the viewer, which can't load
+// under Node.
+vi.mock("@/lib/edge/auth/viewer", () => ({ resolveViewer: vi.fn() }));
 vi.mock("@/lib/edge/auth/site-access", async (importOriginal) => {
   const actual = await importOriginal<typeof SiteAccessModule>();
   return {
@@ -61,10 +64,9 @@ const ctx = {
 } as unknown as ExecutionContext;
 const session = {
   userId: "user-1",
-  username: "user",
-  displayName: "User",
+  email: "user@example.com",
+  teamId: "team-1",
   systemRole: "user" as const,
-  exp: 9999999999,
 };
 function request(path: string, init?: RequestInit): Request {
   return new Request(`https://app.test${path}`, init);

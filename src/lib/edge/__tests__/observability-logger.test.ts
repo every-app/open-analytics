@@ -490,7 +490,7 @@ describe("edge observability logger", () => {
     });
   });
 
-  it("instruments D1 batches, storage bindings, DO RPC, and external fetches", async () => {
+  it("instruments D1 batches, KV, DO RPC, and external fetches", async () => {
     const statement = {
       bind: vi.fn(),
       all: vi.fn(),
@@ -517,15 +517,6 @@ describe("edge observability logger", () => {
       delete: vi.fn(),
       list: vi.fn(),
     };
-    const bucket: R2Bucket = {
-      get: vi.fn().mockResolvedValue(null),
-      head: vi.fn(),
-      put: vi.fn(),
-      delete: vi.fn(),
-      list: vi.fn(),
-      createMultipartUpload: vi.fn(),
-      resumeMultipartUpload: vi.fn(),
-    };
     const stub = {
       id: {} as DurableObjectId,
       fetch: vi.fn().mockResolvedValue(new Response(null, { status: 204 })),
@@ -543,7 +534,6 @@ describe("edge observability logger", () => {
       DB: database,
       INGEST_DO: namespace,
       SITE_SETTINGS_KV: kv,
-      ARCHIVE_BUCKET: bucket,
     };
     const logger = createInvocationLogger({
       source: "worker",
@@ -554,7 +544,6 @@ describe("edge observability logger", () => {
     await instrumented.DB.batch([instrumented.DB.prepare("UPDATE visits")]);
     await instrumented.DB.exec("DELETE FROM visits WHERE expired = 1");
     await instrumented.SITE_SETTINGS_KV?.get("settings");
-    await instrumented.ARCHIVE_BUCKET?.get("archive");
     await instrumented.INGEST_DO.get({} as DurableObjectId).fetch(
       "https://ingest.internal/active",
     );
@@ -567,7 +556,6 @@ describe("edge observability logger", () => {
         d1Statements: 2,
         d1RowsWritten: 2,
         kvOperations: 1,
-        r2Operations: 1,
         doCalls: 1,
         externalFetches: 1,
         failedExternalFetches: 1,
@@ -575,7 +563,6 @@ describe("edge observability logger", () => {
           "d1.batch": expect.objectContaining({ count: 1 }),
           "d1.exec": expect.objectContaining({ count: 1 }),
           "kv.get": expect.objectContaining({ count: 1 }),
-          "r2.get": expect.objectContaining({ count: 1 }),
           "do.fetch": expect.objectContaining({ count: 1 }),
           "external_fetch.test": expect.objectContaining({ count: 1 }),
         }),

@@ -1,18 +1,8 @@
+// The purpose strings feed key derivation: changing one rotates every value
+// derived from it (visitor salts, collect tokens), so they keep their names.
 export const SECRET_PURPOSES = {
-  accountActionTokenHash: "insightflare:account-action-token-hash:v1",
-  dashboardSession: "insightflare:dashboard-session:v1",
-  apiKeyHash: "insightflare:api-key-hash:v1",
   visitorDailySalt: "insightflare:visitor-daily-salt:v1",
-  notificationSecretEncryption:
-    "insightflare:notification-secret-encryption:v1",
-  loginTurnstileSecretEncryption:
-    "insightflare:login-turnstile-secret-encryption:v1",
-  analyticsEngineSecretEncryption:
-    "insightflare:analytics-engine-secret-encryption:v1",
-  legacyBotAnalyticsSecretEncryption:
-    "insightflare:bot-analytics-secret-encryption:v1",
   collectTokenSigning: "insightflare:collect-token-signing:v1",
-  teamInviteTokenEncryption: "insightflare:team-invite-token-encryption:v1",
 } as const;
 
 export interface SecretSource {
@@ -85,31 +75,6 @@ async function cachedDerivedSecret(
   const derived = await deriveSecret(root, purpose);
   derivedSecretCache.set(cacheKey, derived);
   return derived;
-}
-
-export async function dashboardSessionSecret(
-  source: SecretSource,
-): Promise<string | null> {
-  const root = rootSecret(source);
-  return root
-    ? cachedDerivedSecret(root, SECRET_PURPOSES.dashboardSession)
-    : null;
-}
-
-export async function apiKeyHashSecret(
-  source: SecretSource,
-): Promise<string | null> {
-  const root = rootSecret(source);
-  return root ? cachedDerivedSecret(root, SECRET_PURPOSES.apiKeyHash) : null;
-}
-
-export async function accountActionTokenHashSecret(
-  source: SecretSource,
-): Promise<string | null> {
-  const root = rootSecret(source);
-  return root
-    ? cachedDerivedSecret(root, SECRET_PURPOSES.accountActionTokenHash)
-    : null;
 }
 
 export async function visitorDailySaltSecret(

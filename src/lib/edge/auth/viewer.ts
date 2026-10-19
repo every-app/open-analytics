@@ -42,9 +42,9 @@ const mirrored = new Map<string, { key: string; at: number }>();
 const viewers = new WeakMap<Request, Promise<Viewer | null>>();
 
 /**
- * Mirrors the person and their organization's workspace, so rows that name
- * them (notifications, saved filters, rules) can join on them. The
- * organization and role always come from the signed identity, never from the
+ * Mirrors the person, their organization's workspace and their membership in
+ * it, so rows that name them (notifications, saved filters, rules) can join
+ * on them. Access always comes from the signed identity, never from the
  * mirror: someone the gateway removes can't reach the app again.
  */
 async function mirror(env: Env, viewer: Viewer): Promise<void> {
@@ -68,19 +68,26 @@ async function mirror(env: Env, viewer: Viewer): Promise<void> {
         insert(schema.users, {
           id: viewer.userId,
           email: viewer.email,
-          org_role: viewer.role,
-          last_seen_at: unixepoch(),
           created_at: unixepoch(),
           updated_at: unixepoch(),
         }),
         ["id"],
-        {
-          email: viewer.email,
-          org_role: viewer.role,
-          last_seen_at: unixepoch(),
-        },
+        { email: viewer.email },
       ),
       { tag: "viewer.users.mirror" },
+    ),
+    compileD1Mutation(
+      onConflictDoUpdate(
+        insert(schema.members, {
+          team_id: viewer.teamId,
+          user_id: viewer.userId,
+          role: viewer.role,
+          last_seen_at: unixepoch(),
+        }),
+        ["team_id", "user_id"],
+        { role: viewer.role, last_seen_at: unixepoch() },
+      ),
+      { tag: "viewer.members.mirror" },
     ),
   ]);
   mirrored.set(viewer.userId, { key, at: Date.now() });

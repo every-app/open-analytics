@@ -351,8 +351,6 @@ CREATE TABLE users (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL,
   name TEXT,
-  org_role TEXT NOT NULL DEFAULT 'member',
-  last_seen_at INTEGER NOT NULL DEFAULT (unixepoch()),
   timezone TEXT NOT NULL DEFAULT '',
   notification_preferences_json TEXT NOT NULL DEFAULT '{}',
   preferred_locale TEXT NOT NULL DEFAULT '',
@@ -487,3 +485,46 @@ CREATE TABLE widgets (
 );
 
 CREATE INDEX idx_widgets_site_type ON widgets(site_id, type);
+
+-- Who in each gateway organization has opened the app, and the role the
+-- gateway gave them then (viewer.ts). Access always comes from the signed
+-- identity; this mirror only lets notifications reach members by role.
+CREATE TABLE members (
+  team_id TEXT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL DEFAULT 'member',
+  last_seen_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  PRIMARY KEY (team_id, user_id)
+);
+
+-- Requests /collect refused (custom block rules, bots, hosting networks), for
+-- the admins' Request Observation page. Kept 30 days; never the full IP.
+CREATE TABLE request_observations (
+  id INTEGER PRIMARY KEY,
+  site_id TEXT NOT NULL,
+  received_at INTEGER NOT NULL,
+  category TEXT NOT NULL,
+  reasons TEXT NOT NULL DEFAULT '',
+  kind TEXT NOT NULL DEFAULT '',
+  country TEXT NOT NULL DEFAULT '',
+  region TEXT NOT NULL DEFAULT '',
+  city TEXT NOT NULL DEFAULT '',
+  asn INTEGER,
+  as_organization TEXT NOT NULL DEFAULT '',
+  ip_prefix TEXT NOT NULL DEFAULT '',
+  user_agent TEXT NOT NULL DEFAULT '',
+  hostname TEXT NOT NULL DEFAULT '',
+  pathname TEXT NOT NULL DEFAULT '',
+  origin TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX idx_request_observations_received_at
+  ON request_observations(received_at);
+
+-- The internal tasks the 30-minute cron dispatches (src/lib/edge/scheduled-tasks).
+INSERT INTO scheduled_task_schedule_state (task_key, next_run_at)
+VALUES
+  ('visit_hourly_rollup', 0),
+  ('notification_tick', 0),
+  ('database_maintenance', 0),
+  ('analytics_retention', 0);

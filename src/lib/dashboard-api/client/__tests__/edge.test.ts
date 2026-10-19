@@ -2,13 +2,9 @@ import { readFileSync } from "node:fs";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getSessionToken } from "@/lib/auth";
 import { dashboardFilterDocumentFromPresentation } from "@/lib/dashboard/filter-state";
 import {
-  addAdminMember,
   createAdminSite,
-  createAdminTeam,
-  createAdminUser,
   createNotificationRule,
   deleteNotificationRule,
   fetchAdminMe,
@@ -16,8 +12,6 @@ import {
   fetchAdminScriptSnippet,
   fetchAdminSiteConfig,
   fetchAdminSites,
-  fetchAdminTeams,
-  fetchAdminUsers,
   fetchNotificationEmailConfig,
   fetchNotificationEmailPreview,
   fetchNotificationMessages,
@@ -28,32 +22,20 @@ import {
   fetchPublicReferrers,
   fetchPublicSite,
   fetchPublicTrend,
-  loginAdminAccount,
   markAllNotificationMessagesRead,
   markNotificationMessageRead,
   previewNotificationRule,
-  removeAdminMember,
   removeAdminSite,
-  removeAdminTeam,
-  removeAdminUser,
   runNotificationRuleNow,
   sendNotificationTest,
-  transferAdminTeamOwner,
-  updateAdminMemberRole,
   updateAdminSite,
-  updateAdminTeam,
-  updateAdminUser,
   updateMyProfile,
   updateNotificationPreferences,
   updateNotificationRule,
   upsertAdminSiteConfig,
 } from "@/lib/dashboard-api/client/edge";
 import { requestHeader } from "@/lib/request-headers";
-vi.mock("@/lib/auth", () => ({
-  getSessionToken: vi.fn(),
-}));
 vi.mock("@/lib/request-headers", () => ({ requestHeader: vi.fn() }));
-const getSessionTokenMock = vi.mocked(getSessionToken);
 const requestHeaderMock = vi.mocked(requestHeader);
 function fetchMock() {
   return vi.mocked(fetch);
@@ -66,10 +48,6 @@ function jsonResponse(data: unknown, status = 200): Response {
 }
 describe("edge client request wrappers", () => {
   beforeEach(() => {
-    vi.stubEnv("VITE_DEMO_MODE", "");
-    getSessionTokenMock.mockReset();
-    getSessionTokenMock.mockResolvedValue("session-token");
-    requestHeaderMock.mockReset();
     requestHeaderMock.mockResolvedValue(null);
     vi.stubGlobal(
       "fetch",
@@ -84,7 +62,7 @@ describe("edge client request wrappers", () => {
               siteId: "site-1",
               removed: true,
               role: "member",
-              user: { id: "user-1", username: "admin" },
+              user: { id: "user-1" },
               teams: [{ id: "team-1" }],
             },
             interval: "day",
@@ -95,12 +73,11 @@ describe("edge client request wrappers", () => {
   });
 
   afterEach(() => {
-    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
-  it("builds public requests without session authorization", async () => {
+  it("builds public requests without authorization headers", async () => {
     await fetchPublicOverview("public site", { from: 10, to: 20 });
 
     const [url, init] = lastFetchCall();
@@ -112,7 +89,6 @@ describe("edge client request wrappers", () => {
     expect(init.method).toBe("GET");
     expect(init.cache).toBe("no-store");
     expect(headers.has("authorization")).toBe(false);
-    expect(getSessionTokenMock).not.toHaveBeenCalled();
   });
 
   it("unwraps public site metadata and rejects missing public sites", async () => {
@@ -154,16 +130,13 @@ describe("edge client request wrappers", () => {
     );
   });
 
-  it("adds session authorization for private GET requests and serializes filters", async () => {
-    await fetchAdminTeams("user-1");
+  it("builds private and public GET request URLs", async () => {
+    await fetchAdminSites("team-1");
 
-    const [firstUrl, init] = lastFetchCall();
-    let url = firstUrl;
-    const headers = init.headers as Headers;
+    let [url] = lastFetchCall();
     expect(url).toBe(
-      "http://127.0.0.1:8787/api/private/admin/teams?userId=user-1",
+      "http://127.0.0.1:8787/api/private/admin/sites?teamId=team-1",
     );
-    expect(headers.get("authorization")).toBe("Bearer session-token");
 
     await fetchPublicTrend("slug", { from: 1, to: 2 });
     [url] = lastFetchCall();
@@ -246,169 +219,70 @@ describe("edge client request wrappers", () => {
     expect(params.has("eventPayloadFilters")).toBe(false);
   });
 
-  it("omits optional query params when they are not provided", async () => {
-    await fetchAdminTeams();
-
-    const [url] = lastFetchCall();
-
-    expect(url).toBe("http://127.0.0.1:8787/api/private/admin/teams");
-  });
-
   it("serializes POST and PATCH request bodies for admin wrappers", async () => {
-    await createAdminTeam({ name: "Team", slug: "team" });
-
-    let [url, init] = lastFetchCall();
-    const headers = init.headers as Headers;
-    expect(url).toBe("http://127.0.0.1:8787/api/private/admin/teams");
-    expect(init.method).toBe("POST");
-    expect(headers.get("content-type")).toBe("application/json");
-    expect(init.body).toBe(JSON.stringify({ name: "Team", slug: "team" }));
-
-    await updateAdminTeam({ teamId: "team-1", name: "Renamed" });
-    [url, init] = lastFetchCall();
-    expect(url).toBe("http://127.0.0.1:8787/api/private/admin/teams");
-    expect(init.method).toBe("PATCH");
-    expect(init.body).toBe(
-      JSON.stringify({ teamId: "team-1", name: "Renamed" }),
-    );
-
-    await removeAdminTeam({ teamId: "team-1" });
-    [, init] = lastFetchCall();
-    expect(init.body).toBe(
-      JSON.stringify({ teamId: "team-1", intent: "remove" }),
-    );
-
-    await updateAdminMemberRole({
-      teamId: "team-1",
-      userId: "user-1",
-      role: "member",
-    });
-    [, init] = lastFetchCall();
-    expect(init.body).toBe(
-      JSON.stringify({
-        teamId: "team-1",
-        userId: "user-1",
-        role: "member",
-        intent: "update_role",
-      }),
-    );
-  });
-
-  it("serializes remaining admin mutation wrapper bodies", async () => {
-    await loginAdminAccount({ username: "admin", password: "secret" });
-
-    let [url, init] = lastFetchCall();
-    expect(url).toBe("http://127.0.0.1:8787/api/public/session");
-    expect(init.method).toBe("POST");
-    expect(init.body).toBe(
-      JSON.stringify({ username: "admin", password: "secret" }),
-    );
-
-    await updateMyProfile({
-      username: "admin2",
-      email: "admin2@example.test",
-      currentPassword: "old-secret",
-      password: "new-secret",
-      timeZone: "Asia/Shanghai",
-      preferredLocale: "zh",
-    });
-    [url, init] = lastFetchCall();
-    expect(url).toBe("http://127.0.0.1:8787/api/private/admin/profile");
-    expect(init.method).toBe("POST");
-    expect(init.body).toBe(
-      JSON.stringify({
-        username: "admin2",
-        email: "admin2@example.test",
-        currentPassword: "old-secret",
-        password: "new-secret",
-        timeZone: "Asia/Shanghai",
-        preferredLocale: "zh",
-      }),
-    );
-
-    await transferAdminTeamOwner({
-      teamId: "team-1",
-      newOwnerUserId: "user-2",
-    });
-    [, init] = lastFetchCall();
-    expect(init.method).toBe("PATCH");
-    expect(init.body).toBe(
-      JSON.stringify({
-        teamId: "team-1",
-        newOwnerUserId: "user-2",
-        intent: "transfer_owner",
-      }),
-    );
-
-    await removeAdminSite({ siteId: "site-1" });
-    [, init] = lastFetchCall();
-    expect(init.body).toBe(
-      JSON.stringify({ siteId: "site-1", intent: "remove" }),
-    );
-
-    await removeAdminUser({ userId: "user-1" });
-    [, init] = lastFetchCall();
-    expect(init.body).toBe(
-      JSON.stringify({ userId: "user-1", intent: "remove" }),
-    );
-
-    await removeAdminMember({ teamId: "team-1", userId: "user-1" });
-    [, init] = lastFetchCall();
-    expect(init.body).toBe(
-      JSON.stringify({ teamId: "team-1", userId: "user-1" }),
-    );
-  });
-
-  it("unwraps data for the remaining admin wrappers", async () => {
-    await fetchAdminSites("team-1");
     await createAdminSite({
       teamId: "team-1",
       name: "Docs",
       domain: "docs.example.test",
-      publicEnabled: true,
     });
-    await updateAdminSite({ siteId: "site-1", name: "Docs" });
+
+    let [url, init] = lastFetchCall();
+    const headers = init.headers as Headers;
+    expect(url).toBe("http://127.0.0.1:8787/api/private/admin/sites");
+    expect(init.method).toBe("POST");
+    expect(headers.get("content-type")).toBe("application/json");
+    expect(init.body).toBe(
+      JSON.stringify({
+        teamId: "team-1",
+        name: "Docs",
+        domain: "docs.example.test",
+      }),
+    );
+
+    await updateAdminSite({ siteId: "site-1", name: "Renamed" });
+    [, init] = lastFetchCall();
+    expect(init.method).toBe("PATCH");
+    expect(init.body).toBe(
+      JSON.stringify({ siteId: "site-1", name: "Renamed" }),
+    );
+
     await removeAdminSite({ siteId: "site-1" });
+    [, init] = lastFetchCall();
+    expect(init.method).toBe("PATCH");
+    expect(init.body).toBe(
+      JSON.stringify({ siteId: "site-1", intent: "remove" }),
+    );
+
+    await updateMyProfile({ timeZone: "Asia/Shanghai", preferredLocale: "zh" });
+    [url, init] = lastFetchCall();
+    expect(url).toBe("http://127.0.0.1:8787/api/private/admin/profile");
+    expect(init.method).toBe("POST");
+    expect(init.body).toBe(
+      JSON.stringify({ timeZone: "Asia/Shanghai", preferredLocale: "zh" }),
+    );
+  });
+
+  it("unwraps data for the remaining admin wrappers", async () => {
     await fetchAdminMembers("team-1");
-    await addAdminMember({
-      teamId: "team-1",
-      identifier: "user@example.test",
-      role: "member",
-    });
-    await removeAdminMember({ teamId: "team-1", userId: "user-1" });
     await fetchAdminSiteConfig("site-1");
     await upsertAdminSiteConfig({
       siteId: "site-1",
       config: { trackingStrength: "smart" },
     });
     await fetchAdminScriptSnippet("site-1");
-    await loginAdminAccount({ username: "admin", password: "secret" });
-    await fetchAdminMe();
-    await fetchAdminUsers();
-    await createAdminUser({
-      username: "new-user",
-      email: "new@example.test",
-      password: "supersecret",
-      systemRole: "user",
-    });
-    await updateAdminUser({ userId: "user-1", email: "new@example.test" });
-    await removeAdminUser({ userId: "user-1" });
-    await updateMyProfile({ name: "Admin User", timeZone: "Asia/Shanghai" });
-    await transferAdminTeamOwner({
-      teamId: "team-1",
-      newOwnerUserId: "user-2",
+    await expect(fetchAdminMe()).resolves.toMatchObject({
+      user: { id: "user-1" },
+      teams: [{ id: "team-1" }],
     });
 
-    expect(fetchMock()).toHaveBeenCalledTimes(18);
     const urls = fetchMock().mock.calls.map(([url]) => String(url));
-    expect(urls).toContain(
-      "http://127.0.0.1:8787/api/private/admin/sites?teamId=team-1",
-    );
-    expect(urls).toContain(
+    expect(urls).toEqual([
+      "http://127.0.0.1:8787/api/private/admin/members?teamId=team-1",
+      "http://127.0.0.1:8787/api/private/admin/site-config?siteId=site-1",
+      "http://127.0.0.1:8787/api/private/admin/site-config",
       "http://127.0.0.1:8787/api/private/admin/script-snippet?siteId=site-1",
-    );
-    expect(urls).toContain("http://127.0.0.1:8787/api/private/session");
-    expect(urls).toContain("http://127.0.0.1:8787/api/private/admin/users");
+      "http://127.0.0.1:8787/api/private/session",
+    ]);
   });
 
   it("serializes notification rule and preference wrappers", async () => {
@@ -639,8 +513,8 @@ describe("edge client request wrappers", () => {
   it("throws descriptive errors for non-OK edge responses", async () => {
     fetchMock().mockResolvedValueOnce(new Response("denied", { status: 403 }));
 
-    await expect(fetchAdminUsers()).rejects.toThrow(
-      "Edge API failed (403 GET /api/private/admin/users): denied",
+    await expect(fetchAdminMe()).rejects.toThrow(
+      "Edge API failed (403 GET /api/private/session): denied",
     );
   });
 
@@ -657,27 +531,7 @@ describe("edge client request wrappers", () => {
   it("propagates network failures from fetch", async () => {
     fetchMock().mockRejectedValueOnce(new TypeError("fetch failed"));
 
-    await expect(fetchAdminUsers()).rejects.toThrow("fetch failed");
-  });
-
-  it("continues without authorization when the session token is unavailable", async () => {
-    getSessionTokenMock.mockRejectedValueOnce(new Error("outside request"));
-
-    await fetchAdminMe();
-
-    const [, init] = lastFetchCall();
-    const headers = init.headers as Headers;
-    expect(headers.has("authorization")).toBe(false);
-  });
-
-  it("continues without authorization when no session token is returned", async () => {
-    getSessionTokenMock.mockResolvedValueOnce("");
-
-    await fetchAdminMe();
-
-    const [, init] = lastFetchCall();
-    const headers = init.headers as Headers;
-    expect(headers.has("authorization")).toBe(false);
+    await expect(fetchAdminMe()).rejects.toThrow("fetch failed");
   });
 
   it("derives the edge base URL from forwarded server headers", async () => {
@@ -687,10 +541,10 @@ describe("edge client request wrappers", () => {
       return null;
     });
 
-    await fetchAdminUsers();
+    await fetchAdminMe();
 
     const [url] = lastFetchCall();
-    expect(url).toBe("https://dashboard.example.test/api/private/admin/users");
+    expect(url).toBe("https://dashboard.example.test/api/private/session");
   });
 
   it("uses https for non-local server hosts when forwarded proto is absent", async () => {
@@ -698,19 +552,19 @@ describe("edge client request wrappers", () => {
       name === "host" ? "app.test" : null,
     );
 
-    await fetchAdminUsers();
+    await fetchAdminMe();
 
     const [url] = lastFetchCall();
-    expect(url).toBe("https://app.test/api/private/admin/users");
+    expect(url).toBe("https://app.test/api/private/session");
   });
 
   it("falls back when server headers do not include a host", async () => {
     requestHeaderMock.mockResolvedValue(null);
 
-    await fetchAdminUsers();
+    await fetchAdminMe();
 
     const [url] = lastFetchCall();
-    expect(url).toBe("http://127.0.0.1:8787/api/private/admin/users");
+    expect(url).toBe("http://127.0.0.1:8787/api/private/session");
   });
 
   it("uses http for localhost server headers and falls back when headers fail", async () => {
@@ -718,15 +572,15 @@ describe("edge client request wrappers", () => {
       name === "host" ? "localhost:3000" : null,
     );
 
-    await fetchAdminUsers();
+    await fetchAdminMe();
     expect(lastFetchCall()[0]).toBe(
-      "http://localhost:3000/api/private/admin/users",
+      "http://localhost:3000/api/private/session",
     );
 
     requestHeaderMock.mockRejectedValue(new Error("outside request"));
-    await fetchAdminUsers();
+    await fetchAdminMe();
     expect(lastFetchCall()[0]).toBe(
-      "http://127.0.0.1:8787/api/private/admin/users",
+      "http://127.0.0.1:8787/api/private/session",
     );
   });
 
@@ -735,74 +589,10 @@ describe("edge client request wrappers", () => {
       name === "host" ? "127.0.0.1:3000" : null,
     );
 
-    await fetchAdminUsers();
+    await fetchAdminMe();
 
     expect(lastFetchCall()[0]).toBe(
-      "http://127.0.0.1:3000/api/private/admin/users",
-    );
-  });
-
-  it("uses the API for public requests in demo mode", async () => {
-    vi.stubEnv("VITE_DEMO_MODE", "1");
-    fetchMock().mockResolvedValueOnce(
-      jsonResponse({ ok: true, data: [{ bucket: 1 }] }),
-    );
-
-    const result = await fetchPublicTrend("demo-site", { from: 1, to: 2 });
-
-    expect(result).toEqual({ ok: true, data: [{ bucket: 1 }] });
-    expect(lastFetchCall()[0]).toBe(
-      "http://127.0.0.1:8787/api/public/share/demo-site/trend?from=1&to=2&interval=day",
-    );
-  });
-
-  it("keeps admin mutations on the server service in demo mode", async () => {
-    vi.stubEnv("VITE_DEMO_MODE", "1");
-    fetchMock().mockResolvedValueOnce(
-      jsonResponse({
-        ok: true,
-        data: { id: "team-1", name: "Team" },
-      }),
-    );
-
-    const result = await createAdminTeam({ name: "Team", slug: "team" });
-
-    expect(result).toEqual({ id: "team-1", name: "Team" });
-    expect(lastFetchCall()).toMatchObject([
-      "http://127.0.0.1:8787/api/private/admin/teams",
-      {
-        method: "POST",
-        body: JSON.stringify({ name: "Team", slug: "team" }),
-      },
-    ]);
-    expect(getSessionTokenMock).toHaveBeenCalled();
-  });
-
-  it("fetches notification email previews through the API in demo mode", async () => {
-    vi.stubEnv("VITE_DEMO_MODE", "1");
-    const preview = {
-      subject: "Demo",
-      html: "<p>Demo</p>",
-      text: "Demo",
-    };
-    fetchMock().mockResolvedValueOnce(
-      jsonResponse({ ok: true, data: preview }),
-    );
-
-    await expect(
-      fetchNotificationEmailPreview({
-        type: "test",
-        locale: "en",
-        format: "json",
-      }),
-    ).resolves.toEqual(preview);
-
-    const [url, init] = lastFetchCall();
-    expect(url).toBe(
-      "http://127.0.0.1:8787/api/private/admin/notification-email-preview?type=test&locale=en&format=json",
-    );
-    expect((init.headers as Headers).get("authorization")).toBe(
-      "Bearer session-token",
+      "http://127.0.0.1:3000/api/private/session",
     );
   });
 

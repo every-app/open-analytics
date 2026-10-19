@@ -2,17 +2,12 @@ import { DatabaseSync } from "node:sqlite";
 
 import { describe, expect, it } from "vitest";
 
-import type { DemoCustomEventFact } from "@/lib/demo/realtime/events-facts";
-import { demoEventRecordPayload } from "@/lib/demo/realtime/events-payload";
-import { applyDemoFilters } from "@/lib/demo/realtime/fact-filters";
-import type { DemoFactDataset, DemoVisitFact } from "@/lib/demo/realtime/types";
 import {
   attachScopedFilterMetadata,
   createQueryTime,
   createScopedFilterPlan,
   createTimeRange,
   prepareScopedQuery,
-  type QueryTime,
   scopedFilterMetadata,
   siteQueryContext,
 } from "@/lib/edge/analytics/contract";
@@ -68,6 +63,7 @@ const SHARED_ACTIVITIES = [
       id: "history-purchase:purchase",
       name: "purchase",
       timeMs: 1_020,
+      payload: { order: { amount: 42 } },
     },
   },
   {
@@ -294,16 +290,8 @@ function sqliteEnv(activities: readonly SharedActivity[] = SHARED_ACTIVITIES): {
       eventNameIds[activity.event.name]!,
       activity.event.timeMs,
     );
-    const event: DemoCustomEventFact = {
-      eventId: activity.event.id,
-      eventName: activity.event.name,
-      occurredAt: activity.event.timeMs,
-      receivedAt: activity.event.timeMs + 120,
-      sequence: 1,
-      visit: demoVisit(activity),
-    };
     const expanded = expandCustomEventDataJson(
-      JSON.stringify(activity.event.payload ?? demoEventRecordPayload(event)),
+      JSON.stringify(activity.event.payload ?? {}),
     );
     if (!expanded.ok) throw new Error(expanded.error);
     for (const node of expanded.data.nodes) {
@@ -365,58 +353,6 @@ function sqliteEnv(activities: readonly SharedActivity[] = SHARED_ACTIVITIES): {
   return { env, database, queries };
 }
 
-function demoVisit(activity: SharedActivity): DemoVisitFact {
-  return {
-    visitId: activity.visitId,
-    sessionId: activity.sessionId,
-    visitorId: activity.visitorId,
-    startedAt: activity.pageTimeMs,
-    pathname: activity.pathname,
-    title: activity.title ?? activity.pathname,
-    hostname: activity.hostname ?? "example.test",
-    referrerHost: "",
-    referrerUrl: "",
-    browser: "Chrome",
-    browserVersion: "1",
-    osVersion: "Test OS",
-    deviceType: "Desktop",
-    language: "en",
-    screenSize: "1280x720",
-    country: "US",
-    regionCode: "",
-    regionName: "",
-    region: "",
-    cityName: "",
-    city: "",
-    continent: "",
-    timezone: "UTC",
-    organization: "",
-    latitude: 0,
-    longitude: 0,
-    eventType: activity.event?.name ?? "pageview",
-    durationMs: 5,
-    ...(activity.event?.payload !== undefined
-      ? { customEventPayload: activity.event.payload }
-      : {}),
-  };
-}
-
-function sharedDemoDataset(
-  activities: readonly SharedActivity[] = SHARED_ACTIVITIES,
-  from = 0,
-  to = 20_000,
-): DemoFactDataset {
-  const visits = activities.map(demoVisit);
-  return {
-    from,
-    to,
-    viewWeight: 1,
-    visits,
-    sessions: new Map(),
-    visitors: new Map(),
-  };
-}
-
 interface SharedFilterRequest {
   readonly activities: readonly SharedActivity[];
   readonly filterDsl: string;
@@ -433,11 +369,9 @@ interface SharedFilterRequest {
   readonly capturedAtMs: number;
 }
 
-async function evaluateSharedFixture(request: SharedFilterRequest): Promise<{
-  readonly d1: readonly string[];
-  readonly mock: readonly string[];
-  readonly mockVisitIds: readonly string[];
-}> {
+async function evaluateSharedFixture(
+  request: SharedFilterRequest,
+): Promise<{ readonly d1: readonly string[] }> {
   const document = parseFilterDsl(request.filterDsl, analyticsFilterRegistry);
   const { env, database } = sqliteEnv(request.activities);
   try {
@@ -464,7 +398,6 @@ async function evaluateSharedFixture(request: SharedFilterRequest): Promise<{
     });
     if (!input.scopePlan || !input.filters || !("time" in input))
       throw new Error("expected_prepared_scoped_filter_query");
-    const preparedTime = (input as typeof input & { time: QueryTime }).time;
     const output = await d1AdvancedFilterMiddleware(env)(
       "overview",
       input,
@@ -475,54 +408,7 @@ async function evaluateSharedFixture(request: SharedFilterRequest): Promise<{
       .map((item) => item.id)
       .sort();
 
-    const fixtureStart = Math.min(
-      ...request.activities.flatMap((activity) => [
-        activity.pageTimeMs,
-        ...(activity.event ? [activity.event.timeMs] : []),
-      ]),
-    );
-    const coverageStart = Math.min(
-      request.candidateRange.startMs,
-      preparedTime.readRange?.startMs ?? request.candidateRange.startMs,
-      preparedTime.filterRange?.startMs ?? request.candidateRange.startMs,
-      preparedTime.fullHistory ? fixtureStart : Number.MAX_SAFE_INTEGER,
-    );
-    const coverageEnd = Math.max(
-      request.candidateRange.endExclusiveMs,
-      preparedTime.readRange?.endExclusiveMs ??
-        request.candidateRange.endExclusiveMs,
-      preparedTime.filterRange?.endExclusiveMs ??
-        request.candidateRange.endExclusiveMs,
-      preparedTime.fullHistory ? request.capturedAtMs + 1 : 0,
-    );
-    const mockResult = applyDemoFilters(
-      sharedDemoDataset(request.activities, coverageStart, coverageEnd),
-      {
-        filterDocument: prepared.filters ?? document,
-        scope: request.scope,
-        candidateRange: request.candidateRange,
-        ...(preparedTime.filterRange
-          ? { filterRange: preparedTime.filterRange }
-          : {}),
-        ...(preparedTime.filterRangeEmpty ? { filterRangeEmpty: true } : {}),
-        ...(preparedTime.readRange
-          ? { readRange: preparedTime.readRange }
-          : {}),
-        ...(preparedTime.fullHistory ? { fullHistory: true } : {}),
-        reportingTimeZone: request.reportingTimeZone,
-        capturedAtMs: request.capturedAtMs,
-      },
-    );
-    const mockIds = [
-      ...(request.scope === "session"
-        ? mockResult.sessions
-        : mockResult.visitors),
-    ].sort();
-    return {
-      d1: d1Ids,
-      mock: mockIds,
-      mockVisitIds: mockResult.visits.map((visit) => visit.visitId).sort(),
-    };
+    return { d1: d1Ids };
   } finally {
     database.close();
   }
@@ -586,19 +472,6 @@ describe("D1 advanced filter execution", () => {
       expect(compiled.bindings.map((binding) => binding.value)).toContain(
         "session-a",
       );
-
-      const mockResult = applyDemoFilters(sharedDemoDataset(), {
-        filterDocument: document,
-        scope: "session",
-        candidateRange: { startMs: 10_000, endExclusiveMs: 20_000 },
-        readRange: { startMs: 0, endExclusiveMs: 10_000 },
-        reportingTimeZone: "UTC",
-        capturedAtMs: 25_000,
-      });
-      expect([...mockResult.sessions]).toEqual(
-        (resolvedPlan.advancedMatches?.entityIds ?? []).map((item) => item.id),
-      );
-      expect([...mockResult.sessions]).toEqual(["session-a"]);
     } finally {
       database.close();
     }
@@ -772,7 +645,7 @@ describe("D1 advanced filter execution", () => {
     }
   });
 
-  it("keeps Relation semantics consistent across D1 and Mock fixtures", async () => {
+  it("evaluates Relation semantics on the shared fixtures", async () => {
     const sharedRange = { startMs: 0, endExclusiveMs: 20_000 };
     const sameMillisecond = await evaluateSharedFixture({
       activities: SHARED_ACTIVITIES,
@@ -784,7 +657,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 25_000,
     });
     expect(sameMillisecond.d1).toEqual(["session-a"]);
-    expect(sameMillisecond.mock).toEqual(sameMillisecond.d1);
 
     const reverseSameMillisecond = await evaluateSharedFixture({
       activities: SHARED_ACTIVITIES,
@@ -796,7 +668,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 25_000,
     });
     expect(reverseSameMillisecond.d1).toEqual([]);
-    expect(reverseSameMillisecond.mock).toEqual(reverseSameMillisecond.d1);
 
     const withoutBetweenEndpoints = await evaluateSharedFixture({
       activities: SHARED_ACTIVITIES,
@@ -808,7 +679,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 25_000,
     });
     expect(withoutBetweenEndpoints.d1).toEqual(["session-a"]);
-    expect(withoutBetweenEndpoints.mock).toEqual(withoutBetweenEndpoints.d1);
 
     const descendantActivities: readonly SharedActivity[] = [
       {
@@ -850,7 +720,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 25_000,
     });
     expect(lifted.d1).toEqual(["descendant-session"]);
-    expect(lifted.mock).toEqual(lifted.d1);
 
     const independentlyLifted = await evaluateSharedFixture({
       activities: descendantActivities,
@@ -862,7 +731,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 25_000,
     });
     expect(independentlyLifted.d1).toEqual(["descendant-session"]);
-    expect(independentlyLifted.mock).toEqual(independentlyLifted.d1);
 
     const samePageOnly = await evaluateSharedFixture({
       activities: descendantActivities,
@@ -874,10 +742,9 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 25_000,
     });
     expect(samePageOnly.d1).toEqual([]);
-    expect(samePageOnly.mock).toEqual(samePageOnly.d1);
   });
 
-  it("keeps Legacy string predicates and canonical scope facts consistent across providers", async () => {
+  it("keeps Legacy string predicates consistent with the legacy compiler and canonical scope facts", async () => {
     const activities: readonly SharedActivity[] = [
       {
         visitId: "legacy-docs",
@@ -1047,7 +914,6 @@ describe("D1 advanced filter execution", () => {
         });
         expect(baseline).toEqual(expected);
         expect(result.d1).toEqual(baseline);
-        expect(result.mock).toEqual(baseline);
       }
     } finally {
       database.close();
@@ -1093,10 +959,9 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 2_000,
     });
     expect(factParity.d1).toEqual(["fact-visitor"]);
-    expect(factParity.mock).toEqual(factParity.d1);
   });
 
-  it("keeps numeric arithmetic, typed payloads, Duration ranges, auto history, and root Relations in provider parity", async () => {
+  it("evaluates numeric arithmetic, typed payloads, Duration ranges, auto history, and root Relations", async () => {
     const activities: readonly SharedActivity[] = [
       {
         visitId: "advanced-candidate-a",
@@ -1170,7 +1035,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 20_000,
     });
     expect(automaticHistory.d1).toEqual(["advanced-visitor"]);
-    expect(automaticHistory.mock).toEqual(automaticHistory.d1);
 
     const narrowedNumber = await evaluateSharedFixture({
       activities,
@@ -1181,7 +1045,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 20_000,
     });
     expect(narrowedNumber.d1).toEqual(["advanced-visitor"]);
-    expect(narrowedNumber.mock).toEqual(narrowedNumber.d1);
 
     const narrowedString = await evaluateSharedFixture({
       activities,
@@ -1192,7 +1055,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 20_000,
     });
     expect(narrowedString.d1).toEqual(["advanced-visitor"]);
-    expect(narrowedString.mock).toEqual(narrowedString.d1);
 
     const narrowedSet = await evaluateSharedFixture({
       activities,
@@ -1203,7 +1065,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 20_000,
     });
     expect(narrowedSet.d1).toEqual(["advanced-visitor"]);
-    expect(narrowedSet.mock).toEqual(narrowedSet.d1);
 
     const wrappedHistory = await evaluateSharedFixture({
       activities,
@@ -1215,7 +1076,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 20_000,
     });
     expect(wrappedHistory.d1).toEqual(["advanced-visitor"]);
-    expect(wrappedHistory.mock).toEqual(wrappedHistory.d1);
 
     const entityAnchoredWindow = await evaluateSharedFixture({
       activities,
@@ -1227,7 +1087,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 20_000,
     });
     expect(entityAnchoredWindow.d1).toEqual(["advanced-visitor"]);
-    expect(entityAnchoredWindow.mock).toEqual(entityAnchoredWindow.d1);
 
     const visitorSequence =
       'sequence([EVENT { $.name eq "signup" }, EVENT { $.name eq "purchase" }]) exists';
@@ -1240,7 +1099,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 20_000,
     });
     expect(visitorRelation.d1).toEqual(["advanced-visitor"]);
-    expect(visitorRelation.mock).toEqual(visitorRelation.d1);
 
     const sessionRelation = await evaluateSharedFixture({
       activities,
@@ -1251,7 +1109,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 20_000,
     });
     expect(sessionRelation.d1).toEqual([]);
-    expect(sessionRelation.mock).toEqual(sessionRelation.d1);
 
     const contextualActivities: readonly SharedActivity[] = [
       {
@@ -1317,7 +1174,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 2_000,
     });
     expect(contextualParity.d1).toEqual(["same-visitor-a"]);
-    expect(contextualParity.mock).toEqual(contextualParity.d1);
 
     const occurrenceTimeParity = await evaluateSharedFixture({
       activities: contextualActivities,
@@ -1332,7 +1188,6 @@ describe("D1 advanced filter execution", () => {
       "same-visitor-a",
       "same-visitor-b",
     ]);
-    expect(occurrenceTimeParity.mock).toEqual(occurrenceTimeParity.d1);
   });
 
   it("evaluates complete Visitor filters in Filter time and projects only Query time", async () => {
@@ -1405,8 +1260,6 @@ describe("D1 advanced filter execution", () => {
       });
 
       expect(result.d1).toEqual(["visitor-history-match"]);
-      expect(result.mock).toEqual(result.d1);
-      expect(result.mockVisitIds).toEqual(["sep-page-match"]);
     }
 
     const sessionActivities: readonly SharedActivity[] = [
@@ -1452,11 +1305,9 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 3_999,
     });
     expect(sessionResult.d1).toEqual(["session-history"]);
-    expect(sessionResult.mock).toEqual(sessionResult.d1);
-    expect(sessionResult.mockVisitIds).toEqual(["session-current-page"]);
   });
 
-  it("short-circuits future-only Filter ranges in D1 and Mock", async () => {
+  it("short-circuits future-only Filter ranges", async () => {
     const result = await evaluateSharedFixture({
       activities: SHARED_ACTIVITIES,
       filterDsl: "time gte @now+1ms AND count(EVENT) gte 1",
@@ -1466,8 +1317,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 25_000,
     });
     expect(result.d1).toEqual([]);
-    expect(result.mock).toEqual([]);
-    expect(result.mockVisitIds).toEqual([]);
   });
 
   it("extends Window reads beyond Filter time without widening candidate projection", async () => {
@@ -1515,8 +1364,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 10_000_000,
     });
     expect(result.d1).toEqual(["visitor-window"]);
-    expect(result.mock).toEqual(result.d1);
-    expect(result.mockVisitIds).toEqual(["window-query-projection"]);
   });
 
   it("applies top-level Activity time to aggregate Scopes without removing the predicate", async () => {
@@ -1552,7 +1399,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 20_000,
     });
     expect(result.d1).toEqual(["visitor-with-old-activity"]);
-    expect(result.mock).toEqual(result.d1);
 
     const beforeCoverage = await evaluateSharedFixture({
       activities,
@@ -1564,10 +1410,9 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 20_000,
     });
     expect(beforeCoverage.d1).toEqual([]);
-    expect(beforeCoverage.mock).toEqual(beforeCoverage.d1);
   });
 
-  it("uses Filter Range Visitor facts for the full Filter and keeps D1/Mock aligned", async () => {
+  it("uses Filter Range Visitor facts for the full Filter", async () => {
     const filterDsl =
       'time between ["1970-01-01T00:00:01.000Z", "1970-01-01T00:00:03.000Z"] AND visitor.sessions gte 2';
     const candidateRange = { startMs: 10_000, endExclusiveMs: 20_000 };
@@ -1603,8 +1448,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 20_000,
     });
     expect(filterRangeOneSession.d1).toEqual([]);
-    expect(filterRangeOneSession.mock).toEqual(filterRangeOneSession.d1);
-    expect(filterRangeOneSession.mockVisitIds).toEqual([]);
 
     const filterRangeTwoSessions = await evaluateSharedFixture({
       activities: [
@@ -1637,8 +1480,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 20_000,
     });
     expect(filterRangeTwoSessions.d1).toEqual(["visitor-range-b"]);
-    expect(filterRangeTwoSessions.mock).toEqual(filterRangeTwoSessions.d1);
-    expect(filterRangeTwoSessions.mockVisitIds).toEqual(["visitor-query-one"]);
   });
 
   it("uses Filter Range Session facts instead of Query Range candidates", async () => {
@@ -1675,11 +1516,9 @@ describe("D1 advanced filter execution", () => {
     });
 
     expect(result.d1).toEqual(["session-range-a"]);
-    expect(result.mock).toEqual(result.d1);
-    expect(result.mockVisitIds).toEqual(["session-query-one"]);
   });
 
-  it("keeps DST calendar bucket counts, periods, and empty reducers consistent across providers", async () => {
+  it("evaluates DST calendar bucket counts, periods, and empty reducers", async () => {
     for (const timestamp of [
       Date.parse("2026-03-08T20:00:00Z"),
       Date.parse("2026-11-01T20:00:00Z"),
@@ -1706,7 +1545,6 @@ describe("D1 advanced filter execution", () => {
           capturedAtMs: timestamp + 1,
         });
         expect(result.d1).toEqual([activity.sessionId]);
-        expect(result.mock).toEqual(result.d1);
       }
     }
 
@@ -1738,7 +1576,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: saturday + 1,
     });
     expect(mondayWeeks.d1).toEqual(["session-week"]);
-    expect(mondayWeeks.mock).toEqual(mondayWeeks.d1);
 
     const emptyReducers = await evaluateSharedFixture({
       activities: [
@@ -1758,7 +1595,6 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 100,
     });
     expect(emptyReducers.d1).toEqual(["session-empty"]);
-    expect(emptyReducers.mock).toEqual(emptyReducers.d1);
   });
 
   it("rejects evaluation ranges that begin before confirmed site coverage", async () => {

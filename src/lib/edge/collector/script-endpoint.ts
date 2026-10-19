@@ -15,7 +15,7 @@ const SCRIPT_RESPONSE_CACHE_NAME = "insightflare-script-cache";
 const SCRIPT_RESPONSE_CACHE_TTL_SECONDS = 10 * 60;
 const SCRIPT_CACHE_VERSION = "sdk-prebuilt-v1";
 const MAX_SCRIPT_RESPONSE_CACHE_TTL_SECONDS = 24 * 60 * 60;
-const TRACKER_RUNTIME_CONFIG_KEY = "__insightflare_tracker_runtime_config__";
+const TRACKER_RUNTIME_CONFIG_KEY = "__openanalytics_tracker_runtime_config__";
 function isEUCountry(request: Request): boolean {
   const cf = (request as Request & { cf?: { isEUCountry?: boolean } }).cf;
   return Boolean(cf?.isEUCountry);
@@ -229,6 +229,8 @@ export async function handleTrackerScriptRequest(
       "content-type": "application/javascript; charset=utf-8",
       "cache-control": `public, max-age=${ttlSeconds}, s-maxage=${ttlSeconds}`,
       "access-control-allow-origin": "*",
+      // Loaded by <script> on the organization's own websites.
+      "cross-origin-resource-policy": "cross-origin",
     },
   });
 

@@ -403,7 +403,7 @@ describe("filter URL codec", () => {
     params.set("filter[count(event:0)]", "gte:1");
     params.set(
       "filter[event:0][source]",
-      'EVENT { $.name eq "__insightflare_filter_url_ref_0__" AND count(event:1) gt 0 AND NOT (count(event:2) gt 0) }',
+      'EVENT { $.name eq "__openanalytics_filter_url_ref_0__" AND count(event:1) gt 0 AND NOT (count(event:2) gt 0) }',
     );
     params.set("filter[event:0][$.name]", 'eq:"outer"');
     params.set("filter[event:1][$.name]", 'eq:"nested-one"');
@@ -415,7 +415,7 @@ describe("filter URL codec", () => {
       document,
     );
     expect(serialized.toString()).toContain(
-      encodeURIComponent("__insightflare_filter_url_ref_0__"),
+      encodeURIComponent("__openanalytics_filter_url_ref_0__"),
     );
   });
 
@@ -1043,7 +1043,7 @@ describe("filter URL codec", () => {
 });
 
 describe("type-aware value encoding", () => {
-  const all = new Set(["private-dashboard", "api-v1"] as const);
+  const all = new Set(["private-dashboard"] as const);
   const definition = (
     id: string,
     valueKind: FilterFieldDefinition["valueKind"],

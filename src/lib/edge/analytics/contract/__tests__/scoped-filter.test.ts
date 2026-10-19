@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { analyticsOperationRegistry } from "@/lib/edge/analytics/application/operation-registry";
 import {
   attachFilterScopePreference,
   attachSavedFilterScopePreference,
@@ -30,7 +29,7 @@ const context = {
   subject: { kind: "site", siteId: "site-1" },
   policy: {
     revision: "test",
-    audience: "api-v1",
+    audience: "private-dashboard",
     allowedOperations: new Set(),
     allowedDimensions: new Set(),
     allowedFilters: new Set(),
@@ -142,7 +141,6 @@ describe("scoped filter contract", () => {
   );
 
   it("requires every canonical operation to declare a scope capability", () => {
-    expect(analyticsOperationRegistry.length).toBeGreaterThan(0);
     for (const capability of Object.values(FILTER_SCOPE_CAPABILITIES)) {
       expect(capability).toBeDefined();
       if (capability.kind === "scoped") {

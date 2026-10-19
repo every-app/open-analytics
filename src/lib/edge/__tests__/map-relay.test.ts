@@ -3,131 +3,77 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { handleMapRelayRequest } from "@/lib/edge/resources/map-relay";
 import type { Env } from "@/lib/edge/types";
 
-const env = { MAP_RELAY_BASE_URL: "https://maprelay.test" } as unknown as Env;
+const env = {} as Env;
+const STYLE = {
+  layers: [
+    { id: "road", layout: { "text-field": ["to-string", ["get", "ref"]] } },
+    { id: "place", layout: { "text-field": ["get", "name:latin"] } },
+  ],
+};
 
-function request(path: string, init?: RequestInit): Request {
-  return new Request(`https://app.test${path}`, init);
+function request(path: string, headers: Record<string, string> = {}) {
+  return new Request(`https://app.test${path}`, {
+    headers: { "sec-fetch-site": "same-origin", ...headers },
+  });
 }
 
-describe("map relay handler", () => {
+describe("map style handler", () => {
   beforeEach(() => {
-    vi.stubGlobal("fetch", vi.fn());
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json(structuredClone(STYLE))),
+    );
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
-    vi.restoreAllMocks();
   });
 
-  it("requests the relay from the backend and forwards its cache response", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response("style", {
-        headers: {
-          "cache-control": "public, max-age=300",
-          "content-type": "application/json; charset=utf-8",
-          etag: '"style"',
-          "set-cookie": "should-not-be-forwarded",
-        },
-      }),
-    );
-
+  it("serves the open style with place names in the dashboard's language", async () => {
     const response = await handleMapRelayRequest(
-      request("/api/public/resources/map/v1/styles/dark/style.json?locale=zh"),
+      request(
+        "/api/public/resources/map/v1/styles/dark/style.json?locale=zh-tw",
+      ),
       env,
     );
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get("content-type")).toContain("application/json");
-    expect(response.headers.get("cache-control")).toBe("public, max-age=300");
-    expect(response.headers.get("set-cookie")).toBeNull();
-    expect(await response.text()).toBe("style");
-
-    expect(fetch).toHaveBeenCalledTimes(1);
-    const [url, init] = vi.mocked(fetch).mock.calls[0] as [URL, RequestInit];
-    expect(url.toString()).toBe(
-      "https://maprelay.test/v1/styles/dark/style.json?if_origin=https%3A%2F%2Fapp.test&if_locale=zh",
+    expect(fetch).toHaveBeenCalledWith(
+      "https://tiles.openfreemap.org/styles/dark",
     );
-    expect(init.method).toBe("GET");
-    const headers = new Headers(init.headers);
-    expect(headers.get("x-insightflare-client")).toBe(
-      "insightflare-backend-v1",
-    );
-    expect(headers.get("x-insightflare-version")).toBeTruthy();
-    expect(headers.get("x-insightflare-commit")).toBeTruthy();
-    expect(headers.get("x-insightflare-host")).toBe("app.test");
-    expect(headers.get("x-insightflare-protocol")).toBe("https");
-    expect(headers.get("x-insightflare-locale")).toBe("zh");
-    expect(headers.get("origin")).toBeNull();
+    expect(((await response.json()) as typeof STYLE).layers).toEqual([
+      STYLE.layers[0],
+      {
+        id: "place",
+        layout: {
+          "text-field": [
+            "coalesce",
+            ["get", "name:zh-Hant"],
+            ["get", "name:zh"],
+            ["get", "name:latin"],
+          ],
+        },
+      },
+    ]);
   });
 
-  it("rejects cross-origin and unsupported resource requests", async () => {
-    const crossOriginRequest = request(
-      "/api/public/resources/map/v1/styles/light/style.json",
-    );
-    crossOriginRequest.headers.set("referer", "https://evil.test/page");
-    const crossOrigin = await handleMapRelayRequest(crossOriginRequest, env);
-    const unsupported = await handleMapRelayRequest(
-      request("/api/public/resources/map/v1/unknown.json"),
+  it("serves only the two styles", async () => {
+    const response = await handleMapRelayRequest(
+      request("/api/public/resources/map/v1/tiles/1/2/3.mvt"),
       env,
     );
 
-    expect(crossOrigin.status).toBe(403);
-    expect(unsupported.status).toBe(404);
+    expect(response.status).toBe(404);
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it("uses the safe relay fallback for invalid configurations", async () => {
-    vi.mocked(fetch).mockImplementation(
-      async () =>
-        new Response("ok", { headers: { "content-type": "text/plain" } }),
-    );
-
-    const methodNotAllowed = await handleMapRelayRequest(
-      request("/api/public/resources/map/v1/styles/light/style.json", {
-        method: "POST",
-      }),
-      env,
-    );
-    expect(methodNotAllowed.status).toBe(405);
-    expect(methodNotAllowed.headers.get("allow")).toBe("GET");
-
-    const nonMapPath = await handleMapRelayRequest(request("/healthz"), env);
-    expect(nonMapPath.status).toBe(404);
-
-    const invalidConfig = await handleMapRelayRequest(
-      request("/api/public/resources/map/v1/styles/light/style.json?locale=fr"),
-      { MAP_RELAY_BASE_URL: "not-a-url" } as unknown as Env,
-    );
-    expect(invalidConfig.status).toBe(200);
-    expect((vi.mocked(fetch).mock.calls[0]?.[0] as URL).toString()).toBe(
-      "https://maprelay.ravelloh.com/v1/styles/light/style.json?if_origin=https%3A%2F%2Fapp.test",
-    );
-
-    const httpConfig = await handleMapRelayRequest(
-      request("/api/public/resources/map/v1/tiles/carto.streets/v1/0/0/0.mvt"),
-      { MAP_RELAY_BASE_URL: "http://maprelay.test" } as unknown as Env,
-    );
-    expect(httpConfig.status).toBe(200);
-    expect((vi.mocked(fetch).mock.calls[1]?.[0] as URL).origin).toBe(
-      "https://maprelay.ravelloh.com",
-    );
-
-    const noEnv = await handleMapRelayRequest(
-      request("/api/public/resources/map/v1/styles/light/style.json"),
-    );
-    expect(noEnv.status).toBe(200);
-    expect(vi.mocked(fetch).mock.calls).toHaveLength(3);
-  });
-
-  it("returns a gateway error when the relay cannot be reached", async () => {
-    vi.mocked(fetch).mockRejectedValue(new Error("network unavailable"));
+  it("answers 502 when the style host is down", async () => {
+    vi.mocked(fetch).mockRejectedValue(new Error("offline"));
 
     const response = await handleMapRelayRequest(
-      request("/api/public/resources/map/v1/tiles/carto.streets/v1/0/0/0.mvt"),
+      request("/api/public/resources/map/v1/styles/light/style.json"),
       env,
     );
 
     expect(response.status).toBe(502);
-    expect(await response.text()).toBe("Map relay unavailable");
   });
 });

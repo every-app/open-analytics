@@ -4,13 +4,10 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.33.0",
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
     "dev": "everyapp dev",
     "generate:schema": "tsx scripts/generate-schema.ts",
-    "build": "pnpm run build:packages && tsx scripts/build-tracker-sdk.ts && cf build",
+    "build": "pnpm run build:packages && tsx scripts/build-tracker-sdk.ts && vite build",
     "build:packages": "pnpm run build:package:ui && pnpm run build:package:product-ui",
     "build:package:ui": "pnpm --filter @insightflare/ui build",
     "build:package:product-ui": "pnpm --filter @insightflare/product-ui build",

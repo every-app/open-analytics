@@ -27,7 +27,7 @@ vi.mock("@/lib/edge/analytics/providers/d1/operations/team-timeseries", () => ({
 
 const env = {} as Env;
 const time = createQueryTime(100, 200, "UTC", 200);
-const context = teamQueryContext("team-1", "api-v1", ["site-1"]);
+const context = teamQueryContext("team-1", "private-dashboard", ["site-1"]);
 
 describe("D1 team query runtime", () => {
   beforeEach(() => {
@@ -168,7 +168,7 @@ describe("D1 team query runtime", () => {
       allowedSiteIds: undefined,
       interval: undefined,
       page: undefined,
-      audience: "api-v1",
+      audience: "private-dashboard",
       window: {
         startMs: 100,
         endExclusiveMs: 200,

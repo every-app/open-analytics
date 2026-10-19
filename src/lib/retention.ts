@@ -5,6 +5,7 @@ export const DEFAULT_RETENTION_CONFIG: ScheduledTaskRetentionConfig = {
   notificationTestDays: 30,
   notificationAttentionDays: 180,
   notificationDefaultDays: 120,
+  analyticsDetailDays: 396,
 };
 
 export const RETENTION_CONFIG_KEY = "scheduled-task-retention";
@@ -42,6 +43,9 @@ export function normalizeRetentionConfig(
     notificationDefaultDays: validRetentionDays(value?.notificationDefaultDays)
       ? value.notificationDefaultDays
       : DEFAULT_RETENTION_CONFIG.notificationDefaultDays,
+    analyticsDetailDays: validRetentionDays(value?.analyticsDetailDays)
+      ? value.analyticsDetailDays
+      : DEFAULT_RETENTION_CONFIG.analyticsDetailDays,
   };
 }
 

@@ -1,13 +1,8 @@
 import { classifyASN } from "asn-blocklist";
 import { describe, expect, it, vi } from "vitest";
 
-import {
-  REQUEST_ANALYTICS_BLOBS,
-  REQUEST_ANALYTICS_DOUBLES,
-  writeRequestAnalyticsPoint,
-} from "@/lib/edge/analytics-engine/index";
 import { classifyCollectBotTraffic } from "@/lib/edge/collector/bot-protection";
-import type { Env, TrackerClientPayload } from "@/lib/edge/types";
+import type { TrackerClientPayload } from "@/lib/edge/types";
 vi.mock("asn-blocklist", () => ({
   classifyASN: vi.fn((asn: unknown) => {
     if (Number(asn) === 13335) return "hosting";
@@ -44,11 +39,6 @@ const payload: TrackerClientPayload = {
   hostname: "example.com",
 };
 describe("bot protection", () => {
-  it("keeps the Analytics Engine schema within data point limits", () => {
-    expect(REQUEST_ANALYTICS_BLOBS).toHaveLength(20);
-    expect(REQUEST_ANALYTICS_DOUBLES).toHaveLength(20);
-  });
-
   it("classifies known bot user agents as bot traffic", () => {
     const result = classifyCollectBotTraffic({
       request: request({
@@ -251,94 +241,5 @@ describe("bot protection", () => {
       category: "normal",
       reasons: [],
     });
-  });
-
-  it("writes rich request observation points with site index and metadata", () => {
-    const writeDataPoint = vi.fn();
-    const env = {
-      REQUEST_ANALYTICS: { writeDataPoint },
-    } as unknown as Env;
-
-    writeRequestAnalyticsPoint(env, {
-      request: request(
-        {
-          "user-agent": "curl/8.14.1",
-          "cf-connecting-ip": "203.0.113.10",
-          "cf-ray": "ray-1",
-          origin: "https://example.com",
-        },
-        {
-          asn: 137409,
-          asOrganization: "GSL Networks Pty LTD - Tokyo",
-          country: "JP",
-          region: "Tokyo",
-          city: "Tokyo",
-          continent: "AS",
-          colo: "NRT",
-          latitude: "35.6895",
-          longitude: "139.69171",
-        },
-      ),
-      payload,
-      siteId: "site-1",
-      origin: "https://example.com",
-      traceId: "trace-1",
-      receivedAt: 1_800_000_000_000,
-      category: "bot",
-      disposition: "blocked",
-      reasons: ["script_ua"],
-    });
-
-    expect(writeDataPoint).toHaveBeenCalledTimes(1);
-    const point = writeDataPoint.mock.calls[0]?.[0];
-    expect(point).toMatchObject({
-      indexes: ["site-1"],
-      doubles: expect.arrayContaining([
-        1_800_000_000_000,
-        1_800_000_000_000,
-        expect.any(Number),
-        137409,
-        35.6895,
-        139.69171,
-        0,
-        "curl/8.14.1".length,
-      ]),
-    });
-    expect(point?.blobs).toEqual(
-      expect.arrayContaining([
-        "pageview",
-        "bot",
-        "script_ua",
-        "203.0.113.10",
-        "curl/8.14.1",
-        "JP",
-        "ray-1",
-        "trace-1",
-      ]),
-    );
-  });
-
-  it("drops request observation points when Analytics Engine is disabled", () => {
-    const writeDataPoint = vi.fn();
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const env = {
-      REQUEST_ANALYTICS: { writeDataPoint },
-      INSIGHTFLARE_ANALYTICS_ENGINE_DISABLED: "1",
-    } as unknown as Env;
-
-    writeRequestAnalyticsPoint(env, {
-      request: request({ "user-agent": "curl/8.14.1" }),
-      payload,
-      siteId: "site-1",
-      origin: "https://example.com",
-      traceId: "trace-1",
-      receivedAt: 1_800_000_000_000,
-      category: "bot",
-      disposition: "blocked",
-      reasons: ["script_ua"],
-    });
-
-    expect(writeDataPoint).not.toHaveBeenCalled();
-    expect(warn).not.toHaveBeenCalled();
   });
 });

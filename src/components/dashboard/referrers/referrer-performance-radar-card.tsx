@@ -125,13 +125,15 @@ async function fetchReferrerMetadata(
   }
 
   const promise = fetch(
-    `https://meta.ravelloh.com/?url=${encodeURIComponent(targetUrl)}`,
+    `/api/private/link-metadata?url=${encodeURIComponent(targetUrl)}`,
     { cache: "force-cache" },
   )
     .then(async (response) => {
       if (!response.ok) return null;
-      const payload = (await response.json()) as Record<string, unknown>;
-      const metadata = sanitizeMetadata(payload);
+      const payload = (await response.json()) as {
+        data?: Record<string, unknown>;
+      };
+      const metadata = sanitizeMetadata(payload.data ?? {});
       referrerMetadataCache.set(normalized, metadata);
       return metadata;
     })

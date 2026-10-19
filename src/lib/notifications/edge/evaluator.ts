@@ -138,10 +138,10 @@ function testRule(): NotificationRuleEvaluationResult {
       type: "test",
       severity: "info",
       requiresAttention: false,
-      title: "InsightFlare notification test",
-      summary: "This is a test notification from InsightFlare.",
+      title: "Open Analytics notification test",
+      summary: "This is a test notification from Open Analytics.",
       bodyText:
-        "This is a test notification from InsightFlare. If email is configured and enabled, this message also verifies Resend delivery.",
+        "This is a test notification from Open Analytics. If email is set up on the Every App gateway, this message also checks email delivery.",
       data: {
         source: "rule_test",
       },

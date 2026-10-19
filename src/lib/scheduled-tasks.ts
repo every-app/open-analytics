@@ -11,6 +11,8 @@ export interface ScheduledTaskRetentionConfig {
   notificationTestDays: number;
   notificationAttentionDays: number;
   notificationDefaultDays: number;
+  /** Page views and custom events older than this are deleted; hourly totals stay. */
+  analyticsDetailDays: number;
 }
 
 export type ScheduledTaskStatus =

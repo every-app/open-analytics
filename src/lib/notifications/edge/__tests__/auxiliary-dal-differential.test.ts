@@ -21,10 +21,8 @@ function createFixture() {
     .prepare("INSERT INTO users (id, email) VALUES (?, ?)")
     .run("owner-1", "owner@example.test");
   database
-    .prepare(
-      "INSERT INTO teams (id, name, slug, owner_user_id) VALUES (?, ?, ?, ?)",
-    )
-    .run("team-1", "Team One", "team-one", "owner-1");
+    .prepare("INSERT INTO teams (id, name, slug) VALUES (?, ?, ?)")
+    .run("team-1", "Team One", "team-one");
   const insertSite = database.prepare(
     "INSERT INTO sites (id, team_id, name, domain) VALUES (?, ?, ?, ?)",
   );

@@ -14,9 +14,9 @@ describe("Translation Template Interpolator", () => {
       formatI18nTemplate("{greeting}, {name}! Welcome to {place}.", {
         greeting: "Hi",
         name: "Developer",
-        place: "InsightFlare",
+        place: "Open Analytics",
       }),
-    ).toBe("Hi, Developer! Welcome to InsightFlare.");
+    ).toBe("Hi, Developer! Welcome to Open Analytics.");
   });
 
   it("should coerce numbers and other non-string values into standard strings", () => {

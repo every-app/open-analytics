@@ -1,35 +1,6 @@
-appName: InsightFlare
+appName: Open Analytics
 uiGallery:
-  searchLabel: 搜索 UI 组件
-  searchPlaceholder: 搜索组件
-  backToApp: 返回 InsightFlare
-  noSearchResults: 没有符合搜索条件的组件。
-  toggleNavigation: 切换组件库导航
-  library: UI 组件库
-  componentsCount: "{count} 个组件"
-  statesCount: "{count} 个状态"
-  designSystem: InsightFlare 设计系统
-  pageTitle: UI 组件
-  catalogSummary: "{components} 个组件 · {states} 个属性取值"
-  categories:
-    inputs: 输入控件
-    feedback: 反馈
-    foundations: 基础
-    navigation: 导航
-    data-display: 数据展示
-    overlays: 浮层
-    product-analytics: 产品 UI / 分析
-    product-management: 产品 UI / 管理
-    product-realtime: 产品 UI / 实时
-  browseCategories: 按分类浏览
-  featuredComponents: 精选组件
-  backToCatalog: UI 组件
-  canonicalStates: Props 与取值
-  browseAllComponents: 浏览全部组件
-  previewState: 打开预览
-  resetPreview: 重置预览
-  expandCode: 展开代码
-  collapseCode: 收起代码
+  categories: {}
 navigation:
   overview: 总览
   realtime: 实时
@@ -398,7 +369,9 @@ filterBuilder:
   expressionHelpFieldOperators: 操作符
   expressionHelpOtherFields: 其他
   expressionHelpContextTitle: 活动时间与上下文内建值
-  expressionHelpContextDescription: 小写点分名称表示已注册字段；大写 PAGE、EVENT、SESSION 和 VISITOR 表示实体集合。在实体筛选器内，$.member 表示当前实体，-> 显式投影集合成员。@ 表示时间锚点；序列和周期筛选器还提供 $span、$gap 和 $items。
+  expressionHelpContextDescription: 小写点分名称表示已注册字段；大写 PAGE、EVENT、SESSION 和 VISITOR
+    表示实体集合。在实体筛选器内，$.member 表示当前实体，-> 显式投影集合成员。@ 表示时间锚点；序列和周期筛选器还提供 $span、$gap 和
+    $items。
   expressionHelpContextExamples: |-
     time(last(PAGE)) gte @now-14d
     sequence([EVENT { $.name eq "signup" }, EVENT { $.name eq "purchase" }]) {
@@ -693,7 +666,6 @@ realtime:
   eventTime: 事件时间
   eventKind: 事件种类
   eventName: 事件名称
-  siteId: 站点 ID
   traceId: 追踪 ID
   receivedAt: 接收时间
   startedAt: 开始时间
@@ -754,7 +726,6 @@ pages:
   empty: 当前筛选条件下暂无页面数据。
   loadError: 页面数据加载失败，请稍后重试。
   loadMoreError: 加载更多页面失败。
-  retry: 重试
   trendTitle: 页面访问趋势
   otherPages: 其他页面
   hashTab: 锚点
@@ -1604,11 +1575,6 @@ siteSettings:
   savingTracking: 正在保存跟踪设置…
   save: 保存修改
   saving: 保存中...
-  transferTitle: 转移到其他团队
-  transferSubtitle: 将当前站点迁移到你可管理的其他团队。
-  transferTeamLabel: 目标团队
-  transfer: 转移站点
-  transferring: 转移中...
   scriptTitle: 安装统计脚本
   scriptSubtitle: 将此脚本添加到你的网站后即可开始采集分析数据。
   scriptHint: 推荐放在 </head> 结束标签前；若不方便，也可放在 </body> 前，但请确保每页只加载一次。
@@ -1624,8 +1590,6 @@ siteSettings:
   toasts:
     saved: 站点设置已保存。
     saveFailed: 站点设置保存失败。
-    transferred: 站点已转移。
-    transferFailed: 站点转移失败。
     scriptLoadFailed: 加载脚本片段失败。
     settingsLoadFailed: 加载脚本设置失败。
     settingsPropagationHint: 设置分发到全球节点可能需要最多 1 小时。
@@ -1635,33 +1599,16 @@ siteSettings:
 accountSettings:
   emailManagedByGateway: 邮箱来自你的 Every App 账户。
   title: 账户设置
-  subtitle: 管理你的个人信息、登录密码和仪表盘时区。
+  subtitle: 管理你的昵称、通知和仪表盘时区。
   profileTitle: 个人信息
-  profileDescription: 更新昵称、用户名和邮箱。
+  profileDescription: 更新仪表盘中显示的昵称。
   nicknameLabel: 昵称
   nicknamePlaceholder: 例如：产品分析师
-  usernameLabel: 用户名
-  usernamePlaceholder: 例如：alex
-  usernameDescription: 用户名也可用于登录。
   emailLabel: 邮箱
-  emailPlaceholder: name@example.com
-  invalidProfile: 请填写有效的用户名和邮箱。
   profileSave: 保存个人信息
   profileSaving: 保存中...
   profileSaved: 个人信息已保存。
   profileSaveFailed: 保存个人信息失败。
-  passwordTitle: 登录密码
-  passwordDescription: 修改当前账号的登录密码。
-  currentPasswordLabel: 当前密码
-  newPasswordLabel: 新密码
-  confirmPasswordLabel: 确认新密码
-  currentPasswordRequired: 请输入当前密码。
-  passwordTooShort: 新密码至少需要 8 个字符。
-  passwordMismatch: 两次输入的新密码不一致。
-  passwordSave: 修改密码
-  passwordSaving: 修改中...
-  passwordSaved: 密码已修改。
-  passwordSaveFailed: 修改密码失败。
   preferredLanguageTitle: 通知语言
   preferredLanguageDescription: 选择定时通知邮件使用的语言。
   preferredLanguageLabel: 邮件语言
@@ -1780,7 +1727,7 @@ notificationCenter:
   detailFields: {}
 notificationEmail:
   common:
-    brand: InsightFlare
+    brand: Open Analytics
     date: 日期
     coreMetrics: 核心指标
     topPages: 热门页面
@@ -1803,8 +1750,8 @@ notificationEmail:
     never: 从未收到
     noPageData: 暂无页面数据。
     noReferrerData: 暂无来源数据。
-    footer: 这封邮件由 InsightFlare 通知系统发送。
-    fallbackSubject: InsightFlare 通知
+    footer: 这封邮件由 Open Analytics 通知系统发送。
+    fallbackSubject: Open Analytics 通知
     trackingHint: 请检查统计脚本是否正常安装，或确认站点是否仍有流量。
     severity:
       info: 信息
@@ -1812,10 +1759,10 @@ notificationEmail:
       warning: 警告
       critical: 严重
   test:
-    subject: InsightFlare 通知测试
-    title: InsightFlare 通知测试
-    summary: 这是一条来自 InsightFlare 的测试通知。
-    body: 这是一条来自 InsightFlare 的测试通知。如果邮件已配置并启用，它也会验证 Resend 投递是否正常。
+    subject: Open Analytics 通知测试
+    title: Open Analytics 通知测试
+    summary: 这是一条来自 Open Analytics 的测试通知。
+    body: 这是一条来自 Open Analytics 的测试通知。如果邮件已配置并启用，它也会验证 Resend 投递是否正常。
   report:
     subject: "{site} {periodLabel}访问报告"
     title: "{site} {periodLabel}访问报告"
@@ -1853,7 +1800,7 @@ notificationEmail:
 runtimeConfigError:
   title: 需要运行时配置
   eyebrow: 部署已暂停
-  heading: InsightFlare 需要一个运行时密钥后才能加载控制台。
+  heading: Open Analytics 需要一个运行时密钥后才能加载控制台。
   description: 应用已经启动，但当前运行环境没有读取到必需的 root secret，因此暂时阻止进入控制台。
   requiredTitle: 必需的运行时密钥
   requiredDescription: 请在 Cloudflare 运行时密钥中至少设置以下其中一个值。
@@ -1863,65 +1810,19 @@ runtimeConfigError:
   quickStartHint: 或者，请查看 GitHub README 的“快速开始”章节来设置这个变量。
   docsLabel: 打开 GitHub
   homeLabel: 重试控制台
-login:
-  title: 登录
-  subtitle: 使用 InsightFlare 账号登录。
-  username: 用户名或邮箱
-  password: 密码
-  signIn: 登录
-  invalidCredentials: 用户名或密码错误。
+login: {}
 accountLinks:
   invite:
-    title: 团队邀请
-    subtitle: 接受邀请后加入该团队。
-    loading: 正在加载邀请...
-    missingToken: 缺少邀请 token。
-    loadFailed: 加载邀请失败。
-    accept: 接受邀请
-    accepting: 正在接受...
-    accepted: 已接受邀请。
-    acceptFailed: 接受邀请失败。
-    signIn: 登录后接受
-    signedInNotice: 当前已登录。接受后会将当前账号加入该团队。
-    teamLabel: 团队
-    roleLabel: 角色
-    emailLabel: 邀请邮箱
-    accountEmailLabel: 账号邮箱
-    anyEmail: 任意邮箱
-    expiresLabel: 过期时间
-    usernameLabel: 用户名
-    nameLabel: 显示名称
-    passwordLabel: 密码
-    roles:
-      admin: 管理员
-      member: 成员
-  resetPassword:
-    title: 重置密码
-    subtitle: 为该账号设置新密码。
-    loading: 正在加载重置链接...
-    missingToken: 缺少重置 token。
-    loadFailed: 加载重置链接失败。
-    reset: 重置密码
-    resetting: 正在重置...
-    resetDone: 密码已重置，请使用新密码登录。
-    resetFailed: 重置密码失败。
-    signIn: 返回登录
-    accountLabel: 账号
-    emailLabel: 邮箱
-    expiresLabel: 过期时间
-    passwordLabel: 新密码
-    confirmPasswordLabel: 确认密码
-    passwordTooShort: 密码至少 8 个字符。
-    passwordMismatch: 两次输入的密码不一致。
-empty:
-  noTeams: 当前账号还没有可访问的团队。
+    roles: {}
+  resetPassword: {}
+empty: {}
 errorPage:
   notFoundEyebrow: 页面未找到
   notFoundTitle: 找不到这个页面
   notFoundDescription: 地址可能不正确，或者页面已经被移动。
   errorEyebrow: 应用错误
   errorTitle: 页面出现了问题
-  errorDescription: InsightFlare 无法完成这次请求。下面的诊断信息可以帮助我们定位问题。
+  errorDescription: Open Analytics 无法完成这次请求。下面的诊断信息可以帮助我们定位问题。
   statusLabel: 状态
   reasonLabel: 原因
   requestLabel: 请求路径
@@ -1935,7 +1836,6 @@ errorPage:
   reportAction: 在 GitHub 反馈
   reportHint: 将打开一个已预填内容的 GitHub Issue，提交前请先检查信息。
 actions:
-  logout: 退出登录
   switchToEnglish: English
   switchToChinese: 简体中文
   switchToTraditionalChinese: 繁體中文
@@ -1943,63 +1843,19 @@ actions:
   switchToLight: 浅色
   switchToDark: 深色
 teamSelect:
-  groupLabel: 团队
-  groups:
-    created: 创建的团队
-    managed: 管理的团队
-    member: 所属的团队
-    system: 系统中的全部团队
-  createHint: 新建团队
-  createTitle: 新建团队
-  createDescription: 创建后会自动切换到新团队。
-  nameLabel: 团队名称
-  namePlaceholder: 例如：增长团队
-  slugLabel: 团队 Slug（可选）
-  slugPlaceholder: 例如：growth-team
-  create: 创建
-  creating: 创建中...
+  groups: {}
   cancel: 取消
-  invalidName: 团队名称至少 2 个字符。
-  createFailed: 创建失败，请稍后重试。
-  createSuccess: 团队已创建。
 teamManagement:
-  stats:
-    sites: 站点
-    members: 成员
-  toasts:
-    teamSaved: 团队设置已保存。
-    teamSaveFailed: 团队设置保存失败。
-    teamDeleted: 团队已删除。
-    teamDeleteFailed: 删除团队失败。
-    memberRemoved: 成员已移除。
-    memberRemoveFailed: 移除成员失败。
-    roleChanged: 成员角色已更新。
-    roleChangeFailed: 更新成员角色失败。
-    siteAccessChanged: 成员站点权限已更新。
-    siteAccessChangeFailed: 更新站点权限失败。
-    invalidTeamName: 团队名称至少 2 个字符。
-    inviteCreated: 邀请链接已创建。
-    inviteCreateFailed: 创建邀请链接失败。
-    inviteRevoked: 邀请已撤销。
-    inviteRevokeFailed: 撤销邀请失败。
-    inviteCopied: 邀请链接已复制。
-    inviteCopyFailed: 复制邀请链接失败。
-    invalidInviteEmail: 请输入有效的邀请邮箱。
-    invalidInviteExpiry: 邀请有效期至少为 1 小时。
-    ownerTransferred: 所有权已转移。
-    ownerTransferFailed: 转移所有权失败。
-    invalidTransferTarget: 请选择新的所有者。
+  stats: {}
+  toasts: {}
   sites:
-    title: 站点仪表盘
     subtitle: 聚合查看该团队下所有站点的访问表现。
     aggregateTitle: 总访问量
-    pagesPerSession: 每会话页面数
     noSites: 当前团队还没有站点。
     openAnalytics: 查看分析
-  widgets:
-    title: 小组件
-    subtitle: 小组件功能正在开发中。
-    underConstruction: 正在开发中
+    title: 站点仪表盘
+    pagesPerSession: 每会话页面数
+  widgets: {}
   notifications:
     title: 通知规则
     subtitle: 管理当前团队的通知规则。
@@ -2231,186 +2087,24 @@ teamManagement:
       status: 状态
       action: 操作
   apiKeys:
-    title: API 密钥
-    subtitle: 管理当前团队用于接口访问的密钥。
-    empty: 当前团队还没有 API 密钥。
-    create: 创建密钥
-    creating: 创建中...
-    createTitle: 创建 API 密钥
-    createSubtitle: 只授予这个集成真正需要的最小权限。
-    nameLabel: 密钥名称
-    namePlaceholder: 生产同步任务
-    scopesTitle: 权限
-    scopesDescription: API 密钥永远不能管理成员、用户、所有权或其他密钥。
-    siteScopeTitle: 站点范围
-    siteScopeDescription: 不选择站点表示当前团队所有现有和未来站点。
-    allSites: 全部站点
-    expirationLabel: 过期时间
-    expiration30: 30 天
-    expiration90: 90 天
-    expiration180: 180 天
-    expiration365: 365 天
-    expirationNever: 永不过期
-    oneTimeSecretTitle: 立即复制这个密钥
-    oneTimeSecretDescription: 完整密钥只显示一次，关闭弹窗后无法再次查看。
-    copySecret: 复制密钥
-    revoke: 撤销
-    rotate: 轮换
-    revokeConfirm: 确认立即撤销这个 API 密钥吗？
-    rotateConfirm: 确认轮换这个 API 密钥吗？旧密钥会被立即撤销。
-    neverExpires: 永不过期
-    notUsed: 未使用
-    loading: 正在加载 API 密钥...
-    loadFailed: API 密钥加载失败。
-    invalidInput: 请输入名称并至少选择一个权限。
-    createFailed: API 密钥创建失败。
-    revokeFailed: API 密钥撤销失败。
-    rotateFailed: API 密钥轮换失败。
-    copied: 已复制
-    status:
-      active: 有效
-      expired: 已过期
-      revoked: 已撤销
-    scopes:
-      analyticsRead: 读取分析
-      analysisRead: 读取分析定义
-      analysisWrite: 写入分析定义
-      siteRead: 读取站点
-      siteWrite: 写入站点
-      siteConfigRead: 读取配置
-      siteConfigWrite: 写入配置
-    scopeDescriptions:
-      analyticsRead: 查看访问量、访客、页面浏览等分析数据
-      analysisRead: 查看团队共享的已保存筛选器和漏斗定义
-      analysisWrite: 创建、更新或删除漏斗定义
-      siteRead: 查看站点列表和站点详情
-      siteWrite: 创建、更新或删除站点
-      siteConfigRead: 查看站点配置，如跟踪代码、域名白名单等
-      siteConfigWrite: 修改站点配置，如跟踪强度、路径黑名单等
-    scopeGroups:
-      analytics: 分析
-      analysis: 分析定义
-      site: 站点
-      siteConfig: 站点配置
-    columns:
-      name: 名称
-      scopes: 权限
-      sites: 站点
-      expires: 过期
-      lastUsed: 最近使用
-      status: 状态
-      action: 操作
-  settings:
-    title: 团队设置
-    subtitle: 更新团队显示名和 slug。
-    nameLabel: 团队显示名
-    slugLabel: 团队 Slug
-    save: 保存设置
-    saving: 保存中...
-    delete: 删除团队
-    deleting: 删除中...
-    deleteConfirm: 确认删除该团队及其所有数据吗？此操作不可撤销。
-    transferTitle: 转移所有权
-    transferSubtitle: 将团队所有权转移给另一位成员。当前所有者会自动降为管理员。
-    transferTargetLabel: 新的所有者
-    transferTargetPlaceholder: 选择团队成员
-    transfer: 转移所有权
-    transferring: 转移中...
-    transferConfirm: 此操作不可撤销，你将失去对该团队的所有权（仍保留管理员权限）。确认继续吗？
-    noTransferableMembers: 当前团队没有其他可转移的成员，请先添加成员。
+    status: {}
+    scopes: {}
+    scopeDescriptions: {}
+    scopeGroups: {}
+    columns: {}
+  settings: {}
   members:
-    title: 成员管理
-    subtitle: 创建邀请链接或移除现有成员。
-    remove: 移除成员
-    removeMemberAction: 移除成员「{target}」
-    removeMemberConfirm: 确认将「{target}」从该团队移除吗？移除后将立即失去访问权限。
-    noMembers: 当前团队暂无成员。
-    invitesTitle: 创建邀请链接
-    invitesSubtitle: 用户接受邀请后才会加入此团队。
-    inviteEmailLabel: 邮箱限制（可选）
-    inviteEmailPlaceholder: user@example.com
-    inviteExpiresLabel: 有效期（小时）
-    createInvite: 创建邀请链接
-    creatingInvite: 创建中...
-    copyInvite: 复制邀请链接
-    inviteLinksTitle: 邀请链接
-    inviteLinksSubtitle: 查看邀请状态并撤销有效链接。
-    noInvites: 当前团队暂无邀请链接。
-    anyEmail: 任意邮箱
-    revokeInvite: 撤销邀请
-    revokeInviteAction: 撤销「{target}」的邀请
-    revokeInviteConfirm: 确认撤销「{target}」的邀请吗？该邀请链接将立即失效。
-    siteAccessLabel: 站点权限
-    siteAccessAll: 全部站点
-    siteAccessRestricted: 限定站点
-    siteAccessSelected: "已选择 {count} 个站点"
-    siteAccessDescription: 保持为全部站点，或选择此成员可以访问的具体站点。
-    siteAccessAdmins: 管理员可以访问此团队内的全部站点。
-    siteAccessDialogTitle: 编辑站点权限
-    saveSiteAccess: 保存权限
-    cancelSiteAccess: 取消
-    noSitesForAccess: 当前团队暂无站点。
-    inviteStatuses:
-      active: 有效
-      used: 已使用
-      revoked: 已撤销
-      expired: 已过期
-    columns:
-      name: 名称
-      username: 用户名
-      email: 邮箱
-      inviteCode: 邀请码
-      role: 角色
-      siteAccess: 站点权限
-      joinedAt: 加入时间
-      createdAt: 创建时间
-      expiresAt: 过期时间
-      usedAt: 使用时间
-      status: 状态
-      action: 操作
-    roleLabels:
-      owner: 所有者
-      admin: 管理员
-      member: 成员
+    inviteStatuses: {}
+    columns: {}
+    roleLabels: {}
 managementNav:
-  users: 用户管理
   sites: 站点管理
-  teams: 团队管理
-  versionUpdates: 版本更新
   scheduledTasks: 定时任务
   requestObservation: 请求观测
   systemPerformance: 系统性能
   systemSettings: 系统设置
 managementPages:
-  versionUpdates:
-    subtitle: 查看 InsightFlare 已发布版本与当前运行构建。
-    empty: 暂无版本更新记录。
-    currentVersion: 当前版本
-    latestVersion: 最新版本
-    currentCommit: 当前提交
-    releaseCount: 发布数
-    publishedAt: 发布时间
-    author: 发布者
-    commit: 提交
-    statusStable: 正式版
-    statusPrerelease: 预发布
-    statusDraft: 草稿
-    currentVersionBadge: 当前版本
-    releaseNotes: 更新说明
-    openRelease: 打开 Release
-    viewDetails: 查看详细变更
-    detailsTitle: 详细变更
-    detailsDescription: "{range} 包含的提交。"
-    detailsLoading: 正在加载详细变更...
-    detailsEmpty: 这个版本暂无可对比的上一个发布版本。
-    detailsFailed: 加载详细变更失败。
-    currentCommitBadge: 当前部署
-    openCompare: 打开对比
-    openCommit: 打开提交
-    commitCount: 提交数
-    source: 数据来源
-    loadFailed: 加载版本索引失败。
-    unknown: 未知
+  versionUpdates: {}
   scheduledTasks:
     subtitle: 查看和管理系统定时任务。
     empty: 暂无定时任务。
@@ -2488,47 +2182,7 @@ managementPages:
         description: 分批清理过期运行数据和通知，并优化 D1 查询统计信息。
         schedule: 每天
 adminUsers:
-  title: 用户管理
-  subtitle: 仅系统管理员可创建和管理后台用户。
-  createTitle: 新建用户
-  createTeamNotice: 在这里创建用户会同时创建一个由该用户拥有的新团队。如果只是想把用户加入现有团队，请前往对应团队设置中创建邀请链接。
-  username: 用户名
-  email: 邮箱
-  name: 名称（可选）
-  password: 密码（至少 8 位）
-  role: 系统角色
-  teamName: 团队名称
-  teamSlug: 团队 Slug（可选）
-  defaultTeamName: "{name} 的团队"
-  create: 创建用户
-  creating: 创建中...
-  delete: 删除
-  deleting: 删除中...
-  deleteConfirm: 确认删除该用户账号吗？
-  deleteSuccess: 用户已删除。
-  deleteFailed: 删除用户失败。
-  generateResetLink: 生成重置密码链接
-  resetLinkCreated: 重置密码链接已生成。
-  resetLinkCreateFailed: 生成重置密码链接失败。
-  resetLinkCopied: 重置密码链接已复制。
-  resetLinkCopyFailed: 复制重置密码链接失败。
-  copyResetLink: 复制链接
-  resetLinkExpiresAt: 过期时间
-  listTitle: 用户列表
-  listSubtitle: 当前系统内所有用户。
-  noData: 暂无用户数据。
-  loadFailed: 加载用户列表失败。
-  createSuccess: 用户创建成功。
-  createFailed: 用户创建失败。
-  invalidInput: 请填写有效的用户名、邮箱和密码。
-  columns:
-    name: 名称
-    username: 用户名
-    email: 邮箱
-    role: 角色
-    teams: 团队数
-    created: 创建时间
-    action: 操作
+  columns: {}
 adminSites:
   title: 站点管理
   subtitle: 管理当前团队下的站点。
@@ -2555,81 +2209,31 @@ adminSites:
     created: 创建时间
     action: 操作
 adminTeams:
-  title: 团队管理
-  subtitle: 仅系统管理员可创建与查看所有团队。
-  createTitle: 新建团队
-  createSubtitle: 创建后可进入团队配置与成员管理。
-  name: 团队名称
-  slug: 团队 Slug（可选）
-  create: 创建团队
-  creating: 创建中...
-  listTitle: 团队列表
-  listSubtitle: 系统中所有团队。
-  noData: 暂无团队数据。
-  loadFailed: 加载团队失败。
-  createSuccess: 团队创建成功。
-  createFailed: 团队创建失败。
-  invalidInput: 团队名称至少 2 个字符。
-  open: 进入团队
-  settings: 设置
-  columns:
-    name: 名称
-    slug: Slug
-    sites: 站点数
-    members: 成员数
-    created: 创建时间
-    action: 操作
+  columns: {}
 requestObservation:
   title: 请求观测
-  tabs:
-    overview: 总览
-    blocked: 拦截请求
-    included: 统计请求
+  subtitle: "收集器近期拒绝的请求：自定义拦截规则、机器人和托管网络。"
+  blockedTotal: "已拦截请求"
+  retentionNote: "保留 30 天。放行的流量见各站点的仪表盘。"
+  topReasons: "原因"
+  recentTitle: "最近拦截的请求"
+  categoryLabels:
+    custom_block: "拦截规则"
+    bot: "机器人"
+    suspected_bot: "托管网络"
+  tabs: {}
   refresh: 刷新
   loadFailed: 加载请求观测数据失败。
-  notConfiguredTitle: 尚未配置 Analytics Engine 读取凭据
-  notConfiguredDescription: 请先在系统设置中填写 Cloudflare Account ID 和 API Token，用于读取请求观测 Analytics Engine 数据集。
-  analyticsEngineDisabledTitle: Analytics Engine 尚未启用
-  analyticsEngineDisabledDescription:
-    当前部署未绑定 Analytics Engine，因为 Cloudflare
-    账户尚未启用 Analytics Engine。请先在 Cloudflare 中启用，然后重新部署以采集请求观测数据。
-  openAnalyticsEngine: 打开 Analytics Engine
-  openSettings: 打开设置
-  affectedSites: 受影响站点
-  uniqueCountries: 国家/地区
   noData: 当前时间窗口内没有请求数据。
-  trendTitle: 分流趋势
-  client: 客户端
-  edge: 边缘
-  identifiers: 标识符
-  fullUserAgent: 完整 User-Agent
-  id: ID
-  metadata: 元数据
   time: 时间
   site: 站点
   location: 位置
   network: 网络
   reason: 原因
-  request: 请求
-  ip: IP
   userAgent: User-Agent
-  category: 分类
   emptyValue: 未知
-  kind: 类型
-  botScore: Bot 分数
-  botScoreBucket: Bot Score 区间
-  verifiedBotCategory: 验证机器人类别
-  hostname: 主机名
   pathname: 路径
-  origin: Origin
-  asOrganization: ASN 组织
-  asn: ASN
   country: 国家/地区
-  region: 州/省
-  city: 城市
-  colo: 数据中心
-  userAgentLengthBucket: User-Agent 长度
-  userAgentLength: User-Agent 长度（精确）
   ipPrefix: IP 前缀
   botReasonLabels:
     missing_ua: 缺少 User-Agent
@@ -2654,39 +2258,13 @@ requestObservation:
     blocked_asns: 命中 ASN 屏蔽规则
     blocked_countries: 命中国家/地区屏蔽规则
     blocked_regions: 命中区域屏蔽规则
-  requestKindLabels:
-    pageview: 页面浏览
-    custom_event: 自定义事件
-    request: 请求
-    visibility: 可见性
-    leave: 离开
-    identify: 用户识别
+  requestKindLabels: {}
   overviewLabels:
-    p50Latency: P50 Worker 处理耗时
-    p75Latency: P75 Worker 处理耗时
-    p99Latency: P99 Worker 处理耗时
-    p95Latency: P95 Worker 处理耗时
-    avgLatency: 平均 Worker 处理耗时
-    pageviews: 页面浏览
-    customEvents: 自定义事件
-    overviewTrendTitle: 请求分流趋势
-    trafficCompositionTitle: 业务请求构成
-    trafficCompositionDescription: 按时间显示正常采集链路中页面浏览、离开、可见性、自定义事件和用户识别的数量。
-    categoryShareTitle: 请求分类占比
-    latencyTitle: Worker 处理耗时趋势
-    latencyDescription: 正常请求写入 AE 时记录的 P50 / P75 / P95 / P99 Worker 处理耗时。
-    requests: 请求数
     windowDays: "最近 {days} 天"
-    latencyMilliseconds: "{value} 毫秒"
-  normalDetail:
-    requestMethod: 请求方法
-    edgeLatency: Worker 处理耗时
-    eventAt: 事件时间
-    receivedAt: 接收时间
-    continent: 大洲
+  normalDetail: {}
 systemSettings:
   title: 系统设置
-  subtitle: 管理当前 InsightFlare 实例的全站配置。
+  subtitle: 管理当前 Open Analytics 实例的全站配置。
   guide: 教程
   analyticsEngineTitle: 分析引擎
   analyticsEngineDescription: 配置用于读取请求观测以及未来流量和事件分析数据的 Cloudflare 凭据。
@@ -2699,10 +2277,9 @@ systemSettings:
   analyticsEngineDeleteFailed: 删除分析引擎配置失败。
   analyticsEngineDeleteConfirm: 确认删除分析引擎读取凭据吗？删除后，依赖 Analytics Engine 的功能将显示为未配置。
   analyticsEngineDisabledTitle: Analytics Engine 尚未启用
-  analyticsEngineDisabledDescription:
-    当前部署已自动禁用 Analytics Engine 绑定，因为 Cloudflare
-    账户尚未启用 Analytics Engine。请先在 Cloudflare 中启用 Analytics Engine，然后重新部署
-    InsightFlare 以激活相关分析功能。
+  analyticsEngineDisabledDescription: 当前部署已自动禁用 Analytics Engine 绑定，因为 Cloudflare
+    账户尚未启用 Analytics Engine。请先在 Cloudflare 中启用 Analytics Engine，然后重新部署 Open
+    Analytics 以激活相关分析功能。
   analyticsEngineDisabledHint: 在启用 Analytics Engine 并重新部署 Worker 前，分析引擎设置不可修改。
   analyticsEngineOpenCloudflare: 打开 Cloudflare Analytics Engine
   analyticsEngineGuideTitle: 获取分析引擎配置
@@ -2715,7 +2292,10 @@ systemSettings:
     - 为 Token 添加 Account Analytics 读取权限，并限制到当前账号。
     - 保存后复制 Token，回到这里填写 Account ID 和 API Token。
   notificationEmailTitle: 邮件通知
-  notificationEmailDescription: 配置系统用于发送报告、告警和测试邮件的邮件服务。
+  notificationEmailDescription: "报告、提醒和测试消息通过 Every App 网关以邮件发送。"
+  emailGatewayReady: "Every App 网关负责发送通知邮件。"
+  emailGatewayNotReady: "Every App 网关尚未配置邮件发件人。网关管理员设置 EMAIL_FROM 和 Email Sending 后即可发送通知邮件。"
+  emailSenderLabel: "发件人"
   notificationEmailGuideTitle: 获取 Resend 邮件配置
   notificationEmailGuideDescription: 使用 Resend 发送系统邮件前，需要准备发件域名和 API Key。
   notificationEmailGuideSteps:
@@ -2725,11 +2305,12 @@ systemSettings:
     - 回到这里填写发件人名称、发件邮箱、Reply-To 和 Resend API Key。
     - 保存后使用测试收件人发送一封测试邮件，确认投递链路正常。
   retentionTitle: 运行数据保留期
-  retentionDescription: 配置任务运行记录、任务日志和通知消息的保留时间。修改只影响新建记录。
+  retentionDescription: 配置任务运行记录、任务日志、通知消息和详细分析数据的保留时间。任务和通知的修改只影响新建记录；超出新期限的详细分析数据会在下一次每日运行时删除。
   scheduledTaskLogsDaysLabel: 计划任务运行记录和日志（天）
   notificationTestDaysLabel: 测试通知（天）
   notificationAttentionDaysLabel: 警告和严重通知（天）
   notificationDefaultDaysLabel: 其他通知（天）
+  analyticsDetailDaysLabel: 详细分析数据：页面浏览和事件（天；保留每小时汇总）
   retentionRangeHint: 请输入 1 到 3650 之间的整数天数。
   retentionSave: 保存保留期配置
   retentionSaving: 保存中...
@@ -2762,7 +2343,7 @@ systemSettings:
   loginTurnstileGuideSteps:
     - 打开 Cloudflare Dashboard，进入 Turnstile。
     - 新建一个 widget，并选择 Invisible 模式。
-    - 添加当前 InsightFlare 登录域名到允许的主机名列表。
+    - 添加当前 Open Analytics 登录域名到允许的主机名列表。
     - 创建后复制 Site Key 和 Secret Key。
     - 回到这里填写 Site Key 和 Secret Key，先运行测试验证，再保存配置。
   enabledLabel: 启用邮件发送
@@ -2794,7 +2375,7 @@ systemSettings:
   loadFailed: 加载邮件配置失败。
 systemPerformance:
   title: 系统性能
-  subtitle: 基于现有分析行监控 InsightFlare 的采集、缓冲和写入健康度。
+  subtitle: 基于现有分析行监控 Open Analytics 的采集、缓冲和写入健康度。
   refresh: 刷新
   loadFailed: 加载系统性能数据失败。
   noData: 当前时间窗口内暂无系统性能数据。
@@ -2879,20 +2460,8 @@ systemPerformance:
   doDiagnosticThresholdsHint: 阈值：stale {stale}，timeout {timeout}，hardAged
     {hardAged}，stuck flush_attempts ≥ {stuck}
   doDiagnosticHealthy: 当前未发现异常缓冲行。
-loginForm:
-  signingIn: 登录中...
-  verifyingSecurity: 正在安全验证...
-  securityVerificationTitle: 安全验证失败
-  securityVerificationFailed: 安全验证失败，请重试。
-  retrySecurityVerification: 重试验证
-  redirecting: 正在跳转...
-  failed: 登录失败，请稍后重试。
-logoutAction:
-  pending: 退出中...
-  success: 已退出登录。
-  failed: 退出登录失败，请稍后重试。
+loginForm: {}
+logoutAction: {}
 sidebarFooter:
   gateway: 返回 Every App
-teamEntry:
-  title: 选择团队
-  description: 你当前可访问多个团队，请先选择要进入的团队。
+teamEntry: {}

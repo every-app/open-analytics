@@ -1,8 +1,8 @@
-import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 
 import { describe, expect, it, vi } from "vitest";
 
+import { createMigratedDatabase } from "@/../scripts/schema/database";
 import {
   createQueryTime,
   EMPTY_FILTER_DOCUMENT,
@@ -106,6 +106,13 @@ function createD1Env(resultSets: D1Row[][]): {
     calls,
     prepare,
   };
+}
+function createAnalyticsDatabase(): DatabaseSync {
+  const database = createMigratedDatabase();
+  database
+    .prepare("INSERT INTO site_identities (site_pk, site_id) VALUES (1, ?)")
+    .run(siteId);
+  return database;
 }
 function visitBindings(targetWindow = window): QueryBinding[] {
   return [siteId, targetWindow.startMs, targetWindow.endExclusiveMs];
@@ -408,33 +415,7 @@ describe("edge query dimensions low-level coverage", () => {
   });
 
   it("materializes page tab visits once while preserving all tab results", async () => {
-    const database = new DatabaseSync(":memory:");
-    for (const migration of [
-      "migrations/0008_rebuild_analytics.sql",
-      "migrations/0013_add_visit_performance_metrics.sql",
-      "migrations/0019_add_user_identity.sql",
-    ]) {
-      database.exec(readFileSync(migration, "utf8"));
-    }
-    installVisitSiteIdentityFixture(database);
-    database.exec(`
-      DROP TABLE IF EXISTS custom_events;
-      DROP TABLE IF EXISTS custom_event_names;
-      CREATE TABLE custom_event_names (
-        id INTEGER PRIMARY KEY,
-        site_id TEXT NOT NULL,
-        name TEXT NOT NULL
-      );
-      CREATE TABLE custom_events (
-        event_pk INTEGER PRIMARY KEY,
-        event_id TEXT NOT NULL,
-        site_id TEXT NOT NULL,
-        site_pk INTEGER NOT NULL DEFAULT 1,
-        visit_id TEXT NOT NULL,
-        event_name_id INTEGER NOT NULL,
-        occurred_at INTEGER NOT NULL
-      );
-    `);
+    const database = createAnalyticsDatabase();
     const calls: Array<{ sql: string; bindings: QueryBinding[] }> = [];
     const env = {
       DB: {
@@ -452,9 +433,9 @@ describe("edge query dimensions low-level coverage", () => {
     } as Env;
     const insert = database.prepare(`
       INSERT INTO visits (
-        visit_id, site_id, visitor_id, session_id, status, started_at,
+        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
         last_activity_at, pathname, title, hostname
-      ) VALUES (?, ?, ?, ?, 'closed', ?, ?, ?, ?, ?)
+      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, ?, ?)
     `);
 
     try {

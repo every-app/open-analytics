@@ -319,7 +319,11 @@ export async function handleSiteConfigAdmin(
     const siteId = clampString(String(body.siteId || ""), 120);
     if (!siteId) return bad("siteId is required", undefined, req);
     if (!(await canManageSite(env, a, siteId)))
-      return forb("Only team owner can update site config", undefined, req);
+      return forb(
+        "Only organization admins can update site config",
+        undefined,
+        req,
+      );
     const cfg = (
       body.config && typeof body.config === "object" ? body.config : {}
     ) as JsonRecord;

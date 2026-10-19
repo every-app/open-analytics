@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  apiKeyHashSecret,
-  dashboardSessionSecret,
+  collectTokenSigningSecret,
   deriveSecret,
   rootSecret,
   SECRET_PURPOSES,
@@ -23,30 +22,16 @@ describe("secret derivation", () => {
   it("derives different purpose-specific secrets from the same root", async () => {
     const root = "root-secret";
 
-    await expect(dashboardSessionSecret({ MAIN_SECRET: root })).resolves.toBe(
-      await deriveSecret(root, SECRET_PURPOSES.dashboardSession),
-    );
-    await expect(apiKeyHashSecret({ MAIN_SECRET: root })).resolves.toBe(
-      await deriveSecret(root, SECRET_PURPOSES.apiKeyHash),
-    );
     await expect(visitorDailySaltSecret({ MAIN_SECRET: root })).resolves.toBe(
       await deriveSecret(root, SECRET_PURPOSES.visitorDailySalt),
     );
-
-    const values = await Promise.all([
-      dashboardSessionSecret({ MAIN_SECRET: root }),
-      apiKeyHashSecret({ MAIN_SECRET: root }),
-      visitorDailySaltSecret({ MAIN_SECRET: root }),
-    ]);
-    expect(new Set(values).size).toBe(3);
-  });
-
-  it("derives dashboard session secrets only from the root secret", async () => {
-    const root = "main";
     await expect(
-      dashboardSessionSecret({
-        MAIN_SECRET: root,
-      }),
-    ).resolves.toBe(await deriveSecret(root, SECRET_PURPOSES.dashboardSession));
+      collectTokenSigningSecret({ MAIN_SECRET: root }),
+    ).resolves.toBe(
+      await deriveSecret(root, SECRET_PURPOSES.collectTokenSigning),
+    );
+    expect(await visitorDailySaltSecret({ MAIN_SECRET: root })).not.toBe(
+      await collectTokenSigningSecret({ MAIN_SECRET: root }),
+    );
   });
 });

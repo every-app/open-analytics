@@ -168,7 +168,7 @@ describe("edge script endpoint", () => {
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(script).toMatch(
-      /^"use strict";globalThis\["__insightflare_tracker_runtime_config__"\] = \{"siteId":"site-1","isEUMode":true,"trackQueryParams":false,"trackHash":true,"ignoreDoNotTrack":false,"autoTrackOutboundLinks":true,"performanceSampleRate":100,"sessionWindowMs":1800000,"collectToken":"eyJ/,
+      /^"use strict";globalThis\["__openanalytics_tracker_runtime_config__"\] = \{"siteId":"site-1","isEUMode":true,"trackQueryParams":false,"trackHash":true,"ignoreDoNotTrack":false,"autoTrackOutboundLinks":true,"performanceSampleRate":100,"sessionWindowMs":1800000,"collectToken":"eyJ/,
     );
     expect(script).toMatch(/\nfull-sdk$/);
     expect(storage.open).toHaveBeenCalledWith("insightflare-script-cache");
@@ -227,7 +227,7 @@ describe("edge script endpoint", () => {
     );
 
     await expect(response.text()).resolves.toMatch(
-      /^globalThis\["__insightflare_tracker_runtime_config__"\] = \{"siteId":"site-1","isEUMode":true,"trackQueryParams":true,"trackHash":false,"ignoreDoNotTrack":true,"autoTrackOutboundLinks":false,"performanceSampleRate":0,"sessionWindowMs":86400000,"collectToken":"eyJ/,
+      /^globalThis\["__openanalytics_tracker_runtime_config__"\] = \{"siteId":"site-1","isEUMode":true,"trackQueryParams":true,"trackHash":false,"ignoreDoNotTrack":true,"autoTrackOutboundLinks":false,"performanceSampleRate":0,"sessionWindowMs":86400000,"collectToken":"eyJ/,
     );
     expect(response.headers.get("cache-control")).toBe("private, no-store");
   });

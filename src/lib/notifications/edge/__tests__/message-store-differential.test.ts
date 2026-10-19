@@ -38,17 +38,16 @@ function createFixture() {
   databases.add(database);
   const trace: SqliteD1Trace = { preparedSql: [], bindings: [] };
 
-  database
-    .prepare("INSERT INTO users (id, email, username) VALUES (?, ?, ?)")
-    .run("user-1", "user1@example.test", "user1");
-  database
-    .prepare("INSERT INTO users (id, email, username) VALUES (?, ?, ?)")
-    .run("user-2", "user2@example.test", "user2");
-  const insertTeam = database.prepare(
-    "INSERT INTO teams (id, name, slug, owner_user_id) VALUES (?, ?, ?, ?)",
+  const insertUser = database.prepare(
+    "INSERT INTO users (id, email) VALUES (?, ?)",
   );
-  insertTeam.run("team-1", "Team 1", "team-1", "user-1");
-  insertTeam.run("team-2", "Team 2", "team-2", "user-2");
+  insertUser.run("user-1", "user1@example.test");
+  insertUser.run("user-2", "user2@example.test");
+  const insertTeam = database.prepare(
+    "INSERT INTO teams (id, name, slug) VALUES (?, ?, ?)",
+  );
+  insertTeam.run("team-1", "Team 1", "team-1");
+  insertTeam.run("team-2", "Team 2", "team-2");
   const insertSite = database.prepare(
     "INSERT INTO sites (id, team_id, name, domain) VALUES (?, ?, ?, ?)",
   );
@@ -483,20 +482,18 @@ describe("notification message store Typed DAL differential", () => {
       fixture.database,
       tracedStatement(fixture.trace),
     );
-    expectIndexSearch(typedTeamPlan, "idx_notification_messages_team_created");
     const legacyTeamPlan = explainQueryPlan(fixture.database, {
       sql: `SELECT ${MESSAGE_SELECT} FROM notification_messages WHERE team_id=? AND archived_at IS NULL AND (expires_at IS NULL OR expires_at > ?) AND user_id=? ORDER BY created_at DESC LIMIT ?`,
       bindings: ["team-1", NOW, "user-1", 100],
     });
-    expect(
-      typedTeamPlan.some((detail) =>
-        detail.includes("idx_notification_messages_team_created"),
-      ),
-    ).toBe(
-      legacyTeamPlan.some((detail) =>
-        detail.includes("idx_notification_messages_team_created"),
-      ),
+    // team_id and user_id are both equality filters, so either created-time
+    // index serves the query; SQLite's tie-break picks one.
+    const usedIndex = (plan: readonly string[]) =>
+      plan.join("\n").match(/SEARCH .*USING INDEX (\w+)/)?.[1];
+    expect(usedIndex(typedTeamPlan)).toMatch(
+      /^idx_notification_messages_(team|user)_created$/,
     );
+    expect(usedIndex(typedTeamPlan)).toBe(usedIndex(legacyTeamPlan));
 
     resetTrace(fixture.trace);
     const minimalUserInput = { userId: "user-1", limit: 50 };

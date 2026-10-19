@@ -1,6 +1,9 @@
 /**
  * The app's dev server, as `everyapp dev` starts it (everyapp.config.ts `dev`):
- * builds the tracker SDK, then starts `cf dev` while watching src/i18n/*.yaml.
+ * builds the tracker SDK, then starts `vite dev` while watching src/i18n/*.yaml.
+ * Vite rather than `cf dev`: the Cloudflare Vite plugin reads
+ * cloudflare.config.ts itself, and cf's framework detection trips over the
+ * Hono and UI packages in this repository.
  *
  * The yaml watcher reruns `regenerateAppMessages()` on change so editing
  * translation files takes effect in the running app without a restart.
@@ -71,15 +74,15 @@ async function main(): Promise<void> {
   const watcher = createYamlWatcher(rlog);
   watcher.start();
 
-  rlog.info("Starting cf dev...");
+  rlog.info("Starting vite dev...");
   // `pnpm run` puts node_modules/.bin on PATH.
-  const vite = spawn("cf", ["dev"], {
+  const vite = spawn("vite", ["dev"], {
     cwd: ROOT,
     stdio: ["inherit", "inherit", "inherit"],
   });
 
   vite.on("error", (error) => {
-    rlog.error("cf dev failed to start:", error.message);
+    rlog.error("vite failed to start:", error.message);
     watcher.stop();
     process.exit(1);
   });
@@ -88,8 +91,8 @@ async function main(): Promise<void> {
     watcher.stop();
     const reason =
       signal != null
-        ? `cf dev terminated by signal ${signal}`
-        : `cf dev exited with code ${code ?? 0}`;
+        ? `vite terminated by signal ${signal}`
+        : `vite exited with code ${code ?? 0}`;
     rlog.info(reason);
     process.exit(code ?? 0);
   });

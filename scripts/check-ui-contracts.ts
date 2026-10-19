@@ -6,7 +6,6 @@ import ts from "typescript";
 const root = process.cwd();
 const uiContractsDirectory = path.join(root, "packages/ui/src/components/ui");
 const productContractsDirectory = path.join(root, "packages/product-ui/src");
-const registryPath = path.join(root, "src/components/ui-gallery/registry.ts");
 
 function contractFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -158,222 +157,16 @@ for (const sourcePath of sourceFiles) {
   fixtureIds.push(...data.fixtureIds);
 }
 
-const registry = readFileSync(registryPath, "utf8");
-const slugs = [...registry.matchAll(/\bslug:\s*["']([^"']+)["']/gu)].map(
-  (match) => match[1],
-);
-const uiPackage = JSON.parse(
-  readFileSync(path.join(root, "packages/ui/package.json"), "utf8"),
-) as { exports: Record<string, unknown> };
-const productPackage = JSON.parse(
-  readFileSync(path.join(root, "packages/product-ui/package.json"), "utf8"),
-) as { exports: Record<string, unknown> };
-const publicComponentSubpaths = Object.keys(uiPackage.exports)
-  .filter((entry) => entry.startsWith("./"))
-  .map((entry) => entry.slice(2))
-  .filter(
-    (entry) =>
-      entry !== "styles.css" &&
-      entry !== "contracts" &&
-      entry !== "layer-manager" &&
-      entry !== "layer-portal" &&
-      entry !== "use-mobile",
-  );
-const productComponentSubpaths = Object.keys(productPackage.exports)
-  .filter((entry) => entry.startsWith("./"))
-  .map((entry) => entry.slice(2))
-  .filter((entry) => entry !== "styles.css" && entry !== "tabbed-table");
-
-const registrySource = ts.createSourceFile(
-  registryPath,
-  registry,
-  ts.ScriptTarget.Latest,
-  true,
-  ts.ScriptKind.TSX,
-);
-const productImports: Array<{ binding: string; subpath: string }> = [];
-for (const statement of registrySource.statements) {
-  if (!ts.isImportDeclaration(statement)) continue;
-  if (!ts.isStringLiteral(statement.moduleSpecifier)) continue;
-  const match = statement.moduleSpecifier.text.match(
-    /^@insightflare\/product-ui\/(.+)$/u,
-  );
-  if (!match || !statement.importClause?.namedBindings) continue;
-  const bindings = statement.importClause.namedBindings;
-  if (!ts.isNamedImports(bindings)) continue;
-  for (const element of bindings.elements) {
-    productImports.push({
-      binding: element.name.text,
-      subpath: match[1],
-    });
-  }
-}
-const productContractImports = productImports.filter(({ binding }) =>
-  binding.endsWith("Contract"),
-);
-
-function variableInitializer(name: string): ts.Expression | undefined {
-  for (const statement of registrySource.statements) {
-    if (!ts.isVariableStatement(statement)) continue;
-    for (const declaration of statement.declarationList.declarations) {
-      if (ts.isIdentifier(declaration.name) && declaration.name.text === name) {
-        return declaration.initializer;
-      }
-    }
-  }
-  return undefined;
-}
-
-function propertyName(
-  property: ts.ObjectLiteralElementLike,
-): string | undefined {
-  if (!("name" in property) || !property.name) return undefined;
-  return ts.isIdentifier(property.name) || ts.isStringLiteralLike(property.name)
-    ? property.name.text
-    : undefined;
-}
-
-const galleryContractBindings = new Map<string, string>();
-const galleryContractsInitializer = variableInitializer("galleryContracts");
-if (galleryContractsInitializer) {
-  const contracts = unwrapExpression(galleryContractsInitializer);
-  if (ts.isObjectLiteralExpression(contracts)) {
-    for (const property of contracts.properties) {
-      if (!ts.isPropertyAssignment(property)) continue;
-      const key = propertyName(property);
-      const initializer = unwrapExpression(property.initializer);
-      if (
-        key &&
-        ts.isCallExpression(initializer) &&
-        initializer.arguments[0] &&
-        ts.isIdentifier(initializer.arguments[0])
-      ) {
-        galleryContractBindings.set(key, initializer.arguments[0].text);
-      }
-    }
-  }
-}
-
-const productGalleryEntries: Array<{
-  slug: string;
-  subpath: string;
-  contractBinding: string | undefined;
-}> = [];
-const galleryRegistryInitializer = variableInitializer("uiGalleryRegistry");
-if (galleryRegistryInitializer) {
-  const entries = unwrapExpression(galleryRegistryInitializer);
-  if (ts.isArrayLiteralExpression(entries)) {
-    for (const element of entries.elements) {
-      if (!ts.isObjectLiteralExpression(element)) continue;
-      if (stringProperty(element, "packageType") !== "product-ui") continue;
-      const slug = stringProperty(element, "slug");
-      const apiEntry = stringProperty(element, "apiEntry");
-      const contract = element.properties.find(
-        (property) =>
-          ts.isPropertyAssignment(property) &&
-          propertyName(property) === "contract",
-      );
-      const contractInitializer =
-        contract && ts.isPropertyAssignment(contract)
-          ? unwrapExpression(contract.initializer)
-          : undefined;
-      const contractKey =
-        contractInitializer &&
-        ts.isPropertyAccessExpression(contractInitializer) &&
-        ts.isIdentifier(contractInitializer.expression) &&
-        contractInitializer.expression.text === "galleryContracts"
-          ? contractInitializer.name.text
-          : undefined;
-      const subpath = apiEntry?.match(
-        /^@insightflare\/product-ui\/(.+)$/u,
-      )?.[1];
-      if (slug && subpath) {
-        productGalleryEntries.push({
-          slug,
-          subpath,
-          contractBinding: contractKey
-            ? galleryContractBindings.get(contractKey)
-            : undefined,
-        });
-      }
-    }
-  }
-}
-
 for (const id of duplicates(contractIds))
   issues.push(`Duplicate contract id: ${id}`);
 for (const id of duplicates(fixtureIds))
   issues.push(`Duplicate fixture id: ${id}`);
-for (const slug of duplicates(slugs))
-  issues.push(`Duplicate gallery slug: ${slug}`);
-
-const registrySlugs = new Set(slugs);
-for (const subpath of publicComponentSubpaths) {
-  if (!registrySlugs.has(subpath)) {
-    issues.push(
-      `Public UI component subpath is missing from the gallery: ${subpath}`,
-    );
-  }
-}
-
-const importedProductSubpaths = new Set(
-  productImports.map(({ subpath }) => subpath),
-);
-for (const subpath of productComponentSubpaths) {
-  const contractImport = productContractImports.find(
-    (candidate) => candidate.subpath === subpath,
-  );
-  const galleryTargetsSubpath = productGalleryEntries.some(
-    (entry) => entry.subpath === subpath,
-  );
-  if (!galleryTargetsSubpath) {
-    issues.push(
-      `Public Product UI subpath is missing from the Gallery: ${subpath}`,
-    );
-    continue;
-  }
-  if (
-    contractImport &&
-    !productGalleryEntries.some(
-      (entry) =>
-        entry.subpath === subpath &&
-        entry.contractBinding === contractImport.binding,
-    )
-  ) {
-    issues.push(
-      `Product UI contract ${contractImport.binding} is not a Gallery target: ${subpath}`,
-    );
-  }
-}
-for (const subpath of importedProductSubpaths) {
-  if (!productComponentSubpaths.includes(subpath)) {
-    issues.push(`Gallery imports a non-public Product UI subpath: ${subpath}`);
-  }
-}
-if (
-  new Set(productGalleryEntries.map(({ subpath }) => subpath)).size !==
-  productComponentSubpaths.length
-) {
-  issues.push(
-    `Expected ${productComponentSubpaths.length} Product UI Gallery targets, found ${new Set(productGalleryEntries.map(({ subpath }) => subpath)).size}.`,
-  );
-}
-
-const productGallerySlugs = new Set(
-  productGalleryEntries.map(({ slug }) => slug),
-);
-const publicUiSlugs = new Set(publicComponentSubpaths);
-for (const slug of slugs) {
-  if (!publicUiSlugs.has(slug) && !productGallerySlugs.has(slug)) {
-    issues.push(`Gallery slug has no public package target: ${slug}`);
-  }
-}
 
 if (issues.length > 0) {
   console.error(issues.join("\n"));
   process.exitCode = 1;
 } else {
   console.log(
-    `UI contracts passed (${contractIds.length} contracts, ${fixtureIds.length} fixtures, ${slugs.length} gallery entries).`,
+    `UI contracts passed (${contractIds.length} contracts, ${fixtureIds.length} fixtures).`,
   );
 }

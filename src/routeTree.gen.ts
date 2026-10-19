@@ -19,6 +19,7 @@ import { Route as LocaleAppInboxRouteImport } from './routes/$locale.app.inbox'
 import { Route as LocaleAppNotificationsRouteImport } from './routes/$locale.app.notifications'
 import { Route as LocaleAppPublicLinksRouteImport } from './routes/$locale.app.public-links'
 import { Route as LocaleShareSlugRouteImport } from './routes/$locale.share.$slug'
+import { Route as LocaleAppManageRequestObservationRouteImport } from './routes/$locale.app.manage.request-observation'
 import { Route as LocaleAppManageScheduledTasksRouteImport } from './routes/$locale.app.manage.scheduled-tasks'
 import { Route as LocaleAppManageSystemPerformanceRouteImport } from './routes/$locale.app.manage.system-performance'
 import { Route as LocaleAppManageSystemSettingsRouteImport } from './routes/$locale.app.manage.system-settings'
@@ -105,6 +106,12 @@ const LocaleShareSlugRoute = LocaleShareSlugRouteImport.update({
   path: '/share/$slug',
   getParentRoute: () => LocaleRoute,
 } as any)
+const LocaleAppManageRequestObservationRoute =
+  LocaleAppManageRequestObservationRouteImport.update({
+    id: '/manage/request-observation',
+    path: '/manage/request-observation',
+    getParentRoute: () => LocaleAppRoute,
+  } as any)
 const LocaleAppManageScheduledTasksRoute =
   LocaleAppManageScheduledTasksRouteImport.update({
     id: '/manage/scheduled-tasks',
@@ -314,6 +321,7 @@ export interface FileRoutesByFullPath {
   '/$locale/app/public-links': typeof LocaleAppPublicLinksRoute
   '/$locale/share/$slug': typeof LocaleShareSlugRouteWithChildren
   '/$locale/app/': typeof LocaleAppIndexRoute
+  '/$locale/app/manage/request-observation': typeof LocaleAppManageRequestObservationRoute
   '/$locale/app/manage/scheduled-tasks': typeof LocaleAppManageScheduledTasksRoute
   '/$locale/app/manage/system-performance': typeof LocaleAppManageSystemPerformanceRoute
   '/$locale/app/manage/system-settings': typeof LocaleAppManageSystemSettingsRoute
@@ -358,6 +366,7 @@ export interface FileRoutesByTo {
   '/$locale/app/notifications': typeof LocaleAppNotificationsRoute
   '/$locale/app/public-links': typeof LocaleAppPublicLinksRoute
   '/$locale/app': typeof LocaleAppIndexRoute
+  '/$locale/app/manage/request-observation': typeof LocaleAppManageRequestObservationRoute
   '/$locale/app/manage/scheduled-tasks': typeof LocaleAppManageScheduledTasksRoute
   '/$locale/app/manage/system-performance': typeof LocaleAppManageSystemPerformanceRoute
   '/$locale/app/manage/system-settings': typeof LocaleAppManageSystemSettingsRoute
@@ -404,6 +413,7 @@ export interface FileRoutesById {
   '/$locale/app/public-links': typeof LocaleAppPublicLinksRoute
   '/$locale/share/$slug': typeof LocaleShareSlugRouteWithChildren
   '/$locale/app/': typeof LocaleAppIndexRoute
+  '/$locale/app/manage/request-observation': typeof LocaleAppManageRequestObservationRoute
   '/$locale/app/manage/scheduled-tasks': typeof LocaleAppManageScheduledTasksRoute
   '/$locale/app/manage/system-performance': typeof LocaleAppManageSystemPerformanceRoute
   '/$locale/app/manage/system-settings': typeof LocaleAppManageSystemSettingsRoute
@@ -452,6 +462,7 @@ export interface FileRouteTypes {
     | '/$locale/app/public-links'
     | '/$locale/share/$slug'
     | '/$locale/app/'
+    | '/$locale/app/manage/request-observation'
     | '/$locale/app/manage/scheduled-tasks'
     | '/$locale/app/manage/system-performance'
     | '/$locale/app/manage/system-settings'
@@ -496,6 +507,7 @@ export interface FileRouteTypes {
     | '/$locale/app/notifications'
     | '/$locale/app/public-links'
     | '/$locale/app'
+    | '/$locale/app/manage/request-observation'
     | '/$locale/app/manage/scheduled-tasks'
     | '/$locale/app/manage/system-performance'
     | '/$locale/app/manage/system-settings'
@@ -541,6 +553,7 @@ export interface FileRouteTypes {
     | '/$locale/app/public-links'
     | '/$locale/share/$slug'
     | '/$locale/app/'
+    | '/$locale/app/manage/request-observation'
     | '/$locale/app/manage/scheduled-tasks'
     | '/$locale/app/manage/system-performance'
     | '/$locale/app/manage/system-settings'
@@ -653,6 +666,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/share/$slug'
       preLoaderRoute: typeof LocaleShareSlugRouteImport
       parentRoute: typeof LocaleRoute
+    }
+    '/$locale/app/manage/request-observation': {
+      id: '/$locale/app/manage/request-observation'
+      path: '/manage/request-observation'
+      fullPath: '/$locale/app/manage/request-observation'
+      preLoaderRoute: typeof LocaleAppManageRequestObservationRouteImport
+      parentRoute: typeof LocaleAppRoute
     }
     '/$locale/app/manage/scheduled-tasks': {
       id: '/$locale/app/manage/scheduled-tasks'
@@ -955,6 +975,7 @@ interface LocaleAppRouteChildren {
   LocaleAppNotificationsRoute: typeof LocaleAppNotificationsRoute
   LocaleAppPublicLinksRoute: typeof LocaleAppPublicLinksRoute
   LocaleAppIndexRoute: typeof LocaleAppIndexRoute
+  LocaleAppManageRequestObservationRoute: typeof LocaleAppManageRequestObservationRoute
   LocaleAppManageScheduledTasksRoute: typeof LocaleAppManageScheduledTasksRoute
   LocaleAppManageSystemPerformanceRoute: typeof LocaleAppManageSystemPerformanceRoute
   LocaleAppManageSystemSettingsRoute: typeof LocaleAppManageSystemSettingsRoute
@@ -969,6 +990,8 @@ const LocaleAppRouteChildren: LocaleAppRouteChildren = {
   LocaleAppNotificationsRoute: LocaleAppNotificationsRoute,
   LocaleAppPublicLinksRoute: LocaleAppPublicLinksRoute,
   LocaleAppIndexRoute: LocaleAppIndexRoute,
+  LocaleAppManageRequestObservationRoute:
+    LocaleAppManageRequestObservationRoute,
   LocaleAppManageScheduledTasksRoute: LocaleAppManageScheduledTasksRoute,
   LocaleAppManageSystemPerformanceRoute: LocaleAppManageSystemPerformanceRoute,
   LocaleAppManageSystemSettingsRoute: LocaleAppManageSystemSettingsRoute,

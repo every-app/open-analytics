@@ -12,6 +12,7 @@ import {
   insert,
   isNotNull,
   isNull,
+  join,
   limit,
   lte,
   neq,
@@ -25,7 +26,6 @@ import {
 } from "@/lib/db";
 import { canManageSite, canManageTeam } from "@/lib/edge/admin/access";
 import type { Actor } from "@/lib/edge/admin/auth";
-import { appNow } from "@/lib/edge/runtime/e2e-clock";
 import type { Env } from "@/lib/edge/types";
 import { clampString } from "@/lib/edge/utils";
 import {
@@ -255,7 +255,7 @@ export async function createNotificationRule(
   if (!(await requireCanManageRuleScope(env, actor, input))) {
     throw new Error("Forbidden");
   }
-  const now = Math.floor(appNow() / 1000);
+  const now = Math.floor(Date.now() / 1000);
   const id = crypto.randomUUID();
   const schedule = normalizeNotificationSchedule(input.schedule);
   const nextRunAt = computeNextNotificationRunAt(schedule, now);
@@ -342,7 +342,7 @@ export async function updateNotificationRule(
   if (!(await requireCanManageRuleScope(env, actor, { teamId, siteId }))) {
     throw new Error("Forbidden");
   }
-  const now = Math.floor(appNow() / 1000);
+  const now = Math.floor(Date.now() / 1000);
   const nextType =
     input.type !== undefined
       ? normalizeNotificationRuleType(input.type)
@@ -561,7 +561,7 @@ export async function updateNotificationRuleState(
     now?: number;
   },
 ): Promise<void> {
-  const now = Math.trunc(input.now ?? appNow() / 1000);
+  const now = Math.trunc(input.now ?? Date.now() / 1000);
   await notificationRuleDatabase(env).run(
     compileD1Mutation(
       update(schema.notification_rules, (columns) => ({
@@ -606,23 +606,29 @@ export async function resolveNotificationRecipients(
     }
     return recipients;
   }
-  // Everyone who has opened the app is in the organization this deployment
-  // serves (viewer.ts); their role is the one the gateway gave them then.
+  // The organization's members who have opened the app, with the role the
+  // gateway gave them then (viewer.ts).
+  const memberRows = scan(schema.members);
   const userRecords = scan(schema.users);
-  const audience =
+  const joined = join(
+    memberRows,
+    userRecords,
+    eq(memberRows.columns.user_id, userRecords.columns.id),
+  );
+  const teamMembers = eq(joined.columns.left_team_id, param(rule.teamId));
+  const audience = filter(
+    joined,
     rule.recipient.mode === "team_admins"
-      ? filter(
-          userRecords,
-          inList(userRecords.columns.org_role, ["owner", "admin"]),
-        )
-      : userRecords;
+      ? and(teamMembers, inList(joined.columns.left_role, ["owner", "admin"]))
+      : teamMembers,
+  );
   const withOrdering = project(audience, {
-    id: audience.columns.id,
-    email: audience.columns.email,
-    preferencesJson: audience.columns.notification_preferences_json,
-    preferredLocale: audience.columns.preferred_locale,
-    timeZone: audience.columns.timezone,
-    createdAt: audience.columns.created_at,
+    id: audience.columns.right_id,
+    email: audience.columns.right_email,
+    preferencesJson: audience.columns.right_notification_preferences_json,
+    preferredLocale: audience.columns.right_preferred_locale,
+    timeZone: audience.columns.right_timezone,
+    createdAt: audience.columns.right_created_at,
   });
   const ordered = sort(withOrdering, [
     { expression: withOrdering.columns.createdAt, direction: "ASC" },

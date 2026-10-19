@@ -328,7 +328,7 @@ describe("logical query plan validation", () => {
     );
 
     const grouped = aggregate(users, {
-      groupBy: { role: users.columns.system_role },
+      groupBy: { locale: users.columns.preferred_locale },
       aggregates: { count: count(users.columns.id) },
     });
     expectInvalid(() =>

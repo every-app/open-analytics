@@ -1,8 +1,8 @@
-import { readFileSync } from "node:fs";
-import { DatabaseSync } from "node:sqlite";
+import type { DatabaseSync } from "node:sqlite";
 
 import { describe, expect, it, vi } from "vitest";
 
+import { createMigratedDatabase } from "@/../scripts/schema/database";
 import {
   createQueryTime,
   EMPTY_FILTER_DOCUMENT,
@@ -79,6 +79,13 @@ function createD1Env(resultSets: D1Row[][]): {
     calls,
   };
 }
+function createAnalyticsDatabase(): DatabaseSync {
+  const database = createMigratedDatabase();
+  database
+    .prepare("INSERT INTO site_identities (site_pk, site_id) VALUES (1, ?)")
+    .run(siteId);
+  return database;
+}
 function createSqliteDetailEnv(): {
   env: Env;
   calls: QueryCall[];
@@ -86,49 +93,7 @@ function createSqliteDetailEnv(): {
   close: () => void;
   explain: (call: QueryCall) => string[];
 } {
-  const database = new DatabaseSync(":memory:");
-  for (const migration of [
-    "migrations/0008_rebuild_analytics.sql",
-    "migrations/0013_add_visit_performance_metrics.sql",
-    "migrations/0017_structured_custom_events.sql",
-    "migrations/0019_add_user_identity.sql",
-  ]) {
-    database.exec(readFileSync(migration, "utf8"));
-  }
-  database.exec(`
-    CREATE TABLE site_identities (
-      site_pk INTEGER PRIMARY KEY,
-      site_id TEXT NOT NULL UNIQUE
-    );
-    INSERT INTO site_identities (site_pk, site_id) VALUES (1, '${siteId}');
-
-    ALTER TABLE visits ADD COLUMN site_pk INTEGER;
-    ALTER TABLE custom_event_names ADD COLUMN site_pk INTEGER;
-    ALTER TABLE custom_events ADD COLUMN site_pk INTEGER;
-
-    CREATE TRIGGER test_visits_site_pk
-    AFTER INSERT ON visits
-    BEGIN
-      UPDATE visits SET site_pk = 1 WHERE visit_id = NEW.visit_id;
-    END;
-    CREATE TRIGGER test_custom_event_names_site_pk
-    AFTER INSERT ON custom_event_names
-    BEGIN
-      UPDATE custom_event_names SET site_pk = 1 WHERE id = NEW.id;
-    END;
-    CREATE TRIGGER test_custom_events_site_pk
-    AFTER INSERT ON custom_events
-    BEGIN
-      UPDATE custom_events SET site_pk = 1 WHERE event_pk = NEW.event_pk;
-    END;
-
-    CREATE INDEX idx_visits_site_pk_visitor_started_at
-      ON visits(site_pk, visitor_id, started_at);
-    CREATE INDEX idx_visits_site_pk_session_started_at
-      ON visits(site_pk, session_id, started_at);
-    CREATE INDEX idx_custom_events_site_pk_visit_time
-      ON custom_events(site_pk, visit_id, occurred_at, event_pk);
-  `);
+  const database = createAnalyticsDatabase();
   const calls: QueryCall[] = [];
   const env = {
     DB: {
@@ -668,9 +633,9 @@ describe("edge journey detail D1 queries", () => {
       sqlite.database
         .prepare(
           `INSERT INTO visits (
-            visit_id, site_id, visitor_id, session_id, status, started_at,
+            site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
             last_activity_at, pathname, hostname
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           "visit-plan",
@@ -686,9 +651,9 @@ describe("edge journey detail D1 queries", () => {
       sqlite.database
         .prepare(
           `INSERT INTO visits (
-            visit_id, site_id, visitor_id, session_id, status, started_at,
+            site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
             last_activity_at, pathname, hostname
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           "visit-noise",
@@ -703,15 +668,15 @@ describe("edge journey detail D1 queries", () => {
         );
       sqlite.database
         .prepare(
-          "INSERT INTO custom_event_names (id, site_id, name, last_seen_at) VALUES (?, ?, ?, ?)",
+          "INSERT INTO custom_event_names (site_pk, id, site_id, name, last_seen_at) VALUES (1, ?, ?, ?, ?)",
         )
         .run(1, siteId, "signup", baseMs);
       sqlite.database
         .prepare(
           `INSERT INTO custom_events (
-            event_pk, event_id, site_id, visit_id, event_name_id, occurred_at,
+            site_pk, event_pk, event_id, site_id, visit_id, event_name_id, occurred_at,
             received_at, sequence, node_count, value_count
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(1, "event-plan", siteId, "visit-plan", 1, baseMs, baseMs, 0, 0, 0);
       sqlite.database.exec(`
@@ -721,10 +686,11 @@ describe("edge journey detail D1 queries", () => {
           SELECT value + 1 FROM sequence WHERE value < 5001
         )
         INSERT INTO visits (
-          visit_id, site_id, visitor_id, session_id, status, started_at,
+          site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
           last_activity_at, pathname, hostname
         )
         SELECT
+           1,
           'visit-noise-' || value,
           '${siteId}',
           'visitor-noise-' || value,
@@ -742,10 +708,11 @@ describe("edge journey detail D1 queries", () => {
           SELECT value + 1 FROM sequence WHERE value < 5001
         )
         INSERT INTO custom_events (
-          event_pk, event_id, site_id, visit_id, event_name_id, occurred_at,
+          site_pk, event_pk, event_id, site_id, visit_id, event_name_id, occurred_at,
           received_at, sequence, node_count, value_count
         )
         SELECT
+           1,
           value,
           'event-noise-' || value,
           '${siteId}',
@@ -817,9 +784,9 @@ describe("edge journey detail D1 queries", () => {
       sqlite.database
         .prepare(
           `INSERT INTO visits (
-            visit_id, site_id, visitor_id, session_id, status, started_at,
+            site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
             last_activity_at, pathname, hostname, user_id, user_name
-          ) VALUES (?, ?, ?, ?, 'closed', ?, ?, ?, ?, ?, ?)`,
+          ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           "event-only-visit",
@@ -835,15 +802,15 @@ describe("edge journey detail D1 queries", () => {
         );
       sqlite.database
         .prepare(
-          "INSERT INTO custom_event_names (id, site_id, name, last_seen_at) VALUES (?, ?, ?, ?)",
+          "INSERT INTO custom_event_names (site_pk, id, site_id, name, last_seen_at) VALUES (1, ?, ?, ?, ?)",
         )
         .run(1, siteId, "signup", eventAt);
       sqlite.database
         .prepare(
           `INSERT INTO custom_events (
-            event_pk, event_id, site_id, visit_id, event_name_id, occurred_at,
+            site_pk, event_pk, event_id, site_id, visit_id, event_name_id, occurred_at,
             received_at, sequence, node_count, value_count
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           1,
@@ -909,9 +876,9 @@ describe("edge journey detail D1 queries", () => {
     try {
       const insertVisit = sqlite.database.prepare(`
         INSERT INTO visits (
-          visit_id, site_id, visitor_id, session_id, status, started_at,
+          site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
           last_activity_at, pathname, hostname, user_id, user_name
-        ) VALUES (?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?, ?)
+        ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?, ?)
       `);
       const addVisit = (
         visitId: string,
@@ -1085,19 +1052,19 @@ describe("edge journey detail D1 queries", () => {
     try {
       const insertVisit = sqlite.database.prepare(`
         INSERT INTO visits (
-          visit_id, site_id, visitor_id, session_id, status, started_at,
+          site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
           last_activity_at, pathname, hostname
-        ) VALUES (?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test')
+        ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test')
       `);
       const insertEvent = sqlite.database.prepare(`
         INSERT INTO custom_events (
-          event_pk, event_id, site_id, visit_id, event_name_id, occurred_at,
+          site_pk, event_pk, event_id, site_id, visit_id, event_name_id, occurred_at,
           received_at, sequence, node_count, value_count
-        ) VALUES (?, ?, ?, ?, 1, ?, ?, ?, 0, 0)
+        ) VALUES (1, ?, ?, ?, ?, 1, ?, ?, ?, 0, 0)
       `);
       sqlite.database
         .prepare(
-          "INSERT INTO custom_event_names (id, site_id, name, last_seen_at) VALUES (?, ?, ?, ?)",
+          "INSERT INTO custom_event_names (site_pk, id, site_id, name, last_seen_at) VALUES (1, ?, ?, ?, ?)",
         )
         .run(1, siteId, "signup", baseMs);
 
@@ -1246,9 +1213,9 @@ describe("edge journey detail D1 queries", () => {
     try {
       const insertVisit = sqlite.database.prepare(`
         INSERT INTO visits (
-          visit_id, site_id, visitor_id, session_id, status, started_at,
+          site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
           last_activity_at, pathname, hostname
-        ) VALUES (?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test')
+        ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test')
       `);
       const addVisit = (
         visitId: string,

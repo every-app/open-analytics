@@ -158,7 +158,7 @@ describe("notification rule store", () => {
 
     const created = await createNotificationRule(
       env as never,
-      { user: { id: "user-1" }, isAdmin: true } as never,
+      { user: { id: "user-1" }, teamId: "team-1", isAdmin: true } as never,
       { teamId: "team-1", name: "   ", schedule: "bad" },
     );
 
@@ -290,7 +290,7 @@ describe("notification rule store", () => {
     );
   });
 
-  it("lists only manageable rules with actor-scoped filters for non-admins", async () => {
+  it("lists the organization's rules for admins and none for members", async () => {
     const bind = vi.fn(() => ({
       all: vi.fn(() =>
         Promise.resolve({
@@ -325,68 +325,34 @@ describe("notification rule store", () => {
       },
     };
 
+    await expect(
+      listNotificationRules(
+        env as never,
+        { user: { id: "member-1" }, teamId: "team-1", isAdmin: false } as never,
+      ),
+    ).resolves.toEqual([]);
+    expect(env.DB.prepare).not.toHaveBeenCalled();
+
     const rules = await listNotificationRules(
       env as never,
-      { user: { id: "user-1" }, isAdmin: false } as never,
+      { user: { id: "admin-1" }, teamId: "team-1", isAdmin: true } as never,
     );
 
     expect(rules).toHaveLength(1);
-    expect(bind.mock.calls[0]).toEqual(
-      expect.arrayContaining(["user-1", "owner", "admin"]),
-    );
-    const prepareCalls = env.DB.prepare.mock.calls as unknown as Array<
-      [string]
-    >;
-    const sql = String(prepareCalls[0]?.[0] ?? "");
-    expect(sql).toContain("LEFT JOIN");
-    expect(sql).toContain('"team_members"');
-    expect(sql).toContain('"owner_user_id"');
+    expect(bind.mock.calls[0]).toEqual(expect.arrayContaining(["team-1"]));
   });
 
   it("requires manage permission when listing rules by team", async () => {
-    const preparedSql: string[] = [];
-    const env = {
-      DB: {
-        prepare: vi.fn((sql: string) => {
-          preparedSql.push(sql);
-          if (sql.includes('FROM "teams"') && sql.includes('"owner_user_id"')) {
-            return {
-              bind: vi.fn(() => ({
-                first: vi.fn(() =>
-                  Promise.resolve({ id: "team-1", ownerUserId: "owner-1" }),
-                ),
-              })),
-            };
-          }
-          if (
-            sql.includes('FROM "team_members"') &&
-            sql.includes('"site_ids_json"')
-          ) {
-            return {
-              bind: vi.fn(() => ({
-                first: vi.fn(() =>
-                  Promise.resolve({ role: "member", siteIdsJson: "[]" }),
-                ),
-              })),
-            };
-          }
-          return {
-            bind: vi.fn(() => ({
-              all: vi.fn(() => Promise.resolve({ results: [] })),
-            })),
-          };
-        }),
-      },
-    };
+    const env = { DB: { prepare: vi.fn() } };
 
     await expect(
       listNotificationRules(
         env as never,
-        { user: { id: "member-1" }, isAdmin: false } as never,
+        { user: { id: "member-1" }, teamId: "team-1", isAdmin: false } as never,
         { teamId: "team-1" },
       ),
     ).rejects.toThrow("Forbidden");
-    expect(preparedSql.join("\n")).not.toContain("FROM notification_rules");
+    expect(env.DB.prepare).not.toHaveBeenCalled();
   });
 
   it("deletes manageable rules and returns false for missing rules", async () => {
@@ -437,7 +403,11 @@ describe("notification rule store", () => {
         }),
       },
     };
-    const actor = { user: { id: "admin-1" }, isAdmin: true } as never;
+    const actor = {
+      user: { id: "admin-1" },
+      teamId: "team-1",
+      isAdmin: true,
+    } as never;
 
     await expect(
       deleteNotificationRule(env as never, actor, "rule-1"),
@@ -511,9 +481,7 @@ describe("notification rule store", () => {
 
     expect(preparedSql).toHaveLength(3);
     expect(preparedSql[1]).toContain("IN (?, ?)");
-    expect(preparedSql[2]).toContain('"team_members"');
-    expect(preparedSql[2]).toContain('"teams"');
-    expect(preparedSql[2]).toContain('"owner_user_id"');
+    expect(preparedSql[2]).toContain('"members"');
   });
 
   it("preserves omitted fields when partially updating rule state", async () => {
@@ -569,7 +537,7 @@ describe("notification rule store", () => {
 
     await updateNotificationRule(
       env as never,
-      { user: { id: "admin-1" }, isAdmin: true } as never,
+      { user: { id: "admin-1" }, teamId: "team-1", isAdmin: true } as never,
       { ruleId: "rule-1", enabled: false },
     );
 
@@ -640,7 +608,11 @@ describe("notification rule store", () => {
         }),
       },
     };
-    const actor = { user: { id: "admin-1" }, isAdmin: true } as never;
+    const actor = {
+      user: { id: "admin-1" },
+      teamId: "team-1",
+      isAdmin: true,
+    } as never;
 
     await updateNotificationRule(env as never, actor, {
       ruleId: "rule-1",
@@ -720,7 +692,11 @@ describe("notification rule store", () => {
         }),
       },
     };
-    const actor = { user: { id: "admin-1" }, isAdmin: true } as never;
+    const actor = {
+      user: { id: "admin-1" },
+      teamId: "team-1",
+      isAdmin: true,
+    } as never;
 
     await updateNotificationRule(env as never, actor, {
       ruleId: "rule-1",
@@ -793,7 +769,11 @@ describe("notification rule store", () => {
         }),
       },
     };
-    const actor = { user: { id: "admin-1" }, isAdmin: true } as never;
+    const actor = {
+      user: { id: "admin-1" },
+      teamId: "team-1",
+      isAdmin: true,
+    } as never;
 
     await updateNotificationRule(env as never, actor, {
       ruleId: "rule-1",

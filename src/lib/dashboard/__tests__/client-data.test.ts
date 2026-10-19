@@ -31,7 +31,6 @@ import {
   fetchOverviewSourceCardTab,
   fetchPageCardTabs,
   fetchPageHashTab,
-  fetchPageQueryTab,
   fetchPages,
   fetchPagesDashboard,
   fetchPagesShareTrend,
@@ -53,8 +52,6 @@ import {
 } from "@/lib/dashboard/client/data";
 import { withComparison } from "@/lib/dashboard/client/utils";
 import { dashboardFilterDocumentFromPresentation } from "@/lib/dashboard/filter-state";
-import { isErrorEnvelope } from "@/lib/demo/realtime/envelope";
-import { handleDemoRequest } from "@/lib/demo/runtime";
 import { attachFilterScopePreference } from "@/lib/filter-contract";
 describe("Dashboard Client Data Processing Utilities", () => {
   const emptyPaginatedCollection = {
@@ -298,267 +295,32 @@ describe("Dashboard Client Data Processing Utilities", () => {
     });
   });
 
-  describe("Dashboard demo API contract smoke", () => {
-    const realFetch = globalThis.fetch;
+  describe("empty parameter fallbacks", () => {
     const mockWindow = {
       preset: "24h" as const,
-      from: Date.now() - 24 * 60 * 60 * 1000,
-      to: Date.now(),
+      from: 1700000000000,
+      to: 1700000000000 + 24 * 60 * 60 * 1000,
       timeZone: "UTC",
       interval: "hour" as const,
     };
 
-    beforeAll(() => {
-      globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init) => {
-        const url = new URL(String(input), "https://app.test");
-        const result = handleDemoRequest({
-          path: url.pathname,
-          method: init?.method,
-          params: Object.fromEntries(url.searchParams),
-        });
-        return new Response(JSON.stringify(result), {
-          status: isErrorEnvelope(result)
-            ? result.error.code === "not_found"
-              ? 404
-              : 400
-            : 200,
-          headers: { "content-type": "application/json" },
-        });
-      }) as typeof globalThis.fetch;
-    });
-
-    afterAll(() => {
-      globalThis.fetch = realFetch;
-    });
-
-    it(
-      "should fetch all dashboard metrics through an HTTP response boundary",
-      { timeout: 30000 },
-      async () => {
-        // 1. Overview
-        const overview = await fetchOverview("demo-site-001", mockWindow);
-        expect(overview).toBeDefined();
-
-        // 2. Trend
-        const trend = await fetchTrend("demo-site-001", mockWindow);
-        expect(trend).toBeDefined();
-
-        // 3. Pages
-        const pages = await fetchPages("demo-site-001", mockWindow);
-        expect(pages).toBeDefined();
-
-        // 4. Visitors & detail
-        const visitors = await fetchVisitors("demo-site-001", mockWindow);
-        expect(visitors).toBeDefined();
-        const visitorDetail = await fetchVisitorDetail(
-          "demo-site-001",
-          "visitor-1",
-        );
-        expect(visitorDetail).toBeDefined();
-
-        // 5. Sessions & detail
-        const sessions = await fetchSessions("demo-site-001", mockWindow);
-        expect(sessions).toBeDefined();
-        const sessionDetail = await fetchSessionDetail(
-          "demo-site-001",
-          "session-1",
-        );
-        expect(sessionDetail).toBeDefined();
-
-        // 6. Events & Records
-        const eventsSummary = await fetchEventsSummary(
-          "demo-site-001",
-          mockWindow,
-        );
-        expect(eventsSummary).toBeDefined();
-        const eventsTrend = await fetchEventsTrend("demo-site-001", mockWindow);
-        expect(eventsTrend).toBeDefined();
-        const eventsRecords = await fetchEventsRecords(
-          "demo-site-001",
-          mockWindow,
-        );
-        expect(eventsRecords).toBeDefined();
-        const eventTypeDetail = await fetchEventTypeDetail(
-          "demo-site-001",
-          mockWindow,
-          "Click",
-        );
-        expect(eventTypeDetail).toBeDefined();
-        const eventTypeFieldValues = await fetchEventTypeFieldValues(
-          "demo-site-001",
-          mockWindow,
-          "Click",
-          "btn",
-          "string",
-        );
-        expect(eventTypeFieldValues).toBeDefined();
-        const eventRecordDetail = await fetchEventRecordDetail(
-          "demo-site-001",
-          "event-1",
-        );
-        expect(eventRecordDetail).toBeDefined();
-
-        // 7. Performance & Retention
-        const performance = await fetchPerformance("demo-site-001", mockWindow);
-        expect(performance).toBeDefined();
-        const retention = await fetchRetention("demo-site-001", mockWindow);
-        expect(retention).toBeDefined();
-
-        // 8. Pages & Share Trend & Referrers
-        const pagesDashboard = await fetchPagesDashboard(
-          "demo-site-001",
-          mockWindow,
-        );
-        expect(pagesDashboard).toBeDefined();
-        const pagesShareTrend = await fetchPagesShareTrend(
-          "demo-site-001",
-          mockWindow,
-        );
-        expect(pagesShareTrend).toBeDefined();
-        const pageCardTabs = await fetchPageCardTabs(
-          "demo-site-001",
-          mockWindow,
-        );
-        expect(pageCardTabs).toBeDefined();
-        const referrers = await fetchReferrers("demo-site-001", mockWindow);
-        expect(referrers).toBeDefined();
-
-        // 9. UTM
-        const utmDimension = await fetchUtmDimension(
-          "demo-site-001",
-          mockWindow,
-          "source",
-        );
-        expect(utmDimension).toBeDefined();
-        const utmTrend = await fetchUtmTrend(
-          "demo-site-001",
-          mockWindow,
-          "source",
-        );
-        expect(utmTrend).toBeDefined();
-
-        // 10. Geo & Maps
-        const geoPoints = await fetchOverviewGeoPoints(
-          "demo-site-001",
-          mockWindow,
-        );
-        expect(geoPoints).toBeDefined();
-
-        // 11. Overview Tabs
-        const overviewPageCardTab = await fetchOverviewPageCardTab(
-          "demo-site-001",
-          mockWindow,
-          "path",
-        );
-        expect(overviewPageCardTab).toBeDefined();
-        const pageHashTab = await fetchPageHashTab("demo-site-001", mockWindow);
-        expect(pageHashTab).toBeDefined();
-        const pageQueryTab = await fetchPageQueryTab(
-          "demo-site-001",
-          mockWindow,
-        );
-        expect(pageQueryTab).toBeDefined();
-        const overviewSourceCardTab = await fetchOverviewSourceCardTab(
-          "demo-site-001",
-          mockWindow,
-          "domain",
-        );
-        expect(overviewSourceCardTab).toBeDefined();
-        const eventTypesTab = await fetchEventTypesTab(
-          "demo-site-001",
-          mockWindow,
-        );
-        expect(eventTypesTab).toBeDefined();
-        const referrerTrend = await fetchReferrerTrend(
-          "demo-site-001",
-          mockWindow,
-        );
-        expect(referrerTrend).toBeDefined();
-
-        // 12. Client Dimensions
-        const clientDimensionTab = await fetchOverviewClientDimensionTab(
-          "demo-site-001",
-          mockWindow,
-          "browser",
-        );
-        expect(clientDimensionTab).toBeDefined();
-        const geoDimensionTab = await fetchOverviewGeoDimensionTab(
-          "demo-site-001",
-          mockWindow,
-          "country",
-        );
-        expect(geoDimensionTab).toBeDefined();
-        const filterOptions = await fetchFilterValues(
-          "demo-site-001",
-          mockWindow,
-          "geo.country",
-        );
-        expect(filterOptions).toBeDefined();
-
-        // 13. Advanced breakdowns
-        const clientDimensionTrend = await fetchClientDimensionTrend(
-          "demo-site-001",
-          mockWindow,
-          "browser",
-        );
-        expect(clientDimensionTrend).toBeDefined();
-        const clientCrossBreakdown = await fetchClientCrossBreakdown(
-          "demo-site-001",
-          mockWindow,
-          "browser",
-          "deviceType",
-        );
-        expect(clientCrossBreakdown).toBeDefined();
-        const browserTrend = await fetchBrowserTrend(
-          "demo-site-001",
-          mockWindow,
-        );
-        expect(browserTrend).toBeDefined();
-        const browserEngineTrend = await fetchBrowserEngineTrend(
-          "demo-site-001",
-          mockWindow,
-        );
-        expect(browserEngineTrend).toBeDefined();
-        const browserVersionBreakdown = await fetchBrowserVersionBreakdown(
-          "demo-site-001",
-          mockWindow,
-        );
-        expect(browserVersionBreakdown).toBeDefined();
-        const browserCrossBreakdown = await fetchBrowserCrossBreakdown(
-          "demo-site-001",
-          mockWindow,
-        );
-        expect(browserCrossBreakdown).toBeDefined();
-        const browserRadar = await fetchBrowserRadar(
-          "demo-site-001",
-          mockWindow,
-        );
-        expect(browserRadar).toBeDefined();
-        const referrerRadar = await fetchReferrerRadar(
-          "demo-site-001",
-          mockWindow,
-        );
-        expect(referrerRadar).toBeDefined();
-      },
-    );
-
     it("should handle empty parameter fallbacks gracefully", async () => {
       // Test invalid inputs resulting in empty return datasets
-      const emptyVisDetail = await fetchVisitorDetail("demo-site-001", "");
+      const emptyVisDetail = await fetchVisitorDetail("site-1", "");
       expect(emptyVisDetail.data).toBeNull();
 
-      const emptySesDetail = await fetchSessionDetail("demo-site-001", "");
+      const emptySesDetail = await fetchSessionDetail("site-1", "");
       expect(emptySesDetail.data).toBeNull();
 
       const emptyEvtDetail = await fetchEventTypeDetail(
-        "demo-site-001",
+        "site-1",
         mockWindow,
         "",
       );
       expect(emptyEvtDetail.summary.events).toBe(0);
 
       const emptyEvtField = await fetchEventTypeFieldValues(
-        "demo-site-001",
+        "site-1",
         mockWindow,
         "",
         "",
@@ -566,7 +328,7 @@ describe("Dashboard Client Data Processing Utilities", () => {
       );
       expect(emptyEvtField.data.items).toHaveLength(0);
 
-      const emptyEvtRecord = await fetchEventRecordDetail("demo-site-001", "");
+      const emptyEvtRecord = await fetchEventRecordDetail("site-1", "");
       expect(emptyEvtRecord.data).toBeNull();
 
       // Call exported empty objects
@@ -635,7 +397,7 @@ describe("Dashboard Client Data Processing Utilities", () => {
     });
   });
 
-  describe("Non-demo (network) data fetching with mocked fetch", () => {
+  describe("Network data fetching with mocked fetch", () => {
     const realFetch = globalThis.fetch;
     const mockWindow = {
       preset: "24h" as const,
@@ -648,7 +410,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
     const suppressUnhandled = () => {};
 
     beforeAll(() => {
-      delete process.env.VITE_DEMO_MODE;
       // The dedupe path adds a finally-chain off the in-flight promise. When the
       // primary promise rejects (e.g. on HTTP 500), the secondary chain surfaces
       // as a stray unhandled rejection one tick later. Suppress globally for
@@ -688,7 +449,7 @@ describe("Dashboard Client Data Processing Utilities", () => {
       return new URLSearchParams(calledUrl.split("?")[1] ?? "");
     }
 
-    it("should call fetch and parse JSON response in non-demo mode", async () => {
+    it("should call fetch and parse JSON response", async () => {
       const fetchMock = vi
         .fn()
         .mockImplementation(() =>
@@ -2267,37 +2028,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
         message: "Aborted",
       });
       expect(fetchMock).not.toHaveBeenCalled();
-    });
-
-    it("should keep demo detail requests on the network path", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(freshJsonResponse({ ok: true, data: null }));
-      globalThis.fetch = fetchMock as any;
-      const controller = new AbortController();
-
-      process.env.VITE_DEMO_MODE = "1";
-      try {
-        await expect(
-          fetchVisitorDetail(
-            "demo-site-001",
-            "visitor-1",
-            undefined,
-            undefined,
-            {
-              signal: controller.signal,
-            },
-          ),
-        ).resolves.toMatchObject({ ok: true, data: null });
-      } finally {
-        delete process.env.VITE_DEMO_MODE;
-      }
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining(
-          "/api/private/visitor-detail?siteId=demo-site-001",
-        ),
-        expect.objectContaining({ signal: controller.signal }),
-      );
     });
 
     it("should return empty field values when the field path is nullish", async () => {

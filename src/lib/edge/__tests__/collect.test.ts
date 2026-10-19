@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  hasRequestFlag,
-  REQUEST_ANALYTICS_FLAGS,
-} from "@/lib/edge/analytics-engine/request-schema";
 import { issueCollectToken } from "@/lib/edge/auth/collect-token";
 import {
   handleCollectOptionsRequest,
@@ -40,13 +36,13 @@ const baseSettings: SiteTrackingConfig = {
   ignoreDoNotTrack: true,
   performanceSampleRate: 100,
 };
+const recordStatement = { bind: () => ({ run: async () => ({}) }) };
 const env = {
+  // Blocked requests are recorded for Request Observation.
+  DB: { prepare: vi.fn(() => recordStatement) },
   INGEST_DO: {
     idFromName: vi.fn(),
     get: vi.fn(),
-  },
-  REQUEST_ANALYTICS: {
-    writeDataPoint: vi.fn(),
   },
   SITE_SETTINGS_KV: {},
   MAIN_SECRET: "main-secret",
@@ -143,7 +139,6 @@ describe("collect route", () => {
   beforeEach(() => {
     vi.useRealTimers();
     readSiteTrackingConfigMock.mockReset();
-    env.REQUEST_ANALYTICS.writeDataPoint.mockReset();
     env.INGEST_DO.idFromName.mockReset();
     env.INGEST_DO.get.mockReset();
     env.INGEST_DO.idFromName.mockReturnValue("do-id");
@@ -232,7 +227,7 @@ describe("collect route", () => {
       "application/json; charset=utf-8",
     );
     expect(readSiteTrackingConfigMock).not.toHaveBeenCalled();
-    expect(ctx.waitUntil).not.toHaveBeenCalled();
+    expect(env.INGEST_DO.get).not.toHaveBeenCalled();
   });
 
   it("rejects custom event payloads with invalid eventData before forwarding", async () => {
@@ -258,7 +253,7 @@ describe("collect route", () => {
     });
     expect(response.status).toBe(422);
     expect(readSiteTrackingConfigMock).not.toHaveBeenCalled();
-    expect(ctx.waitUntil).not.toHaveBeenCalled();
+    expect(env.INGEST_DO.get).not.toHaveBeenCalled();
   });
 
   it("returns a controlled validation error when custom event payloads omit eventData", async () => {
@@ -283,7 +278,7 @@ describe("collect route", () => {
     });
     expect(response.status).toBe(422);
     expect(readSiteTrackingConfigMock).not.toHaveBeenCalled();
-    expect(ctx.waitUntil).not.toHaveBeenCalled();
+    expect(env.INGEST_DO.get).not.toHaveBeenCalled();
   });
 
   it("rejects custom event payloads when eventData cannot be JSON serialized", async () => {
@@ -326,12 +321,12 @@ describe("collect route", () => {
     });
     expect(response.status).toBe(422);
     expect(readSiteTrackingConfigMock).not.toHaveBeenCalled();
-    expect(ctx.waitUntil).not.toHaveBeenCalled();
+    expect(env.INGEST_DO.get).not.toHaveBeenCalled();
 
     stringifySpy.mockRestore();
   });
 
-  it("blocks bot traffic by default and records a bot disposition", async () => {
+  it("blocks bot traffic by default", async () => {
     const request = makeRuntimeRequest({
       origin: "https://example.com",
       body: await makePayload(),
@@ -348,30 +343,14 @@ describe("collect route", () => {
     );
 
     expect(response.status).toBe(204);
-    expect(env.REQUEST_ANALYTICS.writeDataPoint).toHaveBeenCalledTimes(1);
-    const dataPoint = env.REQUEST_ANALYTICS.writeDataPoint.mock.calls[0]?.[0];
-    expect(dataPoint).toMatchObject({
-      indexes: ["site-1"],
-    });
-    expect(dataPoint?.blobs).toEqual(
-      expect.arrayContaining([
-        "pageview",
-        "bot",
-        expect.stringContaining("ua_isbot"),
-        "Googlebot/2.1",
-      ]),
-    );
-    expect(
-      hasRequestFlag(
-        dataPoint?.doubles?.[18],
-        REQUEST_ANALYTICS_FLAGS.dispositionBlocked,
-      ),
-    ).toBe(true);
     expect(readSiteTrackingConfigMock).toHaveBeenCalledWith(env, "site-1");
-    expect(ctx.waitUntil).not.toHaveBeenCalled();
+    expect(env.INGEST_DO.get).not.toHaveBeenCalled();
+    expect(env.DB.prepare).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO request_observations"),
+    );
   });
 
-  it("forwards bot traffic when bot protection is disabled and keeps its category", async () => {
+  it("forwards bot traffic when bot protection is disabled", async () => {
     readSiteTrackingConfigMock.mockResolvedValue({
       ...baseSettings,
       botProtectionEnabled: false,
@@ -394,15 +373,6 @@ describe("collect route", () => {
     expect(response.status).toBe(204);
     expect(env.INGEST_DO.idFromName).toHaveBeenCalledWith("site-1");
     expect(ctx.waitUntil).toHaveBeenCalledTimes(1);
-    const dataPoint = env.REQUEST_ANALYTICS.writeDataPoint.mock.calls[0]?.[0];
-    expect(dataPoint?.blobs?.[1]).toBe("bot");
-    expect(dataPoint?.blobs?.[3]).toBe("");
-    expect(
-      hasRequestFlag(
-        dataPoint?.doubles?.[18],
-        REQUEST_ANALYTICS_FLAGS.dispositionBlocked,
-      ),
-    ).toBe(false);
   });
 
   it("blocks suspected hosting traffic only when hosting proxy blocking is enabled", async () => {
@@ -428,19 +398,10 @@ describe("collect route", () => {
 
     expect(response.status).toBe(204);
     expect(env.INGEST_DO.idFromName).not.toHaveBeenCalled();
-    expect(ctx.waitUntil).not.toHaveBeenCalled();
-    const dataPoint = env.REQUEST_ANALYTICS.writeDataPoint.mock.calls[0]?.[0];
-    expect(dataPoint?.blobs?.[1]).toBe("suspected_bot");
-    expect(dataPoint?.blobs?.[3]).toBe("");
-    expect(
-      hasRequestFlag(
-        dataPoint?.doubles?.[18],
-        REQUEST_ANALYTICS_FLAGS.dispositionBlocked,
-      ),
-    ).toBe(true);
+    expect(env.INGEST_DO.get).not.toHaveBeenCalled();
   });
 
-  it("forwards suspected hosting traffic with the original category when hosting proxy blocking is disabled", async () => {
+  it("forwards suspected hosting traffic when hosting proxy blocking is disabled", async () => {
     const request = makeRuntimeRequest({
       origin: "https://example.com",
       body: await makePayload(),
@@ -460,15 +421,6 @@ describe("collect route", () => {
     expect(response.status).toBe(204);
     expect(env.INGEST_DO.idFromName).toHaveBeenCalledWith("site-1");
     expect(ctx.waitUntil).toHaveBeenCalledTimes(1);
-    const dataPoint = env.REQUEST_ANALYTICS.writeDataPoint.mock.calls[0]?.[0];
-    expect(dataPoint?.blobs?.[1]).toBe("suspected_bot");
-    expect(dataPoint?.blobs?.[3]).toBe("");
-    expect(
-      hasRequestFlag(
-        dataPoint?.doubles?.[18],
-        REQUEST_ANALYTICS_FLAGS.dispositionBlocked,
-      ),
-    ).toBe(false);
   });
 
   it("drops direct collect requests without a valid collect token", async () => {
@@ -489,9 +441,8 @@ describe("collect route", () => {
 
     expect(response.status).toBe(204);
     expect(readSiteTrackingConfigMock).not.toHaveBeenCalled();
-    expect(env.REQUEST_ANALYTICS.writeDataPoint).not.toHaveBeenCalled();
     expect(env.INGEST_DO.idFromName).not.toHaveBeenCalled();
-    expect(ctx.waitUntil).not.toHaveBeenCalled();
+    expect(env.INGEST_DO.get).not.toHaveBeenCalled();
   });
 
   it("drops collect requests when the token IP does not match the request IP", async () => {
@@ -510,7 +461,7 @@ describe("collect route", () => {
     expect(response.status).toBe(204);
     expect(readSiteTrackingConfigMock).not.toHaveBeenCalled();
     expect(env.INGEST_DO.idFromName).not.toHaveBeenCalled();
-    expect(ctx.waitUntil).not.toHaveBeenCalled();
+    expect(env.INGEST_DO.get).not.toHaveBeenCalled();
   });
 
   it("drops empty, malformed, and unsupported payloads with no forwarding", async () => {
@@ -535,7 +486,7 @@ describe("collect route", () => {
       );
 
       expect(response.status).toBe(204);
-      expect(ctx.waitUntil).not.toHaveBeenCalled();
+      expect(env.INGEST_DO.get).not.toHaveBeenCalled();
       ctx.waitUntil.mockClear();
       readSiteTrackingConfigMock.mockClear();
     }
@@ -562,7 +513,7 @@ describe("collect route", () => {
 
       expect(response.status).toBe(204);
       expect(env.INGEST_DO.idFromName).not.toHaveBeenCalled();
-      expect(ctx.waitUntil).not.toHaveBeenCalled();
+      expect(env.INGEST_DO.get).not.toHaveBeenCalled();
     }
   });
 
@@ -588,7 +539,7 @@ describe("collect route", () => {
     expect(response.headers.get("access-control-allow-origin")).toBe(
       "https://blocked.example",
     );
-    expect(ctx.waitUntil).not.toHaveBeenCalled();
+    expect(env.INGEST_DO.get).not.toHaveBeenCalled();
   });
 
   it("rejects opaque file origins when a hostname whitelist is configured", async () => {
@@ -611,7 +562,7 @@ describe("collect route", () => {
 
     expect(response.status).toBe(204);
     expect(response.headers.get("access-control-allow-origin")).toBe("null");
-    expect(ctx.waitUntil).not.toHaveBeenCalled();
+    expect(env.INGEST_DO.get).not.toHaveBeenCalled();
   });
 
   it("forwards when a whitelisted origin hostname matches case-insensitively", async () => {
@@ -660,7 +611,7 @@ describe("collect route", () => {
     );
 
     expect(response.status).toBe(204);
-    expect(ctx.waitUntil).not.toHaveBeenCalled();
+    expect(env.INGEST_DO.get).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -744,66 +695,10 @@ describe("collect route", () => {
       );
 
       expect(response.status).toBe(204);
-      expect(ctx.waitUntil).not.toHaveBeenCalled();
+      expect(env.INGEST_DO.get).not.toHaveBeenCalled();
       expect(env.INGEST_DO.idFromName).not.toHaveBeenCalled();
-      expect(env.REQUEST_ANALYTICS.writeDataPoint).toHaveBeenCalledTimes(1);
-      expect(
-        env.REQUEST_ANALYTICS.writeDataPoint.mock.calls[0]?.[0]?.blobs,
-      ).toEqual(expect.arrayContaining(["custom_block"]));
     },
   );
-
-  it("records all matching custom-block fields once without storing rule details", async () => {
-    readSiteTrackingConfigMock.mockResolvedValue({
-      ...baseSettings,
-      blockingRules: [
-        {
-          version: 2,
-          data: {
-            domains: ["blocked.example"],
-            paths: ["/private/*"],
-            queryParameters: ["utm_source"],
-          },
-        },
-      ],
-    });
-    const request = makeRuntimeRequest({
-      origin: "https://example.com",
-      body: await makePayload({
-        hostname: "blocked.example",
-        pathname: "/private/account",
-        query: "?utm_source=campaign",
-      }),
-      headers: { "user-agent": "Googlebot/2.1" },
-    });
-
-    const response = await handleCollectRequest(
-      request,
-      env as never,
-      ctx as never,
-      new URL(request.url),
-    );
-
-    expect(response.status).toBe(204);
-    expect(env.REQUEST_ANALYTICS.writeDataPoint).toHaveBeenCalledTimes(1);
-    expect(env.INGEST_DO.idFromName).not.toHaveBeenCalled();
-    const dataPoint = env.REQUEST_ANALYTICS.writeDataPoint.mock.calls[0]?.[0];
-    expect(dataPoint?.blobs?.[2]).toBe(
-      "custom_block,blocked_domains,blocked_paths,blocked_query_parameters",
-    );
-    expect(dataPoint?.blobs?.[2]).not.toContain("ua_isbot");
-    expect(dataPoint?.blobs?.[3]).toBe("");
-    expect(
-      hasRequestFlag(
-        dataPoint?.doubles?.[18],
-        REQUEST_ANALYTICS_FLAGS.dispositionBlocked,
-      ),
-    ).toBe(true);
-    expect(JSON.stringify(dataPoint?.blobs?.[19])).not.toContain(
-      "blocked.example",
-    );
-    expect(JSON.stringify(dataPoint?.blobs?.[19])).not.toContain("version");
-  });
 
   it("allows a later negative v2 rule to override a blocking IP range", async () => {
     readSiteTrackingConfigMock.mockResolvedValue({
@@ -904,15 +799,6 @@ describe("collect route", () => {
       id: expect.any(String),
       acceptedAt: expect.any(Number),
     });
-    const dataPoint = env.REQUEST_ANALYTICS.writeDataPoint.mock.calls[0]?.[0];
-    expect(dataPoint?.blobs?.[1]).toBe("normal");
-    expect(dataPoint?.blobs?.[3]).toBe("");
-    expect(
-      hasRequestFlag(
-        dataPoint?.doubles?.[18],
-        REQUEST_ANALYTICS_FLAGS.dispositionBlocked,
-      ),
-    ).toBe(false);
   });
 
   it("removes literal tab and Unicode whitespace before ingest forwarding", async () => {
@@ -1047,7 +933,7 @@ describe("collect route", () => {
 
     expect(response.status).toBe(204);
     expect(readSiteTrackingConfigMock).not.toHaveBeenCalled();
-    expect(ctx.waitUntil).not.toHaveBeenCalled();
+    expect(env.INGEST_DO.get).not.toHaveBeenCalled();
   });
 
   it("forwards custom events after event name normalization", async () => {
@@ -1168,7 +1054,7 @@ describe("collect route", () => {
       );
 
       expect(response.status).toBe(204);
-      expect(ctx.waitUntil).not.toHaveBeenCalled();
+      expect(env.INGEST_DO.get).not.toHaveBeenCalled();
       ctx.waitUntil.mockClear();
       env.INGEST_DO.idFromName.mockClear();
     }
