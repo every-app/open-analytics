@@ -300,7 +300,7 @@ function generateComplementary(color: string): string {
 }
 function buildSiteColorPairs(
   count: number,
-  baseColor = "oklch(0.85 0.13 165)",
+  baseColor = "oklch(0.575 0.163 255.5)",
 ): Array<{ views: string; visitors: string }> {
   if (count <= 0) return [];
   const complementary = generateComplementary(baseColor);
@@ -310,7 +310,7 @@ function buildSiteColorPairs(
     Math.max(count, 2),
   );
   return Array.from({ length: count }, (_, index) => {
-    const views = gradient[index] ?? gradient[gradient.length - 1] ?? "#2dd4bf";
+    const views = gradient[index] ?? gradient[gradient.length - 1] ?? "#2978d6";
     return {
       views,
       visitors: views,
@@ -360,7 +360,7 @@ function SiteTrafficStackTooltip({
   }
 
   return (
-    <div className="grid min-w-[200px] items-start gap-1.5 rounded-none border border-border/50 bg-background px-2.5 py-2 text-xs shadow-xl">
+    <div className="grid min-w-[200px] items-start gap-1.5 rounded-lg border border-border bg-popover px-2.5 text-popover-foreground py-2 text-xs shadow-xl">
       <div className="font-medium text-foreground">
         {dateFormatter.format(new Date(timestamp))}
       </div>
@@ -370,16 +370,16 @@ function SiteTrafficStackTooltip({
             <ChartTooltipIndicator color="var(--color-primary)" />
             <span className="text-muted-foreground">{viewsLabel}</span>
           </div>
-          <span className="font-mono font-semibold tabular-nums text-foreground">
+          <span className="font-semibold tabular-nums text-foreground">
             {numberFormat(locale, totalViews)}
           </span>
         </div>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-1.5">
-            <ChartTooltipIndicator color="var(--color-chart-3)" />
+            <ChartTooltipIndicator color="var(--color-chart-1)" />
             <span className="text-muted-foreground">{visitorsLabel}</span>
           </div>
-          <span className="font-mono font-semibold tabular-nums text-foreground">
+          <span className="font-semibold tabular-nums text-foreground">
             {numberFormat(locale, totalVisitors)}
           </span>
         </div>
@@ -758,8 +758,8 @@ export const SiteTrafficStackChart = memo(function SiteTrafficStackChart({
     const nextSeries: SiteTrafficSeriesItem[] = orderedSites.map(
       (site, index) => {
         const colors = pairs[index] ?? {
-          views: "#2dd4bf",
-          visitors: "#2dd4bf",
+          views: "#2978d6",
+          visitors: "#2978d6",
         };
         return {
           siteId: site.id,
@@ -904,8 +904,8 @@ export const SiteTrafficStackChart = memo(function SiteTrafficStackChart({
               {hoveredPoint ? (
                 <span className="inline-flex items-center gap-1.5 text-primary font-medium">
                   <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-none bg-primary/60 opacity-75"></span>
-                    <span className="relative inline-flex h-2 w-2 rounded-none bg-primary"></span>
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60 opacity-75"></span>
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
                   </span>
                   {tooltipFormatter.format(
                     new Date(Number(hoveredPoint.timestampMs)),
@@ -931,7 +931,7 @@ export const SiteTrafficStackChart = memo(function SiteTrafficStackChart({
                 aria-pressed={activeSiteIdSet.has(item.siteId)}
                 onClick={() => handleToggleSite(item.siteId)}
                 className={cn(
-                  "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-none px-2.5 py-1 text-left border-0 bg-transparent cursor-pointer transition-all hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/60",
+                  "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-2.5 py-1 text-left border-0 bg-transparent cursor-pointer transition-all hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/60",
                   hasActiveSites && !activeSiteIdSet.has(item.siteId)
                     ? "opacity-40"
                     : "opacity-100",
@@ -939,7 +939,7 @@ export const SiteTrafficStackChart = memo(function SiteTrafficStackChart({
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <span
-                    className="size-2.5 shrink-0 rounded-none"
+                    className="size-2.5 shrink-0 rounded-[2px]"
                     style={{ backgroundColor: item.viewsColor }}
                   />
                   <span
@@ -958,13 +958,13 @@ export const SiteTrafficStackChart = memo(function SiteTrafficStackChart({
                     className="flex shrink-0 items-baseline gap-1.5 text-xs"
                     key={`${views}/${visitors}`}
                   >
-                    <span className="font-mono tabular-nums text-foreground font-semibold">
+                    <span className="tabular-nums text-foreground font-semibold">
                       {numberFormat(locale, views)}
                     </span>
                     <span className="text-[10px] text-muted-foreground font-light">
                       /
                     </span>
-                    <span className="font-mono tabular-nums text-muted-foreground">
+                    <span className="tabular-nums text-muted-foreground">
                       {numberFormat(locale, visitors)}
                     </span>
                   </div>

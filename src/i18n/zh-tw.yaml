@@ -1846,7 +1846,8 @@ teamSelect:
   groups: {}
   cancel: 取消
 teamManagement:
-  stats: {}
+  stats:
+    sites: 站點
   toasts: {}
   sites:
     subtitle: 聚合檢視該團隊下所有站點的造訪表現。

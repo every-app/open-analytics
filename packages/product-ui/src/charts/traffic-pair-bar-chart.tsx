@@ -407,8 +407,8 @@ const TrafficPairCompactBarChart = memo(function TrafficPairCompactBarChart({
       viewBox={`0 0 ${Math.max(1, chartData.length)} 16`}
       preserveAspectRatio="none"
     >
-      <path d={paths.visitors} fill="var(--color-chart-3)" />
-      <path d={paths.remainingViews} fill="var(--color-chart-1)" />
+      <path d={paths.visitors} fill="var(--color-chart-1)" />
+      <path d={paths.remainingViews} fill="var(--color-chart-soft)" />
     </svg>
   );
 });

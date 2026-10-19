@@ -504,7 +504,7 @@ export const CanIUseCompatCard = memo(function CanIUseCompatCard({
                           hoverScale={1.05}
                           tapScale={0.98}
                           className={cn(
-                            "inline-flex h-8 items-center gap-2 rounded-none px-2 text-xs",
+                            "inline-flex h-8 items-center gap-2 rounded-md px-2 text-xs",
                             "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                             "[&_svg]:size-4 [&_svg]:shrink-0",
                           )}
@@ -545,7 +545,7 @@ export const CanIUseCompatCard = memo(function CanIUseCompatCard({
                       <div className="grid grid-cols-3 gap-4">
                         <div className="border border-border p-3 text-center">
                           <div
-                            className="font-mono text-2xl font-bold tabular-nums"
+                            className="text-2xl font-bold tabular-nums"
                             style={{
                               color: supportColor(siteSupport.sitePercent),
                             }}
@@ -557,7 +557,7 @@ export const CanIUseCompatCard = memo(function CanIUseCompatCard({
                           </div>
                         </div>
                         <div className="border border-border p-3 text-center">
-                          <div className="font-mono text-2xl font-bold tabular-nums">
+                          <div className="text-2xl font-bold tabular-nums">
                             {percentFormat(
                               locale,
                               siteSupport.globalFullPercent,
@@ -568,7 +568,7 @@ export const CanIUseCompatCard = memo(function CanIUseCompatCard({
                           </div>
                         </div>
                         <div className="border border-border p-3 text-center">
-                          <div className="font-mono text-2xl font-bold tabular-nums text-muted-foreground">
+                          <div className="text-2xl font-bold tabular-nums text-muted-foreground">
                             {percentFormat(
                               locale,
                               siteSupport.globalPartialPercent,
@@ -600,10 +600,10 @@ export const CanIUseCompatCard = memo(function CanIUseCompatCard({
                                       )}
                                   </span>
                                 </span>
-                                <span className="text-right font-mono tabular-nums">
+                                <span className="text-right tabular-nums">
                                   {percentFormat(locale, b.support)}
                                 </span>
-                                <span className="text-right font-mono text-[11px] text-muted-foreground tabular-nums">
+                                <span className="text-right text-[11px] text-muted-foreground tabular-nums">
                                   {numberFormat(locale, b.visitors)}{" "}
                                   {messages.common.visitors}
                                 </span>
@@ -687,7 +687,7 @@ export const CanIUseCompatCard = memo(function CanIUseCompatCard({
                               {f.title}
                             </span>
                             <span
-                              className="text-right font-mono tabular-nums"
+                              className="text-right tabular-nums"
                               style={
                                 sitePct != null
                                   ? { color: supportColor(sitePct) }
@@ -698,7 +698,7 @@ export const CanIUseCompatCard = memo(function CanIUseCompatCard({
                                 ? percentFormat(locale, sitePct)
                                 : "–"}
                             </span>
-                            <span className="text-right font-mono text-muted-foreground tabular-nums">
+                            <span className="text-right text-muted-foreground tabular-nums">
                               {percentFormat(
                                 locale,
                                 f.usage.fully_supported / 100,
@@ -730,7 +730,7 @@ export const CanIUseCompatCard = memo(function CanIUseCompatCard({
                               {f.title}
                             </span>
                             <span
-                              className="text-right font-mono tabular-nums"
+                              className="text-right tabular-nums"
                               style={
                                 sitePct != null
                                   ? { color: supportColor(sitePct) }
@@ -741,7 +741,7 @@ export const CanIUseCompatCard = memo(function CanIUseCompatCard({
                                 ? percentFormat(locale, sitePct)
                                 : "–"}
                             </span>
-                            <span className="text-right font-mono text-muted-foreground tabular-nums">
+                            <span className="text-right text-muted-foreground tabular-nums">
                               {percentFormat(
                                 locale,
                                 f.usage.fully_supported / 100,

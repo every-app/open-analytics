@@ -38,7 +38,7 @@ export function changeRateClass(
 ): string {
   if (value === null) return "text-muted-foreground";
   const isImprovement = lowerIsBetter ? value <= 0 : value >= 0;
-  return isImprovement ? "text-emerald-600" : "text-rose-600";
+  return isImprovement ? "text-success" : "text-destructive";
 }
 export function epochSecondsToMs(value: number): number {
   return value > 0 && value < 100_000_000_000 ? value * 1000 : value;

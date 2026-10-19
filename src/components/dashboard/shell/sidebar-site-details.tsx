@@ -90,13 +90,13 @@ const SidebarSiteRow = memo(function SidebarSiteRow({
       <div className="grid min-w-24 gap-1">
         <div className="flex items-center justify-between gap-2">
           <span className="text-background/70">{viewsLabel}</span>
-          <span className="font-mono font-medium tabular-nums">
+          <span className="font-medium tabular-nums">
             {metrics ? numberFormat(locale, metrics.views) : "—"}
           </span>
         </div>
         <div className="flex items-center justify-between gap-2">
           <span className="text-background/70">{visitorsLabel}</span>
-          <span className="font-mono font-medium tabular-nums">
+          <span className="font-medium tabular-nums">
             {metrics ? numberFormat(locale, metrics.visitors) : "—"}
           </span>
         </div>
@@ -132,7 +132,7 @@ const SidebarSiteRow = memo(function SidebarSiteRow({
   ]);
 
   const siteLink = (
-    <SidebarMenuButton asChild isActive={isActive} className="h-8 rounded-none">
+    <SidebarMenuButton asChild isActive={isActive} className="h-8">
       <Link
         href={buildSitePath(
           locale,

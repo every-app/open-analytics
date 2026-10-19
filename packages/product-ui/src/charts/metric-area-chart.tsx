@@ -62,7 +62,7 @@ function MetricAreaTooltip({
   const comparisonValue = point?.comparisonValue;
 
   return (
-    <div className="grid min-w-32 items-start gap-1.5 rounded-none border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
+    <div className="grid min-w-32 items-start gap-1.5 rounded-lg border border-border bg-popover px-2.5 text-popover-foreground py-1.5 text-xs shadow-xl">
       <div className="font-medium">
         {dateFormatter.format(new Date(timestamp))}
       </div>
@@ -71,7 +71,7 @@ function MetricAreaTooltip({
           <ChartTooltipIndicator color={color} />
           <div className="flex flex-1 items-center justify-between gap-3 leading-none">
             <span className="text-muted-foreground">{labelText}</span>
-            <span className="font-mono font-medium tabular-nums text-foreground">
+            <span className="font-medium tabular-nums text-foreground">
               {formatValue(value)}
             </span>
           </div>
@@ -81,7 +81,7 @@ function MetricAreaTooltip({
             <ChartTooltipIndicator color={comparisonColor} />
             <div className="flex flex-1 items-center justify-between gap-3 leading-none">
               <span className="text-muted-foreground">{comparisonLabel}</span>
-              <span className="font-mono font-medium tabular-nums text-foreground">
+              <span className="font-medium tabular-nums text-foreground">
                 {formatValue(comparisonValue)}
               </span>
             </div>

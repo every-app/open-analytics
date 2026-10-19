@@ -343,7 +343,7 @@ export const AsyncDimensionBreakdownCard = memo(
                     <span
                       className={
                         row[comparisonMetric] > 0
-                          ? "text-emerald-600"
+                          ? "text-success"
                           : "text-muted-foreground"
                       }
                     >
@@ -355,7 +355,7 @@ export const AsyncDimensionBreakdownCard = memo(
                 return (
                   <span
                     className={
-                      percentage >= 0 ? "text-emerald-600" : "text-rose-600"
+                      percentage >= 0 ? "text-success" : "text-destructive"
                     }
                   >
                     {`${percentage >= 0 ? "+" : ""}${percentage.toFixed(1)}%`}

@@ -107,7 +107,7 @@ export function ShareHeader({
                   className="flex items-center gap-2 text-foreground transition-colors hover:text-primary"
                 >
                   <Image
-                    src="/android-chrome-192x192.png"
+                    src="/favicon.svg"
                     alt="Open Analytics"
                     width={192}
                     height={192}

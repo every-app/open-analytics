@@ -27,7 +27,7 @@ function formatChangeRate(value: number | null): string | null {
 }
 function changeRateClass(value: number | null): string {
   if (value === null) return "text-muted-foreground";
-  return value >= 0 ? "text-emerald-600" : "text-rose-600";
+  return value >= 0 ? "text-success" : "text-destructive";
 }
 export function createComparisonTableColumns<
   TRow extends TabbedDataTableRowBase,

@@ -63,7 +63,7 @@ const SHARE_TREND_AREA_ANIMATION_DURATION = 280;
 const LOADING_SERIES_KEY = "__share-trend-loading__";
 const SHARE_TREND_LEGEND_HEIGHT = 48;
 const SHARE_TREND_LEGEND_CLASS =
-  "pt-6 flex-wrap justify-center gap-x-4 gap-y-2 [&>div>div]:h-2.5 [&>div>div]:w-2.5 [&>div>div]:shrink-0 [&>div>div]:rounded-none";
+  "pt-6 flex-wrap justify-center gap-x-4 gap-y-2 [&>div>div]:h-2.5 [&>div>div]:w-2.5 [&>div>div]:shrink-0 [&>div>div]:rounded-[2px]";
 
 const LOADING_SERIES: ShareTrendAreaSeries = {
   key: LOADING_SERIES_KEY,
@@ -326,7 +326,7 @@ export const ShareTrendAreaChart = memo(function ShareTrendAreaChart({
                           <SeriesIcon className="size-3.5 shrink-0 text-muted-foreground" />
                         ) : (
                           <span
-                            className="h-2.5 w-2.5 shrink-0 rounded-none"
+                            className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
                             style={{
                               backgroundColor: currentSeries?.color,
                             }}
@@ -336,7 +336,7 @@ export const ShareTrendAreaChart = memo(function ShareTrendAreaChart({
                           {currentSeries?.label ?? seriesKey}
                         </span>
                       </span>
-                      <span className="ml-auto min-w-[7.5rem] shrink-0 whitespace-nowrap text-right font-mono text-foreground tabular-nums">
+                      <span className="ml-auto min-w-[7.5rem] shrink-0 whitespace-nowrap text-right text-foreground tabular-nums">
                         {numberFormat(locale, numeric)} ·{" "}
                         {share < 0.1 ? "\u00a0" : ""}
                         {sharePercentFormatter.format(share)}

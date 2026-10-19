@@ -19,7 +19,7 @@ const TOKEN_CLASSES: Partial<Record<HighlightTokenClass, string>> = {
   operator: "text-muted-foreground",
   property: "text-chart-2",
   selector: "text-chart-2",
-  string: "text-emerald-800 dark:text-chart-1",
+  string: "text-chart-3",
   tag: "text-primary",
   type: "text-chart-2",
   variable: "text-chart-secondary",

@@ -1906,7 +1906,8 @@ teamSelect:
   groups: {}
   cancel: Cancel
 teamManagement:
-  stats: {}
+  stats:
+    sites: Sites
   toasts: {}
   sites:
     subtitle: Aggregated traffic view across all sites in this team.

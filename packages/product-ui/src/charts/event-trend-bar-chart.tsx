@@ -99,7 +99,7 @@ export function createEventTrendChartSeries(
     }
 
     const color =
-      palette[paletteIndex] ?? palette[palette.length - 1] ?? "#2dd4bf";
+      palette[paletteIndex] ?? palette[palette.length - 1] ?? "#2978d6";
     paletteIndex += 1;
 
     return {
@@ -376,7 +376,7 @@ function EventTrendTooltip({
     ];
 
     return (
-      <div className="grid min-w-[220px] items-start gap-1.5 rounded-none border border-border/50 bg-background px-2.5 py-2 text-xs shadow-xl">
+      <div className="grid min-w-[220px] items-start gap-1.5 rounded-lg border border-border bg-popover px-2.5 text-popover-foreground py-2 text-xs shadow-xl">
         <div className="font-medium text-foreground">
           {dateFormatter.format(new Date(Number(row.timestampMs ?? 0)))}
         </div>
@@ -386,7 +386,7 @@ function EventTrendTooltip({
               <ChartTooltipIndicator color={item.color} />
               <div className="flex flex-1 items-center justify-between gap-3 leading-none">
                 <span className="text-muted-foreground">{item.label}</span>
-                <span className="font-mono font-semibold tabular-nums text-foreground">
+                <span className="font-semibold tabular-nums text-foreground">
                   {numberFormat(locale, item.value)}
                 </span>
               </div>
@@ -401,7 +401,7 @@ function EventTrendTooltip({
                 <span className="truncate text-muted-foreground">
                   {currentLabel} · {activeSeries.displayLabel}
                 </span>
-                <span className="font-mono font-semibold tabular-nums text-foreground">
+                <span className="font-semibold tabular-nums text-foreground">
                   {numberFormat(locale, activeValue)}
                 </span>
               </div>
@@ -413,7 +413,7 @@ function EventTrendTooltip({
                   <span className="truncate text-muted-foreground">
                     {resolvedComparisonLabel} · {comparisonItem.displayLabel}
                   </span>
-                  <span className="font-mono font-semibold tabular-nums text-foreground">
+                  <span className="font-semibold tabular-nums text-foreground">
                     {numberFormat(locale, comparisonValue)}
                   </span>
                 </div>
@@ -426,7 +426,7 @@ function EventTrendTooltip({
   }
 
   return (
-    <div className="grid min-w-[200px] items-start gap-1.5 rounded-none border border-border/50 bg-background px-2.5 py-2 text-xs shadow-xl">
+    <div className="grid min-w-[200px] items-start gap-1.5 rounded-lg border border-border bg-popover px-2.5 text-popover-foreground py-2 text-xs shadow-xl">
       <div className="font-medium text-foreground">
         {dateFormatter.format(new Date(Number(row.timestampMs ?? 0)))}
       </div>
@@ -435,7 +435,7 @@ function EventTrendTooltip({
           <ChartTooltipIndicator color="var(--color-primary)" />
           <span className="text-muted-foreground">{totalLabel}</span>
         </div>
-        <span className="font-mono font-semibold tabular-nums text-foreground">
+        <span className="font-semibold tabular-nums text-foreground">
           {numberFormat(locale, Math.max(0, Number(row.totalEvents ?? 0)))}
         </span>
       </div>
@@ -448,7 +448,7 @@ function EventTrendTooltip({
                 {activeSeries.displayLabel}
               </span>
             </div>
-            <span className="font-mono font-semibold tabular-nums text-foreground">
+            <span className="font-semibold tabular-nums text-foreground">
               {numberFormat(locale, activeValue)}
             </span>
           </div>
@@ -498,8 +498,8 @@ export const EventTrendLegend = memo(function EventTrendLegend({
                 className="inline-flex items-center gap-1.5 font-medium text-primary"
               >
                 <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-none bg-primary/60 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-none bg-primary" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
                 </span>
                 {dateFormatter.format(
                   new Date(Number(hoveredPoint.timestampMs ?? 0)),
@@ -559,7 +559,7 @@ export const EventTrendLegend = memo(function EventTrendLegend({
                   disabled={!clickable}
                   onClick={() => onSelectEvent?.(item.eventName)}
                   className={cn(
-                    "group/event-trend-item grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-none border-0 bg-transparent px-2.5 py-1 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/60",
+                    "group/event-trend-item grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border-0 bg-transparent px-2.5 py-1 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/60",
                     clickable
                       ? "cursor-pointer hover:bg-accent/40"
                       : "cursor-default text-muted-foreground",
@@ -567,7 +567,7 @@ export const EventTrendLegend = memo(function EventTrendLegend({
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     <span
-                      className="size-2.5 shrink-0 rounded-none"
+                      className="size-2.5 shrink-0 rounded-[2px]"
                       style={{ backgroundColor: item.color }}
                     />
                     <span className="truncate text-xs font-medium text-foreground">
@@ -580,7 +580,7 @@ export const EventTrendLegend = memo(function EventTrendLegend({
                   <AutoTransition>
                     <span
                       key={`${item.key}/${currentValue}`}
-                      className="font-mono text-xs font-semibold tabular-nums text-foreground"
+                      className="text-xs font-semibold tabular-nums text-foreground"
                     >
                       {numberFormat(locale, currentValue)}
                     </span>

@@ -94,13 +94,13 @@ export interface RequestObservationTrendChartProps {
   latencyFormatter?: (valueMs: number) => string;
 }
 
-const PERFORMANCE_WARNING_COLOR = "oklch(0.75 0.16 80)";
+const PERFORMANCE_WARNING_COLOR = "oklch(0.8 0.15 80)";
 const NORMAL_TRAFFIC_SHARE_COLOR = "var(--color-chart-4)";
 const SUSPECTED_BOT_TRAFFIC_COLOR = PERFORMANCE_WARNING_COLOR;
 const BOT_TRAFFIC_COLOR = "var(--color-destructive)";
 const CUSTOM_BLOCKED_TRAFFIC_COLOR = "var(--muted-foreground)";
 const BUSINESS_CUSTOM_EVENT_COLOR = PERFORMANCE_WARNING_COLOR;
-const BUSINESS_IDENTIFY_COLOR = "oklch(0.7 0.14 250)";
+const BUSINESS_IDENTIFY_COLOR = "oklch(0.7 0.15 230)";
 
 type RequestObservationHoverHighlightProps = Pick<
   CategoricalChartState,
@@ -197,12 +197,12 @@ function TrendTooltipValue({
     <div className="flex min-w-36 items-center justify-between gap-3">
       <span className="inline-flex items-center gap-2">
         <span
-          className="size-2.5 shrink-0 rounded-none"
+          className="size-2.5 shrink-0 rounded-[2px]"
           style={{ backgroundColor: color }}
         />
         <span className="text-muted-foreground">{label}</span>
       </span>
-      <span className="font-mono text-foreground tabular-nums">{value}</span>
+      <span className="text-foreground tabular-nums">{value}</span>
     </div>
   );
 }

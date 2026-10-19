@@ -52,7 +52,7 @@ function ChangeRateInline({
   const Icon = change.direction === "up" ? ArrowUpIcon : ArrowDownIcon;
   return (
     <span
-      className={`inline-flex items-end gap-0.5 font-mono text-xs leading-none ${change.direction === "up" ? "text-emerald-600" : "text-rose-600"}`}
+      className={`inline-flex items-end gap-0.5 font-mono text-xs leading-none ${change.direction === "up" ? "text-success" : "text-destructive"}`}
     >
       <Icon className="size-3.5" />
       {change.text}
@@ -97,13 +97,13 @@ function Metric({
                 key="ready"
                 className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5"
               >
-                <span className="font-mono text-xl font-semibold leading-7 text-foreground">
+                <span className="text-xl font-semibold leading-7 text-foreground tabular-nums">
                   {conversionRate}
                 </span>
                 <span aria-hidden="true" className="text-muted-foreground">
                   ·
                 </span>
-                <span className="font-mono text-lg font-semibold text-muted-foreground">
+                <span className="text-lg font-semibold text-muted-foreground tabular-nums">
                   {convertedCount}
                   <span className="ml-1 text-xs font-normal text-muted-foreground">
                     / {totalCount}
@@ -153,10 +153,7 @@ function VisitorConversionBar({
                 className="h-full w-full overflow-hidden bg-muted ring-1 ring-border/50"
               >
                 {loading ? (
-                  <Skeleton
-                    key="loading"
-                    className="h-full w-full rounded-none"
-                  />
+                  <Skeleton key="loading" className="h-full w-full" />
                 ) : (
                   <div
                     key="ready"
@@ -189,7 +186,7 @@ function VisitorConversionBar({
                   {comparison.loading ? (
                     <Skeleton
                       key="comparison-loading"
-                      className="h-full w-full rounded-none"
+                      className="h-full w-full"
                     />
                   ) : (
                     <div
@@ -203,7 +200,7 @@ function VisitorConversionBar({
                       aria-valuetext={comparison.valueText}
                     >
                       <div
-                        className="h-full bg-amber-500/80 transition-[width] motion-reduce:transition-none dark:bg-amber-300/80"
+                        className="h-full bg-warning/80 transition-[width] motion-reduce:transition-none"
                         style={{
                           width: `${comparison.value.toFixed(2)}%`,
                         }}

@@ -51,12 +51,12 @@ function DonutTooltipPeriodRow({
     <div className="flex w-full items-center gap-3">
       <span className="inline-flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
         <span
-          className="h-2.5 w-2.5 shrink-0 rounded-none"
+          className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
           style={{ backgroundColor: color }}
         />
         <span className="truncate text-muted-foreground">{label}</span>
       </span>
-      <span className="ml-auto min-w-[7.5rem] shrink-0 whitespace-nowrap text-right font-mono text-foreground tabular-nums">
+      <span className="ml-auto min-w-[7.5rem] shrink-0 whitespace-nowrap text-right text-foreground tabular-nums">
         {numberFormat(locale, value)} {valueLabel} ·{" "}
         {share < 0.1 ? "\u00a0" : ""}
         {percentFormatWithOneDecimal(locale, share)}
@@ -172,7 +172,7 @@ export const DonutChart = memo(function DonutChart({
 
               if (comparisonChartData) {
                 return (
-                  <div className="grid min-w-[16rem] gap-1.5 rounded-none border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
+                  <div className="grid min-w-[16rem] gap-1.5 rounded-lg border border-border bg-popover px-2.5 text-popover-foreground py-1.5 text-xs shadow-xl">
                     <span className="truncate text-muted-foreground">
                       {item.label}
                     </span>
@@ -202,18 +202,18 @@ export const DonutChart = memo(function DonutChart({
               }
 
               return (
-                <div className="grid min-w-[16rem] gap-1.5 rounded-none border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
+                <div className="grid min-w-[16rem] gap-1.5 rounded-lg border border-border bg-popover px-2.5 text-popover-foreground py-1.5 text-xs shadow-xl">
                   <div className="flex w-full items-center gap-3">
                     <span className="inline-flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
                       <span
-                        className="h-2.5 w-2.5 shrink-0 rounded-none"
+                        className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
                         style={{ backgroundColor: item.color }}
                       />
                       <span className="truncate text-muted-foreground">
                         {item.label}
                       </span>
                     </span>
-                    <span className="ml-auto min-w-[7.5rem] shrink-0 whitespace-nowrap text-right font-mono text-foreground tabular-nums">
+                    <span className="ml-auto min-w-[7.5rem] shrink-0 whitespace-nowrap text-right text-foreground tabular-nums">
                       {numberFormat(locale, item.value)} {valueLabel} ·{" "}
                       {item.share < 0.1 ? "\u00a0" : ""}
                       {percentFormatWithOneDecimal(locale, item.share)}

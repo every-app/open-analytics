@@ -29,7 +29,7 @@ function FieldLabel({ className, ...props }: React.ComponentProps<"label">) {
     <label
       data-slot="field-label"
       className={cn(
-        "block text-xs font-medium leading-none select-none has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50",
+        "block text-sm font-medium leading-none select-none has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50",
         className,
       )}
       {...props}
@@ -51,7 +51,7 @@ function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="field-title"
-      className={cn("text-xs font-medium", className)}
+      className={cn("text-sm font-medium", className)}
       {...props}
     />
   );
@@ -61,7 +61,7 @@ function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
   return (
     <p
       data-slot="field-description"
-      className={cn("text-xs text-muted-foreground", className)}
+      className={cn("text-sm text-muted-foreground", className)}
       {...props}
     />
   );

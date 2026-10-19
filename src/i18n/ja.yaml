@@ -1853,7 +1853,8 @@ teamSelect:
   groups: {}
   cancel: キャンセル
 teamManagement:
-  stats: {}
+  stats:
+    sites: サイト
   toasts: {}
   sites:
     subtitle: このチーム内すべてのサイトを集計したトラフィックビューです。

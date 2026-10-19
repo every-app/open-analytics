@@ -1749,7 +1749,9 @@ export interface AppMessages {
     cancel: string;
   };
   teamManagement: {
-    stats: Record<string, never>;
+    stats: {
+      sites: string;
+    };
     toasts: Record<string, never>;
     sites: {
       subtitle: string;
@@ -4390,7 +4392,9 @@ const enMessages = {
     cancel: "Cancel",
   },
   teamManagement: {
-    stats: {},
+    stats: {
+      sites: "Sites",
+    },
     toasts: {},
     sites: {
       subtitle: "Aggregated traffic view across all sites in this team.",
@@ -7031,7 +7035,9 @@ const zhMessages = {
     cancel: "取消",
   },
   teamManagement: {
-    stats: {},
+    stats: {
+      sites: "站点",
+    },
     toasts: {},
     sites: {
       subtitle: "聚合查看该团队下所有站点的访问表现。",
@@ -9654,7 +9660,9 @@ const zhTwMessages = {
     cancel: "取消",
   },
   teamManagement: {
-    stats: {},
+    stats: {
+      sites: "站點",
+    },
     toasts: {},
     sites: {
       subtitle: "聚合檢視該團隊下所有站點的造訪表現。",
@@ -12340,7 +12348,9 @@ const jaMessages = {
     cancel: "キャンセル",
   },
   teamManagement: {
-    stats: {},
+    stats: {
+      sites: "サイト",
+    },
     toasts: {},
     sites: {
       subtitle: "このチーム内すべてのサイトを集計したトラフィックビューです。",

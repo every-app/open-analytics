@@ -173,7 +173,7 @@ export const RealtimeLogStreamItem = memo(function RealtimeLogStreamItem({
       className="list-none"
     >
       <Clickable
-        className="block w-full rounded-none text-left focus-visible:ring-2 focus-visible:ring-ring"
+        className="block w-full rounded-md text-left focus-visible:ring-2 focus-visible:ring-ring"
         onClick={() => {
           onSelect(event);
         }}

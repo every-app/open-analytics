@@ -252,7 +252,7 @@ export function OverviewMetricsSection({
                           ) : (
                             <p
                               key="value"
-                              className="inline-flex h-6 items-end gap-1.5 font-mono text-2xl font-semibold leading-none tracking-tight"
+                              className="inline-flex h-6 items-end gap-1.5 text-2xl font-semibold leading-none tracking-tight tabular-nums"
                             >
                               <span>{item.value}</span>
                               <ChangeRateInline

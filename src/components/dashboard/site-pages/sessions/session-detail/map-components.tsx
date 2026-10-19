@@ -191,7 +191,7 @@ export function SessionPerformanceCell({
         ) : (
           <p
             key="ready"
-            className="min-w-0 truncate font-mono text-xl font-semibold leading-7 text-foreground"
+            className="min-w-0 truncate text-xl font-semibold leading-7 text-foreground tabular-nums"
           >
             {value}
           </p>

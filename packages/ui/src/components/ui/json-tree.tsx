@@ -78,7 +78,7 @@ function ScalarValue({
         <TooltipTrigger asChild>
           <button
             type="button"
-            className="inline-flex cursor-copy rounded-none px-0.5 text-muted-foreground transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/50"
+            className="inline-flex cursor-copy rounded-sm px-0.5 text-muted-foreground transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             onClick={() => {
               void copyValue();
             }}
@@ -101,7 +101,7 @@ function ScalarValue({
         <TooltipTrigger asChild>
           <button
             type="button"
-            className="inline-flex cursor-copy rounded-none px-0.5 font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/50"
+            className="inline-flex cursor-copy rounded-sm px-0.5 font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             onClick={() => {
               void copyValue();
             }}
@@ -172,7 +172,7 @@ export function JsonTree({ value, depth = 0, labels, label }: JsonTreeProps) {
           <TooltipTrigger asChild>
             <button
               type="button"
-              className="group inline-flex size-4 shrink-0 items-center justify-center rounded-none text-left transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/50"
+              className="group inline-flex size-4 shrink-0 items-center justify-center rounded-sm text-left transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
               onClick={toggle}
               aria-label={expanded ? labels.collapseField : labels.expandField}
             >

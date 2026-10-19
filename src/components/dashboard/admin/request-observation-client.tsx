@@ -237,7 +237,7 @@ function TopCard({
             {rows?.map((row) => (
               <li key={row.value} className="flex justify-between gap-4">
                 <span className="min-w-0 truncate">{label(row.value)}</span>
-                <span className="font-mono tabular-nums">{row.count}</span>
+                <span className="tabular-nums">{row.count}</span>
               </li>
             ))}
           </ul>

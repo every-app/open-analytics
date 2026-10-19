@@ -46,7 +46,7 @@ const LATENCY_SERIES_COLORS = {
   p95: "var(--color-chart-5)",
 } as const;
 const LATENCY_LEGEND_CLASS =
-  "pt-6 flex-wrap justify-center gap-x-4 gap-y-2 [&>div>div]:h-2.5 [&>div>div]:w-2.5 [&>div>div]:shrink-0 [&>div>div]:rounded-none";
+  "pt-6 flex-wrap justify-center gap-x-4 gap-y-2 [&>div>div]:h-2.5 [&>div>div]:w-2.5 [&>div>div]:shrink-0 [&>div>div]:rounded-[2px]";
 
 export const LatencyPercentileChart = memo(function LatencyPercentileChart({
   data,
@@ -155,7 +155,7 @@ export const LatencyPercentileChart = memo(function LatencyPercentileChart({
                         <span className="text-muted-foreground">
                           {String(name ?? "")}
                         </span>
-                        <span className="font-mono text-foreground tabular-nums">
+                        <span className="text-foreground tabular-nums">
                           {formatValue(Number(value ?? 0))}
                         </span>
                       </div>

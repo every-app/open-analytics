@@ -524,7 +524,7 @@ export const animatedNumberFixtures = [
     presentation: { kind: "scenario", scenario: "integer" },
     props: {
       value: 1284,
-      className: "font-mono text-2xl tabular-nums",
+      className: "text-2xl tabular-nums",
     } satisfies AnimatedNumberProps,
   },
   {
@@ -533,7 +533,7 @@ export const animatedNumberFixtures = [
     presentation: { kind: "scenario", scenario: "decimal" },
     props: {
       value: 12.5,
-      className: "font-mono text-2xl tabular-nums",
+      className: "text-2xl tabular-nums",
     } satisfies AnimatedNumberProps,
   },
 ] as const satisfies readonly ComponentFixture<AnimatedNumberProps>[];

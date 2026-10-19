@@ -65,10 +65,10 @@ const PERFORMANCE_TREND_ANIMATION_DURATION_MS = 1200;
 const PERFORMANCE_TREND_CONNECTOR_DELAY_MS =
   PERFORMANCE_TREND_ANIMATION_DURATION_MS + 120;
 const PERFORMANCE_TREND_LEGEND_CLASS =
-  "pt-6 flex-wrap justify-center gap-x-4 gap-y-2 [&>div>div]:h-2.5 [&>div>div]:w-2.5 [&>div>div]:shrink-0 [&>div>div]:rounded-none";
+  "pt-6 flex-wrap justify-center gap-x-4 gap-y-2 [&>div>div]:h-2.5 [&>div>div]:w-2.5 [&>div>div]:shrink-0 [&>div>div]:rounded-[2px]";
 const ZONE_COLORS = {
   great: "var(--color-chart-2)",
-  needsImprovement: "oklch(0.75 0.16 80)",
+  needsImprovement: "oklch(0.8 0.15 80)",
   poor: "var(--color-destructive)",
 } as const;
 function tickDateFormat(
@@ -152,7 +152,7 @@ function zoneBackground(
   metricThresholds: PerformanceTrendMetricThresholds,
 ): string {
   const great = "color-mix(in oklch, var(--color-chart-4) 26%, transparent)";
-  const needs = "color-mix(in oklch, oklch(0.75 0.16 80) 24%, transparent)";
+  const needs = "color-mix(in oklch, oklch(0.8 0.15 80) 24%, transparent)";
   const poor = "color-mix(in oklch, var(--color-destructive) 24%, transparent)";
 
   if (key === "score") {
@@ -539,7 +539,7 @@ export const PerformanceTrendChart = memo(function PerformanceTrendChart({
   return (
     <div className={cn("relative", className)}>
       <div
-        className="pointer-events-none absolute top-3 right-3 bottom-16 left-20 rounded-none"
+        className="pointer-events-none absolute top-3 right-3 bottom-16 left-20 rounded-md"
         style={{
           background: zoneBackground(activePanel, domainMax, metricThresholds),
         }}
@@ -607,7 +607,7 @@ export const PerformanceTrendChart = memo(function PerformanceTrendChart({
                     <span className="text-muted-foreground">
                       {String(name ?? "")}
                     </span>
-                    <span className="font-mono text-foreground tabular-nums">
+                    <span className="text-foreground tabular-nums">
                       {formatValue(Number(value ?? 0))}
                     </span>
                   </div>

@@ -161,12 +161,12 @@ function PageViewsValue({ locale, views }: { locale: Locale; views: number }) {
   const value = numberFormat(locale, views);
   if (views === 1) {
     return (
-      <span className="font-mono font-semibold tabular-nums text-amber-600 dark:text-amber-400">
+      <span className="font-semibold tabular-nums text-warning-foreground dark:text-warning">
         {value}
       </span>
     );
   }
-  return <span className="font-mono tabular-nums">{value}</span>;
+  return <span className="tabular-nums">{value}</span>;
 }
 function CustomEventsValue({
   locale,
@@ -175,11 +175,7 @@ function CustomEventsValue({
   locale: Locale;
   events: number;
 }) {
-  return (
-    <span className="font-mono tabular-nums">
-      {numberFormat(locale, events)}
-    </span>
-  );
+  return <span className="tabular-nums">{numberFormat(locale, events)}</span>;
 }
 function SessionDurationValue({
   locale,
@@ -438,7 +434,7 @@ const SessionTableRowContent = memo(function SessionTableRowContent({
     duration: (
       <ClickableTableCell
         onClick={openSession}
-        className="text-right font-mono tabular-nums"
+        className="text-right tabular-nums"
       >
         <SessionDurationValue locale={locale} durationMs={row.durationMs} />
       </ClickableTableCell>

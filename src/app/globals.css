@@ -1,14 +1,6 @@
-@import "@fontsource-variable/jetbrains-mono/wght.css";
 @import "@insightflare/ui/styles.css";
 @import "@insightflare/product-ui/styles.css";
 @source "../";
-
-@theme inline {
-  --font-mono:
-    "JetBrains Mono Variable", "JetBrains Mono", "Cascadia Mono", Consolas,
-    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", ui-monospace,
-    monospace;
-}
 
 @layer base {
   :root:not([data-scrollbar-mode="native"]),
@@ -22,10 +14,6 @@
     display: none;
     width: 0;
     height: 0;
-  }
-
-  body {
-    font-family: var(--font-mono);
   }
 }
 

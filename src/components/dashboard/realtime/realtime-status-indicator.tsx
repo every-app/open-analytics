@@ -30,31 +30,31 @@ export function RealtimeStatusDot({
           key="connected"
           className="relative inline-flex size-4 items-center justify-center"
         >
-          <span className="absolute inline-flex size-3 rounded-full bg-emerald-500/70 dark:bg-emerald-400/70 animate-ping" />
-          <span className="inline-flex size-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
+          <span className="absolute inline-flex size-3 rounded-full bg-success/70 animate-ping" />
+          <span className="inline-flex size-2 rounded-full bg-success" />
         </span>
       ) : status === "connecting" ? (
         <span
           key="connecting"
           className="relative inline-flex size-4 items-center justify-center"
         >
-          <span className="inline-flex size-2 rounded-full bg-neutral-500 dark:bg-neutral-400 animate-pulse" />
+          <span className="inline-flex size-2 rounded-full bg-muted-foreground animate-pulse" />
         </span>
       ) : status === "disconnected" ? (
         <span
           key="disconnected"
           className="relative inline-flex size-4 items-center justify-center"
         >
-          <span className="absolute inline-flex size-3 rounded-full bg-amber-500/70 dark:bg-amber-400/70 animate-ping" />
-          <span className="inline-flex size-2 rounded-full bg-amber-500 dark:bg-amber-400" />
+          <span className="absolute inline-flex size-3 rounded-full bg-warning/70 animate-ping" />
+          <span className="inline-flex size-2 rounded-full bg-warning" />
         </span>
       ) : (
         <span
           key="failed"
           className="relative inline-flex size-4 items-center justify-center"
         >
-          <span className="absolute inline-flex size-3 rounded-full bg-rose-500/70 dark:bg-rose-400/70 animate-ping" />
-          <span className="inline-flex size-2 rounded-full bg-rose-500 dark:bg-rose-400" />
+          <span className="absolute inline-flex size-3 rounded-full bg-destructive/70 animate-ping" />
+          <span className="inline-flex size-2 rounded-full bg-destructive" />
         </span>
       )}
     </AutoTransition>

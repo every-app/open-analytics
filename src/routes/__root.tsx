@@ -1,6 +1,5 @@
 import "@/lib/iconify";
 
-import jetBrainsMonoLatinUrl from "@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url";
 import { Badge } from "@insightflare/ui/badge";
 import { Button } from "@insightflare/ui/button";
 import {
@@ -45,15 +44,10 @@ export const Route = createRootRoute({
       { name: "description", content: `${APP_NAME} analytics dashboard` },
     ],
     links: [
-      { rel: "icon", href: "/favicon.ico" },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "icon", href: "/favicon.ico", sizes: "any" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "manifest", href: "/site.webmanifest" },
-      {
-        rel: "preload",
-        href: jetBrainsMonoLatinUrl,
-        as: "font",
-        type: "font/woff2",
-        crossOrigin: "anonymous",
-      },
       { rel: "stylesheet", href: globalStylesheetUrl },
     ],
   }),
@@ -72,7 +66,7 @@ function RootDocument() {
         <HeadContent />
         <ScriptOnce>{THEME_INIT_SCRIPT}</ScriptOnce>
       </head>
-      <body className="antialiased font-mono">
+      <body className="antialiased">
         <GlobalScrollbars>
           <ScriptOnce>{ESBUILD_NAME_HELPER_SCRIPT}</ScriptOnce>
           <LayerManagerProvider>

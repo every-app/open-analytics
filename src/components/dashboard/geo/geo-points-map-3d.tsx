@@ -64,7 +64,7 @@ interface ClusteredGeoPoint {
 }
 type EffectiveMapTheme = "light" | "dark";
 const DEFAULT_MAP_HEIGHT_CLASS = "h-[460px]";
-const MAP_ACCENT_RGB: [number, number, number] = [34, 197, 154];
+const MAP_ACCENT_RGB: [number, number, number] = [41, 120, 214];
 const MAP_POINT_ALPHA_VISIBLE = 112;
 const CLUSTER_RADIUS_PX = 26;
 const CLUSTER_ZOOM_STEP = 0.25;

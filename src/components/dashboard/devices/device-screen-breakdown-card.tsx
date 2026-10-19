@@ -280,22 +280,22 @@ function ScreenCategoryPieCard({
           >
             <span className="inline-flex shrink-0 items-center gap-0.5">
               <span
-                className="size-2.5 rounded-none"
+                className="size-2.5 rounded-[2px]"
                 style={{ backgroundColor: item.color }}
               />
               {comparisonItem ? (
                 <span
-                  className="size-2.5 rounded-none"
+                  className="size-2.5 rounded-[2px]"
                   style={{ backgroundColor: comparisonItem.color }}
                 />
               ) : null}
             </span>
             <span className="text-muted-foreground">{item.label}</span>
-            <span className="font-mono tabular-nums text-foreground">
+            <span className="tabular-nums text-foreground">
               {percentFormat(locale, item.share)}
             </span>
             {comparisonItem ? (
-              <span className="font-mono tabular-nums text-chart-secondary">
+              <span className="tabular-nums text-chart-secondary">
                 {percentFormat(locale, comparisonItem.share)}
               </span>
             ) : null}
@@ -329,14 +329,14 @@ function ScreenCategoryPieCard({
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <span
-                className="size-2 shrink-0 rounded-none"
+                className="size-2 shrink-0 rounded-[2px]"
                 style={{ backgroundColor: "var(--color-chart-1)" }}
               />
               {messages.dashboardHeader.compareCurrentPeriod}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span
-                className="size-2 shrink-0 rounded-none"
+                className="size-2 shrink-0 rounded-[2px]"
                 style={{ backgroundColor: "var(--color-chart-secondary-1)" }}
               />
               {comparisonLabel}
@@ -615,7 +615,7 @@ function ScreenPreviewCard({
               messages.devices.previewUnavailableLabel}
           </span>
           {selectedItem ? (
-            <span className="font-mono text-xs tabular-nums text-muted-foreground">
+            <span className="text-xs tabular-nums text-muted-foreground">
               {numberFormat(locale, selectedItem.visitors)}{" "}
               {messages.common.visitors}
               {" · "}

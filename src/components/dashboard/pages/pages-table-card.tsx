@@ -237,7 +237,7 @@ function formatChange(locale: Locale, value: number, suffix: string): string {
 function changeClass(value: number | null, lowerIsBetter = false): string {
   if (value === null) return "text-muted-foreground";
   const improvement = lowerIsBetter ? value <= 0 : value >= 0;
-  return improvement ? "text-emerald-600" : "text-rose-600";
+  return improvement ? "text-success" : "text-destructive";
 }
 function ChangeValue({
   locale,
@@ -255,7 +255,7 @@ function ChangeValue({
   return (
     <span
       className={cn(
-        "inline-flex items-baseline justify-center gap-1 whitespace-nowrap font-mono text-xs tabular-nums leading-none",
+        "inline-flex items-baseline justify-center gap-1 whitespace-nowrap text-xs tabular-nums leading-none",
         changeClass(value, lowerIsBetter),
       )}
     >
@@ -568,7 +568,7 @@ export function PagesTableCard({
           return (
             <TableCell
               key={columnId}
-              className="whitespace-nowrap text-center font-mono tabular-nums"
+              className="whitespace-nowrap text-center tabular-nums"
             >
               <ChangeValue
                 locale={locale}
@@ -592,7 +592,7 @@ export function PagesTableCard({
           <TableCell
             key={columnId}
             className={cn(
-              "font-mono tabular-nums",
+              "tabular-nums",
               centeredMetric ? "text-center" : "text-right",
             )}
           >

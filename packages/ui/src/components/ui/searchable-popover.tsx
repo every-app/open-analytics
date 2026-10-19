@@ -127,7 +127,7 @@ const SearchablePopoverContent = React.forwardRef<
       <Popover.Content
         ref={ref}
         className={cn(
-          "relative flex max-h-(--radix-popover-content-available-height) w-[var(--radix-popover-trigger-width)] origin-(--radix-popover-content-transform-origin) flex-col overflow-hidden rounded-none border border-border bg-popover text-popover-foreground shadow-md outline-none duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
+          "relative flex max-h-(--radix-popover-content-available-height) w-[var(--radix-popover-trigger-width)] origin-(--radix-popover-content-transform-origin) flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-md outline-none duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
           className,
         )}
         style={style}

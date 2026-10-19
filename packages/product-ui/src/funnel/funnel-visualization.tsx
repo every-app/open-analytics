@@ -87,7 +87,7 @@ function formatChangeRate(locale: string, value: number | null): string | null {
 
 function changeRateClass(value: number | null): string {
   if (value === null) return "text-muted-foreground";
-  return value >= 0 ? "text-emerald-600" : "text-rose-600";
+  return value >= 0 ? "text-success" : "text-destructive";
 }
 
 export function FunnelChangeRateInline({
@@ -150,13 +150,13 @@ export function FunnelVisualization(props: FunnelVisualizationProps) {
               className="flex min-w-0 flex-wrap items-baseline gap-x-5 gap-y-1 text-xs text-muted-foreground"
             >
               <span className="inline-flex items-baseline gap-x-2">
-                <span className="font-mono text-xl font-semibold leading-7 text-foreground">
+                <span className="text-xl font-semibold leading-7 text-foreground tabular-nums">
                   {percentFormat(locale, currentSummary.overallConversionRate)}
                 </span>
                 <span>{labels.overallConversion}</span>
               </span>
               <span className="inline-flex items-baseline gap-x-2">
-                <span className="font-mono text-lg font-semibold leading-7 text-muted-foreground">
+                <span className="text-lg font-semibold leading-7 text-muted-foreground tabular-nums">
                   {numberFormat(locale, convertedProgressions)}/
                   {numberFormat(locale, totalProgressions)}
                 </span>
@@ -210,7 +210,7 @@ export function FunnelVisualization(props: FunnelVisualizationProps) {
         return (
           <div key={step.id} className="min-w-0 space-y-2">
             <div className="grid min-w-0 grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-2 text-sm">
-              <span className="flex h-full items-center justify-center pt-0.5 font-mono text-2xl font-semibold leading-none tracking-tight text-muted-foreground tabular-nums">
+              <span className="flex h-full items-center justify-center pt-0.5 text-2xl font-semibold leading-none tracking-tight text-muted-foreground tabular-nums">
                 {numberFormat(locale, index + 1)}
               </span>
               <div className="min-w-0 space-y-2">
@@ -311,7 +311,7 @@ export function FunnelVisualization(props: FunnelVisualizationProps) {
                       {comparisonLoading ? (
                         <Skeleton
                           key="comparison-loading"
-                          className="h-full w-full rounded-none"
+                          className="h-full w-full"
                         />
                       ) : !comparisonHasStep ? (
                         <div
@@ -322,7 +322,7 @@ export function FunnelVisualization(props: FunnelVisualizationProps) {
                       ) : (
                         <div
                           key="comparison-ready"
-                          className="h-full bg-amber-500/80 transition-[width] motion-reduce:transition-none dark:bg-amber-300/80"
+                          className="h-full bg-warning/80 transition-[width] motion-reduce:transition-none"
                           style={{
                             width:
                               comparisonBarRate <= 0

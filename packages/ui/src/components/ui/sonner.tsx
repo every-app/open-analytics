@@ -27,10 +27,7 @@ const Toaster = ({
   return (
     <Sonner
       theme={theme}
-      className={cn(
-        "toaster group pointer-events-auto rounded-none",
-        className,
-      )}
+      className={cn("toaster group pointer-events-auto", className)}
       icons={{
         success: <CircleCheckIcon className="size-4" />,
         info: <InfoIcon className="size-4" />,
@@ -47,7 +44,7 @@ const Toaster = ({
                 "--normal-border": "var(--border)",
               }
             : {}),
-          "--border-radius": "0px",
+          "--border-radius": "var(--radius-lg)",
           pointerEvents: "auto",
           ...style,
         } as React.CSSProperties

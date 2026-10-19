@@ -1846,7 +1846,8 @@ teamSelect:
   groups: {}
   cancel: 取消
 teamManagement:
-  stats: {}
+  stats:
+    sites: 站点
   toasts: {}
   sites:
     subtitle: 聚合查看该团队下所有站点的访问表现。

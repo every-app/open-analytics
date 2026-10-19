@@ -10,7 +10,7 @@ interface OKLCh {
   h: number;
 }
 
-const DEFAULT_BASE_COLOR = "oklch(0.85 0.13 165)";
+const DEFAULT_BASE_COLOR = "oklch(0.575 0.163 255.5)";
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -194,6 +194,6 @@ export function buildComplementaryOklchPalette(
   );
 
   return Array.from({ length: count }, (_, index) => {
-    return gradient[index] ?? gradient[gradient.length - 1] ?? "#2dd4bf";
+    return gradient[index] ?? gradient[gradient.length - 1] ?? "#2978d6";
   });
 }

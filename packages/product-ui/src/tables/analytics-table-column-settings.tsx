@@ -239,7 +239,7 @@ function ColumnSettingsRow({
     >
       <button
         type="button"
-        className="touch-none cursor-grab rounded-none p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:cursor-grabbing focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/60"
+        className="touch-none cursor-grab rounded-lg p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:cursor-grabbing focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/60"
         onPointerDown={(event) => dragControls.start(event)}
         aria-label={dragHint}
       >

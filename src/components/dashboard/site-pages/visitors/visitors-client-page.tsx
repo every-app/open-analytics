@@ -427,21 +427,19 @@ const VisitorTableRowContent = memo(function VisitorTableRowContent({
     sessions: (
       <ClickableTableCell
         onClick={openDetail}
-        className="text-right font-mono tabular-nums"
+        className="text-right tabular-nums"
       >
         {numberFormat(locale, row.sessions)}
       </ClickableTableCell>
     ),
     pageViews: (
       <ClickableTableCell onClick={openDetail} className="text-right">
-        <span className="font-mono tabular-nums">
-          {numberFormat(locale, row.views)}
-        </span>
+        <span className="tabular-nums">{numberFormat(locale, row.views)}</span>
       </ClickableTableCell>
     ),
     customEvents: (
       <ClickableTableCell onClick={openDetail} className="text-right">
-        <span className="font-mono tabular-nums">
+        <span className="tabular-nums">
           {numberFormat(locale, row.events ?? 0)}
         </span>
       </ClickableTableCell>

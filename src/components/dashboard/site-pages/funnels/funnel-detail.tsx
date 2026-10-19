@@ -250,12 +250,12 @@ function FunnelStepRow({
                     {comparisonLoading ? (
                       <Skeleton
                         key="comparison-loading"
-                        className="h-full w-full rounded-none"
+                        className="h-full w-full"
                       />
                     ) : comparisonAnalysisStep ? (
                       <div
                         key="comparison-ready"
-                        className="h-full bg-amber-500/80 transition-[width] motion-reduce:transition-none dark:bg-amber-300/80"
+                        className="h-full bg-warning/80 transition-[width] motion-reduce:transition-none"
                         style={{ width: comparisonWidth }}
                       />
                     ) : (
@@ -670,7 +670,7 @@ function FunnelDetailContent({
                   disabled={loading || funnel.steps.length < 2}
                   className="w-20 sm:w-28"
                 />
-                <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                   {numberFormat(locale, selectedStepIndex + 1)}/
                   {numberFormat(locale, funnel.steps.length)}
                 </span>

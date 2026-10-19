@@ -128,7 +128,7 @@ function ShareBarChartContent({
   return (
     <div className="grid gap-4">
       <div
-        className="flex h-6 w-full overflow-hidden rounded-none bg-muted ring-1 ring-border/50"
+        className="flex h-6 w-full overflow-hidden rounded-lg bg-muted ring-1 ring-border/50"
         role="group"
         aria-label={ariaLabel}
       >
@@ -167,7 +167,7 @@ function ShareBarChartContent({
                     {periodLabel ? `${periodLabel} · ` : ""}
                     {item.label}
                   </span>
-                  <span className="font-mono text-[11px] tabular-nums text-background/70">
+                  <span className="text-[11px] tabular-nums text-background/70">
                     {numberFormat(locale, item.value)} {valueLabel} ·{" "}
                     {percentFormat(locale, item.share)}
                   </span>
@@ -194,7 +194,7 @@ function ShareBarChartContent({
             >
               <div className="flex min-w-0 items-center gap-2">
                 <span
-                  className="size-2.5 shrink-0 rounded-none"
+                  className="size-2.5 shrink-0 rounded-[2px]"
                   style={{ backgroundColor: item.color }}
                 />
                 {ItemIcon ? (
@@ -205,10 +205,10 @@ function ShareBarChartContent({
                 </span>
               </div>
               <div className="flex shrink-0 items-baseline gap-2">
-                <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                <span className="text-xs tabular-nums text-muted-foreground">
                   {numberFormat(locale, item.value)}
                 </span>
-                <span className="font-mono text-xs font-medium tabular-nums text-foreground">
+                <span className="text-xs font-medium tabular-nums text-foreground">
                   {percentFormat(locale, item.share)}
                 </span>
               </div>

@@ -188,7 +188,7 @@ export function TeamManagementSitesPanel() {
                         <p className="text-muted-foreground">
                           {messages.common.views}
                         </p>
-                        <p className="inline-flex items-end gap-1.5 font-mono text-base leading-none">
+                        <p className="inline-flex items-end gap-1.5 text-base leading-none tabular-nums">
                           {numberFormat(locale, overview.views)}
                           <ChangeRateInline value={changeRates.views} />
                         </p>
@@ -197,7 +197,7 @@ export function TeamManagementSitesPanel() {
                         <p className="text-muted-foreground">
                           {messages.common.visitors}
                         </p>
-                        <p className="inline-flex items-end gap-1.5 font-mono text-base leading-none">
+                        <p className="inline-flex items-end gap-1.5 text-base leading-none tabular-nums">
                           {numberFormat(locale, overview.visitors)}
                           <ChangeRateInline value={changeRates.visitors} />
                         </p>
@@ -206,7 +206,7 @@ export function TeamManagementSitesPanel() {
                         <p className="text-muted-foreground">
                           {messages.common.sessions}
                         </p>
-                        <p className="inline-flex items-end gap-1.5 font-mono text-base leading-none">
+                        <p className="inline-flex items-end gap-1.5 text-base leading-none tabular-nums">
                           {numberFormat(locale, overview.sessions)}
                           <ChangeRateInline value={changeRates.sessions} />
                         </p>
@@ -215,7 +215,7 @@ export function TeamManagementSitesPanel() {
                         <p className="text-muted-foreground">
                           {messages.common.bounceRate}
                         </p>
-                        <p className="inline-flex items-end gap-1.5 font-mono text-base leading-none">
+                        <p className="inline-flex items-end gap-1.5 text-base leading-none tabular-nums">
                           {percentFormat(locale, overview.bounceRate)}
                           <ChangeRateInline
                             value={changeRates.bounceRate}
@@ -227,7 +227,7 @@ export function TeamManagementSitesPanel() {
                         <p className="text-muted-foreground">
                           {copy.sites.pagesPerSession}
                         </p>
-                        <p className="inline-flex items-end gap-1.5 font-mono text-base leading-none">
+                        <p className="inline-flex items-end gap-1.5 text-base leading-none tabular-nums">
                           {pagesPerSessionFormatter.format(pagesPerSession)}
                           <ChangeRateInline
                             value={changeRates.pagesPerSession}
@@ -238,7 +238,7 @@ export function TeamManagementSitesPanel() {
                         <p className="text-muted-foreground">
                           {messages.common.avgDuration}
                         </p>
-                        <p className="inline-flex items-end gap-1.5 font-mono text-base leading-none">
+                        <p className="inline-flex items-end gap-1.5 text-base leading-none tabular-nums">
                           {durationFormat(locale, overview.avgDurationMs)}
                           <ChangeRateInline value={changeRates.avgDurationMs} />
                         </p>

@@ -73,12 +73,12 @@ export function EventIcon({ event }: { event: JourneyEvent }) {
   return (
     <span
       className={cn(
-        "inline-flex size-[34px] shrink-0 self-center items-center justify-center rounded-none",
-        isSessionStart && "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-        event.kind === "pageview" &&
-          "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-        isLeave && "bg-rose-500/15 text-rose-600 dark:text-rose-400",
-        isCustom && "bg-sky-500/15 text-sky-600 dark:text-sky-400",
+        "inline-flex size-[34px] shrink-0 self-center items-center justify-center rounded-md",
+        isSessionStart &&
+          "bg-warning/15 text-warning-foreground dark:text-warning",
+        event.kind === "pageview" && "bg-success/15 text-success",
+        isLeave && "bg-destructive/15 text-destructive",
+        isCustom && "bg-info/15 text-info",
       )}
     >
       {isSessionStart ? (
@@ -428,7 +428,7 @@ export const SessionEventCard = memo(function SessionEventCard({
 }) {
   return (
     <Clickable
-      className="block w-full rounded-none text-left focus-visible:ring-2 focus-visible:ring-ring"
+      className="block w-full rounded-md text-left focus-visible:ring-2 focus-visible:ring-ring"
       onClick={() => onOpenEvent(event)}
       enableHoverScale={false}
       tapScale={0.985}

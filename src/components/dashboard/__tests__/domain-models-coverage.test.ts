@@ -390,8 +390,8 @@ describe("dashboard domain model helpers", () => {
     expect(formatRetentionChange(-2)).toBe("-2.0%");
     expect(formatRetentionChange(Number.NaN)).toBeNull();
     expect(retentionChangeClass(null)).toBe("text-muted-foreground");
-    expect(retentionChangeClass(1)).toContain("emerald");
-    expect(retentionChangeClass(-1)).toContain("rose");
+    expect(retentionChangeClass(1)).toContain("success");
+    expect(retentionChangeClass(-1)).toContain("destructive");
     expect(retentionCellStyle(0.5, false)).toEqual({});
     expect(retentionCellStyle(0, true).backgroundColor).toContain("color-mix");
     expect(retentionCellStyle(0.05, true).backgroundColor).toContain("chart-4");
@@ -547,9 +547,9 @@ describe("dashboard domain model helpers", () => {
     expect(formatChangeRate(1.25)).toBe("+1.3%");
     expect(formatChangeRate(-1.25)).toBe("-1.3%");
     expect(changeRateClass(null)).toContain("muted");
-    expect(changeRateClass(2)).toContain("emerald");
-    expect(changeRateClass(-2)).toContain("rose");
-    expect(changeRateClass(-2, true)).toContain("emerald");
+    expect(changeRateClass(2)).toContain("success");
+    expect(changeRateClass(-2)).toContain("destructive");
+    expect(changeRateClass(-2, true)).toContain("success");
     expect(epochSecondsToMs(10)).toBe(10_000);
     expect(epochSecondsToMs(100_000_000_000)).toBe(100_000_000_000);
     expect(safeSlug(" My Site.EXAMPLE ")).toBe("my-site-example");

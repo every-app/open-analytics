@@ -90,18 +90,18 @@ function RealtimeTrafficTooltip({
   const formatter = new Intl.NumberFormat(locale);
 
   return (
-    <div className="grid min-w-32 items-start gap-1.5 rounded-none border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
+    <div className="grid min-w-32 items-start gap-1.5 rounded-lg border border-border bg-popover px-2.5 text-popover-foreground py-1.5 text-xs shadow-xl">
       <div className="font-medium">{point.tooltipLabel}</div>
       <div className="grid gap-1.5">
         <div className="flex w-full items-center gap-2">
           <span
             className="size-2.5 rounded-[2px]"
-            style={{ backgroundColor: "var(--chart-1)" }}
+            style={{ backgroundColor: "var(--chart-soft)" }}
             aria-hidden="true"
           />
           <div className="flex flex-1 items-center justify-between gap-3 leading-none">
             <span className="text-muted-foreground">{viewsLabel}</span>
-            <span className="font-mono font-medium tabular-nums text-foreground">
+            <span className="font-medium tabular-nums text-foreground">
               {formatter.format(views)}
             </span>
           </div>
@@ -109,12 +109,12 @@ function RealtimeTrafficTooltip({
         <div className="flex w-full items-center gap-2">
           <span
             className="size-2.5 rounded-[2px]"
-            style={{ backgroundColor: "var(--chart-3)" }}
+            style={{ backgroundColor: "var(--chart-1)" }}
             aria-hidden="true"
           />
           <div className="flex flex-1 items-center justify-between gap-3 leading-none">
             <span className="text-muted-foreground">{visitorsLabel}</span>
-            <span className="font-mono font-medium tabular-nums text-foreground">
+            <span className="font-medium tabular-nums text-foreground">
               {formatter.format(visitors)}
             </span>
           </div>
@@ -162,8 +162,8 @@ export function RealtimeTrafficTrendView({
   const chartConfig = useMemo(
     () =>
       ({
-        visitors: { label: visitorsLabel, color: "var(--chart-3)" },
-        nonVisitorViews: { label: viewsLabel, color: "var(--chart-1)" },
+        visitors: { label: visitorsLabel, color: "var(--chart-1)" },
+        nonVisitorViews: { label: viewsLabel, color: "var(--chart-soft)" },
       }) satisfies ChartConfig,
     [viewsLabel, visitorsLabel],
   );
@@ -201,12 +201,12 @@ export function RealtimeTrafficTrendView({
                 >
                   <stop
                     offset="5%"
-                    stopColor="var(--chart-3)"
+                    stopColor="var(--chart-1)"
                     stopOpacity={0.8}
                   />
                   <stop
                     offset="95%"
-                    stopColor="var(--chart-3)"
+                    stopColor="var(--chart-1)"
                     stopOpacity={0.12}
                   />
                 </linearGradient>
@@ -219,12 +219,12 @@ export function RealtimeTrafficTrendView({
                 >
                   <stop
                     offset="5%"
-                    stopColor="var(--chart-1)"
+                    stopColor="var(--chart-soft)"
                     stopOpacity={0.72}
                   />
                   <stop
                     offset="95%"
-                    stopColor="var(--chart-1)"
+                    stopColor="var(--chart-soft)"
                     stopOpacity={0.08}
                   />
                 </linearGradient>
@@ -261,14 +261,14 @@ export function RealtimeTrafficTrendView({
                 dataKey="visitors"
                 type="step"
                 stackId="traffic"
-                stroke="var(--chart-3)"
+                stroke="var(--chart-1)"
                 fill={`url(#${gradientId}-visitors)`}
                 strokeWidth={1.5}
                 dot={false}
                 activeDot={{
                   r: 2,
-                  stroke: "var(--chart-3)",
-                  fill: "var(--chart-3)",
+                  stroke: "var(--chart-1)",
+                  fill: "var(--chart-1)",
                 }}
                 isAnimationActive={!loading}
                 animationDuration={280}
@@ -277,14 +277,14 @@ export function RealtimeTrafficTrendView({
                 dataKey="nonVisitorViews"
                 type="step"
                 stackId="traffic"
-                stroke="var(--chart-1)"
+                stroke="var(--chart-soft)"
                 fill={`url(#${gradientId}-views)`}
                 strokeWidth={1.5}
                 dot={false}
                 activeDot={{
                   r: 2,
-                  stroke: "var(--chart-1)",
-                  fill: "var(--chart-1)",
+                  stroke: "var(--chart-soft)",
+                  fill: "var(--chart-soft)",
                 }}
                 isAnimationActive={!loading}
                 animationDuration={280}

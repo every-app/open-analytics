@@ -341,7 +341,7 @@ function DoDiagnosticCell({
         <p
           key={value}
           className={cn(
-            "mt-2 min-w-0 truncate font-mono text-xl leading-7 font-semibold tabular-nums",
+            "mt-2 min-w-0 truncate text-xl leading-7 font-semibold tabular-nums",
             tone === "warning" && "text-destructive",
             tone === "good" && "text-primary",
           )}
@@ -379,7 +379,7 @@ function DoDiagnosticKv({
         <span
           key={value}
           className={cn(
-            "font-mono text-xs tabular-nums",
+            "text-xs tabular-nums",
             tone === "warning" && "text-destructive",
           )}
         >

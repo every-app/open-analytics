@@ -216,7 +216,7 @@ export const DeviceShareOverview = memo(function DeviceShareOverview({
         {showOverlayLoading ? (
           <span
             key="device-share-overlay-loading"
-            className="inline-flex items-center gap-2 rounded-none border border-border/50 bg-background/90 px-2 py-1 text-xs text-muted-foreground shadow-sm"
+            className="inline-flex items-center gap-2 rounded-lg border border-border/50 bg-background/90 px-2 py-1 text-xs text-muted-foreground shadow-sm"
           >
             <Spinner className="size-3.5" />
             {messages.common.loading}

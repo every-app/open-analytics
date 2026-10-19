@@ -344,7 +344,7 @@ const RetentionCell = memo(function RetentionCell({
         {cell.available ? (
           <button
             type="button"
-            className="flex h-8 w-full items-center justify-center font-mono text-[11px] tabular-nums outline-none ring-0 transition-transform hover:scale-[1.035] focus-visible:ring-2 focus-visible:ring-ring/70"
+            className="flex h-8 w-full items-center justify-center text-[11px] tabular-nums outline-none ring-0 transition-transform hover:scale-[1.035] focus-visible:ring-2 focus-visible:ring-ring/70"
             style={retentionCellStyle(cell.rate, cell.available)}
             aria-label={tooltip}
           >
@@ -414,7 +414,7 @@ const RetentionComparisonCell = memo(function RetentionComparisonCell({
       <button
         key={key}
         type="button"
-        className="flex h-full min-h-0 w-full flex-1 items-center justify-center font-mono text-[10px] tabular-nums outline-none ring-0 focus-visible:ring-2 focus-visible:ring-ring/70"
+        className="flex h-full min-h-0 w-full flex-1 items-center justify-center text-[10px] tabular-nums outline-none ring-0 focus-visible:ring-2 focus-visible:ring-ring/70"
         style={retentionCellStyle(cell.rate, true, colorVariable)}
         aria-label={`${key === "current" ? currentLabel : comparisonLabel}: ${percentFormat(locale, cell.rate)}`}
       >
@@ -486,7 +486,7 @@ export const RetentionMatrix = memo(function RetentionMatrix({
     currentValue: number | null,
     comparisonValue: number | null,
   ) => (
-    <div className="grid h-8 grid-rows-2 items-center text-right font-mono tabular-nums">
+    <div className="grid h-8 grid-rows-2 items-center text-right tabular-nums">
       <span className="truncate">
         {currentValue === null ? "--" : numberFormat(locale, currentValue)}
       </span>
@@ -688,7 +688,7 @@ export const RetentionMatrix = memo(function RetentionMatrix({
                             <td
                               className={cn(
                                 RETENTION_SIZE_COLUMN,
-                                "sticky left-[var(--retention-cohort-width)] z-30 border-r border-b bg-card px-2 py-2 text-right font-mono tabular-nums whitespace-nowrap text-muted-foreground group-hover:bg-muted",
+                                "sticky left-[var(--retention-cohort-width)] z-30 border-r border-b bg-card px-2 py-2 text-right tabular-nums whitespace-nowrap text-muted-foreground group-hover:bg-muted",
                               )}
                             >
                               {renderPairValue(
@@ -800,7 +800,7 @@ export const RetentionMatrix = memo(function RetentionMatrix({
                                   <button
                                     type="button"
                                     className={cn(
-                                      "flex h-8 w-full items-center justify-center font-mono text-[11px] tabular-nums outline-none ring-0 transition-transform hover:scale-[1.035] focus-visible:ring-2 focus-visible:ring-ring/70",
+                                      "flex h-8 w-full items-center justify-center text-[11px] tabular-nums outline-none ring-0 transition-transform hover:scale-[1.035] focus-visible:ring-2 focus-visible:ring-ring/70",
                                       average.rate === null &&
                                         "text-muted-foreground",
                                     )}
@@ -832,7 +832,7 @@ export const RetentionMatrix = memo(function RetentionMatrix({
                             <td
                               className={cn(
                                 RETENTION_SIZE_COLUMN,
-                                "sticky left-[var(--retention-cohort-width)] z-30 border-r border-b bg-card px-2 py-2 text-right font-mono tabular-nums whitespace-nowrap text-muted-foreground group-hover:bg-muted",
+                                "sticky left-[var(--retention-cohort-width)] z-30 border-r border-b bg-card px-2 py-2 text-right tabular-nums whitespace-nowrap text-muted-foreground group-hover:bg-muted",
                               )}
                             >
                               {numberFormat(locale, cohort.size)}

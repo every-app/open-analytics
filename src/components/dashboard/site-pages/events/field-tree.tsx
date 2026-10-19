@@ -100,10 +100,10 @@ export function EventFieldTreeSkeleton({
           key={index}
           className={`flex h-8 items-center gap-2 ${row.indent}`}
         >
-          <Skeleton className="size-6 shrink-0 rounded-none" />
-          <Skeleton className={`h-3.5 ${row.width} rounded-none`} />
+          <Skeleton className="size-6 shrink-0 rounded-md" />
+          <Skeleton className={`h-3.5 ${row.width} rounded-md`} />
           {row.branch ? (
-            <Skeleton className="ml-auto size-5 shrink-0 rounded-none" />
+            <Skeleton className="ml-auto size-5 shrink-0 rounded-md" />
           ) : null}
         </div>
       ))}

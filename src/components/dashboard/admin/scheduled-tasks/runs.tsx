@@ -55,10 +55,10 @@ export function formatDateOrDash(
     : "--";
 }
 export function statusTone(status: ScheduledTaskStatus) {
-  if (status === "success") return "text-emerald-600 dark:text-emerald-400";
-  if (status === "partial") return "text-amber-600 dark:text-amber-400";
+  if (status === "success") return "text-success";
+  if (status === "partial") return "text-warning-foreground dark:text-warning";
   if (status === "failed") return "text-destructive";
-  if (status === "running") return "text-sky-600 dark:text-sky-400";
+  if (status === "running") return "text-info";
   return "text-muted-foreground";
 }
 export function StatusBadge({
@@ -268,7 +268,7 @@ export function ScheduledTaskRunsTable({
                   {numberFormat(locale, run.taskCount)}
                 </Badge>
                 {run.successCount > 0 ? (
-                  <span className="font-mono text-emerald-600 dark:text-emerald-400">
+                  <span className="font-mono text-success">
                     {labels.status.success}:
                     {numberFormat(locale, run.successCount)}
                   </span>
@@ -286,13 +286,13 @@ export function ScheduledTaskRunsTable({
                   </span>
                 ) : null}
                 {run.partialCount > 0 ? (
-                  <span className="font-mono text-amber-600 dark:text-amber-400">
+                  <span className="font-mono text-warning-foreground dark:text-warning">
                     {labels.status.partial}:
                     {numberFormat(locale, run.partialCount)}
                   </span>
                 ) : null}
                 {run.runningCount > 0 ? (
-                  <span className="font-mono text-sky-600 dark:text-sky-400">
+                  <span className="font-mono text-info">
                     {labels.status.running}:
                     {numberFormat(locale, run.runningCount)}
                   </span>
@@ -378,7 +378,8 @@ export function ScheduledTaskLogEntry({
             className={cn(
               "truncate font-medium",
               log.level === "error" && "text-destructive",
-              log.level === "warn" && "text-amber-600 dark:text-amber-400",
+              log.level === "warn" &&
+                "text-warning-foreground dark:text-warning",
             )}
           >
             {log.event}

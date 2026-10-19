@@ -38,11 +38,11 @@ export interface TrafficPairRange {
 const TRAFFIC_PAIR_CHART_CONFIG = {
   visitors: {
     label: "visitors",
-    color: "var(--color-chart-3)",
+    color: "var(--color-chart-1)",
   },
   nonVisitorViews: {
     label: "views",
-    color: "var(--color-chart-1)",
+    color: "var(--color-chart-soft)",
   },
 } satisfies ChartConfig;
 
@@ -147,11 +147,11 @@ export function createTrafficPairComparisonChartConfig(
     },
     currentVisitors: {
       label: `${currentPeriodLabel} · ${visitorsLabel}`,
-      color: "var(--color-chart-3)",
+      color: "var(--color-chart-1)",
     },
     currentNonVisitorViews: {
       label: `${currentPeriodLabel} · ${viewsLabel}`,
-      color: "var(--color-chart-1)",
+      color: "var(--color-chart-soft)",
     },
   };
 }
@@ -177,7 +177,7 @@ export function TrafficPairTooltip({
   const visitors = safeChartCount(Number(point?.visitors ?? 0));
 
   return (
-    <div className="grid min-w-32 items-start gap-1.5 rounded-none border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
+    <div className="grid min-w-32 items-start gap-1.5 rounded-lg border border-border bg-popover px-2.5 text-popover-foreground py-1.5 text-xs shadow-xl">
       <div className="font-medium">
         {tooltipFormatter.format(new Date(timestamp))}
       </div>
@@ -186,7 +186,7 @@ export function TrafficPairTooltip({
           <ChartTooltipIndicator color="var(--color-nonVisitorViews)" />
           <div className="flex flex-1 items-center justify-between gap-3 leading-none">
             <span className="text-muted-foreground">{viewsLabel}</span>
-            <span className="font-mono font-medium tabular-nums text-foreground">
+            <span className="font-medium tabular-nums text-foreground">
               {countFormatter.format(views)}
             </span>
           </div>
@@ -195,7 +195,7 @@ export function TrafficPairTooltip({
           <ChartTooltipIndicator color="var(--color-visitors)" />
           <div className="flex flex-1 items-center justify-between gap-3 leading-none">
             <span className="text-muted-foreground">{visitorsLabel}</span>
-            <span className="font-mono font-medium tabular-nums text-foreground">
+            <span className="font-medium tabular-nums text-foreground">
               {countFormatter.format(visitors)}
             </span>
           </div>
@@ -238,12 +238,12 @@ export function TrafficPairComparisonTooltip({
   const rows = [
     {
       label: `${currentPeriodLabel} · ${viewsLabel}`,
-      color: "var(--color-chart-1)",
+      color: "var(--color-chart-soft)",
       value: views,
     },
     {
       label: `${currentPeriodLabel} · ${visitorsLabel}`,
-      color: "var(--color-chart-3)",
+      color: "var(--color-chart-1)",
       value: visitors,
     },
     {
@@ -259,7 +259,7 @@ export function TrafficPairComparisonTooltip({
   ];
 
   return (
-    <div className="grid min-w-[220px] items-start gap-1.5 rounded-none border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
+    <div className="grid min-w-[220px] items-start gap-1.5 rounded-lg border border-border bg-popover px-2.5 text-popover-foreground py-1.5 text-xs shadow-xl">
       <div className="font-medium">
         {tooltipFormatter.format(new Date(timestamp))}
       </div>
@@ -269,7 +269,7 @@ export function TrafficPairComparisonTooltip({
             <ChartTooltipIndicator color={row.color} />
             <div className="flex flex-1 items-center justify-between gap-3 leading-none">
               <span className="text-muted-foreground">{row.label}</span>
-              <span className="font-mono font-medium tabular-nums text-foreground">
+              <span className="font-medium tabular-nums text-foreground">
                 {countFormatter.format(row.value)}
               </span>
             </div>

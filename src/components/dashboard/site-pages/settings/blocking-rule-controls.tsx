@@ -292,7 +292,7 @@ function BlockingRuleTestDialog({
                       "space-y-3 border p-3",
                       fieldResult.decision === "block"
                         ? "border-destructive/30 bg-destructive/[0.04]"
-                        : "border-emerald-500/30 bg-emerald-500/[0.04]",
+                        : "border-success/30 bg-success/[0.04]",
                     )}
                   >
                     <div
@@ -300,7 +300,7 @@ function BlockingRuleTestDialog({
                         "inline-flex items-center gap-2 text-sm font-medium",
                         fieldResult.decision === "block"
                           ? "text-destructive"
-                          : "text-emerald-700 dark:text-emerald-400",
+                          : "text-success",
                       )}
                     >
                       {fieldResult.decision === "block" ? (
@@ -437,7 +437,7 @@ export function BlockingRuleEditorCard({
     errors.length > 0
       ? "text-destructive"
       : hasRules
-        ? "text-emerald-700 dark:text-emerald-400"
+        ? "text-success"
         : "text-muted-foreground";
   return (
     <Card className="h-full">
@@ -466,7 +466,7 @@ export function BlockingRuleEditorCard({
               .filter((id): id is string => id !== null)
               .join(" ")}
             disabled={disabled}
-            className="min-h-24 w-full rounded-none border border-input bg-transparent px-2.5 py-1.5 text-xs outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30 dark:disabled:bg-input/80"
+            className="min-h-24 w-full rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-xs outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30 dark:disabled:bg-input/80"
           />
           <AutoResizer>
             <AutoTransition

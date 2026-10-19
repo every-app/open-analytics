@@ -233,7 +233,7 @@ function GoalTimeseriesTooltip({
   }
 
   return (
-    <div className="grid min-w-[18rem] items-start gap-1.5 rounded-none border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
+    <div className="grid min-w-[18rem] items-start gap-1.5 rounded-lg border border-border bg-popover px-2.5 text-popover-foreground py-1.5 text-xs shadow-xl">
       <div className="font-medium">
         {dateFormatter.format(new Date(point.timestampMs))}
       </div>
@@ -244,7 +244,7 @@ function GoalTimeseriesTooltip({
               <ChartTooltipIndicator color={color} />
               <span className="truncate text-muted-foreground">{label}</span>
             </span>
-            <span className="ml-auto min-w-[10.5rem] shrink-0 whitespace-nowrap text-right font-mono text-foreground tabular-nums">
+            <span className="ml-auto min-w-[10.5rem] shrink-0 whitespace-nowrap text-right text-foreground tabular-nums">
               {numberFormat(locale, metric.converted)} /{" "}
               {numberFormat(locale, metric.total)} ·{" "}
               {percentFormat(locale, metric.rate)}
@@ -493,7 +493,7 @@ export function GoalTimeseriesChart({
               : null}
             <ChartLegend
               content={
-                <ChartLegendContent className="pt-2 flex-wrap justify-center gap-x-4 gap-y-2 [&>div>div]:h-2.5 [&>div>div]:w-2.5 [&>div>div]:shrink-0 [&>div>div]:rounded-none" />
+                <ChartLegendContent className="pt-2 flex-wrap justify-center gap-x-4 gap-y-2 [&>div>div]:h-2.5 [&>div>div]:w-2.5 [&>div>div]:shrink-0 [&>div>div]:rounded-[2px]" />
               }
             />
           </AreaChart>

@@ -396,8 +396,8 @@ export const GeoCountryStatsPanel = memo(function GeoCountryStatsPanel({
       comparisonChangeValue === null || comparisonChangeValue === undefined
         ? "text-muted-foreground"
         : comparisonChangeValue >= 0
-          ? "text-emerald-600"
-          : "text-rose-600";
+          ? "text-success"
+          : "text-destructive";
     const comparisonChangeText =
       comparisonChange === undefined || comparisonChange === null
         ? "—"
@@ -431,19 +431,19 @@ export const GeoCountryStatsPanel = memo(function GeoCountryStatsPanel({
         {comparisonMode ? (
           <>
             <TableCell className="p-0">
-              <div className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">
+              <div className="px-2 py-2 text-right tabular-nums text-muted-foreground">
                 {numberFormat(locale, entry.reference?.[comparisonMetric] ?? 0)}
               </div>
             </TableCell>
             <TableCell className="p-0">
-              <div className="px-2 py-2 text-right font-mono tabular-nums">
+              <div className="px-2 py-2 text-right tabular-nums">
                 {numberFormat(locale, entry[comparisonMetric])}
               </div>
             </TableCell>
             <TableCell className="p-0">
               <div
                 className={cn(
-                  "px-2 py-2 text-right font-mono tabular-nums",
+                  "px-2 py-2 text-right tabular-nums",
                   comparisonChangeClass,
                 )}
               >
@@ -454,12 +454,12 @@ export const GeoCountryStatsPanel = memo(function GeoCountryStatsPanel({
         ) : (
           <>
             <TableCell className="p-0">
-              <div className="px-2 py-2 text-right font-mono tabular-nums">
+              <div className="px-2 py-2 text-right tabular-nums">
                 {numberFormat(locale, entry.visitors)}
               </div>
             </TableCell>
             <TableCell className="p-0">
-              <div className="px-2 py-2 text-right font-mono tabular-nums">
+              <div className="px-2 py-2 text-right tabular-nums">
                 {numberFormat(locale, entry.views)}
               </div>
             </TableCell>
@@ -499,7 +499,7 @@ export const GeoCountryStatsPanel = memo(function GeoCountryStatsPanel({
                           tapScale={0.98}
                           aria-label={messages.geo.back}
                           className={cn(
-                            "peer/menu-button group/menu-button flex h-8 w-full items-center justify-start gap-2 overflow-hidden rounded-none p-2 text-left text-xs outline-hidden transition-[width,height,padding]",
+                            "peer/menu-button group/menu-button flex h-8 w-full items-center justify-start gap-2 overflow-hidden rounded-md p-2 text-left text-xs outline-hidden transition-[width,height,padding]",
                             "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                             "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                             "active:bg-sidebar-accent active:text-sidebar-accent-foreground",

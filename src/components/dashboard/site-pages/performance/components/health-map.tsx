@@ -165,7 +165,7 @@ const CountryStatusColumn = memo(function CountryStatusColumn({
                 )}
               </span>
             ),
-          className: "font-mono tabular-nums",
+          className: "tabular-nums",
         },
         {
           key: "value",
@@ -184,7 +184,7 @@ const CountryStatusColumn = memo(function CountryStatusColumn({
                 )}
               </span>
             ),
-          className: "font-mono tabular-nums",
+          className: "tabular-nums",
         },
       ];
     }
@@ -200,7 +200,7 @@ const CountryStatusColumn = memo(function CountryStatusColumn({
           ) : (
             <span>{numberFormat(locale, value)}</span>
           ),
-        className: "font-mono tabular-nums",
+        className: "tabular-nums",
       },
       {
         key: "value",
@@ -219,7 +219,7 @@ const CountryStatusColumn = memo(function CountryStatusColumn({
               )}
             </span>
           ),
-        className: "font-mono tabular-nums",
+        className: "tabular-nums",
       },
     ];
   }, [
@@ -319,7 +319,7 @@ const CountryStatusColumn = memo(function CountryStatusColumn({
           className="shrink-0"
           transitionKey={rows.length}
         >
-          <div className="font-mono text-sm text-muted-foreground tabular-nums">
+          <div className="text-sm text-muted-foreground tabular-nums">
             {numberFormat(locale, rows.length)}
           </div>
         </PerformanceDynamicValue>
@@ -550,7 +550,7 @@ const PerformanceHealthMapVisual = memo(function PerformanceHealthMapVisual({
                           className="inline-flex shrink-0 items-center"
                         >
                           <AutoTransition
-                            className="inline-block whitespace-nowrap font-mono text-foreground tabular-nums"
+                            className="inline-block whitespace-nowrap text-foreground tabular-nums"
                             duration={0.2}
                             type="fade"
                             initial={false}
@@ -576,7 +576,7 @@ const PerformanceHealthMapVisual = memo(function PerformanceHealthMapVisual({
                           className="inline-flex shrink-0 items-center"
                         >
                           <AutoTransition
-                            className="inline-block whitespace-nowrap font-mono text-foreground tabular-nums"
+                            className="inline-block whitespace-nowrap text-foreground tabular-nums"
                             duration={0.2}
                             type="fade"
                             initial={false}
@@ -601,7 +601,7 @@ const PerformanceHealthMapVisual = memo(function PerformanceHealthMapVisual({
           ) : (
             <Skeleton
               key={loading ? "loading" : "resource-loading"}
-              className="mx-auto aspect-[2/1] w-full rounded-none"
+              className="mx-auto aspect-[2/1] w-full rounded-lg"
             />
           )}
         </AutoTransition>

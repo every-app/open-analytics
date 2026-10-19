@@ -24,9 +24,7 @@ const cardFixtures = [
             <CardDescription>Compared with the previous period</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="font-mono text-2xl font-semibold tabular-nums">
-              1,284
-            </p>
+            <p className="text-2xl font-semibold tabular-nums">1,284</p>
           </CardContent>
         </>
       ),
@@ -44,9 +42,7 @@ const cardFixtures = [
             <CardDescription>Visitors who completed a goal</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="font-mono text-2xl font-semibold tabular-nums">
-              12.5%
-            </p>
+            <p className="text-2xl font-semibold tabular-nums">12.5%</p>
           </CardContent>
         </>
       ),

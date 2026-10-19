@@ -31,7 +31,7 @@ const VISITOR_MAP_VIEW_STATE = {
   bearing: 0,
 } as const;
 const VISITOR_MAP_MAX_RENDERED_POINTS = 320;
-const VISITOR_MAP_POINT_RGB = [52, 211, 153] as const;
+const VISITOR_MAP_POINT_RGB = [41, 120, 214] as const;
 const VISITOR_MAP_POINT_BASE_RADIUS_PX = 4.8;
 function resolveVisitorMapFillColor(
   opacity: number,

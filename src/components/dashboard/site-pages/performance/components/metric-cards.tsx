@@ -51,11 +51,11 @@ export function PerformanceTrendLoadingState({
 
   return (
     <div className="space-y-4">
-      <Skeleton className="h-[360px] w-full rounded-none" />
+      <Skeleton className="h-[360px] w-full rounded-md" />
       <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
         {legend.map((label) => (
           <span key={label} className="inline-flex items-center gap-2">
-            <span className="size-2.5 shrink-0 rounded-none bg-muted" />
+            <span className="size-2.5 shrink-0 rounded-[2px] bg-muted" />
             {label}
           </span>
         ))}
@@ -141,7 +141,7 @@ export const PerformanceRail = memo(function PerformanceRail({
           >
             <div
               className={cn(
-                "relative overflow-hidden rounded-none bg-card p-4 ring-1 ring-border/70 transition-all duration-200",
+                "relative overflow-hidden rounded-lg bg-card p-4 ring-1 ring-border/70 transition-all duration-200",
                 "hover:bg-muted/35",
               )}
             >
@@ -424,7 +424,7 @@ export const MetricSummaryCard = memo(function MetricSummaryCard({
                   </AutoTransition>
                 </AutoResizer>
               </div>
-              <div className="rounded-none bg-muted/45 p-4">
+              <div className="rounded-lg bg-muted/45 p-4">
                 <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                   <GaugeIcon className="size-4 text-muted-foreground" />
                   {messages.performance.datasetTitle}
@@ -442,7 +442,7 @@ export const MetricSummaryCard = memo(function MetricSummaryCard({
 
         <div className="grid gap-3 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex min-h-[4.75rem] flex-col justify-between rounded-none bg-muted/45 p-3">
+            <div className="flex min-h-[4.75rem] flex-col justify-between rounded-lg bg-muted/45 p-3">
               <div className="text-xs text-muted-foreground">
                 {messages.performance.pathsAnalyzedLabel}
               </div>
@@ -450,7 +450,7 @@ export const MetricSummaryCard = memo(function MetricSummaryCard({
                 loading={loading}
                 transitionKey={`${pathCount}:${comparisonPathCount ?? "--"}`}
               >
-                <div className="grid gap-0.5 font-mono text-lg font-semibold tabular-nums">
+                <div className="grid gap-0.5 text-lg font-semibold tabular-nums">
                   <span>{numberFormat(locale, pathCount)}</span>
                   {comparisonLabel ? (
                     <span className="text-xs font-normal text-muted-foreground">
@@ -461,7 +461,7 @@ export const MetricSummaryCard = memo(function MetricSummaryCard({
                 </div>
               </PerformanceSpinnerValue>
             </div>
-            <div className="flex min-h-[4.75rem] flex-col justify-between rounded-none bg-muted/45 p-3">
+            <div className="flex min-h-[4.75rem] flex-col justify-between rounded-lg bg-muted/45 p-3">
               <div className="text-xs text-muted-foreground">
                 {messages.performance.samplesLabel}
               </div>
@@ -469,7 +469,7 @@ export const MetricSummaryCard = memo(function MetricSummaryCard({
                 loading={loading}
                 transitionKey={`${activeSummary.samples}:${comparisonSummary?.samples ?? "--"}`}
               >
-                <div className="grid gap-0.5 font-mono text-lg font-semibold tabular-nums">
+                <div className="grid gap-0.5 text-lg font-semibold tabular-nums">
                   <span>{numberFormat(locale, activeSummary.samples)}</span>
                   {comparisonLabel ? (
                     <span className="text-xs font-normal text-muted-foreground">
@@ -490,7 +490,7 @@ export const MetricSummaryCard = memo(function MetricSummaryCard({
             ].map(([key, label, value]) => (
               <div
                 key={key as string}
-                className="flex min-h-[4.75rem] flex-col justify-between rounded-none bg-muted/45 p-3"
+                className="flex min-h-[4.75rem] flex-col justify-between rounded-lg bg-muted/45 p-3"
               >
                 <div className="text-xs text-muted-foreground">
                   {label as string}
@@ -509,7 +509,7 @@ export const MetricSummaryCard = memo(function MetricSummaryCard({
                     comparisonSummary?.[key as "p50" | "p75" | "p95"] ?? null,
                   )}`}
                 >
-                  <div className="grid gap-0.5 font-mono text-lg font-semibold tabular-nums">
+                  <div className="grid gap-0.5 text-lg font-semibold tabular-nums">
                     <span>
                       {formatPanelValue(
                         locale,

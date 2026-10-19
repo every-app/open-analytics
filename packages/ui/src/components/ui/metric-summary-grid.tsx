@@ -51,7 +51,7 @@ const COLUMN_CLASSES: Record<
 const VALUE_TONE_CLASSES: Record<MetricSummaryTone, string> = {
   default: "text-foreground",
   positive: "text-primary",
-  warning: "text-amber-500",
+  warning: "text-warning",
   critical: "text-destructive",
 };
 
@@ -59,8 +59,8 @@ const CHANGE_TONE_CLASSES: Record<
   NonNullable<MetricSummaryChange["tone"]>,
   string
 > = {
-  positive: "text-emerald-600",
-  negative: "text-rose-600",
+  positive: "text-success",
+  negative: "text-destructive",
   neutral: "text-muted-foreground",
 };
 
@@ -89,17 +89,17 @@ function MetricSummaryCell({
     <>
       <div className="flex min-w-0 items-center gap-2">
         {item.icon ? (
-          <span className="inline-flex size-[11px] shrink-0 items-center justify-center text-muted-foreground [&>svg]:size-[11px]">
+          <span className="inline-flex size-3.5 shrink-0 items-center justify-center text-muted-foreground [&>svg]:size-3.5">
             {item.icon}
           </span>
         ) : null}
-        <p className="min-w-0 truncate text-[11px] uppercase text-muted-foreground">
+        <p className="min-w-0 truncate text-sm text-muted-foreground">
           {item.label}
         </p>
       </div>
-      <AutoResizer initial animateHeight={false} className="mt-3 h-7">
+      <AutoResizer initial animateHeight={false} className="mt-2 h-8">
         <AutoTransition
-          className="h-7"
+          className="h-8"
           transitionKey={contentKey}
           initial={false}
           duration={0.2}
@@ -107,17 +107,17 @@ function MetricSummaryCell({
           presenceMode="wait"
         >
           {isLoading ? (
-            <div key="loading" className="flex h-7 items-center">
+            <div key="loading" className="flex h-8 items-center">
               <Spinner className="size-5" />
             </div>
           ) : (
             <div
               key={contentKey}
-              className="flex h-7 min-w-0 items-end gap-1.5 leading-none"
+              className="flex h-8 min-w-0 items-end gap-2 leading-none"
             >
               <span
                 className={cn(
-                  "min-w-0 truncate font-mono text-xl leading-none font-semibold tabular-nums",
+                  "min-w-0 truncate text-2xl leading-none font-semibold tracking-tight tabular-nums",
                   VALUE_TONE_CLASSES[item.tone ?? "default"],
                 )}
               >
@@ -126,7 +126,7 @@ function MetricSummaryCell({
               {item.change ? (
                 <span
                   className={cn(
-                    "inline-flex shrink-0 items-end gap-0.5 font-mono text-xs leading-none tabular-nums",
+                    "inline-flex shrink-0 items-end gap-0.5 text-xs leading-none font-medium tabular-nums",
                     CHANGE_TONE_CLASSES[item.change.tone ?? "neutral"],
                   )}
                 >
@@ -139,7 +139,7 @@ function MetricSummaryCell({
         </AutoTransition>
       </AutoResizer>
       <AutoTransition
-        className="mt-3 h-[14px]"
+        className="mt-2 h-4"
         initial={false}
         transitionKey={isDetailLoading ? "loading" : (item.detail ?? "detail")}
         duration={0.2}
@@ -149,12 +149,12 @@ function MetricSummaryCell({
         {isDetailLoading ? (
           <Skeleton
             key="loading"
-            className="h-full w-[min(12rem,72%)] rounded-none"
+            className="h-full w-[min(12rem,72%)] rounded-md"
           />
         ) : (
           <p
             key={item.detail ?? "detail"}
-            className="h-[14px] min-w-0 truncate text-[11px] leading-[14px] text-muted-foreground"
+            className="h-4 min-w-0 truncate text-xs leading-4 text-muted-foreground"
           >
             {item.detail}
           </p>
@@ -164,9 +164,10 @@ function MetricSummaryCell({
   );
 
   const cellClassName = cn(
-    "min-w-0 bg-card p-4 text-left",
-    item.onClick && "cursor-pointer transition-colors hover:bg-muted/35",
-    item.pressed && "bg-muted/35",
+    "min-w-0 bg-card p-5 text-left",
+    item.onClick &&
+      "cursor-pointer transition-colors hover:bg-foreground/[0.03]",
+    item.pressed && "bg-foreground/[0.04]",
     item.onClick &&
       "focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70",
   );

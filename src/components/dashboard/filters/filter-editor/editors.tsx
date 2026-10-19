@@ -1269,7 +1269,7 @@ function ConditionEditor({
                         key={pickerField.value}
                         type="button"
                         aria-pressed={advancedField === pickerField.value}
-                        className="relative flex w-full cursor-default items-center gap-2 rounded-none py-2 pr-8 pl-2 text-left text-xs outline-hidden transition-colors select-none hover:bg-accent hover:text-accent-foreground aria-pressed:bg-accent aria-pressed:text-accent-foreground"
+                        className="relative flex w-full cursor-default items-center gap-2 rounded-md py-2 pr-8 pl-2 text-left text-xs outline-hidden transition-colors select-none hover:bg-accent hover:text-accent-foreground aria-pressed:bg-accent aria-pressed:text-accent-foreground"
                         onClick={() => {
                           setField(pickerField.value);
                           setFieldSearch("");

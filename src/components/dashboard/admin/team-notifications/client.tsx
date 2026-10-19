@@ -546,14 +546,14 @@ export function TeamNotificationsClient({
           </DialogHeader>
           <div className="space-y-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-2 text-foreground">
-              <CircleCheckIcon className="size-4 text-emerald-600" />
+              <CircleCheckIcon className="size-4 text-success" />
               {copy.inAppTestHint}
             </div>
             <div
               className={`flex items-center gap-2${emailConfigured ? " text-foreground" : ""}`}
             >
               <SendIcon
-                className={`size-4${emailConfigured ? " text-emerald-600" : ""}`}
+                className={`size-4${emailConfigured ? " text-success" : ""}`}
               />
               {emailConfigured
                 ? copy.emailTestConfiguredHint

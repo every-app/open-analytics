@@ -44,7 +44,6 @@
     "@deck.gl/layers": "^9.3.10",
     "@deck.gl/mapbox": "^9.3.10",
     "@every-app/sdk": "link:../private-every-app/packages/sdk",
-    "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@iconify-json/flagpack": "^1.2.7",
     "@iconify/react": "^6.0.2",
     "@insightflare/product-ui": "0.7.1",

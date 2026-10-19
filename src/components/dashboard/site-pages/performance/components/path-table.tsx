@@ -98,7 +98,7 @@ const PathStatusColumn = memo(function PathStatusColumn({
                 )}
               </span>
             ),
-          className: "font-mono tabular-nums",
+          className: "tabular-nums",
         },
         {
           key: "value",
@@ -117,7 +117,7 @@ const PathStatusColumn = memo(function PathStatusColumn({
                 )}
               </span>
             ),
-          className: "font-mono tabular-nums",
+          className: "tabular-nums",
         },
       ];
     }
@@ -133,7 +133,7 @@ const PathStatusColumn = memo(function PathStatusColumn({
           ) : (
             <span>{numberFormat(locale, value)}</span>
           ),
-        className: "font-mono tabular-nums",
+        className: "tabular-nums",
       },
       {
         key: "value",
@@ -152,7 +152,7 @@ const PathStatusColumn = memo(function PathStatusColumn({
               )}
             </span>
           ),
-        className: "font-mono tabular-nums",
+        className: "tabular-nums",
       },
     ];
   }, [
@@ -248,7 +248,7 @@ const PathStatusColumn = memo(function PathStatusColumn({
         </div>
         <PerformancePanelText
           transitionKey={rows.length}
-          className="font-mono text-sm text-muted-foreground tabular-nums"
+          className="text-sm text-muted-foreground tabular-nums"
         >
           {numberFormat(locale, rows.length)}
         </PerformancePanelText>
@@ -362,7 +362,7 @@ export const PathPerformanceTable = memo(function PathPerformanceTable({
               skeletonClassName="h-4 w-8"
               className="shrink-0"
             >
-              <span className="font-mono tabular-nums">
+              <span className="tabular-nums">
                 {numberFormat(locale, rows.length)}
               </span>
             </PerformanceDynamicValue>

@@ -26,9 +26,9 @@ interface ReferrerSummarySectionProps {
 
 function SummaryMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-none border border-border/70 bg-muted/15 p-3">
+    <div className="rounded-lg border border-border/70 bg-muted/15 p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-2 font-mono text-2xl font-semibold tracking-tight">
+      <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">
         {value}
       </p>
     </div>
@@ -212,7 +212,7 @@ export const ReferrerSummarySection = memo(function ReferrerSummarySection({
                   />
                 </div>
 
-                <div className="rounded-none border border-border/70 bg-muted/10 p-4">
+                <div className="rounded-lg border border-border/70 bg-muted/10 p-4">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
                     {messages.referrers.topSource}
                   </p>

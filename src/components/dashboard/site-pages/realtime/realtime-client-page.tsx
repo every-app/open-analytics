@@ -155,32 +155,32 @@ export function RealtimeClientPage({
                       <AnimatedNumber
                         value={realtime.activeNow}
                         continuous={enableRollingNumber}
-                        className="font-mono text-3xl leading-none tabular-nums md:text-4xl"
+                        className="text-3xl leading-none tabular-nums md:text-4xl"
                         style={NUMBER_FLOW_BASELINE_STYLE}
                       />
-                      <span className="pb-0.5 font-mono text-xl leading-none text-muted-foreground/70 md:text-2xl">
+                      <span className="pb-0.5 text-xl leading-none text-muted-foreground/70 md:text-2xl tabular-nums">
                         /
                       </span>
                       <AnimatedNumber
                         value={realtime.visitorsLast30m}
                         continuous={enableRollingNumber}
-                        className="font-mono text-3xl leading-none tabular-nums md:text-4xl"
+                        className="text-3xl leading-none tabular-nums md:text-4xl"
                         style={NUMBER_FLOW_BASELINE_STYLE}
                       />
-                      <span className="pb-0.5 font-mono text-xl leading-none text-muted-foreground/70 md:text-2xl">
+                      <span className="pb-0.5 text-xl leading-none text-muted-foreground/70 md:text-2xl tabular-nums">
                         /
                       </span>
                       <AnimatedNumber
                         value={realtime.viewsLast30m}
                         continuous={enableRollingNumber}
-                        className="font-mono text-3xl leading-none tabular-nums md:text-4xl"
+                        className="text-3xl leading-none tabular-nums md:text-4xl"
                         style={NUMBER_FLOW_BASELINE_STYLE}
                       />
                     </div>
                   ) : (
                     <span
                       key="realtime-metrics-empty"
-                      className="inline-flex items-end font-mono text-3xl font-semibold leading-none text-foreground tabular-nums md:text-4xl"
+                      className="inline-flex items-end text-3xl font-semibold leading-none text-foreground tabular-nums md:text-4xl"
                     >
                       -- / -- / --
                     </span>

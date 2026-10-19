@@ -133,7 +133,7 @@ function percentageChangeFormat(
 function percentageChangeClass(current: number, comparison: number): string {
   const change = relativeChange(current, comparison);
   if (change === null) return "text-muted-foreground";
-  return change >= 0 ? "text-emerald-600" : "text-rose-600";
+  return change >= 0 ? "text-success" : "text-destructive";
 }
 const BrowserVersionDonutCard = memo(function BrowserVersionDonutCard({
   locale,
@@ -214,14 +214,14 @@ const BrowserVersionDonutCard = memo(function BrowserVersionDonutCard({
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <span
-                className="size-2 shrink-0 rounded-none"
+                className="size-2 shrink-0 rounded-[2px]"
                 style={{ backgroundColor: "var(--color-chart-1)" }}
               />
               {currentLabel}: {numberFormat(locale, browser.visitors)}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span
-                className="size-2 shrink-0 rounded-none"
+                className="size-2 shrink-0 rounded-[2px]"
                 style={{ backgroundColor: "var(--color-chart-secondary-1)" }}
               />
               {comparisonLabel}:{" "}
@@ -291,12 +291,12 @@ const BrowserVersionDonutCard = memo(function BrowserVersionDonutCard({
                       >
                         <span className="inline-flex shrink-0 items-center gap-0.5">
                           <span
-                            className="h-2.5 w-2.5 rounded-none"
+                            className="h-2.5 w-2.5 rounded-[2px]"
                             style={{ backgroundColor: current.color }}
                           />
                           {hasComparison ? (
                             <span
-                              className="h-2.5 w-2.5 rounded-none"
+                              className="h-2.5 w-2.5 rounded-[2px]"
                               style={{ backgroundColor: comparison.color }}
                             />
                           ) : null}
@@ -310,7 +310,7 @@ const BrowserVersionDonutCard = memo(function BrowserVersionDonutCard({
                   </Tooltip>
                   <span
                     className={cn(
-                      "justify-self-end font-mono text-foreground tabular-nums transition-opacity motion-reduce:transition-none",
+                      "justify-self-end text-foreground tabular-nums transition-opacity motion-reduce:transition-none",
                       isDimmed && "opacity-40",
                     )}
                   >
@@ -319,7 +319,7 @@ const BrowserVersionDonutCard = memo(function BrowserVersionDonutCard({
                   {hasComparison ? (
                     <span
                       className={cn(
-                        "justify-self-end font-mono tabular-nums transition-opacity motion-reduce:transition-none",
+                        "justify-self-end tabular-nums transition-opacity motion-reduce:transition-none",
                         percentageChangeClass(current.value, comparison.value),
                         isDimmed && "opacity-40",
                       )}
@@ -333,7 +333,7 @@ const BrowserVersionDonutCard = memo(function BrowserVersionDonutCard({
                   ) : null}
                   <span
                     className={cn(
-                      "justify-self-end text-right font-mono text-[11px] tabular-nums transition-opacity motion-reduce:transition-none",
+                      "justify-self-end text-right text-[11px] tabular-nums transition-opacity motion-reduce:transition-none",
                       isDimmed && "opacity-40",
                     )}
                   >
@@ -344,7 +344,7 @@ const BrowserVersionDonutCard = memo(function BrowserVersionDonutCard({
                   {hasComparison ? (
                     <span
                       className={cn(
-                        "justify-self-end text-right font-mono text-[11px] tabular-nums transition-opacity motion-reduce:transition-none",
+                        "justify-self-end text-right text-[11px] tabular-nums transition-opacity motion-reduce:transition-none",
                         percentageChangeClass(current.share, comparison.share),
                         isDimmed && "opacity-40",
                       )}
@@ -510,7 +510,7 @@ export const BrowserVersionBreakdownGrid = memo(
                 <span
                   key="browser-version-overlay-loading"
                   className={cn(
-                    "inline-flex items-center gap-2 rounded-none border border-border/50 bg-background/90 px-2 py-1 text-xs text-muted-foreground shadow-sm",
+                    "inline-flex items-center gap-2 rounded-lg border border-border/50 bg-background/90 px-2 py-1 text-xs text-muted-foreground shadow-sm",
                   )}
                 >
                   <Spinner className="size-3.5" />

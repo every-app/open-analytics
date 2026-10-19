@@ -412,12 +412,12 @@ const EventRecordTableRowContent = memo(function EventRecordTableRowContent({
       </TableCell>
     ),
     payload: (
-      <TableCell className="pr-4 text-right font-mono tabular-nums">
+      <TableCell className="pr-4 text-right tabular-nums">
         {numberFormat(locale, row.valueCount)}
       </TableCell>
     ),
     nodeCount: (
-      <TableCell className="pr-4 text-right font-mono tabular-nums">
+      <TableCell className="pr-4 text-right tabular-nums">
         {numberFormat(locale, row.nodeCount)}
       </TableCell>
     ),

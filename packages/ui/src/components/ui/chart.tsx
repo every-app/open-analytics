@@ -191,7 +191,7 @@ function ChartTooltipIndicator({
     <span
       aria-hidden="true"
       className={cn(
-        "inline-block size-[0.833em] shrink-0 rounded-none",
+        "inline-block size-[0.833em] shrink-0 rounded-[2px]",
         className,
       )}
       style={{ backgroundColor: color }}
@@ -268,7 +268,7 @@ function ChartTooltipContent({
   return (
     <div
       className={cn(
-        "grid min-w-32 items-start gap-1.5 rounded-none border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl",
+        "grid min-w-32 items-start gap-1.5 rounded-lg border border-border bg-popover px-2.5 py-1.5 text-xs text-popover-foreground shadow-xl",
         className,
       )}
     >
@@ -332,7 +332,7 @@ function ChartTooltipContent({
                         </span>
                       </div>
                       {item.value !== undefined && item.value !== null && (
-                        <span className="font-mono font-medium text-foreground tabular-nums">
+                        <span className="font-medium text-foreground tabular-nums">
                           {item.value.toLocaleString()}
                         </span>
                       )}
@@ -391,7 +391,7 @@ function ChartLegendContent({
                 <itemConfig.icon className="size-3 text-muted-foreground" />
               ) : (
                 <div
-                  className="size-2.5 shrink-0 rounded-none"
+                  className="size-2.5 shrink-0 rounded-[2px]"
                   style={{
                     backgroundColor: item.color,
                   }}

@@ -521,7 +521,7 @@ export const EventFieldsCard = memo(function EventFieldsCard({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="size-6 shrink-0 rounded-none text-primary shadow-none transition-colors hover:bg-primary/10 hover:text-primary"
+                className="size-6 shrink-0 rounded-md text-primary shadow-none transition-colors hover:bg-primary/10 hover:text-primary"
                 onClick={(event) => {
                   event.stopPropagation();
                   toggleFieldExpansion(nodeKey);
@@ -564,7 +564,7 @@ export const EventFieldsCard = memo(function EventFieldsCard({
               <button
                 type="button"
                 className={cn(
-                  "inline-flex size-6 shrink-0 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
+                  "inline-flex size-6 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
                 )}
                 onClick={(event) => {
                   event.stopPropagation();
@@ -664,7 +664,7 @@ export const EventFieldsCard = memo(function EventFieldsCard({
               </div>
             </TableCell>
             <TableCell className="p-0">
-              <div className="px-4 py-2 text-right font-mono tabular-nums">
+              <div className="px-4 py-2 text-right tabular-nums">
                 {numberFormat(locale, count)}
               </div>
             </TableCell>
@@ -750,11 +750,11 @@ export const EventFieldsCard = memo(function EventFieldsCard({
                 {fieldListLoading ? (
                   <EventFieldTreeSkeleton loadingLabel={labels.loading} />
                 ) : fieldListError ? (
-                  <div className="rounded-none border border-border/50 bg-muted/20 px-4 py-6 font-sans text-sm text-muted-foreground">
+                  <div className="rounded-lg border border-border/50 bg-muted/20 px-4 py-6 font-sans text-sm text-muted-foreground">
                     {labels.loadError}
                   </div>
                 ) : activeFields.length === 0 ? (
-                  <div className="rounded-none border border-border/50 bg-muted/20 px-4 py-6 font-sans text-sm text-muted-foreground">
+                  <div className="rounded-lg border border-border/50 bg-muted/20 px-4 py-6 font-sans text-sm text-muted-foreground">
                     {labels.emptyFields}
                   </div>
                 ) : fieldTree.children.length > 0 ? (
@@ -854,7 +854,7 @@ export const EventFieldsCard = memo(function EventFieldsCard({
                 if (payloadFilterError) setPayloadFilterError("");
               }}
               placeholder={labels.payloadFilterPlaceholder}
-              className="min-h-32 w-full resize-y rounded-none border bg-background px-3 py-2 font-mono text-xs leading-5 outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
+              className="min-h-32 w-full resize-y rounded-lg border bg-background px-3 py-2 font-mono text-xs leading-5 outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
             />
             {payloadFilterError ? (
               <p className="text-xs text-destructive">{payloadFilterError}</p>

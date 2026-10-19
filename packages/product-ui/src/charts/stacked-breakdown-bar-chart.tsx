@@ -160,12 +160,12 @@ function StackedBreakdownLegend({
           >
             <span className="inline-flex shrink-0 items-center gap-0.5">
               <span
-                className="size-2.5 shrink-0 rounded-none"
+                className="size-2.5 shrink-0 rounded-[2px]"
                 style={{ backgroundColor: item.color }}
               />
               {comparison ? (
                 <span
-                  className="size-2.5 shrink-0 rounded-none"
+                  className="size-2.5 shrink-0 rounded-[2px]"
                   style={{ backgroundColor: comparison.color }}
                 />
               ) : null}
@@ -193,9 +193,9 @@ function StackedBreakdownTooltipValue({
   value: number;
 }) {
   return (
-    <span className="inline-flex items-center gap-1 font-mono tabular-nums">
+    <span className="inline-flex items-center gap-1 tabular-nums">
       <span
-        className="size-2 shrink-0 rounded-none"
+        className="size-2 shrink-0 rounded-[2px]"
         style={{ backgroundColor: color }}
       />
       <span>
@@ -375,7 +375,7 @@ export const StackedBreakdownBarChart = memo(function StackedBreakdownBarChart({
               });
 
               return (
-                <div className="grid min-w-[18rem] gap-2 rounded-none border border-border/50 bg-background px-2.5 py-2 text-xs shadow-xl">
+                <div className="grid min-w-[18rem] gap-2 rounded-lg border border-border bg-popover px-2.5 text-popover-foreground py-2 text-xs shadow-xl">
                   <div className="font-medium">{row.categoryFullLabel}</div>
                   <div className="grid gap-1.5">
                     {visibleSeries.map((item) => {
@@ -403,12 +403,12 @@ export const StackedBreakdownBarChart = memo(function StackedBreakdownBarChart({
                           <span className="inline-flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
                             <span className="inline-flex shrink-0 items-center gap-0.5">
                               <span
-                                className="size-2.5 shrink-0 rounded-none"
+                                className="size-2.5 shrink-0 rounded-[2px]"
                                 style={{ backgroundColor: item.color }}
                               />
                               {comparison ? (
                                 <span
-                                  className="size-2.5 shrink-0 rounded-none"
+                                  className="size-2.5 shrink-0 rounded-[2px]"
                                   style={{ backgroundColor: comparison.color }}
                                 />
                               ) : null}

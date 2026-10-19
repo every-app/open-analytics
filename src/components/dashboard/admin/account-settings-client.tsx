@@ -708,14 +708,14 @@ export function AccountSettingsClient({
               onSubmit={handleTimeZoneSubmit}
             >
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-none border border-border p-3">
+                <div className="rounded-lg border border-border p-3">
                   <div className="mb-1 flex items-center gap-2 text-xs font-medium">
                     <GlobeIcon className="size-4 text-muted-foreground" />
                     {copy.activeTimeZone}
                   </div>
                   <div className="text-sm">{activeTimeZoneLabel}</div>
                 </div>
-                <div className="rounded-none border border-border p-3">
+                <div className="rounded-lg border border-border p-3">
                   <div className="mb-1 flex items-center gap-2 text-xs font-medium">
                     <MonitorIcon className="size-4 text-muted-foreground" />
                     {copy.browserTimeZone}

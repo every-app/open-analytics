@@ -441,8 +441,8 @@ export function PerformanceChangeRate({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-end gap-0.5 font-mono text-xs leading-none tabular-nums",
-        improved ? "text-emerald-600" : "text-rose-600",
+        "inline-flex shrink-0 items-end gap-0.5 text-xs leading-none tabular-nums",
+        improved ? "text-success" : "text-destructive",
       )}
     >
       <ChangeIcon className="size-3.5" />
@@ -453,7 +453,7 @@ export function PerformanceChangeRate({
 }
 export function statusColor(status: PerformanceStatus): string {
   if (status === "great") return "var(--color-chart-4)";
-  if (status === "needs-improvement") return "oklch(0.75 0.16 80)";
+  if (status === "needs-improvement") return "oklch(0.8 0.15 80)";
   if (status === "poor") return "var(--color-destructive)";
   return "var(--color-muted-foreground)";
 }

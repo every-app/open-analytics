@@ -56,7 +56,7 @@ export const Clickable = forwardRef<HTMLDivElement, ClickableProps>(
         aria-label={ariaLabel}
         aria-disabled={disabled}
         className={cn(
-          "inline-flex select-none items-center justify-center rounded-none outline-none focus-visible:ring-1 focus-visible:ring-ring/60",
+          "inline-flex select-none items-center justify-center rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/60",
           disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
           className,
         )}

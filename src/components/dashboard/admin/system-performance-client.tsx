@@ -390,7 +390,7 @@ export function SystemPerformanceClient({
                             <div className="ml-1 h-3 w-1 bg-destructive" />
                           ) : null}
                         </div>
-                        <div className="text-right font-mono tabular-nums">
+                        <div className="text-right tabular-nums">
                           {formatMetricNumber(locale, point.totalEvents)}
                         </div>
                       </div>
@@ -446,7 +446,7 @@ export function SystemPerformanceClient({
                 >
                   <div
                     key={openVisits ? "data" : "empty"}
-                    className="mt-2 font-mono text-xl font-semibold tabular-nums"
+                    className="mt-2 text-xl font-semibold tabular-nums"
                   >
                     {openVisits
                       ? formatMetricNumber(locale, openVisits.total)
@@ -465,7 +465,7 @@ export function SystemPerformanceClient({
                 >
                   <div
                     key={openVisits ? "data" : "empty"}
-                    className="mt-2 font-mono text-xl font-semibold tabular-nums"
+                    className="mt-2 text-xl font-semibold tabular-nums"
                   >
                     {openVisits
                       ? formatMetricNumber(locale, openVisits.stale)
@@ -486,7 +486,7 @@ export function SystemPerformanceClient({
                 >
                   <div
                     key={openVisits ? "data" : "empty"}
-                    className="mt-2 font-mono text-xl font-semibold tabular-nums"
+                    className="mt-2 text-xl font-semibold tabular-nums"
                   >
                     {openVisits
                       ? formatMetricNumber(locale, openVisits.timedOut)
@@ -551,7 +551,7 @@ export function SystemPerformanceClient({
                 >
                   <div
                     key={summary ? "data" : "empty"}
-                    className="mt-2 font-mono text-xl font-semibold tabular-nums"
+                    className="mt-2 text-xl font-semibold tabular-nums"
                   >
                     {summary
                       ? formatMetricNumber(
@@ -575,7 +575,7 @@ export function SystemPerformanceClient({
                 >
                   <div
                     key={summary ? "data" : "empty"}
-                    className="mt-2 font-mono text-xl font-semibold tabular-nums"
+                    className="mt-2 text-xl font-semibold tabular-nums"
                   >
                     {summary
                       ? formatLatency(locale, summary.avgLatencyMs)

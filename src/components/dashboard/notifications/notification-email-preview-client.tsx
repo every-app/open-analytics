@@ -245,7 +245,7 @@ export function NotificationEmailPreviewClient({
               title={page.title}
               sandbox=""
               srcDoc={payload}
-              className="h-[680px] w-full rounded-none border bg-white"
+              className="h-[680px] w-full rounded-lg border bg-white"
             />
           ) : (
             <OverlayScrollbar

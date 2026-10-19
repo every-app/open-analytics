@@ -109,7 +109,7 @@ export const SidebarFooterMenus = memo(function SidebarFooterMenus({
               <BellIcon />
               <span>{messages.notificationCenter.title}</span>
               {unreadAttentionCount > 0 ? (
-                <span className="ml-auto pr-2 font-mono text-xs tabular-nums text-destructive">
+                <span className="ml-auto pr-2 text-xs tabular-nums text-destructive">
                   {unreadAttentionCount > 99 ? "99+" : unreadAttentionCount}
                 </span>
               ) : null}

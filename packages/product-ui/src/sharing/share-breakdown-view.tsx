@@ -157,7 +157,7 @@ export const ShareBreakdownView = memo(function ShareBreakdownView({
                   key="current"
                   className="flex min-w-0 items-baseline gap-2"
                 >
-                  <span className="font-mono text-xl font-medium tabular-nums text-foreground">
+                  <span className="text-xl font-medium tabular-nums text-foreground">
                     {numberFormat(locale, totalValue)}
                   </span>
                   <span className="truncate text-xs text-muted-foreground">
@@ -172,7 +172,7 @@ export const ShareBreakdownView = memo(function ShareBreakdownView({
                     <span className="truncate text-xs text-muted-foreground">
                       {comparisonLabel}
                     </span>
-                    <span className="font-mono text-xl font-medium tabular-nums text-foreground">
+                    <span className="text-xl font-medium tabular-nums text-foreground">
                       {numberFormat(locale, comparisonTotalValue)}
                     </span>
                     <span className="truncate text-xs text-muted-foreground">

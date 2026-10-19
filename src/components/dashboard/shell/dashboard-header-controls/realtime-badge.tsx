@@ -60,7 +60,7 @@ export function RealtimeActiveBadge({
                 <AnimatedNumber
                   value={activeNow}
                   continuous
-                  className="font-mono tabular-nums"
+                  className="tabular-nums"
                 />
               </span>
             ) : (

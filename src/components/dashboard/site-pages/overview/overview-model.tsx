@@ -202,7 +202,7 @@ export function changeRateClass(
 ): string {
   if (value === null) return "text-muted-foreground";
   const isImprovement = lowerIsBetter ? value <= 0 : value >= 0;
-  return isImprovement ? "text-emerald-600" : "text-rose-600";
+  return isImprovement ? "text-success" : "text-destructive";
 }
 export const ChangeRateInline = memo(function ChangeRateInline({
   value,
