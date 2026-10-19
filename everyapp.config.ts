@@ -21,6 +21,10 @@ export default {
     durableObjects: [{ name: "INGEST_DO", className: "IngestDurableObject" }],
   },
   migrations: { engine: "d1-sql", dir: "migrations", binding: "DB" },
+  // The root secret for visitor salts and collect tokens (src/lib/secrets.ts):
+  // `everyapp secret set MAIN_SECRET`, 32 or more random characters. In dev,
+  // .dev.vars sets it.
+  secrets: ["MAIN_SECRET"],
   // Builds the UI packages and the tracker bundles before `vite build`, and
   // watches the translations while `vite dev` runs (scripts/dev.ts).
   build: "pnpm run build",

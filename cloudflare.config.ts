@@ -15,10 +15,6 @@ export default defineConfig((ctx) => {
     // Rollups, notifications, retention and the ingest alarm sweep
     // (src/lib/edge/scheduled-tasks/dispatcher.ts).
     crons: ["*/30 * * * *"],
-    // The root secret for visitor salts, collect tokens and stored-secret
-    // encryption (src/lib/secrets.ts): `everyapp secret set MAIN_SECRET`, 32
-    // or more random characters. In dev, .dev.vars sets it.
-    secrets: ["MAIN_SECRET"],
   });
   return {
     worker: {
