@@ -12,7 +12,7 @@ export function handleHonoError(error: Error, c: Context<AppEnv>): Response {
       errorLogData(error),
     );
   }
-  return internalServerError(c.req.raw, error);
+  return internalServerError(c.req.raw);
 }
 
 export function errorBoundaryMiddleware(): MiddlewareHandler<AppEnv> {

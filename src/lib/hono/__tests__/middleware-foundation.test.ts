@@ -26,7 +26,6 @@ import {
 } from "@/lib/hono/middleware/site";
 import type { AppEnv } from "@/lib/hono/types";
 import { responseContext } from "@/lib/hono/utils/context";
-import { internalServerError } from "@/lib/hono/utils/response";
 vi.mock("@/lib/edge/analytics/composition/dashboard-cache", () => ({
   withDashboardCache: vi.fn(
     async (
@@ -131,14 +130,6 @@ describe("Hono middleware foundation", () => {
     expect(body.error.code).toBe("internal_server_error");
   });
 
-  it("uses the default internal error message for empty non-Error values", async () => {
-    const response = internalServerError(request("/api/private/overview"), "");
-    const body = (await response.json()) as { error: { message: string } };
-
-    expect(response.status).toBe(500);
-    expect(body.error.message).toBe("Internal Server Error");
-  });
-
   it("passes thrown Response values through the error boundary middleware", async () => {
     const app = createApp(errorBoundaryMiddleware(), () => {
       throw new Response("teapot", { status: 418 });
@@ -162,7 +153,7 @@ describe("Hono middleware foundation", () => {
     expect(body.error.code).toBe("internal_server_error");
   });
 
-  it("maps Error instances through the error boundary middleware", async () => {
+  it("logs an error but answers without its message", async () => {
     const middleware = errorBoundaryMiddleware();
     const logger = { error: vi.fn() };
     const c = {
@@ -177,7 +168,8 @@ describe("Hono middleware foundation", () => {
     const body = (await response.json()) as { error: { message: string } };
 
     expect(response.status).toBe(500);
-    expect(body.error.message).toBe("middleware boom");
+    // Logged in full, answered without the error's text.
+    expect(body.error.message).toBe("Internal Server Error");
     expect(logger.error).toHaveBeenCalledWith(
       "request.unhandled_error",
       expect.objectContaining({

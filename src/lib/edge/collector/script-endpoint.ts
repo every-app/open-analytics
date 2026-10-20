@@ -159,9 +159,9 @@ export async function handleTrackerScriptRequest(
   try {
     settings = await readSiteTrackingConfig(env, siteId);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "site_settings_unavailable";
-    return responseInternalServerError(message);
+    // The script is public: log the cause, answer with a fixed code.
+    console.error("site_settings_unavailable", error);
+    return responseInternalServerError("site_settings_unavailable");
   }
   if (!settings?.siteDomain) {
     return responseNotFound();
@@ -205,9 +205,9 @@ export async function handleTrackerScriptRequest(
       ip: clientIp,
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "collect_token_unavailable";
-    return responseInternalServerError(message);
+    // The script is public: log the cause, answer with a fixed code.
+    console.error("collect_token_unavailable", error);
+    return responseInternalServerError("collect_token_unavailable");
   }
 
   const sdkTemplate = performanceSampleRate > 0 ? SDK_FULL : SDK_NO_PERF;

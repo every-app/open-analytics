@@ -56,8 +56,8 @@ describe("admin notification email handlers", () => {
     });
   });
 
-  it("sends a test message to the admin through the gateway", async () => {
-    const request = testRequest();
+  it("sends the test only to the admin who asked, whatever address is passed", async () => {
+    const request = testRequest({ to: "stranger@example.test" });
     const response = await handleNotificationEmailTestAdmin(request, env);
 
     expect(response.status).toBe(200);

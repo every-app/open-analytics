@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Badge } from "@insightflare/ui/badge";
 import { Button } from "@insightflare/ui/button";
-import { Input } from "@insightflare/ui/input";
 import { Spinner } from "@insightflare/ui/spinner";
 import { useQuery } from "@tanstack/react-query";
 import { SendIcon } from "lucide-react";
@@ -33,7 +32,6 @@ export function NotificationEmailSettingsClient({
   initialData = null,
 }: NotificationEmailSettingsClientProps) {
   const copy = messages.systemSettings;
-  const [testRecipient, setTestRecipient] = useState(currentUserEmail);
   const [testing, setTesting] = useState(false);
   const statusQuery = useQuery({
     queryKey: ["dashboard", "notification-email-config"],
@@ -52,7 +50,6 @@ export function NotificationEmailSettingsClient({
     try {
       await requestAdminService("notification-email/test", {
         method: "POST",
-        body: { to: testRecipient.trim() },
       });
       toast.success(copy.testSent);
     } catch (error) {
@@ -84,20 +81,12 @@ export function NotificationEmailSettingsClient({
         </SettingsRow>
         <SettingsRow
           label={copy.testRecipientLabel}
-          htmlFor="system-email-test-recipient"
+          description={currentUserEmail}
         >
-          <Input
-            id="system-email-test-recipient"
-            type="email"
-            className="sm:w-64"
-            value={testRecipient}
-            disabled={testing}
-            onChange={(event) => setTestRecipient(event.target.value)}
-          />
           <Button
             type="button"
             variant="outline"
-            disabled={testing || !status?.enabled || !testRecipient.trim()}
+            disabled={testing || !status?.enabled}
             onClick={() => {
               void handleSendTest();
             }}

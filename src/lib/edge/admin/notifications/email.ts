@@ -5,13 +5,7 @@ import {
 } from "@every-app/sdk/server";
 
 import { requireActor } from "@/lib/edge/admin/auth";
-import {
-  bad,
-  forb,
-  jsonResponseFor,
-  na,
-  parseJson,
-} from "@/lib/edge/admin/response";
+import { bad, forb, jsonResponseFor, na } from "@/lib/edge/admin/response";
 import type { Env } from "@/lib/edge/types";
 import {
   isValidEmail,
@@ -65,9 +59,9 @@ export async function handleNotificationEmailTestAdmin(
   }
   if (req.method !== "POST") return na(req);
 
-  const body = await parseJson(req);
-  const explicitTo = typeof body.to === "string" ? body.to.trim() : "";
-  const to = explicitTo || actor.user.email;
+  // The test goes to the admin who asked for it, never to an address they
+  // type: the gateway's sender must only reach the organization's members.
+  const to = actor.user.email;
   if (!isValidEmail(to)) {
     return bad("Invalid test recipient email", undefined, req);
   }

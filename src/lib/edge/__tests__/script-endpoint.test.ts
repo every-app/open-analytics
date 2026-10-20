@@ -119,7 +119,9 @@ describe("edge script endpoint", () => {
       makeEnv(),
     );
 
-    await expect(errorResponse.text()).resolves.toBe("KV down");
+    await expect(errorResponse.text()).resolves.toBe(
+      "site_settings_unavailable",
+    );
     expect(errorResponse.status).toBe(500);
     await expect(unknownErrorResponse.text()).resolves.toBe(
       "site_settings_unavailable",
