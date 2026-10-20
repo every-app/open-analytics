@@ -1,8 +1,8 @@
-# Open Analytics
+# OpenAnalytics
 
 Privacy-friendly web analytics that runs as an app on an [Every App](https://github.com/every-app) gateway, entirely on Cloudflare.
 
-Open Analytics is a fork of [InsightFlare](https://github.com/RavelloH/InsightFlare) by RavelloH. It keeps InsightFlare's tracker, ingest pipeline and dashboards, and replaces its accounts, teams, API keys and email setup with what the gateway already provides: sign-in, organizations, agent tools and email.
+OpenAnalytics is a fork of [InsightFlare](https://github.com/RavelloH/InsightFlare) by RavelloH. It keeps InsightFlare's tracker, ingest pipeline and dashboards, and replaces its accounts, teams, API keys and email setup with what the gateway already provides: sign-in, organizations, agent tools and email.
 
 - No cookies and no stored IP addresses. Cloudflare resolves location at the edge.
 - A tracker of about 3 KB gzipped, with custom events, user identification and Web Vitals.
@@ -132,4 +132,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
 ## License
 
-[MIT](LICENSE). Open Analytics is based on InsightFlare, Copyright 2026 RavelloH.
+[MIT](LICENSE). OpenAnalytics is based on InsightFlare, Copyright 2026 RavelloH.

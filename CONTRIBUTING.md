@@ -1,12 +1,12 @@
-# Contributing to Open Analytics
+# Contributing to OpenAnalytics
 
-Thanks for taking the time to improve Open Analytics.
+Thanks for taking the time to improve OpenAnalytics.
 
 This project is still early, so the most useful contributions are focused bug fixes, tests, documentation improvements, and small feature changes that are easy to review.
 
 ## Development Setup
 
-Open Analytics uses Node.js 24 and pnpm 10.33.0.
+OpenAnalytics uses Node.js 24 and pnpm 10.33.0.
 
 ```bash
 pnpm install --frozen-lockfile

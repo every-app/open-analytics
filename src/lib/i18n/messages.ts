@@ -4160,7 +4160,7 @@ const enMessages = {
   },
   notificationEmail: {
     common: {
-      brand: "Open Analytics",
+      brand: "OpenAnalytics",
       date: "Date",
       coreMetrics: "Core metrics",
       topPages: "Top pages",
@@ -4183,8 +4183,8 @@ const enMessages = {
       never: "Never",
       noPageData: "No page data yet.",
       noReferrerData: "No referrer data yet.",
-      footer: "This email was sent by the Open Analytics notification system.",
-      fallbackSubject: "Open Analytics notification",
+      footer: "This email was sent by the OpenAnalytics notification system.",
+      fallbackSubject: "OpenAnalytics notification",
       trackingHint:
         "Check whether the tracking script is installed correctly or whether the site still has traffic.",
       severity: {
@@ -4195,10 +4195,10 @@ const enMessages = {
       },
     },
     test: {
-      subject: "Open Analytics notification test",
-      title: "Open Analytics notification test",
-      summary: "This is a test notification from Open Analytics.",
-      body: "This is a test notification from Open Analytics. If email is set up on the Every App gateway, it also checks email delivery.",
+      subject: "OpenAnalytics notification test",
+      title: "OpenAnalytics notification test",
+      summary: "This is a test notification from OpenAnalytics.",
+      body: "This is a test notification from OpenAnalytics. If email is set up on the Every App gateway, it also checks email delivery.",
     },
     report: {
       subject: "{site} {periodLabel} traffic report",
@@ -4249,7 +4249,7 @@ const enMessages = {
     title: "Runtime configuration required",
     eyebrow: "Deployment paused",
     heading:
-      "Open Analytics needs one runtime secret before the dashboard can load.",
+      "OpenAnalytics needs one runtime secret before the dashboard can load.",
     description:
       "The app has started, but the current runtime environment could not read the required root secret, so dashboard access is temporarily blocked.",
     requiredTitle: "Required runtime secret",
@@ -4281,7 +4281,7 @@ const enMessages = {
     errorEyebrow: "Application error",
     errorTitle: "Something went wrong",
     errorDescription:
-      "Open Analytics couldn't complete this request. The diagnostic details below can help us investigate.",
+      "OpenAnalytics couldn't complete this request. The diagnostic details below can help us investigate.",
     statusLabel: "Status",
     reasonLabel: "Reason",
     requestLabel: "Request path",
@@ -4743,7 +4743,7 @@ const enMessages = {
   systemSettings: {
     title: "System Settings",
     subtitle:
-      "Manage instance-wide configuration for this Open Analytics deployment.",
+      "Manage instance-wide configuration for this OpenAnalytics deployment.",
     guide: "Guide",
     analyticsEngineTitle: "Analytics Engine",
     analyticsEngineDescription:
@@ -4761,7 +4761,7 @@ const enMessages = {
       "Delete the Analytics Engine read credentials? Features that depend on Analytics Engine will show configuration required until the credentials are restored.",
     analyticsEngineDisabledTitle: "Analytics Engine is not enabled",
     analyticsEngineDisabledDescription:
-      "This deployment automatically disabled the Analytics Engine binding because the Cloudflare account has not enabled Analytics Engine. Enable Analytics Engine in Cloudflare, then redeploy Open Analytics to activate related analysis features.",
+      "This deployment automatically disabled the Analytics Engine binding because the Cloudflare account has not enabled Analytics Engine. Enable Analytics Engine in Cloudflare, then redeploy OpenAnalytics to activate related analysis features.",
     analyticsEngineDisabledHint:
       "Analytics Engine settings are locked until Analytics Engine is enabled and the Worker is redeployed.",
     analyticsEngineOpenCloudflare: "Open Cloudflare Analytics Engine",
@@ -4839,7 +4839,7 @@ const enMessages = {
     loginTurnstileGuideSteps: [
       "Open the Cloudflare Dashboard and go to Turnstile.",
       "Create a new widget and choose Invisible mode.",
-      "Add the current Open Analytics login domain to the allowed hostnames.",
+      "Add the current OpenAnalytics login domain to the allowed hostnames.",
       "Copy the Site Key and Secret Key after the widget is created.",
       "Enter the Site Key and Secret Key here, run the verification test, then save the configuration.",
     ],
@@ -6783,7 +6783,7 @@ const zhMessages = {
   },
   notificationEmail: {
     common: {
-      brand: "Open Analytics",
+      brand: "OpenAnalytics",
       date: "日期",
       coreMetrics: "核心指标",
       topPages: "热门页面",
@@ -6806,8 +6806,8 @@ const zhMessages = {
       never: "从未收到",
       noPageData: "暂无页面数据。",
       noReferrerData: "暂无来源数据。",
-      footer: "这封邮件由 Open Analytics 通知系统发送。",
-      fallbackSubject: "Open Analytics 通知",
+      footer: "这封邮件由 OpenAnalytics 通知系统发送。",
+      fallbackSubject: "OpenAnalytics 通知",
       trackingHint: "请检查统计脚本是否正常安装，或确认站点是否仍有流量。",
       severity: {
         info: "信息",
@@ -6817,10 +6817,10 @@ const zhMessages = {
       },
     },
     test: {
-      subject: "Open Analytics 通知测试",
-      title: "Open Analytics 通知测试",
-      summary: "这是一条来自 Open Analytics 的测试通知。",
-      body: "这是一条来自 Open Analytics 的测试通知。如果邮件已配置并启用，它也会验证 Resend 投递是否正常。",
+      subject: "OpenAnalytics 通知测试",
+      title: "OpenAnalytics 通知测试",
+      summary: "这是一条来自 OpenAnalytics 的测试通知。",
+      body: "这是一条来自 OpenAnalytics 的测试通知。如果邮件已配置并启用，它也会验证 Resend 投递是否正常。",
     },
     report: {
       subject: "{site} {periodLabel}访问报告",
@@ -6868,7 +6868,7 @@ const zhMessages = {
   runtimeConfigError: {
     title: "需要运行时配置",
     eyebrow: "部署已暂停",
-    heading: "Open Analytics 需要一个运行时密钥后才能加载控制台。",
+    heading: "OpenAnalytics 需要一个运行时密钥后才能加载控制台。",
     description:
       "应用已经启动，但当前运行环境没有读取到必需的 root secret，因此暂时阻止进入控制台。",
     requiredTitle: "必需的运行时密钥",
@@ -6896,7 +6896,7 @@ const zhMessages = {
     errorEyebrow: "应用错误",
     errorTitle: "页面出现了问题",
     errorDescription:
-      "Open Analytics 无法完成这次请求。下面的诊断信息可以帮助我们定位问题。",
+      "OpenAnalytics 无法完成这次请求。下面的诊断信息可以帮助我们定位问题。",
     statusLabel: "状态",
     reasonLabel: "原因",
     requestLabel: "请求路径",
@@ -7348,7 +7348,7 @@ const zhMessages = {
   },
   systemSettings: {
     title: "系统设置",
-    subtitle: "管理当前 Open Analytics 实例的全站配置。",
+    subtitle: "管理当前 OpenAnalytics 实例的全站配置。",
     guide: "教程",
     analyticsEngineTitle: "分析引擎",
     analyticsEngineDescription:
@@ -7364,7 +7364,7 @@ const zhMessages = {
       "确认删除分析引擎读取凭据吗？删除后，依赖 Analytics Engine 的功能将显示为未配置。",
     analyticsEngineDisabledTitle: "Analytics Engine 尚未启用",
     analyticsEngineDisabledDescription:
-      "当前部署已自动禁用 Analytics Engine 绑定，因为 Cloudflare 账户尚未启用 Analytics Engine。请先在 Cloudflare 中启用 Analytics Engine，然后重新部署 Open Analytics 以激活相关分析功能。",
+      "当前部署已自动禁用 Analytics Engine 绑定，因为 Cloudflare 账户尚未启用 Analytics Engine。请先在 Cloudflare 中启用 Analytics Engine，然后重新部署 OpenAnalytics 以激活相关分析功能。",
     analyticsEngineDisabledHint:
       "在启用 Analytics Engine 并重新部署 Worker 前，分析引擎设置不可修改。",
     analyticsEngineOpenCloudflare: "打开 Cloudflare Analytics Engine",
@@ -7439,7 +7439,7 @@ const zhMessages = {
     loginTurnstileGuideSteps: [
       "打开 Cloudflare Dashboard，进入 Turnstile。",
       "新建一个 widget，并选择 Invisible 模式。",
-      "添加当前 Open Analytics 登录域名到允许的主机名列表。",
+      "添加当前 OpenAnalytics 登录域名到允许的主机名列表。",
       "创建后复制 Site Key 和 Secret Key。",
       "回到这里填写 Site Key 和 Secret Key，先运行测试验证，再保存配置。",
     ],
@@ -9383,7 +9383,7 @@ const zhTwMessages = {
   },
   notificationEmail: {
     common: {
-      brand: "Open Analytics",
+      brand: "OpenAnalytics",
       date: "日期",
       coreMetrics: "核心指標",
       topPages: "熱門頁面",
@@ -9406,8 +9406,8 @@ const zhTwMessages = {
       never: "從未收到",
       noPageData: "暫無頁面資料。",
       noReferrerData: "暫無來源資料。",
-      footer: "這封郵件由 Open Analytics 通知系統傳送。",
-      fallbackSubject: "Open Analytics 通知",
+      footer: "這封郵件由 OpenAnalytics 通知系統傳送。",
+      fallbackSubject: "OpenAnalytics 通知",
       trackingHint: "請檢查統計指令碼是否正常安裝，或確認站點是否仍有流量。",
       severity: {
         info: "資訊",
@@ -9417,10 +9417,10 @@ const zhTwMessages = {
       },
     },
     test: {
-      subject: "Open Analytics 通知測試",
-      title: "Open Analytics 通知測試",
-      summary: "這是一條來自 Open Analytics 的測試通知。",
-      body: "這是一條來自 Open Analytics 的測試通知。如果郵件已設定並啟用，它也會驗證 Resend 投遞是否正常。",
+      subject: "OpenAnalytics 通知測試",
+      title: "OpenAnalytics 通知測試",
+      summary: "這是一條來自 OpenAnalytics 的測試通知。",
+      body: "這是一條來自 OpenAnalytics 的測試通知。如果郵件已設定並啟用，它也會驗證 Resend 投遞是否正常。",
     },
     report: {
       subject: "{site} {periodLabel}造訪報告",
@@ -9468,7 +9468,7 @@ const zhTwMessages = {
   runtimeConfigError: {
     title: "需要執行時設定",
     eyebrow: "部署已暫停",
-    heading: "Open Analytics 需要一個執行時金鑰後才能載入控制台。",
+    heading: "OpenAnalytics 需要一個執行時金鑰後才能載入控制台。",
     description:
       "應用已經啟動，但目前執行環境沒有讀取到必需的 root secret，因此暫時阻止進入控制台。",
     requiredTitle: "必需的執行時金鑰",
@@ -9496,7 +9496,7 @@ const zhTwMessages = {
     errorEyebrow: "應用錯誤",
     errorTitle: "頁面出現了問題",
     errorDescription:
-      "Open Analytics 無法完成這次請求。下面的診斷資訊可以幫助我們定位問題。",
+      "OpenAnalytics 無法完成這次請求。下面的診斷資訊可以幫助我們定位問題。",
     statusLabel: "狀態",
     reasonLabel: "原因",
     requestLabel: "請求路徑",
@@ -9948,7 +9948,7 @@ const zhTwMessages = {
   },
   systemSettings: {
     title: "系統設定",
-    subtitle: "管理目前 Open Analytics 例項的全站設定。",
+    subtitle: "管理目前 OpenAnalytics 例項的全站設定。",
     guide: "教程",
     analyticsEngineTitle: "分析引擎",
     analyticsEngineDescription:
@@ -9964,7 +9964,7 @@ const zhTwMessages = {
       "確認刪除分析引擎讀取憑據嗎？刪除後，依賴 Analytics Engine 的功能將顯示為未設定。",
     analyticsEngineDisabledTitle: "Analytics Engine 尚未啟用",
     analyticsEngineDisabledDescription:
-      "目前部署已自動停用 Analytics Engine 繫結，因為 Cloudflare 帳戶尚未啟用 Analytics Engine。請先在 Cloudflare 中啟用 Analytics Engine，然後重新部署 Open Analytics 以啟用相關分析功能。",
+      "目前部署已自動停用 Analytics Engine 繫結，因為 Cloudflare 帳戶尚未啟用 Analytics Engine。請先在 Cloudflare 中啟用 Analytics Engine，然後重新部署 OpenAnalytics 以啟用相關分析功能。",
     analyticsEngineDisabledHint:
       "在啟用 Analytics Engine 並重新部署 Worker 前，分析引擎設定不可修改。",
     analyticsEngineOpenCloudflare: "開啟 Cloudflare Analytics Engine",
@@ -10039,7 +10039,7 @@ const zhTwMessages = {
     loginTurnstileGuideSteps: [
       "開啟 Cloudflare Dashboard，進入 Turnstile。",
       "建立 widget，並選擇 Invisible 模式。",
-      "將目前 Open Analytics 登入網域加入允許的主機名稱清單。",
+      "將目前 OpenAnalytics 登入網域加入允許的主機名稱清單。",
       "建立後複製 Site Key 和 Secret Key。",
       "回到這裡填寫 Site Key 和 Secret Key，先執行測試驗證，再儲存設定。",
     ],
@@ -12029,7 +12029,7 @@ const jaMessages = {
   },
   notificationEmail: {
     common: {
-      brand: "Open Analytics",
+      brand: "OpenAnalytics",
       date: "日付",
       coreMetrics: "主要指標",
       topPages: "上位ページ",
@@ -12052,8 +12052,8 @@ const jaMessages = {
       never: "未受信",
       noPageData: "ページデータはありません。",
       noReferrerData: "参照元データはありません。",
-      footer: "このメールは Open Analytics の通知システムから送信されました。",
-      fallbackSubject: "Open Analytics 通知",
+      footer: "このメールは OpenAnalytics の通知システムから送信されました。",
+      fallbackSubject: "OpenAnalytics 通知",
       trackingHint:
         "トラッキングスクリプトが正しく設置されているか、またはサイトに引き続きトラフィックがあるかを確認してください。",
       severity: {
@@ -12064,10 +12064,10 @@ const jaMessages = {
       },
     },
     test: {
-      subject: "Open Analytics 通知テスト",
-      title: "Open Analytics 通知テスト",
-      summary: "これは Open Analytics からのテスト通知です。",
-      body: "これは Open Analytics からのテスト通知です。メールが設定され有効になっている場合、このメッセージは Resend の配信も確認します。",
+      subject: "OpenAnalytics 通知テスト",
+      title: "OpenAnalytics 通知テスト",
+      summary: "これは OpenAnalytics からのテスト通知です。",
+      body: "これは OpenAnalytics からのテスト通知です。メールが設定され有効になっている場合、このメッセージは Resend の配信も確認します。",
     },
     report: {
       subject: "{site} の{periodLabel}トラフィックレポート",
@@ -12119,7 +12119,7 @@ const jaMessages = {
     title: "ランタイム設定が必要です",
     eyebrow: "デプロイを一時停止中",
     heading:
-      "UI を読み込む前に、Open Analytics にはランタイムシークレットが 1 つ必要です。",
+      "UI を読み込む前に、OpenAnalytics にはランタイムシークレットが 1 つ必要です。",
     description:
       "アプリは起動していますが、現在のランタイム環境で必須の root secret を取得できないため、ダッシュボードへのアクセスを一時的にブロックしています。",
     requiredTitle: "必須のランタイムシークレット",
@@ -12151,7 +12151,7 @@ const jaMessages = {
     errorEyebrow: "アプリケーションエラー",
     errorTitle: "問題が発生しました",
     errorDescription:
-      "Open Analytics はリクエストを完了できませんでした。以下の診断情報が調査に役立ちます。",
+      "OpenAnalytics はリクエストを完了できませんでした。以下の診断情報が調査に役立ちます。",
     statusLabel: "ステータス",
     reasonLabel: "原因",
     requestLabel: "リクエストパス",
@@ -12610,7 +12610,7 @@ const jaMessages = {
   },
   systemSettings: {
     title: "システム設定",
-    subtitle: "この Open Analytics デプロイ全体の設定を管理します。",
+    subtitle: "この OpenAnalytics デプロイ全体の設定を管理します。",
     guide: "ガイド",
     analyticsEngineTitle: "Analytics Engine",
     analyticsEngineDescription:
@@ -12627,7 +12627,7 @@ const jaMessages = {
       "Analytics Engine の読み取り用認証情報を削除しますか？依存する機能は認証情報が復元されるまで設定が必要な状態になります。",
     analyticsEngineDisabledTitle: "Analytics Engine が有効ではありません",
     analyticsEngineDisabledDescription:
-      "Cloudflare アカウントで Analytics Engine が有効化されていないため、このデプロイでは Analytics Engine バインディングが自動的に無効化されました。Cloudflare で Analytics Engine を有効化し、Open Analytics を再デプロイすると関連分析機能が有効になります。",
+      "Cloudflare アカウントで Analytics Engine が有効化されていないため、このデプロイでは Analytics Engine バインディングが自動的に無効化されました。Cloudflare で Analytics Engine を有効化し、OpenAnalytics を再デプロイすると関連分析機能が有効になります。",
     analyticsEngineDisabledHint:
       "Analytics Engine が有効化され Worker が再デプロイされるまで、Analytics Engine 設定はロックされます。",
     analyticsEngineOpenCloudflare: "Cloudflare Analytics Engine を開く",
@@ -12705,7 +12705,7 @@ const jaMessages = {
     loginTurnstileGuideSteps: [
       "Cloudflare Dashboard を開き、Turnstile に移動します。",
       "新しいウィジェットを作成し、Invisible モードを選択します。",
-      "現在の Open Analytics ログインドメインを許可ホスト名に追加します。",
+      "現在の OpenAnalytics ログインドメインを許可ホスト名に追加します。",
       "ウィジェット作成後に Site Key と Secret Key をコピーします。",
       "ここに Site Key と Secret Key を入力し、検証テストを実行してから設定を保存します。",
     ],

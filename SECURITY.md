@@ -1,6 +1,6 @@
 # Security Policy
 
-Open Analytics handles analytics data and deployment secrets, so security reports are taken seriously.
+OpenAnalytics handles analytics data and deployment secrets, so security reports are taken seriously.
 
 ## Supported Versions
 
@@ -12,7 +12,7 @@ Use the latest release or the latest `main` branch unless a release note says ot
 
 Please do not report security vulnerabilities in public GitHub issues.
 
-Report them privately through GitHub: [open a security advisory](https://github.com/every-app/open-analytics/security/advisories/new).
+Report them privately through GitHub: [open a security advisory](https://github.com/every-app/private-open-analytics/security/advisories/new).
 
 Include as much detail as possible:
 

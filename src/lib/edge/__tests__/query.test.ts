@@ -69,7 +69,7 @@ const adminSession: EdgeSessionClaims = {
 };
 const siteRow = {
   id: "site-1",
-  name: "Open Analytics",
+  name: "OpenAnalytics",
   domain: "example.com",
 };
 const publicSiteRow = {

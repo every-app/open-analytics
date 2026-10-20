@@ -15,7 +15,7 @@ function baseMessage(
     type: input.type,
     severity: input.severity ?? "info",
     requiresAttention: input.requiresAttention ?? false,
-    title: input.title ?? "Open Analytics notification",
+    title: input.title ?? "OpenAnalytics notification",
     summary: input.summary ?? "Preview notification",
     bodyText: input.bodyText ?? "Preview notification body.",
     bodyHtml: "",
@@ -39,10 +39,10 @@ function baseMessage(
 export const notificationEmailPreviewMessages = {
   test: baseMessage({
     type: "test",
-    title: "Open Analytics notification test",
-    summary: "This is a test notification from Open Analytics.",
+    title: "OpenAnalytics notification test",
+    summary: "This is a test notification from OpenAnalytics.",
     bodyText:
-      "This is a test notification from Open Analytics. If email is set up on the Every App gateway, this message also checks email delivery.",
+      "This is a test notification from OpenAnalytics. If email is set up on the Every App gateway, this message also checks email delivery.",
     data: { source: "preview", locale: "en" },
   }),
   report: baseMessage({

@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a reproducible problem in Open Analytics
+about: Report a reproducible problem in OpenAnalytics
 title: "[Bug]: "
 labels: bug
 assignees: ""
@@ -18,7 +18,7 @@ Describe the bug and what you expected to happen.
 
 ## Environment
 
-- Open Analytics commit:
+- OpenAnalytics commit:
 - Deployment method:
 - Browser:
 - Cloudflare environment:

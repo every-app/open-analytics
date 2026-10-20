@@ -12,11 +12,11 @@ import {
   type PublicNotificationEmailConfig,
 } from "@/lib/notifications/email-config";
 
-const TEST_EMAIL_SUBJECT = "Open Analytics email test";
+const TEST_EMAIL_SUBJECT = "OpenAnalytics email test";
 const TEST_EMAIL_TEXT =
-  "This is a test email from Open Analytics. Notification email is working.";
+  "This is a test email from OpenAnalytics. Notification email is working.";
 const TEST_EMAIL_HTML =
-  "<p>This is a test email from Open Analytics.</p><p>Notification email is working.</p>";
+  "<p>This is a test email from OpenAnalytics.</p><p>Notification email is working.</p>";
 
 /** Whether the gateway can send notification email, and as whom. */
 export async function readNotificationEmailStatus(

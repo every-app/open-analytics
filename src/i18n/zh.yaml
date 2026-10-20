@@ -1682,7 +1682,7 @@ notificationCenter:
   detailFields: {}
 notificationEmail:
   common:
-    brand: Open Analytics
+    brand: OpenAnalytics
     date: 日期
     coreMetrics: 核心指标
     topPages: 热门页面
@@ -1705,8 +1705,8 @@ notificationEmail:
     never: 从未收到
     noPageData: 暂无页面数据。
     noReferrerData: 暂无来源数据。
-    footer: 这封邮件由 Open Analytics 通知系统发送。
-    fallbackSubject: Open Analytics 通知
+    footer: 这封邮件由 OpenAnalytics 通知系统发送。
+    fallbackSubject: OpenAnalytics 通知
     trackingHint: 请检查统计脚本是否正常安装，或确认站点是否仍有流量。
     severity:
       info: 信息
@@ -1714,10 +1714,10 @@ notificationEmail:
       warning: 警告
       critical: 严重
   test:
-    subject: Open Analytics 通知测试
-    title: Open Analytics 通知测试
-    summary: 这是一条来自 Open Analytics 的测试通知。
-    body: 这是一条来自 Open Analytics 的测试通知。如果邮件已配置并启用，它也会验证 Resend 投递是否正常。
+    subject: OpenAnalytics 通知测试
+    title: OpenAnalytics 通知测试
+    summary: 这是一条来自 OpenAnalytics 的测试通知。
+    body: 这是一条来自 OpenAnalytics 的测试通知。如果邮件已配置并启用，它也会验证 Resend 投递是否正常。
   report:
     subject: "{site} {periodLabel}访问报告"
     title: "{site} {periodLabel}访问报告"
@@ -1755,7 +1755,7 @@ notificationEmail:
 runtimeConfigError:
   title: 需要运行时配置
   eyebrow: 部署已暂停
-  heading: Open Analytics 需要一个运行时密钥后才能加载控制台。
+  heading: OpenAnalytics 需要一个运行时密钥后才能加载控制台。
   description: 应用已经启动，但当前运行环境没有读取到必需的 root secret，因此暂时阻止进入控制台。
   requiredTitle: 必需的运行时密钥
   requiredDescription: 请在 Cloudflare 运行时密钥中至少设置以下其中一个值。
@@ -1777,7 +1777,7 @@ errorPage:
   notFoundDescription: 地址可能不正确，或者页面已经被移动。
   errorEyebrow: 应用错误
   errorTitle: 页面出现了问题
-  errorDescription: Open Analytics 无法完成这次请求。下面的诊断信息可以帮助我们定位问题。
+  errorDescription: OpenAnalytics 无法完成这次请求。下面的诊断信息可以帮助我们定位问题。
   statusLabel: 状态
   reasonLabel: 原因
   requestLabel: 请求路径
@@ -2191,7 +2191,7 @@ requestObservation:
   normalDetail: {}
 systemSettings:
   title: 系统设置
-  subtitle: 管理当前 Open Analytics 实例的全站配置。
+  subtitle: 管理当前 OpenAnalytics 实例的全站配置。
   guide: 教程
   analyticsEngineTitle: 分析引擎
   analyticsEngineDescription: 配置用于读取请求观测以及未来流量和事件分析数据的 Cloudflare 凭据。
@@ -2270,7 +2270,7 @@ systemSettings:
   loginTurnstileGuideSteps:
     - 打开 Cloudflare Dashboard，进入 Turnstile。
     - 新建一个 widget，并选择 Invisible 模式。
-    - 添加当前 Open Analytics 登录域名到允许的主机名列表。
+    - 添加当前 OpenAnalytics 登录域名到允许的主机名列表。
     - 创建后复制 Site Key 和 Secret Key。
     - 回到这里填写 Site Key 和 Secret Key，先运行测试验证，再保存配置。
   enabledLabel: 启用邮件发送

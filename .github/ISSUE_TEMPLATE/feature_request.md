@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an improvement for Open Analytics
+about: Suggest an improvement for OpenAnalytics
 title: "[Feature]: "
 labels: enhancement
 assignees: ""

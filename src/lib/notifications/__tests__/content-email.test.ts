@@ -67,7 +67,7 @@ describe("notification email content", () => {
         locale: "en",
         data: {},
       }),
-    ).toMatchObject({ subject: "Open Analytics notification test" });
+    ).toMatchObject({ subject: "OpenAnalytics notification test" });
 
     expect(
       buildNotificationContent({

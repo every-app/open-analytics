@@ -36,7 +36,6 @@ import {
 } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 import Image from "@/lib/image";
-import Link from "@/lib/router";
 import { usePathname, useRouter } from "@/lib/router";
 interface ShareHeaderProps {
   locale: Locale;
@@ -88,22 +87,17 @@ export function ShareHeader({
   return (
     <div className="flex min-w-0 items-center gap-2">
       <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
-        <Link
-          href="https://github.com/every-app/open-analytics"
-          target="_blank"
-          rel="noreferrer"
-          className="flex shrink-0 items-center gap-2 font-semibold text-foreground"
-        >
+        <span className="flex shrink-0 items-center gap-2 font-semibold text-foreground">
           <Image
             src="/favicon.svg"
-            alt="Open Analytics"
+            alt="OpenAnalytics"
             width={192}
             height={192}
             className="size-5 shrink-0"
             priority
           />
           <span className="hidden md:inline">{messages.appName}</span>
-        </Link>
+        </span>
         <span className="text-muted-foreground" aria-hidden>
           /
         </span>

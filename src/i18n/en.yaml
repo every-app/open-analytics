@@ -1729,7 +1729,7 @@ notificationCenter:
   detailFields: {}
 notificationEmail:
   common:
-    brand: Open Analytics
+    brand: OpenAnalytics
     date: Date
     coreMetrics: Core metrics
     topPages: Top pages
@@ -1752,8 +1752,8 @@ notificationEmail:
     never: Never
     noPageData: No page data yet.
     noReferrerData: No referrer data yet.
-    footer: This email was sent by the Open Analytics notification system.
-    fallbackSubject: Open Analytics notification
+    footer: This email was sent by the OpenAnalytics notification system.
+    fallbackSubject: OpenAnalytics notification
     trackingHint: Check whether the tracking script is installed correctly or
       whether the site still has traffic.
     severity:
@@ -1762,10 +1762,10 @@ notificationEmail:
       warning: Warning
       critical: Critical
   test:
-    subject: Open Analytics notification test
-    title: Open Analytics notification test
-    summary: This is a test notification from Open Analytics.
-    body: This is a test notification from Open Analytics. If email is set up on the
+    subject: OpenAnalytics notification test
+    title: OpenAnalytics notification test
+    summary: This is a test notification from OpenAnalytics.
+    body: This is a test notification from OpenAnalytics. If email is set up on the
       Every App gateway, it also checks email delivery.
   report:
     subject: "{site} {periodLabel} traffic report"
@@ -1805,7 +1805,7 @@ notificationEmail:
 runtimeConfigError:
   title: Runtime configuration required
   eyebrow: Deployment paused
-  heading: Open Analytics needs one runtime secret before the dashboard can load.
+  heading: OpenAnalytics needs one runtime secret before the dashboard can load.
   description: The app has started, but the current runtime environment could not
     read the required root secret, so dashboard access is temporarily blocked.
   requiredTitle: Required runtime secret
@@ -1831,7 +1831,7 @@ errorPage:
   notFoundDescription: The address may be incorrect, or the page may have moved.
   errorEyebrow: Application error
   errorTitle: Something went wrong
-  errorDescription: Open Analytics couldn't complete this request. The diagnostic
+  errorDescription: OpenAnalytics couldn't complete this request. The diagnostic
     details below can help us investigate.
   statusLabel: Status
   reasonLabel: Reason
@@ -2250,7 +2250,7 @@ requestObservation:
   normalDetail: {}
 systemSettings:
   title: System Settings
-  subtitle: Manage instance-wide configuration for this Open Analytics deployment.
+  subtitle: Manage instance-wide configuration for this OpenAnalytics deployment.
   guide: Guide
   analyticsEngineTitle: Analytics Engine
   analyticsEngineDescription: Configure the Cloudflare credentials used to read
@@ -2349,7 +2349,7 @@ systemSettings:
   loginTurnstileGuideSteps:
     - Open the Cloudflare Dashboard and go to Turnstile.
     - Create a new widget and choose Invisible mode.
-    - Add the current Open Analytics login domain to the allowed hostnames.
+    - Add the current OpenAnalytics login domain to the allowed hostnames.
     - Copy the Site Key and Secret Key after the widget is created.
     - Enter the Site Key and Secret Key here, run the verification test, then
       save the configuration.

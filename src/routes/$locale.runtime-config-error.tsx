@@ -100,7 +100,7 @@ function Page() {
             </div>
             <div className="flex flex-col gap-2 border-t pt-5 md:col-span-2 md:flex-row md:justify-end">
               <Button variant="outline" asChild>
-                <Link href="https://github.com/every-app/open-analytics">
+                <Link href="https://github.com/every-app/private-open-analytics">
                   {copy.docsLabel}
                   <ExternalLinkIcon data-icon="inline-end" />
                 </Link>

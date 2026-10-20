@@ -1,4 +1,4 @@
--- The schema Open Analytics starts from: InsightFlare v0.7.1's migrations
+-- The schema OpenAnalytics starts from: InsightFlare v0.7.1's migrations
 -- 0001-0044 squashed into one, with its own accounts (passwords, team members,
 -- invites, API keys) and the unused archive index removed. People come from
 -- the Every App gateway: `users` mirrors who has opened the app, and `teams`

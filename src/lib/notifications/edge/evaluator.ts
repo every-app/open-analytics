@@ -138,10 +138,10 @@ function testRule(): NotificationRuleEvaluationResult {
       type: "test",
       severity: "info",
       requiresAttention: false,
-      title: "Open Analytics notification test",
-      summary: "This is a test notification from Open Analytics.",
+      title: "OpenAnalytics notification test",
+      summary: "This is a test notification from OpenAnalytics.",
       bodyText:
-        "This is a test notification from Open Analytics. If email is set up on the Every App gateway, this message also checks email delivery.",
+        "This is a test notification from OpenAnalytics. If email is set up on the Every App gateway, this message also checks email delivery.",
       data: {
         source: "rule_test",
       },

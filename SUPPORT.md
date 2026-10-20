@@ -9,7 +9,7 @@ For general questions, setup help, deployment problems, and usage discussions, u
 Before opening an issue:
 
 - Check the README and existing issues
-- Include the Open Analytics commit you are using
+- Include the OpenAnalytics commit you are using
 - Include your Every App gateway version and relevant Cloudflare environment details
 - Include logs or screenshots when they help explain the problem
 

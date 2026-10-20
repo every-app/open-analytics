@@ -292,7 +292,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
       delete (window as any).openAnalytics;
       setRuntimeConfig({ ignoreDoNotTrack: false });
       expect(() => new Function(sdk)()).toThrow(
-        "Open Analytics: Do Not Track enabled",
+        "OpenAnalytics: Do Not Track enabled",
       );
     }
   });
@@ -307,7 +307,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     // Asset the loader crashes safely during bootstrap, preventing invalid script mounts
     await expect(import("../sdk")).rejects.toThrow(
-      "Open Analytics: script element not found",
+      "OpenAnalytics: script element not found",
     );
   });
 
@@ -319,7 +319,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     });
 
     await expect(import("../sdk")).rejects.toThrow(
-      "Open Analytics: script element not found",
+      "OpenAnalytics: script element not found",
     );
   });
 
@@ -354,7 +354,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     await expect(
       importConfiguredSdk({ ignoreDoNotTrack: false }),
-    ).rejects.toThrow("Open Analytics: Do Not Track enabled");
+    ).rejects.toThrow("OpenAnalytics: Do Not Track enabled");
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -440,7 +440,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     // Re-import to simulate duplicate script tag — install key is still on window
     vi.resetModules();
     await expect(import("../sdk")).rejects.toThrow(
-      "Open Analytics: already installed",
+      "OpenAnalytics: already installed",
     );
   });
 
@@ -1180,7 +1180,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     api.track("debug_event", { key: "val" });
 
     expect(logSpy).toHaveBeenCalledWith(
-      "[Open Analytics]",
+      "[OpenAnalytics]",
       "track:",
       JSON.stringify("debug_event"),
       expect.any(String),
@@ -1200,7 +1200,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     api.identify("dbg-user", { name: "Dbg" });
 
     expect(logSpy).toHaveBeenCalledWith(
-      "[Open Analytics]",
+      "[OpenAnalytics]",
       "identify:",
       JSON.stringify("dbg-user"),
       JSON.stringify("Dbg"),
@@ -1565,7 +1565,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     await expect(
       importConfiguredSdk({ ignoreDoNotTrack: false }),
-    ).rejects.toThrow("Open Analytics: Do Not Track enabled");
+    ).rejects.toThrow("OpenAnalytics: Do Not Track enabled");
   });
 
   it("should not register outbound link listener when outbound auto-track is disabled", async () => {
@@ -1742,7 +1742,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect(bodies[1].navigation).toBeUndefined();
     expect(bodies[1].previousVisitId).toBeUndefined();
     expect(logSpy).toHaveBeenCalledWith(
-      "[Open Analytics]",
+      "[OpenAnalytics]",
       "pageview:",
       "/flushed-route",
     );
@@ -2052,13 +2052,13 @@ describe("Tracker Browser SDK Integration Suite", () => {
     api.track("debug-no-data");
 
     expect(logSpy).toHaveBeenCalledWith(
-      "[Open Analytics]",
+      "[OpenAnalytics]",
       "identify:",
       JSON.stringify("debug-no-name"),
       "",
     );
     expect(logSpy).toHaveBeenCalledWith(
-      "[Open Analytics]",
+      "[OpenAnalytics]",
       "track:",
       JSON.stringify("debug-no-data"),
       JSON.stringify({}),

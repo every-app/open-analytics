@@ -1688,7 +1688,7 @@ notificationCenter:
   detailFields: {}
 notificationEmail:
   common:
-    brand: Open Analytics
+    brand: OpenAnalytics
     date: 日付
     coreMetrics: 主要指標
     topPages: 上位ページ
@@ -1711,8 +1711,8 @@ notificationEmail:
     never: 未受信
     noPageData: ページデータはありません。
     noReferrerData: 参照元データはありません。
-    footer: このメールは Open Analytics の通知システムから送信されました。
-    fallbackSubject: Open Analytics 通知
+    footer: このメールは OpenAnalytics の通知システムから送信されました。
+    fallbackSubject: OpenAnalytics 通知
     trackingHint: トラッキングスクリプトが正しく設置されているか、またはサイトに引き続きトラフィックがあるかを確認してください。
     severity:
       info: 情報
@@ -1720,10 +1720,10 @@ notificationEmail:
       warning: 警告
       critical: 重大
   test:
-    subject: Open Analytics 通知テスト
-    title: Open Analytics 通知テスト
-    summary: これは Open Analytics からのテスト通知です。
-    body: これは Open Analytics からのテスト通知です。メールが設定され有効になっている場合、このメッセージは Resend の配信も確認します。
+    subject: OpenAnalytics 通知テスト
+    title: OpenAnalytics 通知テスト
+    summary: これは OpenAnalytics からのテスト通知です。
+    body: これは OpenAnalytics からのテスト通知です。メールが設定され有効になっている場合、このメッセージは Resend の配信も確認します。
   report:
     subject: "{site} の{periodLabel}トラフィックレポート"
     title: "{site} の{periodLabel}トラフィックレポート"
@@ -1761,7 +1761,7 @@ notificationEmail:
 runtimeConfigError:
   title: ランタイム設定が必要です
   eyebrow: デプロイを一時停止中
-  heading: UI を読み込む前に、Open Analytics にはランタイムシークレットが 1 つ必要です。
+  heading: UI を読み込む前に、OpenAnalytics にはランタイムシークレットが 1 つ必要です。
   description: アプリは起動していますが、現在のランタイム環境で必須の root secret
     を取得できないため、ダッシュボードへのアクセスを一時的にブロックしています。
   requiredTitle: 必須のランタイムシークレット
@@ -1784,7 +1784,7 @@ errorPage:
   notFoundDescription: アドレスが正しくないか、ページが移動した可能性があります。
   errorEyebrow: アプリケーションエラー
   errorTitle: 問題が発生しました
-  errorDescription: Open Analytics はリクエストを完了できませんでした。以下の診断情報が調査に役立ちます。
+  errorDescription: OpenAnalytics はリクエストを完了できませんでした。以下の診断情報が調査に役立ちます。
   statusLabel: ステータス
   reasonLabel: 原因
   requestLabel: リクエストパス
@@ -2198,7 +2198,7 @@ requestObservation:
   normalDetail: {}
 systemSettings:
   title: システム設定
-  subtitle: この Open Analytics デプロイ全体の設定を管理します。
+  subtitle: この OpenAnalytics デプロイ全体の設定を管理します。
   guide: ガイド
   analyticsEngineTitle: Analytics Engine
   analyticsEngineDescription: リクエスト監視と将来のトラフィック・イベント分析で使用する Analytics Engine の Cloudflare 認証情報を設定します。
@@ -2213,7 +2213,7 @@ systemSettings:
   analyticsEngineDisabledTitle: Analytics Engine が有効ではありません
   analyticsEngineDisabledDescription: Cloudflare アカウントで Analytics Engine
     が有効化されていないため、このデプロイでは Analytics Engine バインディングが自動的に無効化されました。Cloudflare で
-    Analytics Engine を有効化し、Open Analytics を再デプロイすると関連分析機能が有効になります。
+    Analytics Engine を有効化し、OpenAnalytics を再デプロイすると関連分析機能が有効になります。
   analyticsEngineDisabledHint: Analytics Engine が有効化され Worker が再デプロイされるまで、Analytics Engine 設定はロックされます。
   analyticsEngineOpenCloudflare: Cloudflare Analytics Engine を開く
   analyticsEngineGuideTitle: Analytics Engine 認証情報を取得
@@ -2281,7 +2281,7 @@ systemSettings:
   loginTurnstileGuideSteps:
     - Cloudflare Dashboard を開き、Turnstile に移動します。
     - 新しいウィジェットを作成し、Invisible モードを選択します。
-    - 現在の Open Analytics ログインドメインを許可ホスト名に追加します。
+    - 現在の OpenAnalytics ログインドメインを許可ホスト名に追加します。
     - ウィジェット作成後に Site Key と Secret Key をコピーします。
     - ここに Site Key と Secret Key を入力し、検証テストを実行してから設定を保存します。
   enabledLabel: メール送信を有効化

@@ -1,5 +1,5 @@
 /**
- * Open Analytics' agent tools. The Every App gateway snapshots this catalog
+ * OpenAnalytics' agent tools. The Every App gateway snapshots this catalog
  * at deploy and serves it to MCP clients at `https://<app-host>/mcp` and next
  * to other apps' tools at the gateway's own `/mcp`; the app never speaks MCP.
  *
@@ -682,6 +682,6 @@ export const tools = defineTools(
   },
   {
     instructions:
-      "Open Analytics: privacy-friendly web analytics for the organization's sites. Call list_sites first; every site tool takes its site_id. Times default to the last 7 days. Filters use the filter expression language described on the filter argument.",
+      "OpenAnalytics: privacy-friendly web analytics for the organization's sites. Call list_sites first; every site tool takes its site_id. Times default to the last 7 days. Filters use the filter expression language described on the filter argument.",
   },
 );

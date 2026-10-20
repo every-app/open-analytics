@@ -1,5 +1,5 @@
 /**
- * The Every App manifest: Open Analytics' id, resources and public surface.
+ * The Every App manifest: OpenAnalytics' id, resources and public surface.
  *
  * cloudflare.config.ts builds the Worker from it, and `everyapp deploy`
  * validates it, provisions D1, KV and the Durable Object, migrates D1 and
@@ -8,7 +8,7 @@
  */
 export default {
   id: "analytics",
-  name: "Open Analytics",
+  name: "OpenAnalytics",
   description: "Privacy-friendly web analytics for your organization's sites.",
   // The date InsightFlare ran on under Wrangler.
   compatibilityDate: "2026-03-01",

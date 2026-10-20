@@ -12,7 +12,7 @@ const DEFAULT_WIKI_LANGUAGE = "en";
 const CACHE_CONTROL_HEADER =
   "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800";
 const WIKIMEDIA_USER_AGENT =
-  "OpenAnalytics/1.0 (+https://github.com/every-app/open-analytics)";
+  "OpenAnalytics/1.0 (+https://github.com/every-app/private-open-analytics)";
 const CACHE_HEADERS = { "cache-control": CACHE_CONTROL_HEADER };
 const WIKIPEDIA_ACCEPT_LANGUAGE: Partial<Record<Locale, string>> = {
   zh: "zh-CN,zh;q=0.9,en;q=0.8",

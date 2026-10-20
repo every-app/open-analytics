@@ -251,7 +251,7 @@ The upstream app calls the upstream author's own servers at runtime. A self-host
 ```ts
 export default {
   id: "analytics",
-  name: "Open Analytics",
+  name: "OpenAnalytics",
   description: "Privacy-friendly web analytics for your sites.",
   resources: {
     d1: ["DB"],

@@ -1,5 +1,5 @@
 /* eslint-disable */
-// Open Analytics browser tracker SDK
+// OpenAnalytics browser tracker SDK
 // Compiled at build time; the script endpoint injects this config immediately
 // before the SDK. Do not turn these values into build-time string placeholders:
 // minifiers may constant-fold privacy branches before injection happens.
@@ -29,7 +29,7 @@ function takeRuntimeConfig(): TrackerRuntimeConfig {
   delete configHost[TRACKER_RUNTIME_CONFIG_KEY];
 
   if (!rawConfig || typeof rawConfig !== "object" || Array.isArray(rawConfig)) {
-    throw new Error("Open Analytics: runtime configuration is missing");
+    throw new Error("OpenAnalytics: runtime configuration is missing");
   }
 
   const config = rawConfig as Partial<TrackerRuntimeConfig>;
@@ -44,7 +44,7 @@ function takeRuntimeConfig(): TrackerRuntimeConfig {
     typeof config.sessionWindowMs !== "number" ||
     typeof config.collectToken !== "string"
   ) {
-    throw new Error("Open Analytics: runtime configuration is invalid");
+    throw new Error("OpenAnalytics: runtime configuration is invalid");
   }
 
   return config as TrackerRuntimeConfig;
@@ -86,11 +86,11 @@ let uaClientHintsSettled = false;
 // ── Entry guard ──
 const scriptEl = document.currentScript;
 if (!scriptEl || !(scriptEl instanceof HTMLScriptElement) || !scriptEl.src) {
-  throw new Error("Open Analytics: script element not found");
+  throw new Error("OpenAnalytics: script element not found");
 }
 
 if ((window as any)[INSTALL_KEY]) {
-  throw new Error("Open Analytics: already installed");
+  throw new Error("OpenAnalytics: already installed");
 }
 
 const runtimeConfig = takeRuntimeConfig();
@@ -110,7 +110,7 @@ if (!IGNORE_DO_NOT_TRACK) {
     .trim()
     .toLowerCase();
   if (dnt === "1" || dnt === "yes") {
-    throw new Error("Open Analytics: Do Not Track enabled");
+    throw new Error("OpenAnalytics: Do Not Track enabled");
   }
 }
 
@@ -268,7 +268,7 @@ function startVisit(
 
   if (debugEnabled) {
     console.log(
-      "[Open Analytics]",
+      "[OpenAnalytics]",
       "pageview:",
       new URL(currentVisit.href, window.location.href).pathname || "/",
     );
@@ -447,7 +447,7 @@ function identify(userId: string, opts?: { name?: string }): void {
   if (!currentVisit) return;
   if (debugEnabled) {
     console.log(
-      "[Open Analytics]",
+      "[OpenAnalytics]",
       "identify:",
       JSON.stringify(id),
       name ? JSON.stringify(name) : "",
@@ -507,7 +507,7 @@ function track(eventName: string, eventData?: unknown): void {
   if (!normalizedName || !currentVisit) return;
   if (debugEnabled) {
     console.log(
-      "[Open Analytics]",
+      "[OpenAnalytics]",
       "track:",
       JSON.stringify(normalizedName),
       JSON.stringify(

@@ -5,7 +5,7 @@ const MAX_HTML_BYTES = 512 * 1024;
 const MAX_TEXT_LENGTH = 500;
 const CACHE_TTL_SECONDS = 24 * 60 * 60;
 const USER_AGENT =
-  "Mozilla/5.0 (compatible; OpenAnalytics/1.0; +https://github.com/every-app/open-analytics)";
+  "Mozilla/5.0 (compatible; OpenAnalytics/1.0; +https://github.com/every-app/private-open-analytics)";
 
 export interface LinkMetadata {
   finalUrl?: string;

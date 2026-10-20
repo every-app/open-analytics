@@ -32,7 +32,7 @@ function fallbackRenderedEmail(message: NotificationMessage) {
     text:
       message.bodyText ||
       message.summary ||
-      "You have a new Open Analytics notification.",
+      "You have a new OpenAnalytics notification.",
     html: message.bodyHtml || undefined,
   };
 }
