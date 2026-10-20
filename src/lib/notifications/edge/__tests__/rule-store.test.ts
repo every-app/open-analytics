@@ -10,7 +10,6 @@ import {
   listNotificationRules,
   mapNotificationRule,
   normalizeNotificationRecipientConfig,
-  resolveNotificationRecipients,
   updateNotificationRule,
 } from "@/lib/notifications/edge/rule-store";
 
@@ -416,72 +415,6 @@ describe("notification rule store", () => {
       deleteNotificationRule(env as never, actor, "missing"),
     ).resolves.toBe(false);
     expect(run).toHaveBeenCalledTimes(1);
-  });
-
-  it("resolves recipients for creator, explicit users, and team roles", async () => {
-    const preparedSql: string[] = [];
-    const env = {
-      DB: {
-        prepare: vi.fn((sql: string) => {
-          preparedSql.push(sql);
-          return {
-            bind: vi.fn(() => ({
-              first: vi.fn(() =>
-                Promise.resolve({
-                  id: "creator",
-                  email: "creator@example.test",
-                  preferencesJson: "{}",
-                  preferredLocale: "en",
-                  timeZone: "UTC",
-                }),
-              ),
-              all: vi.fn(() =>
-                Promise.resolve({
-                  results: [
-                    {
-                      id: "user-1",
-                      email: "user@example.test",
-                      preferencesJson: "{}",
-                      preferredLocale: "en",
-                      timeZone: "UTC",
-                    },
-                  ],
-                }),
-              ),
-            })),
-          };
-        }),
-      },
-    };
-
-    await expect(
-      resolveNotificationRecipients(
-        env as never,
-        rule({ recipient: { mode: "creator" } }),
-      ),
-    ).resolves.toHaveLength(1);
-    await expect(
-      resolveNotificationRecipients(
-        env as never,
-        rule({ recipient: { mode: "users", userIds: ["user-1", "user-2"] } }),
-      ),
-    ).resolves.toHaveLength(1);
-    await expect(
-      resolveNotificationRecipients(
-        env as never,
-        rule({ recipient: { mode: "team_admins" } }),
-      ),
-    ).resolves.toHaveLength(1);
-    await expect(
-      resolveNotificationRecipients(
-        env as never,
-        rule({ recipient: { mode: "creator" }, createdByUserId: null }),
-      ),
-    ).resolves.toEqual([]);
-
-    expect(preparedSql).toHaveLength(3);
-    expect(preparedSql[1]).toContain("IN (?, ?)");
-    expect(preparedSql[2]).toContain('"members"');
   });
 
   it("preserves omitted fields when partially updating rule state", async () => {

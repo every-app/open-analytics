@@ -1,3 +1,5 @@
+import { listMembers } from "@every-app/sdk/server";
+
 import {
   and,
   caseWhen,
@@ -12,14 +14,11 @@ import {
   insert,
   isNotNull,
   isNull,
-  join,
   limit,
   lte,
   neq,
   or,
   param,
-  project,
-  scan,
   schema,
   sort,
   update,
@@ -139,27 +138,6 @@ function requireNotificationRuleRow(row: NotificationRuleStorageRow): RuleRow {
   return { ...row, id: row.id };
 }
 
-function requireNotificationRecipientRow(
-  row: NotificationRecipientStorageRow,
-): NotificationRecipient {
-  if (typeof row.id !== "string" || typeof row.email !== "string") {
-    throw new Error("notification_recipient_row_missing_identity");
-  }
-  if (
-    typeof row.preferencesJson !== "string" ||
-    (typeof row.preferredLocale !== "string" && row.preferredLocale !== null) ||
-    (typeof row.timeZone !== "string" && row.timeZone !== null)
-  ) {
-    throw new Error("notification_recipient_row_invalid_preferences");
-  }
-  return {
-    id: row.id,
-    email: row.email,
-    preferencesJson: row.preferencesJson,
-    preferredLocale: row.preferredLocale,
-    timeZone: row.timeZone,
-  };
-}
 function cleanUserIds(input: unknown): string[] {
   if (!Array.isArray(input)) return [];
   return Array.from(
@@ -579,65 +557,46 @@ export async function resolveNotificationRecipients(
   env: Env,
   rule: NotificationRule,
 ): Promise<NotificationRecipient[]> {
-  const database = notificationRuleDatabase(env);
-  if (rule.recipient.mode === "creator") {
-    if (!rule.createdByUserId) return [];
-    const users = notificationRecipientRows();
-    const creator = filter(
-      users,
-      eq(users.columns.id, param(rule.createdByUserId)),
-    );
-    const row = await database.first(
-      compileD1Query(limit(creator, 1), { tag: "notifications.users.first" }),
-    );
-    return row ? [requireNotificationRecipientRow(row)] : [];
-  }
-  if (rule.recipient.mode === "users") {
-    if (rule.recipient.userIds.length === 0) return [];
-    const users = notificationRecipientRows();
-    const recipients: NotificationRecipient[] = [];
-    for (let offset = 0; offset < rule.recipient.userIds.length; offset += 90) {
-      const chunk = rule.recipient.userIds.slice(offset, offset + 90);
-      const selected = filter(users, inList(users.columns.id, chunk));
-      const rows = await database.all(
-        compileD1Query(selected, { tag: "notifications.users.all" }),
-      );
-      recipients.push(...rows.results.map(requireNotificationRecipientRow));
-    }
-    return recipients;
-  }
-  // The organization's members who have opened the app, with the role the
-  // gateway gave them then (viewer.ts).
-  const memberRows = scan(schema.members);
-  const userRecords = scan(schema.users);
-  const joined = join(
-    memberRows,
-    userRecords,
-    eq(memberRows.columns.user_id, userRecords.columns.id),
-  );
-  const teamMembers = eq(joined.columns.left_team_id, param(rule.teamId));
-  const audience = filter(
-    joined,
-    rule.recipient.mode === "team_admins"
-      ? and(teamMembers, inList(joined.columns.left_role, ["owner", "admin"]))
-      : teamMembers,
-  );
-  const withOrdering = project(audience, {
-    id: audience.columns.right_id,
-    email: audience.columns.right_email,
-    preferencesJson: audience.columns.right_notification_preferences_json,
-    preferredLocale: audience.columns.right_preferred_locale,
-    timeZone: audience.columns.right_timezone,
-    createdAt: audience.columns.right_created_at,
+  // Who may receive it: the gateway's members who can open the app now, so
+  // people who left, were deactivated or lost the app get nothing.
+  const { members } = await listMembers({
+    env,
+    for: { background: true, organizationId: rule.teamId },
   });
-  const ordered = sort(withOrdering, [
-    { expression: withOrdering.columns.createdAt, direction: "ASC" },
-  ]);
-  const rows = await database.all(
-    compileD1Query(ordered, { tag: "notifications.users.all" }),
-  );
-  return rows.results.map((row) => {
-    const { createdAt: _createdAt, ...recipient } = row;
-    return requireNotificationRecipientRow(recipient);
+  const recipient = rule.recipient;
+  const audience = members.filter((member) => {
+    if (recipient.mode === "creator") return member.id === rule.createdByUserId;
+    if (recipient.mode === "users")
+      return recipient.userIds.includes(member.id);
+    if (recipient.mode === "team_admins") return member.role !== "member";
+    return true;
+  });
+  if (audience.length === 0) return [];
+
+  // Their own settings (preferences, language, time zone), kept from their
+  // visits (viewer.ts); someone who never opened the app has the defaults.
+  const database = notificationRuleDatabase(env);
+  const users = notificationRecipientRows();
+  const settings = new Map<string, NotificationRecipientStorageRow>();
+  for (let offset = 0; offset < audience.length; offset += 90) {
+    const ids = audience.slice(offset, offset + 90).map((member) => member.id);
+    const rows = await database.all(
+      compileD1Query(filter(users, inList(users.columns.id, ids)), {
+        tag: "notifications.users.all",
+      }),
+    );
+    for (const row of rows.results) {
+      if (typeof row.id === "string") settings.set(row.id, row);
+    }
+  }
+  return audience.map((member) => {
+    const row = settings.get(member.id);
+    return {
+      id: member.id,
+      email: member.email,
+      preferencesJson: row?.preferencesJson ?? "{}",
+      preferredLocale: row?.preferredLocale ?? null,
+      timeZone: row?.timeZone ?? null,
+    };
   });
 }

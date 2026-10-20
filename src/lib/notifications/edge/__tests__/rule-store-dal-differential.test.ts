@@ -18,7 +18,6 @@ import {
   listDueNotificationRules,
   listNotificationRules,
   normalizeNotificationRecipientConfig,
-  resolveNotificationRecipients,
   updateNotificationRule,
   updateNotificationRuleState,
 } from "@/lib/notifications/edge/rule-store";
@@ -43,14 +42,6 @@ interface LegacyRuleRow {
   readonly createdByUserId: string | null;
   readonly createdAt: number;
   readonly updatedAt: number;
-}
-
-interface LegacyRecipientRow {
-  readonly id: string;
-  readonly email: string;
-  readonly preferencesJson: string;
-  readonly preferredLocale: string | null;
-  readonly timeZone: string | null;
 }
 
 const databases = new Set<DatabaseSync>();
@@ -137,35 +128,6 @@ function insertLegacyRule(
     );
 }
 
-function makeRecipientRule(
-  recipient: NotificationRule["recipient"],
-  input: {
-    readonly createdByUserId?: string | null;
-    readonly teamId?: string;
-  } = {},
-): NotificationRule {
-  return {
-    id: "recipient-rule",
-    teamId: input.teamId ?? "team-1",
-    siteId: null,
-    name: "Recipient rule",
-    description: "",
-    type: "threshold",
-    enabled: true,
-    schedule: { kind: "interval", everyMinutes: 60 },
-    condition: {},
-    recipient,
-    state: {},
-    lastCheckedAt: null,
-    lastTriggeredAt: null,
-    nextRunAt: null,
-    cooldownUntil: null,
-    createdByUserId: input.createdByUserId ?? null,
-    createdAt: 1,
-    updatedAt: 1,
-  };
-}
-
 const LEGACY_SELECT = `
   SELECT id, team_id AS teamId, site_id AS siteId, name, description, type,
          enabled, schedule_json AS scheduleJson,
@@ -205,52 +167,6 @@ function legacyDue(database: DatabaseSync, now: number): LegacyRuleRow[] {
        ORDER BY next_run_at ASC LIMIT 100`,
     )
     .all(now, now) as unknown as LegacyRuleRow[];
-}
-
-function legacyCreatorRecipient(
-  database: DatabaseSync,
-  userId: string,
-): LegacyRecipientRow | null {
-  return (
-    (database
-      .prepare(
-        `SELECT id, email, notification_preferences_json AS preferencesJson,
-                preferred_locale AS preferredLocale, timezone AS timeZone
-         FROM users WHERE id = ? LIMIT 1`,
-      )
-      .get(userId) as LegacyRecipientRow | undefined) ?? null
-  );
-}
-
-function legacyUserRecipients(
-  database: DatabaseSync,
-  userIds: readonly string[],
-): LegacyRecipientRow[] {
-  if (userIds.length === 0) return [];
-  return database
-    .prepare(
-      `SELECT id, email, notification_preferences_json AS preferencesJson,
-              preferred_locale AS preferredLocale, timezone AS timeZone
-       FROM users WHERE id IN (${userIds.map(() => "?").join(", ")})`,
-    )
-    .all(...userIds) as unknown as LegacyRecipientRow[];
-}
-
-function legacyRoleRecipients(
-  database: DatabaseSync,
-  mode: "team_admins" | "all_team_members",
-): LegacyRecipientRow[] {
-  const adminClause =
-    mode === "team_admins" ? "AND m.role IN ('owner', 'admin')" : "";
-  return database
-    .prepare(
-      `SELECT u.id, u.email, u.notification_preferences_json AS preferencesJson,
-              u.preferred_locale AS preferredLocale, u.timezone AS timeZone
-       FROM members m JOIN users u ON u.id = m.user_id
-       WHERE m.team_id = 'team-1' ${adminClause}
-       ORDER BY u.created_at ASC`,
-    )
-    .all() as unknown as LegacyRecipientRow[];
 }
 
 function expectSameRule(
@@ -533,132 +449,5 @@ describe("notification rule Typed DAL differential checks", () => {
     );
     expect(trace.preparedSql).toHaveLength(beforeDelete + 2);
     expect(legacyGet(database, created.id)).toBeNull();
-  });
-
-  it("matches legacy recipient resolution modes and chunks 200 explicit users", async () => {
-    const { database, env, trace } = createFixture();
-    const noCreatorRule = makeRecipientRule({ mode: "creator" });
-    await expect(
-      resolveNotificationRecipients(env, noCreatorRule),
-    ).resolves.toEqual([]);
-    expect(trace.preparedSql).toHaveLength(0);
-
-    const creatorRule = makeRecipientRule(
-      { mode: "creator" },
-      { createdByUserId: "owner-1" },
-    );
-    await expect(
-      resolveNotificationRecipients(env, creatorRule),
-    ).resolves.toEqual([legacyCreatorRecipient(database, "owner-1")]);
-    expect(trace.preparedSql).toHaveLength(1);
-
-    const adminBefore = trace.preparedSql.length;
-    const typedAdmins = await resolveNotificationRecipients(
-      env,
-      makeRecipientRule({ mode: "team_admins" }),
-    );
-    expect(typedAdmins).toEqual(legacyRoleRecipients(database, "team_admins"));
-    expect(typedAdmins.map((recipient) => recipient.id)).toEqual([
-      "owner-1",
-      "admin-1",
-    ]);
-    // The Typed DAL compiler wraps each logical relation in an output alias.
-    // Keep sorting as the terminal relation operation so no projection sits
-    // outside the order clause.
-    expect(trace.preparedSql[adminBefore]).toMatch(
-      /ORDER BY .+ ASC\) AS "q\d+"$/,
-    );
-    expect(trace.preparedSql[adminBefore]).toContain("created_at");
-    expect(trace.preparedSql).toHaveLength(adminBefore + 1);
-
-    const membersBefore = trace.preparedSql.length;
-    const typedMembers = await resolveNotificationRecipients(
-      env,
-      makeRecipientRule({ mode: "all_team_members" }),
-    );
-    expect(typedMembers).toEqual(
-      legacyRoleRecipients(database, "all_team_members"),
-    );
-    expect(typedMembers.map((recipient) => recipient.id)).toEqual([
-      "owner-1",
-      "member-1",
-      "admin-1",
-    ]);
-    expect(trace.preparedSql).toHaveLength(membersBefore + 1);
-
-    const normalizedUsers = normalizeNotificationRecipientConfig({
-      mode: "users",
-      userIds: [" owner-1 ", "member-1", "owner-1", "missing-user"],
-    });
-    expect(normalizedUsers).toEqual({
-      mode: "users",
-      userIds: ["owner-1", "member-1", "missing-user"],
-    });
-    if (normalizedUsers.mode !== "users") {
-      throw new Error("normalized_users_mode_expected");
-    }
-    const usersBefore = trace.preparedSql.length;
-    const typedUsers = await resolveNotificationRecipients(
-      env,
-      makeRecipientRule(normalizedUsers),
-    );
-    const legacyUsers = legacyUserRecipients(database, normalizedUsers.userIds);
-    expect(typedUsers.map((recipient) => recipient.id).sort()).toEqual(
-      legacyUsers.map((recipient) => recipient.id).sort(),
-    );
-    expect(trace.preparedSql).toHaveLength(usersBefore + 1);
-
-    const emptyUsersBefore = trace.preparedSql.length;
-    await expect(
-      resolveNotificationRecipients(
-        env,
-        makeRecipientRule({ mode: "users", userIds: [] }),
-      ),
-    ).resolves.toEqual([]);
-    expect(trace.preparedSql).toHaveLength(emptyUsersBefore);
-
-    const insertUser = database.prepare(
-      "INSERT INTO users (id, email, created_at, updated_at) VALUES (?, ?, ?, ?)",
-    );
-    const requestedIds = Array.from({ length: 200 }, (_, index) => {
-      const id = `chunk-user-${index}`;
-      insertUser.run(id, `${id}@example.test`, 1_000 + index, 1_000 + index);
-      return id;
-    });
-    const cappedConfig = normalizeNotificationRecipientConfig({
-      mode: "users",
-      userIds: [...requestedIds, requestedIds[0], "not-included-after-cap"],
-    });
-    expect(cappedConfig).toEqual({ mode: "users", userIds: requestedIds });
-    if (cappedConfig.mode !== "users") {
-      throw new Error("normalized_chunk_users_mode_expected");
-    }
-
-    for (const count of [0, 1, 90, 91, 180, 200]) {
-      trace.preparedSql.length = 0;
-      trace.bindings.length = 0;
-      const chunkIds = cappedConfig.userIds.slice(0, count);
-      const chunked = await resolveNotificationRecipients(
-        env,
-        makeRecipientRule({ mode: "users", userIds: chunkIds }),
-      );
-      expect(chunked).toHaveLength(count);
-      expect(trace.preparedSql).toHaveLength(Math.ceil(count / 90));
-      expect(trace.bindings.map((bindings) => bindings.length)).toEqual(
-        Array.from({ length: Math.ceil(count / 90) }, (_, index) =>
-          Math.min(90, count - index * 90),
-        ),
-      );
-      expect(trace.bindings.every((bindings) => bindings.length <= 100)).toBe(
-        true,
-      );
-      if (count === 200) {
-        expect(chunked.map((recipient) => recipient.id).sort()).toEqual(
-          requestedIds.slice().sort(),
-        );
-        expect(trace.preparedSql).toHaveLength(3);
-        expect(trace.preparedSql.join("\n")).not.toContain("json_each");
-      }
-    }
   });
 });

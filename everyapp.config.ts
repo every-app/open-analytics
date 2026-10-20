@@ -32,6 +32,12 @@ export default {
   // Notification reports and alerts go out as the gateway's mail
   // (src/lib/notifications/edge/delivery.ts).
   capabilities: {
+    // Whom reports and alerts go to: the organization's members who can
+    // open the app now (src/lib/notifications/edge/rule-store.ts).
+    members: {
+      access: "read",
+      why: "Sends reports and alerts only to people who can still open the app.",
+    },
     email: {
       access: "write",
       why: "Emails scheduled reports and alerts to members who turned email notifications on.",
