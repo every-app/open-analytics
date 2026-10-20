@@ -2368,7 +2368,7 @@ export interface AppMessages {
 }
 
 const enMessages = {
-  appName: "Open Analytics",
+  appName: "OpenAnalytics",
   uiGallery: {
     categories: {},
   },
@@ -5031,7 +5031,7 @@ const enMessages = {
 } as AppMessages;
 
 const zhMessages = {
-  appName: "Open Analytics",
+  appName: "OpenAnalytics",
   uiGallery: {
     categories: {},
   },
@@ -7631,7 +7631,7 @@ const zhMessages = {
 } as AppMessages;
 
 const zhTwMessages = {
-  appName: "Open Analytics",
+  appName: "OpenAnalytics",
   uiGallery: {
     categories: {},
   },
@@ -10231,7 +10231,7 @@ const zhTwMessages = {
 } as AppMessages;
 
 const jaMessages = {
-  appName: "Open Analytics",
+  appName: "OpenAnalytics",
   uiGallery: {
     categories: {},
   },
