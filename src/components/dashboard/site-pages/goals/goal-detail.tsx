@@ -328,12 +328,10 @@ export function GoalDetail({
 
   const goalSummary = summary.data?.data.summary;
   const comparisonGoalSummary = comparisonSummary.data?.data.summary;
-  const comparisonLoading =
-    Boolean(comparisonQuery) &&
-    (comparisonSummary.isFetching || !comparisonSummary.data);
+  const comparisonLoading = Boolean(comparisonQuery) && !comparisonSummary.data;
   const filterDescriptionMessages = messages ?? getMessages(locale);
   const fullMessages = getMessages(locale);
-  const metricLoading = summary.isFetching || !summary.data;
+  const metricLoading = !summary.data;
   const comparisonDetail = (value: string) =>
     comparisonGoalSummary && comparisonLabel
       ? `${comparisonLabel}: ${value}`
@@ -472,7 +470,7 @@ export function GoalDetail({
               comparisonFrom={comparisonQuery?.window.from}
               comparisonTo={comparisonQuery?.window.to}
               comparisonLabel={comparisonLabel}
-              loading={timeseries.isFetching || !timeseries.data}
+              loading={!timeseries.data}
             />
           )}
         </CardContent>

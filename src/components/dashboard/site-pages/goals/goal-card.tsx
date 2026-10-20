@@ -225,10 +225,9 @@ export function GoalCard({
                 comparisonSummary={comparisonSummary.data?.data.summary}
                 locale={locale}
                 labels={labels}
-                loading={summary.isFetching || !summary.data}
+                loading={!summary.data}
                 comparisonLoading={
-                  Boolean(comparisonQuery) &&
-                  (comparisonSummary.isFetching || !comparisonSummary.data)
+                  Boolean(comparisonQuery) && !comparisonSummary.data
                 }
               />
             )}

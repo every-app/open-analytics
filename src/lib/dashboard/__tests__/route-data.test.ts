@@ -54,7 +54,6 @@ vi.mock("@tanstack/react-start/server", async (importOriginal) => {
 vi.mock("@/lib/dashboard/server", () => ({
   getDashboardTeamSites: vi.fn(),
   getDashboardTeamContext: vi.fn(),
-  getTeamSiteContext: vi.fn(),
   readDashboardAdmin: vi.fn(),
 }));
 vi.mock("@/lib/dashboard/query-preferences", () => ({
@@ -87,7 +86,6 @@ import { resolveDashboardInitialWindow } from "@/lib/dashboard/query-preferences
 import {
   loadAccountNotificationPreferences,
   loadDashboardInitialWindow,
-  loadDashboardSite,
   loadDashboardTeam,
   loadNotificationCenterInitialData,
   loadRequestOrigin,
@@ -102,7 +100,6 @@ import {
 import {
   getDashboardTeamContext,
   getDashboardTeamSites,
-  getTeamSiteContext,
   readDashboardAdmin,
 } from "@/lib/dashboard/server";
 import { resolveTeamDashboardRequest } from "@/lib/dashboard/server/query";
@@ -328,14 +325,6 @@ describe("Dashboard route data loaders", () => {
         team: "t",
       } as never);
       await expect(loadDashboardTeam()).resolves.toEqual({ team: "t" });
-    });
-
-    it("loads the site context by site slug", async () => {
-      vi.mocked(getTeamSiteContext).mockResolvedValue({ site: "s" } as never);
-      await expect(
-        loadDashboardSite({ data: { siteSlug: "web" } } as never),
-      ).resolves.toEqual({ site: "s" });
-      expect(getTeamSiteContext).toHaveBeenCalledWith("web");
     });
   });
 

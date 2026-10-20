@@ -14,6 +14,8 @@ import { isValidLocale, type Locale } from "@/lib/i18n/config";
  * and `dark` styles are `<base>/positron` and `<base>/dark`).
  */
 const DEFAULT_MAP_STYLE_BASE_URL = "https://tiles.openfreemap.org/styles";
+const OPENFREEMAP_SPRITE_URL =
+  "https://tiles.openfreemap.org/sprites/ofm_f384/ofm";
 const STYLE_PATH =
   /^\/api\/public\/resources\/map\/v1\/styles\/(light|dark)\/style\.json$/;
 const STYLE_NAMES = { light: "positron", dark: "dark" } as const;
@@ -41,6 +43,11 @@ function styleBaseUrl(env?: Env): string {
 }
 
 type StyleLayer = { layout?: Record<string, unknown> };
+
+function correctCircleIconReference(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(correctCircleIconReference);
+  return value === "circle-11" ? "circle_11" : value;
+}
 
 /** Prefers the locale's own name on every place, road and water label. */
 function localizeStyleLabels(
@@ -87,7 +94,20 @@ export async function handleMapRelayRequest(
     if (!response.ok) {
       return new Response("Map style unavailable", { status: 502 });
     }
-    const style = (await response.json()) as { layers?: StyleLayer[] };
+    const style = (await response.json()) as {
+      sprite?: string;
+      layers?: StyleLayer[];
+    };
+    // The published dark style uses a hyphen, but this sprite's ID uses an
+    // underscore: https://github.com/hyperknot/openfreemap/issues/135.
+    if (style.sprite === OPENFREEMAP_SPRITE_URL) {
+      for (const layer of style.layers ?? []) {
+        if (layer.layout?.["icon-image"] === undefined) continue;
+        layer.layout["icon-image"] = correctCircleIconReference(
+          layer.layout["icon-image"],
+        );
+      }
+    }
     localizeStyleLabels(style, locale);
     return Response.json(style, {
       headers: { "cache-control": CACHE_CONTROL },

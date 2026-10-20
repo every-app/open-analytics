@@ -408,7 +408,6 @@ const VisitorEventCard = memo(function VisitorEventCard({
                     ) : (
                       <Link
                         href={sessionHref}
-                        data-skip-page-transition=""
                         className="hover:text-foreground hover:underline"
                         onClick={(clickEvent) => clickEvent.stopPropagation()}
                         onKeyDown={(keyboardEvent) =>

@@ -20,7 +20,6 @@ import type { TimeWindow } from "@/lib/dashboard/query-state";
 import {
   getDashboardTeamContext,
   getDashboardTeamSites,
-  getTeamSiteContext,
   readDashboardAdmin,
 } from "@/lib/dashboard/server";
 import { resolveTeamDashboardRequest } from "@/lib/dashboard/server/query";
@@ -252,9 +251,6 @@ export const loadSystemPerformanceInitialData = createServerFn({
   });
   return data ? { data, fetchedAt: Date.now() } : null;
 });
-export const loadDashboardSite = createServerFn({ method: "GET" })
-  .validator((data: { siteSlug: string }) => data)
-  .handler(({ data }) => getTeamSiteContext(data.siteSlug));
 /**
  * The shared site behind a public link. Not a server function: an anonymous
  * viewer can't reach /_serverFn through the gateway, so the browser reads the

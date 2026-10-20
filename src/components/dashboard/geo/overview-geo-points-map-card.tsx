@@ -66,7 +66,7 @@ export const OverviewGeoPointsMapCard = memo(function OverviewGeoPointsMapCard({
 
   const {
     data: geoPointsData = emptyGeoPointsData,
-    isFetching,
+    isPlaceholderData,
     isPending,
   } = useQuery({
     queryKey: [
@@ -131,7 +131,7 @@ export const OverviewGeoPointsMapCard = memo(function OverviewGeoPointsMapCard({
         <GeoPointsMapIsland
           locale={locale}
           messages={messages}
-          loading={isPending || isFetching}
+          loading={isPending || isPlaceholderData}
           points={points}
           countryCounts={countryCounts}
           selectedCountryCode={selectedCountryCode}

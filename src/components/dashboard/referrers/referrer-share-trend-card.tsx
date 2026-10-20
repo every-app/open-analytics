@@ -95,7 +95,7 @@ function ReferrerTrendPanel({
   );
   const {
     data: trendQueryData,
-    isFetching,
+    isPlaceholderData,
     isPending,
   } = useQuery({
     queryKey: [
@@ -146,7 +146,7 @@ function ReferrerTrendPanel({
     enabled: typeof window !== "undefined",
     placeholderData: keepPreviousData,
   });
-  const loading = isPending || isFetching;
+  const loading = isPending || isPlaceholderData;
   const trendData = trendQueryData?.trendData ?? fallbackTrendData;
   const dataWindow = trendQueryData?.dataWindow ?? currentDataWindow;
   const comparisonTrendData = comparisonQuery

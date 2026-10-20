@@ -51,7 +51,10 @@ export function AppShellLayout({
           ) : null}
           <div
             {...contentDataAttributes}
-            className={cn("w-full min-w-0", contentClassName)}
+            className={cn(
+              "flex w-full min-w-0 flex-1 flex-col",
+              contentClassName,
+            )}
           >
             <PageTransition>{children}</PageTransition>
           </div>

@@ -21,7 +21,7 @@ import { Skeleton } from "@insightflare/ui/skeleton";
 import { Slider } from "@insightflare/ui/slider";
 import { Spinner } from "@insightflare/ui/spinner";
 import { Switch } from "@insightflare/ui/switch";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { CodeBlock } from "@/components/common/code-block";
@@ -42,9 +42,9 @@ import {
   validateBlockingRules,
 } from "@/lib/blocking";
 import { buildSitePath } from "@/lib/dashboard/paths";
+import { dashboardShellQueryOptions } from "@/lib/dashboard/route-query";
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
 import type { SiteData } from "@/lib/dashboard-api/client/edge";
-import { navigateWithTransition } from "@/lib/page-transition";
 import { useRouter } from "@/lib/router";
 import {
   DEFAULT_SITE_SCRIPT_SETTINGS,
@@ -75,6 +75,7 @@ export function SettingsClientPage({
   initialData = null,
 }: SiteSettingsClientPageProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const copy = messages.siteSettings;
   const initialTrackerSettings = normalizeSiteScriptSettings(
     initialData?.config,
@@ -275,16 +276,16 @@ export function SettingsClientPage({
   ]);
 
   /** After a rename the site's slug may change: follow it. */
-  function followSiteSlug(updated: SiteData) {
+  async function followSiteSlug(updated: SiteData) {
     const nextSlug = resolveSiteSlug(updated);
+    queryClient.removeQueries({
+      queryKey: dashboardShellQueryOptions.queryKey,
+    });
     if (nextSlug !== currentSiteSlug) {
       setCurrentSiteSlug(nextSlug);
-      navigateWithTransition(
-        router,
-        buildSitePath(locale, nextSlug, "settings"),
-      );
+      await router.replace(buildSitePath(locale, nextSlug, "settings"));
     } else {
-      router.refresh();
+      await router.refresh();
     }
   }
 
@@ -318,7 +319,7 @@ export function SettingsClientPage({
       setPersistedName(updated.name);
       setPersistedDomain(updated.domain);
       toast.success(copy.toasts.saved);
-      followSiteSlug(updated);
+      await followSiteSlug(updated);
     } catch (error) {
       saveFailed(error);
     } finally {
@@ -351,7 +352,7 @@ export function SettingsClientPage({
       setPersistedPublicEnabled(updatedPublicEnabled);
       setPersistedPublicSlug(updatedPublicSlug);
       toast.success(copy.toasts.saved);
-      followSiteSlug(updated);
+      await followSiteSlug(updated);
     } catch (error) {
       saveFailed(error);
     } finally {
@@ -456,8 +457,10 @@ export function SettingsClientPage({
       );
       toast.success(copy.toasts.deleted);
       setDeleteDialogOpen(false);
-      navigateWithTransition(router, `/${locale}/app`);
-      router.refresh();
+      queryClient.removeQueries({
+        queryKey: dashboardShellQueryOptions.queryKey,
+      });
+      await router.push(`/${locale}/app`);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : copy.toasts.deleteFailed;

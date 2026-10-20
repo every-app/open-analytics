@@ -1,73 +1,21 @@
+import { type AnchorHTMLAttributes, forwardRef, useMemo } from "react";
 import {
-  type AnchorHTMLAttributes,
-  forwardRef,
-  type MouseEvent,
-  useMemo,
-} from "react";
-import {
+  Link as TanStackLink,
   useLocation,
   useNavigate,
   useRouter as useTanStackRouter,
 } from "@tanstack/react-router";
 
-import { notifyUrlStateChange } from "@/lib/dashboard/client/history";
-import { navigateWithTransition } from "@/lib/page-transition";
+import { dashboardShellQueryOptions } from "@/lib/dashboard/route-query";
 interface LinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
   href: string;
   scroll?: boolean;
-  "data-skip-page-transition"?: boolean | string;
-}
-function isInternalHref(href: string): boolean {
-  return href.startsWith("/") && !href.startsWith("//");
-}
-function shouldHandleNavigation(event: MouseEvent<HTMLAnchorElement>): boolean {
-  return (
-    !event.defaultPrevented &&
-    event.button === 0 &&
-    !event.metaKey &&
-    !event.ctrlKey &&
-    !event.shiftKey &&
-    !event.altKey
-  );
 }
 const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
-  {
-    href,
-    onClick,
-    scroll = true,
-    target,
-    "data-skip-page-transition": skipPageTransition,
-    ...props
-  },
+  { href, scroll = true, ...props },
   ref,
 ) {
-  const router = useRouter();
-
-  return (
-    <a
-      {...props}
-      ref={ref}
-      href={href}
-      target={target}
-      data-skip-page-transition={skipPageTransition || undefined}
-      onClick={(event) => {
-        onClick?.(event);
-        if (
-          !shouldHandleNavigation(event) ||
-          !isInternalHref(href) ||
-          target === "_blank"
-        ) {
-          return;
-        }
-        event.preventDefault();
-        if (skipPageTransition) {
-          router.push(href, { scroll });
-          return;
-        }
-        navigateWithTransition(router, href, { scroll });
-      }}
-    />
-  );
+  return <TanStackLink {...props} ref={ref} to={href} resetScroll={scroll} />;
 });
 export default Link;
 export function usePathname(): string {
@@ -85,31 +33,24 @@ export function useRouter() {
     () => ({
       back: () => router.history.back(),
       forward: () => router.history.forward(),
-      preload: (href: string) =>
-        router.preloadRoute({ to: href }).then(() => undefined),
       push: (href: string, options?: { scroll?: boolean }) => {
-        const result = navigate({
+        return navigate({
           to: href,
           resetScroll: options?.scroll !== false,
         });
-        void Promise.resolve(result).then(
-          notifyUrlStateChange,
-          () => undefined,
-        );
-        return result;
       },
-      refresh: () => router.invalidate(),
+      refresh: () => {
+        router.options.context.queryClient.removeQueries({
+          queryKey: dashboardShellQueryOptions.queryKey,
+        });
+        return router.invalidate();
+      },
       replace: (href: string, options?: { scroll?: boolean }) => {
-        const result = navigate({
+        return navigate({
           to: href,
           replace: true,
           resetScroll: options?.scroll !== false,
         });
-        void Promise.resolve(result).then(
-          notifyUrlStateChange,
-          () => undefined,
-        );
-        return result;
       },
     }),
     [navigate, router],

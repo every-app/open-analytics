@@ -5,7 +5,6 @@ import {
   buildSitePath,
   getDashboardTeamContext,
   getSiteSlug,
-  getTeamSiteContext,
 } from "@/lib/dashboard/server";
 
 const mocks = vi.hoisted(() => ({
@@ -125,18 +124,5 @@ describe("dashboard server helpers", () => {
 
     mocks.session.mockResolvedValueOnce({ user: { id: "user-1" }, teams: [] });
     await expect(getDashboardTeamContext()).resolves.toBeNull();
-  });
-
-  it("resolves a site by slug or id and returns null for unknown sites", async () => {
-    await expect(
-      getTeamSiteContext("docs-example-test"),
-    ).resolves.toMatchObject({
-      activeTeam: { id: "team-1" },
-      activeSite: { id: "site-1", slug: "docs-example-test" },
-    });
-    await expect(getTeamSiteContext("site-2")).resolves.toMatchObject({
-      activeSite: { id: "site-2", slug: "blog-example-test" },
-    });
-    await expect(getTeamSiteContext("missing")).resolves.toBeNull();
   });
 });

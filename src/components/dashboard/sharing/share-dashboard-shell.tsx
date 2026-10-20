@@ -66,10 +66,10 @@ export function ShareDashboardShell({
   });
   const rootClassName = isGeoRoute
     ? "flex h-svh min-h-0 flex-col bg-background text-foreground"
-    : "min-h-svh bg-background text-foreground";
+    : "flex min-h-svh flex-col bg-background text-foreground";
   const contentClassName = isGeoRoute
     ? "flex min-h-0 w-full min-w-0 flex-1 flex-col md:overflow-hidden [&>[data-page-transition]]:flex [&>[data-page-transition]]:h-full [&>[data-page-transition]]:min-h-0 [&>[data-page-transition]]:flex-1 [&>[data-page-transition]]:flex-col"
-    : "mx-auto w-full max-w-8xl px-4 py-4 md:px-6 md:py-6";
+    : "mx-auto flex w-full max-w-8xl flex-1 flex-col px-4 py-4 md:px-6 md:py-6";
 
   return (
     <DashboardQueryProvider

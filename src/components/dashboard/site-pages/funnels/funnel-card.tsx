@@ -234,10 +234,9 @@ export function FunnelCard({
               funnel={detail.data?.data.funnel ?? funnel}
               analysis={detail.data?.data.analysis}
               comparisonAnalysis={comparisonDetail.data?.data.analysis}
-              loading={detail.isFetching || !detail.data}
+              loading={!detail.data}
               comparisonLoading={
-                Boolean(comparisonQuery) &&
-                (comparisonDetail.isFetching || !comparisonDetail.data)
+                Boolean(comparisonQuery) && !comparisonDetail.data
               }
             />
           )}

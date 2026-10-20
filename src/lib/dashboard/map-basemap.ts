@@ -14,9 +14,10 @@ export function getVectorBasemapStyleUrl(
   locale: Locale = "en",
 ): string {
   const path = VECTOR_BASEMAP_STYLE_PATHS[theme];
-  return locale === "en"
-    ? path
-    : `${path}?locale=${encodeURIComponent(locale)}`;
+  // Bypass styles cached before the OpenFreeMap sprite reference correction.
+  const params = new URLSearchParams({ v: "2" });
+  if (locale !== "en") params.set("locale", locale);
+  return `${path}?${params}`;
 }
 
 export function getVectorBasemapSky(

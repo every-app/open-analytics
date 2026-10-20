@@ -10,15 +10,16 @@ import {
 import { Input } from "@insightflare/ui/input";
 import { Label } from "@insightflare/ui/label";
 import { Spinner } from "@insightflare/ui/spinner";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { getSiteSlug } from "@/components/dashboard/admin/team-management/model";
 import { buildSitePath } from "@/lib/dashboard/paths";
+import { dashboardShellQueryOptions } from "@/lib/dashboard/route-query";
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
 import type { SiteData } from "@/lib/dashboard-api/client/edge";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
-import { navigateWithTransition } from "@/lib/page-transition";
 import { useRouter } from "@/lib/router";
 
 /** Adds a site to the organization, then opens its overview, which shows
@@ -38,6 +39,7 @@ export function CreateSiteDialog({
 }) {
   const t = messages.adminSites;
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
@@ -67,8 +69,10 @@ export function CreateSiteDialog({
       onOpenChange(false);
       toast.success(t.createSuccess);
       // A new site's overview shows the tracking snippet until data arrives.
-      navigateWithTransition(router, buildSitePath(locale, getSiteSlug(data)));
-      router.refresh();
+      queryClient.removeQueries({
+        queryKey: dashboardShellQueryOptions.queryKey,
+      });
+      await router.push(buildSitePath(locale, getSiteSlug(data)));
     } catch (cause) {
       setError(
         (cause instanceof Error ? cause.message : t.createFailed) ||

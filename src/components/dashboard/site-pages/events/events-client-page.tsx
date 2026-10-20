@@ -202,7 +202,7 @@ export function EventsClientPage({
     }
   }, [detailEventName]);
 
-  const { data, isFetching, isPending } = useQuery({
+  const { data, isPending } = useQuery({
     queryKey: [
       "dashboard",
       "events-overview",
@@ -255,7 +255,7 @@ export function EventsClientPage({
     },
     enabled: typeof window !== "undefined",
   });
-  const loading = isPending || isFetching;
+  const loading = isPending;
   const summary = data?.summary ?? emptySummary();
   const trend = data?.trend ?? emptyTrend(timeWindow.interval);
   const comparisonLabel = comparisonLabelForEvents(

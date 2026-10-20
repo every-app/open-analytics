@@ -490,7 +490,6 @@ export const SessionMapHero = memo(function SessionMapHero({
             <Link
               key="visitor-link"
               href={visitorHref}
-              data-skip-page-transition=""
               className="flex min-w-0 items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
             >
               <VisitorAvatar seed={session.visitorId} className="size-12" />

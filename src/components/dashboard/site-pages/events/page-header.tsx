@@ -4,7 +4,6 @@ import { PageHeading } from "@insightflare/ui/page-heading";
 import { ArrowLeftIcon } from "lucide-react";
 
 import type { AppMessages } from "@/lib/i18n/messages";
-import { navigateWithTransition } from "@/lib/page-transition";
 import { useRouter } from "@/lib/router";
 
 export const EventPageHeader = memo(function EventPageHeader({
@@ -26,7 +25,7 @@ export const EventPageHeader = memo(function EventPageHeader({
   const handleBack = onBack
     ? onBack
     : backHref
-      ? () => navigateWithTransition(router, backHref)
+      ? () => void router.push(backHref)
       : null;
 
   return (

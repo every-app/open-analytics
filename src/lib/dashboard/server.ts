@@ -26,12 +26,6 @@ export interface DashboardTeamContext {
   /** The Every App gateway's home, for leaving the app. */
   gatewayUrl: string;
 }
-export interface DashboardContext {
-  user: AccountUserData;
-  activeTeam: TeamData;
-  sites: SiteWithSlug[];
-  activeSite: SiteWithSlug;
-}
 function safeSlug(value: string): string {
   return value
     .trim()
@@ -50,15 +44,6 @@ function withSiteSlug(site: SiteData): SiteWithSlug {
     ...site,
     slug: getSiteSlug(site),
   };
-}
-function findSiteBySlug(
-  sites: SiteWithSlug[],
-  siteSlug: string,
-): SiteWithSlug | null {
-  const bySlug = sites.find((site) => site.slug === siteSlug);
-  if (bySlug) return bySlug;
-  const byId = sites.find((site) => site.id === siteSlug);
-  return byId ?? null;
 }
 const getMe = cache(async () => {
   try {
@@ -140,22 +125,6 @@ export const getDashboardTeamContext = cache(
       sites,
       unreadAttentionCount,
       gatewayUrl: runtime.env.GATEWAY_URL || "/",
-    };
-  },
-);
-export const getTeamSiteContext = cache(
-  async (siteSlug: string): Promise<DashboardContext | null> => {
-    const teamContext = await getDashboardTeamContext();
-    if (!teamContext) return null;
-
-    const activeSite = findSiteBySlug(teamContext.sites, siteSlug);
-    if (!activeSite) return null;
-
-    return {
-      user: teamContext.user,
-      activeTeam: teamContext.activeTeam,
-      sites: teamContext.sites,
-      activeSite,
     };
   },
 );

@@ -1,18 +1,16 @@
 import { createFileRoute, notFound, Outlet } from "@tanstack/react-router";
 
 import { DashboardShell } from "@/components/dashboard/shell/dashboard-shell";
-import {
-  loadDashboardInitialWindow,
-  loadDashboardTeam,
-} from "@/lib/dashboard/route-data";
+import { dashboardShellQueryOptions } from "@/lib/dashboard/route-query";
 import { usePathname } from "@/lib/router";
 
 export const Route = createFileRoute("/$locale/app")({
-  beforeLoad: async () => {
-    const [teamContext, initialDashboardWindow] = await Promise.all([
-      loadDashboardTeam(),
-      loadDashboardInitialWindow(),
-    ]);
+  beforeLoad: async ({ context }) => {
+    const { teamContext, initialDashboardWindow } =
+      await context.queryClient.ensureQueryData({
+        ...dashboardShellQueryOptions,
+        revalidateIfStale: true,
+      });
     // The gateway signs everyone in before the app; without a workspace the
     // request had no identity this deployment serves.
     if (!teamContext) throw notFound();

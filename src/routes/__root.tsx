@@ -12,8 +12,9 @@ import {
 import { LayerManagerProvider } from "@insightflare/ui/layer-manager";
 import { SCROLLBAR_POLICY_INIT_SCRIPT } from "@insightflare/ui/overlay-scrollbar";
 import { TooltipProvider } from "@insightflare/ui/tooltip";
+import type { QueryClient } from "@tanstack/react-query";
 import {
-  createRootRoute,
+  createRootRouteWithContext,
   HeadContent,
   Outlet,
   ScriptOnce,
@@ -36,27 +37,30 @@ import { getMessages } from "@/lib/i18n/messages";
 import Link from "@/lib/router";
 const THEME_INIT_SCRIPT = `(function(){try{var k='insightflare-theme';var t=localStorage.getItem(k)||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';if(localStorage.getItem('${GET_STARTED_COLLAPSED_KEY}')==='1')document.documentElement.setAttribute('data-get-started-collapsed','')}catch(e){}})()`;
 const ESBUILD_NAME_HELPER_SCRIPT = `(function(){if(typeof globalThis.__name!=="function"){globalThis.__name=function(target){return target}}})()`;
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: APP_NAME },
-      { name: "description", content: `${APP_NAME} analytics dashboard` },
-    ],
-    links: [
-      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-      { rel: "icon", href: "/favicon.ico", sizes: "any" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
-      { rel: "manifest", href: "/site.webmanifest" },
-      { rel: "stylesheet", href: globalStylesheetUrl },
-    ],
-  }),
-  notFoundComponent: NotFoundPage,
-  errorComponent: ErrorPage,
-  component: RootDocument,
-});
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
+  {
+    head: () => ({
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { title: APP_NAME },
+        { name: "description", content: `${APP_NAME} analytics dashboard` },
+      ],
+      links: [
+        { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+        { rel: "icon", href: "/favicon.ico", sizes: "any" },
+        { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+        { rel: "manifest", href: "/site.webmanifest" },
+        { rel: "stylesheet", href: globalStylesheetUrl },
+      ],
+    }),
+    notFoundComponent: NotFoundPage,
+    errorComponent: ErrorPage,
+    component: RootDocument,
+  },
+);
 function RootDocument() {
+  const { queryClient } = Route.useRouteContext();
   const pathname = useLocation({ select: (location) => location.pathname });
   const locale = resolveLocale(pathname.split("/")[1]);
 
@@ -72,7 +76,7 @@ function RootDocument() {
           <ScriptOnce>{ESBUILD_NAME_HELPER_SCRIPT}</ScriptOnce>
           <LayerManagerProvider>
             <LayerSystemFixture />
-            <AppQueryProvider>
+            <AppQueryProvider client={queryClient}>
               <TimeZoneProvider>
                 <ThemeProvider>
                   <TooltipProvider>

@@ -196,11 +196,8 @@ function FunnelDetailDrawer({
       payload={detail.data}
       comparisonAnalysis={comparisonDetail.data?.data.analysis}
       funnel={funnel}
-      loading={detail.isFetching || !detail.data}
-      comparisonLoading={
-        Boolean(comparisonQuery) &&
-        (comparisonDetail.isFetching || !comparisonDetail.data)
-      }
+      loading={!detail.data}
+      comparisonLoading={Boolean(comparisonQuery) && !comparisonDetail.data}
       comparisonLabel={comparisonLabel}
       error={detail.isError}
       canManage={canManage}

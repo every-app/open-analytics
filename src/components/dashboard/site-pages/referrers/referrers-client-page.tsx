@@ -192,7 +192,7 @@ export function ReferrersClientPage({
         summary={summaryQuery.data?.current.data ?? null}
         comparisonSummary={summaryQuery.data?.comparison?.data ?? null}
         comparisonLabel={dashboardComparisonLabel(messages, comparisonQuery)}
-        loading={summaryQuery.isFetching}
+        loading={summaryQuery.isPending}
         hideSummaryCard
       />
 

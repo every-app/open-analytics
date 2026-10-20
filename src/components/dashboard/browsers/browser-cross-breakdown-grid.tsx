@@ -280,7 +280,7 @@ export const BrowserCrossBreakdownGrid = memo(
         comparisonQuery ? filterQueryKey(comparisonQuery.filters) : "none",
       [comparisonQuery],
     );
-    const { data, isFetching, isPending } = useQuery({
+    const { data, isPending } = useQuery({
       queryKey: [
         "dashboard",
         "browser-cross-breakdown",
@@ -327,7 +327,7 @@ export const BrowserCrossBreakdownGrid = memo(
     const comparisonBreakdownData = comparisonQuery
       ? (data?.comparison ?? emptyBrowserCrossBreakdown())
       : undefined;
-    const loading = isPending || isFetching;
+    const loading = isPending;
     const hydrated = data !== undefined;
 
     const operatingSystem = useMemo(

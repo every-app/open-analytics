@@ -593,7 +593,7 @@ export const ShareTrendCard = memo(function ShareTrendCard({
   );
   const {
     data: trendQueryData,
-    isFetching,
+    isPlaceholderData,
     isPending,
   } = useQuery({
     queryKey: [
@@ -643,7 +643,7 @@ export const ShareTrendCard = memo(function ShareTrendCard({
     enabled: !import.meta.env.SSR,
     placeholderData: keepPreviousData,
   });
-  const loading = isPending || isFetching;
+  const loading = isPending || isPlaceholderData;
   const fallbackTrendData = useMemo(
     () => emptyTrendData(window.interval),
     [window.interval],

@@ -49,7 +49,7 @@ export function OverviewMetricsSection({
   const comparisonQuery = useOverviewComparisonQuery(window, filters);
   const {
     data: metricsData,
-    isFetching,
+    isPlaceholderData,
     isPending,
   } = useOverviewSummaryQuery({
     siteId,
@@ -57,7 +57,7 @@ export function OverviewMetricsSection({
     filters,
     comparisonQuery,
   });
-  const loading = isPending || isFetching;
+  const loading = isPending || isPlaceholderData;
   const overview = metricsData?.overview ?? emptyOverviewData();
   const previousOverview = metricsData?.previousOverview ?? emptyOverviewData();
   const detailSeries = metricsData?.trendData.data ?? EMPTY_TREND_POINTS;
@@ -293,7 +293,7 @@ export function OverviewTrendSection({
   );
   const {
     data: trendQueryData,
-    isFetching,
+    isPlaceholderData,
     isPending,
   } = useOverviewSummaryQuery({
     siteId,
@@ -301,7 +301,7 @@ export function OverviewTrendSection({
     filters,
     comparisonQuery,
   });
-  const loading = isPending || isFetching;
+  const loading = isPending || isPlaceholderData;
   const trendData =
     trendQueryData?.trendData ?? emptyTrendData(window.interval);
   const dataWindow = trendQueryData?.dataWindow ?? currentDataWindow;
