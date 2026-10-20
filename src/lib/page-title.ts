@@ -4,28 +4,20 @@ type DashboardTitleContext = {
   [key: string]: unknown;
   siteContext?: {
     activeSite: { name: string };
-    activeTeam: { name: string };
-  };
-  teamContext?: {
-    activeTeam: { name: string };
   };
 };
 
 /**
- * Reproduces the nested metadata templates used by the former Next.js app.
+ * A tab's title: the page, the site it belongs to, then the app, as
+ * OpenCRM's are. The organization stays out: the gateway names it to the app
+ * only by its id.
  */
 export function dashboardPageTitle(
   pageTitle: string,
   context: DashboardTitleContext,
 ): string {
-  if (context.siteContext) {
-    const { activeSite, activeTeam } = context.siteContext;
-    return `${pageTitle} · ${activeSite.name} · ${activeTeam.name} - ${APP_NAME}`;
-  }
-
-  if (context.teamContext) {
-    return `${pageTitle} · ${context.teamContext.activeTeam.name} - ${APP_NAME}`;
-  }
-
-  return `${pageTitle} - ${APP_NAME}`;
+  const site = context.siteContext?.activeSite.name;
+  return site
+    ? `${pageTitle} · ${site} · ${APP_NAME}`
+    : `${pageTitle} · ${APP_NAME}`;
 }

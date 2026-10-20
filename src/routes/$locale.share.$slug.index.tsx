@@ -5,7 +5,7 @@ import { APP_NAME } from "@/lib/constants";
 import { sharePath } from "@/lib/dashboard/share-path";
 export const Route = createFileRoute("/$locale/share/$slug/")({
   head: ({ match }) => ({
-    meta: [{ title: `${match.context.shareContext.site.name} - ${APP_NAME}` }],
+    meta: [{ title: `${match.context.shareContext.site.name} · ${APP_NAME}` }],
   }),
   component: Page,
 });

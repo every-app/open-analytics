@@ -3,26 +3,16 @@ import { describe, expect, it } from "vitest";
 import { dashboardPageTitle } from "@/lib/page-title";
 
 describe("dashboardPageTitle", () => {
-  it("matches the former root metadata template", () => {
-    expect(dashboardPageTitle("Sign in", {})).toBe("Sign in - OpenAnalytics");
-  });
-
-  it("matches the former team metadata template", () => {
+  it("names the page, its site if any, and the app, never the organization", () => {
     expect(
-      dashboardPageTitle("Sites", {
-        teamContext: { activeTeam: { name: "Product" } },
+      dashboardPageTitle("All sites", {
+        teamContext: { activeTeam: { name: "org_8f3k2" } },
       }),
-    ).toBe("Sites · Product - OpenAnalytics");
-  });
-
-  it("matches the former site metadata template", () => {
+    ).toBe("All sites · OpenAnalytics");
     expect(
       dashboardPageTitle("Overview", {
-        siteContext: {
-          activeSite: { name: "Docs" },
-          activeTeam: { name: "Product" },
-        },
+        siteContext: { activeSite: { name: "Docs" } },
       }),
-    ).toBe("Overview · Docs · Product - OpenAnalytics");
+    ).toBe("Overview · Docs · OpenAnalytics");
   });
 });
