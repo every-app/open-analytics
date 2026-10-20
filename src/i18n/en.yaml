@@ -2496,7 +2496,7 @@ getStarted:
   completed: "{count} completed"
   steps:
     site: Add your first site
-    tracking: Install the tracking script
+    tracking: Track your website
     team: Invite your team
     notifications: Get reports by email
     sharing: Share a public dashboard

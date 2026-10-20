@@ -1,15 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { TeamManagementClient } from "@/components/dashboard/admin/team-management-client";
-import { loadTeamDashboardSnapshot } from "@/lib/dashboard/route-data";
+import {
+  loadGetStarted,
+  loadTeamDashboardSnapshot,
+} from "@/lib/dashboard/route-data";
 import { dashboardPageTitle } from "@/lib/page-title";
 
 export const Route = createFileRoute("/$locale/app/")({
-  beforeLoad: async ({ context }) => ({
-    teamDashboardSnapshot: await loadTeamDashboardSnapshot({
-      data: { teamId: context.teamContext.activeTeam.id },
-    }),
-  }),
+  beforeLoad: async ({ context }) => {
+    const [teamDashboardSnapshot, getStarted] = await Promise.all([
+      loadTeamDashboardSnapshot({
+        data: { teamId: context.teamContext.activeTeam.id },
+      }),
+      loadGetStarted(),
+    ]);
+    return { teamDashboardSnapshot, getStarted };
+  },
   head: ({ match }) => ({
     meta: [
       {

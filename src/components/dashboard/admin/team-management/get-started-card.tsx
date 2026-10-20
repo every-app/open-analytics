@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Button, buttonVariants } from "@insightflare/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useRouteContext } from "@tanstack/react-router";
@@ -9,6 +9,7 @@ import {
   ChevronUpIcon,
 } from "lucide-react";
 
+import { GET_STARTED_COLLAPSED_KEY } from "@/lib/dashboard/get-started";
 import {
   buildSettingsPath,
   buildSitePath,
@@ -26,9 +27,6 @@ import { cn } from "@/lib/utils";
 import { useTeamManagementContext } from "./context";
 import { STEP_ILLUSTRATIONS } from "./step-illustrations";
 
-// Folded away in this browser: the header and its progress stay.
-const COLLAPSED_KEY = "open-analytics:get-started-collapsed";
-
 /** Where a step leads: a page here, the gateway, or the create-site dialog. */
 type StepTarget =
   | { kind: "href"; href: string }
@@ -43,18 +41,23 @@ export function GetStartedCard() {
   const { canManage, locale, messages, dashboardSites, openCreateSiteDialog } =
     useTeamManagementContext();
   const { teamContext } = useRouteContext({ from: "/$locale/app" });
+  // Loaded with the page, so the card renders with it; refreshed after.
+  const { getStarted } = useRouteContext({ from: "/$locale/app/" });
   const copy = messages.getStarted;
   const query = useQuery({
     queryKey: ["dashboard", "get-started"],
     queryFn: ({ signal }) =>
       requestAdminService<GetStartedData>("get-started", { signal }),
+    initialData: getStarted ?? undefined,
     enabled: canManage && typeof window !== "undefined",
   });
-  const [collapsed, setCollapsed] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.localStorage.getItem(COLLAPSED_KEY) === "1",
-  );
+  // Folded away in this browser: the header and its progress stay. The
+  // server renders it open; the root's init script marks <html> before paint
+  // so CSS hides the steps until this state catches up.
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    setCollapsed(localStorage.getItem(GET_STARTED_COLLAPSED_KEY) === "1");
+  }, []);
   const [showDone, setShowDone] = useState(false);
 
   const steps = query.data?.steps ?? [];
@@ -84,7 +87,11 @@ export function GetStartedCard() {
   const toggle = () => {
     const value = !collapsed;
     setCollapsed(value);
-    window.localStorage.setItem(COLLAPSED_KEY, value ? "1" : "0");
+    localStorage.setItem(GET_STARTED_COLLAPSED_KEY, value ? "1" : "0");
+    document.documentElement.toggleAttribute(
+      "data-get-started-collapsed",
+      value,
+    );
   };
 
   return (
@@ -123,7 +130,7 @@ export function GetStartedCard() {
       </header>
 
       {collapsed ? null : (
-        <div id="get-started-steps">
+        <div id="get-started-steps" data-get-started-steps="">
           <ol className="mt-5 grid gap-4 md:grid-cols-3">
             {next.map((step) => (
               <StepCard

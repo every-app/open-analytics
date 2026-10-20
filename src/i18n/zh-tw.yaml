@@ -2414,7 +2414,7 @@ getStarted:
   completed: "已完成 {count} 項"
   steps:
     site: 新增第一個站點
-    tracking: 安裝追蹤腳本
+    tracking: 追蹤你的網站
     team: 邀請團隊成員
     notifications: 透過電子郵件接收報告
     sharing: 分享公開儀表板

@@ -2414,7 +2414,7 @@ getStarted:
   completed: "已完成 {count} 项"
   steps:
     site: 添加第一个站点
-    tracking: 安装跟踪脚本
+    tracking: 跟踪你的网站
     team: 邀请团队成员
     notifications: 通过邮件接收报告
     sharing: 分享公开仪表盘

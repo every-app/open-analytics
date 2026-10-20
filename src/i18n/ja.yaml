@@ -2425,7 +2425,7 @@ getStarted:
   completed: "{count} 件完了"
   steps:
     site: 最初のサイトを追加
-    tracking: トラッキングスクリプトを設置
+    tracking: ウェブサイトを計測する
     team: チームを招待
     notifications: レポートをメールで受け取る
     sharing: 公開ダッシュボードを共有

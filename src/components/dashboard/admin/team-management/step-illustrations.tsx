@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import {
   BellIcon,
-  CodeIcon,
   GlobeIcon,
   LinkIcon,
   MailIcon,
@@ -93,8 +92,8 @@ const CHART = ["h-5", "h-8", "h-6", "h-10", "h-9", "h-12"];
 function Tracking() {
   return (
     <Corner className="h-[55%]">
-      <span className="flex items-center gap-1.5 text-muted-foreground">
-        <CodeIcon className="size-3.5" />
+      <span className="flex items-center gap-2">
+        <Dots />
         <Bar className="w-14 bg-foreground/[0.07]" />
       </span>
       <span className="mt-3 flex h-12 items-end gap-1.5">

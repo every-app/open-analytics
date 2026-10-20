@@ -84,3 +84,9 @@
     transform: translateY(28px);
   }
 }
+
+/* All sites' Get started card, folded in this browser: hidden before the
+   card hydrates (the init script in routes/__root.tsx sets the attribute). */
+[data-get-started-collapsed] [data-get-started-steps] {
+  display: none;
+}

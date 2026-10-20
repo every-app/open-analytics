@@ -4761,7 +4761,7 @@ const enMessages = {
       "Delete the Analytics Engine read credentials? Features that depend on Analytics Engine will show configuration required until the credentials are restored.",
     analyticsEngineDisabledTitle: "Analytics Engine is not enabled",
     analyticsEngineDisabledDescription:
-      "This deployment automatically disabled the Analytics Engine binding because the Cloudflare account has not enabled Analytics Engine. Enable Analytics Engine in Cloudflare, then redeploy OpenAnalytics to activate related analysis features.",
+      "This deployment automatically disabled the Analytics Engine binding because the Cloudflare account has not enabled Analytics Engine. Enable Analytics Engine in Cloudflare, then redeploy Open Analytics to activate related analysis features.",
     analyticsEngineDisabledHint:
       "Analytics Engine settings are locked until Analytics Engine is enabled and the Worker is redeployed.",
     analyticsEngineOpenCloudflare: "Open Cloudflare Analytics Engine",
@@ -4994,7 +4994,7 @@ const enMessages = {
     completed: "{count} completed",
     steps: {
       site: "Add your first site",
-      tracking: "Install the tracking script",
+      tracking: "Track your website",
       team: "Invite your team",
       notifications: "Get reports by email",
       sharing: "Share a public dashboard",
@@ -7364,7 +7364,7 @@ const zhMessages = {
       "确认删除分析引擎读取凭据吗？删除后，依赖 Analytics Engine 的功能将显示为未配置。",
     analyticsEngineDisabledTitle: "Analytics Engine 尚未启用",
     analyticsEngineDisabledDescription:
-      "当前部署已自动禁用 Analytics Engine 绑定，因为 Cloudflare 账户尚未启用 Analytics Engine。请先在 Cloudflare 中启用 Analytics Engine，然后重新部署 OpenAnalytics 以激活相关分析功能。",
+      "当前部署已自动禁用 Analytics Engine 绑定，因为 Cloudflare 账户尚未启用 Analytics Engine。请先在 Cloudflare 中启用 Analytics Engine，然后重新部署 Open Analytics 以激活相关分析功能。",
     analyticsEngineDisabledHint:
       "在启用 Analytics Engine 并重新部署 Worker 前，分析引擎设置不可修改。",
     analyticsEngineOpenCloudflare: "打开 Cloudflare Analytics Engine",
@@ -7594,7 +7594,7 @@ const zhMessages = {
     completed: "已完成 {count} 项",
     steps: {
       site: "添加第一个站点",
-      tracking: "安装跟踪脚本",
+      tracking: "跟踪你的网站",
       team: "邀请团队成员",
       notifications: "通过邮件接收报告",
       sharing: "分享公开仪表盘",
@@ -9964,7 +9964,7 @@ const zhTwMessages = {
       "確認刪除分析引擎讀取憑據嗎？刪除後，依賴 Analytics Engine 的功能將顯示為未設定。",
     analyticsEngineDisabledTitle: "Analytics Engine 尚未啟用",
     analyticsEngineDisabledDescription:
-      "目前部署已自動停用 Analytics Engine 繫結，因為 Cloudflare 帳戶尚未啟用 Analytics Engine。請先在 Cloudflare 中啟用 Analytics Engine，然後重新部署 OpenAnalytics 以啟用相關分析功能。",
+      "目前部署已自動停用 Analytics Engine 繫結，因為 Cloudflare 帳戶尚未啟用 Analytics Engine。請先在 Cloudflare 中啟用 Analytics Engine，然後重新部署 Open Analytics 以啟用相關分析功能。",
     analyticsEngineDisabledHint:
       "在啟用 Analytics Engine 並重新部署 Worker 前，分析引擎設定不可修改。",
     analyticsEngineOpenCloudflare: "開啟 Cloudflare Analytics Engine",
@@ -10194,7 +10194,7 @@ const zhTwMessages = {
     completed: "已完成 {count} 項",
     steps: {
       site: "新增第一個站點",
-      tracking: "安裝追蹤腳本",
+      tracking: "追蹤你的網站",
       team: "邀請團隊成員",
       notifications: "透過電子郵件接收報告",
       sharing: "分享公開儀表板",
@@ -12860,7 +12860,7 @@ const jaMessages = {
     completed: "{count} 件完了",
     steps: {
       site: "最初のサイトを追加",
-      tracking: "トラッキングスクリプトを設置",
+      tracking: "ウェブサイトを計測する",
       team: "チームを招待",
       notifications: "レポートをメールで受け取る",
       sharing: "公開ダッシュボードを共有",

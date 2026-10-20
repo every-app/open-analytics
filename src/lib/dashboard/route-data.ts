@@ -139,6 +139,14 @@ export const loadTeamDashboardSnapshot = createServerFn({ method: "GET" })
     };
   });
 /** Loads tracker settings and the install snippet for site settings SSR. */
+/**
+ * Get started's progress, read on the server so the card renders with the
+ * page instead of appearing a moment later. Null for members, who don't see
+ * the card.
+ */
+export const loadGetStarted = createServerFn({ method: "GET" }).handler(() =>
+  readDashboardAdmin("get-started"),
+);
 export const loadSiteSettingsInitialData = createServerFn({ method: "GET" })
   .validator((data: { siteId: string }) => data)
   .handler(async ({ data }): Promise<SiteSettingsInitialData | null> => {
