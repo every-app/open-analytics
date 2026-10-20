@@ -9,6 +9,10 @@ import { parse } from "yaml";
 // the full check and can also starve the integration tests of CPU.
 const VITEST_MAX_WORKERS = Math.min(16, Math.max(1, osCpus().length));
 
+// Date tests read the process's time zone; run them in UTC, as CI does, so a
+// machine's local zone can't change their results.
+process.env.TZ = "UTC";
+
 export default defineConfig({
   plugins: [
     {
