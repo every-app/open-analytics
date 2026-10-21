@@ -29,7 +29,7 @@ Before opening a pull request, run:
 pnpm run check
 ```
 
-This runs the same core checks expected by CI:
+This runs the core checks:
 
 - TypeScript type checking
 - ESLint
