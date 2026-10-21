@@ -10,6 +10,7 @@ export default {
   id: "analytics",
   name: "OpenAnalytics",
   description: "Privacy-friendly web analytics for your organization's sites.",
+  icon: "/everyapp-icon.svg",
   // The date InsightFlare ran on under Wrangler.
   compatibilityDate: "2026-03-01",
   resources: {
