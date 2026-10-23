@@ -15,6 +15,7 @@ import { OverlayScrollbar } from "@insightflare/ui/overlay-scrollbar";
 import { VerticalScrollMask } from "@insightflare/ui/vertical-scroll-mask";
 import {
   CheckIcon,
+  ChevronRightIcon,
   CircleAlertIcon,
   FunnelXIcon,
   MessageSquareQuoteIcon,
@@ -89,6 +90,8 @@ export interface FilterEditorProps {
   readonly onControlledClear?: () => void;
   readonly onControlledApply?: () => void;
   readonly headerContent?: ReactNode;
+  /** Extra controls shown with the expression under Advanced. */
+  readonly advancedContent?: ReactNode;
   readonly footerActions?: ReactNode;
 }
 function containsAdvancedEditorNode(node: EditorNode): boolean {
@@ -136,6 +139,7 @@ export function FilterEditor({
   onControlledClear,
   onControlledApply,
   headerContent,
+  advancedContent,
   footerActions,
 }: FilterEditorProps) {
   const isControlled = controlledRoot !== undefined;
@@ -167,6 +171,9 @@ export function FilterEditor({
   });
   const [validationError, setValidationError] = useState<string | null>(null);
   const [expressionHelpOpen, setExpressionHelpOpen] = useState(false);
+  // The expression, its plain-language reading and any extra controls stay
+  // folded away; the visual editor is the default.
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const expressionUpdateRef = useRef(false);
 
   useEffect(() => {
@@ -215,6 +222,14 @@ export function FilterEditor({
   const renderedValidationError = isControlled
     ? (controlledValidationError ?? null)
     : validationError;
+  // Open Advanced when the expression needs fixing, or holds parts only the
+  // expression can show.
+  const needsAdvanced =
+    Boolean(renderedExpressionError) ||
+    containsAdvancedEditorNode(renderedRoot);
+  useEffect(() => {
+    if (needsAdvanced) setAdvancedOpen(true);
+  }, [needsAdvanced]);
 
   const naturalLanguageDescription = useMemo(
     () =>
@@ -433,71 +448,99 @@ export function FilterEditor({
       </VerticalScrollMask>
 
       <div className="sticky bottom-0 z-10 -mx-4 min-w-0 border-t bg-background">
-        <div className="min-w-0 border-b border-border bg-muted/20">
-          <AutoResizer initial={false} duration={0.18}>
-            <AutoTransition
-              transitionKey={naturalLanguageDescription}
-              type="fade"
-              duration={0.18}
-              initial={false}
-            >
-              <VerticalScrollMask
-                syncKey={naturalLanguageDescription}
-                className="max-h-28"
-                contentClassName="max-h-28"
-                maskClassName="from-muted/20 via-muted/10 to-transparent"
-              >
-                <div
-                  aria-label={messages.filterBuilder.naturalLanguageDescription}
-                  className="min-h-8 px-4 py-2 text-xs leading-4 text-muted-foreground"
-                >
-                  <MessageSquareQuoteIcon
-                    className="mr-2 inline-block size-4 align-text-bottom"
-                    aria-hidden
-                  />
-                  <span className="break-words">
-                    {naturalLanguageDescription}
-                  </span>
+        <button
+          type="button"
+          aria-expanded={advancedOpen}
+          className="flex w-full items-center gap-1.5 border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          onClick={() => setAdvancedOpen((open) => !open)}
+        >
+          <ChevronRightIcon
+            aria-hidden
+            className={cn(
+              "size-3.5 transition-transform",
+              advancedOpen && "rotate-90",
+            )}
+          />
+          {messages.filterBuilder.advanced}
+        </button>
+        <AutoResizer initial={false} duration={0.18}>
+          {advancedOpen ? (
+            <div>
+              {advancedContent ? (
+                <div className="min-w-0 border-b border-border px-4 py-3">
+                  {advancedContent}
                 </div>
-              </VerticalScrollMask>
-            </AutoTransition>
-          </AutoResizer>
-        </div>
-        <div className="min-w-0 border-b border-border">
-          <OverlayScrollbar
-            axis="horizontal"
-            syncKey={renderedExpressionText}
-            className="w-full min-w-0"
-          >
-            <Input
-              id={id}
-              aria-label={expressionLabel}
-              aria-invalid={renderedExpressionError ? true : undefined}
-              className="h-8 min-w-full border-0 bg-transparent px-4 font-mono text-xs shadow-none focus-visible:ring-0 dark:bg-transparent"
-              placeholder={placeholder}
-              style={{
-                width: `${Math.max(32, renderedExpressionText.length + 3)}ch`,
-              }}
-              value={renderedExpressionText}
-              onChange={(event) => {
-                const source = event.target.value;
-                if (isControlled) {
-                  onControlledExpressionChange?.(source);
-                } else {
-                  setExpressionText(source);
-                  updateFromExpressionText(source);
-                  onDraftChange?.(source);
-                }
-              }}
-              onKeyDown={(event) => {
-                if (event.key !== "Enter") return;
-                event.preventDefault();
-                if (isControlled) onControlledExpressionCommit?.();
-                else commitExpressionText();
-              }}
-            />
-          </OverlayScrollbar>
-        </div>
+              ) : null}
+              <div className="min-w-0 border-b border-border bg-muted/20">
+                <AutoResizer initial={false} duration={0.18}>
+                  <AutoTransition
+                    transitionKey={naturalLanguageDescription}
+                    type="fade"
+                    duration={0.18}
+                    initial={false}
+                  >
+                    <VerticalScrollMask
+                      syncKey={naturalLanguageDescription}
+                      className="max-h-28"
+                      contentClassName="max-h-28"
+                      maskClassName="from-muted/20 via-muted/10 to-transparent"
+                    >
+                      <div
+                        aria-label={
+                          messages.filterBuilder.naturalLanguageDescription
+                        }
+                        className="min-h-8 px-4 py-2 text-xs leading-4 text-muted-foreground"
+                      >
+                        <MessageSquareQuoteIcon
+                          className="mr-2 inline-block size-4 align-text-bottom"
+                          aria-hidden
+                        />
+                        <span className="break-words">
+                          {naturalLanguageDescription}
+                        </span>
+                      </div>
+                    </VerticalScrollMask>
+                  </AutoTransition>
+                </AutoResizer>
+              </div>
+              <div className="min-w-0 border-b border-border">
+                <OverlayScrollbar
+                  axis="horizontal"
+                  syncKey={renderedExpressionText}
+                  className="w-full min-w-0"
+                >
+                  <Input
+                    id={id}
+                    aria-label={expressionLabel}
+                    aria-invalid={renderedExpressionError ? true : undefined}
+                    className="h-8 min-w-full border-0 bg-transparent px-4 font-mono text-xs shadow-none focus-visible:ring-0 dark:bg-transparent"
+                    placeholder={placeholder}
+                    style={{
+                      width: `${Math.max(32, renderedExpressionText.length + 3)}ch`,
+                    }}
+                    value={renderedExpressionText}
+                    onChange={(event) => {
+                      const source = event.target.value;
+                      if (isControlled) {
+                        onControlledExpressionChange?.(source);
+                      } else {
+                        setExpressionText(source);
+                        updateFromExpressionText(source);
+                        onDraftChange?.(source);
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter") return;
+                      event.preventDefault();
+                      if (isControlled) onControlledExpressionCommit?.();
+                      else commitExpressionText();
+                    }}
+                  />
+                </OverlayScrollbar>
+              </div>
+            </div>
+          ) : null}
+        </AutoResizer>
         <AutoResizer initial={false} duration={0.18}>
           <AutoTransition
             transitionKey={renderedExpressionError ? "invalid" : "valid"}

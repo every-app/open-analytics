@@ -5,7 +5,6 @@ import { Button } from "@insightflare/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@insightflare/ui/card";
@@ -601,7 +600,6 @@ function FunnelDetailContent({
             <ArrowRightIcon className="size-4" />
             {labels.step}
           </CardTitle>
-          <CardDescription>{labels.listSubtitle}</CardDescription>
         </CardHeader>
         <CardContent className="px-0 py-0">
           {funnel.steps.map((step, index) => (
@@ -849,7 +847,6 @@ export function FunnelDetail({
       <Card className="m-4 min-w-0 md:m-6">
         <CardContent className="flex min-h-56 flex-col items-center justify-center gap-2 text-center">
           <p className="font-medium">{labels.detailLoadError}</p>
-          <p className="text-sm text-muted-foreground">{labels.subtitle}</p>
         </CardContent>
       </Card>
     );

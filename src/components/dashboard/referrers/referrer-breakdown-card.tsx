@@ -314,6 +314,8 @@ export const ReferrerBreakdownCard = memo(function ReferrerBreakdownCard({
     ],
   ) => (
     <TabbedDataTableCard<ReferrerTab, ReferrerBreakdownRow, ReferrerSortKey>
+      messages={messages}
+      filtered={Boolean(filters.root)}
       tabs={tabs}
       loader={loader}
       requestKey={`${requestKey}:${group}:${comparisonMetricByGroup[group]}`}

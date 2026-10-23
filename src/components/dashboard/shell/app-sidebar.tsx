@@ -22,10 +22,10 @@ import Link from "@/lib/router";
 import {
   type ShellRouteState,
   type SidebarSite,
-  SITE_NAV_ITEMS,
   siteNavItemFor,
   siteNavItemIcon,
   siteNavItemLabel,
+  siteNavItemsFor,
   type SiteNavKey,
   useDashboardNavHref,
 } from "./dashboard-shell/navigation";
@@ -38,8 +38,8 @@ const GROUP_LABEL_CLASS =
 
 /**
  * OpenSEO's sidebar: the wordmark and the site switcher, the site's pages
- * when one is open or the list of sites otherwise, then the way back to
- * the gateway and Settings.
+ * when one is open or the list of sites otherwise (none before the first
+ * site), then the way back to the gateway and Settings.
  */
 export function AppSidebar({
   locale,
@@ -127,7 +127,7 @@ export function AppSidebar({
               <SidebarGroup className="py-1">
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    {SITE_NAV_ITEMS.map((item) => (
+                    {siteNavItemsFor(canManage).map((item) => (
                       <SidebarNavLink
                         key={item.key}
                         href={siteItemHref(item.sections[0])}
@@ -145,7 +145,7 @@ export function AppSidebar({
               </SidebarGroup>
             ) : null}
 
-            {siteSlug ? null : (
+            {siteSlug || sites.length === 0 ? null : (
               <SidebarGroup className="py-1">
                 <SidebarGroupLabel className={GROUP_LABEL_CLASS}>
                   {messages.appNav.sites}

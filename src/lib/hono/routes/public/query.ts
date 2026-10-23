@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import { Hono } from "hono";
 
+import { readSiteHasData } from "@/lib/edge/admin/setup/get-started";
 import { PUBLIC_QUERY_CACHE_OPTIONS } from "@/lib/edge/analytics/composition/dashboard-cache";
 import { jsonResponse } from "@/lib/edge/analytics/interfaces/dashboard/protocol/responses";
 import { PUBLIC_QUERY_PATHS } from "@/lib/edge/analytics/interfaces/dashboard/protocol/router";
@@ -35,11 +36,12 @@ export const publicQueryRoutes = new Hono<AppEnv>();
 
 publicQueryRoutes.use("/:slug/*", requireMethodMiddleware("GET"));
 
+// Not cached: whether the site has data yet must be current, so a share
+// page opens its reports as soon as the first view arrives.
 publicQueryRoutes.get(
   "/:slug/site",
   resolvePublicSiteMiddleware(),
-  dashboardCacheMiddleware(PUBLIC_QUERY_CACHE_OPTIONS),
-  (c) => {
+  async (c) => {
     const site = c.get("publicSite");
     if (!site) {
       throw new Error("public site context missing");
@@ -51,6 +53,7 @@ publicQueryRoutes.get(
         name: site.name,
         domain: site.domain,
         id: site.id,
+        hasData: await readSiteHasData(c.env, site.id),
       },
     });
   },

@@ -9,7 +9,7 @@ import type { TimeWindow } from "@/lib/dashboard/query-state";
 describe("dashboard client geo data helpers", () => {
   const realFetch = globalThis.fetch;
   const window: TimeWindow = {
-    preset: "24h",
+    preset: "today",
     from: 1000,
     to: 2000,
     timeZone: "UTC",

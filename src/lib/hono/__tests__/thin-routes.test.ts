@@ -3,7 +3,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  handleNotificationEmailPreviewAdmin,
   handleNotificationPreferences,
   handleNotificationRead,
   handleNotificationRulePreviewAdmin,
@@ -28,7 +27,6 @@ vi.mock("@/lib/edge/admin/users/handlers", () => ({
   handleAuthMeAdmin: vi.fn(),
 }));
 vi.mock("@/lib/edge/admin/notifications/handler", () => ({
-  handleNotificationEmailPreviewAdmin: vi.fn(),
   handleNotificationPreferences: vi.fn(),
   handleNotificationRead: vi.fn(),
   handleNotificationRulePreviewAdmin: vi.fn(),
@@ -57,9 +55,6 @@ describe("thin Hono route modules", () => {
     vi.mocked(handleNotificationRead).mockResolvedValue(new Response("read"));
     vi.mocked(handleNotificationsReadAll).mockResolvedValue(
       new Response("read-all"),
-    );
-    vi.mocked(handleNotificationEmailPreviewAdmin).mockResolvedValue(
-      new Response("preview"),
     );
     vi.mocked(handleNotificationRulePreviewAdmin).mockResolvedValue(
       new Response("rule-preview"),
@@ -125,27 +120,12 @@ describe("thin Hono route modules", () => {
     expect(handleNotificationsReadAll).toHaveBeenCalled();
   }, 10_000);
 
-  it("forwards the canonical private admin notification previews", async () => {
-    await privateAdminRoutes.fetch(
-      request("/notification-email-preview"),
-      env as never,
-    );
+  it("forwards the private admin rule preview", async () => {
     await privateAdminRoutes.fetch(
       request("/notification-rules/preview"),
       env as never,
     );
 
-    expect(handleNotificationEmailPreviewAdmin).toHaveBeenCalledTimes(1);
     expect(handleNotificationRulePreviewAdmin).toHaveBeenCalled();
-  });
-
-  it("does not forward the removed private admin notification preview alias", async () => {
-    const response = await privateAdminRoutes.fetch(
-      request("/notifications/email-preview"),
-      env as never,
-    );
-
-    expect(response.status).toBe(404);
-    expect(handleNotificationEmailPreviewAdmin).not.toHaveBeenCalled();
   });
 });

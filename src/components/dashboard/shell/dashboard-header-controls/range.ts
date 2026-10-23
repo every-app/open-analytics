@@ -4,6 +4,7 @@ import { zonedParts } from "@/lib/analytics/time-zone";
 import { intlLocale } from "@/lib/dashboard/format";
 import {
   type DashboardInterval,
+  RANGE_PRESETS,
   type RangePreset,
 } from "@/lib/dashboard/query-state";
 import type { Locale } from "@/lib/i18n/config";
@@ -15,42 +16,34 @@ export const INTERVAL_ORDER: readonly DashboardInterval[] = [
   "week",
   "month",
 ] as const;
+// Rolling ranges end now, so there is no next period to move to.
 export const ROLLING_RANGE_PRESETS = new Set<RangePreset>([
-  "30m",
-  "1h",
-  "24h",
   "7d",
   "30d",
   "90d",
-  "6m",
   "12m",
 ]);
+/** The presets the date control lists, before Custom range. */
+export const RANGE_PRESET_OPTIONS = RANGE_PRESETS.filter(
+  (preset) => preset !== "custom",
+);
+const RANGE_LABEL_KEYS: Record<RangePreset, keyof AppMessages["ranges"]> = {
+  today: "today",
+  yesterday: "yesterday",
+  "7d": "last7d",
+  "30d": "last30d",
+  "90d": "last90d",
+  "12m": "last12m",
+  custom: "custom",
+};
 export function rangeLabel(messages: AppMessages, range: RangePreset): string {
-  if (range === "30m") return messages.ranges.last30m;
-  if (range === "1h") return messages.ranges.last1h;
-  if (range === "today") return messages.ranges.today;
-  if (range === "yesterday") return messages.ranges.yesterday;
-  if (range === "thisWeek") return messages.ranges.thisWeek;
-  if (range === "thisMonth") return messages.ranges.thisMonth;
-  if (range === "thisYear") return messages.ranges.thisYear;
-  if (range === "24h") return messages.ranges.last24h;
-  if (range === "7d") return messages.ranges.last7d;
-  if (range === "30d") return messages.ranges.last30d;
-  if (range === "90d") return messages.ranges.last90d;
-  if (range === "6m") return messages.ranges.last6m;
-  if (range === "12m") return messages.ranges.last12m;
-  if (range === "custom") return messages.ranges.custom;
-  return messages.ranges.last30d;
+  return messages.ranges[RANGE_LABEL_KEYS[range]];
 }
 export function intervalLabel(
   messages: AppMessages,
   interval: DashboardInterval,
 ): string {
-  if (interval === "minute") return messages.intervals.minute;
-  if (interval === "hour") return messages.intervals.hour;
-  if (interval === "day") return messages.intervals.day;
-  if (interval === "week") return messages.intervals.week;
-  return messages.intervals.month;
+  return messages.intervals[interval];
 }
 export function toCalendarDate(
   timestampMs: number,
@@ -124,45 +117,4 @@ export function shiftTimeWindow(
     from: nextFrom,
     to: nextTo,
   };
-}
-export const RANGE_GROUPS: ReadonlyArray<{
-  key: "quick" | "calendar" | "rolling" | "advanced";
-  items: ReadonlyArray<RangePreset>;
-}> = [
-  {
-    key: "quick",
-    items: ["30m", "1h", "today", "yesterday"],
-  },
-  {
-    key: "calendar",
-    items: ["thisWeek", "thisMonth", "thisYear"],
-  },
-  {
-    key: "rolling",
-    items: ["24h", "7d", "30d", "90d", "6m", "12m"],
-  },
-  {
-    key: "advanced",
-    items: ["custom"],
-  },
-];
-export function rangeGroupLabel(
-  messages: AppMessages,
-  key: "quick" | "calendar" | "rolling" | "advanced",
-): string {
-  if (key === "quick") return messages.dashboardHeader.rangeGroupQuick;
-  if (key === "calendar") return messages.dashboardHeader.rangeGroupCalendar;
-  if (key === "rolling") return messages.dashboardHeader.rangeGroupRolling;
-  return messages.dashboardHeader.rangeGroupAdvanced;
-}
-export function intervalDisabledReason(
-  messages: AppMessages,
-  interval: DashboardInterval,
-): string {
-  if (interval === "minute")
-    return messages.dashboardHeader.intervalDisabledMinute;
-  if (interval === "hour") return messages.dashboardHeader.intervalDisabledHour;
-  if (interval === "day") return messages.dashboardHeader.intervalDisabledDay;
-  if (interval === "week") return messages.dashboardHeader.intervalDisabledWeek;
-  return "";
 }

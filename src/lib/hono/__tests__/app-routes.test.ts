@@ -29,6 +29,9 @@ vi.mock("@/lib/edge/admin/users/handlers", () => ({
   handleMembersAdmin: vi.fn(),
   handleProfileAdmin: vi.fn(),
 }));
+vi.mock("@/lib/edge/admin/setup/get-started", () => ({
+  readSiteHasData: vi.fn().mockResolvedValue(true),
+}));
 vi.mock("@/lib/edge/collector/collect", () => ({
   handleCollectOptionsRequest: vi.fn(),
   handleCollectRequest: vi.fn(),

@@ -1,8 +1,9 @@
 import { type ReactNode, useMemo, useState } from "react";
-import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, RotateCwIcon } from "lucide-react";
 import { AnimatePresence, useReducedMotion } from "motion/react";
 
 import { cn } from "../../../lib/utils";
+import { Button } from "../button";
 import {
   DataTableSkeletonRows as TabbedDataTableSkeletonRows,
   DataTableSwitch,
@@ -68,8 +69,11 @@ export interface TabbedDataTableViewProps<
   sortActionLabel?: (columnLabel: string) => string;
   labelColumnLabel?: string | ((tab: TabbedDataTableTab<TTab>) => string);
   loadingLabel: string;
-  emptyLabel: string;
-  errorLabel?: string;
+  emptyLabel: ReactNode;
+  errorLabel?: ReactNode;
+  /** Shown beside the error label; reloads the failed rows. */
+  retryLabel?: string;
+  onRetry?: () => void;
   loadingMoreLabel?: string;
   hasMore?: boolean;
   onLoadMore?: () => void;
@@ -392,6 +396,8 @@ export function TabbedDataTableView<
   loadingLabel,
   emptyLabel,
   errorLabel,
+  retryLabel,
+  onRetry,
   loadingMoreLabel,
   hasMore = false,
   onLoadMore,
@@ -521,7 +527,20 @@ export function TabbedDataTableView<
           className="h-24 text-center text-destructive"
           role="alert"
         >
-          {errorLabel ?? emptyLabel}
+          <div className="flex flex-col items-center justify-center gap-2">
+            <span>{errorLabel ?? emptyLabel}</span>
+            {retryLabel && onRetry ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onRetry}
+              >
+                <RotateCwIcon data-icon="inline-start" />
+                {retryLabel}
+              </Button>
+            ) : null}
+          </div>
         </TableCell>
       </TableRow>
     ) : (

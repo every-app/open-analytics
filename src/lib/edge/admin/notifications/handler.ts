@@ -14,7 +14,6 @@ import {
 } from "@/lib/edge/admin/response";
 import { runScheduledTask } from "@/lib/edge/scheduled-tasks/runner";
 import type { Env } from "@/lib/edge/types";
-import { renderNotificationEmail } from "@/lib/notifications/edge/email-renderer";
 import {
   countUnreadAttentionMessages,
   listNotificationMessagesForTeam,
@@ -42,12 +41,7 @@ import {
   updateNotificationRule,
   type UpdateNotificationRuleInput,
 } from "@/lib/notifications/edge/rule-store";
-import { resolveNotificationLocale } from "@/lib/notifications/locale";
 import type { NotificationMessage } from "@/lib/notifications/message";
-import {
-  notificationEmailPreviewMessage,
-  type NotificationEmailPreviewType,
-} from "@/lib/notifications/preview-data";
 function stringParam(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -61,16 +55,6 @@ function parseLimit(url: URL): number {
   const raw = Math.trunc(Number(url.searchParams.get("limit") ?? 50));
   if (!Number.isFinite(raw)) return 50;
   return Math.max(1, Math.min(100, raw));
-}
-function isPreviewType(value: string): value is NotificationEmailPreviewType {
-  return (
-    value === "test" ||
-    value === "report" ||
-    value === "milestone" ||
-    value === "threshold" ||
-    value === "change" ||
-    value === "health"
-  );
 }
 async function getManageableRule(env: Env, actor: Actor, ruleId: string) {
   const rule = await getNotificationRule(env, ruleId);
@@ -227,38 +211,6 @@ export async function handleNotificationRuleRunAdmin(
   } catch (error) {
     return mapError(error, req);
   }
-}
-export async function handleNotificationEmailPreviewAdmin(
-  req: Request,
-  env: Env,
-  url: URL,
-): Promise<Response> {
-  const actor = await requireActor(env, req);
-  if (actor instanceof Response) return actor;
-  if (req.method !== "GET") return na(req);
-  if (!actor.isAdmin) return forb("Forbidden", undefined, req);
-
-  const rawType = url.searchParams.get("type")?.trim() || "report";
-  const type = isPreviewType(rawType) ? rawType : "report";
-  const locale = resolveNotificationLocale(url.searchParams.get("locale"));
-  const format = url.searchParams.get("format")?.trim() || "html";
-  const rendered = await renderNotificationEmail({
-    message: notificationEmailPreviewMessage(type, locale),
-    locale,
-    timeZone: "Asia/Shanghai",
-  });
-
-  if (format === "text") {
-    return new Response(rendered.text, {
-      headers: { "content-type": "text/plain; charset=utf-8" },
-    });
-  }
-  if (format === "json") {
-    return jsonResponseFor(req, { ok: true, data: rendered });
-  }
-  return new Response(rendered.html, {
-    headers: { "content-type": "text/html; charset=utf-8" },
-  });
 }
 export async function handleNotifications(
   req: Request,

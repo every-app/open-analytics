@@ -2,17 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { allowedFields } from "@/components/dashboard/filters/filter-editor/field-catalog";
 import {
-  systemPresetGroupLabel,
   systemPresetMatchesScope,
   systemPresetScopeForApply,
 } from "@/components/dashboard/filters/filter-panel";
 import { resolveSuggestionScope } from "@/lib/dashboard/filter-suggestion-scope";
-import {
-  SYSTEM_FILTER_PRESETS,
-  systemFilterPresetFromOptionValue,
-  systemFilterPresetOptionValue,
-} from "@/lib/dashboard/system-filter-presets";
-import { getMessages } from "@/lib/i18n/messages";
+import { SYSTEM_FILTER_PRESETS } from "@/lib/dashboard/system-filter-presets";
 describe("resolveSuggestionScope", () => {
   it.each([
     ["auto", "event", "event"],
@@ -38,7 +32,7 @@ describe("resolveSuggestionScope", () => {
 describe("system preset scope behavior", () => {
   it("uses a fixed scope when applying a preset", () => {
     const preset = SYSTEM_FILTER_PRESETS.find(
-      (item) => item.id === "deepSessions",
+      (item) => item.id === "bouncedSessions",
     )!;
     expect(systemPresetScopeForApply(preset, "auto")).toBe("session");
     expect(systemPresetScopeForApply(preset, "visitor")).toBe("session");
@@ -60,14 +54,6 @@ describe("system preset scope behavior", () => {
     expect(systemPresetMatchesScope(preset, "auto")).toBe(false);
     expect(systemPresetMatchesScope(preset, "session")).toBe(false);
     expect(systemPresetMatchesScope(preset, "visitor")).toBe(true);
-  });
-
-  it("keeps legacy preset option values readable", () => {
-    expect(
-      systemFilterPresetFromOptionValue(
-        systemFilterPresetOptionValue("mobileOrganicDiscovery"),
-      )?.id,
-    ).toBe("mobileOrganicDiscovery");
   });
 });
 describe("registry-driven editor metadata", () => {
@@ -143,18 +129,6 @@ describe("registry-driven editor metadata", () => {
     expect(fields.map((field) => field.id)).not.toContain("visitor.sessions");
     expect(fields.map((field) => field.id)).toContain("event.name");
     expect(fields.map((field) => field.id)).toContain("page.path");
-  });
-
-  it("formats every system preset group with its localized prefix", () => {
-    expect(systemPresetGroupLabel(getMessages("en"), "acquisition")).toBe(
-      "System presets · Acquisition",
-    );
-    expect(systemPresetGroupLabel(getMessages("zh"), "performance")).toBe(
-      "系统预设 · 性能",
-    );
-    expect(systemPresetGroupLabel(getMessages("ja"), "dataQuality")).toBe(
-      "システムプリセット · データ品質",
-    );
   });
 
   it("exposes number fields with registry group and no-suggestion metadata", () => {

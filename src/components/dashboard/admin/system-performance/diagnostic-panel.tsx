@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { AutoResizer } from "@insightflare/ui/auto-resizer";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Badge } from "@insightflare/ui/badge";
@@ -18,7 +17,6 @@ import { CpuIcon, RefreshCwIcon, SirenIcon } from "lucide-react";
 import { shortDateTime } from "@/lib/dashboard/format";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
-import { formatI18nTemplate } from "@/lib/i18n/template";
 import type {
   DoDiagnosticAggregate,
   DoDiagnosticSiteEntry,
@@ -52,16 +50,6 @@ export function DoDiagnosticPanel({
       totals.stuckDirtyVisits > 0 ||
       totals.stuckDirtyCustomEvents > 0
     : false;
-
-  const thresholdHint = useMemo(() => {
-    if (!thresholds) return "";
-    return formatI18nTemplate(t.doDiagnosticThresholdsHint, {
-      stale: formatAge(locale, thresholds.staleMs),
-      timeout: formatAge(locale, thresholds.timeoutMs),
-      hardAged: formatAge(locale, thresholds.hardAgedMs),
-      stuck: thresholds.stuckFlushAttempts,
-    });
-  }, [locale, thresholds, t.doDiagnosticThresholdsHint]);
 
   const sites = data?.sites ?? [];
   const visibleSites = sites.filter((entry) => {
@@ -243,20 +231,13 @@ export function DoDiagnosticPanel({
                 ) : null}
 
                 <div className="border-t pt-4">
-                  <div className="mb-2 flex items-baseline justify-between gap-3">
-                    <div>
-                      <h3 className="text-sm font-medium">
-                        {t.doDiagnosticSiteList}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        {t.doDiagnosticSiteListDescription}
-                      </p>
-                    </div>
-                    {thresholdHint ? (
-                      <p className="hidden text-right text-xs text-muted-foreground md:block">
-                        {thresholdHint}
-                      </p>
-                    ) : null}
+                  <div className="mb-2">
+                    <h3 className="text-sm font-medium">
+                      {t.doDiagnosticSiteList}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {t.doDiagnosticSiteListDescription}
+                    </p>
                   </div>
                   <DataTableSwitch
                     loading={loading}
@@ -301,12 +282,6 @@ export function DoDiagnosticPanel({
                     ))}
                   />
                 </div>
-
-                {thresholdHint ? (
-                  <p className="text-xs text-muted-foreground md:hidden">
-                    {thresholdHint}
-                  </p>
-                ) : null}
               </div>
             )}
           </AutoTransition>

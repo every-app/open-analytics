@@ -62,11 +62,11 @@ export function displayNameFor(user: Pick<UserRow, "name" | "email">): string {
   return user.name?.trim() || user.email;
 }
 
-export const toPublicUser = (u: UserRow, role: OrgRole) => ({
+export const toPublicUser = (u: UserRow, isAdmin: boolean) => ({
   id: u.id,
   email: u.email,
   name: u.name || "",
-  systemRole: role === "member" ? ("user" as const) : ("admin" as const),
+  systemRole: isAdmin ? ("admin" as const) : ("user" as const),
   timeZone: u.timezone || "",
   preferredLocale: isValidLocale(u.preferred_locale) ? u.preferred_locale : "",
   createdAt: u.created_at,

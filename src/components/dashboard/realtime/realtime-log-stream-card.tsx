@@ -218,10 +218,6 @@ export const RealtimeLogStreamCard = memo(function RealtimeLogStreamCard({
             /\/realtime(?:\/detail)?$/,
             "/visitors",
           ),
-          sessionsPathname: pathname.replace(
-            /\/realtime(?:\/detail)?$/,
-            "/sessions",
-          ),
         }
       : null;
 
@@ -358,7 +354,7 @@ export const RealtimeLogStreamCard = memo(function RealtimeLogStreamCard({
                   locale={locale}
                   messages={messages}
                   siteId={journeyDetailContext.siteId}
-                  pathname={journeyDetailContext.sessionsPathname}
+                  pathname={journeyDetailContext.visitorsPathname}
                   sessionId={nestedDetail.id}
                   onOpenVisitor={(visitorId) =>
                     openNestedJourneyDetail("visitor", visitorId)

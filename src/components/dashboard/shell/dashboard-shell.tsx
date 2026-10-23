@@ -1,12 +1,20 @@
-import { type ReactNode, useMemo } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { SidebarTrigger } from "@insightflare/ui/sidebar";
 
 import { AppShellLayout } from "@/components/app-shell-layout";
 import { SiteBrandIcon } from "@/components/dashboard/common/site-brand-icon";
 import { DashboardHeaderControls } from "@/components/dashboard/shell/dashboard-header-controls";
 import { DashboardQueryProvider } from "@/components/dashboard/shell/dashboard-query-provider";
+import {
+  parsePeopleView,
+  PeopleView,
+} from "@/components/dashboard/site-pages/common/detail-query-param";
+import { useSiteHasData } from "@/components/dashboard/site-pages/common/use-site-has-data";
+import { FirstViewsBanner } from "@/components/dashboard/site-pages/install/first-views-banner";
+import { InstallScriptPage } from "@/components/dashboard/site-pages/install/install-script-page";
 import { useAccountTimeZonePreference } from "@/components/time-zone-provider";
-import { buildSitePath } from "@/lib/dashboard/paths";
+import { useLiveSearchParams } from "@/lib/dashboard/client/history";
+import { buildSettingsPath, buildSitePath } from "@/lib/dashboard/paths";
 import { canManageTeam } from "@/lib/dashboard/permissions";
 import {
   parseFilterDocumentFromSearchParams,
@@ -53,23 +61,22 @@ interface DashboardShellProps {
   children: ReactNode;
 }
 
-function filterScopeFor(routeState: ShellRouteState): FilterScope | undefined {
+function filterScopeFor(
+  routeState: ShellRouteState,
+  peopleView: PeopleView,
+): FilterScope | undefined {
   if (!routeState.siteSlug) return undefined;
-  if (routeState.siteSection === "sessions") return "session";
-  if (routeState.siteSection === "visitors") return "visitor";
+  if (routeState.siteSection === "visitors") {
+    return peopleView === PeopleView.Sessions ? "session" : "visitor";
+  }
   if (routeState.siteSection === "realtime") return undefined;
   return "event";
 }
 
-// Pages that fill the panel edge to edge: the map, the live view, and a
-// session's or visitor's journey.
+// Pages that fill the panel edge to edge: the map and the live view.
 function isFullBleed(routeState: ShellRouteState): boolean {
-  const { siteSection, siteSubSection } = routeState;
   return (
-    siteSection === "realtime" ||
-    siteSection === "geo" ||
-    ((siteSection === "sessions" || siteSection === "visitors") &&
-      siteSubSection === "detail")
+    routeState.siteSection === "realtime" || routeState.siteSection === "geo"
   );
 }
 
@@ -88,6 +95,7 @@ export function DashboardShell({
   useAccountTimeZonePreference(user.timeZone);
   const livePathname = usePathname() || pathname;
   const routeSearchParams = useSearchParams();
+  const liveSearchParams = useLiveSearchParams();
   const initialFilters = parseFilterDocumentFromSearchParams(routeSearchParams);
   const initialScopePreference = parseFilterScopePreference(routeSearchParams);
   const canManage = canManageTeam(team.membershipRole, user.systemRole);
@@ -102,15 +110,37 @@ export function DashboardShell({
       )
     : undefined;
   const section = routeState.siteSection;
+  const siteHasData = useSiteHasData(activeSite?.id);
+  // Until a site's first page view, its report pages show only how to
+  // install the script; Site settings stays open.
+  const awaitingFirstView =
+    activeSite !== undefined &&
+    section !== undefined &&
+    section !== "settings" &&
+    siteHasData === false;
+  // The site whose first page views arrived while this page was open, until
+  // its banner is dismissed.
+  const [firstViewsSiteId, setFirstViewsSiteId] = useState<string>();
+  const previousAwaiting = useRef({
+    siteId: activeSite?.id,
+    awaitingFirstView,
+  });
+  useEffect(() => {
+    const previous = previousAwaiting.current;
+    if (
+      previous.siteId === activeSite?.id &&
+      previous.awaitingFirstView &&
+      siteHasData === true
+    ) {
+      setFirstViewsSiteId(activeSite?.id);
+    }
+    previousAwaiting.current = { siteId: activeSite?.id, awaitingFirstView };
+  }, [activeSite?.id, awaitingFirstView, siteHasData]);
   const navHref = useDashboardNavHref();
   const navItem = section ? siteNavItemFor(section) : undefined;
-  // A sidebar entry with several pages shows them as tabs, except on a
-  // session's or visitor's detail page, which has its own way back.
+  // A sidebar entry with several pages shows them as tabs.
   const tabs =
-    navItem &&
-    navItem.sections.length > 1 &&
-    routeState.siteSlug &&
-    routeState.siteSubSection !== "detail"
+    navItem && navItem.sections.length > 1 && routeState.siteSlug
       ? navItem.sections.map((key) => ({
           key,
           label: siteNavLabel(key, messages),
@@ -124,8 +154,10 @@ export function DashboardShell({
           active: key === section,
         }))
       : null;
-  const contentClassName =
-    section === "geo"
+  const contentClassName = awaitingFirstView
+    ? // The install view sits in the middle of the page.
+      "flex min-w-0 w-full flex-1 flex-col px-4 py-4 md:px-6 md:py-6 [&>[data-page-transition]]:flex [&>[data-page-transition]]:flex-1 [&>[data-page-transition]]:flex-col [&>[data-page-transition]]:justify-center"
+    : section === "geo"
       ? "flex min-h-0 flex-1 min-w-0 w-full flex-col md:overflow-hidden [&>[data-page-transition]]:flex [&>[data-page-transition]]:h-full [&>[data-page-transition]]:min-h-0 [&>[data-page-transition]]:flex-1 [&>[data-page-transition]]:flex-col"
       : routeState.orgPage === "settings"
         ? // Settings brings its own navigation column and page padding.
@@ -157,6 +189,11 @@ export function DashboardShell({
       ) : null}
     </>
   ) : null;
+
+  // Home before the first site has no period to pick, so no header at all.
+  const showHeader =
+    routeState.usesDateRange &&
+    !(routeState.orgPage === "all-sites" && sites.length === 0);
 
   return (
     <DashboardQueryProvider
@@ -190,28 +227,42 @@ export function DashboardShell({
           </div>
         }
         header={
-          routeState.usesDateRange ? (
+          showHeader ? (
             <>
               <div className="flex min-w-0 items-center gap-3 px-4 py-2.5 md:px-6">
                 <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
                   {pageTitle}
                 </div>
                 <div className="min-w-0 shrink-0">
-                  <DashboardHeaderControls
-                    locale={locale}
-                    messages={messages}
-                    siteId={activeSite?.id ?? ""}
-                    resolvedScope={filterScopeFor(routeState)}
-                    showControls
-                    showFilterSheet={Boolean(routeState.siteSlug)}
-                    comparisonDisabled={
-                      section === "realtime" ||
-                      section === "sessions" ||
-                      section === "visitors"
-                    }
-                    filterDisabled={section === "realtime"}
-                    showRealtimeBadge
-                  />
+                  {awaitingFirstView ? null : (
+                    <DashboardHeaderControls
+                      locale={locale}
+                      messages={messages}
+                      siteId={activeSite?.id ?? ""}
+                      resolvedScope={filterScopeFor(
+                        routeState,
+                        parsePeopleView(liveSearchParams),
+                      )}
+                      showDateControls={section !== "realtime"}
+                      showComparison={
+                        Boolean(routeState.siteSlug) &&
+                        section !== "realtime" &&
+                        section !== "visitors"
+                      }
+                      showFilter={
+                        Boolean(routeState.siteSlug) && section !== "realtime"
+                      }
+                      realtimeHref={
+                        routeState.siteSlug
+                          ? buildSitePath(
+                              locale,
+                              routeState.siteSlug,
+                              "realtime",
+                            )
+                          : undefined
+                      }
+                    />
+                  )}
                 </div>
               </div>
               {tabs ? (
@@ -227,7 +278,31 @@ export function DashboardShell({
         contentClassName={contentClassName}
         contentDataAttributes={{ "data-dashboard-content": "" }}
       >
-        {children}
+        {awaitingFirstView ? (
+          <InstallScriptPage messages={messages} siteId={activeSite.id} />
+        ) : (
+          <>
+            {section === "overview" &&
+            activeSite &&
+            firstViewsSiteId === activeSite.id ? (
+              <FirstViewsBanner
+                messages={messages}
+                reportsHref={
+                  canManage
+                    ? buildSettingsPath(locale, "notifications")
+                    : undefined
+                }
+                inviteHref={
+                  canManage
+                    ? `${gatewayUrl.replace(/\/$/, "")}/admin/users`
+                    : undefined
+                }
+                onDismiss={() => setFirstViewsSiteId(undefined)}
+              />
+            ) : null}
+            {children}
+          </>
+        )}
       </AppShellLayout>
     </DashboardQueryProvider>
   );

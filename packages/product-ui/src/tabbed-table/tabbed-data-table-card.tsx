@@ -108,6 +108,7 @@ function TabbedDataTableCardDataControllerImpl<
   loadingLabel,
   emptyLabel,
   errorLabel,
+  retryLabel,
   search,
   export: exportConfigProp,
   headerRight,
@@ -1022,6 +1023,10 @@ function TabbedDataTableCardDataControllerImpl<
         onLoadMore={loadMore}
         emptyLabel={emptyLabel}
         errorLabel={errorLabel}
+        retryLabel={retryLabel}
+        onRetry={
+          dataQuery.refetch ? () => void dataQuery.refetch?.() : undefined
+        }
         headerRight={
           headerRight || exportAction || searchAction ? (
             <div className="inline-flex items-center gap-1">

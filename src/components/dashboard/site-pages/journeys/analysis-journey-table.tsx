@@ -73,12 +73,6 @@ type NestedJourneyDetail = {
   id: string;
   stackKey: string;
 };
-function detailPath(pathname: string, entity: Entity): string {
-  return pathname.replace(
-    /\/[^/]+(?:\/detail)?$/,
-    entity === "visitor" ? "/visitors" : "/sessions",
-  );
-}
 export function AnalysisJourneyTable({
   entity,
   siteId,
@@ -342,8 +336,11 @@ export function AnalysisJourneyTable({
   ]);
 
   const isVisitor = entity === "visitor";
-  const visitorsPathname = detailPath(pathname, "visitor");
-  const sessionsPathname = detailPath(pathname, "session");
+  // Journeys open on the Visitors page, which lists both.
+  const visitorsPathname = pathname.replace(
+    /\/[^/]+(?:\/detail)?$/,
+    "/visitors",
+  );
 
   return (
     <TooltipProvider>
@@ -469,7 +466,7 @@ export function AnalysisJourneyTable({
                 locale={locale}
                 messages={messages}
                 siteId={siteId}
-                pathname={sessionsPathname}
+                pathname={visitorsPathname}
                 sessionId={nestedDetail.id}
                 onOpenVisitor={(visitorId) =>
                   openNestedDetail("visitor", visitorId)

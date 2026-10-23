@@ -34,12 +34,12 @@ describe("resolveViewer", () => {
     database.close();
   });
 
-  it("maps owners and admins to admins and everyone else to members", async () => {
-    for (const [orgRole, role, isAdmin] of [
-      ["owner", "owner", true],
-      ["ADMIN", "admin", true],
-      ["member", "member", false],
-      ["billing", "member", false],
+  it("records the gateway role and lets every member manage", async () => {
+    for (const [orgRole, role] of [
+      ["owner", "owner"],
+      ["ADMIN", "admin"],
+      ["member", "member"],
+      ["billing", "member"],
     ] as const) {
       vi.mocked(getEveryAppUser).mockResolvedValueOnce(
         gatewayUser(`role-${orgRole}`, orgRole),
@@ -47,7 +47,7 @@ describe("resolveViewer", () => {
       await expect(resolveViewer(request(), env)).resolves.toMatchObject({
         teamId: "org-1",
         role,
-        isAdmin,
+        isAdmin: true,
       });
     }
   });

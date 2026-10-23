@@ -43,6 +43,8 @@ interface ShareHeaderProps {
   messages: AppMessages;
   publicSiteId: string;
   siteName: string;
+  /** The range and filter controls; hidden while the site has no data. */
+  showControls: boolean;
 }
 function localeSwitchPath(pathname: string, locale: Locale): string {
   const withoutLocale =
@@ -65,6 +67,7 @@ export function ShareHeader({
   messages,
   publicSiteId,
   siteName,
+  showControls,
 }: ShareHeaderProps) {
   const pathname = usePathname() || `/${locale}`;
   const router = useRouter();
@@ -287,10 +290,10 @@ export function ShareHeader({
             locale={locale}
             messages={messages}
             siteId={publicSiteId}
-            showControls
-            showFilterSheet
+            showDateControls={showControls}
+            showComparison={showControls}
+            showFilter={showControls}
             filterAudience="public-share"
-            showRealtimeBadge={false}
           />
         </div>
       </div>

@@ -6,18 +6,15 @@ navigation:
   realtime: リアルタイム
   pages: ページ
   referrers: 参照元
-  sessions: セッション
   events: イベント
-  funnels: ファネル
-  goals: 目標
+  funnels: 目標とファネル
   campaigns: キャンペーン
   visitors: 訪問者
   retention: リテンション
   geo: 地域
   devices: デバイス
-  browsers: ブラウザー
   performance: パフォーマンス
-  settings: 設定
+  settings: サイト設定
 common:
   deviceLabels:
     desktop: デスクトップ
@@ -65,23 +62,20 @@ common:
     OCEANIA: オセアニア
     SOUTH AMERICA: 南アメリカ
   timezone: タイムゾーン
-  organization: 組織
+  organization: ネットワーク組織
   screenSize: 画面サイズ
   loading: 読み込み中
   noData: データなし
+  loadFailed: 読み込めませんでした
+  retry: 再試行
+  filteredEmpty: このフィルターに一致するデータはありません
+  clearFilters: フィルターをクリア
+  trend: 推移
   unknown: 不明
-  lastUpdated: 最終更新
   site: サイト
-  team: チーム
-  management: 管理
-  backToTeam: チームへ戻る
   system: システム
-  account: アカウント
   theme: テーマ
   language: 言語
-  role: 権限
-  admin: 管理者
-  user: ユーザー
   search: 検索
   open: 開く
   sortBy: "{label}で並べ替え"
@@ -109,25 +103,16 @@ common:
     reset: デフォルトに戻す
     dragHint: ドラッグして並べ替え
     close: 閉じる
-  time: 時刻
-  cycle: サイクル
   close: 閉じる
   sitesFiltered: "{active} / {total} サイトを絞り込み中"
   cumulativeTraffic: 期間累計トラフィック
   cumulativeEvents: 期間累計イベント
 ranges:
-  last30m: 30分
-  last1h: 1時間
   today: 今日
   yesterday: 昨日
-  thisWeek: 今週
-  thisMonth: 今月
-  thisYear: 今年
-  last24h: 過去 24 時間
   last7d: 過去 7 日
   last30d: 過去 30 日
   last90d: 過去 90 日
-  last6m: 過去 6 か月
   last12m: 過去 12 か月
   custom: カスタム範囲
 intervals:
@@ -137,43 +122,25 @@ intervals:
   week: 週
   month: 月
 dashboardHeader:
-  range: 期間
   interval: 間隔
   compareButton: 比較
   compareTitle: 比較設定
-  compareSubtitle: 比較する期間とフィルター条件を選択します。
   compareTimeLabel: 比較期間
   compareCurrentPeriod: 現在の期間
-  compareCurrentPeriodDescription: 現在選択されている期間を使用します。
   comparePreviousPeriod: 前の期間
-  comparePreviousPeriodDescription: 現在の期間と同じ長さの直前の期間を使用します。
   compareFilterLabel: 比較フィルター
   compareFollowCurrentFilter: 現在のフィルターに従う
-  compareFollowCurrentFilterDescription: このページで現在適用されているフィルターを使用します。
   compareCustomFilter: カスタムフィルター
-  compareCustomFilterDescription: 比較用に別のフィルター条件を設定します。
   compareApply: 比較を適用
   compareCancel: キャンセル
-  compareDisabled: このページでは比較を利用できません。
   filterButton: フィルター
   filterButtonEvent: フィルター（イベント）
   filterButtonSession: フィルター（セッション）
   filterButtonVisitor: フィルター（訪問者）
-  customRange: カスタム範囲を選択
   customHint: 開始日と終了日を選択してください。
   customPendingEnd: 開始日が選択されました。終了日を選択してください。
   customApply: 日付範囲を適用
-  rangeGroupQuick: クイック範囲
-  rangeGroupCalendar: カレンダー期間
-  rangeGroupRolling: ローリング期間
-  rangeGroupAdvanced: 詳細
-  intervalDisabledMinute: 分単位の間隔は 1 時間以内でのみ利用できます。
-  intervalDisabledHour: 時間単位の間隔は 7 日以内でのみ利用できます。
-  intervalDisabledDay: 日単位の間隔は過去 90 日以内でのみ利用できます。
-  intervalDisabledWeek: 週単位の間隔は過去 12 か月以内でのみ利用できます。
   filterTitle: フィルター
-  filterSubtitle: フィルターを新規作成・保存するか、個人またはチームで保存したフィルターを使用します。
-  filterDisabledRealtime: リアルタイムページではフィルタリングを利用できません。
   previousPeriod: 前の期間
   nextPeriod: 次の期間
   customSelectionSummary: "選択範囲：{from} から {to}（{days} 日）"
@@ -357,7 +324,7 @@ filterBuilder:
   naturalLanguageDescription: 自然言語の説明
   expressionInvalid: 式が無効です。クリックして構文ヘルプを確認してください。
   expressionHelpTitle: フィルター式の構文
-  expressionHelpDescription: 利用可能なフィールドと演算子は、現在のフィルター契約から動的に生成されます。
+  expressionHelpDescription: フィルター式で使えるフィールドと演算子です。
   expressionHelpSyntax: 構文
   expressionHelpLogicDescription: AND は OR より優先されます。ネストには括弧を使用し、AND(...) と OR(...) は明示的な単一条件グループを保持します。
   expressionHelpValues: 値
@@ -455,14 +422,7 @@ filterBuilder:
   savedFiltersLoading: 保存済みフィルターを取得中...
   noSavedFilter: 保存済みフィルターを使用しない
   systemPresets: システムプリセット
-  systemPresetCategories:
-    acquisition: 獲得
-    device: デバイス
-    visitBehavior: 訪問行動
-    sessionEngagement: セッションエンゲージメント
-    visitorBehavior: 訪問者行動
-    performance: パフォーマンス
-    dataQuality: データ品質
+  advanced: 詳細設定
   systemPresetScopes:
     preserve: 現在のスコープを維持
     event: イベントスコープ
@@ -472,122 +432,26 @@ filterBuilder:
     directTraffic:
       name: 直接トラフィック
       description: 外部リファラーのない訪問です。
-    externalReferrals:
-      name: 外部リファラー
-      description: 外部リファラーから到達した訪問です。
     organicSearchDiscovery:
       name: 自然検索による流入
       description: キャンペーンタグのない検索エンジン経由の訪問です。
-    organicSocialDiscovery:
-      name: 自然ソーシャルによる流入
-      description: キャンペーンタグのないソーシャルネットワーク経由の訪問です。
     campaignTaggedTraffic:
       name: キャンペーンタグ付きトラフィック
       description: キャンペーンソース、メディア、または名前を持つ訪問です。
     mobileTraffic:
       name: モバイルトラフィック
       description: モバイル端末からの訪問です。
-    desktopTraffic:
-      name: デスクトップトラフィック
-      description: デスクトップ端末からの訪問です。
-    campaignTaggedExternalAcquisition:
-      name: タグ付き外部獲得
-      description: キャンペーンタグを持つ外部リファラー経由の訪問です。
-    campaignTaggedDirectEntry:
-      name: タグ付き直接流入
-      description: キャンペーンタグを持つ直接訪問です。
-    untaggedExternalReferrals:
-      name: タグなし外部リファラー
-      description: キャンペーンタグのない外部リファラー経由の訪問です。
-    mobileAcquiredTraffic:
-      name: モバイルキャンペーン獲得
-      description: 外部から獲得した、キャンペーンタグ付きのモバイル訪問です。
-    mobileOrganicDiscovery:
-      name: モバイル自然発見
-      description: 検索またはソーシャルから発見された、タグなしのモバイル訪問です。
-    desktopDirectAudience:
-      name: デスクトップ直接訪問者
-      description: キャンペーンタグのないデスクトップ端末からの直接訪問です。
-    geographicAttributionGap:
-      name: 地域帰属の欠落
-      description: 国が記録されていない外部リファラー経由の訪問です。
-    tabletTraffic:
-      name: タブレットトラフィック
-      description: タブレット端末からの訪問です。
-    longPageViews:
-      name: 長いページビュー
-      description: 30 秒以上続いたページビューです。
-    shortPageViews:
-      name: 短いページビュー
-      description: 10 秒未満で終わったページビューです。
-    identifiedActivity:
-      name: 識別済みアクティビティ
-      description: 識別済みユーザーに関連するイベントです。
-    customEventActivity:
-      name: カスタムイベントアクティビティ
-      description: カスタムイベント名が記録されたイベントです。
     bouncedSessions:
       name: バウンスセッション
       description: ページビューが 1 回だけのセッションです。
-    nonBouncedSessions:
-      name: 非バウンスセッション
-      description: 複数のページビューを含むセッションです。
-    longSessions:
-      name: 長いセッション
-      description: 5 分以上続いたセッションです。
-    shortSessions:
-      name: 短いセッション
-      description: 1 分未満のセッションです。
-    deepSessions:
-      name: 深いセッション
-      description: 3 ページ以上を閲覧したセッションです。
-    eventfulSessions:
-      name: イベントの多いセッション
-      description: カスタムイベントを 1 件以上含むセッションです。
-    highEngagementSessions:
-      name: 高エンゲージメントセッション
-      description: 3 ビュー以上かつ 2 件以上のカスタムイベントを含むセッションです。
     returningVisitors:
       name: リピーター訪問者
       description: 2 セッション以上を持つ訪問者です。
-    frequentVisitors:
-      name: 頻繁な訪問者
-      description: 5 セッション以上を持つ訪問者です。
-    deepVisitors:
-      name: 深い訪問者
-      description: 5 ページ以上を閲覧した訪問者です。
-    eventfulVisitors:
-      name: イベントの多い訪問者
-      description: 2 件以上のカスタムイベントを持つ訪問者です。
-    identifiedVisitors:
-      name: 識別済み訪問者
-      description: 識別済みユーザーに関連する訪問者です。
-    organicSearchVisitors:
-      name: 自然検索訪問者
-      description: タグのない検索リファラーを持つ訪問者です。
-    coreWebVitalsNeedsImprovement:
-      name: Core Web Vitals の改善が必要
-      description: Core Web Vitals のしきい値を超えた訪問です。
-    slowLcp:
-      name: LCP が遅い
-      description: LCP が 2.5 秒を超える訪問です。
-    slowInp:
-      name: INP が遅い
-      description: INP が 200 ミリ秒を超える訪問です。
-    highCls:
-      name: CLS が高い
-      description: CLS が 0.1 を超える訪問です。
-    slowTtfb:
-      name: TTFB が遅い
-      description: TTFB が 800 ミリ秒を超える訪問です。
-    slowFcp:
-      name: FCP が遅い
-      description: FCP が 1.8 秒を超える訪問です。
   savedFiltersPersonal: 個人用フィルター
-  savedFiltersTeam: チームのフィルター
+  savedFiltersTeam: 組織のフィルター
   savedFiltersAuthor: "作成者: {name}"
   savedFiltersPrivate: 個人用
-  savedFiltersTeamShared: チームと共有済み
+  savedFiltersTeamShared: 組織と共有済み
   saveThisFilter: このフィルターを保存
   saveAsThisFilter: このフィルターを別名で保存
   manageThisFilter: このフィルターを管理
@@ -603,13 +467,13 @@ filterBuilder:
   scopeVisitor: これらの条件を満たす訪問者を絞り込む
   savedFilterVisibility: 公開範囲
   savedFilterVisibilityPrivate: 自分のみ
-  savedFilterVisibilityTeam: チームと共有
+  savedFilterVisibilityTeam: 組織と共有
   savedFilterCreateDescription: 現在のフィルター式を保存して、あとで再び適用できます。
   savedFilterManageDescription: このフィルターの基本情報を更新するか、条件の編集を開始します。
   editSavedFilter: このフィルターを編集
   deleteSavedFilter: このフィルターを削除
   deleteSavedFilterTitle: このフィルターを削除しますか？
-  deleteSavedFilterDescription: この操作は取り消せません。チームメンバーも使用できなくなります。
+  deleteSavedFilterDescription: この操作は取り消せません。組織の他のメンバーも使用できなくなります。
   savedFilterCancel: キャンセル
   savedFilterSave: 保存
   savedFilterSaving: 保存中...
@@ -627,9 +491,9 @@ filterBuilder:
   invalid: 適用する前に、すべての条件を入力してください。
 realtime:
   title: リアルタイム
-  subtitle: 直近 30 分間のトラフィックを確認します。
   logTitleSeparator: ":"
   activeNow: 現在アクティブ
+  liveCount: "{count} 人がアクセス中"
   liveMetrics: 現在アクティブ / 過去30分の訪問者数 / 過去30分のページビュー数
   connected: 接続済み
   connecting: 接続中
@@ -693,7 +557,7 @@ realtime:
   exitReason: 退出理由
   leaveAt: 離脱時刻
 overview:
-  title: トラフィック概要
+  title: 概要
   trendTitle: トラフィック推移
   sourceTab: ソース
   sourceDomainColumn: ソース（ドメイン）
@@ -715,6 +579,26 @@ overview:
     campaign: キャンペーン
     other: その他
   searchInTab: "{tab} を検索"
+install:
+  title: サイトにスクリプトを追加
+  platforms:
+    html: HTML
+    wordpress: WordPress
+    shopify: Shopify
+    nextjs: Next.js
+    gtm: Google タグ マネージャー
+  steps:
+    html: すべてのページの {tag} の直前に貼り付けます。
+    wordpress: WPCode などのヘッダースクリプト用プラグインで追加するか、テーマの header.php の {tag} の直前に貼り付けます。
+    shopify: "「オンラインストア → テーマ → コードを編集」で theme.liquid を開き、{tag} の直前に貼り付けます。"
+    nextjs: app/layout.tsx の {tag} 内に貼り付けます。
+    gtm: このスクリプトでカスタム HTML タグを作成し、トリガーを「All Pages」にして公開します。
+  waiting: 最初のページビューを待っています
+  received: 最初のページビューを受け取りました。レポートは 1 分以内に表示されます。
+  firstViewsTitle: 最初のページビューが届きました！
+  nextReports: メールでレポートを受け取る
+  nextInvite: メンバーを招待
+  dismiss: 閉じる
 pages:
   title: ページ
   pagesPerSession: ページ / セッション
@@ -722,8 +606,7 @@ pages:
   changePointsColumnLabel: "{metric}の変化（ポイント）"
   percentagePointSuffix: ポイント
   untitled: 無題のページ
-  empty: 現在のフィルターに一致するページデータはありません。
-  loadError: ページデータを読み込めませんでした。後でもう一度お試しください。
+  empty: ページはまだありません
   loadMoreError: 追加のページを読み込めませんでした。
   trendTitle: ページトラフィック推移
   otherPages: その他のページ
@@ -736,39 +619,21 @@ pages:
   viewDetails: 詳細を表示
 referrers:
   title: 参照元
-  summaryTitle: ソース概要
   splitTitle: トラフィック内訳
-  chartTitle: ソース構成
-  radarTitle: 上位 24 ソースのレーダー
-  radarSubtitle: 主要な参照元を行動指標で比較します。
-  radarDuration: 滞在時間
-  radarEngagement: エンゲージメント
-  radarDepth: 深さ
-  radarLoyalty: ロイヤルティ
-  radarFrequency: 頻度
-  radarTraffic: トラフィック
-  directSourceNote: このトラフィックは外部の参照元サイトなしで到達しました。
   breakdownTitle: ソース内訳
-  directViews: 直接表示回数
-  uniqueDomains: ユニークドメイン数
-  uniqueLinks: ユニークリンク数
-  topSource: 主要な外部ソース
-  topSourceShare: 表示回数シェア
-  noExternalSource: 外部ソースなし
   externalLabel: 外部
-  nextSources: その他 4 件のソース
   longTail: ロングテール
   channelLongTail: その他のチャネル
 campaigns:
   title: キャンペーン
-  tabSource: ソース
+  tabSource: UTM ソース
   tabMedium: メディア
   tabCampaign: キャンペーン
   tabTerm: キーワード
   tabContent: コンテンツ
-  breakdownTitle: UTM 内訳
   notSet: 未設定
-  noTaggedTraffic: 選択範囲にタグ付きキャンペーントラフィックはありません。
+  noTaggedTraffic: この期間に UTM タグ付きの訪問はありません
+  taggedLinkHint: リンクに UTM タグを付けます。例：
 sessions:
   title: セッション
   search: セッションを検索...
@@ -835,11 +700,8 @@ sessionDetail:
   performanceTitle: 現在のセッションパフォーマンス
   range: 範囲
 events:
-  title: カスタムイベント
-  subtitle: イベント数、コンテキスト、ペイロードフィールド、元の発火記録を確認します。
+  title: イベント
   detailTitle: イベント詳細
-  detailSubtitle: 1 件のイベントのコンテキストとペイロードを確認します。
-  typeDetailSubtitle: このイベントの推移、コンテキスト分布、ペイロード構造、発火記録を確認します。
   backToEvents: イベントへ戻る
   totalEvents: 総イベント数
   eventTypes: イベント種別
@@ -868,7 +730,6 @@ events:
   payloadFilterInvalid: フィルター条件を解析できません。フィールドパス、演算子、値を確認してください。
   expandField: 項目を展開
   collapseField: 項目を折りたたむ
-  breakdownTitle: コンテキスト内訳
   search: イベント名、ID、訪問者、セッション、ページを検索...
   eventName: イベント名
   eventId: イベント ID
@@ -901,29 +762,26 @@ events:
   loadError: イベントデータを読み込めません。
   detailNotFound: このイベント記録が見つかりません。
   empty: この範囲にカスタムイベントはありません。
+  noCustomEvents: この期間のカスタムイベントはありません
   emptyFields: このイベントにペイロードフィールドはありません。
   noEventName: イベント名がありません。
   loading: 読み込み中
   other: その他
 funnels:
   title: ファネル
-  subtitle: 複数ステップのユーザージャーニーでコンバージョンを測定します。
   listTitle: ファネル定義
-  listSubtitle: 再利用可能なシーケンスを作成し、現在のダッシュボード期間でコンバージョンを確認します。
   conversionRecords: コンバージョン記録
   converted: コンバージョン済み
   dropped: 離脱
   open: ファネルを開く
   moreActions: その他の操作
-  create: 新規ファネル
   createTitle: ファネルを作成
-  createDescription: 順序付きの観測フィルターを少なくとも 2 つ定義してください。
   nameLabel: 名前
   namePlaceholder: 登録アクティベーション
   stepsLabel: ステップ
   addStep: ステップを追加
   removeStep: 削除
-  progression: コンバージョン単位
+  progression: 集計単位
   conversionWindow: コンバージョン期間
   custom: カスタム
   customWindowHours: カスタム期間（時間）
@@ -952,9 +810,6 @@ funnels:
   deleteDescription: 保存済みのファネル定義を削除します。過去の分析データは削除されません。
   deleteConfirm: ファネルを削除
   deleting: 削除中...
-  empty: ファネルはまだありません。
-  emptyHint: ページビューとカスタムイベントからファネルを作成し、コンバージョンを追跡します。
-  loadError: ファネルを読み込めません。
   detailLoadError: ファネル分析を読み込めません。
   invalidFunnel: 名前と、完全なフィルターステップを少なくとも 2 つ追加してください。
   created: ファネルを作成しました。
@@ -979,11 +834,9 @@ funnels:
   updated: 更新
 goals:
   title: 目標
-  listSubtitle: この期間のコンバージョン率の変化を確認します。
   conversionRecords: コンバージョン記録
   open: 目標を開く
   moreActions: その他の操作
-  create: 新しい目標
   createTitle: 目標を作成
   nameLabel: 名前
   namePlaceholder: 購入完了
@@ -999,9 +852,6 @@ goals:
   deleteTitle: 目標を削除
   deleteDescription: 保存した目標定義を削除します。過去の分析データは削除されません。
   deleteConfirm: 目標を削除
-  empty: 目標はまだありません。
-  emptyHint: ページ条件またはカスタムイベントから目標を作成します。
-  loadError: 目標を読み込めません。
   detailLoadError: 目標分析を読み込めません。
   invalidGoal: 名前と完全なコンバージョン条件を入力してください。
   created: 目標を作成しました。
@@ -1016,6 +866,14 @@ goals:
   conversion: 転換率
   timeseries: コンバージョン率
   updated: 更新
+conversions:
+  new: 新規作成
+  newGoal: 目標
+  newGoalDescription: 登録などの 1 ステップ
+  newFunnel: ファネル
+  newFunnelDescription: 順番に進む複数のステップ
+  empty: 目標とファネルはまだありません
+  emptyMemberHint: 管理者が作成できます。
 visitors:
   title: 訪問者
   search: 訪問者を検索...
@@ -1088,7 +946,7 @@ visitorDetail:
   range: 範囲
 retention:
   title: リテンション
-  subtitle: コホートベースの訪問者再訪分析です。
+  cohortBy: "コホート単位：{interval}"
   cohortDate: コホート日付
   cohortSize: コホート人数
   periodLabel: 期間 {n}
@@ -1107,16 +965,15 @@ retention:
   legendHigh: 高
   periodZero: 初回
   empty: この時間範囲には十分な再訪データがありません。
-  emptyHint: より広い範囲を使うか、上部セレクターでより粗い間隔を選ぶと、リテンションの形が早く見えます。
+  emptyHint: 日付メニューでより長い期間か、より粗い間隔を選んでください。
   loadError: リテンションデータを読み込めません。
   unavailableCell: このコホートはまだこの期間に到達していません。
   visitorsDetail: 訪問者
   rateDetail: リテンション
-  cohortDetail: コホート日付
   sizeDetail: コホート人数
 geo:
-  title: 地域分析
-  mapTitle: リクエスト地域分布
+  title: 地域
+  mapTitle: 地域別の訪問者
   countryLabel: 国 / 地域
   regionLabel: 地域
   cityLabel: 都市
@@ -1169,60 +1026,23 @@ geo:
       adm5: 行政レベル 5
 devices:
   title: デバイス
-  deviceShareTitle: デバイス種別シェア
-  osShareTitle: OS シェア
-  deviceTrendTitle: デバイス種別推移
-  osTrendTitle: OS 推移
-  screenDistributionTitle: 画面サイズ分布
-  screenDistributionSubtitle: よく使われるビューポートとレスポンシブ境界を確認します。
-  screenBucketTitle: ブレークポイント分類
-  screenPreviewTitle: 画面プレビュー
-  selectedViewportLabel: 選択中のビューポート
-  openSiteLabel: サイトを開く
-  previewUnavailableLabel: 現在プレビュー可能な画面サイズはありません。
-  browserByDeviceTitle: デバイス種別 × ブラウザー
-  osByDeviceTitle: デバイス種別 × OS
+  shareTitle: 訪問者の割合
+  dimensions:
+    device: デバイス
+    os: OS
+    browser: ブラウザー
+    engine: エンジン
+    screenSize: 画面サイズ
+  crossTabTitle: クロス集計
+  crossTabRows: 行
+  crossTabColumns: 内訳
   otherLabel: その他
-  screenBucketLabels:
-    phoneCompact: 小型スマートフォン
-    phone: スマートフォン
-    tablet: タブレット
-    laptop: ノート PC
-    desktopWide: ワイドデスクトップ
-    unclassified: 未分類
+  screenBucketLabels: {}
 browsers:
-  title: ブラウザー
-  trendTitle: ブラウザーシェア推移
-  engineTrendTitle: エンジンシェア推移
-  versionBreakdownTitle: ブラウザーバージョン内訳
-  osBreakdownTitle: ブラウザー × OS
-  deviceTypeBreakdownTitle: ブラウザー × デバイス種別
   otherLabel: その他
-  browserShareTitle: ブラウザーシェア
-  engineShareTitle: エンジンシェア
-  caniuseTitle: 機能互換性
-  caniuseSubtitle: サイト訪問者のブラウザー構成に基づいて Web 機能の対応状況を確認します。
-  caniuseSearchPlaceholder: Web 機能を検索...
-  caniuseHotFeatures: 人気の機能
-  caniuseTrendingFeatures: 最近変更された機能
-  caniuseSiteSupport: あなたのサイト
-  caniuseGlobalSupport: 全世界
-  caniuseClearSelection: クリア
-  caniuseNoMatch: 一致する機能がありません。
-  caniuseFullSupport: 完全対応
-  caniusePartialSupport: 部分対応
-  caniuseNoSupport: 非対応
-  radarTitle: ブラウザーパフォーマンスレーダー
-  radarSubtitle: 上位ブラウザーを行動指標で比較します。
-  radarDuration: 滞在時間
-  radarEngagement: エンゲージメント
-  radarDepth: 深さ
-  radarLoyalty: ロイヤルティ
-  radarFrequency: 頻度
-  radarTraffic: トラフィック
 performance:
   title: パフォーマンス
-  subtitle: 実際の訪問者パフォーマンスを指標、推移、パスごとに確認します。
+  empty: Web Vitals はまだありません
   chartTitle: パフォーマンス推移
   avgLabel: 平均
   samplesLabel: サンプル
@@ -1247,7 +1067,7 @@ performance:
   great: 良好
   needsImprovement: 改善が必要
   poor: 不良
-  datasetTitle: データセット概要
+  datasetTitle: しきい値
   interpretationTitle: 現在の読み取り
   currentReading: "{metric} の P75 は {value}、{samples} 件のサンプルに基づく体験スコアは {score}
     です。現在の判定：{status}。"
@@ -1259,27 +1079,32 @@ performance:
   pathsAnalyzedLabel: 分析対象パス
   metricValueColumn: P75 値
   statusColumn: 状態
-share: {}
+share:
+  noData: データはまだありません
 siteSettings:
   title: サイト設定
   sections:
     basic:
-      title: 基本情報
+      title: 一般
     tracking:
-      title: トラッキング設定
+      title: トラッキング
     blocking:
       title: ブロックルール
     protection:
-      title: リクエスト保護
+      title: 保護
     danger:
       title: 危険な操作
-  nameLabel: サイト名
+    install:
+      title: インストール
+    advanced:
+      title: 詳細設定
+  nameLabel: 名前
   domainLabel: ドメイン
-  publicSharingTitle: 公開共有
-  publicEnabledLabel: 公開アクセスを有効化
-  publicSlugLabel: 公開スラッグ
+  publicSharingTitle: 共有
+  publicEnabledLabel: 公開ダッシュボード
+  publicSlugLabel: リンクのパス
   publicSlugPlaceholder: "例: my-site"
-  publicSlugHint: URL パス識別子をカスタマイズします。空のままなら自動生成されます。
+  publicSlugHint: リンクの /share/ 以降の部分です。
   publicLinkLabel: 公開リンク
   copiedLink: リンクをコピーしました
   trackingStrengthGroupTitle: トラッキング強度
@@ -1292,17 +1117,14 @@ siteSettings:
   botProtectionEnabledLabel: 検出したボットをブロック
   botProtectionEnabledHint: 有効にすると高信頼度のボットリクエストをブロックし、無効にすると統計に含めます。
   hostingProxyBlockingEnabledLabel: ホスティング・プロキシネットワークをブロック
-  hostingProxyBlockingEnabledHint: 有効にするとホスティングまたはプロキシネットワークからの疑わしいボットリクエストをブロックします。デフォルトはオフです。
-  trackQueryParamsLabel: クエリパラメータを追跡
-  trackHashLabel: URL ハッシュを追跡
-  blockingRulesSave: ブロックルールを保存
-  blockingRulesSaving: ブロックルールを保存中...
+  hostingProxyBlockingEnabledHint: ホスティングまたはプロキシネットワークからの疑わしいボットリクエストをブロックします。
+  trackQueryParamsLabel: クエリパラメーターを記録
+  trackHashLabel: URL ハッシュを記録
+  blockingRulesSave: ルールを保存
   blockingRulesDialogs:
-    testButton: テスト
-    helpButton: ヘルプ
     searchButton: 検索
     searchTitle: 地域を検索
-    searchDescription: 名前またはコードで検索し、結果を選択してこのカードに追加します。
+    searchDescription: 名前またはコードで検索し、結果を選んでください。
     searchInputLabel: 検索
     searchInputPlaceholder: 名前またはコードで検索
     searchCountryLabel: 国 / 地域
@@ -1312,250 +1134,47 @@ siteSettings:
     searchNoResults: 一致する地域がありません。
     searchLoadError: 地域を読み込めません。しばらくしてから再試行してください。
     searchClose: 閉じる
-    helpTitle: ルール構文
-    helpDescription: このフィールドの構文、例、優先順位を確認します。
-    syntaxTitle: 構文
-    examplesTitle: 設定例
-    actionsTitle: ルールの動作
-    actionsDescription: 通常の行は一致をブロックします。ルールの先頭に - を付けると許可します。複数の行が一致した場合は、最後に一致した行が結果を決めます。
-    actionBlock: "{example} に一致した場合はブロック"
-    actionAllow: "{example} に一致した場合は許可"
-    statusEmpty: "{field} に対するブロックルールは現在ありません。"
-    statusValid: 現在のルールは有効です。
-    statusInvalid: 現在のルールは無効です。詳しくは右側の「ヘルプ」をクリックしてください。
-    errorInvalidRule: 無効なルールです。
-    errorInvalidLines: "{field} のルールは 1 行に 1 件のテキストで指定してください。"
-    errorInvalidLine: "{line} 行目は有効なテキストルールではありません。"
-    errorLineTooLong: "{line} 行目が長すぎます。"
-    errorTooManyLines: ルールの行数が多すぎます。
-    errorInvalidPattern: "{line} 行目のルール形式が無効です。"
-    testTitle: ルールをテスト
-    testDescription: このカードの現在のルールに対してリクエスト値をテストします。未保存の編集内容も使用されます。
-    testRun: テストを実行
-    testClose: 閉じる
-    testInvalidRules: テストする前に無効なルールを修正してください。
-    testInvalidRule: 無効なルールです。
-    testBlocked: ブロック
-    testAllowed: 許可
-    testNoMatch: 一致するルールがないため、このフィールドでは値が許可されます。
-    testMatchedRules: 一致したルール
-    testActionBlock: ブロック
-    testActionAllow: 許可
-    testLine: 行
   blockingRulesFields:
     domains:
       title: ドメイン
-      label: ドメインルール（1 行に 1 件）
-      placeholder: |
-        *
-        -example.com
-        -*.example.com
-        admin.example.com
-      hint: ページの hostname に一致します。* と -ドメインで許可リストを作れます。
-      syntax: |
-        各行: [ - ] hostname-glob
-        # で始まる行はコメントとして扱われ、無視されます。
-        * をワイルドカードとして使います。先頭の - は許可ルールを作ります。
-        大文字と小文字を区別せず、ページの hostname に一致します。
-      examples:
-        - "*"
-        - "-example.com"
-        - "-*.example.com"
-        - "admin.example.com"
-      exampleDescription: この設定はすべてのドメインをブロックし、example.com とそのサブドメインを許可した後、完全一致する
-        admin.example.com を再びブロックします。
-      testLabel: ホスト名
-      testPlaceholder: www.example.com
-      testHint: スキームやパスを含めず、ページの hostname を入力します。
+      placeholder: admin.example.com
     paths:
       title: パス
-      label: パスルール（1 行に 1 件）
-      placeholder: |
-        /admin/*
-        /checkout/*/confirm
-        -/admin/health
-      hint: glob 構文で正規化された URL パスに一致します。
-      syntax: |
-        各行: [ - ] /path-glob
-        # で始まる行はコメントとして扱われ、無視されます。
-        パスは / で始まり、* は任意の文字に一致します。
-        URL パスの正規化後、大文字と小文字を区別して一致します。
-      examples:
-        - "/admin/*"
-        - "/checkout/*/confirm"
-        - "-/admin/health"
-      exampleDescription: この設定は /admin/ 配下と /checkout/*/confirm に一致するパスをブロックし、/admin/health を許可します。
-      testLabel: URL パス
-      testPlaceholder: /admin/settings
-      testHint: 先頭のスラッシュを含む pathname のみを入力します。
+      placeholder: /admin/*
     queryParameters:
-      title: クエリパラメータ
-      label: クエリルール（1 行に 1 件）
-      placeholder: |
-        utm_*
-        utm_source=*
-        -utm_source=trusted
-      hint: key または key=value を指定でき、キーと値で * が使えます。
-      syntax: |
-        各行: [ - ] key-glob[=value-glob]
-        # で始まる行はコメントとして扱われ、無視されます。
-        = を省略すると、そのキーの任意の値に一致します。
-        大文字と小文字を区別し、キーと値で * を使用できます。
-      examples:
-        - "utm_*"
-        - "utm_source=*"
-        - "-utm_source=trusted"
-      exampleDescription: この設定は utm_ で始まるキーと utm_source の任意の値をブロックし、utm_source=trusted を許可します。
-      testLabel: クエリ文字列
-      testPlaceholder: utm_source=internal&utm_campaign=spring
-      testHint: 先頭の ? はあってもなくてもかまいません。
+      title: クエリパラメーター
+      placeholder: utm_source=spam
     referrers:
       title: リファラー
-      label: リファラールール（1 行に 1 件）
-      placeholder: |
-        *.example.com
-        social.example.com
-        -trusted.example.com
-      hint: リファラーの hostname に一致します。
-      syntax: |
-        各行: [ - ] hostname-glob
-        # で始まる行はコメントとして扱われ、無視されます。
-        URL は hostname に変換してから一致させます。
-        大文字と小文字を区別せず、* を使用できます。
-      examples:
-        - "*.example.com"
-        - "social.example.com"
-        - "-trusted.example.com"
-      exampleDescription: この設定は example.com の参照元ドメインと social.example.com
-        をブロックし、trusted.example.com を許可します。
-      testLabel: 参照元
-      testPlaceholder: https://social.example.com/article
-      testHint: 参照元の URL または hostname を入力します。
+      placeholder: "*.spam.example"
     userAgents:
       title: User-Agent
-      label: User-Agent ルール（1 行に 1 件）
-      placeholder: |
-        *bot*
-        Mozilla/*
-        -Googlebot
-      hint: 大文字と小文字を区別せず、glob 構文でリクエストの User-Agent に一致します。
-      syntax: |
-        各行: [ - ] text-glob
-        # で始まる行はコメントとして扱われ、無視されます。
-        * はリクエスト User-Agent 内の任意の文字に一致します。
-        大文字と小文字を区別しません。
-      examples:
-        - "*bot*"
-        - "Mozilla/*"
-        - "-Googlebot"
-      exampleDescription: この設定は bot を含む User-Agent と Mozilla/ で始まる値をブロックし、Googlebot を許可します。
-      testLabel: User-Agent
-      testPlaceholder: Mozilla/5.0 (compatible; ExampleBot/1.0)
-      testHint: リクエスト User-Agent の全体または一部を入力します。
+      placeholder: "*bot*"
     ips:
       title: IP アドレス
-      label: IP ルール（1 行に 1 件）
-      placeholder: |
-        203.0.113.15
-        2001:db8::1
-        203.0.113.0/24
-        2001:db8::/32
-        -203.0.113.10..203.0.113.20
-      hint: IPv4/IPv6 アドレス、CIDR、開始..終了の範囲に対応します。
-      syntax: |
-        各行: [ - ] address | CIDR | start..end
-        # で始まる行はコメントとして扱われ、無視されます。
-        IPv4 と IPv6 のアドレスに対応します。
-        範囲の両端は同じアドレスファミリーで、開始値以下にします。
-      examples:
-        - "203.0.113.15"
-        - "2001:db8::1"
-        - "203.0.113.0/24"
-        - "2001:db8::/32"
-        - "-203.0.113.10..203.0.113.20"
-      exampleDescription: この設定は IPv4/IPv6 の単一アドレス、CIDR 範囲、start..end 範囲を示します。- 付きの範囲は許可されます。
-      testLabel: IP アドレス
-      testPlaceholder: 203.0.113.15
-      testHint: テストする IPv4 または IPv6 アドレスを入力します。
+      placeholder: 203.0.113.0/24
     asns:
       title: ASN
-      label: ASN ルール（1 行に 1 件）
-      placeholder: |
-        64500
-        *
-        -64501
-      hint: Cloudflare metadata の数値 ASN に一致します。
-      syntax: |
-        各行: [ - ] ASN-number
-        # で始まる行はコメントとして扱われ、無視されます。
-        * で任意の ASN に一致します。
-        メタデータ値のテストでは、任意の AS プレフィックスも使用できます。
-      examples:
-        - "64500"
-        - "*"
-        - "-64501"
-      exampleDescription: この設定は ASN 64500 と任意の ASN をブロックし、最後のルールで ASN 64501 を許可します。
-      testLabel: ASN
-      testPlaceholder: "64500"
-      testHint: 数値の自律システム番号を入力します。
+      placeholder: "64500"
     countries:
-      title: 国 / 地域
-      label: 国ルール（1 行に 1 件）
-      placeholder: |
-        DE
-        *
-        -US
-      hint: ISO 3166-1 alpha-2 国コードを使用します。
-      syntax: |
-        各行: [ - ] ISO-3166-alpha-2
-        # で始まる行はコメントとして扱われ、無視されます。
-        * で任意の国に一致します。
-        国コードは大文字と小文字を区別しません。
-      examples:
-        - "DE"
-        - "*"
-        - "-US"
-      exampleDescription: この設定は DE と任意の国をブロックし、最後のルールで US を許可します。
-      testLabel: 国コード
-      testPlaceholder: DE
-      testHint: ISO 3166-1 alpha-2 の国コードを入力します。
+      title: 国・地域
+      placeholder: DE
     regions:
-      title: 州 / 省
-      label: 地域ルール（1 行に 1 件）
-      placeholder: |
-        DE-BE
-        *
-        -US-CA
-      hint: Cloudflare metadata の COUNTRY-REGION_CODE 形式を使用します。
-      syntax: |
-        各行: [ - ] COUNTRY-REGION_CODE
-        # で始まる行はコメントとして扱われ、無視されます。
-        * で任意の地域に一致します。
-        地域の値は大文字と小文字を区別しません。
-      examples:
-        - "DE-BE"
-        - "*"
-        - "-US-CA"
-      exampleDescription: この設定は DE-BE と任意の地域をブロックし、最後のルールで US-CA を許可します。
-      testLabel: 地域コード
-      testPlaceholder: US-CA
-      testHint: メタデータの COUNTRY-REGION_CODE 値を入力します。
-  ignoreDoNotTrackLabel: ブラウザーの Do Not Track を無視
+      title: 州・省
+      placeholder: US-CA
+  ignoreDoNotTrackLabel: Do Not Track を無視
   autoTrackOutboundLinksLabel: 外部リンククリックを自動追跡
   autoTrackOutboundLinksHint: 有効にすると、外部ドメインへのリンククリックで outbound_click イベントを自動送信します。
-  performanceSampleRateLabel: パフォーマンスサンプリング率（%）
+  performanceSampleRateLabel: Web Vitals のサンプリング率
   performanceSampleRateHint: サンプリングされた訪問では、離脱時に TTFB、FCP、LCP、CLS、INP を記録します。0 で無効、100 で全量収集です。
-  saveTracking: トラッキング設定を保存
-  savingTracking: トラッキング設定を保存中...
-  save: 変更を保存
+  save: 保存
   saving: 保存中...
-  scriptTitle: トラッキングスクリプトを設置
-  scriptHint: </head> の前を推奨します。必要なら </body> の前にも配置できますが、各ページで 1 回だけ読み込まれるようにしてください。
+  scriptHint: 各ページの </head> の直前に貼り付けてください。
   copyScript: スクリプトをコピー
   copiedScript: スクリプトをコピーしました。
   scriptUnavailable: 現在スクリプトを利用できません。
   deleteTitle: サイトを削除
-  deleteSubtitle: この操作により、サイトはこのチームから削除されます。
+  deleteSubtitle: サイトとそのすべての分析データを削除します。
   delete: サイトを削除
   deleting: 削除中...
   deleteConfirm: この操作は元に戻せません。続行しますか？
@@ -1564,128 +1183,66 @@ siteSettings:
     saveFailed: サイト設定を保存できません。
     scriptLoadFailed: スクリプトスニペットを読み込めません。
     settingsLoadFailed: スクリプト設定を読み込めません。
-    settingsPropagationHint: エッジノードへのグローバル反映には最大 1 時間かかる場合があります。
+    settingsPropagationHint: 変更の反映には最大 1 時間かかります。
     deleted: サイトを削除しました。
     deleteFailed: サイトを削除できません。
     invalidInput: 有効なサイト名とドメインを入力してください。
+  publicEnabledHint: リンクを知っている人は誰でもこのサイトのレポートを閲覧できます。
+  viewBlockedRequests: ブロックされたリクエストを見る
+  blockingRulesHelp: 「ブロック」ルールに一致したリクエストは集計されません。「許可」は例外を作ります。同じ種類の複数のルールに一致した場合は、最後のルールが優先されます。*
+    はワイルドカードとして使えます。
+  blockingRuleTypeLabel: 種類
+  blockingRuleActionLabel: 動作
+  blockingRuleValueLabel: 値
+  blockingRuleBlock: ブロック
+  blockingRuleAllow: 許可
+  blockingRuleAdd: ルールを追加
+  blockingRuleRemove: ルールを削除
+  blockingRulesEmpty: ブロックルールはありません。
+  blockingRuleInvalid: この種類に有効な値を入力してください。
+  blockingRulesTooMany: "{type} のルールが多すぎます。"
 accountSettings:
   emailManagedByGateway: メールアドレスは Every App のアカウントのものです。
   profileTitle: 個人情報
   nicknameLabel: 表示名
   nicknamePlaceholder: "例: プロダクトアナリスト"
   emailLabel: メール
-  profileSave: 詳細を保存
-  profileSaving: 保存中...
   profileSaved: 個人情報を保存しました。
   profileSaveFailed: 個人情報を保存できません。
-  preferredLanguageTitle: 通知言語
-  preferredLanguageLabel: メール言語
-  preferredLanguageDefault: デフォルト
-  preferredLanguageEnglish: 英語
-  preferredLanguageChinese: 簡体字中国語
-  preferredLanguageTraditionalChinese: 繁体字中国語
-  preferredLanguageJapanese: 日本語
-  preferredLanguageSaved: 通知言語を保存しました。
-  preferredLanguageSaveFailed: 通知言語を保存できません。
-  timeZoneTitle: レポートタイムゾーン
-  activeTimeZone: 有効なタイムゾーン
-  browserTimeZone: ブラウザーのタイムゾーン
+  timeZoneTitle: タイムゾーン
   browserUnavailable: 検出されません
-  preferenceLabel: タイムゾーン設定
-  useBrowser: ブラウザーのタイムゾーンを使用
-  useCustom: タイムゾーンを選択
-  customTimeZoneLabel: タイムゾーン
-  invalidTimeZone: 有効な IANA タイムゾーンを選択してください。
-  save: 設定を保存
-  saving: 保存中...
-  saved: タイムゾーン設定を保存しました。
-  saveFailed: タイムゾーン設定を保存できません。
+  useBrowser: ブラウザーのタイムゾーン（{zone}）
+  saved: タイムゾーンを保存しました。
+  saveFailed: タイムゾーンを保存できません。
+  timeZoneLabel: レポートのタイムゾーン
+  languageSaveFailed: 言語を保存できません。
 notificationCenter:
-  title: 通知センター
+  title: 受信トレイ
   empty: 通知はまだありません。
   loading: 通知を読み込み中
   markRead: 既読にする
   markAllRead: すべて既読にする
-  refresh: 更新
-  attention: 要対応
   loadFailed: 通知を読み込めません。
   markReadFailed: 通知を既読にできません。
   markAllReadSuccess: 通知を既読にしました。
   markAllReadFailed: すべての通知を既読にできません。
-  ruleFilterActive: このルールで作成された通知を表示しています。
-  ruleFilterClear: ルールフィルターをクリア
-  sections:
-    importantTitle: 重要な通知
-    importantDescription: "{count} 件の未読要対応項目があります。"
-    importantEmpty: 現在、重要な通知はありません。
-    reportsTitle: レポート
-    reportsDescription: 通知ルールで生成された定期レポートを確認します。
-    reportsEmpty: 現在、レポートはありません。
   tabs:
     all: すべて
     unread: 未読
-    attention: 要対応
-    report: レポート
-  tabDescriptions:
-    all: メッセージ総数
-    unread: 確認待ち
-    attention: 対応が必要
-    report: 定期レポート
-  messageTypes:
-    report: レポート
-    milestone: マイルストーン
-    threshold: しきい値
-    change: 変化
-    health: 健全性
-    system: システム
-    test: テスト
   severities:
     info: 情報
     success: 成功
     warning: 警告
     critical: 重大
-  deliveryStatuses:
-    created: 作成済み
-    sending: 送信中
-    sent: 送信済み
-    partial: 一部完了
-    failed: 失敗
-    skipped: スキップ
-  channels:
-    inApp: アプリ内
-    email: メール
-  channelStatuses:
-    sent: 送信済み
-    skipped: スキップ
-    failed: 失敗
-    created: 作成済み
-  emailSkipReasons:
-    user_preference_disabled: ユーザー設定でメールが無効です
-    system_email_unconfigured: システムメールが設定されていません
-    recipient_email_invalid: 宛先メールアドレスが無効です
-    secret_decryption_failed: 保存済みメール認証情報を復号できません
-    provider_failed: プロバイダーがメッセージを拒否しました
-    network_failed: メールプロバイダーに接続できません
-    unknown: 不明な理由
-  emailAttempts: "試行回数：{count}"
-  emailRetryCount: "再試行：{count}"
-  emailDuration: "{duration} ms"
-  typeFilterLabel: 種別
-  severityFilterLabel: 重要度
-  allTypes: すべての種別
-  allSeverities: すべての重要度
   preferencesTitle: 通知設定
   emailNotificationsLabel: メール通知
-  emailNotificationsDescription: ルールが発火したときにメールを送信します。
-  reportsUnreadLabel: レポートを未読にする
-  reportsUnreadDescription: 作成後のレポートを未読のままにします。
-  milestonesUnreadLabel: マイルストーンを未読にする
-  milestonesUnreadDescription: 未読状態をマイルストーン用に残します。
-  alertsUnreadLabel: アラートを未読にする
-  alertsUnreadDescription: しきい値アラートと健全性アラートを未読のままにします。
-  preferencesSaved: 通知設定を保存しました。
+  reportsUnreadLabel: 新しいレポートを未読にする
+  milestonesUnreadLabel: 新しいマイルストーンを未読にする
+  alertsUnreadLabel: 新しいアラートを未読にする
   preferencesSaveFailed: 通知設定を保存できません。
   detailFields: {}
+  noUnread: 未読の通知はありません。
+  emailFailed: メール送信失敗
 notificationEmail:
   common:
     brand: OpenAnalytics
@@ -1759,19 +1316,11 @@ notificationEmail:
     title: "{site} のトラフィック変化を検出しました"
     summary: "{window}の{metric}が {change} 変化しました。"
 runtimeConfigError:
-  title: ランタイム設定が必要です
-  eyebrow: デプロイを一時停止中
-  heading: UI を読み込む前に、OpenAnalytics にはランタイムシークレットが 1 つ必要です。
-  description: アプリは起動していますが、現在のランタイム環境で必須の root secret
-    を取得できないため、ダッシュボードへのアクセスを一時的にブロックしています。
-  requiredTitle: 必須のランタイムシークレット
-  requiredDescription: Cloudflare のランタイムシークレットに、次の値のいずれかを少なくとも 1 つ設定してください。
-  secretHint: MAIN_SECRET を推奨します。既存のデプロイでは DAILY_SALT_SECRET も引き続き使用できます。
-  commandTitle: Cloudflare コマンド
-  commandDescription: プロジェクトの補助コマンドで推奨シークレットを追加し、その後再デプロイしてください。
-  quickStartHint: または、GitHub README の Quick Start セクションを参照してこの変数を設定してください。
-  docsLabel: GitHub を開く
-  homeLabel: ダッシュボードを再試行
+  title: ダッシュボードを利用できません
+  heading: このダッシュボードは現在利用できません。
+  setupSummary: このデプロイを設定する
+  setupCommand: このコマンドでルートシークレットを設定してから、このページを再読み込みしてください。
+  docsLabel: デプロイガイド
 login: {}
 accountLinks:
   invite:
@@ -1779,24 +1328,12 @@ accountLinks:
   resetPassword: {}
 empty: {}
 errorPage:
-  notFoundEyebrow: ページが見つかりません
   notFoundTitle: お探しのページが見つかりません
   notFoundDescription: アドレスが正しくないか、ページが移動した可能性があります。
-  errorEyebrow: アプリケーションエラー
   errorTitle: 問題が発生しました
-  errorDescription: OpenAnalytics はリクエストを完了できませんでした。以下の診断情報が調査に役立ちます。
-  statusLabel: ステータス
-  reasonLabel: 原因
-  requestLabel: リクエストパス
-  timestampLabel: タイムスタンプ
-  diagnosticIdLabel: 診断 ID
-  errorTypeLabel: エラー種別
-  errorMessageLabel: エラーメッセージ
-  notFoundReason: route_not_found
-  unexpectedReason: unexpected_application_error
+  errorDescription: OpenAnalytics はリクエストを完了できませんでした。
   homeAction: ホームに戻る
   reportAction: GitHub で報告
-  reportHint: 内容を確認できるよう、入力済みの GitHub Issue が開きます。
 actions:
   switchToEnglish: English
   switchToChinese: 簡体字中国語
@@ -1815,24 +1352,26 @@ teamManagement:
     openAnalytics: アナリティクスを開く
     title: すべてのサイト
     pagesPerSession: ページ / セッション
+    public: 公開
+    openPublic: 公開ダッシュボードを開く
   widgets: {}
   notifications:
-    empty: このチームには通知ルールがありません。
+    empty: 通知ルールはまだありません。
     rulesTitle: 通知ルール
-    enabledCount: このチームで {count} 件のルールが有効です。
+    enabledCount: この組織で {count} 件のルールが有効です。
     loadingRules: 通知ルールを読み込み中
     deliveryTestTitle: 配信テスト
     deliveryTestDescription: あなた宛てのアプリ内通知を 1 件作成し、利用可能な場合はメール送信も試行します。
     inAppTestHint: アプリ内通知を送信します。
     emailTestConfiguredHint: テストメールを送信します。
-    emailTestUnconfiguredHint: このシステムではメール送信が設定されていません。追加するには管理者に連絡してください。
+    emailTestUnconfiguredHint: "この Every App ゲートウェイではメールが設定されていません。"
     sendTestNotification: テスト通知を送信
     loadRulesFailed: 通知ルールを読み込めません。
     testNotificationSent: テスト通知を送信しました。
     sendTestNotificationFailed: テスト通知を送信できません。
     createRule: ルールを作成
     editRule: ルールを編集
-    dialogDescription: このチームの基本通知ルールを設定します。
+    dialogDescription: この組織の通知ルールを設定します。
     ruleInfoSection: ルール情報
     scheduleSection: スケジュール
     sendScheduleSection: 送信時刻
@@ -1890,7 +1429,6 @@ teamManagement:
     disable: 無効化
     delete: 削除
     saveRule: ルールを保存
-    emailPreview: メールプレビュー
     preview: プレビュー
     runNow: 今すぐ実行
     previewFailed: ルールをプレビューできません。
@@ -1942,7 +1480,6 @@ teamManagement:
       title: タイトル
       htmlPreview: HTML プレビュー
       bodyText: 本文テキスト
-      data: データ
       createdAt: 作成日時
       updatedAt: 更新日時
       loadingContent: 評価済みレポート内容を読み込み中
@@ -1962,13 +1499,13 @@ teamManagement:
       health: トラッキングが途絶えたときに通知
     recipientModes:
       creator: 作成者
-      team_admins: チーム管理者
+      team_admins: 組織の管理者
       all_team_members: 全メンバー
       users: 選択したユーザー
     recipientKindLabel: 受信者種別
     recipientPresetLabel: プリセット
     customRecipientsEmpty: 受信者が選択されていません
-    noTeamMembers: 利用可能なチームメンバーがいません。
+    noTeamMembers: 組織のメンバーはまだいません。
     recipientKinds:
       preset: プリセット
       custom: カスタム
@@ -2013,25 +1550,14 @@ teamManagement:
       last_1h: 直近 1 時間
       last_24h: 直近 24 時間
       yesterday: 昨日
-    emailPreviewPage:
-      title: 通知メールプレビュー
-      typeLabel: プレビュー種別
-      localeLabel: プレビューロケール
-      formatLabel: プレビュー形式
-      html: HTML
-      text: プレーンテキスト
-      json: JSON
-      refresh: プレビュー
-      loading: プレビューをレンダリング中...
-      loadFailed: メールプレビューをレンダリングできません。
-      subject: 件名
+    addSiteFirst: 先にサイトを追加してください。
+    deleteDescription: この操作は元に戻せません。
+    previewStatuses:
+      skipped: スキップ
+      checked: 未発火
+      triggered: 発火
   publicLinks:
-    enabled: 有効
-    disabled: 無効
-    viewSettings: 設定を表示
     copyLink: リンクをコピー
-    linkCopied: リンクをコピーしました
-    noSites: このチームにはまだサイトがありません。
     columns: {}
   apiKeys:
     status: {}
@@ -2044,8 +1570,6 @@ teamManagement:
     inviteStatuses: {}
     columns: {}
     roleLabels: {}
-managementNav:
-  scheduledTasks: スケジュールタスク
 managementPages:
   versionUpdates: {}
   scheduledTasks:
@@ -2056,17 +1580,12 @@ managementPages:
     allStatuses: すべてのステータス
     runs24h: 24時間以内の実行回数
     successRate24h: 24時間以内の成功率
-    successRateDescription: 成功した実行のみを数えます。
     problemRuns24h: 異常な実行回数
-    retentionPrefix: 保持期間
-    days: 日
     failed: 失敗
     partial: 一部完了
     lastRun: 最終実行
     staleRunning: 長時間未完了の実行
-    noStaleRunning: 長時間未完了の実行なし
     taskListTitle: タスク
-    taskListDescription: 登録済みスケジュールタスクと過去 30 日間の健全性です。
     task: タスク
     schedule: スケジュール
     enabled: 状態
@@ -2080,7 +1599,6 @@ managementPages:
     avgDuration: 平均所要時間
     runHistoryTitle: 実行履歴
     nextRun: 次回実行
-    runHistoryDescription: 過去 30 日間に保持されたタスク実行です。
     noRuns: 実行はまだありません。
     scheduledAt: 予定
     startedAt: 開始
@@ -2113,7 +1631,7 @@ managementPages:
     taskDefinitions:
       visit_hourly_rollup:
         name: 時間別訪問集計
-        description: 閉じた訪問行を時間別ロールアップに集計し、ダッシュボードのカウンターと推移に使用します。
+        description: 終了した訪問を時間ごとの合計に集計し、レポートに使用します。
         schedule: 毎時
       notification_tick:
         name: 通知配信
@@ -2121,32 +1639,24 @@ managementPages:
         schedule: 30分ごと
       database_maintenance:
         name: データベースメンテナンス
-        description: 期限切れの実行データと通知を削除し、D1 の統計情報を最適化します。
+        description: 期限切れのタスク実行記録と通知を削除し、データベースを最適化します。
         schedule: 毎日
+    keptForDays: "{days} 日間保持"
 adminUsers:
   columns: {}
 adminSites:
-  createTitle: サイトを作成
-  name: サイト名
+  createTitle: サイトを追加
+  name: 名前（任意）
   domain: ドメイン
-  publicSlug: 公開スラッグ（任意）
-  create: サイトを作成
-  creating: 作成中...
-  noData: サイトが見つかりません。
-  loadFailed: サイトを読み込めません。
-  createSuccess: サイトを作成しました。
-  createFailed: サイトを作成できません。
-  invalidInput: 有効なサイト名とドメインを入力してください。
-  open: アナリティクスを開く
-  columns:
-    name: 名前
-    domain: ドメイン
-    created: 作成日時
-    action: 操作
+  create: サイトを追加
+  creating: 追加中...
+  createSuccess: サイトを追加しました。
+  createFailed: サイトを追加できませんでした。もう一度お試しください。
+  invalidDomain: example.com のようなドメインを入力してください。
+  columns: {}
 adminTeams:
   columns: {}
 requestObservation:
-  title: リクエスト監視
   blockedTotal: "ブロックしたリクエスト"
   retentionNote: "30 日間保持します。許可されたトラフィックは各サイトのダッシュボードにあります。"
   topReasons: "理由"
@@ -2157,8 +1667,8 @@ requestObservation:
     suspected_bot: "ホスティングネットワーク"
   tabs: {}
   refresh: 更新
-  loadFailed: リクエスト監視データを読み込めません。
-  noData: この期間にリクエストデータはありません。
+  loadFailed: ブロックされたリクエストを読み込めません。
+  noData: この期間にブロックされたリクエストはありません。
   time: 時刻
   site: サイト
   location: 地域
@@ -2197,49 +1707,9 @@ requestObservation:
     windowDays: 過去 {days} 日
   normalDetail: {}
 systemSettings:
-  title: システム設定
-  subtitle: この OpenAnalytics デプロイ全体の設定を管理します。
-  guide: ガイド
-  analyticsEngineTitle: Analytics Engine
-  analyticsEngineDescription: リクエスト監視と将来のトラフィック・イベント分析で使用する Analytics Engine の Cloudflare 認証情報を設定します。
-  analyticsEngineAccountIdLabel: Cloudflare Account ID
-  analyticsEngineApiTokenLabel: Cloudflare API トークン
-  analyticsEngineApiTokenPlaceholder: ガイドを見て Cloudflare API トークンを取得
-  analyticsEngineSaved: Analytics Engine 設定を保存しました。
-  analyticsEngineSaveFailed: Analytics Engine 設定を保存できません。
-  analyticsEngineDeleted: Analytics Engine 設定を削除しました。
-  analyticsEngineDeleteFailed: Analytics Engine 設定を削除できません。
-  analyticsEngineDeleteConfirm: Analytics Engine の読み取り用認証情報を削除しますか？依存する機能は認証情報が復元されるまで設定が必要な状態になります。
-  analyticsEngineDisabledTitle: Analytics Engine が有効ではありません
-  analyticsEngineDisabledDescription: Cloudflare アカウントで Analytics Engine
-    が有効化されていないため、このデプロイでは Analytics Engine バインディングが自動的に無効化されました。Cloudflare で
-    Analytics Engine を有効化し、OpenAnalytics を再デプロイすると関連分析機能が有効になります。
-  analyticsEngineDisabledHint: Analytics Engine が有効化され Worker が再デプロイされるまで、Analytics Engine 設定はロックされます。
-  analyticsEngineOpenCloudflare: Cloudflare Analytics Engine を開く
-  analyticsEngineGuideTitle: Analytics Engine 認証情報を取得
-  analyticsEngineGuideDescription: Analytics Engine には Cloudflare
-    アカウント情報と、Analytics Engine データを読み取れる API トークンが必要です。
-  analyticsEngineGuideSteps:
-    - Cloudflare Dashboard を開き、対象アカウントに入り、Account ID をコピーします。
-    - Workers & Pages で Analytics Engine を有効化します。Request、Traffic、Event の 3
-      データセットはデプロイ時に自動作成・バインドされます。
-    - My Profile → API Tokens に移動し、Custom token を作成します。
-    - トークンに Account Analytics の読み取り権限を付与し、現在のアカウントにスコープします。
-    - トークンをコピーし、ここに Account ID と API トークンを入力します。
   notificationEmailTitle: メール通知
-  notificationEmailDescription: "レポート、アラート、テストメッセージは Every App ゲートウェイ経由でメール送信されます。"
-  emailGatewayReady: "通知メールは Every App ゲートウェイが送信します。"
-  emailGatewayNotReady: "Every App ゲートウェイにメール送信者がまだ設定されていません。運用者が EMAIL_FROM と
-    Email Sending を設定すると通知メールが送信されます。"
+  emailGatewayNotReady: "この Every App ゲートウェイではメールが設定されていません。"
   emailSenderLabel: "送信者"
-  notificationEmailGuideTitle: Resend メール設定を取得
-  notificationEmailGuideDescription: Resend 経由でシステムメールを送るには、検証済み送信ドメインと API キーを用意してください。
-  notificationEmailGuideSteps:
-    - Resend Dashboard を開き、送信ドメインの DNS 検証が完了していることを確認します。
-    - API Keys ページから新しい API キーを作成します。
-    - メール送信に必要な権限を選び、生成された API キーをコピーします。
-    - ここに送信者名、送信者メール、Reply-To、Resend API キーを入力します。
-    - 設定を保存し、テストメールを送信して配信を確認します。
   retentionTitle: 運用データの保持期間
   retentionDescription: タスク実行、タスクログ、通知メッセージ、詳細な分析データの保持期間を設定します。タスクと通知の変更は新しいレコードにのみ適用されます。新しい期間より古い詳細な分析データは、次回の日次実行で削除されます。
   scheduledTaskLogsDaysLabel: スケジュールタスクの実行とログ（日）
@@ -2252,70 +1722,16 @@ systemSettings:
   retentionSaving: 保存中...
   retentionSaved: 保持期間を保存しました。
   retentionSaveFailed: 保持期間を保存できません。
-  loginTurnstileTitle: ログイン Turnstile 保護
-  loginTurnstileDescription: 有効にすると、ログインページはバックグラウンドで Cloudflare Turnstile
-    Invisible 検証を実行し、サーバー側のサインイン処理で強制します。
-  loginTurnstileEnabledLabel: ログイン保護を有効化
-  loginTurnstileSiteKeyLabel: Site Key
-  loginTurnstileSecretKeyLabel: Secret Key
-  loginTurnstileSecretKeyPlaceholder: ガイドを見て Turnstile Secret Key を取得
-  loginTurnstileModeLabel: 検証モード
-  loginTurnstileModeInvisible: Invisible
-  loginTurnstileTest: 設定をテスト
-  loginTurnstileTesting: 検証中...
-  loginTurnstileTestPassed: 検証に成功しました
-  loginTurnstileTestRequired: 新しい Secret Key は先にテストが必要です
-  loginTurnstileTestMissing: 先に Site Key と Secret Key の両方を入力してください。
-  loginTurnstileTestFailed: 検証に失敗しました。Site Key と Secret Key を確認してください。
-  loginTurnstileSaved: ログイン Turnstile 設定を保存しました。
-  loginTurnstileSaveFailed: ログイン Turnstile 設定を保存できません。
-  loginTurnstileDeleted: ログイン Turnstile 設定を削除しました。
-  loginTurnstileDeleteFailed: ログイン Turnstile 設定を削除できません。
-  loginTurnstileDeleteConfirm: ログイン Turnstile 設定を削除しますか？ログイン保護は無効になります。
-  loginTurnstileLoadFailed: ログイン Turnstile 設定を読み込めません。
-  loginTurnstilePrivacyNotice: Cloudflare Turnstile コンソールで Invisible
-    ウィジェットを作成してください。 セルフホスト環境では、プライバシーポリシーが Cloudflare Turnstile
-    の要件に合っていることを確認してください。
-  loginTurnstileGuideTitle: Turnstile 認証情報を取得
-  loginTurnstileGuideDescription: ログイン保護には Cloudflare Turnstile の Site Key と Secret Key が必要です。
-  loginTurnstileGuideSteps:
-    - Cloudflare Dashboard を開き、Turnstile に移動します。
-    - 新しいウィジェットを作成し、Invisible モードを選択します。
-    - 現在の OpenAnalytics ログインドメインを許可ホスト名に追加します。
-    - ウィジェット作成後に Site Key と Secret Key をコピーします。
-    - ここに Site Key と Secret Key を入力し、検証テストを実行してから設定を保存します。
-  enabledLabel: メール送信を有効化
   enabledOn: 有効
   enabledOff: 無効
-  providerLabel: メールサービス
-  providerResend: Resend
-  fromNameLabel: 送信者名
-  fromEmailLabel: 送信者メール
-  replyToLabel: Reply-To メール
-  replyToPlaceholder: 任意。未指定の場合は送信者メールを使用
-  resendApiKeyLabel: Resend API Key
-  resendApiKeyPlaceholder: ガイドを見て Resend API キーを取得
-  testRecipientLabel: テスト宛先
-  save: 設定を保存
-  saving: 保存中...
-  test: テストメールを送信
-  testing: 送信中...
-  saved: メール設定を保存しました。
-  saveFailed: メール設定を保存できません。
-  delete: 設定を削除
-  deleting: 削除中...
   cancel: キャンセル
-  deleted: メール設定を削除しました。
-  deleteFailed: メール設定を削除できません。
-  deleteConfirm: メール通知設定を削除しますか？削除後、システムはメール未設定かつ無効として扱います。
-  testSent: テストメールを送信しました。
-  testFailed: テストメールを送信できません。
-  loadFailed: メール設定を読み込めません。
+  retentionLowerTitle: 古い分析データを削除しますか？
+  retentionLowerDescription: "{days} 日より古いページビューとイベントは、次回の日次実行で削除されます。時間ごとの合計は保持されます。この操作は元に戻せません。"
+  retentionLowerConfirm: 保存して削除
 systemPerformance:
-  title: システムパフォーマンス
   refresh: 更新
-  loadFailed: システムパフォーマンスデータを読み込めません。
-  noData: この期間にシステムパフォーマンスデータはありません。
+  loadFailed: 取り込みデータを読み込めません。
+  noData: この期間に取り込みデータはありません。
   range15m: 過去 15 分
   range1h: 過去 1 時間
   range6h: 過去 6 時間
@@ -2340,7 +1756,7 @@ systemPerformance:
   customEvents: カスタムイベント
   anomalyBucket: 異常分類
   openVisitHealth: 未終了訪問バックログ
-  openVisitHealthDescription: leave、ルート変更、タイムアウト確定でまだ閉じられていない未終了行です。
+  openVisitHealthDescription: まだ終了していない訪問です。
   open: 未終了
   stale: 停滞
   timedOut: タイムアウト
@@ -2354,18 +1770,18 @@ systemPerformance:
   events: イベント
   avgLatency: 平均遅延
   slowestEventsTitle: 推定最遅イベント
-  slowestEventsDescription: 選択期間で書き込み時刻とイベント時刻の正の差が最大の記録です。
+  slowestEventsDescription: 発生から保存までの遅延が最も長いイベントです。
   eventTime: イベント時刻
   serverTime: サーバー書き込み時刻
   estimatedDelay: 推定遅延
-  doDiagnosticTitle: DO バッファ診断
-  doDiagnosticDescription: 各サイトの専用 Durable Object のデータ停滞状況を診断します。
-  doDiagnosticLoadFailed: DO 診断データを読み込めません。
-  doDiagnosticLoading: サイトごとに DO 状態を取得中…
-  doDiagnosticRun: DO 診断を実行
-  doDiagnosticEmpty: DO 状態はありません。
-  doDiagnosticUnreachable: 一部の DO に到達できません
-  doDiagnosticReachableSites: 到達可能 DO
+  doDiagnosticTitle: バッファ中のデータ
+  doDiagnosticDescription: 各サイトでまだ保存されていないデータを確認します。
+  doDiagnosticLoadFailed: バッファ中のデータを確認できません。
+  doDiagnosticLoading: 各サイトを確認中…
+  doDiagnosticRun: バッファ中のデータを確認
+  doDiagnosticEmpty: バッファ中のデータはありません。
+  doDiagnosticUnreachable: 到達できないサイト
+  doDiagnosticReachableSites: 到達可能なサイト
   doDiagnosticTotalSites: 総サイト数
   doDiagnosticActiveAlarms: アクティブなアラームタイマー
   doDiagnosticBufferedVisits: バッファ済み訪問
@@ -2377,10 +1793,10 @@ systemPerformance:
   doDiagnosticStuckDirty: 未フラッシュで停滞
   doDiagnosticMaxFlushAttempts: 最大再試行回数
   doDiagnosticBufferedCustomEvents: バッファ済みカスタムイベント
-  doDiagnosticOldestOpen: 最古の未終了 started_at
+  doDiagnosticOldestOpen: 最も古い未終了の訪問
   doDiagnosticFutureMaxActivity: 未来側に最もずれた最終活動時刻
   doDiagnosticSiteList: リスク上位サイト
-  doDiagnosticSiteListDescription: DO ごとのバッファ状態スナップショットをリスクスコア順に並べた上位 20 サイトです。
+  doDiagnosticSiteListDescription: リスクが最も高い 20 サイト。
   doDiagnosticSiteFailed: 到達不能
   doDiagnosticSiteOpen: 未終了
   doDiagnosticSiteStuck: 停滞
@@ -2394,8 +1810,6 @@ systemPerformance:
   doDiagnosticSiteNextDueHidden: 非表示フォールバック
   doDiagnosticSiteNextDueTimeout: 訪問タイムアウト
   doDiagnosticSiteResponseMs: 応答時間
-  doDiagnosticThresholdsHint: "しきい値：stale {stale}、timeout {timeout}、hardAged
-    {hardAged}、stuck flush_attempts ≥ {stuck}"
   doDiagnosticHealthy: 異常なバッファ行は検出されませんでした。
 loginForm: {}
 logoutAction: {}
@@ -2407,7 +1821,7 @@ appNav:
   toggleSidebar: サイドバーを切り替え
   sources: 流入元
   audience: オーディエンス
-  conversions: コンバージョン
+  goals: 目標
   sites: サイト
   allSites: すべてのサイト
   inbox: 受信トレイ
@@ -2426,32 +1840,25 @@ getStarted:
   steps:
     site: 最初のサイトを追加
     tracking: ウェブサイトを計測する
-    team: チームを招待
+    team: メンバーを招待
     notifications: レポートをメールで受け取る
     sharing: 公開ダッシュボードを共有
-  noSitesTitle: サイトはまだありません
-  noSitesDescription: サイトを追加して、そのスクリプトをページに設置してください。
+  noSitesTitle: 最初のサイトを追加
+  memberNoSitesTitle: サイトはまだありません
+  memberNoSitesDescription: 管理者に追加を依頼してください。
   addSite: サイトを追加
   waitingTitle: 最初のページビューを待っています
-  waitingDescription: "このスクリプトを {domain} のすべてのページに追加してください。ページビューは1分以内にここに表示されます。"
   copy: コピー
   copied: コピーしました
-  trackingSettings: トラッキング設定
 settingsNav:
   label: 設定
-  personal: 個人
-  organization: 組織
-  system: システム
+  system: システムの状態
   account: アカウント
-  sites: サイト
   notifications: 通知
-  publicLinks: 公開リンク
-  general: 一般
-  scheduledTasks: スケジュールタスク
-  requestObservation: リクエスト監視
-  performance: パフォーマンス
   cancel: キャンセル
-  managerOnly: 変更できるのはオーナーまたは管理者のみです。
-  dangerZone: 危険な操作
-  copy: コピー
-  copied: コピーしました
+systemHealth:
+  tabs:
+    tasks: スケジュールタスク
+    blocked: ブロックされたリクエスト
+    ingestion: データ受信
+    data: データ

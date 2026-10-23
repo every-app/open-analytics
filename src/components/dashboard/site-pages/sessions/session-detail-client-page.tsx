@@ -6,6 +6,11 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { JourneyDetailStateSwitch } from "@/components/dashboard/journeys/journey-detail-state";
 import { JourneyGeoLocationCard } from "@/components/dashboard/journeys/journey-geo-location-card";
 import { useDashboardQueryControls } from "@/components/dashboard/shell/dashboard-query-provider";
+import {
+  PeopleView,
+  VIEW_QUERY_PARAM,
+  visitorDetailHref,
+} from "@/components/dashboard/site-pages/common/detail-query-param";
 import { EventDetailDrawer } from "@/components/dashboard/site-pages/events/event-detail-drawer";
 import { PageDetailDrawer } from "@/components/dashboard/site-pages/pages/page-detail-drawer";
 import {
@@ -58,15 +63,13 @@ function DetailContent({
 }) {
   const modalClose = useDetailDrawerClose();
   const session = detail.session;
-  const sessionsPath = pathname.replace(/\/detail$/, "");
-  const siteBasePath = sessionsPath.replace(/\/sessions$/, "");
+  const siteBasePath = pathname.replace(/\/visitors$/, "");
+  const sessionsPath = `${pathname}?${VIEW_QUERY_PARAM}=${PeopleView.Sessions}`;
   const sessionSiteDomain = useMemo(
     () => resolveSessionSiteDomain(detail),
     [detail],
   );
-  const visitorHref = `${siteBasePath}/visitors?detail=${encodeURIComponent(
-    session.visitorId,
-  )}`;
+  const visitorHref = visitorDetailHref(siteBasePath, session.visitorId);
   const geoLocations = useMemo(
     () => sessionGeoLocationInputs(detail),
     [detail],

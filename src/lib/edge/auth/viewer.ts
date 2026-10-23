@@ -11,7 +11,7 @@ import {
 } from "@/lib/db";
 import type { Env } from "@/lib/edge/types";
 
-/** The gateway's organization roles. Owners and admins manage the app. */
+/** The gateway's organization roles. */
 export type OrgRole = "owner" | "admin" | "member";
 
 /**
@@ -25,7 +25,7 @@ export interface Viewer {
   email: string;
   teamId: string;
   role: OrgRole;
-  /** Owners and admins: manage sites, notifications and settings. */
+  /** Manages sites, notifications and settings: for now, everyone. */
   isAdmin: boolean;
 }
 
@@ -104,13 +104,14 @@ async function loadViewer(request: Request, env: Env): Promise<Viewer | null> {
   // A deployment pinned to one organization serves no other (`everyapp dev`
   // pins none).
   if (env.EVERY_APP_ORG_ID && user.orgId !== env.EVERY_APP_ORG_ID) return null;
-  const role = toOrgRole(user.orgRole);
   const viewer: Viewer = {
     userId: user.id,
     email: user.email,
     teamId: user.orgId,
-    role,
-    isAdmin: role === "owner" || role === "admin",
+    role: toOrgRole(user.orgRole),
+    // For now every member of the organization manages the app; there is no
+    // view-only role. The gateway role is still recorded.
+    isAdmin: true,
   };
   await mirror(env, viewer);
   return viewer;

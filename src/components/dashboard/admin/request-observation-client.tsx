@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@insightflare/ui/card";
-import { PageHeading } from "@insightflare/ui/page-heading";
 import { Spinner } from "@insightflare/ui/spinner";
 import {
   Table,
@@ -69,40 +68,35 @@ export function RequestObservationClient({
 
   return (
     <div className="space-y-4">
-      <PageHeading
-        title={copy.title}
-        actions={
-          <div className="flex items-center gap-2">
-            {WINDOWS.map((window) => (
-              <Button
-                key={window}
-                type="button"
-                size="sm"
-                variant={window === days ? "default" : "outline"}
-                onClick={() => setDays(window)}
-              >
-                {formatI18nTemplate(copy.overviewLabels.windowDays, {
-                  days: window,
-                })}
-              </Button>
-            ))}
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={query.isFetching}
-              onClick={() => void query.refetch()}
-            >
-              {query.isFetching ? (
-                <Spinner data-icon="inline-start" />
-              ) : (
-                <RefreshCwIcon data-icon="inline-start" />
-              )}
-              {copy.refresh}
-            </Button>
-          </div>
-        }
-      />
+      <div className="flex flex-wrap justify-end gap-2">
+        {WINDOWS.map((window) => (
+          <Button
+            key={window}
+            type="button"
+            size="sm"
+            variant={window === days ? "default" : "outline"}
+            onClick={() => setDays(window)}
+          >
+            {formatI18nTemplate(copy.overviewLabels.windowDays, {
+              days: window,
+            })}
+          </Button>
+        ))}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={query.isFetching}
+          onClick={() => void query.refetch()}
+        >
+          {query.isFetching ? (
+            <Spinner data-icon="inline-start" />
+          ) : (
+            <RefreshCwIcon data-icon="inline-start" />
+          )}
+          {copy.refresh}
+        </Button>
+      </div>
 
       {query.isError ? (
         <p className="text-sm text-destructive">{copy.loadFailed}</p>

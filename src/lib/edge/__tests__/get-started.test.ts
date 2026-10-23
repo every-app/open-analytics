@@ -134,14 +134,27 @@ describe("get started", () => {
     ]);
   });
 
-  it("counts only the organization's own data", async () => {
+  it("offers nothing before the first site", async () => {
     seedTeam(database, "org-1");
+    seedFinishedTeam(database, "org-2");
+
+    const { body } = await getStarted(database);
+
+    expect(body.data.steps).toEqual([]);
+  });
+
+  it("offers only installing the script until the organization's own sites get a page view", async () => {
+    seedTeam(database, "org-1");
+    seedSite(database, "org-1", "site-a");
     seedMembers(database, "org-1", 1);
     seedFinishedTeam(database, "org-2");
 
     const { body } = await getStarted(database);
 
-    expect(doneSteps(body)).toEqual([]);
+    expect(body.data.steps).toEqual([
+      { id: "site", done: true },
+      { id: "tracking", done: false },
+    ]);
   });
 
   it("keeps tracking done after retention deletes the visits", async () => {

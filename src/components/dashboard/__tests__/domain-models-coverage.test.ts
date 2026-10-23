@@ -14,10 +14,8 @@ import {
 import {
   formatDateSpan,
   INTERVAL_ORDER,
-  intervalDisabledReason,
   intervalLabel,
-  RANGE_GROUPS,
-  rangeGroupLabel,
+  RANGE_PRESET_OPTIONS,
   rangeLabel,
   ROLLING_RANGE_PRESETS,
   shiftTimeWindow,
@@ -122,18 +120,11 @@ const windowFor = (
 
 const messages = {
   ranges: {
-    last30m: "30m",
-    last1h: "1h",
     today: "today",
     yesterday: "yesterday",
-    thisWeek: "week",
-    thisMonth: "month",
-    thisYear: "year",
-    last24h: "24h",
     last7d: "7d",
     last30d: "30d",
     last90d: "90d",
-    last6m: "6m",
     last12m: "12m",
     custom: "custom",
   },
@@ -143,16 +134,6 @@ const messages = {
     day: "day",
     week: "week",
     month: "month",
-  },
-  dashboardHeader: {
-    rangeGroupQuick: "quick",
-    rangeGroupCalendar: "calendar",
-    rangeGroupRolling: "rolling",
-    rangeGroupAdvanced: "advanced",
-    intervalDisabledMinute: "minute disabled",
-    intervalDisabledHour: "hour disabled",
-    intervalDisabledDay: "day disabled",
-    intervalDisabledWeek: "week disabled",
   },
   retention: { periodLabel: "Period {n}" },
   performance: {
@@ -236,27 +217,19 @@ describe("dashboard domain model helpers", () => {
     expect(ROLLING_RANGE_PRESETS.has("30d")).toBe(true);
     expect(ROLLING_RANGE_PRESETS.has("custom")).toBe(false);
     expect(INTERVAL_ORDER).toEqual(["minute", "hour", "day", "week", "month"]);
-    expect(RANGE_GROUPS.map(({ key }) => key)).toEqual([
-      "quick",
-      "calendar",
-      "rolling",
-      "advanced",
+    expect(RANGE_PRESET_OPTIONS).toEqual([
+      "today",
+      "yesterday",
+      "7d",
+      "30d",
+      "90d",
+      "12m",
     ]);
-    expect(rangeLabel(messages, "30m")).toBe("30m");
+    expect(rangeLabel(messages, "today")).toBe("today");
     expect(rangeLabel(messages, "custom")).toBe("custom");
-    expect(rangeLabel(messages, "6m")).toBe("6m");
     expect(rangeLabel(messages, "12m")).toBe("12m");
     expect(intervalLabel(messages, "minute")).toBe("minute");
     expect(intervalLabel(messages, "month")).toBe("month");
-    expect(rangeGroupLabel(messages, "quick")).toBe("quick");
-    expect(rangeGroupLabel(messages, "calendar")).toBe("calendar");
-    expect(rangeGroupLabel(messages, "rolling")).toBe("rolling");
-    expect(rangeGroupLabel(messages, "advanced")).toBe("advanced");
-    expect(intervalDisabledReason(messages, "minute")).toBe("minute disabled");
-    expect(intervalDisabledReason(messages, "hour")).toBe("hour disabled");
-    expect(intervalDisabledReason(messages, "day")).toBe("day disabled");
-    expect(intervalDisabledReason(messages, "week")).toBe("week disabled");
-    expect(intervalDisabledReason(messages, "month")).toBe("");
 
     expect(toCalendarDate(Number.NaN, "UTC")).toBeNull();
     expect(toCalendarDate(Date.UTC(2024, 4, 6), "UTC")?.getDate()).toBe(6);

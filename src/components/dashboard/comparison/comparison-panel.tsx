@@ -6,7 +6,6 @@ import { Button } from "@insightflare/ui/button";
 import {
   Field,
   FieldContent,
-  FieldDescription,
   FieldLabel,
   FieldTitle,
 } from "@insightflare/ui/field";
@@ -16,7 +15,6 @@ import {
   ResponsiveDialog,
   ResponsiveDialogBody,
   ResponsiveDialogContent,
-  ResponsiveDialogDescription,
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from "@insightflare/ui/responsive-dialog";
@@ -108,9 +106,6 @@ function ComparisonFilterDialog({
           <ResponsiveDialogTitle icon={ListFilterIcon}>
             {messages.dashboardHeader.compareCustomFilter}
           </ResponsiveDialogTitle>
-          <ResponsiveDialogDescription>
-            {messages.dashboardHeader.compareCustomFilterDescription}
-          </ResponsiveDialogDescription>
         </ResponsiveDialogHeader>
         <ResponsiveDialogBody
           scrollable={false}
@@ -155,13 +150,11 @@ function ComparisonFilterDialog({
   );
 }
 function ComparisonOption({
-  description,
   id,
   label,
   selected,
   value,
 }: {
-  readonly description: string;
   readonly id: string;
   readonly label: string;
   readonly selected: boolean;
@@ -178,7 +171,6 @@ function ComparisonOption({
       >
         <FieldContent>
           <FieldTitle>{label}</FieldTitle>
-          <FieldDescription>{description}</FieldDescription>
         </FieldContent>
         <RadioGroupItem id={id} value={value} className="mt-0.5" />
       </Field>
@@ -239,18 +231,12 @@ export function ComparisonPanel({
             id="comparison-period-current"
             value="same"
             label={messages.dashboardHeader.compareCurrentPeriod}
-            description={
-              messages.dashboardHeader.compareCurrentPeriodDescription
-            }
             selected={period === "same"}
           />
           <ComparisonOption
             id="comparison-period-previous"
             value="previous"
             label={messages.dashboardHeader.comparePreviousPeriod}
-            description={
-              messages.dashboardHeader.comparePreviousPeriodDescription
-            }
             selected={period === "previous"}
           />
         </RadioGroup>
@@ -270,18 +256,12 @@ export function ComparisonPanel({
             id="comparison-filter-current"
             value="current"
             label={messages.dashboardHeader.compareFollowCurrentFilter}
-            description={
-              messages.dashboardHeader.compareFollowCurrentFilterDescription
-            }
             selected={filterMode === "current"}
           />
           <ComparisonOption
             id="comparison-filter-custom"
             value="custom"
             label={messages.dashboardHeader.compareCustomFilter}
-            description={
-              messages.dashboardHeader.compareCustomFilterDescription
-            }
             selected={filterMode === "custom"}
           />
         </RadioGroup>

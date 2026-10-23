@@ -31,34 +31,6 @@ export function SectionLayout({
   );
 }
 
-/** A labelled group of links in a section's navigation column. */
-export function SectionNavGroup({
-  label,
-  children,
-  className,
-}: {
-  label: ReactNode;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    // Below `md` the groups' links run together in one scrolling strip.
-    <div
-      className={cn(
-        "contents md:block md:min-w-0 md:not-first:mt-3",
-        className,
-      )}
-    >
-      <div className="hidden h-8 items-center px-2.5 md:flex">
-        <span className="min-w-0 truncate text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
-          {label}
-        </span>
-      </div>
-      <div className="contents md:flex md:flex-col md:gap-0.5">{children}</div>
-    </div>
-  );
-}
-
 // The router sets `data-status="active"` and `aria-current="page"` on the
 // link that matches the current URL.
 function SectionNavAnchor({ className, ...props }: ComponentProps<"a">) {

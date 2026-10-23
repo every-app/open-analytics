@@ -508,9 +508,7 @@ export const EventTypeDetailClientPage = memo(
           <EventPageHeader
             messages={messages}
             title={messages.events.detailTitle}
-            subtitle={messages.events.typeDetailSubtitle}
             backHref={eventsPath}
-            backLabel={messages.events.backToEvents}
             onBack={modalClose ?? undefined}
           />
           <JourneyDetailStateSwitch stateKey="event-type-missing">
@@ -529,9 +527,7 @@ export const EventTypeDetailClientPage = memo(
         <EventPageHeader
           messages={messages}
           title={eventName}
-          subtitle={messages.events.typeDetailSubtitle}
           backHref={eventsPath}
-          backLabel={messages.events.backToEvents}
           onBack={modalClose ?? undefined}
         />
 

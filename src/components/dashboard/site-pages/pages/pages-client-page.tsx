@@ -4,6 +4,10 @@ import { PageHeading } from "@insightflare/ui/page-heading";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 import {
+  emptyContent,
+  LoadFailedContent,
+} from "@/components/dashboard/common/table-states";
+import {
   dashboardComparisonLabel,
   useDashboardComparisonQuery,
 } from "@/components/dashboard/comparison/use-dashboard-comparison-query";
@@ -187,6 +191,7 @@ export function PagesClientPage({
     isFetchNextPageError,
     isFetchingNextPage,
     isPending,
+    refetch,
   } = useInfiniteQuery({
     queryKey: [
       "dashboard",
@@ -241,6 +246,11 @@ export function PagesClientPage({
   const loadingMore = isFetchingNextPage;
   const hasMore = hasNextPage ?? false;
   const error = Boolean(queryError) && rows.length === 0;
+  const emptyLabel = emptyContent(
+    messages,
+    messages.pages.empty,
+    Boolean(filters.root),
+  );
   const appendError = isFetchNextPageError;
 
   const loadNextPage = useCallback(() => {
@@ -290,7 +300,7 @@ export function PagesClientPage({
 
   return (
     <div className="space-y-6">
-      <PageHeading title={messages.pages.title} />
+      <PageHeading title={messages.navigation.pages} />
 
       <PagesShareTrendCard
         locale={locale}
@@ -324,8 +334,13 @@ export function PagesClientPage({
         loading={loadingInitial}
         loadingMore={loadingMore}
         error={error}
-        errorContent={messages.pages.loadError}
-        emptyContent={messages.pages.empty}
+        errorContent={
+          <LoadFailedContent
+            messages={messages}
+            onRetry={() => void refetch()}
+          />
+        }
+        emptyContent={emptyLabel}
         appendError={appendError}
         appendErrorContent={messages.pages.loadMoreError}
         hasMore={hasMore}

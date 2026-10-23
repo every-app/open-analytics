@@ -92,6 +92,7 @@ export interface TabbedDataTableQueryResult<
   isPending: boolean;
   isPlaceholderData: boolean;
   isError?: boolean;
+  refetch?: () => Promise<unknown>;
 }
 
 export type TabbedDataTableQueryHook<TRow extends TabbedDataTableRowBase> = (
@@ -178,8 +179,10 @@ export interface TabbedDataTableCardProps<
   sortActionLabel?: (columnLabel: string) => string;
   labelColumnLabel?: string | ((tab: TabbedDataTableTab<TTab>) => string);
   loadingLabel: string;
-  emptyLabel: string;
-  errorLabel?: string;
+  emptyLabel: ReactNode;
+  errorLabel?: ReactNode;
+  /** Offers to reload the rows when they fail to load. */
+  retryLabel?: string;
   search?: false | TabbedDataTableSearchConfig<TRow, TTab>;
   export?: false | TabbedDataTableExportConfig<TRow, TTab, TKey>;
   headerRight?: ReactNode;

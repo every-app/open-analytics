@@ -32,6 +32,8 @@ export interface PublicSiteData {
   slug: string;
   name: string;
   domain: string;
+  /** Whether the site has received a page view yet. */
+  hasData: boolean;
 }
 export interface FetchEdgeOptions {
   method?: HttpMethod;
@@ -486,40 +488,6 @@ export async function fetchNotificationMessages(input: {
         ? data.unreadAttentionCount
         : 0,
   };
-}
-export async function fetchNotificationEmailPreview(input: {
-  type: "test" | "report" | "milestone" | "threshold" | "change" | "health";
-  locale: Locale;
-  format: "html" | "text" | "json";
-}): Promise<
-  | string
-  | {
-      subject: string;
-      html: string;
-      text: string;
-    }
-> {
-  const baseUrl = await edgeBaseUrl();
-  const url = withQuery(
-    new URL(adminServicePath("notification-email-preview"), baseUrl),
-    input,
-  );
-  const res = await fetch(url.toString(), {
-    method: "GET",
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Email preview failed (${res.status}): ${text}`);
-  }
-  if (input.format === "json") {
-    const payload = (await res.json()) as {
-      ok: boolean;
-      data: { subject: string; html: string; text: string };
-    };
-    return payload.data;
-  }
-  return res.text();
 }
 export async function markNotificationMessageRead(input: {
   messageId: string;

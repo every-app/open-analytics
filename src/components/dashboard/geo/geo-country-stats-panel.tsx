@@ -11,9 +11,9 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   ExternalLinkIcon,
-  InfoIcon,
 } from "lucide-react";
 
+import { InfoTooltip } from "@/components/dashboard/common/info-tooltip";
 import {
   ComparisonMetricToggle,
   type ComparisonTableMetric,
@@ -560,23 +560,22 @@ export const GeoCountryStatsPanel = memo(function GeoCountryStatsPanel({
                                 {wikiSummary.extract}
                               </p>
                             ) : null}
-                            {wikiSummary?.pageUrl ? (
-                              <a
-                                href={wikiSummary.pageUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-primary"
-                              >
-                                {messages.geo.viewOnWikipedia}
-                                <ExternalLinkIcon className="size-3.5 shrink-0" />
-                              </a>
-                            ) : null}
-                            <p className="text-[11px] leading-4 text-muted-foreground">
-                              <span className="mr-1.5 inline-flex h-4 align-top items-center">
-                                <InfoIcon className="size-3.5" />
-                              </span>
-                              {geoInvestigationNotice}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              {wikiSummary?.pageUrl ? (
+                                <a
+                                  href={wikiSummary.pageUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-primary"
+                                >
+                                  {messages.geo.viewOnWikipedia}
+                                  <ExternalLinkIcon className="size-3.5 shrink-0" />
+                                </a>
+                              ) : null}
+                              <InfoTooltip label={geoInvestigationNotice}>
+                                {geoInvestigationNotice}
+                              </InfoTooltip>
+                            </div>
                           </div>
                         ) : null}
                       </div>

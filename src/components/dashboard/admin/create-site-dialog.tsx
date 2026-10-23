@@ -21,9 +21,11 @@ import type { SiteData } from "@/lib/dashboard-api/client/edge";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { useRouter } from "@/lib/router";
+import { normalizeSiteDomain } from "@/lib/site-settings";
 
-/** Adds a site to the organization, then opens its overview, which shows
- * the tracking snippet until the first page view arrives. */
+/** Adds a site to the organization from its domain, then opens its
+ * overview, which shows the tracking snippet until the first page view
+ * arrives. The name is optional: the server names the site after its domain. */
 export function CreateSiteDialog({
   open,
   onOpenChange,
@@ -43,12 +45,12 @@ export function CreateSiteDialog({
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
-  const [publicSlug, setPublicSlug] = useState("");
   const [error, setError] = useState("");
 
   async function handleCreateSite() {
-    if (name.trim().length < 2 || domain.trim().length < 3) {
-      setError(t.invalidInput);
+    const normalizedDomain = normalizeSiteDomain(domain);
+    if (!normalizedDomain) {
+      setError(t.invalidDomain);
       return;
     }
     setSubmitting(true);
@@ -56,22 +58,23 @@ export function CreateSiteDialog({
     try {
       const data = await requestAdminService<SiteData>("sites", {
         method: "POST",
-        body: {
-          teamId,
-          name: name.trim(),
-          domain: domain.trim(),
-          publicSlug: publicSlug.trim() || undefined,
-        },
+        body: { teamId, name: name.trim(), domain: normalizedDomain },
       });
       setName("");
       setDomain("");
-      setPublicSlug("");
       onOpenChange(false);
       toast.success(t.createSuccess);
-      // A new site's overview shows the tracking snippet until data arrives.
+      // The sidebar, All sites and Get started all list the new site.
       queryClient.removeQueries({
         queryKey: dashboardShellQueryOptions.queryKey,
       });
+      void queryClient.invalidateQueries({
+        queryKey: ["dashboard", "team-dashboard"],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["dashboard", "get-started"],
+      });
+      // A new site's overview shows the tracking snippet until data arrives.
       await router.push(buildSitePath(locale, getSiteSlug(data)));
     } catch (cause) {
       setError(
@@ -104,32 +107,23 @@ export function CreateSiteDialog({
           }}
         >
           <div className="space-y-1.5">
-            <Label htmlFor="create-site-name">{t.name}</Label>
-            <Input
-              id="create-site-name"
-              value={name}
-              minLength={2}
-              required
-              onChange={(event) => setName(event.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
             <Label htmlFor="create-site-domain">{t.domain}</Label>
             <Input
               id="create-site-domain"
               value={domain}
-              minLength={3}
               placeholder="example.com"
+              autoComplete="off"
               required
               onChange={(event) => setDomain(event.target.value)}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="create-site-public-slug">{t.publicSlug}</Label>
+            <Label htmlFor="create-site-name">{t.name}</Label>
             <Input
-              id="create-site-public-slug"
-              value={publicSlug}
-              onChange={(event) => setPublicSlug(event.target.value)}
+              id="create-site-name"
+              value={name}
+              placeholder={normalizeSiteDomain(domain) || undefined}
+              onChange={(event) => setName(event.target.value)}
             />
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}

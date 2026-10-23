@@ -1206,7 +1206,7 @@ export function RealtimeLogEventDetailsDrawer({
 
             <section className="space-y-3">
               <h3 className="text-sm font-medium">
-                {messages.navigation.sessions}
+                {messages.common.sessions}
               </h3>
               <dl className="grid gap-3 sm:grid-cols-2">
                 {sessionDetailRows.map((row, index) => (

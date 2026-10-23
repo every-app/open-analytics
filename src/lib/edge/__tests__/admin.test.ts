@@ -602,28 +602,22 @@ describe("private admin edge handler", () => {
       });
     });
 
-    it("creates sites and initializes script settings", async () => {
+    it("creates sites from a normalized domain and initializes script settings", async () => {
       setSession(adminSession);
       mockUuid("00000000-0000-4000-8000-000000000301");
       upsertSiteScriptSettingsMock.mockResolvedValue(
         DEFAULT_SITE_SCRIPT_SETTINGS,
       );
-      const slugCheck = statement({ first: null });
       const insertSite = statement();
-      const { env } = createEnv([
-        statement({ first: userRow() }),
-        slugCheck,
-        insertSite,
-      ]);
+      const { env } = createEnv([statement({ first: userRow() }), insertSite]);
 
       const response = await dispatch(
         "/api/private/admin/sites",
         env,
         jsonInit({
           teamId: "team-1",
-          name: "Docs Site",
-          domain: "docs.example.test",
-          publicEnabled: "yes",
+          name: " ",
+          domain: " HTTPS://Docs.Example.test/pricing/ ",
         }),
       );
 
@@ -633,19 +627,19 @@ describe("private admin edge handler", () => {
         data: {
           id: "00000000-0000-4000-8000-000000000301",
           teamId: "team-1",
-          name: "Docs Site",
+          name: "docs.example.test",
           domain: "docs.example.test",
-          publicEnabled: true,
-          publicSlug: "docs-site",
+          publicEnabled: false,
+          publicSlug: "",
         },
       });
       expect(insertSite.bind).toHaveBeenCalledWith(
         "00000000-0000-4000-8000-000000000301",
         "team-1",
-        "Docs Site",
         "docs.example.test",
-        1,
-        "docs-site",
+        "docs.example.test",
+        0,
+        null,
       );
       expect(upsertSiteScriptSettingsMock).toHaveBeenCalledWith(
         env,
@@ -665,7 +659,7 @@ describe("private admin edge handler", () => {
       const missingFields = await dispatch(
         "/api/private/admin/sites",
         missingFieldsEnv,
-        jsonInit({ teamId: "team-1", name: "Docs" }),
+        jsonInit({ teamId: "team-1", name: "Docs", domain: "*.example" }),
       );
 
       const forbiddenEnv = createEnv([statement({ first: memberRow() })]).env;
@@ -682,7 +676,7 @@ describe("private admin edge handler", () => {
       expect(missingFields.status).toBe(400);
       expect(await missingFields.json()).toMatchObject({
         ok: false,
-        error: { message: "teamId, name and domain are required" },
+        error: { message: "domain must be a hostname, like example.com" },
       });
       expect(forbidden.status).toBe(403);
       expect(await forbidden.json()).toMatchObject({
@@ -779,6 +773,46 @@ describe("private admin edge handler", () => {
       expect(upsertSiteScriptSettingsMock).toHaveBeenCalledWith(env, "site-1", {
         siteDomain: "new.example.test",
       });
+    });
+
+    it("renames a site whose stored domain predates normalization", async () => {
+      setSession(adminSession);
+      upsertSiteScriptSettingsMock.mockResolvedValue(
+        DEFAULT_SITE_SCRIPT_SETTINGS,
+      );
+      const update = statement();
+      const { env } = createEnv([
+        statement({ first: userRow() }),
+        statement({
+          first: {
+            id: "site-1",
+            teamId: "team-1",
+            name: "Local",
+            domain: "localhost:3000",
+            publicEnabled: 0,
+            publicSlug: null,
+          },
+        }),
+        update,
+      ]);
+
+      const response = await dispatch(
+        "/api/private/admin/sites",
+        env,
+        jsonInit(
+          { siteId: "site-1", name: "Renamed", domain: "localhost:3000" },
+          "PATCH",
+        ),
+      );
+
+      expect(response.status).toBe(200);
+      expect(update.bind).toHaveBeenCalledWith(
+        "Renamed",
+        "localhost:3000",
+        0,
+        null,
+        "site-1",
+      );
     });
 
     it("updates sites with public slugs when publishing", async () => {

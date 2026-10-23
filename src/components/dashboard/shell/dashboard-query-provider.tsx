@@ -194,12 +194,7 @@ function clampPresetForMaxDays(
   maxRangeDays?: number,
 ): RangePreset {
   if (!maxRangeDays) return range;
-  if ((range === "6m" || range === "12m") && maxRangeDays <= 90) {
-    return "90d";
-  }
-  if (range === "thisYear" && maxRangeDays <= 90) {
-    return "90d";
-  }
+  if (range === "12m" && maxRangeDays <= 90) return "90d";
   return range;
 }
 export function DashboardQueryProvider({

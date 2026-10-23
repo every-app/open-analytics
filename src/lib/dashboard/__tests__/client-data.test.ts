@@ -6,11 +6,8 @@ import {
   emptyOverviewClientDimensionTabsData,
   emptyOverviewGeoDimensionTabsData,
   emptyOverviewGeoPointsData,
-  fetchBrowserCrossBreakdown,
   fetchBrowserEngineTrend,
-  fetchBrowserRadar,
   fetchBrowserTrend,
-  fetchBrowserVersionBreakdown,
   fetchClientCrossBreakdown,
   fetchClientDimensionTrend,
   fetchEventRecordDetail,
@@ -35,7 +32,6 @@ import {
   fetchPagesDashboard,
   fetchPagesShareTrend,
   fetchPerformance,
-  fetchReferrerRadar,
   fetchReferrers,
   fetchReferrerTrend,
   fetchRetention,
@@ -259,7 +255,7 @@ describe("Dashboard Client Data Processing Utilities", () => {
         {
           mode: "same",
           window: {
-            preset: "24h",
+            preset: "today",
             from: 100,
             to: 200,
             timeZone: "UTC",
@@ -297,7 +293,7 @@ describe("Dashboard Client Data Processing Utilities", () => {
 
   describe("empty parameter fallbacks", () => {
     const mockWindow = {
-      preset: "24h" as const,
+      preset: "today" as const,
       from: 1700000000000,
       to: 1700000000000 + 24 * 60 * 60 * 1000,
       timeZone: "UTC",
@@ -400,7 +396,7 @@ describe("Dashboard Client Data Processing Utilities", () => {
   describe("Network data fetching with mocked fetch", () => {
     const realFetch = globalThis.fetch;
     const mockWindow = {
-      preset: "24h" as const,
+      preset: "today" as const,
       from: 1700000000000,
       to: 1700000000000 + 24 * 60 * 60 * 1000,
       timeZone: "UTC",
@@ -548,10 +544,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
         ),
         fetchUtmTrend("signal-utm", mockWindow, "source", undefined, options),
         fetchReferrerTrend("signal-referrer", mockWindow, undefined, options),
-        fetchReferrerRadar("signal-referrer-radar", mockWindow, undefined, {
-          limit: 24,
-          signal: controller.signal,
-        }),
         fetchEventTypesTab("signal-event-types", mockWindow, undefined, {
           limit: 100,
           signal: controller.signal,
@@ -559,7 +551,7 @@ describe("Dashboard Client Data Processing Utilities", () => {
         fetchPagesShareTrend("signal-pages", mockWindow, undefined, options),
       ]);
 
-      expect(fetchMock).toHaveBeenCalledTimes(10);
+      expect(fetchMock).toHaveBeenCalledTimes(9);
       for (const [, init] of fetchMock.mock.calls) {
         expect((init as RequestInit).signal).toBe(controller.signal);
       }
@@ -942,33 +934,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
       params = paramsFromCall(fetchMock, 6);
       expect(params.get("limit")).toBe("7");
 
-      await fetchBrowserVersionBreakdown(
-        "option-browser-version",
-        mockWindow,
-        undefined,
-        { browserLimit: 3, versionLimit: 4 },
-      );
-      params = paramsFromCall(fetchMock, 7);
-      expect(params.get("browserLimit")).toBe("3");
-      expect(params.get("versionLimit")).toBe("4");
-
-      await fetchBrowserCrossBreakdown(
-        "option-browser-cross",
-        mockWindow,
-        undefined,
-        { browserLimit: 3, osLimit: 4, deviceTypeLimit: 5 },
-      );
-      params = paramsFromCall(fetchMock, 8);
-      expect(params.get("browserLimit")).toBe("3");
-      expect(params.get("osLimit")).toBe("4");
-      expect(params.get("deviceTypeLimit")).toBe("5");
-
-      await fetchReferrerRadar("option-referrer-radar", mockWindow, undefined, {
-        limit: 13,
-      });
-      params = paramsFromCall(fetchMock, 9);
-      expect(params.get("limit")).toBe("13");
-
       await fetchPagesDashboard(
         "option-pages-dashboard",
         mockWindow,
@@ -978,14 +943,14 @@ describe("Dashboard Client Data Processing Utilities", () => {
           cursor: "pages-cursor",
         },
       );
-      params = paramsFromCall(fetchMock, 10);
+      params = paramsFromCall(fetchMock, 7);
       expect(params.get("limit")).toBe("14");
       expect(params.get("cursor")).toBe("pages-cursor");
 
       await fetchRetention("option-retention", mockWindow, undefined, {
         granularity: "day",
       });
-      params = paramsFromCall(fetchMock, 11);
+      params = paramsFromCall(fetchMock, 8);
       expect(params.get("granularity")).toBe("day");
     });
 
@@ -1335,102 +1300,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
         fetchFunnelDetail(
           "funnel-detail-aborted",
           "funnel-1",
-          mockWindow,
-          undefined,
-          { signal: controller.signal },
-        ),
-      ).rejects.toMatchObject({ name: "AbortError" });
-    });
-
-    it("forwards cancellation signals for browser radar requests", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(freshJsonResponse({ ok: true, data: [] }));
-      globalThis.fetch = fetchMock as any;
-      const controller = new AbortController();
-
-      await fetchBrowserRadar("browser-radar-signal", mockWindow, undefined, {
-        signal: controller.signal,
-      });
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({ signal: controller.signal }),
-      );
-    });
-
-    it("preserves aborted browser radar requests", async () => {
-      const controller = new AbortController();
-      controller.abort();
-
-      await expect(
-        fetchBrowserRadar("browser-radar-aborted", mockWindow, undefined, {
-          signal: controller.signal,
-        }),
-      ).rejects.toMatchObject({ name: "AbortError" });
-    });
-
-    it("forwards cancellation signals for browser version requests", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(freshJsonResponse({ ok: true, data: [] }));
-      globalThis.fetch = fetchMock as any;
-      const controller = new AbortController();
-
-      await fetchBrowserVersionBreakdown(
-        "browser-version-signal",
-        mockWindow,
-        undefined,
-        { signal: controller.signal },
-      );
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({ signal: controller.signal }),
-      );
-    });
-
-    it("preserves aborted browser version requests", async () => {
-      const controller = new AbortController();
-      controller.abort();
-
-      await expect(
-        fetchBrowserVersionBreakdown(
-          "browser-version-aborted",
-          mockWindow,
-          undefined,
-          { signal: controller.signal },
-        ),
-      ).rejects.toMatchObject({ name: "AbortError" });
-    });
-
-    it("forwards cancellation signals for browser cross breakdown requests", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(freshJsonResponse({ ok: true, data: [] }));
-      globalThis.fetch = fetchMock as any;
-      const controller = new AbortController();
-
-      await fetchBrowserCrossBreakdown(
-        "browser-cross-signal",
-        mockWindow,
-        undefined,
-        { signal: controller.signal },
-      );
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({ signal: controller.signal }),
-      );
-    });
-
-    it("preserves aborted browser cross breakdown requests", async () => {
-      const controller = new AbortController();
-      controller.abort();
-
-      await expect(
-        fetchBrowserCrossBreakdown(
-          "browser-cross-aborted",
           mockWindow,
           undefined,
           { signal: controller.signal },

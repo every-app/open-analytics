@@ -37,6 +37,9 @@ vi.mock("@/lib/edge/auth/site-access", async (importOriginal) => {
     fetchPublicSite: vi.fn(),
   };
 });
+vi.mock("@/lib/edge/admin/setup/get-started", () => ({
+  readSiteHasData: vi.fn().mockResolvedValue(true),
+}));
 vi.mock("@/lib/edge/analytics/interfaces/dashboard/protocol/overview", () => ({
   handleOverviewContract: vi.fn(),
   handleTrendContract: vi.fn(),
@@ -71,7 +74,7 @@ describe("Hono public query routes", () => {
     vi.mocked(handleOverviewContract).mockResolvedValue(new Response("query"));
   });
 
-  it("returns public site metadata through the public cache wrapper", async () => {
+  it("returns current public site metadata without caching it", async () => {
     const app = createApp();
 
     const response = await app.fetch(
@@ -86,26 +89,13 @@ describe("Hono public query routes", () => {
 
     expect(body).toMatchObject({
       ok: true,
-      data: { slug: "demo", id: "site-1" },
+      data: { slug: "demo", id: "site-1", hasData: true },
     });
     expect(fetchPublicSite).toHaveBeenCalledWith(
       env,
       new URL("https://app.test/api/public/share/demo/site"),
     );
-    expect(withDashboardCache).toHaveBeenCalledWith(
-      ctx,
-      new URL("https://app.test/api/public/share/demo/site"),
-      expect.any(Function),
-      expect.objectContaining({
-        ...PUBLIC_QUERY_CACHE_OPTIONS,
-        identity: {
-          scope: "public",
-          tenantId: "site-1",
-          route: "site",
-        },
-        request: expect.any(Request),
-      }),
-    );
+    expect(withDashboardCache).not.toHaveBeenCalled();
     expect(dispatchQueryRoute).not.toHaveBeenCalled();
   });
 

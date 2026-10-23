@@ -16,7 +16,6 @@ import {
 } from "@insightflare/ui/card";
 import { DataTableSwitch } from "@insightflare/ui/data-table-switch";
 import { MetricSummaryGrid } from "@insightflare/ui/metric-summary-grid";
-import { PageHeading } from "@insightflare/ui/page-heading";
 import {
   Select,
   SelectContent,
@@ -187,73 +186,66 @@ export function SystemPerformanceClient({
 
   return (
     <div className="space-y-5">
-      <PageHeading
-        title={t.title}
-        actions={
-          <>
-            <Select
-              value={String(minutes)}
-              onValueChange={(value) => {
-                const next = Number(value);
-                if (
-                  WINDOW_OPTIONS.includes(
-                    next as SystemPerformanceWindowMinutes,
-                  )
-                ) {
-                  setMinutes(next as SystemPerformanceWindowMinutes);
-                }
+      <div className="flex flex-wrap justify-end gap-2">
+        <Select
+          value={String(minutes)}
+          onValueChange={(value) => {
+            const next = Number(value);
+            if (
+              WINDOW_OPTIONS.includes(next as SystemPerformanceWindowMinutes)
+            ) {
+              setMinutes(next as SystemPerformanceWindowMinutes);
+            }
+          }}
+        >
+          <SelectTrigger className="w-36">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {WINDOW_OPTIONS.map((option) => (
+              <SelectItem key={option} value={String(option)}>
+                {windowLabel(messages, option)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          type="button"
+          variant="outline"
+          className="gap-2"
+          disabled={loading}
+          onClick={() => {
+            void performanceQuery.refetch();
+          }}
+        >
+          <span className="inline-flex size-4 shrink-0 items-center justify-center">
+            {loading ? <Spinner /> : <RefreshCwIcon />}
+          </span>
+          <AutoResizer
+            initial
+            animateWidth
+            animateHeight={false}
+            className="inline-flex shrink-0 items-center"
+          >
+            <AutoTransition
+              className="inline-block"
+              duration={0.2}
+              type="fade"
+              initial={false}
+              presenceMode="wait"
+              customVariants={{
+                initial: { opacity: 0 },
+                animate: { opacity: 1 },
+                exit: { opacity: 0 },
               }}
             >
-              <SelectTrigger className="w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {WINDOW_OPTIONS.map((option) => (
-                  <SelectItem key={option} value={String(option)}>
-                    {windowLabel(messages, option)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              variant="outline"
-              className="gap-2"
-              disabled={loading}
-              onClick={() => {
-                void performanceQuery.refetch();
-              }}
-            >
-              <span className="inline-flex size-4 shrink-0 items-center justify-center">
-                {loading ? <Spinner /> : <RefreshCwIcon />}
+              <span key={loading ? "loading" : "refresh"}>
+                {loading ? messages.common.loading : t.refresh}
               </span>
-              <AutoResizer
-                initial
-                animateWidth
-                animateHeight={false}
-                className="inline-flex shrink-0 items-center"
-              >
-                <AutoTransition
-                  className="inline-block"
-                  duration={0.2}
-                  type="fade"
-                  initial={false}
-                  presenceMode="wait"
-                  customVariants={{
-                    initial: { opacity: 0 },
-                    animate: { opacity: 1 },
-                    exit: { opacity: 0 },
-                  }}
-                >
-                  <span key={loading ? "loading" : "refresh"}>
-                    {loading ? messages.common.loading : t.refresh}
-                  </span>
-                </AutoTransition>
-              </AutoResizer>
-            </Button>
-          </>
-        }
-      />
+            </AutoTransition>
+          </AutoResizer>
+        </Button>
+      </div>
 
       <MetricSummaryGrid
         items={[

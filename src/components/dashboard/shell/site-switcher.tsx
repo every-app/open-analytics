@@ -1,4 +1,4 @@
-import { Button } from "@insightflare/ui/button";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,26 +7,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@insightflare/ui/dropdown-menu";
+import { useRouteContext } from "@tanstack/react-router";
 import {
   CheckIcon,
   ChevronsUpDownIcon,
   LayoutGridIcon,
   PlusIcon,
-  SettingsIcon,
 } from "lucide-react";
 
+import { CreateSiteDialog } from "@/components/dashboard/admin/create-site-dialog";
 import { SiteBrandIcon } from "@/components/dashboard/common/site-brand-icon";
-import { buildSettingsPath, buildSitePath } from "@/lib/dashboard/paths";
+import { buildSitePath } from "@/lib/dashboard/paths";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 import Link from "@/lib/router";
-import { cn } from "@/lib/utils";
 
 import type { SidebarSite, SiteNavKey } from "./dashboard-shell/navigation";
 
 /**
  * The site the sidebar's pages belong to, and the way to another: each site
  * opens on the page you're on, all sites on the organization's dashboard.
+ * Owners and admins add a site from here too.
  */
 export function SiteSwitcher({
   locale,
@@ -51,16 +52,15 @@ export function SiteSwitcher({
   const section =
     activeSection && activeSection !== "overview" ? activeSection : undefined;
   const allSitesHref = navHref(`/${locale}/app`);
+  const { teamContext } = useRouteContext({ from: "/$locale/app" });
+  const [createSiteOpen, setCreateSiteOpen] = useState(false);
 
   return (
-    <div className="flex items-stretch rounded-lg border border-sidebar-border bg-card">
+    <>
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label={messages.appNav.switchSite}
-          className={cn(
-            "flex min-w-0 flex-1 items-center gap-2 px-3 py-1.5 text-left outline-none hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50",
-            activeSite && canManage ? "rounded-l-lg" : "rounded-lg",
-          )}
+          className="flex min-w-0 items-center gap-2 rounded-lg border border-sidebar-border bg-card px-3 py-1.5 text-left outline-none hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           {activeSite ? (
             <SiteBrandIcon
@@ -129,35 +129,23 @@ export function SiteSwitcher({
           {canManage ? (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link
-                  href={buildSettingsPath(locale, "sites")}
-                  onClick={onNavigate}
-                >
-                  <PlusIcon />
-                  <span>{messages.appNav.addSite}</span>
-                </Link>
+              <DropdownMenuItem onSelect={() => setCreateSiteOpen(true)}>
+                <PlusIcon />
+                <span>{messages.appNav.addSite}</span>
               </DropdownMenuItem>
             </>
           ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
-      {activeSite && canManage ? (
-        <Button
-          asChild
-          variant="ghost"
-          className="h-auto w-10 self-stretch rounded-l-none border-0 border-l border-sidebar-border"
-        >
-          <Link
-            href={buildSitePath(locale, activeSite.slug, "settings")}
-            aria-label={messages.appNav.siteSettings}
-            title={messages.appNav.siteSettings}
-            onClick={onNavigate}
-          >
-            <SettingsIcon className="size-4" />
-          </Link>
-        </Button>
+      {canManage ? (
+        <CreateSiteDialog
+          open={createSiteOpen}
+          onOpenChange={setCreateSiteOpen}
+          locale={locale}
+          messages={messages}
+          teamId={teamContext.activeTeam.id}
+        />
       ) : null}
-    </div>
+    </>
   );
 }

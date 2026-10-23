@@ -1,5 +1,3 @@
-import { AnimatedNumber } from "@insightflare/ui/animated-number";
-import { AutoTransition } from "@insightflare/ui/auto-transition";
 import {
   Tooltip,
   TooltipContent,
@@ -11,10 +9,12 @@ import {
   realtimeStatusText,
 } from "@/components/dashboard/realtime/realtime-status-indicator";
 import type { AppMessages } from "@/lib/i18n/messages";
+import { formatI18nTemplate } from "@/lib/i18n/template";
 import type {
   RealtimeChannelState,
   RealtimeConnectionState,
 } from "@/lib/realtime/types";
+import Link from "@/lib/router";
 export const selectRealtimeHeaderState = (state: RealtimeChannelState) => ({
   activeNow: state.activeNow,
   status: state.status,
@@ -28,17 +28,20 @@ export const areRealtimeHeaderStatesEqual = (
   left.activeNow === right.activeNow &&
   left.status === right.status &&
   left.hasConnected === right.hasConnected;
+/** The live count in the header, and the way to Real-time. */
 export function RealtimeActiveBadge({
   activeNow,
   status,
   showValue,
   label,
+  href,
   messages,
 }: {
   activeNow: number;
   status: RealtimeConnectionState;
   showValue: boolean;
   label: string;
+  href: string;
   messages: AppMessages;
 }) {
   const statusText = realtimeStatusText(messages, status);
@@ -47,34 +50,17 @@ export function RealtimeActiveBadge({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="inline-flex h-9 items-center px-1 text-xs font-medium text-foreground/90">
-          <AutoTransition
-            type="fade"
-            duration={0.16}
-            initial={false}
-            presenceMode="wait"
-            className="inline-flex items-center"
-          >
-            {showValue ? (
-              <span key="active-now-value" className="inline-flex items-center">
-                <AnimatedNumber
-                  value={activeNow}
-                  continuous
-                  className="tabular-nums"
-                />
-              </span>
-            ) : (
-              <span
-                key="active-now-empty"
-                className="inline-flex w-0 overflow-hidden"
-                aria-hidden
-              />
-            )}
-          </AutoTransition>
-          <span className={showValue ? "ml-2" : ""}>
-            <RealtimeStatusDot status={status} />
+        <Link
+          href={href}
+          className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-medium text-foreground shadow-xs transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <RealtimeStatusDot status={status} />
+          <span className="tabular-nums">
+            {formatI18nTemplate(messages.realtime.liveCount, {
+              count: showValue ? activeNow : "–",
+            })}
           </span>
-        </div>
+        </Link>
       </TooltipTrigger>
       <TooltipContent side="bottom">{`${label}: ${valueText} · ${statusText}`}</TooltipContent>
     </Tooltip>

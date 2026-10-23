@@ -1,9 +1,10 @@
 import {
   BLOCKING_FIELD_IDS,
   type BlockingFieldId,
-  type BlockingRequestContext,
-  type BlockingRuleSyntaxError,
+  type BlockingRuleAction,
+  type BlockingRulesV2Values,
   parseBlockingRules,
+  validateBlockingRules,
 } from "@/lib/blocking";
 import type { SiteSettingsInitialData } from "@/lib/dashboard/management-data";
 import {
@@ -14,7 +15,6 @@ import type { SiteData } from "@/lib/dashboard-api/client/edge";
 import type { AdminServiceRoute } from "@/lib/dashboard-api/contract/admin-service";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
-import { formatI18nTemplate } from "@/lib/i18n/template";
 export interface SiteSettingsClientPageProps {
   locale: Locale;
   messages: AppMessages;
@@ -23,6 +23,8 @@ export interface SiteSettingsClientPageProps {
     SiteData,
     "id" | "name" | "domain" | "publicEnabled" | "publicSlug"
   >;
+  /** Whether the viewer can open System health, where blocked requests show. */
+  canViewSystemHealth: boolean;
   initialData?: SiteSettingsInitialData | null;
 }
 function safeSlug(value: string): string {
@@ -60,124 +62,79 @@ export async function postJson<T>(
 ): Promise<T> {
   return requestAdminService<T>(route, { method, body });
 }
-export type BlockingEditorValues = Record<BlockingFieldId, string>;
-export interface BlockingRuleFieldCopy {
-  title: string;
-  label: string;
-  placeholder: string;
-  hint: string;
-  syntax: string;
-  examples: readonly string[];
-  exampleDescription: string;
-  testLabel: string;
-  testPlaceholder: string;
-  testHint: string;
+
+/**
+ * One blocking rule as the list edits it. A field's rules are stored as
+ * lines, `-` marking an allow rule; the list keeps their order per field.
+ */
+export interface BlockingRuleRow {
+  id: string;
+  field: BlockingFieldId;
+  action: BlockingRuleAction;
+  value: string;
 }
-export interface BlockingRuleDialogCopy {
-  testButton: string;
-  helpButton: string;
-  searchButton: string;
-  searchTitle: string;
-  searchDescription: string;
-  searchInputLabel: string;
-  searchInputPlaceholder: string;
-  searchCountryLabel: string;
-  searchRegionLabel: string;
-  searchBack: string;
-  searchLoading: string;
-  searchNoResults: string;
-  searchLoadError: string;
-  searchClose: string;
-  helpTitle: string;
-  helpDescription: string;
-  syntaxTitle: string;
-  examplesTitle: string;
-  actionsTitle: string;
-  actionsDescription: string;
-  actionBlock: string;
-  actionAllow: string;
-  statusEmpty: string;
-  statusValid: string;
-  statusInvalid: string;
-  errorInvalidRule: string;
-  errorInvalidLines: string;
-  errorInvalidLine: string;
-  errorLineTooLong: string;
-  errorTooManyLines: string;
-  errorInvalidPattern: string;
-  testTitle: string;
-  testDescription: string;
-  testRun: string;
-  testClose: string;
-  testInvalidRules: string;
-  testInvalidRule: string;
-  testBlocked: string;
-  testAllowed: string;
-  testNoMatch: string;
-  testMatchedRules: string;
-  testActionBlock: string;
-  testActionAllow: string;
-  testLine: string;
+
+/** The rules in a site's config, in field order; comments are dropped. */
+export function blockingRuleRows(
+  config: unknown,
+  nextId: () => string,
+): BlockingRuleRow[] {
+  const parsed = parseBlockingRules(config);
+  return BLOCKING_FIELD_IDS.flatMap((field) =>
+    parsed.fields[field].lines
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0 && !line.startsWith("#"))
+      .map((line) => {
+        const allow = line.startsWith("-");
+        return {
+          id: nextId(),
+          field,
+          action: allow ? ("allow" as const) : ("block" as const),
+          value: (allow ? line.slice(1) : line).trim(),
+        };
+      }),
+  );
 }
-export function blockingEditorValues(input: unknown): BlockingEditorValues {
-  const parsed = parseBlockingRules(input);
+
+/** Every field's lines, for a patch that replaces all of the site's rules. */
+export function blockingRulesPatch(
+  rows: readonly BlockingRuleRow[],
+): Record<BlockingFieldId, string[]> {
   return Object.fromEntries(
     BLOCKING_FIELD_IDS.map((field) => [
       field,
-      parsed.fields[field].lines.join("\n"),
+      rows
+        .filter((row) => row.field === field && row.value.trim().length > 0)
+        .map(
+          (row) => `${row.action === "allow" ? "-" : ""}${row.value.trim()}`,
+        ),
     ]),
-  ) as BlockingEditorValues;
+  ) as Record<BlockingFieldId, string[]>;
 }
-export function blockingEditorLines(value: string): string[] {
-  return value.length === 0 ? [] : value.split(/\r?\n/u);
-}
-export function blockingRuleErrorMessage(
-  error: BlockingRuleSyntaxError,
-  copy: BlockingRuleFieldCopy,
-  dialogCopy: BlockingRuleDialogCopy,
-): string {
-  const params = {
-    field: copy.title,
-    line: error.line ?? "",
-  };
-  switch (error.code) {
-    case "invalid_lines":
-      return formatI18nTemplate(dialogCopy.errorInvalidLines, params);
-    case "invalid_line":
-      return formatI18nTemplate(dialogCopy.errorInvalidLine, params);
-    case "line_too_long":
-      return formatI18nTemplate(dialogCopy.errorLineTooLong, params);
-    case "too_many_lines":
-      return dialogCopy.errorTooManyLines;
-    case "invalid_pattern":
-      return formatI18nTemplate(dialogCopy.errorInvalidPattern, params);
-    default:
-      return dialogCopy.errorInvalidRule;
+
+/**
+ * The rules the parser rejects, by row id, and the fields with more rules
+ * than it allows.
+ */
+export function invalidBlockingRules(rows: readonly BlockingRuleRow[]): {
+  rowIds: ReadonlySet<string>;
+  tooManyFields: readonly BlockingFieldId[];
+} {
+  const patch: BlockingRulesV2Values = blockingRulesPatch(rows);
+  const rowIds = new Set<string>();
+  const tooManyFields: BlockingFieldId[] = [];
+  for (const field of BLOCKING_FIELD_IDS) {
+    const fieldRows = rows.filter(
+      (row) => row.field === field && row.value.trim().length > 0,
+    );
+    const errors = validateBlockingRules({
+      blockingRules: [{ version: 2, data: { [field]: patch[field] } }],
+    });
+    for (const error of errors) {
+      if (error.code === "too_many_lines") tooManyFields.push(field);
+      const row = error.line ? fieldRows[error.line - 1] : undefined;
+      if (row) rowIds.add(row.id);
+    }
   }
-}
-export function blockingTestContext(
-  field: BlockingFieldId,
-  value: string,
-): BlockingRequestContext {
-  const input = value.trim();
-  switch (field) {
-    case "domains":
-      return { hostname: input };
-    case "paths":
-      return { pathname: input };
-    case "queryParameters":
-      return { query: input };
-    case "referrers":
-      return { referrer: input };
-    case "userAgents":
-      return { userAgent: input };
-    case "ips":
-      return { ip: input };
-    case "asns":
-      return { asn: input };
-    case "countries":
-      return { country: input };
-    case "regions":
-      return { region: input };
-  }
+  return { rowIds, tooManyFields };
 }

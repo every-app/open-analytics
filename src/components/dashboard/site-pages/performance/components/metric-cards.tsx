@@ -6,6 +6,7 @@ import { Clickable } from "@insightflare/ui/clickable";
 import { Skeleton } from "@insightflare/ui/skeleton";
 import { GaugeIcon } from "lucide-react";
 
+import { InfoTooltip } from "@/components/dashboard/common/info-tooltip";
 import {
   formatMetricValue,
   formatPanelValue,
@@ -294,12 +295,17 @@ export const MetricSummaryCard = memo(function MetricSummaryCard({
               <div className="space-y-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 space-y-2">
-                    <PerformancePanelText
-                      transitionKey={activePanel}
-                      className="text-sm text-muted-foreground"
-                    >
-                      {panelLabel(messages, activePanel)}
-                    </PerformancePanelText>
+                    <div className="flex items-center gap-1.5">
+                      <PerformancePanelText
+                        transitionKey={activePanel}
+                        className="text-sm text-muted-foreground"
+                      >
+                        {panelLabel(messages, activePanel)}
+                      </PerformancePanelText>
+                      <InfoTooltip label={panelLabel(messages, activePanel)}>
+                        {description}
+                      </InfoTooltip>
+                    </div>
                     <PerformanceDynamicValue
                       loading={loading}
                       skeletonClassName="h-9 w-24"
@@ -385,12 +391,6 @@ export const MetricSummaryCard = memo(function MetricSummaryCard({
                     )}
                   </AutoTransition>
                 </div>
-                <PerformancePanelText
-                  transitionKey={description}
-                  className="max-w-xl text-sm leading-6 text-muted-foreground"
-                >
-                  {description}
-                </PerformancePanelText>
               </div>
             </div>
 

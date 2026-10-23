@@ -48,6 +48,7 @@ function Page() {
         publicEnabled: c.activeSite.publicEnabled,
         publicSlug: c.activeSite.publicSlug,
       }}
+      canViewSystemHealth={c.user.systemRole === "admin"}
       initialData={siteSettingsInitialData}
     />
   );

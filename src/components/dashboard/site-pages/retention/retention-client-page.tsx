@@ -1,14 +1,16 @@
 import { useMemo } from "react";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
+import { Button } from "@insightflare/ui/button";
 import { MetricSummaryGrid } from "@insightflare/ui/metric-summary-grid";
 import { PageHeading } from "@insightflare/ui/page-heading";
 import { useQuery } from "@tanstack/react-query";
-import { ActivityIcon, Repeat2Icon } from "lucide-react";
+import { ActivityIcon, Repeat2Icon, RotateCwIcon } from "lucide-react";
 
 import {
   dashboardComparisonLabel,
   useDashboardComparisonQuery,
 } from "@/components/dashboard/comparison/use-dashboard-comparison-query";
+import { intervalLabel } from "@/components/dashboard/shell/dashboard-header-controls/range";
 import { useDashboardQuery } from "@/components/dashboard/site-pages/common/use-dashboard-query";
 import { fetchRetention } from "@/lib/dashboard/client/data/index";
 import { filterQueryKey } from "@/lib/dashboard/filter-query-key";
@@ -17,6 +19,7 @@ import type { RetentionData } from "@/lib/dashboard-api/client/edge";
 import type { FilterDocument } from "@/lib/filter-contract/index";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
+import { formatI18nTemplate } from "@/lib/i18n/template";
 
 import {
   createRetentionMetricItems,
@@ -73,6 +76,7 @@ export function RetentionClientPage({
     isError: error,
     isFetching: loading,
     isPending,
+    refetch,
   } = useQuery<RetentionQueryData>({
     queryKey: [
       "dashboard",
@@ -168,7 +172,16 @@ export function RetentionClientPage({
 
   return (
     <div className="space-y-6">
-      <PageHeading title={messages.retention.title} />
+      <PageHeading
+        title={messages.navigation.retention}
+        actions={
+          <span className="text-sm text-muted-foreground">
+            {formatI18nTemplate(labels.cohortBy, {
+              interval: intervalLabel(messages, granularity),
+            })}
+          </span>
+        }
+      />
 
       {resolvedLoading || (!error && !isEmpty) ? (
         <MetricSummaryGrid
@@ -206,8 +219,18 @@ export function RetentionClientPage({
           {error ? (
             <RetentionStateCard
               title={labels.loadError}
-              subtitle={messages.retention.subtitle}
               icon={ActivityIcon}
+              action={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void refetch()}
+                >
+                  <RotateCwIcon data-icon="inline-start" />
+                  {messages.common.retry}
+                </Button>
+              }
             />
           ) : (
             <RetentionStateCard

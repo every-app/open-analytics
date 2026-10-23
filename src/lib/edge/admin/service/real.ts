@@ -1,10 +1,6 @@
 import { requireActor } from "@/lib/edge/admin/auth";
+import { handleNotificationEmailConfigAdmin } from "@/lib/edge/admin/notifications/email";
 import {
-  handleNotificationEmailConfigAdmin,
-  handleNotificationEmailTestAdmin,
-} from "@/lib/edge/admin/notifications/email";
-import {
-  handleNotificationEmailPreviewAdmin,
   handleNotificationPreferences,
   handleNotificationRead,
   handleNotificationRulePreviewAdmin,
@@ -61,10 +57,6 @@ export async function executeRealAdminService(
       return handleScriptSnippetAdmin(request, env, url);
     case "notification-email":
       return handleNotificationEmailConfigAdmin(request, env);
-    case "notification-email/test":
-      return handleNotificationEmailTestAdmin(request, env);
-    case "notification-email-preview":
-      return handleNotificationEmailPreviewAdmin(request, env, url);
     case "notification-rules":
       return handleNotificationRulesAdmin(request, env, url);
     case "notification-rules/preview":

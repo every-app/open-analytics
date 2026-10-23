@@ -6,18 +6,15 @@ navigation:
   realtime: 即時
   pages: 頁面
   referrers: 來源
-  sessions: 工作階段
   events: 事件
-  funnels: 漏斗
-  goals: 目標
+  funnels: 目標與漏斗
   campaigns: 推廣
   visitors: 訪客
   retention: 留存
   geo: 位置
   devices: 裝置
-  browsers: 瀏覽器
   performance: 效能
-  settings: 設定
+  settings: 站點設定
 common:
   deviceLabels:
     desktop: 電腦端
@@ -69,19 +66,16 @@ common:
   screenSize: 螢幕大小
   loading: 載入中
   noData: 暫無資料
+  loadFailed: 無法載入
+  retry: 重試
+  filteredEmpty: 沒有符合這些篩選條件的資料
+  clearFilters: 清除篩選
+  trend: 趨勢
   unknown: 未知
-  lastUpdated: 更新時間
   site: 站點
-  team: 團隊
-  management: 管理
-  backToTeam: 返回團隊
   system: 系統
-  account: 帳戶
   theme: 主題
   language: 語言
-  role: 角色
-  admin: 管理員
-  user: 普通使用者
   search: 搜尋
   open: 開啟
   sortBy: 按 {label} 排序
@@ -109,25 +103,16 @@ common:
     reset: 恢復預設
     dragHint: 拖動調整順序
     close: 關閉
-  time: 時間
-  cycle: 週期
   close: 關閉
   sitesFiltered: "已篩選 {active} / {total} 個站點"
   cumulativeTraffic: 全部週期累計流量
   cumulativeEvents: 全部週期累計事件
 ranges:
-  last30m: 30分鐘
-  last1h: 1小時
   today: 今天
   yesterday: 昨天
-  thisWeek: 本週
-  thisMonth: 本月
-  thisYear: 今年
-  last24h: 最近 24 小時
   last7d: 最近 7 天
   last30d: 最近 30 天
   last90d: 最近 90 天
-  last6m: 最近 6 個月
   last12m: 最近 12 個月
   custom: 自訂時間段
 intervals:
@@ -137,43 +122,25 @@ intervals:
   week: 周
   month: 月
 dashboardHeader:
-  range: 時間範圍
   interval: 時間間隔
   compareButton: 對比
   compareTitle: 對比設定
-  compareSubtitle: 選擇對比周期和篩選條件。
   compareTimeLabel: 對比時間
   compareCurrentPeriod: 目前週期
-  compareCurrentPeriodDescription: 使用目前選定的時間範圍。
   comparePreviousPeriod: 上一週期
-  comparePreviousPeriodDescription: 使用目前週期之前的同等長度時間範圍。
   compareFilterLabel: 對比篩選
   compareFollowCurrentFilter: 跟隨目前篩選
-  compareFollowCurrentFilterDescription: 使用目前頁面的篩選條件。
   compareCustomFilter: 自訂篩選
-  compareCustomFilterDescription: 為對比單獨設定篩選條件。
   compareApply: 應用對比
   compareCancel: 取消
-  compareDisabled: 目前頁面中對比不可用。
   filterButton: 篩選
   filterButtonEvent: 篩選 (事件)
   filterButtonSession: 篩選 (工作階段)
   filterButtonVisitor: 篩選 (訪客)
-  customRange: 選擇自訂區間
   customHint: 請選擇開始和結束日期。
   customPendingEnd: 已選擇開始日期，請繼續選擇結束日期。
   customApply: 應用日期範圍
-  rangeGroupQuick: 快速範圍
-  rangeGroupCalendar: 自然週期
-  rangeGroupRolling: 滾動視窗
-  rangeGroupAdvanced: 高階
-  intervalDisabledMinute: 僅在 1 小時內可選分鐘間隔。
-  intervalDisabledHour: 僅在 7 天內可選小時間隔。
-  intervalDisabledDay: 僅在最近 90 天內可選日間隔。
-  intervalDisabledWeek: 僅在最近 12 個月內可選周間隔。
   filterTitle: 篩選條件
-  filterSubtitle: 新建、儲存篩選條件，或者使用個人/團隊儲存的篩選條件。
-  filterDisabledRealtime: 即時頁面中篩選不可用。
   previousPeriod: 上個週期
   nextPeriod: 下個週期
   customSelectionSummary: "目前選擇：{from} 至 {to}（共 {days} 天）"
@@ -357,7 +324,7 @@ filterBuilder:
   naturalLanguageDescription: 自然語言描述
   expressionInvalid: 表示式無效，點選檢視語法幫助
   expressionHelpTitle: 篩選表示式語法
-  expressionHelpDescription: 可用欄位和運算子由目前篩選契約動態產生。
+  expressionHelpDescription: 可在篩選運算式中使用的欄位和運算子。
   expressionHelpSyntax: 語法
   expressionHelpLogicDescription: AND 的優先順序高於 OR。使用括號表達巢狀；AND(...) 和 OR(...) 可保留明確的單條件分組。
   expressionHelpValues: 值
@@ -454,14 +421,7 @@ filterBuilder:
   savedFiltersLoading: 正在取得已儲存的篩選...
   noSavedFilter: 不使用已儲存的篩選
   systemPresets: 系統預設
-  systemPresetCategories:
-    acquisition: 獲客
-    device: 裝置
-    visitBehavior: 造訪行為
-    sessionEngagement: 工作階段參與度
-    visitorBehavior: 訪客行為
-    performance: 效能
-    dataQuality: 資料品質
+  advanced: 進階
   systemPresetScopes:
     preserve: 保留目前範圍
     event: 事件範圍
@@ -471,122 +431,26 @@ filterBuilder:
     directTraffic:
       name: 直接造訪
       description: 沒有外部來源的造訪。
-    externalReferrals:
-      name: 外部來源造訪
-      description: 透過外部來源進入的造訪。
     organicSearchDiscovery:
       name: 自然搜尋發現
       description: 沒有行銷活動標記的搜尋引擎來源造訪。
-    organicSocialDiscovery:
-      name: 自然社交發現
-      description: 沒有行銷活動標記的社交網路來源造訪。
     campaignTaggedTraffic:
       name: 帶活動標記的流量
       description: 帶有活動來源、媒介或名稱的造訪。
     mobileTraffic:
       name: 行動裝置流量
       description: 來自行動裝置的造訪。
-    desktopTraffic:
-      name: 電腦端流量
-      description: 來自桌上型裝置的造訪。
-    campaignTaggedExternalAcquisition:
-      name: 帶標記的外部獲客
-      description: 帶有行銷活動標記的外部來源造訪。
-    campaignTaggedDirectEntry:
-      name: 帶標記的直接造訪
-      description: 帶有行銷活動標記的直接造訪。
-    untaggedExternalReferrals:
-      name: 未標記的外部來源
-      description: 沒有行銷活動標記的外部來源造訪。
-    mobileAcquiredTraffic:
-      name: 行動裝置活動獲客
-      description: 來自外部且帶有行銷活動標記的行動裝置造訪。
-    mobileOrganicDiscovery:
-      name: 行動裝置自然發現
-      description: 透過搜尋或社群發現、且沒有活動標記的行動裝置造訪。
-    desktopDirectAudience:
-      name: 電腦端直接受眾
-      description: 來自桌上型裝置、且沒有活動標記的直接造訪。
-    geographicAttributionGap:
-      name: 地理歸因缺口
-      description: 有外部來源但未記錄國家的造訪。
-    tabletTraffic:
-      name: 平板電腦流量
-      description: 來自平板裝置的造訪。
-    longPageViews:
-      name: 長時頁面瀏覽
-      description: 持續至少 30 秒的頁面瀏覽。
-    shortPageViews:
-      name: 短時頁面瀏覽
-      description: 持續少於 10 秒的頁面瀏覽。
-    identifiedActivity:
-      name: 已識別活動
-      description: 與已識別使用者關聯的事件。
-    customEventActivity:
-      name: 自訂事件活動
-      description: 記錄了自訂事件名稱的事件。
     bouncedSessions:
       name: 跳出工作階段
       description: 只包含一次頁面瀏覽的工作階段。
-    nonBouncedSessions:
-      name: 非跳出工作階段
-      description: 包含多次頁面瀏覽的工作階段。
-    longSessions:
-      name: 長工作階段
-      description: 持續至少五分鐘的工作階段。
-    shortSessions:
-      name: 短工作階段
-      description: 持續少於一分鐘的工作階段。
-    deepSessions:
-      name: 深度工作階段
-      description: 至少瀏覽三個頁面的工作階段。
-    eventfulSessions:
-      name: 活躍工作階段
-      description: 至少包含一個自訂事件的工作階段。
-    highEngagementSessions:
-      name: 高參與度工作階段
-      description: 至少三次瀏覽且包含兩個自訂事件的工作階段。
     returningVisitors:
       name: 回訪訪客
       description: 至少擁有兩個工作階段的訪客。
-    frequentVisitors:
-      name: 高頻訪客
-      description: 至少擁有五個工作階段的訪客。
-    deepVisitors:
-      name: 深度訪客
-      description: 至少瀏覽五個頁面的訪客。
-    eventfulVisitors:
-      name: 活躍訪客
-      description: 至少產生兩個自訂事件的訪客。
-    identifiedVisitors:
-      name: 已識別訪客
-      description: 與已識別使用者關聯的訪客。
-    organicSearchVisitors:
-      name: 自然搜尋訪客
-      description: 擁有未標記搜尋來源的訪客。
-    coreWebVitalsNeedsImprovement:
-      name: Core Web Vitals 需改進
-      description: 超過 Core Web Vitals 閾值的造訪。
-    slowLcp:
-      name: LCP 較慢
-      description: LCP 超過 2.5 秒的造訪。
-    slowInp:
-      name: INP 較慢
-      description: INP 超過 200 毫秒的造訪。
-    highCls:
-      name: CLS 較高
-      description: CLS 超過 0.1 的造訪。
-    slowTtfb:
-      name: TTFB 較慢
-      description: TTFB 超過 800 毫秒的造訪。
-    slowFcp:
-      name: FCP 較慢
-      description: FCP 超過 1.8 秒的造訪。
   savedFiltersPersonal: 個人篩選
-  savedFiltersTeam: 團隊篩選
+  savedFiltersTeam: 組織篩選
   savedFiltersAuthor: "作者：{name}"
   savedFiltersPrivate: 個人
-  savedFiltersTeamShared: 已共享給團隊
+  savedFiltersTeamShared: 已與組織共享
   saveThisFilter: 儲存此篩選
   saveAsThisFilter: 另存此篩選
   manageThisFilter: 管理此篩選
@@ -602,13 +466,13 @@ filterBuilder:
   scopeVisitor: 篩選滿足這些條件的訪客
   savedFilterVisibility: 可見性
   savedFilterVisibilityPrivate: 僅自己可見
-  savedFilterVisibilityTeam: 與團隊共享
+  savedFilterVisibilityTeam: 與組織共享
   savedFilterCreateDescription: 儲存目前的篩選表示式，以便之後再次套用。
   savedFilterManageDescription: 更新此篩選的基本資訊，或開始編輯篩選條件。
   editSavedFilter: 修改此篩選
   deleteSavedFilter: 刪除此篩選
   deleteSavedFilterTitle: 刪除此篩選？
-  deleteSavedFilterDescription: 刪除後無法恢復，團隊成員也將無法再使用它。
+  deleteSavedFilterDescription: 刪除後無法恢復，組織中的其他成員也將無法再使用它。
   savedFilterCancel: 取消
   savedFilterSave: 儲存
   savedFilterSaving: 正在儲存...
@@ -626,9 +490,9 @@ filterBuilder:
   invalid: 請先完成每一條篩選條件。
 realtime:
   title: 即時
-  subtitle: 檢視最近 30 分鐘的造訪情況
   logTitleSeparator: "："
   activeNow: 目前線上
+  liveCount: "{count} 人在線"
   liveMetrics: 目前線上 / 近 30 分鐘訪客 / 近 30 分鐘瀏覽量
   connected: 已連線
   connecting: 連線中
@@ -692,7 +556,7 @@ realtime:
   exitReason: 退出原因
   leaveAt: 離開時間
 overview:
-  title: 造訪總覽
+  title: 總覽
   trendTitle: 造訪趨勢
   sourceTab: 來源
   sourceDomainColumn: 來源（網域）
@@ -714,15 +578,34 @@ overview:
     campaign: 行銷活動
     other: 其他
   searchInTab: "搜尋{tab}"
+install:
+  title: 將指令碼加入你的網站
+  platforms:
+    html: HTML
+    wordpress: WordPress
+    shopify: Shopify
+    nextjs: Next.js
+    gtm: Google 代碼管理工具
+  steps:
+    html: 在每個頁面的 {tag} 之前貼上它。
+    wordpress: 用 WPCode 等頁首指令碼外掛加入，或貼到佈景主題 header.php 的 {tag} 之前。
+    shopify: 在「線上商店 → 佈景主題 → 編輯程式碼」中開啟 theme.liquid，貼到 {tag} 之前。
+    nextjs: 在 app/layout.tsx 的 {tag} 中貼上它。
+    gtm: 用它建立一個「自訂 HTML」代碼，觸發條件選「所有網頁」，然後發布。
+  waiting: 正在等待第一次頁面瀏覽
+  received: 已收到第一次頁面瀏覽，報表將在一分鐘內更新。
+  firstViewsTitle: 第一批頁面瀏覽已到達！
+  nextReports: 透過電子郵件接收報告
+  nextInvite: 邀請成員
+  dismiss: 關閉
 pages:
-  title: 頁面分析
+  title: 頁面
   pagesPerSession: 每工作階段頁面數
   changePercentColumnLabel: "{metric}變化（%）"
   changePointsColumnLabel: "{metric}變化（百分點）"
   percentagePointSuffix: 個百分點
   untitled: 未命名頁面
-  empty: 目前篩選條件下暫無頁面資料。
-  loadError: 頁面資料載入失敗，請稍後重試。
+  empty: 尚無頁面
   loadMoreError: 載入更多頁面失敗。
   trendTitle: 頁面造訪趨勢
   otherPages: 其他頁面
@@ -734,42 +617,24 @@ pages:
   eventsMetric: 事件數
   viewDetails: 檢視詳情
 referrers:
-  title: 來源分析
-  summaryTitle: 來源概覽
+  title: 來源
   splitTitle: 來源拆分
-  chartTitle: 來源結構
-  radarTitle: 前 24 來源雷達圖
-  radarSubtitle: 對比主要來源在多項行為指標上的表現
-  radarDuration: 停留時長
-  radarEngagement: 互動率
-  radarDepth: 瀏覽深度
-  radarLoyalty: 回訪率
-  radarFrequency: 造訪頻次
-  radarTraffic: 流量佔比
-  directSourceNote: 這部分流量沒有外部來源站點，屬於直接造訪。
   breakdownTitle: 來源明細
-  directViews: 直接造訪量
-  uniqueDomains: 來源網域數
-  uniqueLinks: 來源連結數
-  topSource: 主要外部來源
-  topSourceShare: 造訪佔比
-  noExternalSource: 暫無外部來源
   externalLabel: 外部來源
-  nextSources: 其他 4 個來源
   longTail: 長尾來源
   channelLongTail: 其他管道
 campaigns:
-  title: 推廣活動
-  tabSource: 來源
+  title: 推廣
+  tabSource: UTM 來源
   tabMedium: 媒介
   tabCampaign: 活動
   tabTerm: 關鍵詞
   tabContent: 內容
-  breakdownTitle: UTM 明細
   notSet: 未設定
-  noTaggedTraffic: 目前篩選範圍內暫無帶 UTM 標籤的流量。
+  noTaggedTraffic: 此期間尚無帶 UTM 標籤的造訪
+  taggedLinkHint: 在連結中加入 UTM 標籤，例如
 sessions:
-  title: 工作階段列表
+  title: 工作階段
   search: 搜尋工作階段...
   started: 開始時間
   sessionId: 工作階段 ID
@@ -834,11 +699,8 @@ sessionDetail:
   performanceTitle: 目前工作階段效能
   range: 範圍
 events:
-  title: 自訂事件
-  subtitle: 檢視事件規模、上下文、事件載荷欄位與原始觸發記錄。
+  title: 事件
   detailTitle: 事件詳情
-  detailSubtitle: 檢視單次事件的上下文與事件載荷。
-  typeDetailSubtitle: 檢視該事件的趨勢、上下文分佈、事件載荷結構與觸發記錄。
   backToEvents: 返回事件總覽
   totalEvents: 事件總數
   eventTypes: 事件型別
@@ -865,7 +727,6 @@ events:
   payloadFilterInvalid: 無法解析篩選條件，請檢查欄位路徑、運算子和值。
   expandField: 展開欄位
   collapseField: 收起欄位
-  breakdownTitle: 上下文分佈
   search: 搜尋事件名、ID、訪客、工作階段、頁面...
   eventName: 事件名
   eventId: 事件 ID
@@ -898,29 +759,26 @@ events:
   loadError: 無法載入事件資料。
   detailNotFound: 未找到該事件記錄。
   empty: 目前篩選範圍內沒有自訂事件。
+  noCustomEvents: 此期間尚無自訂事件
   emptyFields: 目前事件暫無事件載荷欄位。
   noEventName: 缺少事件名。
   loading: 載入中
   other: 其他
 funnels:
-  title: 漏斗分析
-  subtitle: 衡量多步驟使用者旅程的轉換情況。
+  title: 漏斗
   listTitle: 漏斗定義
-  listSubtitle: 建立可重複使用的步驟序列，並按目前看板時間窗檢視轉換。
   conversionRecords: 轉換記錄
   converted: 已轉換
   dropped: 已流失
   open: 開啟漏斗
   moreActions: 更多操作
-  create: 新建漏斗
   createTitle: 建立漏斗
-  createDescription: 至少定義兩個有順序的觀察篩選步驟。
   nameLabel: 名稱
   namePlaceholder: 註冊啟用
   stepsLabel: 步驟
   addStep: 新增步驟
   removeStep: 移除步驟
-  progression: 轉換主體
+  progression: 計數依據
   conversionWindow: 轉換視窗
   custom: 自訂
   customWindowHours: 自訂視窗（小時）
@@ -949,9 +807,6 @@ funnels:
   deleteDescription: 這會移除已儲存的漏斗定義，不會刪除歷史分析資料。
   deleteConfirm: 刪除漏斗
   deleting: 刪除中...
-  empty: 暫無漏斗。
-  emptyHint: 使用頁面瀏覽和自訂事件建立漏斗來追蹤轉換。
-  loadError: 無法載入漏斗。
   detailLoadError: 無法載入漏斗分析。
   invalidFunnel: 請填寫名稱，並至少補全兩個篩選步驟。
   created: 漏斗已建立。
@@ -976,11 +831,9 @@ funnels:
   updated: 更新於
 goals:
   title: 目標分析
-  listSubtitle: 檢視這段時間範圍內的轉換率變化情況
   conversionRecords: 轉換記錄
   open: 開啟目標
   moreActions: 更多操作
-  create: 新建目標
   createTitle: 建立目標
   nameLabel: 名稱
   namePlaceholder: 完成購買
@@ -996,9 +849,6 @@ goals:
   deleteTitle: 刪除目標
   deleteDescription: 這會移除已儲存的目標定義，不會刪除歷史分析資料。
   deleteConfirm: 刪除目標
-  empty: 暫無目標。
-  emptyHint: 使用頁面條件或自訂事件建立目標來追蹤轉換。
-  loadError: 無法載入目標。
   detailLoadError: 無法載入目標分析。
   invalidGoal: 請填寫名稱，並補全轉換條件。
   created: 目標已建立。
@@ -1013,8 +863,16 @@ goals:
   conversion: 轉換率
   timeseries: 轉換率
   updated: 更新於
+conversions:
+  new: 新增
+  newGoal: 目標
+  newGoalDescription: 單一步驟，例如註冊
+  newFunnel: 漏斗
+  newFunnelDescription: 依序完成的多個步驟
+  empty: 尚無目標或漏斗
+  emptyMemberHint: 管理員可以建立。
 visitors:
-  title: 訪客分析
+  title: 訪客
   search: 搜尋訪客...
   visitor: 訪客
   anonymous: 匿名訪客
@@ -1084,8 +942,8 @@ visitorDetail:
   performanceTitle: 目前訪客效能
   range: 範圍
 retention:
-  title: 留存分析
-  subtitle: 基於群組的訪客回訪分析。
+  title: 留存
+  cohortBy: "群組週期：{interval}"
   cohortDate: 群組日期
   cohortSize: 人數
   periodLabel: "第 {n} 期"
@@ -1104,16 +962,15 @@ retention:
   legendHigh: 高
   periodZero: 初始
   empty: 目前時間範圍內沒有足夠的回訪資料。
-  emptyHint: 擴大時間範圍，或在頂部選擇更粗的時間間隔，可以更快看到留存形態。
+  emptyHint: 在日期選單中選擇更長的時間範圍或更粗的時間間隔。
   loadError: 無法載入留存資料。
   unavailableCell: 該群組還沒有進入這個週期。
   visitorsDetail: 訪客
   rateDetail: 留存率
-  cohortDetail: 群組
   sizeDetail: 人數
 geo:
-  title: 位置分析
-  mapTitle: 請求地理分佈
+  title: 位置
+  mapTitle: 訪客分布
   countryLabel: 國家/地區
   regionLabel: 州/省
   cityLabel: 市/縣
@@ -1165,61 +1022,24 @@ geo:
       adm4: 四級行政區
       adm5: 五級行政區
 devices:
-  title: 裝置分析
-  deviceShareTitle: 裝置型別佔比
-  osShareTitle: 作業系統佔比
-  deviceTrendTitle: 裝置型別趨勢
-  osTrendTitle: 作業系統趨勢
-  screenDistributionTitle: 螢幕尺寸分佈
-  screenDistributionSubtitle: 識別最常見的視口尺寸和響應式斷點。
-  screenBucketTitle: 斷點分桶
-  screenPreviewTitle: 螢幕預覽
-  selectedViewportLabel: 目前視口
-  openSiteLabel: 開啟站點
-  previewUnavailableLabel: 目前沒有可預覽的螢幕尺寸。
-  browserByDeviceTitle: 裝置型別 × 瀏覽器
-  osByDeviceTitle: 裝置型別 × 作業系統
+  title: 裝置
+  shareTitle: 訪客佔比
+  dimensions:
+    device: 裝置
+    os: 作業系統
+    browser: 瀏覽器
+    engine: 引擎
+    screenSize: 螢幕尺寸
+  crossTabTitle: 交叉分析
+  crossTabRows: 列
+  crossTabColumns: 拆分依據
   otherLabel: 其他
-  screenBucketLabels:
-    phoneCompact: 小屏手機
-    phone: 手機
-    tablet: 平板
-    laptop: 筆記本
-    desktopWide: 寬屏桌面
-    unclassified: 未歸類
+  screenBucketLabels: {}
 browsers:
-  title: 瀏覽器分析
-  trendTitle: 瀏覽器佔比趨勢
-  engineTrendTitle: 核心佔比趨勢
-  versionBreakdownTitle: 瀏覽器版本分佈
-  osBreakdownTitle: 瀏覽器 × 系統
-  deviceTypeBreakdownTitle: 瀏覽器 × 裝置型別
   otherLabel: 其他
-  browserShareTitle: 瀏覽器佔比
-  engineShareTitle: 核心佔比
-  caniuseTitle: 特性相容性
-  caniuseSubtitle: 根據站點訪客資料檢查 Web 特性的瀏覽器支援情況。
-  caniuseSearchPlaceholder: 搜尋 Web 特性…
-  caniuseHotFeatures: 熱門特性
-  caniuseTrendingFeatures: 近期變動
-  caniuseSiteSupport: 本站支援率
-  caniuseGlobalSupport: 全球支援率
-  caniuseClearSelection: 清除
-  caniuseNoMatch: 找不到相符的功能。
-  caniuseFullSupport: 完全支援
-  caniusePartialSupport: 部分支援
-  caniuseNoSupport: 不支援
-  radarTitle: 瀏覽器行為雷達圖
-  radarSubtitle: 對比主流瀏覽器在多項行為指標上的表現
-  radarDuration: 停留時長
-  radarEngagement: 互動率
-  radarDepth: 瀏覽深度
-  radarLoyalty: 回訪率
-  radarFrequency: 造訪頻次
-  radarTraffic: 流量佔比
 performance:
-  title: 效能追蹤
-  subtitle: 按指標、趨勢與路徑檢視真實訪客效能。
+  title: 效能
+  empty: 尚無 Web Vitals 資料
   chartTitle: 效能趨勢
   avgLabel: 平均值
   samplesLabel: 樣本數
@@ -1244,7 +1064,7 @@ performance:
   great: 優秀
   needsImprovement: 需要改進
   poor: 較差
-  datasetTitle: 資料集概覽
+  datasetTitle: 門檻
   interpretationTitle: 目前解讀
   currentReading: "{metric} 目前 P75 為 {value}，體驗評分為 {score}，覆蓋 {samples} 個樣本。目前判定：{status}。"
   metricThresholdText: "優秀為不高於 {good}；需要改進為 {good} 到 {poor}；較差為高於 {poor}。"
@@ -1255,27 +1075,32 @@ performance:
   pathsAnalyzedLabel: 已分析路徑
   metricValueColumn: P75 數值
   statusColumn: 狀態
-share: {}
+share:
+  noData: 尚無資料
 siteSettings:
   title: 站點設定
   sections:
     basic:
-      title: 基本資訊
+      title: 一般
     tracking:
-      title: 追蹤設定
+      title: 追蹤
     blocking:
-      title: 遮蔽規則
+      title: 攔截規則
     protection:
-      title: 請求防護
+      title: 防護
     danger:
-      title: 危險區域
-  nameLabel: 站點名稱
+      title: 危險操作
+    install:
+      title: 安裝
+    advanced:
+      title: 進階
+  nameLabel: 名稱
   domainLabel: 網域
-  publicSharingTitle: 公開分享
-  publicEnabledLabel: 啟用公開存取
-  publicSlugLabel: 公開 Slug
+  publicSharingTitle: 分享
+  publicEnabledLabel: 公開看板
+  publicSlugLabel: 連結路徑
   publicSlugPlaceholder: 例如 my-site
-  publicSlugHint: 自訂 URL 路徑標識。留空將自動產生。
+  publicSlugHint: 連結中 /share/ 之後的部分。
   publicLinkLabel: 公開連結
   copiedLink: 連結已複製
   trackingStrengthGroupTitle: 追蹤強度
@@ -1288,17 +1113,14 @@ siteSettings:
   botProtectionEnabledLabel: 機器人攔截
   botProtectionEnabledHint: 開啟後攔截高置信度機器人請求；關閉後這類請求仍會計入統計。
   hostingProxyBlockingEnabledLabel: 攔截託管/代理網路請求
-  hostingProxyBlockingEnabledHint: 開啟後攔截來自託管或代理網路的疑似機器人請求，預設關閉。
-  trackQueryParamsLabel: 開啟查詢參數追蹤
-  trackHashLabel: 開啟 Hash 追蹤
-  blockingRulesSave: 儲存遮蔽規則
-  blockingRulesSaving: 正在儲存遮蔽規則...
+  hostingProxyBlockingEnabledHint: 攔截來自託管或代理網路的疑似機器人請求。
+  trackQueryParamsLabel: 追蹤查詢參數
+  trackHashLabel: 追蹤 URL 雜湊
+  blockingRulesSave: 儲存規則
   blockingRulesDialogs:
-    testButton: 測試
-    helpButton: 幫助
     searchButton: 搜尋
     searchTitle: 搜尋地區
-    searchDescription: 按名稱或程式碼搜尋，選擇結果後將其新增到此卡片。
+    searchDescription: 依名稱或代碼搜尋，然後選擇結果。
     searchInputLabel: 搜尋
     searchInputPlaceholder: 按名稱或程式碼搜尋
     searchCountryLabel: 國家 / 地區
@@ -1308,248 +1130,47 @@ siteSettings:
     searchNoResults: 找不到符合條件的地區。
     searchLoadError: 無法載入地區，請稍後重試。
     searchClose: 關閉
-    helpTitle: 規則語法
-    helpDescription: 檢視此欄位的語法、示例和優先順序規則。
-    syntaxTitle: 語法
-    examplesTitle: 示例設定
-    actionsTitle: 規則動作
-    actionsDescription: 一般規則會遮蔽；在規則前加上 - 表示允許。如果多條規則同時符合，則以最後符合的規則為準。
-    actionBlock: 符合 {example} 時遮蔽
-    actionAllow: 符合 {example} 時允許
-    statusEmpty: 目前無任何針對 {field} 的遮蔽規則。
-    statusValid: 目前規則有效。
-    statusInvalid: 目前規則無效，請點選右側“幫助”取得詳細資訊。
-    errorInvalidRule: 無效規則。
-    errorInvalidLines: "{field} 的規則必須按行填寫。"
-    errorInvalidLine: "第 {line} 行不是有效的文字規則。"
-    errorLineTooLong: "第 {line} 行過長。"
-    errorTooManyLines: 規則行數過多。
-    errorInvalidPattern: "第 {line} 行的規則格式無效。"
-    testTitle: 測試規則
-    testDescription: 輸入請求值以測試目前卡片中的規則，未儲存的編輯內容也會參與測試。
-    testRun: 執行測試
-    testClose: 關閉
-    testInvalidRules: 請先修復無效規則，然後再進行測試。
-    testInvalidRule: 無效規則。
-    testBlocked: 已遮蔽
-    testAllowed: 已允許
-    testNoMatch: 沒有任何規則符合，因此允許此欄位的值。
-    testMatchedRules: 符合的規則
-    testActionBlock: 遮蔽
-    testActionAllow: 允許
-    testLine: 第
   blockingRulesFields:
     domains:
       title: 網域
-      label: 網域規則（每行一條）
-      placeholder: |
-        *
-        -example.com
-        -*.example.com
-        admin.example.com
-      hint: 比對頁面 hostname；使用 * 與 -網域 規則可建立允許清單。
-      syntax: |
-        每行格式：[ - ] hostname-glob
-        以 # 開頭的行將被視為註釋並忽略。
-        使用 * 作為萬用字元；以 - 開頭表示允許規則。
-        比對時不區分大小寫，並使用頁面 hostname。
-      examples:
-        - "*"
-        - "-example.com"
-        - "-*.example.com"
-        - "admin.example.com"
-      exampleDescription: 這段設定先遮蔽所有網域，再允許 example.com 及其子網域，最後再遮蔽與 admin.example.com 完全相符的網域。
-      testLabel: 主機名稱
-      testPlaceholder: www.example.com
-      testHint: 輸入頁面 hostname，不要包含協議或路徑。
+      placeholder: admin.example.com
     paths:
       title: 路徑
-      label: 路徑規則（每行一條）
-      placeholder: |
-        /admin/*
-        /checkout/*/confirm
-        -/admin/health
-      hint: 使用 glob 語法比對正規化後的 URL 路徑。
-      syntax: |
-        每行格式：[ - ] /path-glob
-        以 # 開頭的行將被視為註釋並忽略。
-        路徑必須以 / 開頭，* 可以比對任意字元。
-        URL 路徑正規化後按區分大小寫的方式比對。
-      examples:
-        - "/admin/*"
-        - "/checkout/*/confirm"
-        - "-/admin/health"
-      exampleDescription: 這段設定遮蔽 /admin/ 下的路徑和符合 /checkout/*/confirm 的路徑，但允許 /admin/health。
-      testLabel: URL 路徑
-      testPlaceholder: /admin/settings
-      testHint: 只輸入 pathname，並保留開頭的斜槓。
+      placeholder: /admin/*
     queryParameters:
       title: 查詢參數
-      label: 查詢參數規則（每行一條）
-      placeholder: |
-        utm_*
-        utm_source=*
-        -utm_source=trusted
-      hint: 支援 key 或 key=value，鍵和值都支援 * 萬用字元。
-      syntax: |
-        每行格式：[ - ] key-glob[=value-glob]
-        以 # 開頭的行將被視為註釋並忽略。
-        省略 = 時，表示比對該鍵的任意值。
-        區分大小寫，鍵和值都支援 * 萬用字元。
-      examples:
-        - "utm_*"
-        - "utm_source=*"
-        - "-utm_source=trusted"
-      exampleDescription: 這段設定遮蔽所有以 utm_ 開頭的參數以及 utm_source 的任意值，但允許 utm_source=trusted。
-      testLabel: 查詢字串
-      testPlaceholder: utm_source=internal&utm_campaign=spring
-      testHint: 輸入查詢字串，可帶或不帶開頭的 ?。
+      placeholder: utm_source=spam
     referrers:
       title: 來源
-      label: 來源規則（每行一條）
-      placeholder: |
-        *.example.com
-        social.example.com
-        -trusted.example.com
-      hint: 比對來源頁面的 hostname。
-      syntax: |
-        每行格式：[ - ] hostname-glob
-        以 # 開頭的行將被視為註釋並忽略。
-        URL 會先轉換為 hostname，然後再進行比對。
-        比對時不區分大小寫，並支援 * 萬用字元。
-      examples:
-        - "*.example.com"
-        - "social.example.com"
-        - "-trusted.example.com"
-      exampleDescription: 這段設定遮蔽 example.com 的來源網域和 social.example.com，但允許 trusted.example.com。
-      testLabel: 來源
-      testPlaceholder: https://social.example.com/article
-      testHint: 輸入來源 URL 或 hostname。
+      placeholder: "*.spam.example"
     userAgents:
       title: User-Agent
-      label: User-Agent 規則（每行一條）
-      placeholder: |
-        *bot*
-        Mozilla/*
-        -Googlebot
-      hint: 不區分大小寫地使用 glob 語法比對請求 User-Agent。
-      syntax: |
-        每行格式：[ - ] text-glob
-        以 # 開頭的行將被視為註釋並忽略。
-        * 可以比對請求 User-Agent 中的任意字元。
-        比對時不區分大小寫。
-      examples:
-        - "*bot*"
-        - "Mozilla/*"
-        - "-Googlebot"
-      exampleDescription: 這段設定遮蔽包含 bot 的 User-Agent 和以 Mozilla/ 開頭的值，但允許 Googlebot。
-      testLabel: User-Agent
-      testPlaceholder: Mozilla/5.0 (compatible; ExampleBot/1.0)
-      testHint: 輸入完整或部分請求 User-Agent。
+      placeholder: "*bot*"
     ips:
-      title: IP 地址
-      label: IP 規則（每行一條）
-      placeholder: |
-        203.0.113.15
-        2001:db8::1
-        203.0.113.0/24
-        2001:db8::/32
-        -203.0.113.10..203.0.113.20
-      hint: 支援 IPv4/IPv6、CIDR 網段以及起始..結束範圍。
-      syntax: |
-        每行格式：[ - ] address | CIDR | start..end
-        以 # 開頭的行將被視為註釋並忽略。
-        支援 IPv4 和 IPv6 地址。
-        範圍兩端必須使用相同地址族，且起點不能大於終點。
-      examples:
-        - "203.0.113.15"
-        - "2001:db8::1"
-        - "203.0.113.0/24"
-        - "2001:db8::/32"
-        - "-203.0.113.10..203.0.113.20"
-      exampleDescription: 這段設定演示 IPv4/IPv6 單個地址、CIDR 網段和 start..end 範圍；範圍前的 - 表示允許該範圍。
-      testLabel: IP 地址
-      testPlaceholder: 203.0.113.15
-      testHint: 輸入一個 IPv4 或 IPv6 地址進行測試。
+      title: IP 位址
+      placeholder: 203.0.113.0/24
     asns:
       title: ASN
-      label: ASN 規則（每行一條）
-      placeholder: |
-        64500
-        *
-        -64501
-      hint: 比對 Cloudflare metadata 中的數字自治系統編號。
-      syntax: |
-        每行格式：[ - ] ASN-number
-        以 # 開頭的行將被視為註釋並忽略。
-        使用 * 比對任意 ASN。
-        測試 metadata 值時也接受可選的 AS 字首。
-      examples:
-        - "64500"
-        - "*"
-        - "-64501"
-      exampleDescription: 這段設定遮蔽 ASN 64500 和任意 ASN，但透過最後一條規則放行 ASN 64501。
-      testLabel: ASN
-      testPlaceholder: "64500"
-      testHint: 輸入數字自治系統編號。
+      placeholder: "64500"
     countries:
-      title: 國家 / 地區
-      label: 國家規則（每行一條）
-      placeholder: |
-        DE
-        *
-        -US
-      hint: 使用 ISO 3166-1 alpha-2 國家程式碼。
-      syntax: |
-        每行格式：[ - ] ISO-3166-alpha-2
-        以 # 開頭的行將被視為註釋並忽略。
-        使用 * 比對任意國家。
-        國家程式碼比對時不區分大小寫。
-      examples:
-        - "DE"
-        - "*"
-        - "-US"
-      exampleDescription: 這段設定遮蔽 DE 和任意國家，但透過最後一條規則放行 US。
-      testLabel: 國家程式碼
-      testPlaceholder: DE
-      testHint: 輸入 ISO 3166-1 alpha-2 國家程式碼。
+      title: 國家/地區
+      placeholder: DE
     regions:
-      title: 州 / 省
-      label: 地區規則（每行一條）
-      placeholder: |
-        DE-BE
-        *
-        -US-CA
-      hint: 使用 Cloudflare metadata 中的 COUNTRY-REGION_CODE 格式。
-      syntax: |
-        每行格式：[ - ] COUNTRY-REGION_CODE
-        以 # 開頭的行將被視為註釋並忽略。
-        使用 * 比對任意地區。
-        地區值比對時不區分大小寫。
-      examples:
-        - "DE-BE"
-        - "*"
-        - "-US-CA"
-      exampleDescription: 這段設定遮蔽 DE-BE 和任意地區，但透過最後一條規則放行 US-CA。
-      testLabel: 地區程式碼
-      testPlaceholder: US-CA
-      testHint: 輸入 metadata 中的 COUNTRY-REGION_CODE 值。
-  ignoreDoNotTrackLabel: 忽略瀏覽器 Do Not Track
+      title: 州/省
+      placeholder: US-CA
+  ignoreDoNotTrackLabel: 忽略「請勿追蹤」
   autoTrackOutboundLinksLabel: 自動追蹤外鏈點選
   autoTrackOutboundLinksHint: 開啟後，點選指向外部網域的連結將自動回報 outbound_click 事件。
-  performanceSampleRateLabel: 效能取樣率（%）
+  performanceSampleRateLabel: Web Vitals 取樣率
   performanceSampleRateHint: 被取樣的造訪會在離開頁面時記錄 TTFB、FCP、LCP、CLS 和 INP。填 0 表示不採樣，100 表示全量採集。
-  saveTracking: 儲存追蹤設定
-  savingTracking: 正在儲存追蹤設定…
-  save: 儲存修改
+  save: 儲存
   saving: 儲存中...
-  scriptTitle: 安裝統計指令碼
-  scriptHint: 推薦放在 </head> 結束標籤前；若不方便，也可放在 </body> 前，但請確保每頁只加載一次。
+  scriptHint: 將其貼到每個頁面的 </head> 之前。
   copyScript: 複製指令碼
   copiedScript: 指令碼已複製。
   scriptUnavailable: 目前無法取得指令碼。
   deleteTitle: 刪除站點
-  deleteSubtitle: 此操作會將目前站點從團隊中移除。
+  deleteSubtitle: 刪除該站點及其所有分析資料。
   delete: 刪除站點
   deleting: 刪除中...
   deleteConfirm: 該操作不可撤銷，是否繼續？
@@ -1558,128 +1179,65 @@ siteSettings:
     saveFailed: 站點設定儲存失敗。
     scriptLoadFailed: 載入指令碼片段失敗。
     settingsLoadFailed: 載入指令碼設定失敗。
-    settingsPropagationHint: 設定分發到全球節點可能需要最多 1 小時。
+    settingsPropagationHint: 變更最多需要一小時生效。
     deleted: 站點已刪除。
     deleteFailed: 刪除站點失敗。
     invalidInput: 請填寫有效的站點名稱和網域。
+  publicEnabledHint: 任何取得連結的人都可以查看此站點的報表。
+  viewBlockedRequests: 查看已攔截請求
+  blockingRulesHelp: 符合「攔截」規則的請求不會被統計，「允許」用於設定例外。同一類型的多條規則都符合時，以最後一條為準。可使用 * 作為萬用字元。
+  blockingRuleTypeLabel: 類型
+  blockingRuleActionLabel: 動作
+  blockingRuleValueLabel: 值
+  blockingRuleBlock: 攔截
+  blockingRuleAllow: 允許
+  blockingRuleAdd: 新增規則
+  blockingRuleRemove: 移除規則
+  blockingRulesEmpty: 沒有攔截規則。
+  blockingRuleInvalid: 請輸入此類型的有效值。
+  blockingRulesTooMany: "{type} 規則過多。"
 accountSettings:
   emailManagedByGateway: 電子郵件來自你的 Every App 帳戶。
   profileTitle: 個人資訊
   nicknameLabel: 暱稱
   nicknamePlaceholder: 例如：產品分析師
   emailLabel: 電子郵件
-  profileSave: 儲存個人資訊
-  profileSaving: 儲存中...
   profileSaved: 個人資訊已儲存。
   profileSaveFailed: 儲存個人資訊失敗。
-  preferredLanguageTitle: 通知語言
-  preferredLanguageLabel: 郵件語言
-  preferredLanguageDefault: 預設
-  preferredLanguageEnglish: 英語
-  preferredLanguageChinese: 簡體中文
-  preferredLanguageTraditionalChinese: 繁體中文
-  preferredLanguageJapanese: 日語
-  preferredLanguageSaved: 通知語言已儲存。
-  preferredLanguageSaveFailed: 儲存通知語言失敗。
-  timeZoneTitle: 報表時區
-  activeTimeZone: 目前生效時區
-  browserTimeZone: 瀏覽器時區
+  timeZoneTitle: 時區
   browserUnavailable: 未檢測到
-  preferenceLabel: 時區偏好
-  useBrowser: 跟隨瀏覽器時區
-  useCustom: 選擇時區
-  customTimeZoneLabel: 時區
-  invalidTimeZone: 請選擇有效的 IANA 時區。
-  save: 儲存偏好
-  saving: 儲存中...
-  saved: 時區偏好已儲存。
-  saveFailed: 儲存時區偏好失敗。
+  useBrowser: 瀏覽器時區（{zone}）
+  saved: 時區已儲存。
+  saveFailed: 無法儲存時區。
+  timeZoneLabel: 報表時區
+  languageSaveFailed: 無法儲存語言。
 notificationCenter:
-  title: 通知中心
+  title: 收件匣
   empty: 暫無通知。
   loading: 正在載入通知
   markRead: 標記已讀
   markAllRead: 全部標記為已讀
-  refresh: 重新整理
-  attention: 重點
   loadFailed: 載入通知失敗。
   markReadFailed: 標記通知為已讀失敗。
   markAllReadSuccess: 通知已全部標記為已讀。
   markAllReadFailed: 全部標記為已讀失敗。
-  ruleFilterActive: 正在檢視此規則產生的通知。
-  ruleFilterClear: 清除篩選
-  sections:
-    importantTitle: 重要通知
-    importantDescription: "{count} 條未讀重點通知。"
-    importantEmpty: 目前沒有重要通知。
-    reportsTitle: 報告
-    reportsDescription: 檢視通知規則產生的定期報告。
-    reportsEmpty: 目前沒有報告。
   tabs:
     all: 全部
     unread: 未讀
-    attention: 重點
-    report: 報告
-  tabDescriptions:
-    all: 全部訊息
-    unread: 等待檢視
-    attention: 需要關注
-    report: 定期報告
-  messageTypes:
-    report: 報告
-    milestone: 里程碑
-    threshold: 閾值
-    change: 變化
-    health: 健康
-    system: 系統
-    test: 測試
   severities:
     info: 資訊
     success: 成功
     warning: 警告
     critical: 嚴重
-  deliveryStatuses:
-    created: 已建立
-    sending: 傳送中
-    sent: 已傳送
-    partial: 部分完成
-    failed: 失敗
-    skipped: 已跳過
-  channels:
-    inApp: 站內通知
-    email: 郵件
-  channelStatuses:
-    sent: 已傳送
-    skipped: 已跳過
-    failed: 失敗
-    created: 已建立
-  emailSkipReasons:
-    user_preference_disabled: 使用者已關閉郵件通知
-    system_email_unconfigured: 系統郵件尚未設定
-    recipient_email_invalid: 收件人電子郵件無效
-    secret_decryption_failed: 儲存的郵件憑據無法解密
-    provider_failed: 郵件服務商拒絕傳送
-    network_failed: 無法連線郵件服務商
-    unknown: 未知原因
-  emailAttempts: "嘗試次數：{count}"
-  emailRetryCount: "重試次數：{count}"
-  emailDuration: "{duration} 毫秒"
-  typeFilterLabel: 型別
-  severityFilterLabel: 嚴重程度
-  allTypes: 全部型別
-  allSeverities: 全部嚴重程度
   preferencesTitle: 通知偏好
   emailNotificationsLabel: 郵件通知
-  emailNotificationsDescription: 規則觸發時傳送郵件。
-  reportsUnreadLabel: 報告保持未讀
-  reportsUnreadDescription: 報告建立後保持未讀狀態。
-  milestonesUnreadLabel: 里程碑保持未讀
-  milestonesUnreadDescription: 將未讀狀態保留給里程碑訊息。
-  alertsUnreadLabel: 告警保持未讀
-  alertsUnreadDescription: 閾值和健康告警保持未讀。
-  preferencesSaved: 通知偏好已儲存。
+  reportsUnreadLabel: 新報告標為未讀
+  milestonesUnreadLabel: 新里程碑標為未讀
+  alertsUnreadLabel: 新提醒標為未讀
   preferencesSaveFailed: 儲存通知偏好失敗。
   detailFields: {}
+  noUnread: 沒有未讀通知。
+  emailFailed: 郵件傳送失敗
 notificationEmail:
   common:
     brand: OpenAnalytics
@@ -1753,18 +1311,11 @@ notificationEmail:
     title: "{site} 流量變化提醒"
     summary: "{window}的{metric}變化了 {change}。"
 runtimeConfigError:
-  title: 需要執行時設定
-  eyebrow: 部署已暫停
-  heading: OpenAnalytics 需要一個執行時金鑰後才能載入控制台。
-  description: 應用已經啟動，但目前執行環境沒有讀取到必需的 root secret，因此暫時阻止進入控制台。
-  requiredTitle: 必需的執行時金鑰
-  requiredDescription: 請在 Cloudflare 執行時金鑰中至少設定以下其中一個值。
-  secretHint: 推薦使用 MAIN_SECRET。舊部署仍可繼續使用 DAILY_SALT_SECRET。
-  commandTitle: Cloudflare 命令
-  commandDescription: 使用專案內建命令寫入推薦金鑰，然後重新部署。
-  quickStartHint: 或者，請檢視 GitHub README 的“快速開始”章節來設定這個變數。
-  docsLabel: 開啟 GitHub
-  homeLabel: 重試控制台
+  title: 儀表板無法使用
+  heading: 此儀表板暫時無法使用。
+  setupSummary: 設定此部署
+  setupCommand: 用這條命令設定根金鑰，然後重新整理此頁面。
+  docsLabel: 部署指南
 login: {}
 accountLinks:
   invite:
@@ -1772,24 +1323,12 @@ accountLinks:
   resetPassword: {}
 empty: {}
 errorPage:
-  notFoundEyebrow: 頁面未找到
   notFoundTitle: 找不到這個頁面
   notFoundDescription: 地址可能不正確，或者頁面已經被移動。
-  errorEyebrow: 應用錯誤
   errorTitle: 頁面出現了問題
-  errorDescription: OpenAnalytics 無法完成這次請求。下面的診斷資訊可以幫助我們定位問題。
-  statusLabel: 狀態
-  reasonLabel: 原因
-  requestLabel: 請求路徑
-  timestampLabel: 時間
-  diagnosticIdLabel: 診斷 ID
-  errorTypeLabel: 錯誤型別
-  errorMessageLabel: 錯誤資訊
-  notFoundReason: route_not_found
-  unexpectedReason: unexpected_application_error
+  errorDescription: OpenAnalytics 無法完成這次請求。
   homeAction: 返回首頁
   reportAction: 在 GitHub 反饋
-  reportHint: 將開啟一個已預填內容的 GitHub Issue，提交前請先檢查資訊。
 actions:
   switchToEnglish: English
   switchToChinese: 簡體中文
@@ -1808,24 +1347,26 @@ teamManagement:
     openAnalytics: 檢視分析
     title: 所有站點
     pagesPerSession: 每工作階段頁面數
+    public: 公開
+    openPublic: 開啟公開儀表板
   widgets: {}
   notifications:
-    empty: 目前團隊還沒有通知規則。
+    empty: 還沒有通知規則。
     rulesTitle: 通知規則
-    enabledCount: "目前團隊已啟用 {count} 條規則。"
+    enabledCount: "此組織已啟用 {count} 條規則。"
     loadingRules: 正在載入通知規則
     deliveryTestTitle: 投遞測試
     deliveryTestDescription: 為你建立一條站內通知；如果可用，也會嘗試傳送郵件。
     inAppTestHint: 我們會向你傳送一條站內通知。
     emailTestConfiguredHint: 我們會向你傳送一條測試郵件。
-    emailTestUnconfiguredHint: 目前系統未設定郵件傳送服務，請聯絡管理員新增。
+    emailTestUnconfiguredHint: "此 Every App 閘道尚未設定郵件。"
     sendTestNotification: 傳送測試通知
     loadRulesFailed: 載入通知規則失敗。
     testNotificationSent: 測試通知已傳送。
     sendTestNotificationFailed: 傳送測試通知失敗。
     createRule: 建立規則
     editRule: 編輯規則
-    dialogDescription: 為目前團隊設定一條基礎通知規則。
+    dialogDescription: 為此組織設定一條通知規則。
     ruleInfoSection: 規則資訊
     scheduleSection: 計劃
     sendScheduleSection: 傳送時間
@@ -1883,7 +1424,6 @@ teamManagement:
     disable: 停用
     delete: 刪除
     saveRule: 儲存規則
-    emailPreview: 郵件預覽
     preview: 預覽
     runNow: 立即執行
     previewFailed: 預覽規則失敗。
@@ -1935,7 +1475,6 @@ teamManagement:
       title: 標題
       htmlPreview: HTML 預覽
       bodyText: 正文
-      data: 資料
       createdAt: 建立時間
       updatedAt: 更新時間
       loadingContent: 正在載入實際報告內容
@@ -1955,13 +1494,13 @@ teamManagement:
       health: 長時間無資料時通知
     recipientModes:
       creator: 建立者
-      team_admins: 團隊管理員
+      team_admins: 組織管理員
       all_team_members: 全部團隊成員
       users: 指定使用者
     recipientKindLabel: 接收人型別
     recipientPresetLabel: 預設
     customRecipientsEmpty: 未選擇接收人
-    noTeamMembers: 目前沒有可選團隊成員。
+    noTeamMembers: 此組織還沒有成員。
     recipientKinds:
       preset: 預設
       custom: 自訂
@@ -2006,25 +1545,14 @@ teamManagement:
       last_1h: 最近 1 小時
       last_24h: 最近 24 小時
       yesterday: 昨天
-    emailPreviewPage:
-      title: 通知郵件預覽
-      typeLabel: 預覽型別
-      localeLabel: 預覽語言
-      formatLabel: 預覽格式
-      html: HTML
-      text: 純文字
-      json: JSON
-      refresh: 預覽
-      loading: 正在渲染預覽...
-      loadFailed: 渲染郵件預覽失敗。
-      subject: 主題
+    addSiteFirst: 請先新增站點。
+    deleteDescription: 此操作無法復原。
+    previewStatuses:
+      skipped: 已略過
+      checked: 未觸發
+      triggered: 已觸發
   publicLinks:
-    enabled: 已啟用
-    disabled: 未啟用
-    viewSettings: 檢視設定
     copyLink: 複製連結
-    linkCopied: 連結已複製
-    noSites: 目前團隊還沒有站點。
     columns: {}
   apiKeys:
     status: {}
@@ -2037,8 +1565,6 @@ teamManagement:
     inviteStatuses: {}
     columns: {}
     roleLabels: {}
-managementNav:
-  scheduledTasks: 排程任務
 managementPages:
   versionUpdates: {}
   scheduledTasks:
@@ -2049,17 +1575,12 @@ managementPages:
     allStatuses: 全部狀態
     runs24h: 24 小時內執行次數
     successRate24h: 24 小時成功率
-    successRateDescription: 只統計成功狀態的執行。
     problemRuns24h: 異常執行次數
-    retentionPrefix: 保留
-    days: 天
     failed: 失敗
     partial: 部分完成
     lastRun: 最近執行
     staleRunning: 長時間未完成的執行
-    noStaleRunning: 沒有長時間未完成的執行
     taskListTitle: 任務
-    taskListDescription: 目前系統註冊的排程任務和近 30 天健康狀況。
     task: 任務
     schedule: 計劃
     enabled: 狀態
@@ -2073,7 +1594,6 @@ managementPages:
     avgDuration: 平均耗時
     runHistoryTitle: 執行歷史
     nextRun: 下次執行
-    runHistoryDescription: 最近 30 天內的任務執行記錄。
     noRuns: 暫無執行記錄。
     scheduledAt: 計劃時間
     startedAt: 開始時間
@@ -2106,7 +1626,7 @@ managementPages:
     taskDefinitions:
       visit_hourly_rollup:
         name: 小時造訪聚合
-        description: 將已關閉的造訪記錄聚合為小時彙總，用於儀表盤計數器和趨勢。
+        description: 將已結束的造訪彙總為每小時總計，供報表使用。
         schedule: 每小時
       notification_tick:
         name: 通知分發
@@ -2114,32 +1634,24 @@ managementPages:
         schedule: 每 30 分鐘
       database_maintenance:
         name: 資料庫最佳化
-        description: 分批清理過期執行資料和通知，並最佳化 D1 查詢統計資訊。
+        description: 清理過期的任務執行記錄和通知，並最佳化資料庫。
         schedule: 每天
+    keptForDays: 保留 {days} 天
 adminUsers:
   columns: {}
 adminSites:
-  createTitle: 新建站點
-  name: 站點名稱
+  createTitle: 新增站點
+  name: 名稱（選填）
   domain: 網域
-  publicSlug: 公開 Slug（可選）
-  create: 建立站點
-  creating: 建立中...
-  noData: 暫無站點資料。
-  loadFailed: 載入站點失敗。
-  createSuccess: 站點建立成功。
-  createFailed: 站點建立失敗。
-  invalidInput: 請填寫有效的站點名稱和網域。
-  open: 開啟分析
-  columns:
-    name: 名稱
-    domain: 網域
-    created: 建立時間
-    action: 操作
+  create: 新增站點
+  creating: 新增中...
+  createSuccess: 站點已新增。
+  createFailed: 無法新增站點，請重試。
+  invalidDomain: 請輸入網域，例如 example.com。
+  columns: {}
 adminTeams:
   columns: {}
 requestObservation:
-  title: 請求觀測
   blockedTotal: "已封鎖請求"
   retentionNote: "保留 30 天。放行的流量見各站點的儀表板。"
   topReasons: "原因"
@@ -2150,8 +1662,8 @@ requestObservation:
     suspected_bot: "託管網路"
   tabs: {}
   refresh: 重新整理
-  loadFailed: 載入請求觀測資料失敗。
-  noData: 目前時間視窗內沒有請求資料。
+  loadFailed: 無法載入被攔截的請求。
+  noData: 此期間沒有被攔截的請求。
   time: 時間
   site: 站點
   location: 位置
@@ -2190,47 +1702,9 @@ requestObservation:
     windowDays: "最近 {days} 天"
   normalDetail: {}
 systemSettings:
-  title: 系統設定
-  subtitle: 管理目前 OpenAnalytics 例項的全站設定。
-  guide: 教程
-  analyticsEngineTitle: 分析引擎
-  analyticsEngineDescription: 設定用於讀取請求觀測以及未來流量和事件分析資料的 Cloudflare 憑據。
-  analyticsEngineAccountIdLabel: Cloudflare Account ID
-  analyticsEngineApiTokenLabel: Cloudflare API Token
-  analyticsEngineApiTokenPlaceholder: 檢視教程以取得 Cloudflare API Token
-  analyticsEngineSaved: 分析引擎設定已儲存。
-  analyticsEngineSaveFailed: 儲存分析引擎設定失敗。
-  analyticsEngineDeleted: 分析引擎設定已刪除。
-  analyticsEngineDeleteFailed: 刪除分析引擎設定失敗。
-  analyticsEngineDeleteConfirm: 確認刪除分析引擎讀取憑據嗎？刪除後，依賴 Analytics Engine 的功能將顯示為未設定。
-  analyticsEngineDisabledTitle: Analytics Engine 尚未啟用
-  analyticsEngineDisabledDescription: 目前部署已自動停用 Analytics Engine 繫結，因為 Cloudflare
-    帳戶尚未啟用 Analytics Engine。請先在 Cloudflare 中啟用 Analytics Engine，然後重新部署 Open
-    Analytics 以啟用相關分析功能。
-  analyticsEngineDisabledHint: 在啟用 Analytics Engine 並重新部署 Worker 前，分析引擎設定不可修改。
-  analyticsEngineOpenCloudflare: 開啟 Cloudflare Analytics Engine
-  analyticsEngineGuideTitle: 取得分析引擎設定
-  analyticsEngineGuideDescription: 分析引擎需要 Cloudflare 帳號資訊和一個可讀取 Analytics Engine 的 API Token。
-  analyticsEngineGuideSteps:
-    - 開啟 Cloudflare Dashboard，進入目標帳號並複製 Account ID。
-    - 在 Workers & Pages 中啟用 Analytics Engine；Request、Traffic 和 Event
-      三個資料集會隨部署自動建立並繫結。
-    - 前往 My Profile → API Tokens，建立 Custom token。
-    - 為 Token 新增 Account Analytics 讀取權限，並限制到目前帳號。
-    - 儲存後複製 Token，回到這裡填寫 Account ID 和 API Token。
   notificationEmailTitle: 郵件通知
-  notificationEmailDescription: "報告、提醒和測試訊息透過 Every App 閘道以電子郵件寄送。"
-  emailGatewayReady: "Every App 閘道負責寄送通知郵件。"
-  emailGatewayNotReady: "Every App 閘道尚未設定郵件寄件人。閘道管理員設定 EMAIL_FROM 和 Email Sending 後即可寄送通知郵件。"
+  emailGatewayNotReady: "此 Every App 閘道尚未設定郵件。"
   emailSenderLabel: "寄件人"
-  notificationEmailGuideTitle: 取得 Resend 郵件設定
-  notificationEmailGuideDescription: 使用 Resend 傳送系統郵件前，需要準備寄件網域和 API Key。
-  notificationEmailGuideSteps:
-    - 開啟 Resend Dashboard，並確認寄件網域已完成 DNS 驗證。
-    - 在 API Keys 頁面建立新的 API Key。
-    - 選擇傳送郵件所需的權限，並複製產生後的 API Key。
-    - 回到這裡填寫發件人名稱、發件電子郵件、Reply-To 和 Resend API Key。
-    - 儲存後使用測試收件人傳送一封測試郵件，確認投遞鏈路正常。
   retentionTitle: 執行資料保留期
   retentionDescription: 設定任務執行記錄、任務日誌、通知訊息和詳細分析資料的保留時間。任務和通知的修改只影響新建記錄；超出新期限的詳細分析資料會在下一次每日執行時刪除。
   scheduledTaskLogsDaysLabel: 排程任務執行記錄和日誌（天）
@@ -2243,68 +1717,16 @@ systemSettings:
   retentionSaving: 儲存中...
   retentionSaved: 保留期設定已儲存。
   retentionSaveFailed: 儲存保留期設定失敗。
-  loginTurnstileTitle: 登入 Turnstile 防護
-  loginTurnstileDescription: 啟用後，登入頁會在後臺執行 Cloudflare Turnstile Invisible 驗證，並在服務端登入流程中強制校驗。
-  loginTurnstileEnabledLabel: 啟用登入保護
-  loginTurnstileSiteKeyLabel: Site Key
-  loginTurnstileSecretKeyLabel: Secret Key
-  loginTurnstileSecretKeyPlaceholder: 檢視教程以取得 Turnstile Secret Key
-  loginTurnstileModeLabel: 驗證模式
-  loginTurnstileModeInvisible: 隱形（Invisible）
-  loginTurnstileTest: 測試設定
-  loginTurnstileTesting: 驗證中...
-  loginTurnstileTestPassed: 驗證成功
-  loginTurnstileTestRequired: 新 Secret Key 需要先測試
-  loginTurnstileTestMissing: 請先填寫 Site Key 和 Secret Key。
-  loginTurnstileTestFailed: 驗證失敗，請檢查 Site Key 與 Secret Key。
-  loginTurnstileSaved: 登入 Turnstile 設定已儲存。
-  loginTurnstileSaveFailed: 儲存登入 Turnstile 設定失敗。
-  loginTurnstileDeleted: 登入 Turnstile 設定已刪除。
-  loginTurnstileDeleteFailed: 刪除登入 Turnstile 設定失敗。
-  loginTurnstileDeleteConfirm: 確認刪除登入 Turnstile 設定嗎？刪除後登入保護將關閉。
-  loginTurnstileLoadFailed: 載入登入 Turnstile 設定失敗。
-  loginTurnstilePrivacyNotice: 請在 Cloudflare Turnstile 控制台建立 Invisible
-    widget。自託管站點啟用後，請自行確認隱私權政策符合 Cloudflare Turnstile 的使用要求。
-  loginTurnstileGuideTitle: 取得 Turnstile 設定
-  loginTurnstileGuideDescription: 登入保護需要 Cloudflare Turnstile 的 Site Key 和 Secret Key。
-  loginTurnstileGuideSteps:
-    - 開啟 Cloudflare Dashboard，進入 Turnstile。
-    - 建立 widget，並選擇 Invisible 模式。
-    - 將目前 OpenAnalytics 登入網域加入允許的主機名稱清單。
-    - 建立後複製 Site Key 和 Secret Key。
-    - 回到這裡填寫 Site Key 和 Secret Key，先執行測試驗證，再儲存設定。
-  enabledLabel: 啟用郵件傳送
   enabledOn: 開啟
   enabledOff: 關閉
-  providerLabel: 郵件服務
-  providerResend: Resend
-  fromNameLabel: 發件人名稱
-  fromEmailLabel: 發件人電子郵件
-  replyToLabel: Reply-To 電子郵件
-  replyToPlaceholder: 可選，預設使用發件人電子郵件
-  resendApiKeyLabel: Resend API Key
-  resendApiKeyPlaceholder: 檢視教程以取得 Resend API Key
-  testRecipientLabel: 測試收件人
-  save: 儲存設定
-  saving: 儲存中...
-  test: 傳送測試郵件
-  testing: 傳送中...
-  saved: 郵件設定已儲存。
-  saveFailed: 儲存郵件設定失敗。
-  delete: 刪除設定
-  deleting: 刪除中...
   cancel: 取消
-  deleted: 郵件設定已刪除。
-  deleteFailed: 刪除郵件設定失敗。
-  deleteConfirm: 確認刪除郵件通知設定嗎？刪除後系統將視為未設定並關閉郵件傳送。
-  testSent: 測試郵件已傳送。
-  testFailed: 測試郵件傳送失敗。
-  loadFailed: 載入郵件設定失敗。
+  retentionLowerTitle: 刪除較早的分析資料？
+  retentionLowerDescription: 超過 {days} 天的頁面瀏覽和事件會在下一次每日執行時刪除，小時彙總會保留。此操作無法復原。
+  retentionLowerConfirm: 儲存並刪除
 systemPerformance:
-  title: 系統效能
   refresh: 重新整理
-  loadFailed: 載入系統效能資料失敗。
-  noData: 目前時間視窗內暫無系統效能資料。
+  loadFailed: 無法載入接收資料。
+  noData: 此期間沒有接收資料。
   range15m: 最近 15 分鐘
   range1h: 最近 1 小時
   range6h: 最近 6 小時
@@ -2329,7 +1751,7 @@ systemPerformance:
   customEvents: 自訂事件
   anomalyBucket: 異常分桶
   openVisitHealth: 未關閉造訪堆積
-  openVisitHealthDescription: 尚未被離開事件、路由切換或超時收尾關閉的造訪行。
+  openVisitHealthDescription: 尚未結束的造訪。
   open: 未關閉
   stale: 停滯
   timedOut: 已超時
@@ -2343,18 +1765,18 @@ systemPerformance:
   events: 事件
   avgLatency: 平均延遲
   slowestEventsTitle: 估算最慢事件
-  slowestEventsDescription: 目前視窗內伺服器端寫入時間與事件時間正向差值最大的記錄。
+  slowestEventsDescription: 從發生到儲存延遲最長的事件。
   eventTime: 事件時間
   serverTime: 伺服器端寫入時間
   estimatedDelay: 估算延遲
-  doDiagnosticTitle: DO 內部緩衝診斷
-  doDiagnosticDescription: 診斷每個站點的專用 Durable Object 中的資料停滯情況。
-  doDiagnosticLoadFailed: 載入 DO 診斷資料失敗。
-  doDiagnosticLoading: 正在拉取每個 DO 的狀態…
-  doDiagnosticRun: 執行 DO 診斷
-  doDiagnosticEmpty: 暫無站點 DO 狀態。
-  doDiagnosticUnreachable: 部分站點 DO 不可達
-  doDiagnosticReachableSites: 可達 DO
+  doDiagnosticTitle: 緩衝資料
+  doDiagnosticDescription: 檢查每個站點尚未儲存的資料。
+  doDiagnosticLoadFailed: 無法檢查緩衝資料。
+  doDiagnosticLoading: 正在檢查每個站點…
+  doDiagnosticRun: 檢查緩衝資料
+  doDiagnosticEmpty: 暫無緩衝資料。
+  doDiagnosticUnreachable: 不可達站點
+  doDiagnosticReachableSites: 可達站點
   doDiagnosticTotalSites: 總站點
   doDiagnosticActiveAlarms: 活躍 Alarm 定時器
   doDiagnosticBufferedVisits: 緩衝造訪
@@ -2366,10 +1788,10 @@ systemPerformance:
   doDiagnosticStuckDirty: 未重新整理且卡住
   doDiagnosticMaxFlushAttempts: 最大重試次數
   doDiagnosticBufferedCustomEvents: 緩衝自訂事件
-  doDiagnosticOldestOpen: 最早未關閉起始
+  doDiagnosticOldestOpen: 最早未關閉的造訪
   doDiagnosticFutureMaxActivity: 最晚的未來活動時間
   doDiagnosticSiteList: 風險最高的站點
-  doDiagnosticSiteListDescription: 按風險評分排序，前 20 個站點的 DO 內部緩衝快照。
+  doDiagnosticSiteListDescription: 風險最高的 20 個站點。
   doDiagnosticSiteFailed: 不可達
   doDiagnosticSiteOpen: 未關閉
   doDiagnosticSiteStuck: 卡滯
@@ -2383,8 +1805,6 @@ systemPerformance:
   doDiagnosticSiteNextDueHidden: 隱藏回退
   doDiagnosticSiteNextDueTimeout: 造訪超時
   doDiagnosticSiteResponseMs: 響應耗時
-  doDiagnosticThresholdsHint: 閾值：stale {stale}，timeout {timeout}，hardAged
-    {hardAged}，stuck flush_attempts ≥ {stuck}
   doDiagnosticHealthy: 目前未發現異常緩衝行。
 loginForm: {}
 logoutAction: {}
@@ -2396,7 +1816,7 @@ appNav:
   toggleSidebar: 切換側邊欄
   sources: 來源
   audience: 受眾
-  conversions: 轉換
+  goals: 目標
   sites: 站點
   allSites: 所有站點
   inbox: 收件匣
@@ -2415,32 +1835,25 @@ getStarted:
   steps:
     site: 新增第一個站點
     tracking: 追蹤你的網站
-    team: 邀請團隊成員
+    team: 邀請成員
     notifications: 透過電子郵件接收報告
     sharing: 分享公開儀表板
-  noSitesTitle: 還沒有站點
-  noSitesDescription: 新增一個站點，然後把它的腳本放到你的頁面上。
+  noSitesTitle: 新增第一個站點
+  memberNoSitesTitle: 還沒有站點
+  memberNoSitesDescription: 請管理員新增一個。
   addSite: 新增站點
   waitingTitle: 正在等待第一次頁面瀏覽
-  waitingDescription: "把這段腳本加入 {domain} 的每個頁面。頁面瀏覽會在一分鐘內顯示在這裡。"
   copy: 複製
   copied: 已複製
-  trackingSettings: 追蹤設定
 settingsNav:
   label: 設定
-  personal: 個人
-  organization: 組織
-  system: 系統
+  system: 系統健康
   account: 帳戶
-  sites: 站點
   notifications: 通知
-  publicLinks: 公開連結
-  general: 一般
-  scheduledTasks: 排程任務
-  requestObservation: 請求觀測
-  performance: 效能
   cancel: 取消
-  managerOnly: 只有擁有者或管理員可以修改。
-  dangerZone: 危險操作
-  copy: 複製
-  copied: 已複製
+systemHealth:
+  tabs:
+    tasks: 排程任務
+    blocked: 已攔截請求
+    ingestion: 資料接收
+    data: 資料

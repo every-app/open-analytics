@@ -3,11 +3,8 @@ import { withFilters } from "@/lib/dashboard/client/utils";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type { ClientDimensionKey } from "@/lib/dashboard-api/client/edge";
 import type {
-  BrowserCrossBreakdownData,
   BrowserCrossBreakdownDimensionData,
-  BrowserRadarData,
   BrowserTrendData,
-  BrowserVersionBreakdownData,
   ClientCrossBreakdownData,
 } from "@/lib/dashboard-api/client/edge";
 import type { FilterDocument } from "@/lib/filter-contract";
@@ -38,11 +35,14 @@ export async function fetchClientDimensionTrend(
     { signal: options?.signal },
   );
 }
+/** The dimensions a cross-tab of the visitors' technology can pair. */
+export type CrossBreakdownDimension =
+  ClientDimensionKey | "client.browserEngine";
 export async function fetchClientCrossBreakdown(
   siteId: string,
   window: TimeWindow,
-  primaryDimension: ClientDimensionKey,
-  secondaryDimension: ClientDimensionKey,
+  primaryDimension: CrossBreakdownDimension,
+  secondaryDimension: CrossBreakdownDimension,
   filters?: FilterDocument,
   options?: {
     primaryLimit?: number;
@@ -118,96 +118,4 @@ export async function fetchBrowserEngineTrend(
     ),
     { signal: options?.signal },
   );
-}
-export async function fetchBrowserVersionBreakdown(
-  siteId: string,
-  window: TimeWindow,
-  filters?: FilterDocument,
-  options?: {
-    browserLimit?: number;
-    versionLimit?: number;
-    signal?: AbortSignal;
-  },
-): Promise<BrowserVersionBreakdownData> {
-  const requestParams = withFilters(
-    {
-      siteId,
-      from: window.from,
-      to: window.to,
-      timeZone: window.timeZone,
-      browserLimit: options?.browserLimit ?? 0,
-      versionLimit: options?.versionLimit ?? 5,
-    },
-    filters,
-  );
-  return options?.signal
-    ? fetchPrivateJson<BrowserVersionBreakdownData>(
-        "/api/private/browser-version-breakdown",
-        requestParams,
-        { signal: options.signal },
-      )
-    : fetchPrivateJson<BrowserVersionBreakdownData>(
-        "/api/private/browser-version-breakdown",
-        requestParams,
-      );
-}
-export async function fetchBrowserCrossBreakdown(
-  siteId: string,
-  window: TimeWindow,
-  filters?: FilterDocument,
-  options?: {
-    browserLimit?: number;
-    osLimit?: number;
-    deviceTypeLimit?: number;
-    signal?: AbortSignal;
-  },
-): Promise<BrowserCrossBreakdownData> {
-  const requestParams = withFilters(
-    {
-      siteId,
-      from: window.from,
-      to: window.to,
-      timeZone: window.timeZone,
-      browserLimit: options?.browserLimit ?? 8,
-      osLimit: options?.osLimit ?? 6,
-      deviceTypeLimit: options?.deviceTypeLimit ?? 5,
-    },
-    filters,
-  );
-  return options?.signal
-    ? fetchPrivateJson<BrowserCrossBreakdownData>(
-        "/api/private/browser-cross-breakdown",
-        requestParams,
-        { signal: options.signal },
-      )
-    : fetchPrivateJson<BrowserCrossBreakdownData>(
-        "/api/private/browser-cross-breakdown",
-        requestParams,
-      );
-}
-export async function fetchBrowserRadar(
-  siteId: string,
-  window: TimeWindow,
-  filters?: FilterDocument,
-  options?: { signal?: AbortSignal },
-): Promise<BrowserRadarData> {
-  const requestParams = withFilters(
-    {
-      siteId,
-      from: window.from,
-      to: window.to,
-      timeZone: window.timeZone,
-    },
-    filters,
-  );
-  return options?.signal
-    ? fetchPrivateJson<BrowserRadarData>(
-        "/api/private/browser-radar",
-        requestParams,
-        { signal: options.signal },
-      )
-    : fetchPrivateJson<BrowserRadarData>(
-        "/api/private/browser-radar",
-        requestParams,
-      );
 }

@@ -6,6 +6,7 @@ import {
   SelectValue,
 } from "@insightflare/ui/select";
 import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
+import { toast } from "sonner";
 
 import { normalizeLocalePath } from "@/components/dashboard/shell/dashboard-shell/navigation";
 import {
@@ -14,6 +15,7 @@ import {
   SettingsSection,
 } from "@/components/settings/settings-section";
 import { useTheme } from "@/components/theme-provider";
+import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
 import {
   isValidLocale,
   type Locale,
@@ -42,7 +44,10 @@ function localeLabel(messages: AppMessages, locale: Locale): string {
   return messages.actions.switchToEnglish;
 }
 
-/** This browser's theme and the dashboard's language, as OpenSEO's Appearance. */
+/**
+ * This browser's theme and the viewer's language, as OpenSEO's Appearance.
+ * The language is saved to the profile too, so notification email follows it.
+ */
 export function AppearanceSettings({
   locale,
   messages,
@@ -53,6 +58,22 @@ export function AppearanceSettings({
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname() || "";
+
+  async function changeLanguage(value: Locale) {
+    try {
+      await requestAdminService("profile", {
+        method: "POST",
+        body: { preferredLocale: value },
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : messages.accountSettings.languageSaveFailed,
+      );
+    }
+    await router.push(`/${value}${normalizeLocalePath(pathname)}`);
+  }
 
   return (
     <SettingsSection title={messages.appNav.appearance}>
@@ -93,7 +114,7 @@ export function AppearanceSettings({
             value={locale}
             onValueChange={(value) => {
               if (!isValidLocale(value) || value === locale) return;
-              router.push(`/${value}${normalizeLocalePath(pathname)}`);
+              void changeLanguage(value);
             }}
           >
             <SelectTrigger id="appearance-language" className="w-full sm:w-56">

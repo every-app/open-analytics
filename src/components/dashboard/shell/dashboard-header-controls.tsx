@@ -1,64 +1,21 @@
 import type { CSSProperties } from "react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type DateRange } from "react-day-picker";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { AutoResizer } from "@insightflare/ui/auto-resizer";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Button } from "@insightflare/ui/button";
-import { ButtonGroup } from "@insightflare/ui/button-group";
-import { Calendar } from "@insightflare/ui/calendar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@insightflare/ui/dialog";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
   DrawerHeader,
-  DrawerScrollArea,
   DrawerTitle,
-  DrawerTrigger,
 } from "@insightflare/ui/drawer";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@insightflare/ui/dropdown-menu";
-import { Label } from "@insightflare/ui/label";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@insightflare/ui/sheet";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@insightflare/ui/tooltip";
-import {
-  CalendarIcon,
-  ChartColumnStackedIcon,
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ClockIcon,
-  FunnelIcon,
-  XIcon,
-} from "lucide-react";
+import { ChartColumnStackedIcon, FunnelIcon } from "lucide-react";
 
 import {
   ComparisonPanel,
@@ -80,14 +37,9 @@ import {
   withDashboardComparisonSearchParams,
   withDashboardFilterSearchParams,
 } from "@/lib/dashboard/filter-state";
-import { intlLocale } from "@/lib/dashboard/format";
 import {
-  type CustomTimeRange,
-  type DashboardInterval,
-  normalizeCustomDateRange,
   parseFilterDocumentFromSearchParams,
   parseFilterScopeFromSearchParams,
-  type RangePreset,
   serializeFilterScopeToSearchParams,
 } from "@/lib/dashboard/query-state";
 import {
@@ -103,22 +55,10 @@ import {
 } from "@/lib/filter-contract/index";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
-import { formatI18nTemplate } from "@/lib/i18n/template";
 import { usePathname } from "@/lib/router";
 import { cn } from "@/lib/utils";
 
-import {
-  formatDateSpan,
-  INTERVAL_ORDER,
-  intervalDisabledReason,
-  intervalLabel,
-  RANGE_GROUPS,
-  rangeGroupLabel,
-  rangeLabel,
-  ROLLING_RANGE_PRESETS,
-  shiftTimeWindow,
-  toDateRange,
-} from "./dashboard-header-controls/range";
+import { DateControl } from "./dashboard-header-controls/date-control";
 import {
   areRealtimeHeaderStatesEqual,
   RealtimeActiveBadge,
@@ -128,20 +68,22 @@ interface DashboardHeaderControlsProps {
   locale: Locale;
   messages: AppMessages;
   siteId?: string;
-  showControls: boolean;
-  showFilterSheet: boolean;
-  comparisonDisabled?: boolean;
-  filterDisabled?: boolean;
+  /** The date control. Off on pages with a fixed window, like Real-time. */
+  showDateControls: boolean;
+  /** Compare; off where a comparison can't be drawn. */
+  showComparison: boolean;
+  /** Filter; off where the page can't be filtered. */
+  showFilter: boolean;
   filterAudience?: "private-dashboard" | "public-share";
   /** Concrete scope selected by the active dashboard page for Auto filters. */
   resolvedScope?: FilterScope;
-  showRealtimeBadge?: boolean;
+  /** Real-time's page; given, the header shows the live count linking to it. */
+  realtimeHref?: string;
 }
 function FilterTrigger({
   activeFilterCount,
   className,
   compact = false,
-  disabled,
   messages,
   onClick,
   scopePreference,
@@ -150,7 +92,6 @@ function FilterTrigger({
   activeFilterCount: number;
   className: string;
   compact?: boolean;
-  disabled: boolean;
   messages: AppMessages;
   onClick: () => void;
   scopePreference: FilterScopePreference;
@@ -166,112 +107,86 @@ function FilterTrigger({
           : messages.dashboardHeader.filterButton;
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span tabIndex={disabled ? 0 : undefined} className="inline-flex">
-          <Button
-            type="button"
-            variant="outline"
-            size={compact ? "icon" : "default"}
-            className={cn(
-              className,
-              compact &&
-                "relative gap-0 p-0 sm:h-8 sm:w-auto sm:gap-2 sm:px-2.5 sm:has-data-[icon=inline-start]:pl-2",
-            )}
-            disabled={disabled}
-            aria-label={filterButtonLabel}
-            onClick={onClick}
-            style={style}
-          >
-            <FunnelIcon
-              data-icon="inline-start"
-              className={cn(activeFilterCount === 0 && "text-muted-foreground")}
-            />
-            <AutoResizer
-              initial
-              animateWidth
-              animateHeight={false}
-              className="inline-flex min-w-0 items-center"
-            >
-              <AutoTransition
-                as="span"
-                className="hidden whitespace-nowrap sm:inline-block"
-                duration={0.2}
-                initial={false}
-                presenceMode="wait"
-                transitionKey={scopePreference}
-                type="fade"
-              >
-                {filterButtonLabel}
-              </AutoTransition>
-            </AutoResizer>
-            <FilterActiveCountBadge
-              count={activeFilterCount}
-              className={
-                compact
-                  ? "absolute -top-1 -right-2 mr-0 sm:static sm:mr-0"
-                  : undefined
-              }
-            />
-          </Button>
-        </span>
-      </TooltipTrigger>
-      {disabled ? (
-        <TooltipContent side="bottom">
-          {messages.dashboardHeader.filterDisabledRealtime}
-        </TooltipContent>
-      ) : null}
-    </Tooltip>
+    <Button
+      type="button"
+      variant="outline"
+      size={compact ? "icon" : "default"}
+      className={cn(
+        className,
+        compact &&
+          "relative gap-0 p-0 sm:h-8 sm:w-auto sm:gap-2 sm:px-2.5 sm:has-data-[icon=inline-start]:pl-2",
+      )}
+      aria-label={filterButtonLabel}
+      onClick={onClick}
+      style={style}
+    >
+      <FunnelIcon
+        data-icon="inline-start"
+        className={cn(activeFilterCount === 0 && "text-muted-foreground")}
+      />
+      <AutoResizer
+        initial
+        animateWidth
+        animateHeight={false}
+        className="inline-flex min-w-0 items-center"
+      >
+        <AutoTransition
+          as="span"
+          className="hidden whitespace-nowrap sm:inline-block"
+          duration={0.2}
+          initial={false}
+          presenceMode="wait"
+          transitionKey={scopePreference}
+          type="fade"
+        >
+          {filterButtonLabel}
+        </AutoTransition>
+      </AutoResizer>
+      <FilterActiveCountBadge
+        count={activeFilterCount}
+        className={
+          compact
+            ? "absolute -top-1 -right-2 mr-0 sm:static sm:mr-0"
+            : undefined
+        }
+      />
+    </Button>
   );
 }
 function CompareTrigger({
   active,
   className,
   compact = false,
-  disabled,
   messages,
   onClick,
 }: {
   active: boolean;
   className: string;
   compact?: boolean;
-  disabled: boolean;
   messages: AppMessages;
   onClick: () => void;
 }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span tabIndex={disabled ? 0 : undefined} className="inline-flex">
-          <Button
-            type="button"
-            variant="outline"
-            size={compact ? "icon" : "default"}
-            className={cn(
-              className,
-              compact &&
-                "gap-0 p-0 sm:h-8 sm:w-auto sm:gap-2 sm:px-2.5 sm:has-data-[icon=inline-start]:pl-2",
-            )}
-            disabled={disabled}
-            aria-label={messages.dashboardHeader.compareButton}
-            onClick={onClick}
-          >
-            <ChartColumnStackedIcon
-              data-icon="inline-start"
-              className={cn(!active && "text-muted-foreground")}
-            />
-            <span className="hidden sm:inline">
-              {messages.dashboardHeader.compareButton}
-            </span>
-          </Button>
-        </span>
-      </TooltipTrigger>
-      {disabled ? (
-        <TooltipContent side="bottom">
-          {messages.dashboardHeader.compareDisabled}
-        </TooltipContent>
-      ) : null}
-    </Tooltip>
+    <Button
+      type="button"
+      variant="outline"
+      size={compact ? "icon" : "default"}
+      className={cn(
+        className,
+        compact &&
+          "gap-0 p-0 sm:h-8 sm:w-auto sm:gap-2 sm:px-2.5 sm:has-data-[icon=inline-start]:pl-2",
+      )}
+      aria-label={messages.dashboardHeader.compareButton}
+      onClick={onClick}
+    >
+      <ChartColumnStackedIcon
+        data-icon="inline-start"
+        className={cn(!active && "text-muted-foreground")}
+      />
+      <span className="hidden sm:inline">
+        {messages.dashboardHeader.compareButton}
+      </span>
+    </Button>
   );
 }
 function comparisonSettingsFromSearchState(
@@ -290,30 +205,21 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
   locale,
   messages,
   siteId,
-  showControls,
-  showFilterSheet,
-  comparisonDisabled = false,
-  filterDisabled = false,
+  showDateControls,
+  showComparison,
+  showFilter,
   filterAudience = "private-dashboard",
   resolvedScope,
-  showRealtimeBadge: shouldShowRealtimeBadge = true,
+  realtimeHref,
 }: DashboardHeaderControlsProps) {
   const searchParams = useLiveSearchParams();
   const livePathname = usePathname() || "/";
   const {
-    range,
     window,
-    customRange,
-    setRange,
-    setCustomRange,
-    setInterval: setDashboardInterval,
     setUiFilters,
     scopePreference,
     setScopePreference,
     uiFilterDsl,
-    allowedIntervals,
-    timeZone,
-    maxRangeDays,
   } = useDashboardQueryControls();
   const searchParamsKey = searchParams.toString();
   const queryDocument = useMemo(
@@ -337,8 +243,7 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
     () => serializeFilterParams(queryDocument, analyticsFilterRegistry).size,
     [queryDocument],
   );
-  const filterSuggestionScope =
-    resolvedScope ?? (filterDisabled ? undefined : "event");
+  const filterSuggestionScope = resolvedScope ?? "event";
   const hasActiveFilters = activeFilterCount > 0;
   const headerTriggerClassName =
     "gap-2 transition-[color,background-color,border-color,opacity]";
@@ -361,23 +266,10 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
       }
     : undefined;
 
-  const selectedDateRange = useMemo(
-    () => toDateRange(customRange?.from, customRange?.to, timeZone),
-    [customRange?.from, customRange?.to, timeZone],
-  );
-  const [customDialogOpen, setCustomDialogOpen] = useState(false);
   const [mobileCompareDrawerOpen, setMobileCompareDrawerOpen] = useState(false);
   const [desktopCompareSheetOpen, setDesktopCompareSheetOpen] = useState(false);
   const [mobileFilterDrawerOpen, setMobileFilterDrawerOpen] = useState(false);
   const [desktopFilterSheetOpen, setDesktopFilterSheetOpen] = useState(false);
-  const [mobileTimeDrawerOpen, setMobileTimeDrawerOpen] = useState(false);
-  const customDialogAfterCloseRef = useRef<"desktop" | "mobile" | null>(null);
-  const [periodForwardStack, setPeriodForwardStack] = useState<
-    CustomTimeRange[]
-  >([]);
-  const [pendingCustomRange, setPendingCustomRange] = useState<
-    DateRange | undefined
-  >(selectedDateRange);
   const [comparisonSettings, setComparisonSettings] =
     useState<ComparisonSettings>(() =>
       comparisonSettingsFromSearchState(
@@ -386,101 +278,18 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
       ),
     );
   const realtimeSiteId = siteId || undefined;
-  const showRealtimeBadge =
-    shouldShowRealtimeBadge && showFilterSheet && Boolean(siteId);
-  const realtimeEnabled = showControls && showRealtimeBadge;
+  const showRealtimeBadge = Boolean(realtimeHref) && Boolean(siteId);
   const realtimeHeaderState = useRealtimeChannelSelector(
     realtimeSiteId,
     selectRealtimeHeaderState,
     areRealtimeHeaderStatesEqual,
-    { enabled: realtimeEnabled },
+    { enabled: showRealtimeBadge },
   );
   const {
     activeNow,
     status: realtimeStatus,
     hasConnected: hasRealtimeConnected,
   } = realtimeHeaderState;
-
-  const orderedAllowedIntervals = INTERVAL_ORDER.filter((value) =>
-    allowedIntervals.includes(value),
-  );
-  const rangeGroups = useMemo(
-    () =>
-      RANGE_GROUPS.map((group) => ({
-        ...group,
-        items: group.items.filter((item) => {
-          if (!maxRangeDays) return true;
-          if (maxRangeDays <= 90) {
-            return item !== "6m" && item !== "12m";
-          }
-          return true;
-        }),
-      })).filter((group) => group.items.length > 0),
-    [maxRangeDays],
-  );
-  const rangeLabelText = rangeLabel(messages, range);
-  const intervalLabelText = intervalLabel(messages, window.interval);
-  const pendingNormalized = normalizeCustomDateRange(
-    pendingCustomRange,
-    timeZone,
-  );
-  const previousPeriodRange = shiftTimeWindow(
-    window.from,
-    window.to,
-    "previous",
-  );
-  const inferredNextPeriodRange = shiftTimeWindow(
-    window.from,
-    window.to,
-    "next",
-  );
-  const canShiftToNextPeriod = !ROLLING_RANGE_PRESETS.has(range);
-  const nextPeriodRange = canShiftToNextPeriod
-    ? (periodForwardStack[0] ?? inferredNextPeriodRange)
-    : null;
-  const previousPeriodLabel = messages.dashboardHeader.previousPeriod;
-  const nextPeriodLabel = messages.dashboardHeader.nextPeriod;
-  const mobileTimeLabel = messages.common.time;
-  const cycleLabel = messages.common.cycle;
-  const closeLabel = messages.common.close;
-  const naturalSelectionText = useMemo(() => {
-    if (!pendingCustomRange?.from && !pendingCustomRange?.to) {
-      return messages.dashboardHeader.customHint;
-    }
-    if (pendingCustomRange?.from && !pendingCustomRange?.to) {
-      return messages.dashboardHeader.customPendingEnd;
-    }
-    if (!pendingNormalized) {
-      return messages.dashboardHeader.customHint;
-    }
-
-    const formatter = new Intl.DateTimeFormat(intlLocale(locale), {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      timeZone,
-    });
-    const dayCount = Math.max(
-      1,
-      Math.round(
-        (pendingNormalized.to - pendingNormalized.from) / (24 * 60 * 60 * 1000),
-      ),
-    );
-    return formatI18nTemplate(messages.dashboardHeader.customSelectionSummary, {
-      from: formatter.format(new Date(pendingNormalized.from)),
-      to: formatter.format(new Date(pendingNormalized.to)),
-      days: dayCount,
-    });
-  }, [
-    locale,
-    messages.dashboardHeader.customSelectionSummary,
-    messages.dashboardHeader.customHint,
-    messages.dashboardHeader.customPendingEnd,
-    pendingCustomRange?.from,
-    pendingCustomRange?.to,
-    pendingNormalized,
-    timeZone,
-  ]);
 
   useEffect(() => {
     if (scopePreference !== urlScopePreference) {
@@ -555,10 +364,6 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
     setDesktopCompareSheetOpen(false);
   };
 
-  useEffect(() => {
-    setPeriodForwardStack([]);
-  }, [siteId]);
-
   const applyFilterDocument = useCallback(
     (
       nextDocument: FilterDocument,
@@ -593,576 +398,166 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
     [livePathname, scopePreference, searchParams, setUiFilters],
   );
 
-  const openCustomDialogAfterClose = (source: "desktop" | "mobile") => {
-    if (customDialogAfterCloseRef.current !== source) return;
-    customDialogAfterCloseRef.current = null;
-    setCustomDialogOpen(true);
-  };
-
-  const handleRangeValueChange = (
-    value: RangePreset,
-    source: "desktop" | "mobile" = "desktop",
-  ) => {
-    if (value === "custom") {
-      setPendingCustomRange(selectedDateRange);
-      customDialogAfterCloseRef.current = source;
-      if (source === "mobile") {
-        setMobileTimeDrawerOpen(false);
-      }
-      return;
-    }
-
-    setPeriodForwardStack([]);
-    setRange(value);
-  };
-
-  const handleIntervalValueChange = (value: DashboardInterval) => {
-    if (!orderedAllowedIntervals.includes(value)) return;
-    setDashboardInterval(value);
-  };
-
-  const handleShiftToPreviousPeriod = () => {
-    if (!previousPeriodRange) return;
-    setPeriodForwardStack((current) => [
-      {
-        from: window.from,
-        to: window.to,
-      },
-      ...current,
-    ]);
-    setCustomRange(previousPeriodRange);
-  };
-
-  const handleShiftToNextPeriod = () => {
-    if (!canShiftToNextPeriod) return;
-    if (periodForwardStack.length > 0) {
-      const [nextRange, ...rest] = periodForwardStack;
-      setPeriodForwardStack(rest);
-      setCustomRange(nextRange);
-      return;
-    }
-    if (!inferredNextPeriodRange) return;
-    setCustomRange(inferredNextPeriodRange);
-  };
-
-  if (!showControls) return null;
+  const comparisonPanel = (
+    <ComparisonPanel
+      currentFilterDsl={uiFilterDsl ?? ""}
+      initialSettings={comparisonSettings}
+      messages={messages}
+      onApply={handleComparisonApply}
+      onCancel={handleComparisonCancel}
+      resolvedScope={resolvedScope ?? "event"}
+      siteId={siteId}
+      timeWindow={window}
+    />
+  );
+  const filterPanel = (open: boolean) => (
+    <FilterPanel
+      audience={filterAudience}
+      document={queryDocument}
+      expressionText={uiFilterDsl}
+      messages={messages}
+      open={open}
+      resolvedScope={filterSuggestionScope}
+      siteId={siteId}
+      scopePreference={scopePreference}
+      window={window}
+      onApply={applyFilterDocument}
+      onScopeChange={handleScopeChange}
+    />
+  );
+  const realtimeBadge =
+    realtimeHref && showRealtimeBadge ? (
+      <RealtimeActiveBadge
+        href={realtimeHref}
+        activeNow={activeNow}
+        status={realtimeStatus}
+        showValue={hasRealtimeConnected}
+        label={messages.realtime.activeNow}
+        messages={messages}
+      />
+    ) : null;
 
   return (
-    <>
-      <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2">
-        <div className="flex items-center justify-end gap-2 lg:hidden">
-          {showRealtimeBadge ? (
-            <RealtimeActiveBadge
-              activeNow={activeNow}
-              status={realtimeStatus}
-              showValue={hasRealtimeConnected}
-              label={messages.realtime.activeNow}
-              messages={messages}
-            />
-          ) : null}
-          {showFilterSheet ? (
-            <Drawer
-              open={mobileCompareDrawerOpen}
-              onOpenChange={setMobileCompareDrawerOpen}
-            >
-              <CompareTrigger
-                active={hasActiveComparison}
-                className={comparisonTriggerClassName}
-                compact
-                disabled={comparisonDisabled}
-                messages={messages}
-                onClick={() => setMobileCompareDrawerOpen(true)}
-              />
-              <DrawerContent className="h-[80dvh] max-h-[80dvh] min-h-0 flex flex-col overflow-hidden">
-                <DrawerHeader className="shrink-0">
-                  <DrawerTitle>
-                    <ComparisonPanelTitle messages={messages} />
-                  </DrawerTitle>
-                  <DrawerDescription>
-                    {messages.dashboardHeader.compareSubtitle}
-                  </DrawerDescription>
-                </DrawerHeader>
-                <ComparisonPanel
-                  currentFilterDsl={uiFilterDsl ?? ""}
-                  initialSettings={comparisonSettings}
-                  messages={messages}
-                  onApply={handleComparisonApply}
-                  onCancel={handleComparisonCancel}
-                  resolvedScope={resolvedScope ?? "event"}
-                  siteId={siteId}
-                  timeWindow={window}
-                />
-              </DrawerContent>
-            </Drawer>
-          ) : null}
-          {showFilterSheet ? (
-            <Drawer
-              open={mobileFilterDrawerOpen}
-              onOpenChange={setMobileFilterDrawerOpen}
-            >
-              <FilterTrigger
-                activeFilterCount={activeFilterCount}
-                className={filterTriggerClassName}
-                compact
-                disabled={filterDisabled}
-                messages={messages}
-                onClick={() => setMobileFilterDrawerOpen(true)}
-                scopePreference={scopePreference}
-                style={filterTriggerStyle}
-              />
-              <DrawerContent className="h-[80dvh] max-h-[80dvh] flex flex-col overflow-hidden">
-                <DrawerHeader>
-                  <DrawerTitle>
-                    {messages.dashboardHeader.filterTitle}
-                  </DrawerTitle>
-                  <DrawerDescription>
-                    {messages.dashboardHeader.filterSubtitle}
-                  </DrawerDescription>
-                </DrawerHeader>
-                <div className="min-h-0 flex-1 px-4">
-                  <FilterPanel
-                    audience={filterAudience}
-                    document={queryDocument}
-                    expressionText={uiFilterDsl}
-                    messages={messages}
-                    open={mobileFilterDrawerOpen}
-                    resolvedScope={filterSuggestionScope}
-                    siteId={siteId}
-                    scopePreference={scopePreference}
-                    window={window}
-                    onApply={applyFilterDocument}
-                    onScopeChange={handleScopeChange}
-                  />
-                </div>
-              </DrawerContent>
-            </Drawer>
-          ) : null}
-
+    <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2">
+      <div className="flex items-center justify-end gap-2 lg:hidden">
+        {realtimeBadge}
+        {showComparison ? (
           <Drawer
-            open={mobileTimeDrawerOpen}
-            onOpenChange={setMobileTimeDrawerOpen}
+            open={mobileCompareDrawerOpen}
+            onOpenChange={setMobileCompareDrawerOpen}
           >
-            <DrawerTrigger asChild>
-              <Button variant="outline">
-                <ClockIcon data-icon="inline-start" />
-                {mobileTimeLabel}
-              </Button>
-            </DrawerTrigger>
+            <CompareTrigger
+              active={hasActiveComparison}
+              className={comparisonTriggerClassName}
+              compact
+              messages={messages}
+              onClick={() => setMobileCompareDrawerOpen(true)}
+            />
             <DrawerContent
-              className="max-h-[80dvh]"
-              onCloseAutoFocus={() => {
-                openCustomDialogAfterClose("mobile");
-              }}
+              aria-describedby={undefined}
+              className="h-[80dvh] max-h-[80dvh] min-h-0 flex flex-col overflow-hidden"
             >
-              <DrawerHeader>
-                <DrawerTitle>{mobileTimeLabel}</DrawerTitle>
-                <DrawerDescription>
-                  {rangeLabelText} / {intervalLabelText}
-                </DrawerDescription>
+              <DrawerHeader className="shrink-0">
+                <DrawerTitle>
+                  <ComparisonPanelTitle messages={messages} />
+                </DrawerTitle>
               </DrawerHeader>
-
-              <DrawerScrollArea contentClassName="space-y-4 px-4 pb-2">
-                <div className="space-y-2">
-                  <Label>{cycleLabel}</Label>
-                  <ButtonGroup className="w-full">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="flex-1 justify-center"
-                      disabled={!previousPeriodRange}
-                      onClick={handleShiftToPreviousPeriod}
-                    >
-                      <ChevronLeftIcon data-icon="inline-start" />
-                      <span>{previousPeriodLabel}</span>
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="flex-1 justify-center"
-                      disabled={!nextPeriodRange}
-                      onClick={handleShiftToNextPeriod}
-                    >
-                      <span>{nextPeriodLabel}</span>
-                      <ChevronRightIcon data-icon="inline-end" />
-                    </Button>
-                  </ButtonGroup>
-                </div>
-
-                <div className="space-y-3">
-                  <Label>{messages.dashboardHeader.range}</Label>
-                  {rangeGroups.map((group) => (
-                    <div key={group.key} className="space-y-2">
-                      <p className="text-[11px] text-muted-foreground">
-                        {rangeGroupLabel(messages, group.key)}
-                      </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {group.items.map((item) => (
-                          <Button
-                            key={item}
-                            type="button"
-                            size="sm"
-                            variant={range === item ? "default" : "outline"}
-                            className="justify-start truncate px-2"
-                            onClick={() => {
-                              handleRangeValueChange(item, "mobile");
-                            }}
-                          >
-                            <CalendarIcon data-icon="inline-start" />
-                            <span>{rangeLabel(messages, item)}</span>
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-2">
-                  <Label>{messages.dashboardHeader.interval}</Label>
-                  <div className="grid grid-cols-5 gap-1">
-                    {INTERVAL_ORDER.map((item) => {
-                      const enabled = orderedAllowedIntervals.includes(item);
-                      const disabledReason = enabled
-                        ? undefined
-                        : intervalDisabledReason(messages, item);
-                      const intervalButton = (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={
-                            window.interval === item ? "default" : "outline"
-                          }
-                          className="w-full justify-center overflow-hidden px-1"
-                          disabled={!enabled}
-                          onClick={() => {
-                            handleIntervalValueChange(item);
-                          }}
-                        >
-                          <ClockIcon data-icon="inline-start" />
-                          <span className="min-w-0 truncate">
-                            {intervalLabel(messages, item)}
-                          </span>
-                        </Button>
-                      );
-
-                      return disabledReason ? (
-                        <Tooltip key={item}>
-                          <TooltipTrigger asChild>
-                            <span className="inline-flex w-full" tabIndex={0}>
-                              {intervalButton}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent side="top">
-                            {disabledReason}
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        <span key={item} className="inline-flex w-full">
-                          {intervalButton}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-              </DrawerScrollArea>
-
-              <DrawerFooter>
-                <DrawerClose asChild>
-                  <Button>
-                    <XIcon data-icon="inline-start" />
-                    <span>{closeLabel}</span>
-                  </Button>
-                </DrawerClose>
-              </DrawerFooter>
+              {comparisonPanel}
             </DrawerContent>
           </Drawer>
-        </div>
-
-        <div className="hidden min-w-0 max-w-full flex-wrap items-center justify-end gap-2 lg:flex">
-          {showRealtimeBadge ? (
-            <RealtimeActiveBadge
-              activeNow={activeNow}
-              status={realtimeStatus}
-              showValue={hasRealtimeConnected}
-              label={messages.realtime.activeNow}
+        ) : null}
+        {showFilter ? (
+          <Drawer
+            open={mobileFilterDrawerOpen}
+            onOpenChange={setMobileFilterDrawerOpen}
+          >
+            <FilterTrigger
+              activeFilterCount={activeFilterCount}
+              className={filterTriggerClassName}
+              compact
               messages={messages}
+              onClick={() => setMobileFilterDrawerOpen(true)}
+              scopePreference={scopePreference}
+              style={filterTriggerStyle}
             />
-          ) : null}
-          {showFilterSheet ? (
-            <Sheet
-              modal={false}
-              open={desktopCompareSheetOpen}
-              onOpenChange={setDesktopCompareSheetOpen}
+            <DrawerContent
+              aria-describedby={undefined}
+              className="h-[80dvh] max-h-[80dvh] flex flex-col overflow-hidden"
             >
-              <CompareTrigger
-                active={hasActiveComparison}
-                className={comparisonTriggerClassName}
-                disabled={comparisonDisabled}
-                messages={messages}
-                onClick={() => setDesktopCompareSheetOpen(true)}
-              />
-              <SheetContent
-                side="right"
-                className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full flex-col overflow-hidden data-[side=right]:sm:max-w-md"
-              >
-                <SheetHeader className="shrink-0">
-                  <SheetTitle>
-                    <ComparisonPanelTitle messages={messages} />
-                  </SheetTitle>
-                  <SheetDescription>
-                    {messages.dashboardHeader.compareSubtitle}
-                  </SheetDescription>
-                </SheetHeader>
-                <ComparisonPanel
-                  currentFilterDsl={uiFilterDsl ?? ""}
-                  initialSettings={comparisonSettings}
-                  messages={messages}
-                  onApply={handleComparisonApply}
-                  onCancel={handleComparisonCancel}
-                  resolvedScope={resolvedScope ?? "event"}
-                  siteId={siteId}
-                  timeWindow={window}
-                />
-              </SheetContent>
-            </Sheet>
-          ) : null}
-          {showFilterSheet ? (
-            <Sheet
-              modal={false}
-              open={desktopFilterSheetOpen}
-              onOpenChange={setDesktopFilterSheetOpen}
-            >
-              <FilterTrigger
-                activeFilterCount={activeFilterCount}
-                className={filterTriggerClassName}
-                disabled={filterDisabled}
-                messages={messages}
-                onClick={() => setDesktopFilterSheetOpen(true)}
-                scopePreference={scopePreference}
-                style={filterTriggerStyle}
-              />
-              <SheetContent
-                side="right"
-                className="flex h-full max-h-screen w-full flex-col data-[side=right]:sm:max-w-md"
-              >
-                <SheetHeader>
-                  <SheetTitle>
-                    {messages.dashboardHeader.filterTitle}
-                  </SheetTitle>
-                  <SheetDescription>
-                    {messages.dashboardHeader.filterSubtitle}
-                  </SheetDescription>
-                </SheetHeader>
-
-                <div className="min-h-0 flex-1 px-4">
-                  <FilterPanel
-                    audience={filterAudience}
-                    document={queryDocument}
-                    expressionText={uiFilterDsl}
-                    messages={messages}
-                    open={desktopFilterSheetOpen}
-                    resolvedScope={filterSuggestionScope}
-                    siteId={siteId}
-                    scopePreference={scopePreference}
-                    window={window}
-                    onApply={applyFilterDocument}
-                    onScopeChange={handleScopeChange}
-                  />
-                </div>
-              </SheetContent>
-            </Sheet>
-          ) : null}
-
-          <ButtonGroup>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  disabled={!previousPeriodRange}
-                  aria-label={previousPeriodLabel}
-                  onClick={handleShiftToPreviousPeriod}
-                >
-                  <ChevronLeftIcon />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                {previousPeriodLabel}
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  disabled={!nextPeriodRange}
-                  aria-label={nextPeriodLabel}
-                  onClick={handleShiftToNextPeriod}
-                >
-                  <ChevronRightIcon />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">{nextPeriodLabel}</TooltipContent>
-            </Tooltip>
-          </ButtonGroup>
-
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="min-w-[156px] justify-between"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <CalendarIcon
-                    data-icon="inline-start"
-                    className="text-muted-foreground"
-                  />
-                  <span>{rangeLabelText}</span>
-                </span>
-                <ChevronDownIcon
-                  data-icon="inline-end"
-                  className="text-muted-foreground"
-                />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-64"
-              onCloseAutoFocus={() => {
-                openCustomDialogAfterClose("desktop");
-              }}
-            >
-              <DropdownMenuLabel>
-                {messages.dashboardHeader.range}
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {rangeGroups.map((group, groupIndex) => (
-                <div key={group.key}>
-                  {groupIndex > 0 ? <DropdownMenuSeparator /> : null}
-                  <DropdownMenuLabel>
-                    {rangeGroupLabel(messages, group.key)}
-                  </DropdownMenuLabel>
-                  <DropdownMenuRadioGroup
-                    value={range}
-                    onValueChange={(value) => {
-                      handleRangeValueChange(value as RangePreset, "desktop");
-                    }}
-                  >
-                    {group.items.map((item) => (
-                      <DropdownMenuRadioItem key={item} value={item}>
-                        {rangeLabel(messages, item)}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </div>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="min-w-[96px] justify-between"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <ClockIcon
-                    data-icon="inline-start"
-                    className="text-muted-foreground"
-                  />
-                  <span>{intervalLabelText}</span>
-                </span>
-                <ChevronDownIcon
-                  data-icon="inline-end"
-                  className="text-muted-foreground"
-                />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel>
-                {messages.dashboardHeader.interval}
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup
-                value={window.interval}
-                onValueChange={(value) => {
-                  handleIntervalValueChange(value as DashboardInterval);
-                }}
-              >
-                {INTERVAL_ORDER.map((item) =>
-                  orderedAllowedIntervals.includes(item) ? (
-                    <DropdownMenuRadioItem key={item} value={item}>
-                      {intervalLabel(messages, item)}
-                    </DropdownMenuRadioItem>
-                  ) : (
-                    <Tooltip key={item}>
-                      <TooltipTrigger asChild>
-                        <DropdownMenuItem
-                          onSelect={(event) => {
-                            event.preventDefault();
-                          }}
-                          className="cursor-not-allowed text-muted-foreground/80 opacity-60 focus:bg-transparent focus:text-muted-foreground/80"
-                        >
-                          {intervalLabel(messages, item)}
-                        </DropdownMenuItem>
-                      </TooltipTrigger>
-                      <TooltipContent side="left" sideOffset={8}>
-                        {intervalDisabledReason(messages, item)}
-                      </TooltipContent>
-                    </Tooltip>
-                  ),
-                )}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+              <DrawerHeader>
+                <DrawerTitle>
+                  {messages.dashboardHeader.filterTitle}
+                </DrawerTitle>
+              </DrawerHeader>
+              <div className="min-h-0 flex-1 px-4">
+                {filterPanel(mobileFilterDrawerOpen)}
+              </div>
+            </DrawerContent>
+          </Drawer>
+        ) : null}
       </div>
 
-      <Dialog open={customDialogOpen} onOpenChange={setCustomDialogOpen}>
-        <DialogContent className="w-fit">
-          <DialogHeader>
-            <DialogTitle icon={CalendarIcon}>
-              {messages.ranges.custom}
-            </DialogTitle>
-            <DialogDescription>
-              {formatDateSpan(
-                locale,
-                timeZone,
-                customRange?.from,
-                customRange?.to,
-              ) || messages.dashboardHeader.customRange}
-            </DialogDescription>
-          </DialogHeader>
-          <Calendar
-            mode="range"
-            captionLayout="dropdown"
-            numberOfMonths={2}
-            selected={pendingCustomRange}
-            onSelect={(value) => {
-              setPendingCustomRange(value);
-            }}
-          />
-          <p className="px-1 text-xs text-muted-foreground">
-            {naturalSelectionText}
-          </p>
-          <DialogFooter>
-            <Button
-              onClick={() => {
-                if (!pendingNormalized) return;
-                setPeriodForwardStack([]);
-                setCustomRange(pendingNormalized);
-                setCustomDialogOpen(false);
-              }}
-              disabled={!pendingNormalized}
+      <div className="hidden min-w-0 max-w-full flex-wrap items-center justify-end gap-2 lg:flex">
+        {realtimeBadge}
+        {showComparison ? (
+          <Sheet
+            modal={false}
+            open={desktopCompareSheetOpen}
+            onOpenChange={setDesktopCompareSheetOpen}
+          >
+            <CompareTrigger
+              active={hasActiveComparison}
+              className={comparisonTriggerClassName}
+              messages={messages}
+              onClick={() => setDesktopCompareSheetOpen(true)}
+            />
+            <SheetContent
+              side="right"
+              aria-describedby={undefined}
+              className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full flex-col overflow-hidden data-[side=right]:sm:max-w-md"
             >
-              <CheckIcon data-icon="inline-start" />
-              <span>{messages.dashboardHeader.customApply}</span>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+              <SheetHeader className="shrink-0">
+                <SheetTitle>
+                  <ComparisonPanelTitle messages={messages} />
+                </SheetTitle>
+              </SheetHeader>
+              {comparisonPanel}
+            </SheetContent>
+          </Sheet>
+        ) : null}
+        {showFilter ? (
+          <Sheet
+            modal={false}
+            open={desktopFilterSheetOpen}
+            onOpenChange={setDesktopFilterSheetOpen}
+          >
+            <FilterTrigger
+              activeFilterCount={activeFilterCount}
+              className={filterTriggerClassName}
+              messages={messages}
+              onClick={() => setDesktopFilterSheetOpen(true)}
+              scopePreference={scopePreference}
+              style={filterTriggerStyle}
+            />
+            <SheetContent
+              side="right"
+              aria-describedby={undefined}
+              className="flex h-full max-h-screen w-full flex-col data-[side=right]:sm:max-w-md"
+            >
+              <SheetHeader>
+                <SheetTitle>{messages.dashboardHeader.filterTitle}</SheetTitle>
+              </SheetHeader>
+              <div className="min-h-0 flex-1 px-4">
+                {filterPanel(desktopFilterSheetOpen)}
+              </div>
+            </SheetContent>
+          </Sheet>
+        ) : null}
+      </div>
+
+      {showDateControls ? (
+        <DateControl locale={locale} messages={messages} siteId={siteId} />
+      ) : null}
+    </div>
   );
 });

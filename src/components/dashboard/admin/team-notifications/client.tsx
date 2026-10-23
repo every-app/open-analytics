@@ -1,4 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@insightflare/ui/alert-dialog";
 import { AutoResizer } from "@insightflare/ui/auto-resizer";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Badge } from "@insightflare/ui/badge";
@@ -11,7 +21,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@insightflare/ui/dialog";
-import { JsonTreePanel } from "@insightflare/ui/json-tree";
 import { OverlayScrollbar } from "@insightflare/ui/overlay-scrollbar";
 import {
   ResponsiveDialog,
@@ -32,6 +41,11 @@ import {
   TableRow,
 } from "@insightflare/ui/table";
 import { TableActionButton } from "@insightflare/ui/table-action-button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@insightflare/ui/tooltip";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BellIcon,
@@ -54,7 +68,6 @@ import {
   SettingsPage,
   SettingsSection,
 } from "@/components/settings/settings-section";
-import { buildSettingsPath } from "@/lib/dashboard/paths";
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
 import {
   type MemberData,
@@ -65,7 +78,6 @@ import {
 } from "@/lib/dashboard-api/client/edge";
 import { formatI18nTemplate } from "@/lib/i18n/template";
 import type { PublicNotificationEmailConfig } from "@/lib/notifications/email-config";
-import Link from "@/lib/router";
 
 import {
   browserDefaultTimeZone,
@@ -109,6 +121,10 @@ export function TeamNotificationsClient({
   const [previewResult, setPreviewResult] =
     useState<NotificationRuleEvaluationData | null>(null);
   const [form, setForm] = useState<RuleFormState>(EMPTY_FORM);
+  const [deletingRule, setDeletingRule] = useState<NotificationRuleData | null>(
+    null,
+  );
+  const [deleting, setDeleting] = useState(false);
   const nowSeconds = Math.floor(Date.now() / 1000);
   const rulesQueryKey = [
     "dashboard",
@@ -243,12 +259,7 @@ export function TeamNotificationsClient({
   }
 
   async function removeRule(rule: NotificationRuleData) {
-    if (
-      !window.confirm(
-        formatI18nTemplate(copy.deleteConfirm, { name: rule.name }),
-      )
-    )
-      return;
+    setDeleting(true);
     try {
       await requestAdminService<{ id: string; removed: boolean }>(
         "notification-rules",
@@ -258,9 +269,12 @@ export function TeamNotificationsClient({
         },
       );
       await queryClient.invalidateQueries({ queryKey: rulesQueryKey });
+      setDeletingRule(null);
       toast.success(copy.ruleDeleted);
     } catch {
       toast.error(copy.deleteRuleFailed);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -335,14 +349,6 @@ export function TeamNotificationsClient({
       width="wide"
       actions={
         <>
-          <Button type="button" variant="outline" asChild>
-            <Link
-              href={`${buildSettingsPath(locale, "notifications")}/email-preview`}
-            >
-              <SendIcon data-icon="inline-start" />
-              <span>{copy.emailPreview}</span>
-            </Link>
-          </Button>
           <Button
             type="button"
             variant="outline"
@@ -351,14 +357,29 @@ export function TeamNotificationsClient({
             <SendIcon data-icon="inline-start" />
             <span>{copy.sendTestNotification}</span>
           </Button>
-          <Button
-            type="button"
-            onClick={() => openCreate()}
-            disabled={!canCreateRule}
-          >
-            <PlusIcon data-icon="inline-start" />
-            <span>{copy.createRule}</span>
-          </Button>
+          {canCreateRule || loading ? (
+            <Button
+              type="button"
+              onClick={() => openCreate()}
+              disabled={!canCreateRule}
+            >
+              <PlusIcon data-icon="inline-start" />
+              <span>{copy.createRule}</span>
+            </Button>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {/* A disabled button can't be hovered, so the span carries the tooltip. */}
+                <span tabIndex={0}>
+                  <Button type="button" disabled>
+                    <PlusIcon data-icon="inline-start" />
+                    <span>{copy.createRule}</span>
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{copy.addSiteFirst}</TooltipContent>
+            </Tooltip>
+          )}
         </>
       }
     >
@@ -481,7 +502,7 @@ export function TeamNotificationsClient({
                         <TableActionButton
                           label={`${copy.delete}: ${rule.name}`}
                           tone="destructive"
-                          onClick={() => void removeRule(rule)}
+                          onClick={() => setDeletingRule(rule)}
                         >
                           <Trash2Icon className="size-4" />
                         </TableActionButton>
@@ -672,7 +693,9 @@ export function TeamNotificationsClient({
                         <p className="text-xs text-muted-foreground">
                           {copy.previewFields.status}
                         </p>
-                        <Badge variant="outline">{previewResult.status}</Badge>
+                        <Badge variant="outline">
+                          {copy.previewStatuses[previewResult.status]}
+                        </Badge>
                       </div>
                       <div className="space-y-1">
                         <p className="text-xs text-muted-foreground">
@@ -726,25 +749,6 @@ export function TeamNotificationsClient({
                         </div>
                       </div>
                     ) : null}
-
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground">
-                        {copy.previewFields.data}
-                      </p>
-                      <JsonTreePanel
-                        value={previewResult}
-                        labels={{
-                          expandField: messages.events.expandField,
-                          collapseField: messages.events.collapseField,
-                          copyJson: messages.events.copyJson,
-                          copiedJson: messages.events.copiedJson,
-                          copyJsonFailed: messages.events.copyJsonFailed,
-                          copyValue: messages.events.copyValue,
-                          copiedValue: messages.events.copiedValue,
-                          copyValueFailed: messages.events.copyValueFailed,
-                        }}
-                      />
-                    </div>
                   </div>
                 ) : (
                   <div className="h-1" />
@@ -819,6 +823,41 @@ export function TeamNotificationsClient({
           </ResponsiveDialogFooter>
         </ResponsiveDialogContent>
       </ResponsiveDialog>
+      <AlertDialog
+        open={deletingRule !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setDeletingRule(null);
+        }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {formatI18nTemplate(copy.deleteConfirm, {
+                name: deletingRule?.name ?? "",
+              })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {copy.deleteDescription}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>
+              {messages.teamSelect.cancel}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleting}
+              onClick={(event) => {
+                event.preventDefault();
+                if (deletingRule) void removeRule(deletingRule);
+              }}
+            >
+              {deleting ? <Spinner className="size-4" /> : null}
+              {copy.delete}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SettingsPage>
   );
 }

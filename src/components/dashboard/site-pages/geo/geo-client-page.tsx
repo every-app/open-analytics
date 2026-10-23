@@ -441,7 +441,7 @@ export function GeoClientPage({
 
       <div className="pointer-events-none absolute left-4 top-4 z-10 max-w-[min(26rem,calc(100%-2rem))] sm:max-w-[calc(100%-25.5rem)] md:left-6 md:top-6">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          {messages.geo.title}
+          {messages.navigation.geo}
         </h1>
       </div>
     </>

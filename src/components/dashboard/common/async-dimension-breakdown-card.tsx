@@ -413,6 +413,7 @@ export const AsyncDimensionBreakdownCard = memo(
 
     return (
       <TabbedDataTableCard<T, AsyncDimensionBreakdownRow, SortKey>
+        messages={messages}
         tabs={tabs}
         value={value}
         onValueChange={onValueChange}

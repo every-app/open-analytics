@@ -185,6 +185,8 @@ export interface SourceCardRow {
 
 export interface OverviewPagesSectionProps extends OverviewClientPageProps {
   filters: FilterDocument;
+  /** The cards follow the page's filters, and some are set. */
+  filtered?: boolean;
   resolvedScope?: FilterScope;
   loading?: boolean;
   cardDataOverride?: OverviewPagesSectionCardData | null;

@@ -52,3 +52,6 @@ export type SsrTeamDashboardResult = AnalyticsResult<SsrTeamDashboardData>;
 
 /** Composition-only access to the authenticated dashboard scope resolver. */
 export { resolveTeamDashboardScope };
+
+/** The team's site list revision, for team dashboard cache keys. */
+export { readTeamSitesRevision } from "@/lib/edge/analytics/providers/d1/internal/team";

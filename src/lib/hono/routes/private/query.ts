@@ -2,7 +2,10 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 
 import { withDashboardCache } from "@/lib/edge/analytics/composition/dashboard-cache";
-import { resolveTeamDashboardScope } from "@/lib/edge/analytics/composition/ssr-query-runtime";
+import {
+  readTeamSitesRevision,
+  resolveTeamDashboardScope,
+} from "@/lib/edge/analytics/composition/ssr-query-runtime";
 import {
   executePrivateQuery,
   executePrivateTeamDashboard,
@@ -52,6 +55,7 @@ privateQueryRoutes.all("/team-dashboard", async (c) => {
     session,
   });
   if (team instanceof Response) return team;
+  const revision = await readTeamSitesRevision(c.env, team.teamId);
 
   return withDashboardCache(
     executionContext(c),
@@ -70,6 +74,7 @@ privateQueryRoutes.all("/team-dashboard", async (c) => {
         route: "team-dashboard",
         audienceId: session.userId,
         allowedSiteIds: team.allowedSiteIds,
+        revision,
       },
       request: c.req.raw,
     },

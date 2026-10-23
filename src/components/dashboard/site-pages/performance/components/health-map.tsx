@@ -326,6 +326,7 @@ const CountryStatusColumn = memo(function CountryStatusColumn({
       </div>
       <div className="pb-4">
         <TabbedDataTableCard<typeof status, CountryHealthRow, PathSortKey>
+          messages={messages}
           tabs={tabs}
           loader={loader}
           columns={columns}

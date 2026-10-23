@@ -14,7 +14,6 @@ import type {
   BrowserTrendData,
   DimensionData,
   ReferrerChannelTrendData,
-  ReferrerRadarData,
   ReferrersData,
   ReferrerSummaryData,
 } from "@/lib/dashboard-api/client/edge";
@@ -190,30 +189,6 @@ export async function fetchReferrerAndChannelTrend(
         timeZone: window.timeZone,
         interval: window.interval,
         limit: options?.limit ?? 5,
-      },
-      filters,
-    ),
-    { signal: options?.signal },
-  );
-}
-export async function fetchReferrerRadar(
-  siteId: string,
-  window: TimeWindow,
-  filters?: FilterDocument,
-  options?: {
-    limit?: number;
-    signal?: AbortSignal;
-  },
-): Promise<ReferrerRadarData> {
-  return fetchPrivateJson<ReferrerRadarData>(
-    "/api/private/referrer-radar",
-    withFilters(
-      {
-        siteId,
-        from: window.from,
-        to: window.to,
-        timeZone: window.timeZone,
-        limit: options?.limit ?? 24,
       },
       filters,
     ),

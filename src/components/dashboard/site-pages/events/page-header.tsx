@@ -9,16 +9,12 @@ import { useRouter } from "@/lib/router";
 export const EventPageHeader = memo(function EventPageHeader({
   messages,
   title,
-  subtitle,
   backHref,
-  backLabel,
   onBack,
 }: {
   messages: AppMessages;
   title: string;
-  subtitle?: string;
   backHref?: string;
-  backLabel?: string;
   onBack?: () => void;
 }) {
   const router = useRouter();
@@ -31,7 +27,6 @@ export const EventPageHeader = memo(function EventPageHeader({
   return (
     <PageHeading
       title={title}
-      subtitle={subtitle}
       actions={
         handleBack ? (
           <Button
@@ -41,7 +36,7 @@ export const EventPageHeader = memo(function EventPageHeader({
             onClick={handleBack}
           >
             <ArrowLeftIcon data-icon="inline-start" />
-            {backLabel || messages.common.backToTeam}
+            {messages.events.backToEvents}
           </Button>
         ) : null
       }

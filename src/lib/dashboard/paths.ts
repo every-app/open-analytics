@@ -4,16 +4,13 @@ export type SiteSection =
   | "realtime"
   | "pages"
   | "referrers"
-  | "sessions"
   | "campaigns"
   | "events"
   | "funnels"
-  | "goals"
   | "visitors"
   | "retention"
   | "geo"
   | "devices"
-  | "browsers"
   | "performance"
   | "settings";
 
@@ -32,14 +29,9 @@ export function buildSitePath(
  * admins.
  */
 export const SETTINGS_SECTIONS = [
-  { key: "account", group: "personal", access: "member" },
-  { key: "sites", group: "organization", access: "admin" },
-  { key: "notifications", group: "organization", access: "admin" },
-  { key: "public-links", group: "organization", access: "admin" },
-  { key: "general", group: "organization", access: "admin" },
-  { key: "scheduled-tasks", group: "system", access: "admin" },
-  { key: "request-observation", group: "system", access: "admin" },
-  { key: "performance", group: "system", access: "admin" },
+  { key: "account", access: "member" },
+  { key: "notifications", access: "admin" },
+  { key: "system", access: "admin" },
 ] as const;
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number]["key"];
@@ -51,4 +43,26 @@ export function buildSettingsPath(
 ): string {
   const base = `/${locale}/app/settings`;
   return section ? `${base}/${section}` : base;
+}
+
+/** System health's tabs, in the order the page lists them. */
+export const SYSTEM_HEALTH_TABS = [
+  "tasks",
+  "blocked",
+  "ingestion",
+  "data",
+] as const;
+
+export type SystemHealthTab = (typeof SYSTEM_HEALTH_TABS)[number];
+
+export function isSystemHealthTab(value: unknown): value is SystemHealthTab {
+  return SYSTEM_HEALTH_TABS.includes(value as SystemHealthTab);
+}
+
+/** One tab of System health. */
+export function buildSystemHealthPath(
+  locale: Locale,
+  tab: SystemHealthTab,
+): string {
+  return `${buildSettingsPath(locale, "system")}?tab=${tab}`;
 }

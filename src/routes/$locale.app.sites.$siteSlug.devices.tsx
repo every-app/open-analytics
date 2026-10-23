@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { DevicesClientPage } from "@/components/dashboard/site-pages/devices/devices-client-page";
-import { buildSitePath } from "@/lib/dashboard/paths";
 import { dashboardPageTitle } from "@/lib/page-title";
 
 export const Route = createFileRoute("/$locale/app/sites/$siteSlug/devices")({
@@ -24,8 +23,6 @@ function Page() {
       locale={locale}
       messages={messages}
       siteId={c.activeSite.id}
-      siteDomain={c.activeSite.domain}
-      pathname={buildSitePath(locale, c.activeSite.slug, "devices")}
     />
   );
 }

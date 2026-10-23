@@ -1,5 +1,11 @@
 import type { UtmDimensionTab } from "@/lib/dashboard/client/data/index";
 import type { DimensionRow } from "@/lib/dashboard-api/client/edge";
+import {
+  analyticsFilterRegistry,
+  type FilterDocument,
+  parseFilterDsl,
+} from "@/lib/filter-contract/index";
+import type { AppMessages } from "@/lib/i18n/messages";
 
 export type CampaignTab = UtmDimensionTab;
 export type CampaignSortKey =
@@ -27,6 +33,33 @@ export const CAMPAIGN_TABS = [
   "term",
   "content",
 ] as const satisfies CampaignTab[];
+
+/**
+ * The filters with only visits that carry the tab's UTM value: Campaigns
+ * reads tagged traffic, not every visit with the untagged ones as "Not set".
+ */
+export function withCampaignTag(
+  filters: FilterDocument | undefined,
+  tab: CampaignTab,
+): FilterDocument {
+  const tagged = parseFilterDsl(`utm.${tab} notEmpty`, analyticsFilterRegistry);
+  if (!filters?.root) return tagged;
+  return {
+    ...filters,
+    root: { kind: "and", children: [filters.root, tagged.root!] },
+  };
+}
+
+export function campaignTabLabel(
+  tab: CampaignTab,
+  messages: AppMessages,
+): string {
+  if (tab === "source") return messages.campaigns.tabSource;
+  if (tab === "medium") return messages.campaigns.tabMedium;
+  if (tab === "campaign") return messages.campaigns.tabCampaign;
+  if (tab === "term") return messages.campaigns.tabTerm;
+  return messages.campaigns.tabContent;
+}
 
 export function buildCampaignRows(
   rows: CampaignRawRowsByTab[CampaignTab],

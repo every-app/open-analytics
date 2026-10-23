@@ -15,6 +15,7 @@ import { PageHeading } from "@insightflare/ui/page-heading";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { GaugeIcon } from "lucide-react";
 
+import { emptyContent } from "@/components/dashboard/common/table-states";
 import {
   dashboardComparisonLabel,
   useDashboardComparisonQuery,
@@ -366,10 +367,15 @@ export function PerformanceClientPage({
     pathRows.length > 0 ||
     countryRows.length > 0;
   const showContent = loading || hasContent;
+  const emptyLabel = emptyContent(
+    messages,
+    messages.performance.empty,
+    Boolean(filters.root),
+  );
 
   return (
     <div className="space-y-6">
-      <PageHeading title={messages.performance.title} />
+      <PageHeading title={messages.navigation.performance} />
 
       {showContent ? (
         <div className="grid items-start gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
@@ -468,7 +474,7 @@ export function PerformanceClientPage({
         </div>
       ) : (
         <div className="flex min-h-[520px] items-center justify-center text-sm text-muted-foreground">
-          {messages.common.noData}
+          {emptyLabel}
         </div>
       )}
     </div>

@@ -10,11 +10,7 @@ import {
 } from "lucide-react";
 
 import { GET_STARTED_COLLAPSED_KEY } from "@/lib/dashboard/get-started";
-import {
-  buildSettingsPath,
-  buildSitePath,
-  type SettingsSection,
-} from "@/lib/dashboard/paths";
+import { buildSettingsPath, buildSitePath } from "@/lib/dashboard/paths";
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
 import type {
   GetStartedData,
@@ -35,7 +31,8 @@ type StepTarget =
 
 /**
  * All sites' Get started card: the next three steps as cards, how many are
- * done, and the done ones folded underneath. Gone once every step is done.
+ * done, and the done ones folded underneath. The server picks the steps
+ * worth offering (get-started.ts); the card is gone once they're all done.
  */
 export function GetStartedCard() {
   const { canManage, locale, messages, dashboardSites, openCreateSiteDialog } =
@@ -65,23 +62,25 @@ export function GetStartedCard() {
   const next = steps.filter((step) => !step.done).slice(0, 3);
   if (!canManage || next.length === 0) return null;
 
+  // Until a page view arrives every site is still untracked, so the first
+  // one's overview, with its snippet, is where tracking starts.
   const firstSite = dashboardSites[0];
-  const settings = (section: SettingsSection): StepTarget => ({
-    kind: "href",
-    href: buildSettingsPath(locale, section),
-  });
-  const siteSettings: StepTarget = firstSite
-    ? { kind: "href", href: buildSitePath(locale, firstSite.slug, "settings") }
-    : settings("sites");
+  if (!firstSite) return null;
   const targets: Record<GetStartedStepId, StepTarget> = {
     site: { kind: "action", onClick: openCreateSiteDialog },
-    tracking: siteSettings,
+    tracking: { kind: "href", href: buildSitePath(locale, firstSite.slug) },
     team: {
       kind: "external",
       href: `${teamContext.gatewayUrl.replace(/\/$/, "")}/admin/users`,
     },
-    notifications: settings("notifications"),
-    sharing: siteSettings,
+    notifications: {
+      kind: "href",
+      href: buildSettingsPath(locale, "notifications"),
+    },
+    sharing: {
+      kind: "href",
+      href: buildSitePath(locale, firstSite.slug, "settings"),
+    },
   };
 
   const toggle = () => {
@@ -195,7 +194,7 @@ function StepCard({
 }) {
   const Illustration = STEP_ILLUSTRATIONS[id];
   return (
-    <li className="relative overflow-hidden rounded-xl bg-foreground/[0.04] md:min-h-56 dark:bg-foreground/[0.06]">
+    <li className="relative overflow-hidden rounded-xl border border-border bg-muted/40 shadow-xs transition-[border-color,box-shadow,translate] hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md md:min-h-56">
       <StepLink target={target}>
         <span className="flex items-start gap-3">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-card text-sm font-medium shadow-xs">
@@ -215,7 +214,7 @@ function StepCard({
             "relative ml-auto shrink-0 group-hover/step:bg-primary/80 md:mt-auto md:ml-0",
           )}
         >
-          <ArrowRightIcon />
+          <ArrowRightIcon className="transition-transform group-hover/step:translate-x-0.5" />
         </span>
       </StepLink>
     </li>

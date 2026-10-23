@@ -15,18 +15,22 @@ import {
   useAnalyticsTableColumns,
 } from "@insightflare/product-ui/tables";
 import { ClickableTableCell } from "@insightflare/ui/clickable-table-cell";
-import { Input } from "@insightflare/ui/input";
 import { PageHeading } from "@insightflare/ui/page-heading";
 import { Skeleton } from "@insightflare/ui/skeleton";
 import { TableCell, TableHead, TableRow } from "@insightflare/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@insightflare/ui/tabs";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ChevronDownIcon, ChevronUpIcon, SearchIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 
 import {
   AnalyticsDetailsTooltipTarget,
   AnalyticsTimeTooltipTarget,
 } from "@/components/dashboard/analytics-time-tooltip";
 import { AnalyticsDataTable } from "@/components/dashboard/common/analytics-data-table";
+import {
+  emptyContent,
+  LoadFailedContent,
+} from "@/components/dashboard/common/table-states";
 import {
   BrowserMeta,
   CountryRegionMeta,
@@ -38,7 +42,12 @@ import {
   VisitorAvatar,
   visitorDisplayName,
 } from "@/components/dashboard/journeys/journey-display";
-import { DETAIL_QUERY_PARAM } from "@/components/dashboard/site-pages/common/detail-query-param";
+import {
+  DETAIL_QUERY_PARAM,
+  parsePeopleView,
+  PeopleView,
+  VIEW_QUERY_PARAM,
+} from "@/components/dashboard/site-pages/common/detail-query-param";
 import { useDashboardQuery } from "@/components/dashboard/site-pages/common/use-dashboard-query";
 import { SessionDetailClientPage } from "@/components/dashboard/site-pages/sessions/session-detail-client-page";
 import { VisitorDetailClientPage } from "@/components/dashboard/site-pages/visitors/visitor-detail-client-page";
@@ -58,6 +67,9 @@ import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { formatI18nTemplate } from "@/lib/i18n/template";
 import { cn } from "@/lib/utils";
+
+import { PeopleSearchInput } from "./people-search-input";
+import { SessionsList } from "./sessions-list";
 interface VisitorsClientPageProps {
   locale: Locale;
   messages: AppMessages;
@@ -543,18 +555,6 @@ const VisitorTableRowContent = memo(function VisitorTableRowContent({
     </>
   );
 });
-function detailQueryTarget(
-  pathname: string,
-  searchParams: URLSearchParams,
-  detailId: string,
-): string {
-  const params = new URLSearchParams(searchParams.toString());
-  params.set(DETAIL_QUERY_PARAM, detailId);
-  params.delete("visitorId");
-  params.delete("sessionId");
-  const query = serializeDashboardSearchParams(params);
-  return query ? `${pathname}?${query}` : pathname;
-}
 export const VisitorAnalyticsTable = memo(function VisitorAnalyticsTable({
   locale,
   messages,
@@ -587,8 +587,8 @@ export const VisitorAnalyticsTable = memo(function VisitorAnalyticsTable({
   loading: boolean;
   loadingMore: boolean;
   error: boolean;
-  errorContent: string;
-  emptyContent: string;
+  errorContent: ReactNode;
+  emptyContent: ReactNode;
   appendError: boolean;
   appendErrorContent: string;
   hasMore: boolean;
@@ -728,12 +728,20 @@ export const VisitorAnalyticsTable = memo(function VisitorAnalyticsTable({
     />
   );
 });
-export function VisitorsClientPage({
+/** The Visitors page's Visitors view: one row per visitor. */
+function VisitorsList({
   locale,
   messages,
   siteId,
-  pathname,
-}: VisitorsClientPageProps) {
+  viewToggle,
+  onOpenDetail,
+}: {
+  locale: Locale;
+  messages: AppMessages;
+  siteId: string;
+  viewToggle: ReactNode;
+  onOpenDetail: (visitorId: string) => void;
+}) {
   const labels = messages.visitors;
   const visitorColumnDefinitions = useMemo(
     () =>
@@ -755,24 +763,12 @@ export function VisitorsClientPage({
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [sort, setSort] = useState<VisitorSortState>(DEFAULT_VISITOR_SORT);
   const [now, setNow] = useState(() => Date.now());
-  const searchParams = useLiveSearchParams();
-  const detailVisitorId = searchParams.get(DETAIL_QUERY_PARAM)?.trim() || "";
-  const [nestedDetails, setNestedDetails] = useState<NestedJourneyDetail[]>([]);
-  const nestedDetailKeyRef = useRef(0);
-  const openedDetailFromListRef = useRef(false);
   const filtersKey = useMemo(() => filterQueryKey(filters), [filters]);
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    if (!detailVisitorId) {
-      openedDetailFromListRef.current = false;
-      setNestedDetails([]);
-    }
-  }, [detailVisitorId]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -790,6 +786,7 @@ export function VisitorsClientPage({
     isFetching,
     isFetchingNextPage,
     isPending,
+    refetch,
   } = useInfiniteQuery({
     queryKey: [
       "dashboard",
@@ -827,16 +824,20 @@ export function VisitorsClientPage({
       ) ?? [],
     [data?.pages],
   );
-  const loadingInitial = isPending;
   const loadingMore = isFetchingNextPage;
   const error = Boolean(queryError) && rows.length === 0;
+  const emptyLabel = emptyContent(
+    messages,
+    labels.empty,
+    Boolean(filters.root),
+  );
   const appendError = isFetchNextPageError;
   const replacingRows = isPending || (isFetching && !isFetchingNextPage);
   const hasMore = hasNextPage ?? false;
   const loadNextPage = useCallback(() => {
-    if (loadingInitial || loadingMore || appendError || !hasMore) return;
+    if (isPending || loadingMore || appendError || !hasMore) return;
     void fetchNextPage();
-  }, [appendError, fetchNextPage, hasMore, loadingInitial, loadingMore]);
+  }, [appendError, fetchNextPage, hasMore, isPending, loadingMore]);
 
   const toggleSort = useCallback((key: VisitorSortKey) => {
     setSort((current) =>
@@ -849,22 +850,123 @@ export function VisitorsClientPage({
     );
   }, []);
 
-  const openVisitorDetail = useCallback(
-    (visitorId: string) => {
+  return (
+    <>
+      <PageHeading
+        title={messages.navigation.visitors}
+        actions={
+          <>
+            {viewToggle}
+            <PeopleSearchInput
+              value={query}
+              onChange={setQuery}
+              placeholder={labels.search}
+            />
+            <AnalyticsTableColumnSettings
+              columns={visitorColumnDefinitions}
+              orderedIds={visitorColumns.orderedIds}
+              visibleIds={visitorColumns.visibleIds}
+              onOrderChange={visitorColumns.setOrder}
+              onVisibilityChange={visitorColumns.setVisible}
+              onReset={visitorColumns.reset}
+              labels={messages.common.tableColumns}
+            />
+          </>
+        }
+      />
+
+      <VisitorAnalyticsTable
+        locale={locale}
+        messages={messages}
+        labels={labels}
+        rows={rows}
+        now={now}
+        columns={visitorColumns.visibleIds}
+        sort={sort}
+        onToggleSort={toggleSort}
+        onOpenDetail={onOpenDetail}
+        loading={replacingRows}
+        loadingMore={loadingMore}
+        error={error}
+        errorContent={
+          <LoadFailedContent
+            messages={messages}
+            onRetry={() => void refetch()}
+          />
+        }
+        emptyContent={emptyLabel}
+        appendError={appendError}
+        appendErrorContent={labels.loadError}
+        hasMore={hasMore}
+        onLoadMore={loadNextPage}
+      />
+    </>
+  );
+}
+function detailQueryTarget(
+  pathname: string,
+  searchParams: URLSearchParams,
+  detailId: string,
+): string {
+  const params = new URLSearchParams(searchParams.toString());
+  params.set(DETAIL_QUERY_PARAM, detailId);
+  const query = serializeDashboardSearchParams(params);
+  return query ? `${pathname}?${query}` : pathname;
+}
+function viewQueryTarget(
+  pathname: string,
+  searchParams: URLSearchParams,
+  view: PeopleView,
+): string {
+  const params = new URLSearchParams(searchParams.toString());
+  params.delete(DETAIL_QUERY_PARAM);
+  if (view === PeopleView.Sessions) {
+    params.set(VIEW_QUERY_PARAM, PeopleView.Sessions);
+  } else {
+    params.delete(VIEW_QUERY_PARAM);
+  }
+  const query = serializeDashboardSearchParams(params);
+  return query ? `${pathname}?${query}` : pathname;
+}
+/**
+ * Visitors and their sessions, one table at a time: `?view=sessions` lists
+ * sessions. `?detail=` opens the row's journey in a drawer, and journeys open
+ * each other in drawers stacked on top.
+ */
+export function VisitorsClientPage({
+  locale,
+  messages,
+  siteId,
+  pathname,
+}: VisitorsClientPageProps) {
+  const searchParams = useLiveSearchParams();
+  const view = parsePeopleView(searchParams);
+  const detailId = searchParams.get(DETAIL_QUERY_PARAM)?.trim() || "";
+  const [nestedDetails, setNestedDetails] = useState<NestedJourneyDetail[]>([]);
+  const nestedDetailKeyRef = useRef(0);
+  const openedDetailFromListRef = useRef(false);
+
+  useEffect(() => {
+    if (!detailId) {
+      openedDetailFromListRef.current = false;
+      setNestedDetails([]);
+    }
+  }, [detailId]);
+
+  const openDetail = useCallback(
+    (id: string) => {
       openedDetailFromListRef.current = true;
-      pushUrlWithoutNavigation(
-        detailQueryTarget(pathname, searchParams, visitorId),
-      );
+      pushUrlWithoutNavigation(detailQueryTarget(pathname, searchParams, id));
     },
     [pathname, searchParams],
   );
-  const openVisitorDetailRef = useRef(openVisitorDetail);
-  openVisitorDetailRef.current = openVisitorDetail;
-  const stableOpenVisitorDetail = useCallback((visitorId: string) => {
-    openVisitorDetailRef.current(visitorId);
+  const openDetailRef = useRef(openDetail);
+  openDetailRef.current = openDetail;
+  const stableOpenDetail = useCallback((id: string) => {
+    openDetailRef.current(id);
   }, []);
 
-  const closeVisitorDetail = useCallback(() => {
+  const closeDetail = useCallback(() => {
     const params = new URLSearchParams(window.location.search);
     if (!params.has(DETAIL_QUERY_PARAM)) return;
 
@@ -878,10 +980,6 @@ export function VisitorsClientPage({
     const query = serializeDashboardSearchParams(params);
     replaceUrlWithoutNavigation(query ? `${pathname}?${query}` : pathname);
   }, [pathname]);
-  const sessionsPathname = useMemo(
-    () => pathname.replace(/\/visitors(?:\/detail)?$/, "/sessions"),
-    [pathname],
-  );
   const openNestedDetail = useCallback(
     (kind: NestedJourneyDetail["kind"], id: string) => {
       const normalizedId = id.trim();
@@ -920,108 +1018,100 @@ export function VisitorsClientPage({
     });
   }, []);
 
-  return (
-    <div className="space-y-6">
-      <PageHeading
-        title={messages.visitors.title}
-        actions={
-          <div className="flex w-full items-center justify-end gap-2">
-            <div className="relative min-w-0 flex-1 sm:w-80 sm:flex-none">
-              <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={labels.search}
-                className="pl-8"
-              />
-            </div>
-            <AnalyticsTableColumnSettings
-              columns={visitorColumnDefinitions}
-              orderedIds={visitorColumns.orderedIds}
-              visibleIds={visitorColumns.visibleIds}
-              onOrderChange={visitorColumns.setOrder}
-              onVisibilityChange={visitorColumns.setVisible}
-              onReset={visitorColumns.reset}
-              labels={messages.common.tableColumns}
-            />
-          </div>
-        }
-      />
-
-      <VisitorAnalyticsTable
+  const viewToggle = (
+    <Tabs
+      value={view}
+      onValueChange={(next) =>
+        replaceUrlWithoutNavigation(
+          viewQueryTarget(pathname, searchParams, next as PeopleView),
+        )
+      }
+    >
+      <TabsList>
+        <TabsTrigger value={PeopleView.Visitors}>
+          {messages.visitors.title}
+        </TabsTrigger>
+        <TabsTrigger value={PeopleView.Sessions}>
+          {messages.sessions.title}
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
+  );
+  const renderJourney = (kind: NestedJourneyDetail["kind"], id: string) =>
+    kind === "visitor" ? (
+      <VisitorDetailClientPage
         locale={locale}
         messages={messages}
-        labels={labels}
-        rows={rows}
-        now={now}
-        columns={visitorColumns.visibleIds}
-        sort={sort}
-        onToggleSort={toggleSort}
-        onOpenDetail={stableOpenVisitorDetail}
-        loading={replacingRows}
-        loadingMore={loadingMore}
-        error={error}
-        errorContent={labels.loadError}
-        emptyContent={labels.empty}
-        appendError={appendError}
-        appendErrorContent={labels.loadError}
-        hasMore={hasMore}
-        onLoadMore={loadNextPage}
+        siteId={siteId}
+        pathname={pathname}
+        visitorId={id}
+        onOpenSession={openNestedSession}
       />
+    ) : (
+      <SessionDetailClientPage
+        locale={locale}
+        messages={messages}
+        siteId={siteId}
+        pathname={pathname}
+        sessionId={id}
+        onOpenVisitor={openNestedVisitor}
+      />
+    );
+  const journeyLabel = (kind: NestedJourneyDetail["kind"]) =>
+    kind === "visitor"
+      ? messages.visitors.title
+      : messages.sessionDetail.visitDetailsTitle;
+  const detailKind: NestedJourneyDetail["kind"] =
+    view === PeopleView.Sessions ? "session" : "visitor";
 
-      {detailVisitorId ? (
+  return (
+    <div className="space-y-6">
+      {view === PeopleView.Sessions ? (
+        <SessionsList
+          locale={locale}
+          messages={messages}
+          siteId={siteId}
+          viewToggle={viewToggle}
+          onOpenSession={stableOpenDetail}
+          onOpenVisitor={openNestedVisitor}
+        />
+      ) : (
+        <VisitorsList
+          locale={locale}
+          messages={messages}
+          siteId={siteId}
+          viewToggle={viewToggle}
+          onOpenDetail={stableOpenDetail}
+        />
+      )}
+
+      {detailId ? (
         <DetailDrawer
-          ariaLabel={messages.visitors.title}
-          drawerKey={`visitor:${detailVisitorId}`}
-          open={Boolean(detailVisitorId)}
+          ariaLabel={journeyLabel(detailKind)}
+          drawerKey={`${detailKind}:${detailId}`}
+          open
           onOpenChange={(nextOpen) => {
-            if (!nextOpen) closeVisitorDetail();
+            if (!nextOpen) {
+              setNestedDetails([]);
+              closeDetail();
+            }
           }}
         >
-          <VisitorDetailClientPage
-            locale={locale}
-            messages={messages}
-            siteId={siteId}
-            pathname={pathname}
-            visitorId={detailVisitorId}
-            onOpenSession={openNestedSession}
-          />
+          {renderJourney(detailKind, detailId)}
         </DetailDrawer>
       ) : null}
 
       {nestedDetails.map((nestedDetail) => (
         <DetailDrawer
           key={nestedDetail.stackKey}
-          ariaLabel={
-            nestedDetail.kind === "visitor"
-              ? messages.visitors.title
-              : messages.sessionDetail.visitDetailsTitle
-          }
+          ariaLabel={journeyLabel(nestedDetail.kind)}
           drawerKey={nestedDetail.stackKey}
           open
           onOpenChange={(nextOpen) => {
             if (!nextOpen) closeNestedDetail(nestedDetail.stackKey);
           }}
         >
-          {nestedDetail.kind === "visitor" ? (
-            <VisitorDetailClientPage
-              locale={locale}
-              messages={messages}
-              siteId={siteId}
-              pathname={pathname}
-              visitorId={nestedDetail.id}
-              onOpenSession={openNestedSession}
-            />
-          ) : (
-            <SessionDetailClientPage
-              locale={locale}
-              messages={messages}
-              siteId={siteId}
-              pathname={sessionsPathname}
-              sessionId={nestedDetail.id}
-              onOpenVisitor={openNestedVisitor}
-            />
-          )}
+          {renderJourney(nestedDetail.kind, nestedDetail.id)}
         </DetailDrawer>
       ))}
     </div>

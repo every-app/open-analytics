@@ -1,435 +1,112 @@
-import {
-  createElement,
-  type ReactNode,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { AutoResizer } from "@insightflare/ui/auto-resizer";
-import { AutoTransition } from "@insightflare/ui/auto-transition";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@insightflare/ui/badge";
 import { Button } from "@insightflare/ui/button";
 import { Card, CardContent } from "@insightflare/ui/card";
-import { MetricSummaryGrid } from "@insightflare/ui/metric-summary-grid";
 import { PageHeading } from "@insightflare/ui/page-heading";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@insightflare/ui/select";
 import { Spinner } from "@insightflare/ui/spinner";
+import { Tabs, TabsList, TabsTrigger } from "@insightflare/ui/tabs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  BellIcon,
-  CheckCheckIcon,
-  CheckIcon,
-  FileTextIcon,
-  FunnelXIcon,
-  InboxIcon,
-  type LucideIcon,
-  MailOpenIcon,
-  RefreshCwIcon,
-  TriangleAlertIcon,
-} from "lucide-react";
+import { BellIcon, CheckCheckIcon, CheckIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { NotificationPreferencesPopover } from "@/components/dashboard/notifications/notification-preferences-popover";
 import { shortDateTime } from "@/lib/dashboard/format";
-import type { NotificationCenterInitialData } from "@/lib/dashboard/management-data";
+import type {
+  AccountNotificationPreferencesInitialData,
+  NotificationCenterInitialData,
+} from "@/lib/dashboard/management-data";
+import { buildSitePath } from "@/lib/dashboard/paths";
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
-import { type NotificationMessageData } from "@/lib/dashboard-api/client/edge";
+import type { NotificationMessageData } from "@/lib/dashboard-api/client/edge";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
-import { formatI18nTemplate } from "@/lib/i18n/template";
-import { usePathname, useRouter, useSearchParams } from "@/lib/router";
-interface NotificationCenterClientProps {
-  locale: Locale;
-  messages: AppMessages;
-  teamId?: string;
-  initialData?: NotificationCenterInitialData | null;
-}
-type NotificationTab = "all" | "unread" | "attention" | "report";
-type NotificationCenterCopy = AppMessages["notificationCenter"];
-const NOTIFICATION_TABS: readonly NotificationTab[] = [
-  "all",
-  "unread",
-  "attention",
-  "report",
-];
-const MESSAGE_TYPE_FILTERS = [
-  "all",
-  "report",
-  "milestone",
-  "threshold",
-  "change",
-  "health",
-  "test",
-] as const;
-const SEVERITY_FILTERS = [
-  "all",
-  "info",
-  "success",
-  "warning",
-  "critical",
-] as const;
-function severityVariant(
-  severity: string,
-): "default" | "secondary" | "destructive" {
-  if (severity === "critical") return "destructive";
-  if (severity === "warning") return "secondary";
-  return "default";
-}
-function dictionaryLabel<T extends Record<string, string>>(
-  labels: T,
-  value: string,
-): string {
-  if (value in labels) return labels[value as keyof T];
-  return value;
-}
-function record(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
-}
-function compactText(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-function compactNumber(value: unknown): number | null {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
-}
-function truncateMessage(value: string): string {
-  return value.length > 96 ? `${value.slice(0, 95)}...` : value;
-}
+import Link from "@/lib/router";
+
+const VIEWS = ["all", "unread"] as const;
+type InboxView = (typeof VIEWS)[number];
+
+type InboxSite = { id: string; name: string; slug: string };
+
+type NotificationsData = {
+  messages: NotificationMessageData[];
+  unreadAttentionCount: number;
+};
+
 function isUnread(item: NotificationMessageData): boolean {
   return item.readAt === null;
 }
-function isReport(item: NotificationMessageData): boolean {
-  return item.type === "report";
-}
-function countForTab(
-  messagesList: NotificationMessageData[],
-  tab: NotificationTab,
-): number {
-  if (tab === "all") return messagesList.length;
-  if (tab === "unread") return messagesList.filter(isUnread).length;
-  if (tab === "attention") {
-    return messagesList.filter(
-      (item) => item.requiresAttention && isUnread(item),
-    ).length;
-  }
-  return messagesList.filter(isReport).length;
-}
-function tabIcon(tab: NotificationTab): LucideIcon {
-  if (tab === "unread") return MailOpenIcon;
-  if (tab === "attention") return TriangleAlertIcon;
-  if (tab === "report") return FileTextIcon;
-  return InboxIcon;
-}
-function NotificationSectionHeading({
-  actions,
-  subtitle,
-  title,
-}: {
-  actions?: ReactNode;
-  subtitle: string;
-  title: string;
-}) {
-  return (
-    <div className="flex min-w-0 max-w-full flex-col gap-3 md:flex-row md:items-end md:justify-between">
-      <div className="min-w-0 space-y-1">
-        <h2 className="break-words text-xl font-semibold tracking-tight">
-          {title}
-        </h2>
-        <p className="max-w-prose break-words text-xs text-muted-foreground">
-          {subtitle}
-        </p>
-      </div>
-      {actions ? (
-        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-          {actions}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-function NotificationMessageList({
-  copy,
-  empty,
-  items,
-  locale,
-  onRead,
-  updatingId,
-}: {
-  copy: NotificationCenterCopy;
-  empty: string;
-  items: NotificationMessageData[];
-  locale: Locale;
-  onRead: (messageId: string) => void;
-  updatingId: string;
-}) {
-  if (items.length === 0) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center gap-3 py-10 text-center text-sm text-muted-foreground">
-          <BellIcon className="size-8 text-muted-foreground/70" />
-          <p>{empty}</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
+function emailFailed(item: NotificationMessageData): boolean {
+  const email = item.deliveryResults.email;
   return (
-    <div className="space-y-3">
-      {items.map((item) => {
-        const email = record(item.deliveryResults.email);
-        const emailStatus = compactText(email?.status);
-        const emailReason = compactText(email?.reason);
-        const attempts = compactNumber(email?.attempts);
-        const retryCount = compactNumber(email?.retryCount);
-        const durationMs = compactNumber(email?.durationMs);
-        const errorMessage = truncateMessage(compactText(email?.errorMessage));
-        const inAppStatus =
-          compactText(record(item.deliveryResults.inApp)?.status) || "sent";
-        const reasonLabel = emailReason
-          ? dictionaryLabel(copy.emailSkipReasons, emailReason)
-          : "";
-        return (
-          <Card key={item.id}>
-            <CardContent className="space-y-4 p-4 md:p-5">
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div className="min-w-0 space-y-2">
-                  <h2 className="truncate text-sm font-semibold">
-                    {item.title}
-                  </h2>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-                    <span>{shortDateTime(locale, item.createdAt * 1000)}</span>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant={severityVariant(item.severity)}>
-                        {dictionaryLabel(copy.severities, item.severity)}
-                      </Badge>
-                      <Badge variant="outline">
-                        {dictionaryLabel(copy.messageTypes, item.type)}
-                      </Badge>
-                      <Badge variant="outline">
-                        {dictionaryLabel(
-                          copy.deliveryStatuses,
-                          item.deliveryStatus,
-                        )}
-                      </Badge>
-                      {item.requiresAttention ? (
-                        <Badge variant="secondary">{copy.attention}</Badge>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] leading-5 text-muted-foreground">
-                    <Badge variant="outline" className="font-normal">
-                      {copy.channels.inApp}:{" "}
-                      {dictionaryLabel(copy.channelStatuses, inAppStatus)}
-                    </Badge>
-                    {email ? (
-                      <Badge variant="outline" className="font-normal">
-                        {copy.channels.email}:{" "}
-                        {dictionaryLabel(
-                          copy.channelStatuses,
-                          emailStatus || "skipped",
-                        )}
-                        {reasonLabel ? `, ${reasonLabel}` : ""}
-                      </Badge>
-                    ) : null}
-                    {attempts !== null ? (
-                      <span>
-                        {formatI18nTemplate(copy.emailAttempts, {
-                          count: attempts,
-                        })}
-                      </span>
-                    ) : null}
-                    {retryCount !== null && retryCount > 0 ? (
-                      <span>
-                        {formatI18nTemplate(copy.emailRetryCount, {
-                          count: retryCount,
-                        })}
-                      </span>
-                    ) : null}
-                    {durationMs !== null ? (
-                      <span>
-                        {formatI18nTemplate(copy.emailDuration, {
-                          duration: durationMs,
-                        })}
-                      </span>
-                    ) : null}
-                    {errorMessage ? <span>{errorMessage}</span> : null}
-                  </div>
-                </div>
-                {item.readAt === null ? (
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={updatingId === item.id}
-                      onClick={() => onRead(item.id)}
-                    >
-                      {updatingId === item.id ? (
-                        <Spinner data-icon="inline-start" />
-                      ) : (
-                        <CheckIcon data-icon="inline-start" />
-                      )}
-                      <span>{copy.markRead}</span>
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
-              {item.summary || item.bodyText ? (
-                <div className="space-y-4 border-t pt-4">
-                  {item.summary ? (
-                    <blockquote className="border-l-2 border-primary/55 bg-muted/35 px-4 py-3 text-sm leading-6 text-foreground/90">
-                      <p className="whitespace-pre-wrap break-words">
-                        {item.summary}
-                      </p>
-                    </blockquote>
-                  ) : null}
-                  {item.bodyText ? (
-                    <div className="whitespace-pre-wrap break-words text-sm leading-6 text-foreground/85">
-                      {item.bodyText}
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
+    typeof email === "object" &&
+    email !== null &&
+    (email as Record<string, unknown>).status === "failed"
   );
 }
+
+/** The viewer's notifications: one list, all or unread. */
 export function NotificationCenterClient({
   locale,
   messages,
-  teamId,
-  initialData = null,
-}: NotificationCenterClientProps) {
+  userId,
+  sites,
+  initialData,
+  preferencesInitialData,
+}: {
+  locale: Locale;
+  messages: AppMessages;
+  userId: string;
+  sites: InboxSite[];
+  initialData: NotificationCenterInitialData | null;
+  preferencesInitialData: AccountNotificationPreferencesInitialData | null;
+}) {
   const copy = messages.notificationCenter;
   const queryClient = useQueryClient();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const ruleIdFilter = searchParams.get("ruleId")?.trim() || "";
-  const [activeTab, setActiveTab] = useState<NotificationTab>("all");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [severityFilter, setSeverityFilter] = useState("all");
+  const [view, setView] = useState<InboxView>("all");
   const [updatingId, setUpdatingId] = useState("");
   const [markingAll, setMarkingAll] = useState(false);
-  const messagesQueryKey = useMemo(
-    () =>
-      [
-        "dashboard",
-        "notification-messages",
-        teamId ?? "",
-        ruleIdFilter,
-        locale,
-      ] as const,
-    [locale, ruleIdFilter, teamId],
-  );
+  const queryKey = ["dashboard", "notification-messages", locale] as const;
   const messagesQuery = useQuery({
-    queryKey: messagesQueryKey,
+    queryKey,
     queryFn: ({ signal }) =>
-      requestAdminService<{
-        messages: NotificationMessageData[];
-        unreadAttentionCount: number;
-      }>("notifications", {
-        params: {
-          teamId,
-          ruleId: ruleIdFilter || undefined,
-          locale,
-          limit: 80,
-        },
+      requestAdminService<NotificationsData>("notifications", {
+        params: { locale, limit: 80 },
         signal,
       }),
-    initialData: initialData
-      ? {
-          messages: initialData.messages,
-          unreadAttentionCount: initialData.unreadAttentionCount,
-        }
-      : undefined,
+    initialData: initialData ?? undefined,
     initialDataUpdatedAt: initialData?.fetchedAt,
     enabled: typeof window !== "undefined",
   });
-  const messagesList = messagesQuery.data?.messages ?? [];
-  const unreadAttentionCount = messagesQuery.data?.unreadAttentionCount ?? 0;
-  const loading = messagesQuery.isPending;
-
-  const filteredMessages = useMemo(() => {
-    return messagesList.filter((item) => {
-      if (typeFilter !== "all" && item.type !== typeFilter) return false;
-      if (severityFilter !== "all" && item.severity !== severityFilter) {
-        return false;
-      }
-      if (activeTab === "unread") return isUnread(item);
-      if (activeTab === "attention") {
-        return item.requiresAttention && isUnread(item);
-      }
-      if (activeTab === "report") return isReport(item);
-      return true;
-    });
-  }, [activeTab, messagesList, severityFilter, typeFilter]);
-
-  const importantMessages = useMemo(
-    () => filteredMessages.filter((item) => !isReport(item)),
-    [filteredMessages],
+  const allMessages = messagesQuery.data?.messages ?? [];
+  const unreadCount = allMessages.filter(isUnread).length;
+  const visible =
+    view === "unread" ? allMessages.filter(isUnread) : allMessages;
+  const siteById = useMemo(
+    () => new Map(sites.map((site) => [site.id, site])),
+    [sites],
   );
-  const reportMessages = useMemo(
-    () => filteredMessages.filter(isReport),
-    [filteredMessages],
-  );
-  const unreadCount = useMemo(
-    () => messagesList.filter(isUnread).length,
-    [messagesList],
-  );
-
-  const bodyState = loading
-    ? "loading"
-    : filteredMessages.length === 0
-      ? `empty:${activeTab}`
-      : `${activeTab}:${filteredMessages.map((item) => item.id).join(":")}`;
 
   useEffect(() => {
     if (messagesQuery.isError) toast.error(copy.loadFailed);
   }, [copy.loadFailed, messagesQuery.errorUpdatedAt, messagesQuery.isError]);
 
-  function clearRuleFilter() {
-    const next = new URLSearchParams(searchParams.toString());
-    next.delete("ruleId");
-    const query = next.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
-  }
-
   async function handleRead(messageId: string) {
-    const target = messagesList.find((item) => item.id === messageId);
     setUpdatingId(messageId);
     try {
       const updated = await requestAdminService<NotificationMessageData | null>(
         `notifications/${encodeURIComponent(messageId)}`,
-        {
-          method: "PATCH",
-          body: { read: true, locale },
-        },
+        { method: "PATCH", body: { read: true, locale } },
       );
-      queryClient.setQueryData(
-        messagesQueryKey,
-        (current: typeof messagesQuery.data) => {
-          if (!current) return current;
-          return {
-            ...current,
-            messages: current.messages.map((item) =>
-              item.id === messageId && updated ? updated : item,
-            ),
-            unreadAttentionCount:
-              target?.requiresAttention && target.readAt === null
-                ? Math.max(0, current.unreadAttentionCount - 1)
-                : current.unreadAttentionCount,
-          };
-        },
+      queryClient.setQueryData<NotificationsData>(queryKey, (current) =>
+        current && updated
+          ? {
+              ...current,
+              messages: current.messages.map((item) =>
+                item.id === messageId ? updated : item,
+              ),
+            }
+          : current,
       );
     } catch {
       toast.error(copy.markReadFailed);
@@ -439,14 +116,13 @@ export function NotificationCenterClient({
   }
 
   async function handleReadAll() {
-    if (markingAll) return;
     setMarkingAll(true);
     try {
       await requestAdminService<{ updated: number }>("notifications/read-all", {
         method: "PATCH",
-        body: { teamId, read: true },
+        body: { read: true },
       });
-      await queryClient.invalidateQueries({ queryKey: messagesQueryKey });
+      await queryClient.invalidateQueries({ queryKey });
       toast.success(copy.markAllReadSuccess);
     } catch {
       toast.error(copy.markAllReadFailed);
@@ -461,184 +137,165 @@ export function NotificationCenterClient({
         title={copy.title}
         actions={
           <>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue aria-label={copy.typeFilterLabel} />
-              </SelectTrigger>
-              <SelectContent>
-                {MESSAGE_TYPE_FILTERS.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type === "all"
-                      ? copy.allTypes
-                      : dictionaryLabel(copy.messageTypes, type)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={severityFilter} onValueChange={setSeverityFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue aria-label={copy.severityFilterLabel} />
-              </SelectTrigger>
-              <SelectContent>
-                {SEVERITY_FILTERS.map((severity) => (
-                  <SelectItem key={severity} value={severity}>
-                    {severity === "all"
-                      ? copy.allSeverities
-                      : dictionaryLabel(copy.severities, severity)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleReadAll}
-              disabled={markingAll || unreadCount === 0}
-            >
-              {markingAll ? (
-                <Spinner data-icon="inline-start" />
-              ) : (
-                <CheckCheckIcon data-icon="inline-start" />
-              )}
-              <span>{copy.markAllRead}</span>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={loading}
-              onClick={() => void messagesQuery.refetch()}
-            >
-              <span className="inline-flex size-4 shrink-0 items-center justify-center">
-                {loading ? <Spinner /> : <RefreshCwIcon />}
-              </span>
-              <AutoResizer
-                initial
-                animateWidth
-                animateHeight={false}
-                className="inline-flex shrink-0 items-center"
-              >
-                <AutoTransition
-                  className="inline-block"
-                  duration={0.2}
-                  type="fade"
-                  initial={false}
-                  presenceMode="wait"
-                  customVariants={{
-                    initial: { opacity: 0 },
-                    animate: { opacity: 1 },
-                    exit: { opacity: 0 },
+            {/* An empty inbox has nothing to filter or mark. */}
+            {allMessages.length > 0 ? (
+              <>
+                <Tabs
+                  value={view}
+                  onValueChange={(value) => {
+                    if (VIEWS.includes(value as InboxView)) {
+                      setView(value as InboxView);
+                    }
                   }}
                 >
-                  <span key={loading ? "loading" : "refresh"}>
-                    {loading ? messages.common.loading : copy.refresh}
-                  </span>
-                </AutoTransition>
-              </AutoResizer>
-            </Button>
+                  <TabsList aria-label={copy.title}>
+                    <TabsTrigger value="all">{copy.tabs.all}</TabsTrigger>
+                    <TabsTrigger value="unread">{copy.tabs.unread}</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void handleReadAll()}
+                  disabled={markingAll || unreadCount === 0}
+                >
+                  {markingAll ? (
+                    <Spinner data-icon="inline-start" />
+                  ) : (
+                    <CheckCheckIcon data-icon="inline-start" />
+                  )}
+                  <span>{copy.markAllRead}</span>
+                </Button>
+              </>
+            ) : null}
+            <NotificationPreferencesPopover
+              messages={messages}
+              userId={userId}
+              initialData={preferencesInitialData}
+            />
           </>
         }
       />
 
-      <MetricSummaryGrid
-        items={NOTIFICATION_TABS.map((tab) => ({
-          id: tab,
-          icon: createElement(tabIcon(tab)),
-          label: copy.tabs[tab],
-          value: String(
-            tab === "attention"
-              ? unreadAttentionCount
-              : countForTab(messagesList, tab),
-          ),
-          detail: copy.tabDescriptions[tab],
-          loading,
-          onClick: () => setActiveTab(tab),
-          pressed: activeTab === tab,
-        }))}
-      />
-
-      {ruleIdFilter ? (
+      {messagesQuery.isPending ? (
         <Card>
-          <CardContent className="flex flex-col gap-3 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="font-medium">{copy.ruleFilterActive}</p>
-              <p className="break-all text-xs text-muted-foreground">
-                {ruleIdFilter}
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={clearRuleFilter}
-            >
-              <FunnelXIcon data-icon="inline-start" />
-              <span>{copy.ruleFilterClear}</span>
-            </Button>
+          <CardContent className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+            <Spinner className="mr-2 size-4" />
+            {copy.loading}
           </CardContent>
         </Card>
-      ) : null}
-
-      <AutoResizer initial>
-        <AutoTransition
-          transitionKey={bodyState}
-          initial={false}
-          duration={0.18}
-          type="fade"
-          presenceMode="wait"
-        >
-          {loading ? (
-            <Card key="loading">
-              <CardContent className="flex h-40 items-center justify-center text-sm text-muted-foreground">
-                <Spinner className="mr-2 size-4" />
-                {copy.loading}
-              </CardContent>
-            </Card>
-          ) : filteredMessages.length === 0 ? (
-            <Card key="empty">
-              <CardContent className="flex flex-col items-center gap-3 py-12 text-center text-sm text-muted-foreground">
-                <BellIcon className="size-8 text-muted-foreground/70" />
-                <p>{copy.empty}</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div key="messages" className="space-y-8">
-              <section className="space-y-3">
-                <NotificationSectionHeading
-                  title={copy.sections.importantTitle}
-                  subtitle={formatI18nTemplate(
-                    copy.sections.importantDescription,
-                    {
-                      count: unreadAttentionCount,
-                    },
-                  )}
-                />
-                <NotificationMessageList
-                  copy={copy}
-                  empty={copy.sections.importantEmpty}
-                  items={importantMessages}
-                  locale={locale}
-                  updatingId={updatingId}
-                  onRead={(messageId) => void handleRead(messageId)}
-                />
-              </section>
-              <section className="space-y-3">
-                <NotificationSectionHeading
-                  title={copy.sections.reportsTitle}
-                  subtitle={copy.sections.reportsDescription}
-                />
-                <NotificationMessageList
-                  copy={copy}
-                  empty={copy.sections.reportsEmpty}
-                  items={reportMessages}
-                  locale={locale}
-                  updatingId={updatingId}
-                  onRead={(messageId) => void handleRead(messageId)}
-                />
-              </section>
-            </div>
-          )}
-        </AutoTransition>
-      </AutoResizer>
+      ) : visible.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-12 text-center text-sm text-muted-foreground">
+            <BellIcon className="size-8 text-muted-foreground/70" />
+            <p>
+              {view === "unread" && allMessages.length > 0
+                ? copy.noUnread
+                : copy.empty}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {visible.map((item) => (
+            <NotificationCard
+              key={item.id}
+              item={item}
+              locale={locale}
+              copy={copy}
+              site={item.siteId ? siteById.get(item.siteId) : undefined}
+              updating={updatingId === item.id}
+              onRead={() => void handleRead(item.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
+  );
+}
+
+function NotificationCard({
+  item,
+  locale,
+  copy,
+  site,
+  updating,
+  onRead,
+}: {
+  item: NotificationMessageData;
+  locale: Locale;
+  copy: AppMessages["notificationCenter"];
+  site: InboxSite | undefined;
+  updating: boolean;
+  onRead: () => void;
+}) {
+  const unread = isUnread(item);
+  return (
+    <Card>
+      <CardContent className="space-y-3 p-4 md:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              {unread ? (
+                <span
+                  aria-hidden
+                  className="size-2 shrink-0 rounded-full bg-primary"
+                />
+              ) : null}
+              <span className="truncate">{item.title}</span>
+            </h2>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              {site ? (
+                <Link
+                  href={buildSitePath(locale, site.slug)}
+                  className="font-medium text-foreground/80 hover:text-foreground hover:underline"
+                >
+                  {site.name}
+                </Link>
+              ) : null}
+              <span>{shortDateTime(locale, item.createdAt * 1000)}</span>
+              {item.severity === "warning" || item.severity === "critical" ? (
+                <Badge
+                  variant={
+                    item.severity === "critical" ? "destructive" : "warning"
+                  }
+                >
+                  {copy.severities[item.severity]}
+                </Badge>
+              ) : null}
+              {emailFailed(item) ? (
+                <Badge variant="destructive">{copy.emailFailed}</Badge>
+              ) : null}
+            </div>
+          </div>
+          {unread ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={updating}
+              onClick={onRead}
+            >
+              {updating ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <CheckIcon data-icon="inline-start" />
+              )}
+              <span>{copy.markRead}</span>
+            </Button>
+          ) : null}
+        </div>
+        {item.summary || item.bodyText ? (
+          <div className="space-y-3 border-t pt-3 text-sm leading-6 text-foreground/85">
+            {item.summary ? (
+              <p className="whitespace-pre-wrap break-words">{item.summary}</p>
+            ) : null}
+            {item.bodyText ? (
+              <p className="whitespace-pre-wrap break-words">{item.bodyText}</p>
+            ) : null}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }

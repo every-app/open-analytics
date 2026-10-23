@@ -117,6 +117,7 @@ export function OverviewPagesSection({
   siteDomain,
   pathname,
   filters,
+  filtered = false,
   resolvedScope,
   cardDataOverride,
   comparisonEnabled = true,
@@ -1617,6 +1618,8 @@ export function OverviewPagesSection({
         {resolvedVisibleCards.has("page") ? (
           <div className="min-w-0">
             <TabbedDataTableCard<PageCardTab, PageCardRow, PageCardSortKey>
+              messages={messages}
+              filtered={filtered}
               tabs={pageCardTableTabs}
               loader={pageCardLoader}
               contentTransitionKey={tableContentTransitionKey}
@@ -1653,6 +1656,8 @@ export function OverviewPagesSection({
         {resolvedVisibleCards.has("source") ? (
           <div className="min-w-0">
             <TabbedDataTableCard<SourceCardTab, SourceCardRow, PageCardSortKey>
+              messages={messages}
+              filtered={filtered}
               tabs={sourceCardTableTabs}
               loader={sourceCardLoader}
               contentTransitionKey={tableContentTransitionKey}
@@ -1697,6 +1702,8 @@ export function OverviewPagesSection({
               PageCardRow,
               PageCardSortKey
             >
+              messages={messages}
+              filtered={filtered}
               tabs={clientDimensionCardTableTabs}
               loader={clientDimensionCardLoader}
               contentTransitionKey={tableContentTransitionKey}
@@ -1741,6 +1748,8 @@ export function OverviewPagesSection({
               PageCardRow,
               PageCardSortKey
             >
+              messages={messages}
+              filtered={filtered}
               tabs={geoDimensionCardTableTabs}
               loader={geoDimensionCardLoader}
               contentTransitionKey={tableContentTransitionKey}

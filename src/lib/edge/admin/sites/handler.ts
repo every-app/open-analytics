@@ -45,7 +45,12 @@ import {
 import { siteDeletionMutations } from "@/lib/edge/sites/site-deletion";
 import type { Env } from "@/lib/edge/types";
 import { clampString } from "@/lib/edge/utils";
-import { DEFAULT_SITE_SCRIPT_SETTINGS } from "@/lib/site-settings";
+import {
+  DEFAULT_SITE_SCRIPT_SETTINGS,
+  normalizeSiteDomain,
+} from "@/lib/site-settings";
+
+const INVALID_DOMAIN_MESSAGE = "domain must be a hostname, like example.com";
 
 function database(env: Env) {
   return createD1DatabaseClient(env.DB);
@@ -87,13 +92,7 @@ export async function ensurePublicSlugAvailable(
 }
 export async function createSiteWithDefaultSettings(
   env: Env,
-  input: {
-    teamId: string;
-    name: string;
-    domain: string;
-    publicEnabled: boolean;
-    publicSlug: string | null;
-  },
+  input: { teamId: string; name: string; domain: string },
 ): Promise<string> {
   const siteId = crypto.randomUUID();
   await database(env).run(
@@ -103,8 +102,8 @@ export async function createSiteWithDefaultSettings(
         team_id: input.teamId,
         name: input.name,
         domain: input.domain,
-        public_enabled: input.publicEnabled ? 1 : 0,
-        public_slug: input.publicEnabled ? input.publicSlug : null,
+        public_enabled: 0,
+        public_slug: null,
         created_at: unixepoch(),
         updated_at: unixepoch(),
       }),
@@ -181,26 +180,17 @@ export async function handleSitesAdmin(
   if (req.method === "POST") {
     const body = await parseJson(req);
     const teamId = clampString(String(body.teamId || ""), 120);
-    const name = clampString(String(body.name || ""), 120);
-    const domain = clampString(String(body.domain || ""), 255);
-    const pub = bool(body.publicEnabled, false);
-    const pubSlug = clampString(
-      String(body.publicSlug || toSlug(name || domain || `site-${Date.now()}`)),
-      120,
-    );
-    if (!teamId || !name || !domain)
-      return bad("teamId, name and domain are required", undefined, req);
+    const domain = normalizeSiteDomain(body.domain);
+    // A site without a name goes by its domain.
+    const name = clampString(String(body.name || "").trim(), 120) || domain;
+    if (!teamId) return bad("teamId is required", undefined, req);
+    if (!domain) return bad(INVALID_DOMAIN_MESSAGE, undefined, req);
     if (!canManageTeam(a, teamId))
       return forb("Only organization admins can create sites", undefined, req);
-    if (pub && pubSlug && !(await ensurePublicSlugAvailable(env, pubSlug))) {
-      return bad("Public slug already exists", undefined, req);
-    }
     const siteId = await createSiteWithDefaultSettings(env, {
       teamId,
       name,
       domain,
-      publicEnabled: pub,
-      publicSlug: pub ? pubSlug : null,
     });
     return jsonResponseFor(req, {
       ok: true,
@@ -209,8 +199,8 @@ export async function handleSitesAdmin(
         teamId,
         name,
         domain,
-        publicEnabled: pub,
-        publicSlug: pub ? pubSlug : "",
+        publicEnabled: false,
+        publicSlug: "",
       },
     });
   }
@@ -243,7 +233,13 @@ export async function handleSitesAdmin(
       });
     }
     const name = clampString(String(body.name ?? e.name), 120);
-    const domain = clampString(String(body.domain ?? e.domain), 255);
+    // An unchanged domain is kept as stored, so sites saved before domains
+    // were normalized (ports, underscores) can still be renamed.
+    const domain =
+      body.domain === undefined || String(body.domain).trim() === e.domain
+        ? e.domain
+        : normalizeSiteDomain(body.domain);
+    if (!domain) return bad(INVALID_DOMAIN_MESSAGE, undefined, req);
     const pub = bool(body.publicEnabled, e.publicEnabled === 1);
     const pubSlug = clampString(
       String(body.publicSlug ?? e.publicSlug ?? toSlug(name || domain)),

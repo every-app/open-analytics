@@ -9,7 +9,7 @@ export interface DataTableSwitchProps {
   loading: boolean;
   hasContent: boolean;
   loadingLabel: string;
-  emptyLabel: string;
+  emptyLabel: ReactNode;
   colSpan: number;
   loadingRowCount?: number;
   header: ReactNode;

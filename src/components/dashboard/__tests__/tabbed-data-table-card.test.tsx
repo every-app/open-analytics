@@ -110,6 +110,7 @@ import {
   TabbedDataTableCard,
   type TabbedDataTableColumn,
 } from "@/components/dashboard/common/tabbed-data-table-card";
+import { getMessages } from "@/lib/i18n/messages";
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 interface TestRow extends TabbedDataTableRowBase {
   value: number;
@@ -152,6 +153,7 @@ function renderTable(
     root.render(
       <QueryClientProvider client={client}>
         <TabbedDataTableCard<TestTab, TestRow, TestSortKey>
+          messages={getMessages("en")}
           tabs={tabs}
           columns={columns}
           loader={loader}

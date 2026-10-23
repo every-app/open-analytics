@@ -4,8 +4,6 @@ import {
   resolveReportingTimeZone,
   startOfZonedDay,
   startOfZonedMonth,
-  startOfZonedWeek,
-  startOfZonedYear,
   zonedParts,
   zonedTimeToUtcMs,
 } from "@/lib/analytics/time-zone";
@@ -26,20 +24,7 @@ import {
 
 import { serializeDashboardSearchParams } from "./filter-state";
 export type RangePreset =
-  | "30m"
-  | "1h"
-  | "today"
-  | "yesterday"
-  | "thisWeek"
-  | "thisMonth"
-  | "thisYear"
-  | "24h"
-  | "7d"
-  | "30d"
-  | "90d"
-  | "6m"
-  | "12m"
-  | "custom";
+  "today" | "yesterday" | "7d" | "30d" | "90d" | "12m" | "custom";
 export type DashboardInterval = "minute" | "hour" | "day" | "week" | "month";
 export interface CustomTimeRange {
   from: number;
@@ -53,19 +38,13 @@ export interface TimeWindow {
   timeZone: string;
 }
 export const DEFAULT_RANGE_PRESET: RangePreset = "30d";
-const RANGE_PRESETS: readonly RangePreset[] = [
-  "30m",
-  "1h",
+/** The ranges the date control offers, in its order. */
+export const RANGE_PRESETS: readonly RangePreset[] = [
   "today",
   "yesterday",
-  "thisWeek",
-  "thisMonth",
-  "thisYear",
-  "24h",
   "7d",
   "30d",
   "90d",
-  "6m",
   "12m",
   "custom",
 ] as const;
@@ -120,12 +99,6 @@ function rangeBounds(
   timeZone: string,
   customRange?: CustomTimeRange,
 ): { from: number; to: number } {
-  if (preset === "30m") {
-    return { from: now - 30 * MINUTE_MS, to: now };
-  }
-  if (preset === "1h") {
-    return { from: now - HOUR_MS, to: now };
-  }
   if (preset === "today") {
     return { from: startOfZonedDay(now, timeZone), to: now };
   }
@@ -137,18 +110,6 @@ function rangeBounds(
       to: startToday,
     };
   }
-  if (preset === "thisWeek") {
-    return { from: startOfZonedWeek(now, timeZone), to: now };
-  }
-  if (preset === "thisMonth") {
-    return { from: startOfZonedMonth(now, timeZone), to: now };
-  }
-  if (preset === "thisYear") {
-    return { from: startOfZonedYear(now, timeZone), to: now };
-  }
-  if (preset === "24h") {
-    return { from: now - DAY_MS, to: now };
-  }
   if (preset === "7d") {
     return { from: startOfZonedDay(now, timeZone) - 7 * DAY_MS, to: now };
   }
@@ -157,12 +118,6 @@ function rangeBounds(
   }
   if (preset === "90d") {
     return { from: startOfZonedDay(now, timeZone) - 90 * DAY_MS, to: now };
-  }
-  if (preset === "6m") {
-    return {
-      from: startOfZonedMonth(subtractZonedMonths(now, 6, timeZone), timeZone),
-      to: now,
-    };
   }
   if (preset === "12m") {
     return {

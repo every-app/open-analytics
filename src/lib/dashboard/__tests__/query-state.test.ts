@@ -75,24 +75,13 @@ describe("dashboard query-state helpers", () => {
   describe("resolveTimeWindow", () => {
     const now = Date.UTC(2026, 4, 26, 15, 14, 59, 999);
 
-    it.each([
-      ["30m", now - 30 * MINUTE_MS, now, "minute"],
-      ["1h", now - HOUR_MS, now, "minute"],
-      ["24h", now - DAY_MS, now, "hour"],
-    ] satisfies Array<[RangePreset, number, number, string]>)(
-      "resolves %s bounds",
-      (preset, from, to, interval) => {
-        expect(
-          resolveTimeWindow(preset, now, { timeZone: "UTC" }),
-        ).toMatchObject({
-          preset,
-          from,
-          to,
-          interval,
-          timeZone: "UTC",
-        });
-      },
-    );
+    it("falls back to the default range for a range it no longer offers", () => {
+      expect(resolveTimeWindow("24h", now, { timeZone: "UTC" })).toMatchObject({
+        preset: "30d",
+        from: Date.UTC(2026, 4, 26) - 30 * DAY_MS,
+        to: now,
+      });
+    });
 
     it("stabilizes preset cache keys within a minute while preserving custom precision", () => {
       const withinMinuteNow = Date.UTC(2026, 4, 26, 15, 14, 12, 345);
@@ -131,27 +120,6 @@ describe("dashboard query-state helpers", () => {
         to: Date.UTC(2026, 4, 26),
         interval: "hour",
       });
-      expect(
-        resolveTimeWindow("thisWeek", now, { timeZone: "UTC" }),
-      ).toMatchObject({
-        from: Date.UTC(2026, 4, 25),
-        to: now,
-        interval: "day",
-      });
-      expect(
-        resolveTimeWindow("thisMonth", now, { timeZone: "UTC" }),
-      ).toMatchObject({
-        from: Date.UTC(2026, 4, 1),
-        to: now,
-        interval: "day",
-      });
-      expect(
-        resolveTimeWindow("thisYear", now, { timeZone: "UTC" }),
-      ).toMatchObject({
-        from: Date.UTC(2026, 0, 1),
-        to: now,
-        interval: "month",
-      });
     });
 
     it("resolves day and month lookback ranges from zoned boundaries", () => {
@@ -169,11 +137,6 @@ describe("dashboard query-state helpers", () => {
         from: Date.UTC(2026, 4, 26) - 90 * DAY_MS,
         to: now,
         interval: "day",
-      });
-      expect(resolveTimeWindow("6m", now, { timeZone: "UTC" })).toMatchObject({
-        from: Date.UTC(2025, 10, 1),
-        to: now,
-        interval: "month",
       });
       expect(resolveTimeWindow("12m", now, { timeZone: "UTC" })).toMatchObject({
         from: Date.UTC(2025, 4, 1),
@@ -229,7 +192,7 @@ describe("dashboard query-state helpers", () => {
     });
 
     it("preserves allowed requested intervals", () => {
-      const window = resolveTimeWindow("24h", now, {
+      const window = resolveTimeWindow("yesterday", now, {
         interval: "day",
         timeZone: "UTC",
       });

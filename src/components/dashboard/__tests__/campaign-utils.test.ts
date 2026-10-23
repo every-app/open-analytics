@@ -4,7 +4,13 @@ import {
   buildCampaignRowsByTab,
   CAMPAIGN_TABS,
   type CampaignRawRowsByTab,
+  withCampaignTag,
 } from "@/components/dashboard/campaigns/campaign-utils";
+import {
+  analyticsFilterRegistry,
+  formatFilterDsl,
+  parseFilterDsl,
+} from "@/lib/filter-contract/index";
 describe("campaign breakdown utilities", () => {
   it("exports the expected campaign tab order", () => {
     expect(CAMPAIGN_TABS).toEqual([
@@ -125,5 +131,18 @@ describe("campaign breakdown utilities", () => {
         visitors: { absolute: 1, relative: 0.5 },
       },
     });
+  });
+
+  it("counts only visits tagged with the tab's UTM value", () => {
+    expect(formatFilterDsl(withCampaignTag(undefined, "medium"))).toBe(
+      "utm.medium notEmpty",
+    );
+    const filters = parseFilterDsl(
+      'client.deviceType eq "mobile"',
+      analyticsFilterRegistry,
+    );
+    expect(formatFilterDsl(withCampaignTag(filters, "source"))).toBe(
+      'client.deviceType eq "mobile" AND utm.source notEmpty',
+    );
   });
 });

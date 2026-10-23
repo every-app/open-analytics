@@ -280,7 +280,7 @@ export function GoalTimeseriesChart({
   readonly comparisonPoints?: readonly GoalTimeseriesPoint[];
   readonly comparisonFrom?: number;
   readonly comparisonTo?: number;
-  readonly comparisonLabel?: string;
+  readonly comparisonLabel: string;
 }) {
   const gradientId = useId().replace(/:/g, "");
   const hasComparison =
@@ -352,11 +352,11 @@ export function GoalTimeseriesChart({
             ...(hasComparison
               ? {
                   comparisonSessionsRate: {
-                    label: `${comparisonLabel ?? "Comparison"} · ${labels.sessions}`,
+                    label: `${comparisonLabel} · ${labels.sessions}`,
                     color: "var(--color-chart-secondary-1)",
                   },
                   comparisonVisitorsRate: {
-                    label: `${comparisonLabel ?? "Comparison"} · ${labels.visitors}`,
+                    label: `${comparisonLabel} · ${labels.visitors}`,
                     color: "var(--color-chart-secondary-3)",
                   },
                 }

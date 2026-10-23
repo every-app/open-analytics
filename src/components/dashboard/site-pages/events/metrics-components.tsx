@@ -46,7 +46,7 @@ export function createEventMetricItems({
   labels: EventPageCopy;
   summary: EventMetricSummary;
   comparisonSummary?: EventMetricSummary;
-  comparisonLabel?: string;
+  comparisonLabel: string;
   includeShare?: boolean;
   loading?: boolean;
 }): MetricSummaryItem[] {
@@ -78,7 +78,7 @@ export function createEventMetricItems({
 
   const comparisonDetail = (value: number) =>
     comparisonSummary
-      ? `${comparisonLabel ?? "Comparison"}: ${numberFormat(locale, value)}`
+      ? `${comparisonLabel}: ${numberFormat(locale, value)}`
       : undefined;
   const change = (value: number | null) =>
     value === null
@@ -97,9 +97,7 @@ export function createEventMetricItems({
       value: numberFormat(locale, summary.events),
       detail:
         comparisonDetail(comparisonSummary?.events ?? 0) ??
-        (share
-          ? `${labels.shareOfAllEvents}: ${share}`
-          : labels.detailSubtitle),
+        (share ? `${labels.shareOfAllEvents}: ${share}` : undefined),
       change: change(comparisonChanges?.events ?? null),
       loading,
     },
@@ -108,9 +106,7 @@ export function createEventMetricItems({
       icon: <LayersIcon />,
       label: labels.eventTypes,
       value: numberFormat(locale, summary.eventTypes),
-      detail:
-        comparisonDetail(comparisonSummary?.eventTypes ?? 0) ??
-        labels.breakdownTitle,
+      detail: comparisonDetail(comparisonSummary?.eventTypes ?? 0),
       change: change(comparisonChanges?.eventTypes ?? null),
       loading,
     },
@@ -130,9 +126,7 @@ export function createEventMetricItems({
       icon: <DatabaseIcon />,
       label: labels.visitors,
       value: numberFormat(locale, summary.visitors),
-      detail:
-        comparisonDetail(comparisonSummary?.visitors ?? 0) ??
-        labels.recordsTitle,
+      detail: comparisonDetail(comparisonSummary?.visitors ?? 0),
       change: change(comparisonChanges?.visitors ?? null),
       loading,
     },

@@ -17,7 +17,6 @@ import {
   intlLocale,
   numberFormat,
   percentFormat,
-  shortDateTime,
 } from "@/lib/dashboard/format";
 
 import {
@@ -338,10 +337,6 @@ export function OverviewTrendSection({
           <ChartLineIcon className="size-4" />
           {messages.overview.trendTitle}
         </CardTitle>
-        <span className="text-xs text-muted-foreground">
-          {messages.common.lastUpdated}:{" "}
-          {shortDateTime(locale, Date.now(), dataWindow.timeZone)}
-        </span>
       </CardHeader>
       <CardContent>
         <div>

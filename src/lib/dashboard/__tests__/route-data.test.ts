@@ -217,6 +217,7 @@ describe("Dashboard route data loaders", () => {
         slug: "demo",
         name: "Site",
         domain: "app.test",
+        hasData: true,
       };
       vi.mocked(readShareSite).mockResolvedValueOnce(site);
 
@@ -404,7 +405,7 @@ describe("Dashboard route data loaders", () => {
       });
     });
 
-    it("serializes notification center messages with the requested scope", async () => {
+    it("serializes notification center messages in the requested locale", async () => {
       mockAdminReads({
         notifications: {
           messages: [
@@ -420,7 +421,7 @@ describe("Dashboard route data loaders", () => {
       });
 
       const result = await loadNotificationCenterInitialData({
-        data: { teamId: "team-1", ruleId: "rule-1", locale: "zh" },
+        data: { locale: "zh" },
       } as never);
 
       expect(result).toMatchObject({
@@ -436,8 +437,6 @@ describe("Dashboard route data loaders", () => {
         fetchedAt: expect.any(Number),
       });
       expect(readDashboardAdmin).toHaveBeenCalledWith("notifications", {
-        teamId: "team-1",
-        ruleId: "rule-1",
         locale: "zh",
         limit: 80,
       });

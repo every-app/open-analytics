@@ -28,14 +28,6 @@ privateAdminRoutes.all(
   adminServiceRoute("notification-email"),
 );
 privateAdminRoutes.all(
-  "/notification-email/test",
-  adminServiceRoute("notification-email/test"),
-);
-privateAdminRoutes.all(
-  "/notification-email-preview",
-  adminServiceRoute("notification-email-preview"),
-);
-privateAdminRoutes.all(
   "/notification-rules",
   adminServiceRoute("notification-rules"),
 );

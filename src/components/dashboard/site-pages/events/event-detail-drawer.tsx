@@ -296,11 +296,10 @@ export const EventDetailDrawer = memo(function EventDetailDrawer({
   const nestedDetailKeyRef = useRef(0);
   const basePath =
     siteBasePathOverride ??
-    pathname.replace(/\/(?:events|sessions|visitors)(?:\/detail)?$/, "");
+    pathname.replace(/\/(?:events|visitors)(?:\/detail)?$/, "");
   const visitorId = detail.context.visitorId.trim();
   const sessionId = detail.context.sessionId.trim();
-  const visitorPathname = `${basePath}/visitors`;
-  const sessionPathname = `${basePath}/sessions`;
+  const visitorsPathname = `${basePath}/visitors`;
   const nestedDetailOpen = nestedDetails.length > 0;
   const showPayload =
     eventKind === "custom" || detailData?.event.eventKind === "custom_event";
@@ -388,7 +387,7 @@ export const EventDetailDrawer = memo(function EventDetailDrawer({
                 <Skeleton key="loading" className="h-4 w-44" />
               ) : (
                 <DrawerDescription key="ready">
-                  {detailData?.event.eventName || labels.detailSubtitle}
+                  {detailData?.event.eventName}
                 </DrawerDescription>
               )}
             </AutoTransition>
@@ -711,7 +710,7 @@ export const EventDetailDrawer = memo(function EventDetailDrawer({
 
                 <section className="space-y-3">
                   <h3 className="text-sm font-medium">
-                    {messages.navigation.sessions}
+                    {messages.common.sessions}
                   </h3>
                   <dl className="grid gap-3 sm:grid-cols-2">
                     <DetailItem
@@ -1108,7 +1107,7 @@ export const EventDetailDrawer = memo(function EventDetailDrawer({
               locale={locale}
               messages={messages}
               siteId={siteId}
-              pathname={visitorPathname}
+              pathname={visitorsPathname}
               visitorId={nestedDetail.id}
               onOpenSession={openSessionDetail}
             />
@@ -1117,7 +1116,7 @@ export const EventDetailDrawer = memo(function EventDetailDrawer({
               locale={locale}
               messages={messages}
               siteId={siteId}
-              pathname={sessionPathname}
+              pathname={visitorsPathname}
               sessionId={nestedDetail.id}
               onOpenVisitor={openVisitorDetail}
             />

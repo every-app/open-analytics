@@ -42,7 +42,7 @@ export async function handleAuthMeAdmin(
   return jsonResponseFor(req, {
     ok: true,
     data: {
-      user: toPublicUser(a.user, a.role),
+      user: toPublicUser(a.user, a.isAdmin),
       teams: workspace ? [workspace] : [],
     },
   });
@@ -79,7 +79,7 @@ export async function handleProfileAdmin(
   if (req.method === "GET") {
     return jsonResponseFor(req, {
       ok: true,
-      data: { user: toPublicUser(a.user, a.role) },
+      data: { user: toPublicUser(a.user, a.isAdmin) },
     });
   }
   if (req.method !== "POST" && req.method !== "PATCH") return na(req);
@@ -119,5 +119,5 @@ export async function handleProfileAdmin(
   );
   const u = await byId(env, a.user.id);
   if (!u) return bad("Failed to update profile", undefined, req);
-  return jsonResponseFor(req, { ok: true, data: toPublicUser(u, a.role) });
+  return jsonResponseFor(req, { ok: true, data: toPublicUser(u, a.isAdmin) });
 }

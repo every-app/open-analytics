@@ -17,7 +17,20 @@ export const GET_STARTED_STEPS = [
 export type GetStartedStepId = (typeof GET_STARTED_STEPS)[number];
 
 export interface GetStartedData {
+  /** The steps worth offering now, done or not; none means no card. */
   steps: Array<{ id: GetStartedStepId; done: boolean }>;
+}
+
+/**
+ * Nothing before the first site (All sites asks for one), then adding the
+ * site and installing its script, then the rest once a page view arrives.
+ */
+function offeredSteps(
+  done: Record<GetStartedStepId, boolean>,
+): readonly GetStartedStepId[] {
+  if (!done.site) return [];
+  if (!done.tracking) return ["site", "tracking"];
+  return GET_STARTED_STEPS;
 }
 
 // A site has data once a visit is stored, or once rolled-up hours remain
@@ -56,8 +69,11 @@ export async function readGetStarted(
     bindings: [teamId],
     tag: "admin.get_started.progress",
   });
+  const done = Object.fromEntries(
+    GET_STARTED_STEPS.map((id) => [id, Boolean(row?.[id])]),
+  ) as Record<GetStartedStepId, boolean>;
   return {
-    steps: GET_STARTED_STEPS.map((id) => ({ id, done: Boolean(row?.[id]) })),
+    steps: offeredSteps(done).map((id) => ({ id, done: done[id] })),
   };
 }
 

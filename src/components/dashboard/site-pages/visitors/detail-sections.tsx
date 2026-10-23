@@ -47,6 +47,7 @@ import {
   SessionsTableCard,
   type SessionsTableLabels,
 } from "@/components/dashboard/sessions/sessions-table-card";
+import { sessionDetailHref } from "@/components/dashboard/site-pages/common/detail-query-param";
 import { EventDetailDrawer } from "@/components/dashboard/site-pages/events/event-detail-drawer";
 import { OverviewPagesSection } from "@/components/dashboard/site-pages/overview/pages-section";
 import { type OverviewPagesSectionCardData } from "@/components/dashboard/site-pages/overview/types";
@@ -348,9 +349,7 @@ const VisitorEventCard = memo(function VisitorEventCard({
   onOpenEvent: (event: JourneyEvent) => void;
 }) {
   const sessionId = event.sessionId.trim();
-  const sessionHref = `${siteBasePath}/sessions?detail=${encodeURIComponent(
-    sessionId,
-  )}`;
+  const sessionHref = sessionDetailHref(siteBasePath, sessionId);
 
   return (
     <Clickable
@@ -682,9 +681,7 @@ const ActivityAndSessionsSection = memo(function ActivityAndSessionsSection({
         return;
       }
 
-      window.location.assign(
-        `${siteBasePath}/sessions?detail=${encodeURIComponent(sessionId)}`,
-      );
+      window.location.assign(sessionDetailHref(siteBasePath, sessionId));
     },
     [onOpenSession, siteBasePath],
   );
@@ -1032,8 +1029,7 @@ export function DetailContent({
   loading?: boolean;
 }) {
   const modalClose = useDetailDrawerClose();
-  const visitorListPath = pathname.replace(/\/detail$/, "");
-  const siteBasePath = visitorListPath.replace(/\/visitors$/, "");
+  const siteBasePath = pathname.replace(/\/visitors$/, "");
   const visitorSiteDomain = useMemo(
     () => resolveVisitorSiteDomain(detail),
     [detail],
@@ -1092,7 +1088,7 @@ export function DetailContent({
         visitor={detail.visitor}
         metrics={detail.metrics}
         sessions={detail.sessions}
-        backHref={visitorListPath}
+        backHref={pathname}
         onBack={modalClose ?? undefined}
         loading={loading}
       />

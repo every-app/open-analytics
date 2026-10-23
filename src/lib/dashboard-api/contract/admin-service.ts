@@ -11,8 +11,6 @@ export type AdminServiceRoute =
   | "site-config"
   | "script-snippet"
   | "notification-email"
-  | "notification-email/test"
-  | "notification-email-preview"
   | "request-observation"
   | "get-started"
   | "site-tracking"
@@ -35,8 +33,6 @@ const STATIC_ADMIN_SERVICE_ROUTES = new Set<AdminServiceRoute>([
   "site-config",
   "script-snippet",
   "notification-email",
-  "notification-email/test",
-  "notification-email-preview",
   "request-observation",
   "get-started",
   "site-tracking",

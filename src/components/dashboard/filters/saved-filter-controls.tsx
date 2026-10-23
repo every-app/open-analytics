@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 import { AutoResizer } from "@insightflare/ui/auto-resizer";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Input } from "@insightflare/ui/input";
@@ -45,68 +44,21 @@ export const EMPTY_SAVED_FILTER_FORM = {
   scopePreference: "auto",
 } as const satisfies Omit<SavedFilterInput, "filterDsl">;
 export type SavedFilterForm = Omit<SavedFilterInput, "filterDsl">;
-export type MessageRecord = Record<string, unknown>;
 export type SystemPresetCopy = {
   readonly name: string;
   readonly description: string;
 };
-export function readMessagePath(
-  messages: AppMessages,
-  path: string,
-): string | undefined {
-  let value: unknown = messages;
-  for (const segment of path.split(".")) {
-    if (!value || typeof value !== "object") return undefined;
-    value = (value as MessageRecord)[segment];
-  }
-  return typeof value === "string" ? value : undefined;
-}
 export function systemPresetItem(
   messages: AppMessages,
   preset: SystemFilterPreset,
 ): SystemPresetCopy {
-  const item = (
-    messages.filterBuilder.systemPresetItems as unknown as MessageRecord
-  )[preset.id];
-  const legacyItem =
-    item && typeof item === "object" ? (item as MessageRecord) : undefined;
-  return {
-    name:
-      readMessagePath(messages, preset.labelKey) ??
-      (typeof legacyItem?.name === "string" ? legacyItem.name : preset.id),
-    description:
-      readMessagePath(messages, preset.descriptionKey) ??
-      (typeof legacyItem?.description === "string"
-        ? legacyItem.description
-        : ""),
-  };
-}
-export function systemPresetCategoryLabel(
-  messages: AppMessages,
-  category: string,
-): string {
-  const categories = (messages.filterBuilder as unknown as MessageRecord)
-    .systemPresetCategories;
-  return categories && typeof categories === "object"
-    ? (((categories as MessageRecord)[category] as string | undefined) ??
-        category)
-    : category;
-}
-export function systemPresetGroupLabel(
-  messages: AppMessages,
-  category: string,
-): string {
-  return `${messages.filterBuilder.systemPresets} · ${systemPresetCategoryLabel(messages, category)}`;
+  return messages.filterBuilder.systemPresetItems[preset.id];
 }
 export function systemPresetScopeLabel(
   messages: AppMessages,
   scope: SystemFilterPreset["scope"],
 ): string {
-  const scopes = (messages.filterBuilder as unknown as MessageRecord)
-    .systemPresetScopes;
-  return scopes && typeof scopes === "object"
-    ? (((scopes as MessageRecord)[scope] as string | undefined) ?? scope)
-    : scope;
+  return messages.filterBuilder.systemPresetScopes[scope];
 }
 export function systemPresetScopeForApply(
   preset: SystemFilterPreset,
@@ -148,17 +100,6 @@ export function SavedFilterSelect({
   const visibleSystemPresets = SYSTEM_FILTER_PRESETS.filter((preset) =>
     systemFilterPresetAvailableForAudience(preset, audience),
   );
-  const systemPresetGroups = visibleSystemPresets.reduce<
-    Array<{ category: string; presets: SystemFilterPreset[] }>
-  >((groups, preset) => {
-    const existing = groups.find((group) => group.category === preset.category);
-    if (existing) {
-      existing.presets.push(preset);
-    } else {
-      groups.push({ category: preset.category, presets: [preset] });
-    }
-    return groups;
-  }, []);
 
   return (
     <Select
@@ -238,24 +179,17 @@ export function SavedFilterSelect({
           </>
         ) : null}
         <SelectSeparator />
-        {systemPresetGroups.map((group, index) => (
-          <Fragment key={group.category}>
-            {index > 0 ? <SelectSeparator /> : null}
-            <SelectGroup>
-              <SelectLabel>
-                {systemPresetGroupLabel(messages, group.category)}
-              </SelectLabel>
-              {group.presets.map((preset) => (
-                <SelectItem
-                  key={preset.id}
-                  value={systemFilterPresetOptionValue(preset.id)}
-                >
-                  {systemPresetItem(messages, preset).name}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </Fragment>
-        ))}
+        <SelectGroup>
+          <SelectLabel>{messages.filterBuilder.systemPresets}</SelectLabel>
+          {visibleSystemPresets.map((preset) => (
+            <SelectItem
+              key={preset.id}
+              value={systemFilterPresetOptionValue(preset.id)}
+            >
+              {systemPresetItem(messages, preset).name}
+            </SelectItem>
+          ))}
+        </SelectGroup>
       </SelectContent>
     </Select>
   );
@@ -381,11 +315,9 @@ export function FilterPanelHeader({
   savedFilterTriggerLabel,
   savedFilters,
   savedFiltersLoading,
-  scopePreference,
   onApplySavedFilter,
   onApplySystemPreset,
   onClearSavedFilter,
-  onScopeChange,
 }: {
   audience: FilterPanelAudience;
   matchedSavedFilter?: SavedFilter;
@@ -395,119 +327,110 @@ export function FilterPanelHeader({
   savedFilterTriggerLabel: string;
   savedFilters: readonly SavedFilter[];
   savedFiltersLoading: boolean;
-  scopePreference: FilterScopePreference;
   onApplySavedFilter: (filter: SavedFilter) => void;
   onApplySystemPreset: (preset: SystemFilterPreset) => void;
   onClearSavedFilter: () => void;
+}) {
+  return (
+    <div className="mb-4 border-b border-border pb-4">
+      <SavedFilterSelect
+        audience={audience}
+        matchedSavedFilter={matchedSavedFilter}
+        matchedSystemPreset={matchedSystemPreset}
+        messages={messages}
+        savedFilterTriggerKey={savedFilterTriggerKey}
+        savedFilterTriggerLabel={savedFilterTriggerLabel}
+        savedFilters={savedFilters}
+        savedFiltersLoading={savedFiltersLoading}
+        onApplySavedFilter={onApplySavedFilter}
+        onApplySystemPreset={onApplySystemPreset}
+        onClearSavedFilter={onClearSavedFilter}
+      />
+
+      <AutoResizer initial={false} duration={0.18}>
+        <AutoTransition
+          transitionKey={
+            matchedSavedFilter?.id ??
+            (matchedSystemPreset
+              ? systemFilterPresetOptionValue(matchedSystemPreset.id)
+              : "none")
+          }
+          type="fade"
+          duration={0.18}
+          initial={false}
+        >
+          {matchedSavedFilter ? (
+            <div className="space-y-1.5 pt-3 text-xs text-muted-foreground">
+              {matchedSavedFilter.description ? (
+                <p className="break-words">{matchedSavedFilter.description}</p>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="inline-flex items-center gap-1">
+                  <UserIcon className="size-3.5" aria-hidden />
+                  {formatI18nTemplate(
+                    messages.filterBuilder.savedFiltersAuthor,
+                    { name: matchedSavedFilter.authorName },
+                  )}
+                </span>
+                <span>
+                  {matchedSavedFilter.visibility === "team"
+                    ? messages.filterBuilder.savedFiltersTeamShared
+                    : messages.filterBuilder.savedFiltersPrivate}
+                </span>
+              </div>
+            </div>
+          ) : matchedSystemPreset ? (
+            <div className="space-y-1.5 pt-3 text-xs text-muted-foreground">
+              <p>
+                {systemPresetItem(messages, matchedSystemPreset).description}
+              </p>
+              <p>
+                {systemPresetScopeLabel(messages, matchedSystemPreset.scope)}
+              </p>
+            </div>
+          ) : null}
+        </AutoTransition>
+      </AutoResizer>
+    </div>
+  );
+}
+/** Which records a filter selects: events, sessions or visitors. */
+export function FilterScopeSelect({
+  messages,
+  scopePreference,
+  onScopeChange,
+}: {
+  messages: AppMessages;
+  scopePreference: FilterScopePreference;
   onScopeChange: (preference: FilterScopePreference) => void;
 }) {
   return (
-    <>
-      <div className="mb-4 border-b border-border pb-4">
-        <SavedFilterSelect
-          audience={audience}
-          matchedSavedFilter={matchedSavedFilter}
-          matchedSystemPreset={matchedSystemPreset}
-          messages={messages}
-          savedFilterTriggerKey={savedFilterTriggerKey}
-          savedFilterTriggerLabel={savedFilterTriggerLabel}
-          savedFilters={savedFilters}
-          savedFiltersLoading={savedFiltersLoading}
-          onApplySavedFilter={onApplySavedFilter}
-          onApplySystemPreset={onApplySystemPreset}
-          onClearSavedFilter={onClearSavedFilter}
-        />
-
-        <AutoResizer initial={false} duration={0.18}>
-          <AutoTransition
-            transitionKey={
-              matchedSavedFilter?.id ??
-              (matchedSystemPreset
-                ? systemFilterPresetOptionValue(matchedSystemPreset.id)
-                : "none")
-            }
-            type="fade"
-            duration={0.18}
-            initial={false}
-          >
-            {matchedSavedFilter ? (
-              <div className="space-y-1.5 pt-3 text-xs text-muted-foreground">
-                {matchedSavedFilter.description ? (
-                  <p className="break-words">
-                    {matchedSavedFilter.description}
-                  </p>
-                ) : null}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span className="inline-flex items-center gap-1">
-                    <UserIcon className="size-3.5" aria-hidden />
-                    {formatI18nTemplate(
-                      messages.filterBuilder.savedFiltersAuthor,
-                      { name: matchedSavedFilter.authorName },
-                    )}
-                  </span>
-                  <span>
-                    {matchedSavedFilter.visibility === "team"
-                      ? messages.filterBuilder.savedFiltersTeamShared
-                      : messages.filterBuilder.savedFiltersPrivate}
-                  </span>
-                </div>
-              </div>
-            ) : matchedSystemPreset ? (
-              <div className="space-y-1.5 pt-3 text-xs text-muted-foreground">
-                <p>
-                  {systemPresetItem(messages, matchedSystemPreset).description}
-                </p>
-                <p className="flex flex-wrap gap-x-3 gap-y-1">
-                  <span>
-                    {systemPresetCategoryLabel(
-                      messages,
-                      matchedSystemPreset.category,
-                    )}
-                  </span>
-                  <span>
-                    {systemPresetScopeLabel(
-                      messages,
-                      matchedSystemPreset.scope,
-                    )}
-                  </span>
-                </p>
-              </div>
-            ) : null}
-          </AutoTransition>
-        </AutoResizer>
-      </div>
-
-      <div className="mb-4 border-b border-border pb-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="filter-panel-scope">
-            {messages.filterBuilder.scopeLabel}
-          </Label>
-          <Select
-            value={scopePreference}
-            onValueChange={(value) =>
-              onScopeChange(value as FilterScopePreference)
-            }
-          >
-            <SelectTrigger id="filter-panel-scope" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="auto">
-                {messages.filterBuilder.scopeAuto}
-              </SelectItem>
-              <SelectItem value="event">
-                {messages.filterBuilder.scopeEvent}
-              </SelectItem>
-              <SelectItem value="session">
-                {messages.filterBuilder.scopeSession}
-              </SelectItem>
-              <SelectItem value="visitor">
-                {messages.filterBuilder.scopeVisitor}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-    </>
+    <div className="space-y-1.5">
+      <Label htmlFor="filter-panel-scope">
+        {messages.filterBuilder.scopeLabel}
+      </Label>
+      <Select
+        value={scopePreference}
+        onValueChange={(value) => onScopeChange(value as FilterScopePreference)}
+      >
+        <SelectTrigger id="filter-panel-scope" className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="auto">
+            {messages.filterBuilder.scopeAuto}
+          </SelectItem>
+          <SelectItem value="event">
+            {messages.filterBuilder.scopeEvent}
+          </SelectItem>
+          <SelectItem value="session">
+            {messages.filterBuilder.scopeSession}
+          </SelectItem>
+          <SelectItem value="visitor">
+            {messages.filterBuilder.scopeVisitor}
+          </SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
   );
 }

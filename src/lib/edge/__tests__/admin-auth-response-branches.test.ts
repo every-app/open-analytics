@@ -125,12 +125,12 @@ describe("admin auth", () => {
       updated_at: 200,
     };
 
-    expect(toPublicUser(user, "owner")).toMatchObject({
+    expect(toPublicUser(user, true)).toMatchObject({
       name: "",
       systemRole: "admin",
       timeZone: "",
     });
-    expect(toPublicUser(user, "member").systemRole).toBe("user");
+    expect(toPublicUser(user, false).systemRole).toBe("user");
   });
 
   it("returns 401 without a gateway identity or a mirrored user", async () => {

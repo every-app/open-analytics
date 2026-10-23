@@ -70,6 +70,7 @@ import type {
 import {
   EMPTY_SAVED_FILTER_FORM,
   FilterPanelHeader,
+  FilterScopeSelect,
   SavedFilterFormFields,
   systemPresetItem,
   systemPresetMatchesScope,
@@ -77,7 +78,6 @@ import {
 } from "./saved-filter-controls";
 export {
   SavedFilterSelect,
-  systemPresetGroupLabel,
   systemPresetMatchesScope,
   systemPresetScopeForApply,
 } from "./saved-filter-controls";
@@ -567,10 +567,15 @@ export function FilterPanel({
             savedFilterTriggerLabel={savedFilterTriggerLabel}
             savedFilters={savedFilters}
             savedFiltersLoading={savedFiltersQuery.isFetching}
-            scopePreference={scopePreference}
             onApplySavedFilter={applySavedFilter}
             onApplySystemPreset={applySystemPreset}
             onClearSavedFilter={clearSavedFilter}
+          />
+        }
+        advancedContent={
+          <FilterScopeSelect
+            messages={messages}
+            scopePreference={scopePreference}
             onScopeChange={onScopeChange}
           />
         }

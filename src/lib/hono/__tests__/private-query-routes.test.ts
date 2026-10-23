@@ -21,6 +21,13 @@ vi.mock("@/lib/edge/analytics/composition/dashboard-cache", () => ({
     ) => loader(),
   ),
 }));
+vi.mock(
+  "@/lib/edge/analytics/providers/d1/internal/team",
+  async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    readTeamSitesRevision: vi.fn(async () => "1:100"),
+  }),
+);
 // Site access imports the gateway SDK through the viewer, which can't load
 // under Node.
 vi.mock("@/lib/edge/auth/viewer", () => ({ resolveViewer: vi.fn() }));
@@ -325,6 +332,7 @@ describe("Hono private query routes", () => {
           route: "team-dashboard",
           audienceId: "user-1",
           allowedSiteIds: ["site-1"],
+          revision: "1:100",
         },
         request: expect.any(Request),
       }),

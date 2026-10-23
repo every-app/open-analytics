@@ -4,6 +4,8 @@ import { DetailModal } from "@insightflare/product-ui/detail-drawer";
 import { MetricSummaryGrid } from "@insightflare/ui/metric-summary-grid";
 import { useQuery } from "@tanstack/react-query";
 
+import { CodeBlock } from "@/components/common/code-block";
+import { EmptyState } from "@/components/common/empty-state";
 import { DETAIL_QUERY_PARAM } from "@/components/dashboard/site-pages/common/detail-query-param";
 import { useDashboardQuery } from "@/components/dashboard/site-pages/common/use-dashboard-query";
 import { EventTypeDetailClientPage } from "@/components/dashboard/site-pages/events/event-type-detail-client-page";
@@ -35,6 +37,8 @@ import type {
 } from "@/lib/dashboard-api/client/edge";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
+// The one line that sends a custom event from the tracking script.
+const TRACK_EXAMPLE = 'openAnalytics.track("signup")';
 interface EventsClientPageProps {
   locale: Locale;
   messages: AppMessages;
@@ -264,6 +268,9 @@ export function EventsClientPage({
     Boolean(comparisonQuery?.filters.root),
   );
   const initialLoading = isPending && !data;
+  // Unfiltered and empty: no custom event arrived in this period.
+  const noCustomEvents =
+    data !== undefined && data.summary.summary.events === 0 && !filters.root;
 
   const openEventType = useCallback(
     (eventName: string) => {
@@ -304,91 +311,110 @@ export function EventsClientPage({
 
   return (
     <div className="space-y-6">
-      <EventPageHeader messages={messages} title={messages.events.title} />
+      <EventPageHeader messages={messages} title={messages.navigation.events} />
 
-      <MetricSummaryGrid
-        items={createEventMetricItems({
-          locale,
-          labels,
-          summary: summary.summary,
-          comparisonSummary: data?.comparisonSummary?.summary,
-          comparisonLabel,
-          loading,
-        })}
-      />
-
-      <EventTrendStackedBarCard
-        locale={locale}
-        labels={labels}
-        trend={trend}
-        comparisonTrend={data?.comparisonTrend}
-        comparisonWindow={comparisonQuery?.window}
-        window={timeWindow}
-        title={labels.trendTitle}
-        loading={loading}
-        cumulativeLabel={messages.common.cumulativeEvents}
-        currentPeriodLabel={messages.dashboardHeader.compareCurrentPeriod}
-        comparisonLabel={comparisonLabel}
-        onSelectEvent={openEventType}
-      />
-
-      <div className="grid gap-4 xl:grid-cols-2">
-        <OverviewPagesSection
-          locale={locale}
-          messages={messages}
-          siteId={siteId}
-          siteDomain={siteDomain}
-          pathname={pathname}
-          filters={filters}
-          loading={initialLoading}
-          cardDataOverride={eventCardDataOverride}
-          visibleCards={["page"]}
-          pageCardTabs={["path"]}
-          pageCardTabMetaOverride={{
-            path: {
-              label: labels.topEvents,
-              columnLabel: labels.eventName,
-              primaryMetricLabel: labels.totalEvents,
-              mono: false,
-              showIcon: false,
-            },
-          }}
-          pageCardFilterEnabledOverride={{ path: false }}
-          pageCardNavigableTabs={[]}
-          pageCardDetailTabs={["path"]}
-          pageCardDetailClickResolvers={{
-            path: ({ value }) => openEventType(value),
-          }}
-          pageCardShowVisitors
-          primaryMetricLabel={labels.totalEvents}
-          sectionClassName="xl:grid-cols-1"
+      {noCustomEvents ? (
+        <EmptyState
+          title={labels.noCustomEvents}
+          variant="card"
+          className="min-h-64"
+          action={
+            <CodeBlock
+              value={TRACK_EXAMPLE}
+              copyLabel={messages.getStarted.copy}
+              copiedLabel={messages.getStarted.copied}
+            />
+          }
         />
+      ) : (
+        <>
+          <MetricSummaryGrid
+            items={createEventMetricItems({
+              locale,
+              labels,
+              summary: summary.summary,
+              comparisonSummary: data?.comparisonSummary?.summary,
+              comparisonLabel,
+              loading,
+            })}
+          />
 
-        <OverviewPagesSection
-          locale={locale}
-          messages={messages}
-          siteId={siteId}
-          siteDomain={siteDomain}
-          pathname={siteBasePath}
-          filters={filters}
-          loading={initialLoading}
-          cardDataOverride={contextCardDataOverride}
-          visibleCards={["page"]}
-          pageCardTabs={["path", "title", "hostname"]}
-          primaryMetricLabel={labels.totalEvents}
-          sectionClassName="xl:grid-cols-1"
-        />
-      </div>
+          <EventTrendStackedBarCard
+            locale={locale}
+            labels={labels}
+            trend={trend}
+            comparisonTrend={data?.comparisonTrend}
+            comparisonWindow={comparisonQuery?.window}
+            window={timeWindow}
+            title={labels.trendTitle}
+            loading={loading}
+            cumulativeLabel={messages.common.cumulativeEvents}
+            currentPeriodLabel={messages.dashboardHeader.compareCurrentPeriod}
+            comparisonLabel={comparisonLabel}
+            onSelectEvent={openEventType}
+          />
 
-      <EventRecordsSection
-        locale={locale}
-        messages={messages}
-        labels={labels}
-        siteId={siteId}
-        pathname={pathname}
-        window={timeWindow}
-        filters={filters}
-      />
+          <div className="grid gap-4 xl:grid-cols-2">
+            <OverviewPagesSection
+              locale={locale}
+              messages={messages}
+              siteId={siteId}
+              siteDomain={siteDomain}
+              pathname={pathname}
+              filters={filters}
+              filtered={Boolean(filters.root)}
+              loading={initialLoading}
+              cardDataOverride={eventCardDataOverride}
+              visibleCards={["page"]}
+              pageCardTabs={["path"]}
+              pageCardTabMetaOverride={{
+                path: {
+                  label: labels.topEvents,
+                  columnLabel: labels.eventName,
+                  primaryMetricLabel: labels.totalEvents,
+                  mono: false,
+                  showIcon: false,
+                },
+              }}
+              pageCardFilterEnabledOverride={{ path: false }}
+              pageCardNavigableTabs={[]}
+              pageCardDetailTabs={["path"]}
+              pageCardDetailClickResolvers={{
+                path: ({ value }) => openEventType(value),
+              }}
+              pageCardShowVisitors
+              primaryMetricLabel={labels.totalEvents}
+              sectionClassName="xl:grid-cols-1"
+            />
+
+            <OverviewPagesSection
+              locale={locale}
+              messages={messages}
+              siteId={siteId}
+              siteDomain={siteDomain}
+              pathname={siteBasePath}
+              filters={filters}
+              filtered={Boolean(filters.root)}
+              loading={initialLoading}
+              cardDataOverride={contextCardDataOverride}
+              visibleCards={["page"]}
+              pageCardTabs={["path", "title", "hostname"]}
+              primaryMetricLabel={labels.totalEvents}
+              sectionClassName="xl:grid-cols-1"
+            />
+          </div>
+
+          <EventRecordsSection
+            locale={locale}
+            messages={messages}
+            labels={labels}
+            siteId={siteId}
+            pathname={pathname}
+            window={timeWindow}
+            filters={filters}
+          />
+        </>
+      )}
 
       {detailEventName ? (
         <DetailModal

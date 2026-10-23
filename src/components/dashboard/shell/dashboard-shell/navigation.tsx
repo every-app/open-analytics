@@ -1,11 +1,10 @@
 import { useCallback } from "react";
 import {
-  ActivityIcon,
   FileTextIcon,
   GaugeIcon,
   LayoutDashboardIcon,
   type LucideIcon,
-  MonitorSmartphoneIcon,
+  SettingsIcon,
   ShareIcon,
   TargetIcon,
   UserRoundIcon,
@@ -30,31 +29,29 @@ export type SiteNavKey =
   | "pages"
   | "referrers"
   | "campaigns"
-  | "sessions"
   | "visitors"
   | "retention"
   | "geo"
   | "devices"
-  | "browsers"
   | "events"
   | "funnels"
-  | "goals"
   | "performance"
   | "settings";
 
 /**
  * The sidebar's entries for a site, in order. An entry with several pages
- * links to its first and shows the rest as tabs above the page.
+ * links to its first and shows the rest as tabs above the page. Site
+ * settings comes last, for owners and admins only. Real-time has no entry:
+ * the live count in the header opens it.
  */
 export const SITE_NAV_ITEMS = [
   { key: "overview", sections: ["overview"] },
-  { key: "realtime", sections: ["realtime"] },
   { key: "pages", sections: ["pages"] },
   { key: "sources", sections: ["referrers", "campaigns"] },
-  { key: "audience", sections: ["visitors", "sessions", "retention", "geo"] },
-  { key: "devices", sections: ["devices", "browsers"] },
-  { key: "conversions", sections: ["events", "funnels", "goals"] },
+  { key: "audience", sections: ["visitors", "geo", "devices", "retention"] },
+  { key: "goals", sections: ["funnels", "events"] },
   { key: "performance", sections: ["performance"] },
+  { key: "settings", sections: ["settings"] },
 ] as const satisfies readonly {
   key: string;
   sections: readonly SiteNavKey[];
@@ -64,13 +61,12 @@ export type SiteNavItem = (typeof SITE_NAV_ITEMS)[number];
 
 const SITE_NAV_ITEM_ICONS: Record<SiteNavItem["key"], LucideIcon> = {
   overview: LayoutDashboardIcon,
-  realtime: ActivityIcon,
   pages: FileTextIcon,
   sources: ShareIcon,
   audience: UserRoundIcon,
-  devices: MonitorSmartphoneIcon,
-  conversions: TargetIcon,
+  goals: TargetIcon,
   performance: GaugeIcon,
+  settings: SettingsIcon,
 };
 
 export function siteNavItemIcon(item: SiteNavItem): LucideIcon {
@@ -84,8 +80,15 @@ export function siteNavItemLabel(
 ): string {
   if (item.key === "sources") return messages.appNav.sources;
   if (item.key === "audience") return messages.appNav.audience;
-  if (item.key === "conversions") return messages.appNav.conversions;
+  if (item.key === "goals") return messages.appNav.goals;
   return messages.navigation[item.key];
+}
+
+/** The entries a viewer sees: everyone's, plus Site settings for managers. */
+export function siteNavItemsFor(canManage: boolean): readonly SiteNavItem[] {
+  return canManage
+    ? SITE_NAV_ITEMS
+    : SITE_NAV_ITEMS.filter((item) => item.key !== "settings");
 }
 
 /** The sidebar entry a site page belongs to. */
@@ -101,7 +104,7 @@ export function siteNavLabel(key: SiteNavKey, messages: AppMessages): string {
 
 const SITE_NAV_KEYS = new Set<string>([
   ...SITE_NAV_ITEMS.flatMap((item) => item.sections),
-  "settings",
+  "realtime",
 ]);
 
 export function isSiteNavKey(value: string): value is SiteNavKey {
@@ -122,23 +125,13 @@ export function normalizeLocalePath(pathname: string): string {
 export interface ShellRouteState {
   /** The site in the path, when on one of its pages. */
   siteSlug?: string;
-  /** The site page ("overview" at the site's root) and a detail sub-page. */
+  /** The site page ("overview" at the site's root). */
   siteSection?: SiteNavKey;
-  siteSubSection?: string;
   /** The organization's page otherwise: all sites, the inbox or settings. */
   orgPage?: "all-sites" | "inbox" | "settings";
   /** The page reads the range and filters, so the shell shows their controls. */
   usesDateRange: boolean;
 }
-
-// Settings pages that chart a period: the sites list, task runs and the
-// Worker's performance (and their addresses before they moved to Settings).
-const DATE_RANGE_SETTINGS = new Set([
-  "sites",
-  "scheduled-tasks",
-  "performance",
-  "system-performance",
-]);
 
 /** Where the shell is, from the path. */
 export function parseShellRouteState(pathname: string): ShellRouteState {
@@ -151,20 +144,14 @@ export function parseShellRouteState(pathname: string): ShellRouteState {
     return {
       siteSlug: local[1],
       siteSection: isSiteNavKey(section) ? section : undefined,
-      siteSubSection: local[3] || "",
       usesDateRange: section !== "settings",
     };
   }
   if (local.length === 0) return { orgPage: "all-sites", usesDateRange: true };
   if (local[0] === "inbox") return { orgPage: "inbox", usesDateRange: false };
-  if (local[0] === "settings" || local[0] === "manage") {
-    return {
-      orgPage: "settings",
-      usesDateRange: DATE_RANGE_SETTINGS.has(local[1] ?? ""),
-    };
-  }
-  // The organization's other pages all live under Settings.
-  return { orgPage: "settings", usesDateRange: local[0] === "sites" };
+  // The organization's other pages all live under Settings, which charts
+  // no period of the header's.
+  return { orgPage: "settings", usesDateRange: false };
 }
 
 /**

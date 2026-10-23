@@ -6,18 +6,15 @@ navigation:
   realtime: 实时
   pages: 页面
   referrers: 来源
-  sessions: 会话
   events: 事件
-  funnels: 漏斗
-  goals: 目标
+  funnels: 目标与漏斗
   campaigns: 推广
   visitors: 访客
   retention: 留存
   geo: 位置
   devices: 设备
-  browsers: 浏览器
   performance: 性能
-  settings: 设置
+  settings: 站点设置
 common:
   deviceLabels:
     desktop: 桌面端
@@ -69,19 +66,16 @@ common:
   screenSize: 屏幕大小
   loading: 加载中
   noData: 暂无数据
+  loadFailed: 无法加载
+  retry: 重试
+  filteredEmpty: 没有符合这些筛选条件的数据
+  clearFilters: 清除筛选
+  trend: 趋势
   unknown: 未知
-  lastUpdated: 更新时间
   site: 站点
-  team: 团队
-  management: 管理
-  backToTeam: 返回团队
   system: 系统
-  account: 账户
   theme: 主题
   language: 语言
-  role: 角色
-  admin: 管理员
-  user: 普通用户
   search: 搜索
   open: 打开
   sortBy: 按 {label} 排序
@@ -109,25 +103,16 @@ common:
     reset: 恢复默认
     dragHint: 拖动调整顺序
     close: 关闭
-  time: 时间
-  cycle: 周期
   close: 关闭
   sitesFiltered: "已筛选 {active} / {total} 个站点"
   cumulativeTraffic: 全部周期累计流量
   cumulativeEvents: 全部周期累计事件
 ranges:
-  last30m: 30分钟
-  last1h: 1小时
   today: 今天
   yesterday: 昨天
-  thisWeek: 本周
-  thisMonth: 本月
-  thisYear: 今年
-  last24h: 最近 24 小时
   last7d: 最近 7 天
   last30d: 最近 30 天
   last90d: 最近 90 天
-  last6m: 最近 6 个月
   last12m: 最近 12 个月
   custom: 自定义时间段
 intervals:
@@ -137,43 +122,25 @@ intervals:
   week: 周
   month: 月
 dashboardHeader:
-  range: 时间范围
   interval: 时间间隔
   compareButton: 对比
   compareTitle: 对比设置
-  compareSubtitle: 选择对比周期和筛选条件。
   compareTimeLabel: 对比时间
   compareCurrentPeriod: 当前周期
-  compareCurrentPeriodDescription: 使用当前选定的时间范围。
   comparePreviousPeriod: 上一周期
-  comparePreviousPeriodDescription: 使用当前周期之前的同等长度时间范围。
   compareFilterLabel: 对比筛选
   compareFollowCurrentFilter: 跟随当前筛选
-  compareFollowCurrentFilterDescription: 使用当前页面的筛选条件。
   compareCustomFilter: 自定义筛选
-  compareCustomFilterDescription: 为对比单独设置筛选条件。
   compareApply: 应用对比
   compareCancel: 取消
-  compareDisabled: 当前页面中对比不可用。
   filterButton: 筛选
   filterButtonEvent: 筛选 (事件)
   filterButtonSession: 筛选 (会话)
   filterButtonVisitor: 筛选 (访客)
-  customRange: 选择自定义区间
   customHint: 请选择开始和结束日期。
   customPendingEnd: 已选择开始日期，请继续选择结束日期。
   customApply: 应用日期范围
-  rangeGroupQuick: 快速范围
-  rangeGroupCalendar: 自然周期
-  rangeGroupRolling: 滚动窗口
-  rangeGroupAdvanced: 高级
-  intervalDisabledMinute: 仅在 1 小时内可选分钟间隔。
-  intervalDisabledHour: 仅在 7 天内可选小时间隔。
-  intervalDisabledDay: 仅在最近 90 天内可选日间隔。
-  intervalDisabledWeek: 仅在最近 12 个月内可选周间隔。
   filterTitle: 筛选条件
-  filterSubtitle: 新建、保存筛选条件，或者使用个人/团队保存的筛选条件。
-  filterDisabledRealtime: 实时页面中筛选不可用。
   previousPeriod: 上个周期
   nextPeriod: 下个周期
   customSelectionSummary: "当前选择：{from} 至 {to}（共 {days} 天）"
@@ -357,7 +324,7 @@ filterBuilder:
   naturalLanguageDescription: 自然语言描述
   expressionInvalid: 表达式无效，点击查看语法帮助
   expressionHelpTitle: 筛选表达式语法
-  expressionHelpDescription: 可用字段和操作符由当前筛选契约动态生成。
+  expressionHelpDescription: 可在筛选表达式中使用的字段和操作符。
   expressionHelpSyntax: 语法
   expressionHelpLogicDescription: AND 的优先级高于 OR。使用括号表达嵌套；AND(...) 和 OR(...) 可保留显式的单条件分组。
   expressionHelpValues: 值
@@ -454,14 +421,7 @@ filterBuilder:
   savedFiltersLoading: 正在获取已保存的筛选...
   noSavedFilter: 不使用已保存的筛选
   systemPresets: 系统预设
-  systemPresetCategories:
-    acquisition: 获客
-    device: 设备
-    visitBehavior: 访问行为
-    sessionEngagement: 会话参与度
-    visitorBehavior: 访客行为
-    performance: 性能
-    dataQuality: 数据质量
+  advanced: 高级
   systemPresetScopes:
     preserve: 保留当前范围
     event: 事件范围
@@ -471,122 +431,26 @@ filterBuilder:
     directTraffic:
       name: 直接访问
       description: 没有外部来源的访问。
-    externalReferrals:
-      name: 外部来源访问
-      description: 通过外部来源进入的访问。
     organicSearchDiscovery:
       name: 自然搜索发现
       description: 没有营销活动标记的搜索引擎来源访问。
-    organicSocialDiscovery:
-      name: 自然社交发现
-      description: 没有营销活动标记的社交网络来源访问。
     campaignTaggedTraffic:
       name: 带活动标记的流量
       description: 带有活动来源、媒介或名称的访问。
     mobileTraffic:
       name: 移动端流量
       description: 来自移动设备的访问。
-    desktopTraffic:
-      name: 桌面端流量
-      description: 来自桌面设备的访问。
-    campaignTaggedExternalAcquisition:
-      name: 带标记的外部获客
-      description: 带有营销活动标记的外部来源访问。
-    campaignTaggedDirectEntry:
-      name: 带标记的直接访问
-      description: 带有营销活动标记的直接访问。
-    untaggedExternalReferrals:
-      name: 未标记的外部来源
-      description: 没有营销活动标记的外部来源访问。
-    mobileAcquiredTraffic:
-      name: 移动端活动获客
-      description: 来自外部且带有营销活动标记的移动端访问。
-    mobileOrganicDiscovery:
-      name: 移动端自然发现
-      description: 通过搜索或社交发现、且没有活动标记的移动端访问。
-    desktopDirectAudience:
-      name: 桌面端直接受众
-      description: 来自桌面设备、且没有活动标记的直接访问。
-    geographicAttributionGap:
-      name: 地理归因缺口
-      description: 有外部来源但未记录国家的访问。
-    tabletTraffic:
-      name: 平板端流量
-      description: 来自平板设备的访问。
-    longPageViews:
-      name: 长时页面浏览
-      description: 持续至少 30 秒的页面浏览。
-    shortPageViews:
-      name: 短时页面浏览
-      description: 持续少于 10 秒的页面浏览。
-    identifiedActivity:
-      name: 已识别活动
-      description: 与已识别用户关联的事件。
-    customEventActivity:
-      name: 自定义事件活动
-      description: 记录了自定义事件名称的事件。
     bouncedSessions:
       name: 跳出会话
       description: 只包含一次页面浏览的会话。
-    nonBouncedSessions:
-      name: 非跳出会话
-      description: 包含多次页面浏览的会话。
-    longSessions:
-      name: 长会话
-      description: 持续至少五分钟的会话。
-    shortSessions:
-      name: 短会话
-      description: 持续少于一分钟的会话。
-    deepSessions:
-      name: 深度会话
-      description: 至少浏览三个页面的会话。
-    eventfulSessions:
-      name: 活跃会话
-      description: 至少包含一个自定义事件的会话。
-    highEngagementSessions:
-      name: 高参与度会话
-      description: 至少三次浏览且包含两个自定义事件的会话。
     returningVisitors:
       name: 回访访客
       description: 至少拥有两个会话的访客。
-    frequentVisitors:
-      name: 高频访客
-      description: 至少拥有五个会话的访客。
-    deepVisitors:
-      name: 深度访客
-      description: 至少浏览五个页面的访客。
-    eventfulVisitors:
-      name: 活跃访客
-      description: 至少产生两个自定义事件的访客。
-    identifiedVisitors:
-      name: 已识别访客
-      description: 与已识别用户关联的访客。
-    organicSearchVisitors:
-      name: 自然搜索访客
-      description: 拥有未标记搜索来源的访客。
-    coreWebVitalsNeedsImprovement:
-      name: Core Web Vitals 需改进
-      description: 超过 Core Web Vitals 阈值的访问。
-    slowLcp:
-      name: LCP 较慢
-      description: LCP 超过 2.5 秒的访问。
-    slowInp:
-      name: INP 较慢
-      description: INP 超过 200 毫秒的访问。
-    highCls:
-      name: CLS 较高
-      description: CLS 超过 0.1 的访问。
-    slowTtfb:
-      name: TTFB 较慢
-      description: TTFB 超过 800 毫秒的访问。
-    slowFcp:
-      name: FCP 较慢
-      description: FCP 超过 1.8 秒的访问。
   savedFiltersPersonal: 个人筛选
-  savedFiltersTeam: 团队筛选
+  savedFiltersTeam: 组织筛选
   savedFiltersAuthor: "作者：{name}"
   savedFiltersPrivate: 个人
-  savedFiltersTeamShared: 已共享给团队
+  savedFiltersTeamShared: 已与组织共享
   saveThisFilter: 保存此筛选
   saveAsThisFilter: 另存此筛选
   manageThisFilter: 管理此筛选
@@ -602,13 +466,13 @@ filterBuilder:
   scopeVisitor: 筛选满足这些条件的访客
   savedFilterVisibility: 可见性
   savedFilterVisibilityPrivate: 仅自己可见
-  savedFilterVisibilityTeam: 与团队共享
+  savedFilterVisibilityTeam: 与组织共享
   savedFilterCreateDescription: 保存当前的筛选表达式，以便之后再次套用。
   savedFilterManageDescription: 更新此筛选的基本信息，或开始编辑筛选条件。
   editSavedFilter: 修改此筛选
   deleteSavedFilter: 删除此筛选
   deleteSavedFilterTitle: 删除此筛选？
-  deleteSavedFilterDescription: 删除后无法恢复，团队成员也将无法再使用它。
+  deleteSavedFilterDescription: 删除后无法恢复，组织中的其他成员也将无法再使用它。
   savedFilterCancel: 取消
   savedFilterSave: 保存
   savedFilterSaving: 正在保存...
@@ -626,9 +490,9 @@ filterBuilder:
   invalid: 请先完成每一条筛选条件。
 realtime:
   title: 实时
-  subtitle: 查看最近 30 分钟的访问情况
   logTitleSeparator: "："
   activeNow: 当前在线
+  liveCount: "{count} 人在线"
   liveMetrics: 当前在线 / 近 30 分钟访客 / 近 30 分钟浏览量
   connected: 已连接
   connecting: 连接中
@@ -692,7 +556,7 @@ realtime:
   exitReason: 退出原因
   leaveAt: 离开时间
 overview:
-  title: 访问总览
+  title: 总览
   trendTitle: 访问趋势
   sourceTab: 来源
   sourceDomainColumn: 来源（域名）
@@ -714,15 +578,34 @@ overview:
     campaign: 营销活动
     other: 其他
   searchInTab: "搜索{tab}"
+install:
+  title: 将脚本添加到你的网站
+  platforms:
+    html: HTML
+    wordpress: WordPress
+    shopify: Shopify
+    nextjs: Next.js
+    gtm: Google 跟踪代码管理器
+  steps:
+    html: 在每个页面的 {tag} 之前粘贴它。
+    wordpress: 用 WPCode 等页头脚本插件添加，或粘贴到主题 header.php 的 {tag} 之前。
+    shopify: 在“在线商店 → 模板 → 编辑代码”中打开 theme.liquid，粘贴到 {tag} 之前。
+    nextjs: 在 app/layout.tsx 的 {tag} 中粘贴它。
+    gtm: 用它创建一个“自定义 HTML”代码，触发条件选“所有网页”，然后发布。
+  waiting: 正在等待第一次页面浏览
+  received: 已收到第一次页面浏览，报表将在一分钟内更新。
+  firstViewsTitle: 第一批页面浏览已到达！
+  nextReports: 通过邮件接收报告
+  nextInvite: 邀请成员
+  dismiss: 关闭
 pages:
-  title: 页面分析
+  title: 页面
   pagesPerSession: 每会话页面数
   changePercentColumnLabel: "{metric}变化（%）"
   changePointsColumnLabel: "{metric}变化（百分点）"
   percentagePointSuffix: 个百分点
   untitled: 未命名页面
-  empty: 当前筛选条件下暂无页面数据。
-  loadError: 页面数据加载失败，请稍后重试。
+  empty: 暂无页面
   loadMoreError: 加载更多页面失败。
   trendTitle: 页面访问趋势
   otherPages: 其他页面
@@ -734,42 +617,24 @@ pages:
   eventsMetric: 事件数
   viewDetails: 查看详情
 referrers:
-  title: 来源分析
-  summaryTitle: 来源概览
+  title: 来源
   splitTitle: 来源拆分
-  chartTitle: 来源结构
-  radarTitle: 前 24 来源雷达图
-  radarSubtitle: 对比主要来源在多项行为指标上的表现
-  radarDuration: 停留时长
-  radarEngagement: 互动率
-  radarDepth: 浏览深度
-  radarLoyalty: 回访率
-  radarFrequency: 访问频次
-  radarTraffic: 流量占比
-  directSourceNote: 这部分流量没有外部来源站点，属于直接访问。
   breakdownTitle: 来源明细
-  directViews: 直接访问量
-  uniqueDomains: 来源域名数
-  uniqueLinks: 来源链接数
-  topSource: 主要外部来源
-  topSourceShare: 访问占比
-  noExternalSource: 暂无外部来源
   externalLabel: 外部来源
-  nextSources: 其他 4 个来源
   longTail: 长尾来源
   channelLongTail: 其他渠道
 campaigns:
-  title: 推广活动
-  tabSource: 来源
+  title: 推广
+  tabSource: UTM 来源
   tabMedium: 媒介
   tabCampaign: 活动
   tabTerm: 关键词
   tabContent: 内容
-  breakdownTitle: UTM 明细
   notSet: 未设置
-  noTaggedTraffic: 当前筛选范围内暂无带 UTM 标签的流量。
+  noTaggedTraffic: 此期间暂无带 UTM 标签的访问
+  taggedLinkHint: 在链接中添加 UTM 标签，例如
 sessions:
-  title: 会话列表
+  title: 会话
   search: 搜索会话...
   started: 开始时间
   sessionId: 会话 ID
@@ -834,11 +699,8 @@ sessionDetail:
   performanceTitle: 当前会话性能
   range: 范围
 events:
-  title: 自定义事件
-  subtitle: 查看事件规模、上下文、事件载荷字段与原始触发记录。
+  title: 事件
   detailTitle: 事件详情
-  detailSubtitle: 查看单次事件的上下文与事件载荷。
-  typeDetailSubtitle: 查看该事件的趋势、上下文分布、事件载荷结构与触发记录。
   backToEvents: 返回事件总览
   totalEvents: 事件总数
   eventTypes: 事件类型
@@ -865,7 +727,6 @@ events:
   payloadFilterInvalid: 无法解析筛选条件，请检查字段路径、操作符和值。
   expandField: 展开字段
   collapseField: 收起字段
-  breakdownTitle: 上下文分布
   search: 搜索事件名、ID、访客、会话、页面...
   eventName: 事件名
   eventId: 事件 ID
@@ -898,29 +759,26 @@ events:
   loadError: 无法加载事件数据。
   detailNotFound: 未找到该事件记录。
   empty: 当前筛选范围内没有自定义事件。
+  noCustomEvents: 此期间暂无自定义事件
   emptyFields: 当前事件暂无事件载荷字段。
   noEventName: 缺少事件名。
   loading: 加载中
   other: 其他
 funnels:
-  title: 漏斗分析
-  subtitle: 衡量多步骤用户旅程的转化情况。
+  title: 漏斗
   listTitle: 漏斗定义
-  listSubtitle: 构建可复用的步骤序列，并按当前看板时间窗查看转化。
   conversionRecords: 转化记录
   converted: 已转化
   dropped: 已流失
   open: 打开漏斗
   moreActions: 更多操作
-  create: 新建漏斗
   createTitle: 创建漏斗
-  createDescription: 至少定义两个有顺序的观察筛选步骤。
   nameLabel: 名称
   namePlaceholder: 注册激活
   stepsLabel: 步骤
   addStep: 添加步骤
   removeStep: 移除步骤
-  progression: 转化主体
+  progression: 计数依据
   conversionWindow: 转化窗口
   custom: 自定义
   customWindowHours: 自定义窗口（小时）
@@ -949,9 +807,6 @@ funnels:
   deleteDescription: 这会移除已保存的漏斗定义，不会删除历史分析数据。
   deleteConfirm: 删除漏斗
   deleting: 删除中...
-  empty: 暂无漏斗。
-  emptyHint: 使用页面浏览和自定义事件创建漏斗来跟踪转化。
-  loadError: 无法加载漏斗。
   detailLoadError: 无法加载漏斗分析。
   invalidFunnel: 请填写名称，并至少补全两个筛选步骤。
   created: 漏斗已创建。
@@ -976,11 +831,9 @@ funnels:
   updated: 更新于
 goals:
   title: 目标分析
-  listSubtitle: 查看这段时间范围内的转化率变化情况
   conversionRecords: 转化记录
   open: 打开目标
   moreActions: 更多操作
-  create: 新建目标
   createTitle: 创建目标
   nameLabel: 名称
   namePlaceholder: 完成购买
@@ -996,9 +849,6 @@ goals:
   deleteTitle: 删除目标
   deleteDescription: 这会移除已保存的目标定义，不会删除历史分析数据。
   deleteConfirm: 删除目标
-  empty: 暂无目标。
-  emptyHint: 使用页面条件或自定义事件创建目标来跟踪转化。
-  loadError: 无法加载目标。
   detailLoadError: 无法加载目标分析。
   invalidGoal: 请填写名称，并补全转化条件。
   created: 目标已创建。
@@ -1013,8 +863,16 @@ goals:
   conversion: 转化率
   timeseries: 转化率
   updated: 更新于
+conversions:
+  new: 新建
+  newGoal: 目标
+  newGoalDescription: 单个步骤，例如注册
+  newFunnel: 漏斗
+  newFunnelDescription: 按顺序完成的多个步骤
+  empty: 暂无目标或漏斗
+  emptyMemberHint: 管理员可以创建。
 visitors:
-  title: 访客分析
+  title: 访客
   search: 搜索访客...
   visitor: 访客
   anonymous: 匿名访客
@@ -1084,8 +942,8 @@ visitorDetail:
   performanceTitle: 当前访客性能
   range: 范围
 retention:
-  title: 留存分析
-  subtitle: 基于群组的访客回访分析。
+  title: 留存
+  cohortBy: "群组周期：{interval}"
   cohortDate: 群组日期
   cohortSize: 人数
   periodLabel: "第 {n} 期"
@@ -1104,16 +962,15 @@ retention:
   legendHigh: 高
   periodZero: 初始
   empty: 当前时间范围内没有足够的回访数据。
-  emptyHint: 扩大时间范围，或在顶部选择更粗的时间间隔，可以更快看到留存形态。
+  emptyHint: 在日期菜单中选择更长的时间范围或更粗的时间间隔。
   loadError: 无法加载留存数据。
   unavailableCell: 该群组还没有进入这个周期。
   visitorsDetail: 访客
   rateDetail: 留存率
-  cohortDetail: 群组
   sizeDetail: 人数
 geo:
-  title: 位置分析
-  mapTitle: 请求地理分布
+  title: 位置
+  mapTitle: 访客分布
   countryLabel: 国家/地区
   regionLabel: 州/省
   cityLabel: 市/县
@@ -1165,61 +1022,24 @@ geo:
       adm4: 四级行政区
       adm5: 五级行政区
 devices:
-  title: 设备分析
-  deviceShareTitle: 设备类型占比
-  osShareTitle: 操作系统占比
-  deviceTrendTitle: 设备类型趋势
-  osTrendTitle: 操作系统趋势
-  screenDistributionTitle: 屏幕尺寸分布
-  screenDistributionSubtitle: 识别最常见的视口尺寸和响应式断点。
-  screenBucketTitle: 断点分桶
-  screenPreviewTitle: 屏幕预览
-  selectedViewportLabel: 当前视口
-  openSiteLabel: 打开站点
-  previewUnavailableLabel: 当前没有可预览的屏幕尺寸。
-  browserByDeviceTitle: 设备类型 × 浏览器
-  osByDeviceTitle: 设备类型 × 操作系统
+  title: 设备
+  shareTitle: 访客占比
+  dimensions:
+    device: 设备
+    os: 操作系统
+    browser: 浏览器
+    engine: 引擎
+    screenSize: 屏幕尺寸
+  crossTabTitle: 交叉分析
+  crossTabRows: 行
+  crossTabColumns: 拆分依据
   otherLabel: 其他
-  screenBucketLabels:
-    phoneCompact: 小屏手机
-    phone: 手机
-    tablet: 平板
-    laptop: 笔记本
-    desktopWide: 宽屏桌面
-    unclassified: 未归类
+  screenBucketLabels: {}
 browsers:
-  title: 浏览器分析
-  trendTitle: 浏览器占比趋势
-  engineTrendTitle: 内核占比趋势
-  versionBreakdownTitle: 浏览器版本分布
-  osBreakdownTitle: 浏览器 × 系统
-  deviceTypeBreakdownTitle: 浏览器 × 设备类型
   otherLabel: 其他
-  browserShareTitle: 浏览器占比
-  engineShareTitle: 内核占比
-  caniuseTitle: 特性兼容性
-  caniuseSubtitle: 根据站点访客数据检查 Web 特性的浏览器支持情况。
-  caniuseSearchPlaceholder: 搜索 Web 特性…
-  caniuseHotFeatures: 热门特性
-  caniuseTrendingFeatures: 近期变动
-  caniuseSiteSupport: 本站支持率
-  caniuseGlobalSupport: 全球支持率
-  caniuseClearSelection: 清除
-  caniuseNoMatch: 未找到匹配的特性。
-  caniuseFullSupport: 完全支持
-  caniusePartialSupport: 部分支持
-  caniuseNoSupport: 不支持
-  radarTitle: 浏览器行为雷达图
-  radarSubtitle: 对比主流浏览器在多项行为指标上的表现
-  radarDuration: 停留时长
-  radarEngagement: 互动率
-  radarDepth: 浏览深度
-  radarLoyalty: 回访率
-  radarFrequency: 访问频次
-  radarTraffic: 流量占比
 performance:
-  title: 性能跟踪
-  subtitle: 按指标、趋势与路径查看真实访客性能。
+  title: 性能
+  empty: 暂无 Web Vitals 数据
   chartTitle: 性能趋势
   avgLabel: 平均值
   samplesLabel: 样本数
@@ -1244,7 +1064,7 @@ performance:
   great: 优秀
   needsImprovement: 需要改进
   poor: 较差
-  datasetTitle: 数据集概览
+  datasetTitle: 阈值
   interpretationTitle: 当前解读
   currentReading: "{metric} 当前 P75 为 {value}，体验评分为 {score}，覆盖 {samples} 个样本。当前判定：{status}。"
   metricThresholdText: "优秀为不高于 {good}；需要改进为 {good} 到 {poor}；较差为高于 {poor}。"
@@ -1255,27 +1075,32 @@ performance:
   pathsAnalyzedLabel: 已分析路径
   metricValueColumn: P75 数值
   statusColumn: 状态
-share: {}
+share:
+  noData: 暂无数据
 siteSettings:
   title: 站点设置
   sections:
     basic:
-      title: 基本信息
+      title: 常规
     tracking:
-      title: 跟踪设置
+      title: 跟踪
     blocking:
-      title: 屏蔽规则
+      title: 拦截规则
     protection:
-      title: 请求防护
+      title: 防护
     danger:
-      title: 危险区域
-  nameLabel: 站点名称
+      title: 危险操作
+    install:
+      title: 安装
+    advanced:
+      title: 高级
+  nameLabel: 名称
   domainLabel: 域名
-  publicSharingTitle: 公开分享
-  publicEnabledLabel: 启用公开访问
-  publicSlugLabel: 公开 Slug
+  publicSharingTitle: 分享
+  publicEnabledLabel: 公开看板
+  publicSlugLabel: 链接路径
   publicSlugPlaceholder: 例如 my-site
-  publicSlugHint: 自定义 URL 路径标识。留空将自动生成。
+  publicSlugHint: 链接中 /share/ 之后的部分。
   publicLinkLabel: 公开链接
   copiedLink: 链接已复制
   trackingStrengthGroupTitle: 跟踪强度
@@ -1288,17 +1113,14 @@ siteSettings:
   botProtectionEnabledLabel: 机器人拦截
   botProtectionEnabledHint: 开启后拦截高置信度机器人请求；关闭后这类请求仍会计入统计。
   hostingProxyBlockingEnabledLabel: 拦截托管/代理网络请求
-  hostingProxyBlockingEnabledHint: 开启后拦截来自托管或代理网络的疑似机器人请求，默认关闭。
-  trackQueryParamsLabel: 开启查询参数跟踪
-  trackHashLabel: 开启 Hash 跟踪
-  blockingRulesSave: 保存屏蔽规则
-  blockingRulesSaving: 正在保存屏蔽规则...
+  hostingProxyBlockingEnabledHint: 拦截来自托管或代理网络的疑似机器人请求。
+  trackQueryParamsLabel: 跟踪查询参数
+  trackHashLabel: 跟踪 URL 哈希
+  blockingRulesSave: 保存规则
   blockingRulesDialogs:
-    testButton: 测试
-    helpButton: 帮助
     searchButton: 搜索
     searchTitle: 搜索地区
-    searchDescription: 按名称或代码搜索，选择结果后将其添加到此卡片。
+    searchDescription: 按名称或代码搜索，然后选择结果。
     searchInputLabel: 搜索
     searchInputPlaceholder: 按名称或代码搜索
     searchCountryLabel: 国家 / 地区
@@ -1308,248 +1130,47 @@ siteSettings:
     searchNoResults: 没有匹配的地区。
     searchLoadError: 无法加载地区，请稍后重试。
     searchClose: 关闭
-    helpTitle: 规则语法
-    helpDescription: 查看此字段的语法、示例和优先级规则。
-    syntaxTitle: 语法
-    examplesTitle: 示例配置
-    actionsTitle: 规则动作
-    actionsDescription: 普通行表示屏蔽；在规则前加 - 表示允许。如果多行同时匹配，则最后一条匹配行决定结果。
-    actionBlock: 匹配 {example} 时屏蔽
-    actionAllow: 匹配 {example} 时允许
-    statusEmpty: 当前无任何针对 {field} 的屏蔽规则。
-    statusValid: 当前规则有效。
-    statusInvalid: 当前规则无效，请点击右侧“帮助”获取详细信息。
-    errorInvalidRule: 无效规则。
-    errorInvalidLines: "{field} 的规则必须按行填写。"
-    errorInvalidLine: "第 {line} 行不是有效的文本规则。"
-    errorLineTooLong: "第 {line} 行过长。"
-    errorTooManyLines: 规则行数过多。
-    errorInvalidPattern: "第 {line} 行的规则格式无效。"
-    testTitle: 测试规则
-    testDescription: 输入请求值以测试当前卡片中的规则，未保存的编辑内容也会参与测试。
-    testRun: 执行测试
-    testClose: 关闭
-    testInvalidRules: 请先修复无效规则，然后再进行测试。
-    testInvalidRule: 无效规则。
-    testBlocked: 已屏蔽
-    testAllowed: 已允许
-    testNoMatch: 没有规则匹配，此字段允许该值通过。
-    testMatchedRules: 匹配的规则
-    testActionBlock: 屏蔽
-    testActionAllow: 允许
-    testLine: 第
   blockingRulesFields:
     domains:
       title: 域名
-      label: 域名规则（每行一条）
-      placeholder: |
-        *
-        -example.com
-        -*.example.com
-        admin.example.com
-      hint: 匹配页面 hostname；使用 * 和 -域名 可以实现白名单。
-      syntax: |
-        每行格式：[ - ] hostname-glob
-        以 # 开头的行将被视为注释并忽略。
-        使用 * 作为通配符；以 - 开头表示允许规则。
-        匹配不区分大小写，并使用页面 hostname。
-      examples:
-        - "*"
-        - "-example.com"
-        - "-*.example.com"
-        - "admin.example.com"
-      exampleDescription: 这段配置先屏蔽所有域名，再允许 example.com 及其子域名，最后重新屏蔽精确匹配的 admin.example.com。
-      testLabel: 主机名
-      testPlaceholder: www.example.com
-      testHint: 输入页面 hostname，不要包含协议或路径。
+      placeholder: admin.example.com
     paths:
       title: 路径
-      label: 路径规则（每行一条）
-      placeholder: |
-        /admin/*
-        /checkout/*/confirm
-        -/admin/health
-      hint: 使用 glob 语法匹配规范化后的 URL 路径。
-      syntax: |
-        每行格式：[ - ] /path-glob
-        以 # 开头的行将被视为注释并忽略。
-        路径必须以 / 开头，* 可以匹配任意字符。
-        URL 路径规范化后按区分大小写的方式匹配。
-      examples:
-        - "/admin/*"
-        - "/checkout/*/confirm"
-        - "-/admin/health"
-      exampleDescription: 这段配置屏蔽 /admin/ 下的路径和符合 /checkout/*/confirm 的路径，但允许 /admin/health。
-      testLabel: URL 路径
-      testPlaceholder: /admin/settings
-      testHint: 只输入 pathname，并保留开头的斜杠。
+      placeholder: /admin/*
     queryParameters:
       title: 查询参数
-      label: 查询参数规则（每行一条）
-      placeholder: |
-        utm_*
-        utm_source=*
-        -utm_source=trusted
-      hint: 支持 key 或 key=value，键和值都支持 * 通配符。
-      syntax: |
-        每行格式：[ - ] key-glob[=value-glob]
-        以 # 开头的行将被视为注释并忽略。
-        省略 = 时，表示匹配该键的任意值。
-        区分大小写，键和值都支持 * 通配符。
-      examples:
-        - "utm_*"
-        - "utm_source=*"
-        - "-utm_source=trusted"
-      exampleDescription: 这段配置屏蔽所有以 utm_ 开头的参数以及 utm_source 的任意值，但允许 utm_source=trusted。
-      testLabel: 查询字符串
-      testPlaceholder: utm_source=internal&utm_campaign=spring
-      testHint: 输入查询字符串，可带或不带开头的 ?。
+      placeholder: utm_source=spam
     referrers:
       title: 来源
-      label: 来源规则（每行一条）
-      placeholder: |
-        *.example.com
-        social.example.com
-        -trusted.example.com
-      hint: 匹配来源页面的 hostname。
-      syntax: |
-        每行格式：[ - ] hostname-glob
-        以 # 开头的行将被视为注释并忽略。
-        URL 会先转换为 hostname，然后再进行匹配。
-        匹配不区分大小写，并支持 * 通配符。
-      examples:
-        - "*.example.com"
-        - "social.example.com"
-        - "-trusted.example.com"
-      exampleDescription: 这段配置屏蔽 example.com 的来源域名和 social.example.com，但允许 trusted.example.com。
-      testLabel: 来源
-      testPlaceholder: https://social.example.com/article
-      testHint: 输入来源 URL 或 hostname。
+      placeholder: "*.spam.example"
     userAgents:
       title: User-Agent
-      label: User-Agent 规则（每行一条）
-      placeholder: |
-        *bot*
-        Mozilla/*
-        -Googlebot
-      hint: 不区分大小写地使用 glob 语法匹配请求 User-Agent。
-      syntax: |
-        每行格式：[ - ] text-glob
-        以 # 开头的行将被视为注释并忽略。
-        * 可以匹配请求 User-Agent 中的任意字符。
-        匹配不区分大小写。
-      examples:
-        - "*bot*"
-        - "Mozilla/*"
-        - "-Googlebot"
-      exampleDescription: 这段配置屏蔽包含 bot 的 User-Agent 和以 Mozilla/ 开头的值，但允许 Googlebot。
-      testLabel: User-Agent
-      testPlaceholder: Mozilla/5.0 (compatible; ExampleBot/1.0)
-      testHint: 输入完整或部分请求 User-Agent。
+      placeholder: "*bot*"
     ips:
       title: IP 地址
-      label: IP 规则（每行一条）
-      placeholder: |
-        203.0.113.15
-        2001:db8::1
-        203.0.113.0/24
-        2001:db8::/32
-        -203.0.113.10..203.0.113.20
-      hint: 支持 IPv4/IPv6、CIDR 网段以及起始..结束范围。
-      syntax: |
-        每行格式：[ - ] address | CIDR | start..end
-        以 # 开头的行将被视为注释并忽略。
-        支持 IPv4 和 IPv6 地址。
-        范围两端必须使用相同地址族，且起点不能大于终点。
-      examples:
-        - "203.0.113.15"
-        - "2001:db8::1"
-        - "203.0.113.0/24"
-        - "2001:db8::/32"
-        - "-203.0.113.10..203.0.113.20"
-      exampleDescription: 这段配置演示 IPv4/IPv6 单个地址、CIDR 网段和 start..end 范围；范围前的 - 表示允许该范围。
-      testLabel: IP 地址
-      testPlaceholder: 203.0.113.15
-      testHint: 输入一个 IPv4 或 IPv6 地址进行测试。
+      placeholder: 203.0.113.0/24
     asns:
       title: ASN
-      label: ASN 规则（每行一条）
-      placeholder: |
-        64500
-        *
-        -64501
-      hint: 匹配 Cloudflare metadata 中的数字自治系统编号。
-      syntax: |
-        每行格式：[ - ] ASN-number
-        以 # 开头的行将被视为注释并忽略。
-        使用 * 匹配任意 ASN。
-        测试 metadata 值时也接受可选的 AS 前缀。
-      examples:
-        - "64500"
-        - "*"
-        - "-64501"
-      exampleDescription: 这段配置屏蔽 ASN 64500 和任意 ASN，但通过最后一条规则允许 ASN 64501。
-      testLabel: ASN
-      testPlaceholder: "64500"
-      testHint: 输入数字自治系统编号。
+      placeholder: "64500"
     countries:
-      title: 国家 / 地区
-      label: 国家规则（每行一条）
-      placeholder: |
-        DE
-        *
-        -US
-      hint: 使用 ISO 3166-1 alpha-2 国家代码。
-      syntax: |
-        每行格式：[ - ] ISO-3166-alpha-2
-        以 # 开头的行将被视为注释并忽略。
-        使用 * 匹配任意国家。
-        国家代码匹配时不区分大小写。
-      examples:
-        - "DE"
-        - "*"
-        - "-US"
-      exampleDescription: 这段配置屏蔽 DE 和任意国家，但通过最后一条规则允许 US。
-      testLabel: 国家代码
-      testPlaceholder: DE
-      testHint: 输入 ISO 3166-1 alpha-2 国家代码。
+      title: 国家/地区
+      placeholder: DE
     regions:
-      title: 州 / 省
-      label: 地区规则（每行一条）
-      placeholder: |
-        DE-BE
-        *
-        -US-CA
-      hint: 使用 Cloudflare metadata 中的 COUNTRY-REGION_CODE 格式。
-      syntax: |
-        每行格式：[ - ] COUNTRY-REGION_CODE
-        以 # 开头的行将被视为注释并忽略。
-        使用 * 匹配任意地区。
-        地区值匹配时不区分大小写。
-      examples:
-        - "DE-BE"
-        - "*"
-        - "-US-CA"
-      exampleDescription: 这段配置屏蔽 DE-BE 和任意地区，但通过最后一条规则允许 US-CA。
-      testLabel: 地区代码
-      testPlaceholder: US-CA
-      testHint: 输入 metadata 中的 COUNTRY-REGION_CODE 值。
-  ignoreDoNotTrackLabel: 忽略浏览器 Do Not Track
+      title: 州/省
+      placeholder: US-CA
+  ignoreDoNotTrackLabel: 忽略“请勿跟踪”
   autoTrackOutboundLinksLabel: 自动跟踪外链点击
   autoTrackOutboundLinksHint: 开启后，点击指向外部域名的链接将自动上报 outbound_click 事件。
-  performanceSampleRateLabel: 性能采样率（%）
+  performanceSampleRateLabel: Web Vitals 采样率
   performanceSampleRateHint: 被采样的访问会在离开页面时记录 TTFB、FCP、LCP、CLS 和 INP。填 0 表示不采样，100 表示全量采集。
-  saveTracking: 保存跟踪设置
-  savingTracking: 正在保存跟踪设置…
-  save: 保存修改
+  save: 保存
   saving: 保存中...
-  scriptTitle: 安装统计脚本
-  scriptHint: 推荐放在 </head> 结束标签前；若不方便，也可放在 </body> 前，但请确保每页只加载一次。
+  scriptHint: 将其粘贴到每个页面的 </head> 之前。
   copyScript: 复制脚本
   copiedScript: 脚本已复制。
   scriptUnavailable: 当前无法获取脚本。
   deleteTitle: 删除站点
-  deleteSubtitle: 此操作会将当前站点从团队中移除。
+  deleteSubtitle: 删除该站点及其所有分析数据。
   delete: 删除站点
   deleting: 删除中...
   deleteConfirm: 该操作不可撤销，是否继续？
@@ -1558,128 +1179,65 @@ siteSettings:
     saveFailed: 站点设置保存失败。
     scriptLoadFailed: 加载脚本片段失败。
     settingsLoadFailed: 加载脚本设置失败。
-    settingsPropagationHint: 设置分发到全球节点可能需要最多 1 小时。
+    settingsPropagationHint: 更改最多需要一小时生效。
     deleted: 站点已删除。
     deleteFailed: 删除站点失败。
     invalidInput: 请填写有效的站点名称和域名。
+  publicEnabledHint: 任何拿到链接的人都可以查看此站点的报表。
+  viewBlockedRequests: 查看已拦截请求
+  blockingRulesHelp: 匹配“拦截”规则的请求不会被统计，“允许”用于设置例外。同一类型的多条规则都匹配时，以最后一条为准。可使用 * 作为通配符。
+  blockingRuleTypeLabel: 类型
+  blockingRuleActionLabel: 操作
+  blockingRuleValueLabel: 值
+  blockingRuleBlock: 拦截
+  blockingRuleAllow: 允许
+  blockingRuleAdd: 添加规则
+  blockingRuleRemove: 删除规则
+  blockingRulesEmpty: 没有拦截规则。
+  blockingRuleInvalid: 请输入此类型的有效值。
+  blockingRulesTooMany: "{type} 规则过多。"
 accountSettings:
   emailManagedByGateway: 邮箱来自你的 Every App 账户。
   profileTitle: 个人信息
   nicknameLabel: 昵称
   nicknamePlaceholder: 例如：产品分析师
   emailLabel: 邮箱
-  profileSave: 保存个人信息
-  profileSaving: 保存中...
   profileSaved: 个人信息已保存。
   profileSaveFailed: 保存个人信息失败。
-  preferredLanguageTitle: 通知语言
-  preferredLanguageLabel: 邮件语言
-  preferredLanguageDefault: 默认
-  preferredLanguageEnglish: 英语
-  preferredLanguageChinese: 简体中文
-  preferredLanguageTraditionalChinese: 繁体中文
-  preferredLanguageJapanese: 日语
-  preferredLanguageSaved: 通知语言已保存。
-  preferredLanguageSaveFailed: 保存通知语言失败。
-  timeZoneTitle: 报表时区
-  activeTimeZone: 当前生效时区
-  browserTimeZone: 浏览器时区
+  timeZoneTitle: 时区
   browserUnavailable: 未检测到
-  preferenceLabel: 时区偏好
-  useBrowser: 跟随浏览器时区
-  useCustom: 选择时区
-  customTimeZoneLabel: 时区
-  invalidTimeZone: 请选择有效的 IANA 时区。
-  save: 保存偏好
-  saving: 保存中...
-  saved: 时区偏好已保存。
-  saveFailed: 保存时区偏好失败。
+  useBrowser: 浏览器时区（{zone}）
+  saved: 时区已保存。
+  saveFailed: 无法保存时区。
+  timeZoneLabel: 报表时区
+  languageSaveFailed: 无法保存语言。
 notificationCenter:
-  title: 通知中心
+  title: 收件箱
   empty: 暂无通知。
   loading: 正在加载通知
   markRead: 标记已读
   markAllRead: 全部标记为已读
-  refresh: 刷新
-  attention: 重点
   loadFailed: 加载通知失败。
   markReadFailed: 标记通知为已读失败。
   markAllReadSuccess: 通知已全部标记为已读。
   markAllReadFailed: 全部标记为已读失败。
-  ruleFilterActive: 正在查看此规则产生的通知。
-  ruleFilterClear: 清除筛选
-  sections:
-    importantTitle: 重要通知
-    importantDescription: "{count} 条未读重点通知。"
-    importantEmpty: 当前没有重要通知。
-    reportsTitle: 报告
-    reportsDescription: 查看通知规则生成的定期报告。
-    reportsEmpty: 当前没有报告。
   tabs:
     all: 全部
     unread: 未读
-    attention: 重点
-    report: 报告
-  tabDescriptions:
-    all: 全部消息
-    unread: 等待查看
-    attention: 需要关注
-    report: 定期报告
-  messageTypes:
-    report: 报告
-    milestone: 里程碑
-    threshold: 阈值
-    change: 变化
-    health: 健康
-    system: 系统
-    test: 测试
   severities:
     info: 信息
     success: 成功
     warning: 警告
     critical: 严重
-  deliveryStatuses:
-    created: 已创建
-    sending: 发送中
-    sent: 已发送
-    partial: 部分完成
-    failed: 失败
-    skipped: 已跳过
-  channels:
-    inApp: 站内通知
-    email: 邮件
-  channelStatuses:
-    sent: 已发送
-    skipped: 已跳过
-    failed: 失败
-    created: 已创建
-  emailSkipReasons:
-    user_preference_disabled: 用户已关闭邮件通知
-    system_email_unconfigured: 系统邮件尚未配置
-    recipient_email_invalid: 收件人邮箱无效
-    secret_decryption_failed: 保存的邮件凭据无法解密
-    provider_failed: 邮件服务商拒绝发送
-    network_failed: 无法连接邮件服务商
-    unknown: 未知原因
-  emailAttempts: "尝试次数：{count}"
-  emailRetryCount: "重试次数：{count}"
-  emailDuration: "{duration} 毫秒"
-  typeFilterLabel: 类型
-  severityFilterLabel: 严重程度
-  allTypes: 全部类型
-  allSeverities: 全部严重程度
   preferencesTitle: 通知偏好
   emailNotificationsLabel: 邮件通知
-  emailNotificationsDescription: 规则触发时发送邮件。
-  reportsUnreadLabel: 报告保持未读
-  reportsUnreadDescription: 报告创建后保持未读状态。
-  milestonesUnreadLabel: 里程碑保持未读
-  milestonesUnreadDescription: 将未读状态保留给里程碑消息。
-  alertsUnreadLabel: 告警保持未读
-  alertsUnreadDescription: 阈值和健康告警保持未读。
-  preferencesSaved: 通知偏好已保存。
+  reportsUnreadLabel: 新报告标为未读
+  milestonesUnreadLabel: 新里程碑标为未读
+  alertsUnreadLabel: 新提醒标为未读
   preferencesSaveFailed: 保存通知偏好失败。
   detailFields: {}
+  noUnread: 没有未读通知。
+  emailFailed: 邮件发送失败
 notificationEmail:
   common:
     brand: OpenAnalytics
@@ -1753,18 +1311,11 @@ notificationEmail:
     title: "{site} 流量变化提醒"
     summary: "{window}的{metric}变化了 {change}。"
 runtimeConfigError:
-  title: 需要运行时配置
-  eyebrow: 部署已暂停
-  heading: OpenAnalytics 需要一个运行时密钥后才能加载控制台。
-  description: 应用已经启动，但当前运行环境没有读取到必需的 root secret，因此暂时阻止进入控制台。
-  requiredTitle: 必需的运行时密钥
-  requiredDescription: 请在 Cloudflare 运行时密钥中至少设置以下其中一个值。
-  secretHint: 推荐使用 MAIN_SECRET。旧部署仍可继续使用 DAILY_SALT_SECRET。
-  commandTitle: Cloudflare 命令
-  commandDescription: 使用项目内置命令写入推荐密钥，然后重新部署。
-  quickStartHint: 或者，请查看 GitHub README 的“快速开始”章节来设置这个变量。
-  docsLabel: 打开 GitHub
-  homeLabel: 重试控制台
+  title: 仪表盘不可用
+  heading: 此仪表盘暂时不可用。
+  setupSummary: 配置此部署
+  setupCommand: 用这条命令设置根密钥，然后刷新此页面。
+  docsLabel: 部署指南
 login: {}
 accountLinks:
   invite:
@@ -1772,24 +1323,12 @@ accountLinks:
   resetPassword: {}
 empty: {}
 errorPage:
-  notFoundEyebrow: 页面未找到
   notFoundTitle: 找不到这个页面
   notFoundDescription: 地址可能不正确，或者页面已经被移动。
-  errorEyebrow: 应用错误
   errorTitle: 页面出现了问题
-  errorDescription: OpenAnalytics 无法完成这次请求。下面的诊断信息可以帮助我们定位问题。
-  statusLabel: 状态
-  reasonLabel: 原因
-  requestLabel: 请求路径
-  timestampLabel: 时间
-  diagnosticIdLabel: 诊断 ID
-  errorTypeLabel: 错误类型
-  errorMessageLabel: 错误信息
-  notFoundReason: route_not_found
-  unexpectedReason: unexpected_application_error
+  errorDescription: OpenAnalytics 无法完成这次请求。
   homeAction: 返回首页
   reportAction: 在 GitHub 反馈
-  reportHint: 将打开一个已预填内容的 GitHub Issue，提交前请先检查信息。
 actions:
   switchToEnglish: English
   switchToChinese: 简体中文
@@ -1808,24 +1347,26 @@ teamManagement:
     openAnalytics: 查看分析
     title: 所有站点
     pagesPerSession: 每会话页面数
+    public: 公开
+    openPublic: 打开公开仪表盘
   widgets: {}
   notifications:
-    empty: 当前团队还没有通知规则。
+    empty: 还没有通知规则。
     rulesTitle: 通知规则
-    enabledCount: "当前团队已启用 {count} 条规则。"
+    enabledCount: "此组织已启用 {count} 条规则。"
     loadingRules: 正在加载通知规则
     deliveryTestTitle: 投递测试
     deliveryTestDescription: 为你创建一条站内通知；如果可用，也会尝试发送邮件。
     inAppTestHint: 我们会向你发送一条站内通知。
     emailTestConfiguredHint: 我们会向你发送一条测试邮件。
-    emailTestUnconfiguredHint: 当前系统未设置邮件发送服务，请联系管理员添加。
+    emailTestUnconfiguredHint: "此 Every App 网关尚未设置邮件。"
     sendTestNotification: 发送测试通知
     loadRulesFailed: 加载通知规则失败。
     testNotificationSent: 测试通知已发送。
     sendTestNotificationFailed: 发送测试通知失败。
     createRule: 创建规则
     editRule: 编辑规则
-    dialogDescription: 为当前团队配置一条基础通知规则。
+    dialogDescription: 为此组织设置一条通知规则。
     ruleInfoSection: 规则信息
     scheduleSection: 计划
     sendScheduleSection: 发送时间
@@ -1883,7 +1424,6 @@ teamManagement:
     disable: 停用
     delete: 删除
     saveRule: 保存规则
-    emailPreview: 邮件预览
     preview: 预览
     runNow: 立即运行
     previewFailed: 预览规则失败。
@@ -1935,7 +1475,6 @@ teamManagement:
       title: 标题
       htmlPreview: HTML 预览
       bodyText: 正文
-      data: 数据
       createdAt: 创建时间
       updatedAt: 更新时间
       loadingContent: 正在加载实际报告内容
@@ -1955,13 +1494,13 @@ teamManagement:
       health: 长时间无数据时通知
     recipientModes:
       creator: 创建者
-      team_admins: 团队管理员
+      team_admins: 组织管理员
       all_team_members: 全部团队成员
       users: 指定用户
     recipientKindLabel: 接收人类型
     recipientPresetLabel: 预设
     customRecipientsEmpty: 未选择接收人
-    noTeamMembers: 当前没有可选团队成员。
+    noTeamMembers: 此组织还没有成员。
     recipientKinds:
       preset: 预设
       custom: 自定义
@@ -2006,25 +1545,14 @@ teamManagement:
       last_1h: 最近 1 小时
       last_24h: 最近 24 小时
       yesterday: 昨天
-    emailPreviewPage:
-      title: 通知邮件预览
-      typeLabel: 预览类型
-      localeLabel: 预览语言
-      formatLabel: 预览格式
-      html: HTML
-      text: 纯文本
-      json: JSON
-      refresh: 预览
-      loading: 正在渲染预览...
-      loadFailed: 渲染邮件预览失败。
-      subject: 主题
+    addSiteFirst: 请先添加站点。
+    deleteDescription: 此操作无法撤销。
+    previewStatuses:
+      skipped: 已跳过
+      checked: 未触发
+      triggered: 已触发
   publicLinks:
-    enabled: 已启用
-    disabled: 未启用
-    viewSettings: 查看设置
     copyLink: 复制链接
-    linkCopied: 链接已复制
-    noSites: 当前团队还没有站点。
     columns: {}
   apiKeys:
     status: {}
@@ -2037,8 +1565,6 @@ teamManagement:
     inviteStatuses: {}
     columns: {}
     roleLabels: {}
-managementNav:
-  scheduledTasks: 定时任务
 managementPages:
   versionUpdates: {}
   scheduledTasks:
@@ -2049,17 +1575,12 @@ managementPages:
     allStatuses: 全部状态
     runs24h: 24 小时内运行次数
     successRate24h: 24 小时成功率
-    successRateDescription: 只统计成功状态的运行。
     problemRuns24h: 异常运行次数
-    retentionPrefix: 保留
-    days: 天
     failed: 失败
     partial: 部分完成
     lastRun: 最近运行
     staleRunning: 长时间未完成的运行
-    noStaleRunning: 没有长时间未完成的运行
     taskListTitle: 任务
-    taskListDescription: 当前系统注册的定时任务和近 30 天健康状况。
     task: 任务
     schedule: 计划
     enabled: 状态
@@ -2073,7 +1594,6 @@ managementPages:
     avgDuration: 平均耗时
     runHistoryTitle: 运行历史
     nextRun: 下次运行
-    runHistoryDescription: 最近 30 天内的任务运行记录。
     noRuns: 暂无运行记录。
     scheduledAt: 计划时间
     startedAt: 开始时间
@@ -2106,7 +1626,7 @@ managementPages:
     taskDefinitions:
       visit_hourly_rollup:
         name: 小时访问聚合
-        description: 将已关闭的访问记录聚合为小时汇总，用于仪表盘计数器和趋势。
+        description: 将已结束的访问汇总为每小时总计，供报表使用。
         schedule: 每小时
       notification_tick:
         name: 通知分发
@@ -2114,32 +1634,24 @@ managementPages:
         schedule: 每 30 分钟
       database_maintenance:
         name: 数据库优化
-        description: 分批清理过期运行数据和通知，并优化 D1 查询统计信息。
+        description: 清理过期的任务运行记录和通知，并优化数据库。
         schedule: 每天
+    keptForDays: 保留 {days} 天
 adminUsers:
   columns: {}
 adminSites:
-  createTitle: 新建站点
-  name: 站点名称
+  createTitle: 添加站点
+  name: 名称（可选）
   domain: 域名
-  publicSlug: 公开 Slug（可选）
-  create: 创建站点
-  creating: 创建中...
-  noData: 暂无站点数据。
-  loadFailed: 加载站点失败。
-  createSuccess: 站点创建成功。
-  createFailed: 站点创建失败。
-  invalidInput: 请填写有效的站点名称和域名。
-  open: 打开分析
-  columns:
-    name: 名称
-    domain: 域名
-    created: 创建时间
-    action: 操作
+  create: 添加站点
+  creating: 添加中...
+  createSuccess: 站点已添加。
+  createFailed: 无法添加站点，请重试。
+  invalidDomain: 请输入域名，例如 example.com。
+  columns: {}
 adminTeams:
   columns: {}
 requestObservation:
-  title: 请求观测
   blockedTotal: "已拦截请求"
   retentionNote: "保留 30 天。放行的流量见各站点的仪表盘。"
   topReasons: "原因"
@@ -2150,8 +1662,8 @@ requestObservation:
     suspected_bot: "托管网络"
   tabs: {}
   refresh: 刷新
-  loadFailed: 加载请求观测数据失败。
-  noData: 当前时间窗口内没有请求数据。
+  loadFailed: 无法加载被拦截的请求。
+  noData: 此期间没有被拦截的请求。
   time: 时间
   site: 站点
   location: 位置
@@ -2190,47 +1702,9 @@ requestObservation:
     windowDays: "最近 {days} 天"
   normalDetail: {}
 systemSettings:
-  title: 系统设置
-  subtitle: 管理当前 OpenAnalytics 实例的全站配置。
-  guide: 教程
-  analyticsEngineTitle: 分析引擎
-  analyticsEngineDescription: 配置用于读取请求观测以及未来流量和事件分析数据的 Cloudflare 凭据。
-  analyticsEngineAccountIdLabel: Cloudflare Account ID
-  analyticsEngineApiTokenLabel: Cloudflare API Token
-  analyticsEngineApiTokenPlaceholder: 查看教程以获取 Cloudflare API Token
-  analyticsEngineSaved: 分析引擎配置已保存。
-  analyticsEngineSaveFailed: 保存分析引擎配置失败。
-  analyticsEngineDeleted: 分析引擎配置已删除。
-  analyticsEngineDeleteFailed: 删除分析引擎配置失败。
-  analyticsEngineDeleteConfirm: 确认删除分析引擎读取凭据吗？删除后，依赖 Analytics Engine 的功能将显示为未配置。
-  analyticsEngineDisabledTitle: Analytics Engine 尚未启用
-  analyticsEngineDisabledDescription: 当前部署已自动禁用 Analytics Engine 绑定，因为 Cloudflare
-    账户尚未启用 Analytics Engine。请先在 Cloudflare 中启用 Analytics Engine，然后重新部署 Open
-    Analytics 以激活相关分析功能。
-  analyticsEngineDisabledHint: 在启用 Analytics Engine 并重新部署 Worker 前，分析引擎设置不可修改。
-  analyticsEngineOpenCloudflare: 打开 Cloudflare Analytics Engine
-  analyticsEngineGuideTitle: 获取分析引擎配置
-  analyticsEngineGuideDescription: 分析引擎需要 Cloudflare 账号信息和一个可读取 Analytics Engine 的 API Token。
-  analyticsEngineGuideSteps:
-    - 打开 Cloudflare Dashboard，进入目标账号并复制 Account ID。
-    - 在 Workers & Pages 中启用 Analytics Engine；Request、Traffic 和 Event
-      三个数据集会随部署自动创建并绑定。
-    - 前往 My Profile → API Tokens，创建 Custom token。
-    - 为 Token 添加 Account Analytics 读取权限，并限制到当前账号。
-    - 保存后复制 Token，回到这里填写 Account ID 和 API Token。
   notificationEmailTitle: 邮件通知
-  notificationEmailDescription: "报告、提醒和测试消息通过 Every App 网关以邮件发送。"
-  emailGatewayReady: "Every App 网关负责发送通知邮件。"
-  emailGatewayNotReady: "Every App 网关尚未配置邮件发件人。网关管理员设置 EMAIL_FROM 和 Email Sending 后即可发送通知邮件。"
+  emailGatewayNotReady: "此 Every App 网关尚未设置邮件。"
   emailSenderLabel: "发件人"
-  notificationEmailGuideTitle: 获取 Resend 邮件配置
-  notificationEmailGuideDescription: 使用 Resend 发送系统邮件前，需要准备发件域名和 API Key。
-  notificationEmailGuideSteps:
-    - 打开 Resend Dashboard，并确认要作为发件人的域名已完成 DNS 验证。
-    - 在 API Keys 页面创建新的 API Key。
-    - 选择发送邮件所需的权限，并复制生成后的 API Key。
-    - 回到这里填写发件人名称、发件邮箱、Reply-To 和 Resend API Key。
-    - 保存后使用测试收件人发送一封测试邮件，确认投递链路正常。
   retentionTitle: 运行数据保留期
   retentionDescription: 配置任务运行记录、任务日志、通知消息和详细分析数据的保留时间。任务和通知的修改只影响新建记录；超出新期限的详细分析数据会在下一次每日运行时删除。
   scheduledTaskLogsDaysLabel: 计划任务运行记录和日志（天）
@@ -2243,68 +1717,16 @@ systemSettings:
   retentionSaving: 保存中...
   retentionSaved: 保留期配置已保存。
   retentionSaveFailed: 保存保留期配置失败。
-  loginTurnstileTitle: 登录 Turnstile 防护
-  loginTurnstileDescription: 启用后，登录页会在后台执行 Cloudflare Turnstile Invisible 验证，并在服务端登录流程中强制校验。
-  loginTurnstileEnabledLabel: 启用登录保护
-  loginTurnstileSiteKeyLabel: Site Key
-  loginTurnstileSecretKeyLabel: Secret Key
-  loginTurnstileSecretKeyPlaceholder: 查看教程以获取 Turnstile Secret Key
-  loginTurnstileModeLabel: 验证模式
-  loginTurnstileModeInvisible: 隐形（Invisible）
-  loginTurnstileTest: 测试配置
-  loginTurnstileTesting: 验证中...
-  loginTurnstileTestPassed: 验证成功
-  loginTurnstileTestRequired: 新 Secret Key 需要先测试
-  loginTurnstileTestMissing: 请先填写 Site Key 和 Secret Key。
-  loginTurnstileTestFailed: 验证失败，请检查 Site Key 与 Secret Key。
-  loginTurnstileSaved: 登录 Turnstile 配置已保存。
-  loginTurnstileSaveFailed: 保存登录 Turnstile 配置失败。
-  loginTurnstileDeleted: 登录 Turnstile 配置已删除。
-  loginTurnstileDeleteFailed: 删除登录 Turnstile 配置失败。
-  loginTurnstileDeleteConfirm: 确认删除登录 Turnstile 配置吗？删除后登录保护将关闭。
-  loginTurnstileLoadFailed: 加载登录 Turnstile 配置失败。
-  loginTurnstilePrivacyNotice: 请在 Cloudflare Turnstile 控制台创建 Invisible
-    widget。自托管站点启用后，请自行确认隐私政策与 Cloudflare Turnstile 要求匹配。
-  loginTurnstileGuideTitle: 获取 Turnstile 配置
-  loginTurnstileGuideDescription: 登录保护需要 Cloudflare Turnstile 的 Site Key 和 Secret Key。
-  loginTurnstileGuideSteps:
-    - 打开 Cloudflare Dashboard，进入 Turnstile。
-    - 新建一个 widget，并选择 Invisible 模式。
-    - 添加当前 OpenAnalytics 登录域名到允许的主机名列表。
-    - 创建后复制 Site Key 和 Secret Key。
-    - 回到这里填写 Site Key 和 Secret Key，先运行测试验证，再保存配置。
-  enabledLabel: 启用邮件发送
   enabledOn: 开启
   enabledOff: 关闭
-  providerLabel: 邮件服务
-  providerResend: Resend
-  fromNameLabel: 发件人名称
-  fromEmailLabel: 发件人邮箱
-  replyToLabel: Reply-To 邮箱
-  replyToPlaceholder: 可选，默认使用发件人邮箱
-  resendApiKeyLabel: Resend API Key
-  resendApiKeyPlaceholder: 查看教程以获取 Resend API Key
-  testRecipientLabel: 测试收件人
-  save: 保存配置
-  saving: 保存中...
-  test: 发送测试邮件
-  testing: 发送中...
-  saved: 邮件配置已保存。
-  saveFailed: 保存邮件配置失败。
-  delete: 删除配置
-  deleting: 删除中...
   cancel: 取消
-  deleted: 邮件配置已删除。
-  deleteFailed: 删除邮件配置失败。
-  deleteConfirm: 确认删除邮件通知配置吗？删除后系统将视为未配置并关闭邮件发送。
-  testSent: 测试邮件已发送。
-  testFailed: 测试邮件发送失败。
-  loadFailed: 加载邮件配置失败。
+  retentionLowerTitle: 删除较早的分析数据？
+  retentionLowerDescription: 超过 {days} 天的页面浏览和事件会在下一次每日运行时删除，小时汇总会保留。此操作无法撤销。
+  retentionLowerConfirm: 保存并删除
 systemPerformance:
-  title: 系统性能
   refresh: 刷新
-  loadFailed: 加载系统性能数据失败。
-  noData: 当前时间窗口内暂无系统性能数据。
+  loadFailed: 无法加载接收数据。
+  noData: 此期间没有接收数据。
   range15m: 最近 15 分钟
   range1h: 最近 1 小时
   range6h: 最近 6 小时
@@ -2329,7 +1751,7 @@ systemPerformance:
   customEvents: 自定义事件
   anomalyBucket: 异常分桶
   openVisitHealth: 未关闭访问堆积
-  openVisitHealthDescription: 尚未被离开事件、路由切换或超时收尾关闭的访问行。
+  openVisitHealthDescription: 尚未结束的访问。
   open: 未关闭
   stale: 停滞
   timedOut: 已超时
@@ -2343,18 +1765,18 @@ systemPerformance:
   events: 事件
   avgLatency: 平均延迟
   slowestEventsTitle: 估算最慢事件
-  slowestEventsDescription: 当前窗口内服务端写入时间与事件时间正向差值最大的记录。
+  slowestEventsDescription: 从发生到保存延迟最长的事件。
   eventTime: 事件时间
   serverTime: 服务端写入时间
   estimatedDelay: 估算延迟
-  doDiagnosticTitle: DO 内部缓冲诊断
-  doDiagnosticDescription: 诊断每个站点的专用 Durable Object 中的数据停滞情况。
-  doDiagnosticLoadFailed: 加载 DO 诊断数据失败。
-  doDiagnosticLoading: 正在拉取每个 DO 的状态…
-  doDiagnosticRun: 运行 DO 诊断
-  doDiagnosticEmpty: 暂无站点 DO 状态。
-  doDiagnosticUnreachable: 部分站点 DO 不可达
-  doDiagnosticReachableSites: 可达 DO
+  doDiagnosticTitle: 缓冲数据
+  doDiagnosticDescription: 检查每个站点尚未保存的数据。
+  doDiagnosticLoadFailed: 无法检查缓冲数据。
+  doDiagnosticLoading: 正在检查每个站点…
+  doDiagnosticRun: 检查缓冲数据
+  doDiagnosticEmpty: 暂无缓冲数据。
+  doDiagnosticUnreachable: 不可达站点
+  doDiagnosticReachableSites: 可达站点
   doDiagnosticTotalSites: 总站点
   doDiagnosticActiveAlarms: 活跃 Alarm 定时器
   doDiagnosticBufferedVisits: 缓冲访问
@@ -2366,10 +1788,10 @@ systemPerformance:
   doDiagnosticStuckDirty: 未刷新且卡住
   doDiagnosticMaxFlushAttempts: 最大重试次数
   doDiagnosticBufferedCustomEvents: 缓冲自定义事件
-  doDiagnosticOldestOpen: 最早未关闭起始
+  doDiagnosticOldestOpen: 最早未关闭的访问
   doDiagnosticFutureMaxActivity: 最晚的未来活动时间
   doDiagnosticSiteList: 风险最高的站点
-  doDiagnosticSiteListDescription: 按风险评分排序，前 20 个站点的 DO 内部缓冲快照。
+  doDiagnosticSiteListDescription: 风险最高的 20 个站点。
   doDiagnosticSiteFailed: 不可达
   doDiagnosticSiteOpen: 未关闭
   doDiagnosticSiteStuck: 卡滞
@@ -2383,8 +1805,6 @@ systemPerformance:
   doDiagnosticSiteNextDueHidden: 隐藏回退
   doDiagnosticSiteNextDueTimeout: 访问超时
   doDiagnosticSiteResponseMs: 响应耗时
-  doDiagnosticThresholdsHint: 阈值：stale {stale}，timeout {timeout}，hardAged
-    {hardAged}，stuck flush_attempts ≥ {stuck}
   doDiagnosticHealthy: 当前未发现异常缓冲行。
 loginForm: {}
 logoutAction: {}
@@ -2396,7 +1816,7 @@ appNav:
   toggleSidebar: 切换侧边栏
   sources: 来源
   audience: 受众
-  conversions: 转化
+  goals: 目标
   sites: 站点
   allSites: 所有站点
   inbox: 收件箱
@@ -2415,32 +1835,25 @@ getStarted:
   steps:
     site: 添加第一个站点
     tracking: 跟踪你的网站
-    team: 邀请团队成员
+    team: 邀请成员
     notifications: 通过邮件接收报告
     sharing: 分享公开仪表盘
-  noSitesTitle: 还没有站点
-  noSitesDescription: 添加一个站点，然后把它的脚本放到你的页面上。
+  noSitesTitle: 添加第一个站点
+  memberNoSitesTitle: 还没有站点
+  memberNoSitesDescription: 请让管理员添加一个。
   addSite: 添加站点
   waitingTitle: 正在等待第一次页面浏览
-  waitingDescription: "把这段脚本添加到 {domain} 的每个页面。页面浏览会在一分钟内显示在这里。"
   copy: 复制
   copied: 已复制
-  trackingSettings: 跟踪设置
 settingsNav:
   label: 设置
-  personal: 个人
-  organization: 组织
-  system: 系统
+  system: 系统健康
   account: 账户
-  sites: 站点
   notifications: 通知
-  publicLinks: 公开链接
-  general: 通用
-  scheduledTasks: 计划任务
-  requestObservation: 请求观测
-  performance: 性能
   cancel: 取消
-  managerOnly: 只有所有者或管理员可以修改。
-  dangerZone: 危险操作
-  copy: 复制
-  copied: 已复制
+systemHealth:
+  tabs:
+    tasks: 计划任务
+    blocked: 已拦截请求
+    ingestion: 数据接收
+    data: 数据

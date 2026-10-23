@@ -30,6 +30,10 @@ import {
 } from "@/components/dashboard/analytics-time-tooltip";
 import { AnalyticsDataTable } from "@/components/dashboard/common/analytics-data-table";
 import {
+  emptyContent,
+  LoadFailedContent,
+} from "@/components/dashboard/common/table-states";
+import {
   BrowserMeta,
   CountryRegionMeta,
   DeviceMeta,
@@ -442,6 +446,8 @@ const EventRecordsTable = memo(function EventRecordsTable({
   loadingRows,
   loadingMore,
   error,
+  onRetry,
+  filtered,
   appendError,
   hasMore,
   onLoadMore,
@@ -457,11 +463,14 @@ const EventRecordsTable = memo(function EventRecordsTable({
   loadingRows: boolean;
   loadingMore: boolean;
   error: boolean;
+  onRetry: () => void;
+  filtered: boolean;
   appendError: boolean;
   hasMore: boolean;
   onLoadMore: () => void;
   visibleColumnIds: readonly EventRecordTableColumnId[];
 }) {
+  const emptyLabel = emptyContent(messages, labels.empty, filtered);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -581,8 +590,8 @@ const EventRecordsTable = memo(function EventRecordsTable({
       loading={loadingRows}
       loadingMore={loadingMore}
       error={error}
-      errorContent={labels.loadError}
-      emptyContent={labels.empty}
+      errorContent={<LoadFailedContent messages={messages} onRetry={onRetry} />}
+      emptyContent={emptyLabel}
       appendError={appendError}
       appendErrorContent={labels.loadError}
       hasMore={hasMore}
@@ -659,6 +668,7 @@ export const EventRecordsSection = memo(function EventRecordsSection({
     isFetching,
     isFetchingNextPage,
     isPending,
+    refetch,
   } = useInfiniteQuery({
     queryKey: [
       "dashboard",
@@ -791,6 +801,9 @@ export const EventRecordsSection = memo(function EventRecordsSection({
         loadingRows={replacingRows}
         loadingMore={loadingMore}
         error={error}
+        onRetry={() => void refetch()}
+        // An event's own records aren't narrowed by the page's filters.
+        filtered={!eventName && Boolean(filters.root)}
         appendError={appendError}
         hasMore={hasMore}
         onLoadMore={loadNextPage}

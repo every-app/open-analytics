@@ -6,18 +6,15 @@ navigation:
   realtime: Real-time
   pages: Pages
   referrers: Referrers
-  sessions: Sessions
   events: Events
-  funnels: Funnels
-  goals: Goals
+  funnels: Goals & funnels
   campaigns: Campaigns
   visitors: Visitors
   retention: Retention
   geo: Location
   devices: Devices
-  browsers: Browsers
   performance: Performance
-  settings: Settings
+  settings: Site settings
 common:
   deviceLabels:
     desktop: Desktop
@@ -28,23 +25,23 @@ common:
   views: Views
   sessions: Sessions
   visitors: Visitors
-  bounceRate: Bounce Rate
-  avgDuration: Avg. Duration
+  bounceRate: Bounce rate
+  avgDuration: Avg. duration
   path: Path
   title: Title
   hostname: Hostname
-  referrerHost: Referrer Host
-  entryPage: Entry Page
-  exitPage: Exit Page
+  referrerHost: Referrer host
+  entryPage: Entry page
+  exitPage: Exit page
   referrer: Referrer
   event: Event
   location: Location
   browser: Browser
-  operatingSystem: Operating System
-  deviceType: Device Type
+  operatingSystem: Operating system
+  deviceType: Device type
   country: Country
   region: Region
-  regionCode: Region Code
+  regionCode: Region code
   city: City
   continent: Continent
   latitude: Latitude
@@ -65,23 +62,20 @@ common:
     OCEANIA: Oceania
     SOUTH AMERICA: South America
   timezone: Time zone
-  organization: Organization
-  screenSize: Screen Size
+  organization: Network organization
+  screenSize: Screen size
   loading: Loading
   noData: No data
+  loadFailed: Couldn't load
+  retry: Retry
+  filteredEmpty: Nothing matches these filters
+  clearFilters: Clear filters
+  trend: Trend
   unknown: Unknown
-  lastUpdated: Last updated
   site: Site
-  team: Team
-  management: Management
-  backToTeam: Back to Team
   system: System
-  account: Account
   theme: Theme
   language: Language
-  role: Role
-  admin: Admin
-  user: User
   search: Search
   open: Open
   sortBy: Sort by {label}
@@ -109,27 +103,18 @@ common:
     reset: Reset to default
     dragHint: Drag to reorder
     close: Close
-  time: Time
-  cycle: Cycle
   close: Close
   sitesFiltered: "{active} / {total} sites filtered"
   cumulativeTraffic: Cumulative traffic
   cumulativeEvents: Cumulative events
 ranges:
-  last30m: 30m
-  last1h: 1h
   today: Today
   yesterday: Yesterday
-  thisWeek: This Week
-  thisMonth: This Month
-  thisYear: This Year
-  last24h: Last 24 hours
   last7d: Last 7 days
   last30d: Last 30 days
   last90d: Last 90 days
-  last6m: Last 6 months
   last12m: Last 12 months
-  custom: Custom Range
+  custom: Custom range
 intervals:
   minute: Minute
   hour: Hour
@@ -137,43 +122,25 @@ intervals:
   week: Week
   month: Month
 dashboardHeader:
-  range: Time Range
   interval: Interval
   compareButton: Compare
   compareTitle: Comparison settings
-  compareSubtitle: Choose a comparison period and filter conditions.
   compareTimeLabel: Comparison period
   compareCurrentPeriod: Current period
-  compareCurrentPeriodDescription: Use the currently selected time range.
   comparePreviousPeriod: Previous period
-  comparePreviousPeriodDescription: Use the same-length range before the current period.
   compareFilterLabel: Comparison filter
   compareFollowCurrentFilter: Follow current filter
-  compareFollowCurrentFilterDescription: Use the filters currently applied to this page.
   compareCustomFilter: Custom filter
-  compareCustomFilterDescription: Set separate filter conditions for the comparison.
   compareApply: Apply comparison
   compareCancel: Cancel
-  compareDisabled: Comparison is unavailable on this page.
   filterButton: Filter
-  filterButtonEvent: Filter (Event)
-  filterButtonSession: Filter (Session)
-  filterButtonVisitor: Filter (Visitor)
-  customRange: Select Custom Range
-  customHint: Please select a start and end date.
-  customPendingEnd: Start date selected. Please pick an end date.
+  filterButtonEvent: Filter (event)
+  filterButtonSession: Filter (session)
+  filterButtonVisitor: Filter (visitor)
+  customHint: Select a start and end date.
+  customPendingEnd: Now pick an end date.
   customApply: Apply date range
-  rangeGroupQuick: Quick Ranges
-  rangeGroupCalendar: Calendar Periods
-  rangeGroupRolling: Rolling Windows
-  rangeGroupAdvanced: Advanced
-  intervalDisabledMinute: Minute interval is only available within 1 hour.
-  intervalDisabledHour: Hour interval is only available within 7 days.
-  intervalDisabledDay: Day interval is only available within the last 90 days.
-  intervalDisabledWeek: Week interval is only available within the last 12 months.
   filterTitle: Filters
-  filterSubtitle: Create and save filters, or use your personal and team saved filters.
-  filterDisabledRealtime: Filtering is unavailable on the real-time page.
   previousPeriod: Previous period
   nextPeriod: Next period
   customSelectionSummary: "Selected range: {from} to {to} ({days} days)"
@@ -248,8 +215,8 @@ filterBuilder:
     client.deviceType: Device type
     client.language: Language
     client.screenSize: Screen size
-    geo.country: Country / Region
-    geo.region: Province / State / Region
+    geo.country: Country / region
+    geo.region: Province / state / region
     geo.city: City
     geo.continent: Continent
     geo.timeZone: Time zone
@@ -332,7 +299,7 @@ filterBuilder:
     json-scalar: JSON scalar
   booleanTrue: "True"
   booleanFalse: "False"
-  valueUnset: (Not set)
+  valueUnset: (not set)
   valueLoading: Loading values
   valueSearchPlaceholder: Search or enter a value
   valueListPlaceholder: Search or enter a value, then press Enter
@@ -349,7 +316,7 @@ filterBuilder:
     percent: "%"
     perMille: "‰"
     pixels: Pixels
-  jsonPointer: JSON Pointer
+  jsonPointer: JSON pointer
   jsonPointerPlaceholder: Search or enter a JSON pointer
   match: Match
   expression: Filter expression
@@ -357,7 +324,7 @@ filterBuilder:
   naturalLanguageDescription: Natural-language description
   expressionInvalid: Invalid expression. Click to view syntax help.
   expressionHelpTitle: Filter expression syntax
-  expressionHelpDescription: Available fields and operators are generated from the active filter contract.
+  expressionHelpDescription: The fields and operators you can use in a filter expression.
   expressionHelpSyntax: Syntax
   expressionHelpLogicDescription: AND binds more tightly than OR. Use parentheses
     for nesting; AND(...) and OR(...) preserve an explicit one-condition group.
@@ -430,7 +397,7 @@ filterBuilder:
     coreRelation: Advanced filter
     coreRelationExpression: Advanced filter expression
     structuredEditor: Advanced filter controls
-    unavailableForObservation: Advanced filters are unavailable for Goal and Funnel steps.
+    unavailableForObservation: Advanced filters are unavailable for goal and funnel steps.
     targetKinds:
       time: Time
       field: Field
@@ -457,16 +424,9 @@ filterBuilder:
       adjacent: Adjacent sequence
       without: Sequence without
   savedFiltersLoading: Loading saved filters...
-  noSavedFilter: Do not use a saved filter
+  noSavedFilter: No saved filter
   systemPresets: System presets
-  systemPresetCategories:
-    acquisition: Acquisition
-    device: Device
-    visitBehavior: Visit behavior
-    sessionEngagement: Session engagement
-    visitorBehavior: Visitor behavior
-    performance: Performance
-    dataQuality: Data quality
+  advanced: Advanced
   systemPresetScopes:
     preserve: Keep current scope
     event: Event scope
@@ -476,122 +436,26 @@ filterBuilder:
     directTraffic:
       name: Direct traffic
       description: Visits with no external referrer.
-    externalReferrals:
-      name: External referrals
-      description: Visits that arrived from an external referrer.
     organicSearchDiscovery:
       name: Organic search discovery
       description: Search-engine referrals without campaign tags.
-    organicSocialDiscovery:
-      name: Organic social discovery
-      description: Social-network referrals without campaign tags.
     campaignTaggedTraffic:
       name: Campaign-tagged traffic
       description: Visits carrying a campaign source, medium, or name.
     mobileTraffic:
       name: Mobile traffic
       description: Visits from mobile devices.
-    desktopTraffic:
-      name: Desktop traffic
-      description: Visits from desktop devices.
-    campaignTaggedExternalAcquisition:
-      name: Tagged external acquisition
-      description: Externally referred visits carrying campaign tags.
-    campaignTaggedDirectEntry:
-      name: Tagged direct entry
-      description: Direct visits carrying campaign tags.
-    untaggedExternalReferrals:
-      name: Untagged external referrals
-      description: Externally referred visits without campaign tags.
-    mobileAcquiredTraffic:
-      name: Mobile campaign acquisition
-      description: Mobile visits from external, campaign-tagged acquisition.
-    mobileOrganicDiscovery:
-      name: Mobile organic discovery
-      description: Untagged mobile visits discovered through search or social.
-    desktopDirectAudience:
-      name: Desktop direct audience
-      description: Untagged direct visits from desktop devices.
-    geographicAttributionGap:
-      name: Geographic attribution gap
-      description: Externally referred visits without a recorded country.
-    tabletTraffic:
-      name: Tablet traffic
-      description: Visits from tablet devices.
-    longPageViews:
-      name: Long page views
-      description: Page views lasting at least 30 seconds.
-    shortPageViews:
-      name: Short page views
-      description: Page views lasting less than 10 seconds.
-    identifiedActivity:
-      name: Identified activity
-      description: Events associated with an identified user.
-    customEventActivity:
-      name: Custom event activity
-      description: Events with a recorded custom event name.
     bouncedSessions:
       name: Bounced sessions
       description: Sessions containing a single page view.
-    nonBouncedSessions:
-      name: Non-bounced sessions
-      description: Sessions containing more than one page view.
-    longSessions:
-      name: Long sessions
-      description: Sessions lasting at least five minutes.
-    shortSessions:
-      name: Short sessions
-      description: Sessions lasting less than one minute.
-    deepSessions:
-      name: Deep sessions
-      description: Sessions with at least three page views.
-    eventfulSessions:
-      name: Eventful sessions
-      description: Sessions with at least one custom event.
-    highEngagementSessions:
-      name: Highly engaged sessions
-      description: Sessions with at least three views and two custom events.
     returningVisitors:
       name: Returning visitors
       description: Visitors with at least two sessions.
-    frequentVisitors:
-      name: Frequent visitors
-      description: Visitors with at least five sessions.
-    deepVisitors:
-      name: Deep visitors
-      description: Visitors with at least five page views.
-    eventfulVisitors:
-      name: Eventful visitors
-      description: Visitors with at least two custom events.
-    identifiedVisitors:
-      name: Identified visitors
-      description: Visitors associated with an identified user.
-    organicSearchVisitors:
-      name: Organic search visitors
-      description: Visitors with an untagged search referral.
-    coreWebVitalsNeedsImprovement:
-      name: Core Web Vitals need improvement
-      description: Visits exceeding a Core Web Vitals threshold.
-    slowLcp:
-      name: Slow LCP
-      description: Visits with LCP above 2.5 seconds.
-    slowInp:
-      name: Slow INP
-      description: Visits with INP above 200 milliseconds.
-    highCls:
-      name: High CLS
-      description: Visits with CLS above 0.1.
-    slowTtfb:
-      name: Slow TTFB
-      description: Visits with TTFB above 800 milliseconds.
-    slowFcp:
-      name: Slow FCP
-      description: Visits with FCP above 1.8 seconds.
   savedFiltersPersonal: Personal filters
-  savedFiltersTeam: Team filters
+  savedFiltersTeam: Organization filters
   savedFiltersAuthor: "Author: {name}"
   savedFiltersPrivate: Personal
-  savedFiltersTeamShared: Shared with team
+  savedFiltersTeamShared: Shared with your organization
   saveThisFilter: Save this filter
   saveAsThisFilter: Save as this filter
   manageThisFilter: Manage this filter
@@ -607,20 +471,20 @@ filterBuilder:
   scopeVisitor: Filter visitors meeting these conditions
   savedFilterVisibility: Visibility
   savedFilterVisibilityPrivate: Only me
-  savedFilterVisibilityTeam: Share with team
+  savedFilterVisibilityTeam: Share with your organization
   savedFilterCreateDescription: Save the current filter expression to apply it again later.
   savedFilterManageDescription: Update this filter's details or start editing its conditions.
   editSavedFilter: Edit this filter
   deleteSavedFilter: Delete this filter
   deleteSavedFilterTitle: Delete this filter?
-  deleteSavedFilterDescription: This cannot be undone, and team members will no longer be able to use it.
+  deleteSavedFilterDescription: This can't be undone, and others in your organization will lose access to it.
   savedFilterCancel: Cancel
   savedFilterSave: Save
   savedFilterSaving: Saving...
   savedFilterDelete: Delete
   savedFilterDeleting: Deleting...
-  savedFilterOperationFailed: The operation failed. Please try again.
-  apply: Apply Filters
+  savedFilterOperationFailed: Something went wrong. Try again.
+  apply: Apply filters
   allConditions: All conditions
   anyCondition: Any condition
   condition: Condition {index}
@@ -631,10 +495,10 @@ filterBuilder:
   invalid: Complete each filter condition before applying.
 realtime:
   title: Real-time
-  subtitle: View traffic from the last 30 minutes.
   logTitleSeparator: ":"
   activeNow: Active now
-  liveMetrics: Active now / Visitors in last 30m / Views in last 30m
+  liveCount: "{count} online now"
+  liveMetrics: Active now / Visitors in the last 30 minutes / Views in the last 30 minutes
   connected: Connected
   connecting: Connecting
   reconnecting: Reconnecting
@@ -661,7 +525,7 @@ realtime:
   visibilityHidden: Page became hidden
   visibilityChange: Page visibility changed
   visitorHistorySection: Visitor activity
-  visitorHistorySubtitle: All records for this visitor in the current realtime window.
+  visitorHistorySubtitle: All records for this visitor in the real-time window.
   visitorHistoryRange: Activity range
   visitorHistoryEmpty: No additional records are available for this visitor yet.
   visitorMapUnavailable: This event does not include usable coordinates.
@@ -697,12 +561,12 @@ realtime:
   exitReason: Exit reason
   leaveAt: Left at
 overview:
-  title: Traffic Overview
-  trendTitle: Traffic Trend
+  title: Overview
+  trendTitle: Traffic trend
   sourceTab: Source
-  sourceDomainColumn: Source (Domain)
-  sourceLinkTab: Source Link
-  sourceLinkColumn: Source Link
+  sourceDomainColumn: Source (domain)
+  sourceLinkTab: Source link
+  sourceLinkColumn: Source link
   channelTab: Channel
   channelColumn: Channel
   direct: Direct
@@ -719,79 +583,82 @@ overview:
     campaign: Campaign
     other: Other
   searchInTab: Search {tab}
+install:
+  title: Add the script to your site
+  platforms:
+    html: HTML
+    wordpress: WordPress
+    shopify: Shopify
+    nextjs: Next.js
+    gtm: Google Tag Manager
+  steps:
+    html: Paste it before {tag} on every page.
+    wordpress: Add it with a header scripts plugin such as WPCode, or paste it
+      before {tag} in your theme's header.php.
+    shopify: In Online Store → Themes → Edit code, open theme.liquid and paste it
+      before {tag}.
+    nextjs: Paste it inside {tag} in app/layout.tsx.
+    gtm: Create a Custom HTML tag with it, trigger it on All Pages, then publish.
+  waiting: Waiting for the first page view
+  received: Got your first page view. Reports fill in within a minute.
+  firstViewsTitle: Your first page views are in!
+  nextReports: Get reports by email
+  nextInvite: Invite members
+  dismiss: Dismiss
 pages:
   title: Pages
-  pagesPerSession: Pages / Session
+  pagesPerSession: Pages / session
   changePercentColumnLabel: "{metric} change (%)"
   changePointsColumnLabel: "{metric} change (pp)"
   percentagePointSuffix: pp
-  untitled: Untitled Page
-  empty: No page data matches the current filters.
-  loadError: Failed to load page data. Please try again later.
+  untitled: Untitled page
+  empty: No pages yet
   loadMoreError: Failed to load more pages.
-  trendTitle: Page Traffic Trend
-  otherPages: Other Pages
+  trendTitle: Page traffic trend
+  otherPages: Other pages
   hashTab: Anchor
-  noHash: No Anchor
-  queryTab: Query Params
-  noQuery: No Query Params
+  noHash: No anchor
+  queryTab: Query parameters
+  noQuery: No query parameters
   eventTab: Events
   eventsMetric: Event count
   viewDetails: View details
 referrers:
   title: Referrers
-  summaryTitle: Source Summary
-  splitTitle: Traffic Split
-  chartTitle: Source Mix
-  radarTitle: Top 24 Source Radar
-  radarSubtitle: Compare the leading referrers across behavioral metrics.
-  radarDuration: Duration
-  radarEngagement: Engagement
-  radarDepth: Depth
-  radarLoyalty: Loyalty
-  radarFrequency: Frequency
-  radarTraffic: Traffic
-  directSourceNote: This traffic arrived without an external referring website.
-  breakdownTitle: Source Breakdown
-  directViews: Direct Views
-  uniqueDomains: Unique Domains
-  uniqueLinks: Unique Links
-  topSource: Primary External Source
-  topSourceShare: Share of Views
-  noExternalSource: No external source
+  splitTitle: Traffic split
+  breakdownTitle: Source breakdown
   externalLabel: External
-  nextSources: Other 4 Sources
-  longTail: Long Tail
+  longTail: Long tail
   channelLongTail: Other channels
 campaigns:
   title: Campaigns
-  tabSource: Source
+  tabSource: UTM source
   tabMedium: Medium
   tabCampaign: Campaign
   tabTerm: Term
   tabContent: Content
-  breakdownTitle: UTM Breakdown
   notSet: Not set
-  noTaggedTraffic: No tagged campaign traffic in the selected range.
+  noTaggedTraffic: No UTM-tagged visits in this period
+  taggedLinkHint: Add UTM tags to your links, for example
 sessions:
   title: Sessions
   search: Search sessions...
-  started: Start Time
+  started: Start time
   sessionId: Session ID
   visitor: Visitor
   anonymous: Anonymous
-  entryPage: Entry Page
-  exitPage: Exit Page
+  entryPage: Entry page
+  exitPage: Exit page
   duration: Duration
   referrer: Referrer
   location: Location
   os: OS
   browser: Browser
   device: Device
-  pageViews: Page Views
-  customEvents: Custom Events
-  screenSize: Screen Size
-  exitTime: Exit Time
+  pageViews: Page views
+  customEvents: Custom events
+  screenSize: Screen size
+  exitTime: Exit time
   loadError: Unable to load sessions.
   empty: No sessions in this time range.
 sessionDetail:
@@ -806,28 +673,28 @@ sessionDetail:
   inactive: Ended
   status: Status
   duration: Duration
-  screenViews: Page Views
+  screenViews: Page views
   events: Events
-  bounce: Bounced?
-  entryPath: Entry Path
-  exitPath: Exit Path
-  referrerName: Referrer Name
+  bounce: Bounced
+  entryPath: Entry path
+  exitPath: Exit path
+  referrerName: Referrer name
   os: OS
   browser: Browser
   device: Device
   screen: Screen
   yes: Yes
   no: No
-  uniquePages: Unique Pages
-  firstEvent: First Event
-  lastEvent: Last Event
+  uniquePages: Unique pages
+  firstEvent: First event
+  lastEvent: Last event
   sessionStarted: Session started
-  pageview: Pageview
+  pageview: Page view
   exitPage: Exit page
   customEvent: Custom event
   eventTitleSeparator: ": "
   visitDetailsTitle: Visit details
-  visitDetailsSubtitle: Session start, pageviews, exits, and custom events in the
+  visitDetailsSubtitle: Session start, page views, exits, and custom events in the
     order they happened.
   location: Location
   visitorId: Visitor ID
@@ -836,48 +703,43 @@ sessionDetail:
   emptyEvents: No events recorded.
   emptyCustomEvents: No custom events.
   sincePrevious: Since previous
-  geoLocationTitle: Geo location
+  geoLocationTitle: Location
   performanceTitle: Current session performance
   range: Range
 events:
-  title: Custom Events
-  subtitle: Review event volume, context, payload fields, and raw trigger records.
-  detailTitle: Event Detail
-  detailSubtitle: Inspect a single event with its context and payload.
-  typeDetailSubtitle: Review this event's trend, context distribution, payload
-    schema, and trigger records.
-  backToEvents: Back to Events
-  totalEvents: Total Events
-  eventTypes: Event Types
+  title: Events
+  detailTitle: Event detail
+  backToEvents: Back to events
+  totalEvents: Total events
+  eventTypes: Event types
   sessions: Triggered sessions
   visitors: Triggered visitors
-  avgEventsPerSession: Avg Events / Session
-  shareOfAllEvents: Share of All Events
+  avgEventsPerSession: Avg. events / session
+  shareOfAllEvents: Share of all events
   triggerCount: Triggers
   triggerVisitors: Triggered visitors
-  trendTitle: Event Trend
-  topEvents: Top Events
-  recordsTitle: Event Records
-  fieldsTitle: Payload Fields
+  trendTitle: Event trend
+  topEvents: Top events
+  recordsTitle: Event records
+  fieldsTitle: Payload fields
   fieldsSubtitle: Select a field to inspect its values and metadata.
-  fieldValuesTitle: Field Values
+  fieldValuesTitle: Field values
   fieldValuesSubtitle: Records and occurrence counts for the selected field. Click a row to filter.
   fieldValuesEmpty: No values recorded for this field.
   payloadFilter: Filter
-  payloadFilterTitle: Payload Filters
+  payloadFilterTitle: Payload filters
   payloadFilterSubtitle: Add one condition per line. Combine filters with == or !=.
   payloadFilterPlaceholder: |-
     path.value == "a"
     level != 0
-  payloadFilterApply: Apply Filters
-  payloadFilterClear: Clear Filters
+  payloadFilterApply: Apply filters
+  payloadFilterClear: Clear filters
   payloadFilterInvalid: Unable to parse the filter conditions. Check the field
     path, operator, and value.
   expandField: Expand field
   collapseField: Collapse field
-  breakdownTitle: Context Breakdown
   search: Search event name, IDs, visitor, session, page...
-  eventName: Event Name
+  eventName: Event name
   eventId: Event ID
   occurredAt: Occurred
   receivedAt: Received
@@ -891,13 +753,13 @@ events:
   os: OS
   device: Device
   payload: Payload
-  nodeCount: Node Count
-  payloadFields: Payload Fields
+  nodeCount: Node count
+  payloadFields: Payload fields
   values: Values
   nodes: Nodes
   occurrences: Occurrences
-  openVisitor: Open Visitor
-  openSession: Open Session
+  openVisitor: Open visitor
+  openSession: Open session
   integratingEvent: Integrating event ({seconds}s)
   copyJson: Copy JSON
   copiedJson: JSON copied.
@@ -908,30 +770,26 @@ events:
   loadError: Unable to load event data.
   detailNotFound: This event record was not found.
   empty: No custom events in this range.
+  noCustomEvents: No custom events in this period
   emptyFields: No payload fields for this event.
   noEventName: Missing event name.
   loading: Loading
   other: Other
 funnels:
   title: Funnels
-  subtitle: Measure conversion through multi-step user journeys.
   listTitle: Funnel definitions
-  listSubtitle: Build a reusable sequence, then inspect conversion for the current
-    dashboard window.
   conversionRecords: Conversion records
   converted: Converted
   dropped: Dropped off
   open: Open funnel
   moreActions: More actions
-  create: New funnel
   createTitle: Create funnel
-  createDescription: Define at least two ordered observation filters.
   nameLabel: Name
   namePlaceholder: Signup activation
   stepsLabel: Steps
   addStep: Add step
   removeStep: Remove step
-  progression: Progression identity
+  progression: Count by
   conversionWindow: Conversion window
   custom: Custom
   customWindowHours: Custom window in hours
@@ -961,9 +819,6 @@ funnels:
     analytics data is not deleted.
   deleteConfirm: Delete funnel
   deleting: Deleting...
-  empty: No funnels yet.
-  emptyHint: Create a funnel from pageviews and custom events to track conversion.
-  loadError: Unable to load funnels.
   detailLoadError: Unable to load funnel analysis.
   invalidFunnel: Add a name and at least two complete filters.
   created: Funnel created.
@@ -988,11 +843,9 @@ funnels:
   updated: Updated
 goals:
   title: Goals
-  listSubtitle: View conversion rate changes across this time range.
   conversionRecords: Conversion records
   open: Open goal
   moreActions: More actions
-  create: New goal
   createTitle: Create goal
   nameLabel: Name
   namePlaceholder: Purchase completed
@@ -1009,9 +862,6 @@ goals:
   deleteDescription: This removes the saved goal definition. Historical analytics
     data is not deleted.
   deleteConfirm: Delete goal
-  empty: No goals yet.
-  emptyHint: Create a goal from a page condition or custom event to track conversion.
-  loadError: Unable to load goals.
   detailLoadError: Unable to load goal analysis.
   invalidGoal: Add a name and a complete conversion condition.
   created: Goal created.
@@ -1026,6 +876,14 @@ goals:
   conversion: Conversion rate
   timeseries: Conversion rate
   updated: Updated
+conversions:
+  new: New
+  newGoal: Goal
+  newGoalDescription: One step, such as a signup
+  newFunnel: Funnel
+  newFunnelDescription: Several steps in order
+  empty: No goals or funnels yet
+  emptyMemberHint: An admin can create one.
 visitors:
   title: Visitors
   search: Search visitors...
@@ -1036,12 +894,12 @@ visitors:
   os: OS
   browser: Browser
   device: Device
-  firstSeen: First Visit
-  lastSeen: Last Visit
-  pageViews: Page Views
+  firstSeen: First visit
+  lastSeen: Last visit
+  pageViews: Page views
   sessions: Sessions
-  customEvents: Custom Events
-  screenSize: Screen Size
+  customEvents: Custom events
+  screenSize: Screen size
   loadError: Unable to load visitors.
   empty: No visitors in this time range.
 visitorDetail:
@@ -1052,26 +910,26 @@ visitorDetail:
   missing: Missing visitorId.
   notFound: Visitor not found.
   loadError: Unable to load visitor detail.
-  totalDuration: Total Duration
+  totalDuration: Total duration
   events: Events
-  views: Pageviews
-  uniquePages: Unique Pages
-  avgPagesPerSession: Avg Pages/Session
-  avgEventsPerSession: Avg Events/Session
-  avgStay: Avg. Visit Duration
+  views: Page views
+  uniquePages: Unique pages
+  avgPagesPerSession: Avg. pages / session
+  avgEventsPerSession: Avg. events / session
+  avgStay: Avg. visit duration
   firstSeen: First visit
   lastSeen: Last visit
-  daysActive: Days Active
-  avgTimeBetweenSessions: Avg Time Between Sessions
+  daysActive: Days active
+  avgTimeBetweenSessions: Avg. time between sessions
   activity: Activity
   sessionRecords: Session records
-  started: Start Time
+  started: Start time
   visitor: Visitor
   duration: Duration
   referrer: Referrer
-  pageViews: Page Views
+  pageViews: Page views
   visitDetailsTitle: Visit details
-  visitDetailsSubtitle: Session starts, pageviews, exits, and custom events for
+  visitDetailsSubtitle: Session starts, page views, exits, and custom events for
     this visitor in the order they happened.
   customEvents: Custom events
   emptyEvents: No events recorded.
@@ -1079,38 +937,38 @@ visitorDetail:
   emptySessions: No sessions recorded.
   visitorId: Visitor ID
   sessionId: Session ID
-  referrerName: Referrer Name
+  referrerName: Referrer name
   referrerUrl: Referrer URL
   location: Location
   browser: Browser
   os: OS
   device: Device
   screen: Screen
-  entryPath: Entry Path
-  exitPath: Exit Path
+  entryPath: Entry path
+  exitPath: Exit path
   sessionStarted: Session started
-  pageview: Pageview
+  pageview: Page view
   exitPage: Exit page
   customEvent: Custom event
   eventTitleSeparator: ": "
   sincePrevious: Since previous
-  geoLocationTitle: Geo location
+  geoLocationTitle: Location
   performanceTitle: Current visitor performance
   range: Range
 retention:
   title: Retention
-  subtitle: Cohort-based visitor return analysis.
+  cohortBy: "Cohort by: {interval}"
   cohortDate: Cohort date
   cohortSize: Cohort size
   periodLabel: Period {n}
-  matrixTitle: Retention Matrix
+  matrixTitle: Retention matrix
   matrixSubtitle: Each row is a first-seen cohort; each column shows the share
     that returned in a later period.
   cohortsMetric: Cohorts
-  visitorsMetric: Cohort Visitors
-  periodOneMetric: First Return
-  averageReturnMetric: Average Return
-  strongestCohortMetric: Best Cohort
+  visitorsMetric: Cohort visitors
+  periodOneMetric: First return
+  averageReturnMetric: Average return
+  strongestCohortMetric: Best cohort
   eligibleVisitors: Eligible visitors
   periodsAnalyzed: Periods analyzed
   noEligibleCohorts: No eligible cohorts
@@ -1119,25 +977,23 @@ retention:
   legendHigh: High
   periodZero: Initial
   empty: Not enough return data in this time range.
-  emptyHint: Use a wider range or choose a coarser interval from the top selector
-    to reveal the retention shape sooner.
+  emptyHint: Pick a longer period, or a coarser interval, in the date menu.
   loadError: Unable to load retention data.
   unavailableCell: This cohort has not reached this period yet.
   visitorsDetail: Visitors
   rateDetail: Retention
-  cohortDetail: Cohort date
   sizeDetail: Cohort size
 geo:
-  title: Location Analysis
-  mapTitle: Request Geo Distribution
-  countryLabel: Country / Region
+  title: Location
+  mapTitle: Visitors by location
+  countryLabel: Country / region
   regionLabel: Region
   cityLabel: City
   back: Back
   viewOnWikipedia: View on Wikipedia
   investigationNotice: This data comes from the web and may contain errors.
   timezoneDeltaVsLocal: "Difference from local time: {delta}"
-  visitorCoordinates: Visitor Coordinates
+  visitorCoordinates: Visitor coordinates
   ipNotice: Estimated location via IP. Coordinates are approximate and do not
     pinpoint a precise address.
   multipleNotice: This visitor's journey across different sessions may span multiple cities.
@@ -1147,7 +1003,7 @@ geo:
     population: Population
     gdp: GDP
     gdpPerCapita: GDP per capita
-    marketPenetration: Market Penetration
+    marketPenetration: Market penetration
     region: Region
     currency: Currency
     phonecode: Phone code
@@ -1176,68 +1032,31 @@ geo:
       municipality: Municipality
       territory: Territory
       section: Section
-      adm1: Admin Level 1
-      adm2: Admin Level 2
-      adm3: Admin Level 3
-      adm4: Admin Level 4
-      adm5: Admin Level 5
+      adm1: Admin level 1
+      adm2: Admin level 2
+      adm3: Admin level 3
+      adm4: Admin level 4
+      adm5: Admin level 5
 devices:
   title: Devices
-  deviceShareTitle: Device Type Share
-  osShareTitle: Operating System Share
-  deviceTrendTitle: Device Type Trend
-  osTrendTitle: Operating System Trend
-  screenDistributionTitle: Screen Size Distribution
-  screenDistributionSubtitle: Surface the most common viewports and responsive breakpoints.
-  screenBucketTitle: Breakpoint Buckets
-  screenPreviewTitle: Screen Preview
-  selectedViewportLabel: Selected viewport
-  openSiteLabel: Open site
-  previewUnavailableLabel: No previewable screen sizes are available right now.
-  browserByDeviceTitle: Device Type × Browser
-  osByDeviceTitle: Device Type × Operating System
+  shareTitle: Visitor share
+  dimensions:
+    device: Device
+    os: OS
+    browser: Browser
+    engine: Engine
+    screenSize: Screen size
+  crossTabTitle: Breakdown
+  crossTabRows: Rows
+  crossTabColumns: Split by
   otherLabel: Other
-  screenBucketLabels:
-    phoneCompact: Compact Phone
-    phone: Phone
-    tablet: Tablet
-    laptop: Laptop
-    desktopWide: Wide Desktop
-    unclassified: Unclassified
+  screenBucketLabels: {}
 browsers:
-  title: Browsers
-  trendTitle: Browser Share Trend
-  engineTrendTitle: Engine Share Trend
-  versionBreakdownTitle: Browser Version Breakdown
-  osBreakdownTitle: Browser × Operating System
-  deviceTypeBreakdownTitle: Browser × Device Type
   otherLabel: Other
-  browserShareTitle: Browser Share
-  engineShareTitle: Engine Share
-  caniuseTitle: Feature Compatibility
-  caniuseSubtitle: Check browser support for web features based on your site's visitor data.
-  caniuseSearchPlaceholder: Search web features...
-  caniuseHotFeatures: Popular Features
-  caniuseTrendingFeatures: Recently Changed
-  caniuseSiteSupport: Your Site
-  caniuseGlobalSupport: Global
-  caniuseClearSelection: Clear
-  caniuseNoMatch: No matching features found.
-  caniuseFullSupport: Full Support
-  caniusePartialSupport: Partial Support
-  caniuseNoSupport: No Support
-  radarTitle: Browser Performance Radar
-  radarSubtitle: Compare top browsers across behavioral metrics.
-  radarDuration: Duration
-  radarEngagement: Engagement
-  radarDepth: Depth
-  radarLoyalty: Loyalty
-  radarFrequency: Frequency
-  radarTraffic: Traffic
 performance:
   title: Performance
-  subtitle: Review real visitor performance by metric, trend, and path.
-  chartTitle: Performance Trend
+  empty: No Web Vitals yet
+  chartTitle: Performance trend
   avgLabel: Average
   samplesLabel: Samples
   p50Label: P50
@@ -1262,49 +1081,54 @@ performance:
   msUnit: ms
   secondsUnit: s
   clsUnit: score
-  score: Experience Score
+  score: Experience score
   scoreDescription: Combines P75 loading, stability, and interaction metrics into
     a 0 to 100 experience score. Higher is better.
   great: Great
-  needsImprovement: Needs Improvement
+  needsImprovement: Needs improvement
   poor: Poor
-  datasetTitle: Dataset Overview
-  interpretationTitle: Current Reading
+  datasetTitle: Thresholds
+  interpretationTitle: Current reading
   currentReading: "{metric} P75 is {value}, with an experience score of {score}
     across {samples} samples. Current status: {status}."
   metricThresholdText: "Great: {good} or lower; needs improvement: {good} to
     {poor}; poor: above {poor}."
   scoreThresholdText: "Great: above 90; needs improvement: 50 to 90; poor: below 50."
-  countryHealthTitle: Country and Region Health
+  countryHealthTitle: Country and region health
   countryHealthSubtitle: Boundary fill shows {metric} health by country or region.
-  pathsTitle: Path Performance
+  pathsTitle: Path performance
   pathsAnalyzedLabel: Paths analyzed
   metricValueColumn: P75 value
   statusColumn: Status
-share: {}
+share:
+  noData: No data yet
 siteSettings:
-  title: Site Settings
+  title: Site settings
   sections:
     basic:
-      title: Basic Information
+      title: General
     tracking:
-      title: Tracking Settings
+      title: Tracking
     blocking:
-      title: Blocking Rules
+      title: Blocking rules
     protection:
-      title: Request Protection
+      title: Protection
     danger:
-      title: Danger Zone
-  nameLabel: Site Name
+      title: Danger zone
+    install:
+      title: Install
+    advanced:
+      title: Advanced
+  nameLabel: Name
   domainLabel: Domain
-  publicSharingTitle: Public Sharing
-  publicEnabledLabel: Enable Public Access
-  publicSlugLabel: Public Slug
+  publicSharingTitle: Sharing
+  publicEnabledLabel: Public dashboard
+  publicSlugLabel: Link path
   publicSlugPlaceholder: e.g. my-site
-  publicSlugHint: Customize the URL path identifier. Leave blank to generate one.
-  publicLinkLabel: Public Link
+  publicSlugHint: The part of the link after /share/.
+  publicLinkLabel: Public link
   copiedLink: Link copied
-  trackingStrengthGroupTitle: Tracking Strength
+  trackingStrengthGroupTitle: Tracking strength
   trackingStrengthStrong: Strong
   trackingStrengthSmart: Smart
   trackingStrengthWeak: Weak
@@ -1318,18 +1142,14 @@ siteSettings:
   botProtectionEnabledHint: High-confidence bot requests are blocked when this is
     enabled; otherwise they remain included in statistics.
   hostingProxyBlockingEnabledLabel: Block hosting and proxy traffic
-  hostingProxyBlockingEnabledHint: Block suspected bot requests from hosting or
-    proxy networks. This is disabled by default.
-  trackQueryParamsLabel: Track Query Parameters
-  trackHashLabel: Track URL Hash
-  blockingRulesSave: Save Blocking Rules
-  blockingRulesSaving: Saving Blocking Rules...
+  hostingProxyBlockingEnabledHint: Block suspected bot requests from hosting or proxy networks.
+  trackQueryParamsLabel: Track query parameters
+  trackHashLabel: Track URL hash
+  blockingRulesSave: Save rules
   blockingRulesDialogs:
-    testButton: Test
-    helpButton: Help
     searchButton: Search
     searchTitle: Search locations
-    searchDescription: Search by name or code, then select a result to add it to this card.
+    searchDescription: Search by name or code, then pick a result.
     searchInputLabel: Search
     searchInputPlaceholder: Search by name or code
     searchCountryLabel: Country / region
@@ -1339,265 +1159,50 @@ siteSettings:
     searchNoResults: No matching locations.
     searchLoadError: Locations could not be loaded. Try again later.
     searchClose: Close
-    helpTitle: Rule Syntax
-    helpDescription: Review the syntax, examples, and precedence for this field.
-    syntaxTitle: Syntax
-    examplesTitle: Example configuration
-    actionsTitle: Rule actions
-    actionsDescription: A normal line blocks a match. Prefix a rule with - to allow
-      it. If multiple lines match, the last matching line wins.
-    actionBlock: Blocks when {example} matches
-    actionAllow: Allows when {example} matches
-    statusEmpty: No blocking rules are currently set for {field}.
-    statusValid: The current rules are valid.
-    statusInvalid: The current rules are invalid. Click Help on the right for details.
-    errorInvalidRule: Invalid rule.
-    errorInvalidLines: Rules for {field} must be provided one per line.
-    errorInvalidLine: Line {line} is not a valid text rule.
-    errorLineTooLong: Line {line} is too long.
-    errorTooManyLines: Too many rule lines.
-    errorInvalidPattern: Line {line} has an invalid rule pattern.
-    testTitle: Test Rules
-    testDescription: Enter a request value to evaluate the current contents of this
-      card. Unsaved edits are included.
-    testRun: Run Test
-    testClose: Close
-    testInvalidRules: Fix invalid rules before testing.
-    testInvalidRule: Invalid rule.
-    testBlocked: Blocked
-    testAllowed: Allowed
-    testNoMatch: No rule matched; this field allows the value.
-    testMatchedRules: Matched rules
-    testActionBlock: blocks
-    testActionAllow: allows
-    testLine: Line
   blockingRulesFields:
     domains:
       title: Domains
-      label: Domain rules (one per line)
-      placeholder: |
-        *
-        -example.com
-        -*.example.com
-        admin.example.com
-      hint: Matches the page hostname. Use * with -domain.com for an allowlist.
-      syntax: |
-        Each line: [ - ] hostname-glob
-        Lines starting with # are treated as comments and ignored.
-        Use * as a wildcard. A leading - creates an allow rule.
-        Matching is case-insensitive and uses the page hostname.
-      examples:
-        - "*"
-        - "-example.com"
-        - "-*.example.com"
-        - "admin.example.com"
-      exampleDescription: This configuration first blocks every domain, then allows
-        example.com and its subdomains, and finally blocks the exact
-        admin.example.com domain again.
-      testLabel: Hostname
-      testPlaceholder: www.example.com
-      testHint: Enter the page hostname without a scheme or path.
+      placeholder: admin.example.com
     paths:
       title: Paths
-      label: Path rules (one per line)
-      placeholder: |
-        /admin/*
-        /checkout/*/confirm
-        -/admin/health
-      hint: Matches normalized URL paths with glob syntax.
-      syntax: |
-        Each line: [ - ] /path-glob
-        Lines starting with # are treated as comments and ignored.
-        Paths start with / and * matches any characters.
-        Matching is case-sensitive after URL path normalization.
-      examples:
-        - "/admin/*"
-        - "/checkout/*/confirm"
-        - "-/admin/health"
-      exampleDescription: This configuration blocks paths under /admin/ and paths
-        matching /checkout/*/confirm, while allowing /admin/health.
-      testLabel: URL path
-      testPlaceholder: /admin/settings
-      testHint: Enter the pathname only, including its leading slash.
+      placeholder: /admin/*
     queryParameters:
-      title: Query Parameters
-      label: Query rules (one per line)
-      placeholder: |
-        utm_*
-        utm_source=*
-        -utm_source=trusted
-      hint: Use key or key=value patterns; * is supported in keys and values.
-      syntax: |
-        Each line: [ - ] key-glob[=value-glob]
-        Lines starting with # are treated as comments and ignored.
-        Omitting = matches any value for the key.
-        Matching is case-sensitive and supports * in keys and values.
-      examples:
-        - "utm_*"
-        - "utm_source=*"
-        - "-utm_source=trusted"
-      exampleDescription: This configuration blocks keys beginning with utm_ and any
-        value of utm_source, while allowing utm_source=trusted.
-      testLabel: Query string
-      testPlaceholder: utm_source=internal&utm_campaign=spring
-      testHint: Enter a query string with or without the leading ?.
+      title: Query parameters
+      placeholder: utm_source=spam
     referrers:
       title: Referrers
-      label: Referrer rules (one per line)
-      placeholder: |
-        *.example.com
-        social.example.com
-        -trusted.example.com
-      hint: Matches the referrer hostname.
-      syntax: |
-        Each line: [ - ] hostname-glob
-        Lines starting with # are treated as comments and ignored.
-        A URL is reduced to its hostname before matching.
-        Matching is case-insensitive and supports *.
-      examples:
-        - "*.example.com"
-        - "social.example.com"
-        - "-trusted.example.com"
-      exampleDescription: This configuration blocks example.com referrers and
-        social.example.com, while allowing trusted.example.com.
-      testLabel: Referrer
-      testPlaceholder: https://social.example.com/article
-      testHint: Enter a referrer URL or hostname.
+      placeholder: "*.spam.example"
     userAgents:
-      title: User Agents
-      label: User-agent rules (one per line)
-      placeholder: |
-        *bot*
-        Mozilla/*
-        -Googlebot
-      hint: Case-insensitive glob matching against the request User-Agent.
-      syntax: |
-        Each line: [ - ] text-glob
-        Lines starting with # are treated as comments and ignored.
-        * matches any characters in the request User-Agent.
-        Matching is case-insensitive.
-      examples:
-        - "*bot*"
-        - "Mozilla/*"
-        - "-Googlebot"
-      exampleDescription: This configuration blocks User-Agent values containing bot
-        and values beginning with Mozilla/, while allowing Googlebot.
-      testLabel: User-Agent
-      testPlaceholder: Mozilla/5.0 (compatible; ExampleBot/1.0)
-      testHint: Enter the complete or partial request User-Agent.
+      title: User agents
+      placeholder: "*bot*"
     ips:
-      title: IP Addresses
-      label: IP rules (one per line)
-      placeholder: |
-        203.0.113.15
-        2001:db8::1
-        203.0.113.0/24
-        2001:db8::/32
-        -203.0.113.10..203.0.113.20
-      hint: Supports IPv4/IPv6 addresses, CIDR ranges, and start..end ranges.
-      syntax: |
-        Each line: [ - ] address | CIDR | start..end
-        Lines starting with # are treated as comments and ignored.
-        IPv4 and IPv6 addresses are supported.
-        Ranges must use the same address family and be ordered.
-      examples:
-        - "203.0.113.15"
-        - "2001:db8::1"
-        - "203.0.113.0/24"
-        - "2001:db8::/32"
-        - "-203.0.113.10..203.0.113.20"
-      exampleDescription: This configuration demonstrates individual IPv4/IPv6
-        addresses, CIDR ranges, and start..end ranges; the prefixed range is
-        allowed.
-      testLabel: IP address
-      testPlaceholder: 203.0.113.15
-      testHint: Enter one IPv4 or IPv6 address to test.
+      title: IP addresses
+      placeholder: 203.0.113.0/24
     asns:
       title: ASNs
-      label: ASN rules (one per line)
-      placeholder: |
-        64500
-        *
-        -64501
-      hint: Match the numeric autonomous system number from Cloudflare metadata.
-      syntax: |
-        Each line: [ - ] ASN-number
-        Lines starting with # are treated as comments and ignored.
-        Use * to match any ASN.
-        The optional AS prefix is accepted when testing metadata values.
-      examples:
-        - "64500"
-        - "*"
-        - "-64501"
-      exampleDescription: This configuration blocks ASN 64500 and any ASN, while the
-        final rule allows ASN 64501.
-      testLabel: ASN
-      testPlaceholder: "64500"
-      testHint: Enter the numeric autonomous system number.
+      placeholder: "64500"
     countries:
-      title: Countries / Regions
-      label: Country rules (one per line)
-      placeholder: |
-        DE
-        *
-        -US
-      hint: Use ISO 3166-1 alpha-2 country codes.
-      syntax: |
-        Each line: [ - ] ISO-3166-alpha-2
-        Lines starting with # are treated as comments and ignored.
-        Use * to match any country.
-        Country codes are matched case-insensitively.
-      examples:
-        - "DE"
-        - "*"
-        - "-US"
-      exampleDescription: This configuration blocks DE and any country, while the
-        final rule allows US.
-      testLabel: Country code
-      testPlaceholder: DE
-      testHint: Enter an ISO 3166-1 alpha-2 country code.
+      title: Countries
+      placeholder: DE
     regions:
-      title: States / Provinces
-      label: Region rules (one per line)
-      placeholder: |
-        DE-BE
-        *
-        -US-CA
-      hint: Use COUNTRY-REGION_CODE values from Cloudflare metadata.
-      syntax: |
-        Each line: [ - ] COUNTRY-REGION_CODE
-        Lines starting with # are treated as comments and ignored.
-        Use * to match any region.
-        Region values are matched case-insensitively.
-      examples:
-        - "DE-BE"
-        - "*"
-        - "-US-CA"
-      exampleDescription: This configuration blocks DE-BE and any region, while the
-        final rule allows US-CA.
-      testLabel: Region code
-      testPlaceholder: US-CA
-      testHint: Enter the COUNTRY-REGION_CODE value from metadata.
-  ignoreDoNotTrackLabel: Ignore Browser Do Not Track
+      title: States / provinces
+      placeholder: US-CA
+  ignoreDoNotTrackLabel: Ignore Do Not Track
   autoTrackOutboundLinksLabel: Auto-track outbound link clicks
   autoTrackOutboundLinksHint: When enabled, clicking links to external domains
     automatically reports outbound_click events.
-  performanceSampleRateLabel: Performance Sample Rate (%)
+  performanceSampleRateLabel: Web Vitals sample rate
   performanceSampleRateHint: A sampled visit records TTFB, FCP, LCP, CLS, and INP
     on leave. Use 0 to disable sampling or 100 for full coverage.
-  saveTracking: Save Tracking Settings
-  savingTracking: Saving Tracking Settings...
-  save: Save Changes
+  save: Save
   saving: Saving...
-  scriptTitle: Install Tracking Script
-  scriptHint: Recommended before </head>; if needed you can place it before
-    </body>, but ensure it's loaded once per page.
-  copyScript: Copy Script
+  scriptHint: Paste it before </head> on every page.
+  copyScript: Copy script
   copiedScript: Script copied.
   scriptUnavailable: Script is currently unavailable.
-  deleteTitle: Delete Site
-  deleteSubtitle: This action will remove the site from this team.
-  delete: Delete Site
+  deleteTitle: Delete site
+  deleteSubtitle: Deletes the site and all of its analytics data.
+  delete: Delete site
   deleting: Deleting...
   deleteConfirm: This action cannot be undone. Continue?
   toasts:
@@ -1605,128 +1210,67 @@ siteSettings:
     saveFailed: Failed to save site settings.
     scriptLoadFailed: Failed to load script snippet.
     settingsLoadFailed: Failed to load script settings.
-    settingsPropagationHint: Global propagation to edge nodes may take up to 1 hour.
+    settingsPropagationHint: Changes take up to an hour to apply.
     deleted: Site deleted.
     deleteFailed: Failed to delete site.
-    invalidInput: Please provide a valid site name and domain.
+    invalidInput: Enter a site name and a valid domain.
+  publicEnabledHint: Anyone with the link can view this site's reports.
+  viewBlockedRequests: See blocked requests
+  blockingRulesHelp: Requests that match a Block rule aren't counted. Allow makes
+    an exception. When several rules of one type match, the last one wins. Use *
+    as a wildcard.
+  blockingRuleTypeLabel: Type
+  blockingRuleActionLabel: Action
+  blockingRuleValueLabel: Value
+  blockingRuleBlock: Block
+  blockingRuleAllow: Allow
+  blockingRuleAdd: Add rule
+  blockingRuleRemove: Remove rule
+  blockingRulesEmpty: No blocking rules.
+  blockingRuleInvalid: Enter a valid value for this type.
+  blockingRulesTooMany: Too many {type} rules.
 accountSettings:
   emailManagedByGateway: Your email comes from your Every App account.
-  profileTitle: Personal Details
+  profileTitle: Personal details
   nicknameLabel: Display name
   nicknamePlaceholder: e.g. Product Analyst
   emailLabel: Email
-  profileSave: Save details
-  profileSaving: Saving...
   profileSaved: Personal details saved.
   profileSaveFailed: Failed to save personal details.
-  preferredLanguageTitle: Notification Language
-  preferredLanguageLabel: Email language
-  preferredLanguageDefault: Default
-  preferredLanguageEnglish: English
-  preferredLanguageChinese: Simplified Chinese
-  preferredLanguageTraditionalChinese: Traditional Chinese
-  preferredLanguageJapanese: Japanese
-  preferredLanguageSaved: Notification language saved.
-  preferredLanguageSaveFailed: Failed to save notification language.
-  timeZoneTitle: Reporting Time Zone
-  activeTimeZone: Active time zone
-  browserTimeZone: Browser time zone
+  timeZoneTitle: Time zone
   browserUnavailable: Not detected
-  preferenceLabel: Time zone preference
-  useBrowser: Use browser time zone
-  useCustom: Choose a time zone
-  customTimeZoneLabel: Time zone
-  invalidTimeZone: Please choose a valid IANA time zone.
-  save: Save preference
-  saving: Saving...
-  saved: Time zone preference saved.
-  saveFailed: Failed to save time zone preference.
+  useBrowser: Browser time zone ({zone})
+  saved: Time zone saved.
+  saveFailed: Couldn't save the time zone.
+  timeZoneLabel: Reporting time zone
+  languageSaveFailed: Couldn't save your language.
 notificationCenter:
-  title: Notification Center
+  title: Inbox
   empty: No notifications yet.
   loading: Loading notifications
   markRead: Mark read
   markAllRead: Mark all as read
-  refresh: Refresh
-  attention: Attention
   loadFailed: Failed to load notifications.
   markReadFailed: Failed to mark notification as read.
   markAllReadSuccess: Notifications marked as read.
   markAllReadFailed: Failed to mark notifications as read.
-  ruleFilterActive: Viewing notifications created by this rule.
-  ruleFilterClear: Clear rule filter
-  sections:
-    importantTitle: Important Notifications
-    importantDescription: "{count} unread attention items."
-    importantEmpty: No important notifications right now.
-    reportsTitle: Reports
-    reportsDescription: Review recurring reports generated by notification rules.
-    reportsEmpty: No reports right now.
   tabs:
     all: All
     unread: Unread
-    attention: Attention
-    report: Reports
-  tabDescriptions:
-    all: Total messages
-    unread: Waiting for review
-    attention: Needs attention
-    report: Recurring reports
-  messageTypes:
-    report: Report
-    milestone: Milestone
-    threshold: Threshold
-    change: Change
-    health: Health
-    system: System
-    test: Test
   severities:
     info: Info
     success: Success
     warning: Warning
     critical: Critical
-  deliveryStatuses:
-    created: Created
-    sending: Sending
-    sent: Sent
-    partial: Partial
-    failed: Failed
-    skipped: Skipped
-  channels:
-    inApp: In-app
-    email: Email
-  channelStatuses:
-    sent: sent
-    skipped: skipped
-    failed: failed
-    created: created
-  emailSkipReasons:
-    user_preference_disabled: email disabled by user preference
-    system_email_unconfigured: system email is not configured
-    recipient_email_invalid: recipient email is invalid
-    secret_decryption_failed: saved email credentials cannot be decrypted
-    provider_failed: provider rejected the message
-    network_failed: unable to reach email provider
-    unknown: unknown reason
-  emailAttempts: "Attempts: {count}"
-  emailRetryCount: "Retries: {count}"
-  emailDuration: "{duration} ms"
-  typeFilterLabel: Type
-  severityFilterLabel: Severity
-  allTypes: All types
-  allSeverities: All severities
   preferencesTitle: Notification preferences
   emailNotificationsLabel: Email notifications
-  emailNotificationsDescription: Send email when a rule triggers.
-  reportsUnreadLabel: Reports unread
-  reportsUnreadDescription: Keep reports unread after creation.
-  milestonesUnreadLabel: Milestones unread
-  milestonesUnreadDescription: Reserve unread state for milestones.
-  alertsUnreadLabel: Alerts unread
-  alertsUnreadDescription: Keep threshold and health alerts unread.
-  preferencesSaved: Notification preferences saved.
+  reportsUnreadLabel: Mark new reports as unread
+  milestonesUnreadLabel: Mark new milestones as unread
+  alertsUnreadLabel: Mark new alerts as unread
   preferencesSaveFailed: Failed to save notification preferences.
   detailFields: {}
+  noUnread: No unread notifications.
+  emailFailed: Email failed
 notificationEmail:
   common:
     brand: OpenAnalytics
@@ -1790,7 +1334,7 @@ notificationEmail:
       visitors: visitors
       sessions: sessions
     windows:
-      last_1h: Last 1 hour
+      last_1h: Last hour
       last_24h: Last 24 hours
       yesterday: Yesterday
   health:
@@ -1803,22 +1347,11 @@ notificationEmail:
     title: "{site} traffic change alert"
     summary: "{metric} for {window} changed by {change}."
 runtimeConfigError:
-  title: Runtime configuration required
-  eyebrow: Deployment paused
-  heading: OpenAnalytics needs one runtime secret before the dashboard can load.
-  description: The app has started, but the current runtime environment could not
-    read the required root secret, so dashboard access is temporarily blocked.
-  requiredTitle: Required runtime secret
-  requiredDescription: Set at least one of the following values in your Cloudflare runtime secrets.
-  secretHint: MAIN_SECRET is recommended. Existing deployments can continue using
-    DAILY_SALT_SECRET.
-  commandTitle: Cloudflare command
-  commandDescription: Use the project helper command to write the recommended
-    secret, then redeploy.
-  quickStartHint: Or see the Quick Start section in the GitHub README to configure
-    this variable.
-  docsLabel: Open GitHub
-  homeLabel: Retry dashboard
+  title: Dashboard unavailable
+  heading: This dashboard isn't available right now.
+  setupSummary: Set up this deployment
+  setupCommand: Set the root secret with this command, then reload this page.
+  docsLabel: Deployment guide
 login: {}
 accountLinks:
   invite:
@@ -1826,25 +1359,12 @@ accountLinks:
   resetPassword: {}
 empty: {}
 errorPage:
-  notFoundEyebrow: Page not found
   notFoundTitle: We couldn't find that page
   notFoundDescription: The address may be incorrect, or the page may have moved.
-  errorEyebrow: Application error
   errorTitle: Something went wrong
-  errorDescription: OpenAnalytics couldn't complete this request. The diagnostic
-    details below can help us investigate.
-  statusLabel: Status
-  reasonLabel: Reason
-  requestLabel: Request path
-  timestampLabel: Timestamp
-  diagnosticIdLabel: Diagnostic ID
-  errorTypeLabel: Error type
-  errorMessageLabel: Error message
-  notFoundReason: route_not_found
-  unexpectedReason: unexpected_application_error
+  errorDescription: OpenAnalytics couldn't complete this request.
   homeAction: Return home
   reportAction: Report on GitHub
-  reportHint: The report opens a pre-filled GitHub issue. Review it before submitting.
 actions:
   switchToEnglish: English
   switchToChinese: Simplified Chinese
@@ -1859,29 +1379,30 @@ teamManagement:
   stats: {}
   toasts: {}
   sites:
-    aggregateTitle: Total Visits
+    aggregateTitle: Total visits
     openAnalytics: Open analytics
     title: All sites
-    pagesPerSession: Pages / Session
+    pagesPerSession: Pages / session
+    public: Public
+    openPublic: Open the public dashboard
   widgets: {}
   notifications:
-    empty: This team has no notification rules yet.
-    rulesTitle: Notification Rules
-    enabledCount: "{count} enabled rules in this team."
+    empty: No notification rules yet.
+    rulesTitle: Notification rules
+    enabledCount: "{count} enabled rules in this organization."
     loadingRules: Loading notification rules
-    deliveryTestTitle: Delivery Test
+    deliveryTestTitle: Delivery test
     deliveryTestDescription: Creates one in-app notification for you and attempts email when available.
     inAppTestHint: We will send you an in-app notification.
     emailTestConfiguredHint: We will send you a test email.
-    emailTestUnconfiguredHint: Email sending is not configured for this system.
-      Contact an administrator to add it.
+    emailTestUnconfiguredHint: Email isn't set up on this Every App gateway.
     sendTestNotification: Send test notification
     loadRulesFailed: Failed to load notification rules.
     testNotificationSent: Test notification sent.
     sendTestNotificationFailed: Failed to send test notification.
     createRule: Create rule
     editRule: Edit rule
-    dialogDescription: Configure a basic notification rule for this team.
+    dialogDescription: Set up a notification rule for this organization.
     ruleInfoSection: Rule info
     scheduleSection: Schedule
     sendScheduleSection: Send time
@@ -1923,8 +1444,8 @@ teamManagement:
     cooldownLabel: Cooldown
     cooldownDescription: Notifications will not be sent again during this cooldown window.
     noDataHoursLabel: No data hours
-    pleaseChooseSite: Please choose a site.
-    pleaseChooseRecipients: Please choose at least one recipient.
+    pleaseChooseSite: Choose a site.
+    pleaseChooseRecipients: Choose at least one recipient.
     ruleCreated: Rule created.
     ruleUpdated: Rule updated.
     createRuleFailed: Failed to create rule.
@@ -1939,7 +1460,6 @@ teamManagement:
     disable: Disable
     delete: Delete
     saveRule: Save rule
-    emailPreview: Email preview
     preview: Preview
     runNow: Run now
     previewFailed: Failed to preview rule.
@@ -1977,7 +1497,7 @@ teamManagement:
       recipient: Recipient
       schedule: Schedule
       condition: Condition
-      nextRun: Next Run
+      nextRun: Next run
       status: Status
     status:
       enabled: Enabled
@@ -1992,7 +1512,6 @@ teamManagement:
       title: Title
       htmlPreview: HTML preview
       bodyText: Body text
-      data: Data
       createdAt: Created at
       updatedAt: Updated at
       loadingContent: Loading evaluated report content
@@ -2012,13 +1531,13 @@ teamManagement:
       health: Notify when tracking goes quiet
     recipientModes:
       creator: Creator
-      team_admins: Team admins
+      team_admins: Organization admins
       all_team_members: All members
       users: Selected users
     recipientKindLabel: Recipient type
     recipientPresetLabel: Preset
     customRecipientsEmpty: No recipients selected
-    noTeamMembers: No team members available.
+    noTeamMembers: No organization members yet.
     recipientKinds:
       preset: Preset
       custom: Custom
@@ -2060,28 +1579,17 @@ teamManagement:
       visitors: Visitors
       sessions: Sessions
     windows:
-      last_1h: Last 1h
-      last_24h: Last 24h
+      last_1h: Last hour
+      last_24h: Last 24 hours
       yesterday: Yesterday
-    emailPreviewPage:
-      title: Notification email preview
-      typeLabel: Preview type
-      localeLabel: Preview locale
-      formatLabel: Preview format
-      html: HTML
-      text: Plain text
-      json: JSON
-      refresh: Preview
-      loading: Rendering preview...
-      loadFailed: Failed to render email preview.
-      subject: Subject
+    addSiteFirst: Add a site first.
+    deleteDescription: This can't be undone.
+    previewStatuses:
+      skipped: Skipped
+      checked: Not triggered
+      triggered: Triggered
   publicLinks:
-    enabled: Enabled
-    disabled: Disabled
-    viewSettings: View Settings
-    copyLink: Copy Link
-    linkCopied: Link copied
-    noSites: This team has no sites yet.
+    copyLink: Copy link
     columns: {}
   apiKeys:
     status: {}
@@ -2094,8 +1602,6 @@ teamManagement:
     inviteStatuses: {}
     columns: {}
     roleLabels: {}
-managementNav:
-  scheduledTasks: Scheduled Tasks
 managementPages:
   versionUpdates: {}
   scheduledTasks:
@@ -2104,19 +1610,14 @@ managementPages:
     loadFailed: Failed to load scheduled tasks.
     loadMore: Load more
     allStatuses: All statuses
-    runs24h: Runs in 24h
-    successRate24h: Success rate in 24h
-    successRateDescription: Counts only successful runs.
+    runs24h: Runs (last 24 hours)
+    successRate24h: Success rate (last 24 hours)
     problemRuns24h: Problematic runs
-    retentionPrefix: Retained for
-    days: days
     failed: Failed
     partial: Partial
     lastRun: Last run
     staleRunning: Long-running unfinished runs
-    noStaleRunning: No long-running unfinished runs
     taskListTitle: Tasks
-    taskListDescription: Registered scheduled tasks and 30-day health status.
     task: Task
     schedule: Schedule
     enabled: State
@@ -2125,12 +1626,11 @@ managementPages:
     taskStateSaved: Task state updated.
     taskStateSaveFailed: Failed to update task state.
     lastStatus: Last status
-    runs30d: 30d runs
-    successRate30d: 30d success rate
-    avgDuration: Avg duration
+    runs30d: Runs (30 days)
+    successRate30d: Success rate (30 days)
+    avgDuration: Avg. duration
     runHistoryTitle: Run history
     nextRun: Next run
-    runHistoryDescription: Task runs retained over the last 30 days.
     noRuns: No runs yet.
     scheduledAt: Scheduled
     startedAt: Started
@@ -2163,8 +1663,7 @@ managementPages:
     taskDefinitions:
       visit_hourly_rollup:
         name: Hourly visit aggregation
-        description: Aggregates closed visit rows into hourly rollups for dashboard
-          counters and trends.
+        description: Rolls finished visits up into hourly totals for reports.
         schedule: Every hour
       notification_tick:
         name: Notification dispatch
@@ -2172,33 +1671,24 @@ managementPages:
         schedule: Every 30 minutes
       database_maintenance:
         name: Database maintenance
-        description: Removes expired run data and notifications, and optimizes D1 query
-          statistics.
+        description: Removes expired task runs and notifications, and tunes the database.
         schedule: Every day
+    keptForDays: Kept for {days} days
 adminUsers:
   columns: {}
 adminSites:
-  createTitle: Create Site
-  name: Site Name
+  createTitle: Add site
+  name: Name (optional)
   domain: Domain
-  publicSlug: Public Slug (optional)
-  create: Create Site
-  creating: Creating...
-  noData: No site found.
-  loadFailed: Failed to load sites.
-  createSuccess: Site created.
-  createFailed: Failed to create site.
-  invalidInput: Please provide a valid site name and domain.
-  open: Open analytics
-  columns:
-    name: Name
-    domain: Domain
-    created: Created
-    action: Action
+  create: Add site
+  creating: Adding...
+  createSuccess: Site added.
+  createFailed: Couldn't add the site. Try again.
+  invalidDomain: Enter a domain, like example.com.
+  columns: {}
 adminTeams:
   columns: {}
 requestObservation:
-  title: Request Observability
   blockedTotal: "Blocked requests"
   retentionNote: "Kept for 30 days. Allowed traffic is in each site's dashboards."
   topReasons: "Reasons"
@@ -2209,8 +1699,8 @@ requestObservation:
     suspected_bot: "Hosting network"
   tabs: {}
   refresh: Refresh
-  loadFailed: Failed to load request observability data.
-  noData: No request data in this window.
+  loadFailed: Couldn't load blocked requests.
+  noData: No blocked requests in this period.
   time: Time
   site: Site
   location: Location
@@ -2219,14 +1709,14 @@ requestObservation:
   userAgent: User agent
   emptyValue: Unknown
   pathname: Path
-  country: Country / Region
-  ipPrefix: IP Prefix
+  country: Country / region
+  ipPrefix: IP prefix
   botReasonLabels:
-    missing_ua: Missing User-Agent
-    ua_too_long: User-Agent too long
-    ua_isbot: User-Agent matches bot
-    script_ua: Script client User-Agent
-    cf_bot_score_low: Low Cloudflare Bot Score
+    missing_ua: Missing user agent
+    ua_too_long: User agent too long
+    ua_isbot: User agent matches a bot
+    script_ua: Script client user agent
+    cf_bot_score_low: Low Cloudflare bot score
     cf_verified_bot_category: Cloudflare verified bot category
     hosting_asn: Hosting ASN
     network_service_asn: Network service ASN
@@ -2239,7 +1729,7 @@ requestObservation:
     blocked_paths: Blocked paths
     blocked_query_parameters: Blocked query parameters
     blocked_referrers: Blocked referrers
-    blocked_user_agents: Blocked User-Agents
+    blocked_user_agents: Blocked user agents
     blocked_ips: Blocked IPs
     blocked_asns: Blocked ASNs
     blocked_countries: Blocked countries
@@ -2249,61 +1739,9 @@ requestObservation:
     windowDays: "Last {days} days"
   normalDetail: {}
 systemSettings:
-  title: System Settings
-  subtitle: Manage instance-wide configuration for this OpenAnalytics deployment.
-  guide: Guide
-  analyticsEngineTitle: Analytics Engine
-  analyticsEngineDescription: Configure the Cloudflare credentials used to read
-    Analytics Engine data for request observation and future traffic and event
-    analytics.
-  analyticsEngineAccountIdLabel: Cloudflare Account ID
-  analyticsEngineApiTokenLabel: Cloudflare API token
-  analyticsEngineApiTokenPlaceholder: View the guide to get a Cloudflare API token
-  analyticsEngineSaved: Analytics Engine configuration saved.
-  analyticsEngineSaveFailed: Failed to save Analytics Engine configuration.
-  analyticsEngineDeleted: Analytics Engine configuration deleted.
-  analyticsEngineDeleteFailed: Failed to delete Analytics Engine configuration.
-  analyticsEngineDeleteConfirm: Delete the Analytics Engine read credentials?
-    Features that depend on Analytics Engine will show configuration required
-    until the credentials are restored.
-  analyticsEngineDisabledTitle: Analytics Engine is not enabled
-  analyticsEngineDisabledDescription: This deployment automatically disabled the
-    Analytics Engine binding because the Cloudflare account has not enabled
-    Analytics Engine. Enable Analytics Engine in Cloudflare, then redeploy Open
-    Analytics to activate related analysis features.
-  analyticsEngineDisabledHint: Analytics Engine settings are locked until
-    Analytics Engine is enabled and the Worker is redeployed.
-  analyticsEngineOpenCloudflare: Open Cloudflare Analytics Engine
-  analyticsEngineGuideTitle: Get Analytics Engine credentials
-  analyticsEngineGuideDescription: Analytics Engine needs Cloudflare account
-    details and an API token that can read Analytics Engine data.
-  analyticsEngineGuideSteps:
-    - Open the Cloudflare Dashboard, enter the target account, and copy the
-      Account ID.
-    - Enable Analytics Engine under Workers & Pages; the Request, Traffic, and
-      Event datasets are created and bound automatically during deployment.
-    - Go to My Profile → API Tokens and create a Custom token.
-    - Grant the token Account Analytics read access and scope it to the current
-      account.
-    - Copy the token, then enter the Account ID and API token here.
-  notificationEmailTitle: Email Notifications
-  notificationEmailDescription: "Reports, alerts and test messages are sent by
-    email through the Every App gateway."
-  emailGatewayReady: "The Every App gateway sends notification email."
-  emailGatewayNotReady: "The Every App gateway has no email sender set up yet. Its
-    operator sets EMAIL_FROM and Email Sending, then notification email starts."
+  notificationEmailTitle: Email notifications
+  emailGatewayNotReady: "Email isn't set up on this Every App gateway."
   emailSenderLabel: "Sender"
-  notificationEmailGuideTitle: Get Resend email settings
-  notificationEmailGuideDescription: To send system email through Resend, prepare
-    a verified sender domain and an API key.
-  notificationEmailGuideSteps:
-    - Open the Resend Dashboard and confirm the sender domain has passed DNS
-      verification.
-    - Create a new API key from the API Keys page.
-    - Choose the permissions required to send email, then copy the generated API
-      key.
-    - Enter the sender name, sender email, Reply-To, and Resend API key here.
-    - Save the configuration, then send a test email to confirm delivery works.
   retentionTitle: Operational data retention
   retentionDescription: Configure how long task runs, task logs, notification
     messages and detailed analytics remain available. Task and notification
@@ -2319,144 +1757,87 @@ systemSettings:
   retentionSaving: Saving...
   retentionSaved: Retention settings saved.
   retentionSaveFailed: Failed to save retention settings.
-  loginTurnstileTitle: Login Turnstile Protection
-  loginTurnstileDescription: When enabled, the login page runs Cloudflare
-    Turnstile Invisible verification in the background and the server enforces
-    it during sign-in.
-  loginTurnstileEnabledLabel: Enable login protection
-  loginTurnstileSiteKeyLabel: Site Key
-  loginTurnstileSecretKeyLabel: Secret Key
-  loginTurnstileSecretKeyPlaceholder: View the guide to get a Turnstile Secret Key
-  loginTurnstileModeLabel: Verification mode
-  loginTurnstileModeInvisible: Invisible
-  loginTurnstileTest: Test configuration
-  loginTurnstileTesting: Verifying...
-  loginTurnstileTestPassed: Verification passed
-  loginTurnstileTestRequired: New Secret Key must be tested first
-  loginTurnstileTestMissing: Enter both Site Key and Secret Key first.
-  loginTurnstileTestFailed: Verification failed. Check the Site Key and Secret Key.
-  loginTurnstileSaved: Login Turnstile configuration saved.
-  loginTurnstileSaveFailed: Failed to save login Turnstile configuration.
-  loginTurnstileDeleted: Login Turnstile configuration deleted.
-  loginTurnstileDeleteFailed: Failed to delete login Turnstile configuration.
-  loginTurnstileDeleteConfirm: Delete the login Turnstile configuration? Login protection will be disabled.
-  loginTurnstileLoadFailed: Failed to load login Turnstile configuration.
-  loginTurnstilePrivacyNotice: Create an Invisible widget in the Cloudflare
-    Turnstile console. For self-hosted deployments, confirm your privacy policy
-    matches Cloudflare Turnstile requirements.
-  loginTurnstileGuideTitle: Get Turnstile credentials
-  loginTurnstileGuideDescription: Login protection needs a Cloudflare Turnstile Site Key and Secret Key.
-  loginTurnstileGuideSteps:
-    - Open the Cloudflare Dashboard and go to Turnstile.
-    - Create a new widget and choose Invisible mode.
-    - Add the current OpenAnalytics login domain to the allowed hostnames.
-    - Copy the Site Key and Secret Key after the widget is created.
-    - Enter the Site Key and Secret Key here, run the verification test, then
-      save the configuration.
-  enabledLabel: Enable email sending
   enabledOn: Enabled
   enabledOff: Disabled
-  providerLabel: Email service
-  providerResend: Resend
-  fromNameLabel: Sender name
-  fromEmailLabel: Sender email
-  replyToLabel: Reply-To email
-  replyToPlaceholder: Optional, defaults to sender email
-  resendApiKeyLabel: Resend API Key
-  resendApiKeyPlaceholder: View the guide to get a Resend API key
-  testRecipientLabel: Test recipient
-  save: Save configuration
-  saving: Saving...
-  test: Send test email
-  testing: Sending...
-  saved: Email configuration saved.
-  saveFailed: Failed to save email configuration.
-  delete: Delete configuration
-  deleting: Deleting...
   cancel: Cancel
-  deleted: Email configuration deleted.
-  deleteFailed: Failed to delete email configuration.
-  deleteConfirm: Delete the email notification configuration? The system will
-    treat email as unconfigured and disabled.
-  testSent: Test email sent.
-  testFailed: Failed to send test email.
-  loadFailed: Failed to load email configuration.
+  retentionLowerTitle: Delete older analytics?
+  retentionLowerDescription: Page views and events older than {days} days are
+    deleted on the next daily run. Hourly totals are kept. This can't be undone.
+  retentionLowerConfirm: Save and delete
 systemPerformance:
-  title: System Performance
   refresh: Refresh
-  loadFailed: Failed to load system performance data.
-  noData: No system performance data in this window.
+  loadFailed: Couldn't load ingestion data.
+  noData: No ingestion data in this period.
   range15m: Last 15 minutes
-  range1h: Last 1 hour
+  range1h: Last hour
   range6h: Last 6 hours
   range24h: Last 24 hours
-  totalEvents: Accepted Events
-  p95Latency: P95 Estimated Delay
+  totalEvents: Accepted events
+  p95Latency: P95 estimated delay
   p50Latency: P50
   p75Latency: P75
   p50Label: P50
   p75Label: P75
   p95Label: P95
-  dataFreshness: Data Freshness
+  dataFreshness: Data freshness
   noRecentWrite: No recent write
-  clockAnomalies: Clock / Delay Anomalies
+  clockAnomalies: Clock / delay anomalies
   delayed: Delayed
   future: Future timestamps
-  latencyPercentileTrend: Latency Percentile Trend
+  latencyPercentileTrend: Latency percentile trend
   latencyPercentileTrendDescription: View estimated P50, P75, and P95 delay for received events.
-  throughputTrend: Accepted Event Throughput
+  throughputTrend: Accepted event throughput
   throughputTrendDescription: View the throughput of received events.
   visits: Visits
-  customEvents: Custom Events
+  customEvents: Custom events
   anomalyBucket: Anomaly bucket
-  openVisitHealth: Open Visit Backlog
-  openVisitHealthDescription: Open rows that have not been closed by leave, route
-    change, or timeout finalization.
+  openVisitHealth: Open visit backlog
+  openVisitHealthDescription: Visits that haven't ended yet.
   open: Open
   stale: Stale
   timedOut: Timed out
   oldestOpen: Oldest open
   latestActivity: Latest activity
-  latencySampleHealth: Latency Sample Health
+  latencySampleHealth: Latency sample health
   latencySampleHealthDescription: View the delay of trusted events.
   trustedSamples: Trusted samples
-  topSitesTitle: Top Sites by System Load
+  topSitesTitle: Top sites by load
   topSitesDescription: Sites receiving the most events in the current view.
   events: Events
   avgLatency: Avg delay
-  slowestEventsTitle: Slowest Estimated Events
-  slowestEventsDescription: Highest positive write-time minus event-time gaps in the selected window.
+  slowestEventsTitle: Slowest events
+  slowestEventsDescription: Events with the longest delay between happening and being saved.
   eventTime: Event time
   serverTime: Server write time
   estimatedDelay: Estimated delay
-  doDiagnosticTitle: DO Buffer Diagnostic
-  doDiagnosticDescription: Diagnoses data stagnation in each site's dedicated Durable Object.
-  doDiagnosticLoadFailed: Failed to load DO diagnostic data.
-  doDiagnosticLoading: Fetching DO state per site…
-  doDiagnosticRun: Run DO diagnostic
-  doDiagnosticEmpty: No DO state available.
-  doDiagnosticUnreachable: Some DOs unreachable
-  doDiagnosticReachableSites: Reachable DOs
+  doDiagnosticTitle: Buffered data
+  doDiagnosticDescription: Checks each site for data that hasn't been saved yet.
+  doDiagnosticLoadFailed: Couldn't check buffered data.
+  doDiagnosticLoading: Checking each site…
+  doDiagnosticRun: Check buffered data
+  doDiagnosticEmpty: No buffered data.
+  doDiagnosticUnreachable: Unreachable sites
+  doDiagnosticReachableSites: Reachable sites
   doDiagnosticTotalSites: Total sites
   doDiagnosticActiveAlarms: Active alarms
   doDiagnosticBufferedVisits: Buffered visits
-  doDiagnosticOpenVisits: Buffered open rows
-  doDiagnosticOpenStale: Open idle >30m
-  doDiagnosticOpenTimedOut: Open idle >12h
-  doDiagnosticOpenHardAged: Started >36h ago
+  doDiagnosticOpenVisits: Buffered open visits
+  doDiagnosticOpenStale: Idle over 30 minutes
+  doDiagnosticOpenTimedOut: Idle over 12 hours
+  doDiagnosticOpenHardAged: Started over 36 hours ago
   doDiagnosticOpenFutureSkew: Future timestamps
-  doDiagnosticStuckDirty: Stuck unflushed
+  doDiagnosticStuckDirty: Stuck unsaved
   doDiagnosticMaxFlushAttempts: Max retry attempts
   doDiagnosticBufferedCustomEvents: Buffered custom events
-  doDiagnosticOldestOpen: Oldest open started_at
+  doDiagnosticOldestOpen: Oldest open visit
   doDiagnosticFutureMaxActivity: Latest future activity time
   doDiagnosticSiteList: Top risk sites
-  doDiagnosticSiteListDescription: Top 20 sites by risk score, snapshotted from per-DO buffered state.
+  doDiagnosticSiteListDescription: The 20 sites most at risk.
   doDiagnosticSiteFailed: Unreachable
   doDiagnosticSiteOpen: Open
   doDiagnosticSiteStuck: Stuck
   doDiagnosticSiteFuture: Future timestamps
-  doDiagnosticSiteHardAged: Over 36h old
+  doDiagnosticSiteHardAged: Over 36 hours old
   doDiagnosticSiteAlarm: Alarm
   doDiagnosticSiteAlarmNone: None
   doDiagnosticSiteAlarmDue: Due
@@ -2465,8 +1846,6 @@ systemPerformance:
   doDiagnosticSiteNextDueHidden: Hidden fallback
   doDiagnosticSiteNextDueTimeout: Visit timeout
   doDiagnosticSiteResponseMs: Response time
-  doDiagnosticThresholdsHint: Thresholds — stale {stale}, timeout {timeout},
-    hardAged {hardAged}, stuck flush_attempts ≥ {stuck}
   doDiagnosticHealthy: No abnormal buffered rows detected.
 loginForm: {}
 logoutAction: {}
@@ -2478,7 +1857,7 @@ appNav:
   toggleSidebar: Toggle sidebar
   sources: Sources
   audience: Audience
-  conversions: Conversions
+  goals: Goals
   sites: Sites
   allSites: All sites
   inbox: Inbox
@@ -2497,33 +1876,25 @@ getStarted:
   steps:
     site: Add your first site
     tracking: Track your website
-    team: Invite your team
+    team: Invite members
     notifications: Get reports by email
     sharing: Share a public dashboard
-  noSitesTitle: No sites yet
-  noSitesDescription: Add a site, then put its script on your pages.
+  noSitesTitle: Add your first site
+  memberNoSitesTitle: No sites yet
+  memberNoSitesDescription: Ask an admin to add one.
   addSite: Add site
   waitingTitle: Waiting for the first page view
-  waitingDescription: "Add this script to every page of {domain}. Page views show
-    up here within a minute."
   copy: Copy
   copied: Copied
-  trackingSettings: Tracking settings
 settingsNav:
   label: Settings
-  personal: Personal
-  organization: Organization
-  system: System
+  system: System health
   account: Account
-  sites: Sites
   notifications: Notifications
-  publicLinks: Public links
-  general: General
-  scheduledTasks: Scheduled tasks
-  requestObservation: Request observation
-  performance: Performance
   cancel: Cancel
-  managerOnly: Only an owner or an admin can change this.
-  dangerZone: Danger zone
-  copy: Copy
-  copied: Copied
+systemHealth:
+  tabs:
+    tasks: Scheduled tasks
+    blocked: Blocked requests
+    ingestion: Ingestion
+    data: Data

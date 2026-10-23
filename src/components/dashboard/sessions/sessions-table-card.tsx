@@ -18,6 +18,7 @@ import {
   AnalyticsTimeTooltipTarget,
 } from "@/components/dashboard/analytics-time-tooltip";
 import { AnalyticsDataTable } from "@/components/dashboard/common/analytics-data-table";
+import { LoadFailedContent } from "@/components/dashboard/common/table-states";
 import {
   BrowserMeta,
   CountryRegionMeta,
@@ -97,6 +98,10 @@ interface SessionsTableCardProps {
   loadingRows?: boolean;
   loadingMore?: boolean;
   error?: boolean;
+  /** Offers to reload when the rows fail to load. */
+  onRetry?: () => void;
+  /** What the table says when it has no rows; the labels' "empty" by default. */
+  emptyContent?: ReactNode;
   appendError?: boolean;
   hasMore?: boolean;
   skeletonRows?: number;
@@ -621,6 +626,8 @@ export const SessionsTableCard = memo(function SessionsTableCard({
   loadingRows = false,
   loadingMore = false,
   error = false,
+  onRetry,
+  emptyContent = labels.empty,
   appendError = false,
   hasMore = false,
   skeletonRows = 50,
@@ -755,8 +762,14 @@ export const SessionsTableCard = memo(function SessionsTableCard({
       loading={loadingRows}
       loadingMore={loadingMore}
       error={error}
-      errorContent={labels.loadError}
-      emptyContent={labels.empty}
+      errorContent={
+        onRetry ? (
+          <LoadFailedContent messages={messages} onRetry={onRetry} />
+        ) : (
+          labels.loadError
+        )
+      }
+      emptyContent={emptyContent}
       appendError={appendError}
       appendErrorContent={labels.loadError}
       hasMore={hasMore}

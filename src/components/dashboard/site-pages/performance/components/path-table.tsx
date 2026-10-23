@@ -255,6 +255,7 @@ const PathStatusColumn = memo(function PathStatusColumn({
       </div>
       <div className="pb-4">
         <TabbedDataTableCard<typeof status, PathPerformanceRow, PathSortKey>
+          messages={messages}
           tabs={tabs}
           loader={loader}
           columns={columns}

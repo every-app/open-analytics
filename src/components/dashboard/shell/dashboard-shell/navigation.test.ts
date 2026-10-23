@@ -14,13 +14,10 @@ describe("normalizeLocalePath", () => {
 });
 
 describe("parseShellRouteState", () => {
-  it("keeps a detail page's section active and its date controls on", () => {
-    expect(
-      parseShellRouteState("/en/app/sites/example-com/sessions/detail"),
-    ).toEqual({
+  it("finds a site page and keeps its date controls on", () => {
+    expect(parseShellRouteState("/en/app/sites/example-com/visitors")).toEqual({
       siteSlug: "example-com",
-      siteSection: "sessions",
-      siteSubSection: "detail",
+      siteSection: "visitors",
       usesDateRange: true,
     });
   });
@@ -44,9 +41,9 @@ describe("parseShellRouteState", () => {
       orgPage: "settings",
       usesDateRange: false,
     });
-    expect(parseShellRouteState("/en/app/settings/performance")).toEqual({
+    expect(parseShellRouteState("/en/app/settings/system")).toEqual({
       orgPage: "settings",
-      usesDateRange: true,
+      usesDateRange: false,
     });
   });
 });

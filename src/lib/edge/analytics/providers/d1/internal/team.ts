@@ -489,6 +489,29 @@ export interface TeamDashboardQueryResult {
   readonly data: TeamDashboardData;
   readonly source: AnalyticsDataSource;
 }
+/**
+ * Changes whenever one of the team's sites is added, edited or removed, so a
+ * cached team dashboard never lists yesterday's sites.
+ */
+export async function readTeamSitesRevision(
+  env: Env,
+  teamId: string,
+): Promise<string> {
+  const row = await createDatabaseRuntime(env.DB).first<{
+    count: number;
+    updatedAt: number | null;
+  }>({
+    sql: `
+      SELECT COUNT(*) AS count, MAX(updated_at) AS updatedAt
+      FROM sites
+      WHERE team_id = ?
+    `,
+    bindings: [teamId],
+    tag: "analytics.sites.revision",
+  });
+  return `${row?.count ?? 0}:${row?.updatedAt ?? 0}`;
+}
+
 /** Typed team dashboard reader shared by private and API v1 adapters. */
 export async function queryTeamDashboardForTeam(
   env: Env,

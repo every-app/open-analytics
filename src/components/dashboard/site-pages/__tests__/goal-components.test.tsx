@@ -61,7 +61,7 @@ import {
   goalTimeseriesQueryKey,
 } from "@/components/dashboard/site-pages/goals/goal-detail";
 import { GoalEditor } from "@/components/dashboard/site-pages/goals/goal-editor";
-import { goalDefinitionQueryKey } from "@/components/dashboard/site-pages/goals/goals-client-page";
+import { goalDefinitionQueryKey } from "@/components/dashboard/site-pages/goals/use-goal-conversions";
 import { TimeZoneProvider } from "@/components/time-zone-provider";
 import {
   fetchGoalSummary,
@@ -278,6 +278,7 @@ describe("Goal dashboard components", () => {
     const { container, root } = renderWithQueryClient(
       createElement(GoalDetail, {
         goal,
+        comparisonLabel: "Previous period",
         siteId: "site-1",
         locale: "en",
         labels,
@@ -389,6 +390,7 @@ describe("Goal dashboard components", () => {
     const { container, root } = renderWithQueryClient(
       createElement(GoalDetail, {
         goal,
+        comparisonLabel: "Previous period",
         siteId: "site-1",
         locale: "en",
         labels,
@@ -431,6 +433,7 @@ describe("Goal dashboard components", () => {
     const { container, root } = renderWithQueryClient(
       createElement(GoalDetail, {
         goal,
+        comparisonLabel: "Previous period",
         siteId: "site-1",
         locale: "en",
         labels,
@@ -464,6 +467,7 @@ describe("Goal dashboard components", () => {
               { client },
               createElement(GoalDetail, {
                 goal,
+                comparisonLabel: "Previous period",
                 siteId: "site-1",
                 locale: "en",
                 labels,

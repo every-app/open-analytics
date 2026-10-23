@@ -4,11 +4,9 @@ import {
   emptyOverviewGeoPoints,
 } from "@/lib/dashboard/client/data/empty";
 export {
-  fetchBrowserCrossBreakdown,
+  type CrossBreakdownDimension,
   fetchBrowserEngineTrend,
-  fetchBrowserRadar,
   fetchBrowserTrend,
-  fetchBrowserVersionBreakdown,
   fetchClientCrossBreakdown,
   fetchClientDimensionTrend,
 } from "@/lib/dashboard/client/data/browser";
@@ -58,7 +56,6 @@ export {
   fetchPagesShareTrend,
 } from "@/lib/dashboard/client/data/pages";
 export {
-  fetchReferrerRadar,
   fetchReferrers,
   fetchReferrerSummary,
   fetchReferrerTrend,

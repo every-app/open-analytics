@@ -123,14 +123,9 @@ export function RealtimeClientPage({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/60 to-transparent" />
 
         <div className="pointer-events-none absolute left-4 top-4 z-10 md:left-6 md:top-6">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              {messages.realtime.title}
-            </h1>
-            <p className="text-sm text-foreground/75">
-              {messages.realtime.subtitle}
-            </p>
-          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            {messages.navigation.realtime}
+          </h1>
         </div>
 
         <div className="absolute bottom-4 left-4 z-10 inline-flex w-auto max-w-[calc(100vw-2rem)] md:left-6 md:max-w-[calc(100vw-3rem)]">

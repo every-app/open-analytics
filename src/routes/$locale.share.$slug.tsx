@@ -21,6 +21,7 @@ function Layout() {
       messages={messages}
       slug={slug}
       siteName={shareContext.site.name}
+      hasData={shareContext.site.hasData}
     >
       <Outlet />
     </ShareDashboardShell>

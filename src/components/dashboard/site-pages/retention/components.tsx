@@ -1,9 +1,8 @@
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@insightflare/ui/card";
@@ -22,6 +21,7 @@ import {
   AnalyticsDetailsTooltipTarget,
   AnalyticsTimeTooltipProvider,
 } from "@/components/dashboard/analytics-time-tooltip";
+import { InfoTooltip } from "@/components/dashboard/common/info-tooltip";
 import { numberFormat, percentFormat } from "@/lib/dashboard/format";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
@@ -71,7 +71,7 @@ export function createRetentionMetricItems({
     icon: MetricSummaryItem["icon"],
     label: string,
     value: string,
-    detail: string,
+    detail: string | undefined,
     current: number | null,
     previous: number | null | undefined,
   ): MetricSummaryItem => {
@@ -121,7 +121,7 @@ export function createRetentionMetricItems({
       <UsersIcon />,
       labels.visitorsMetric,
       numberFormat(locale, summary.totalVisitors),
-      labels.cohortDetail,
+      undefined,
       summary.totalVisitors,
       comparisonSummary?.totalVisitors,
     ),
@@ -156,10 +156,12 @@ export function createRetentionMetricItems({
 export const RetentionStateCard = memo(function RetentionStateCard({
   title,
   subtitle,
+  action,
   icon: Icon,
 }: {
   title: string;
-  subtitle: string;
+  subtitle?: string;
+  action?: ReactNode;
   icon: LucideIcon;
 }) {
   return (
@@ -170,8 +172,11 @@ export const RetentionStateCard = memo(function RetentionStateCard({
         </span>
         <div className="space-y-1">
           <p className="font-medium">{title}</p>
-          <p className="max-w-md text-muted-foreground">{subtitle}</p>
+          {subtitle ? (
+            <p className="max-w-md text-muted-foreground">{subtitle}</p>
+          ) : null}
         </div>
+        {action}
       </CardContent>
     </Card>
   );
@@ -475,13 +480,12 @@ export const RetentionMatrix = memo(function RetentionMatrix({
   labels: RetentionCopy;
   viewModel: RetentionViewModel;
   comparisonViewModel?: RetentionComparisonViewModel | null;
-  comparisonLabel?: string;
+  comparisonLabel: string;
   loading?: boolean;
   loadingShape: RetentionLoadingShape;
 }) {
   const columns = comparisonViewModel?.columns ?? viewModel.columns;
   const hasComparison = Boolean(comparisonViewModel);
-  const resolvedComparisonLabel = comparisonLabel ?? "Comparison";
   const renderPairValue = (
     currentValue: number | null,
     comparisonValue: number | null,
@@ -505,8 +509,10 @@ export const RetentionMatrix = memo(function RetentionMatrix({
           <CardTitle className="inline-flex items-center gap-2">
             <Repeat2Icon className="size-4" />
             {labels.matrixTitle}
+            <InfoTooltip label={labels.matrixTitle}>
+              {labels.matrixSubtitle}
+            </InfoTooltip>
           </CardTitle>
-          <CardDescription>{labels.matrixSubtitle}</CardDescription>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[11px] text-muted-foreground md:justify-self-end">
           {hasComparison ? (
@@ -520,7 +526,7 @@ export const RetentionMatrix = memo(function RetentionMatrix({
                   className="size-2 bg-chart-secondary-4"
                   aria-hidden="true"
                 />
-                {resolvedComparisonLabel}
+                {comparisonLabel}
               </span>
             </>
           ) : null}
@@ -662,7 +668,7 @@ export const RetentionMatrix = memo(function RetentionMatrix({
                                     ? labels.unavailableCell
                                     : `${periodLabel(messages, labels, index)} · ${numberFormat(locale, comparisonAverage.visitors)} · ${percentFormat(locale, comparisonAverage.rate)}`
                                 }
-                                comparisonLabel={resolvedComparisonLabel}
+                                comparisonLabel={comparisonLabel}
                                 tooltipKey={`retention-overall:${index}:${currentAverage.rate ?? "unavailable"}:${comparisonAverage.rate ?? "unavailable"}`}
                               />
                             );
@@ -712,7 +718,7 @@ export const RetentionMatrix = memo(function RetentionMatrix({
                                   row.comparison,
                                   index,
                                 )}
-                                comparisonLabel={resolvedComparisonLabel}
+                                comparisonLabel={comparisonLabel}
                                 tooltipKey={`retention-cell:${row.key}:${index}`}
                               />
                             ))}

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { EmptyState } from "@/components/common/empty-state";
 import { ShareHeader } from "@/components/dashboard/sharing/share-header";
 import { DashboardQueryProvider } from "@/components/dashboard/shell/dashboard-query-provider";
 import { useDashboardNavHref } from "@/components/dashboard/shell/dashboard-shell/navigation";
@@ -18,6 +19,8 @@ interface ShareDashboardShellProps {
   messages: AppMessages;
   slug: string;
   siteName: string;
+  /** Whether the site has received a page view yet. */
+  hasData: boolean;
   children: ReactNode;
 }
 
@@ -29,7 +32,6 @@ const SHARE_TABS = [
   "retention",
   "geo",
   "devices",
-  "browsers",
   "performance",
 ] as const;
 
@@ -42,6 +44,7 @@ export function ShareDashboardShell({
   messages,
   slug,
   siteName,
+  hasData,
   children,
 }: ShareDashboardShellProps) {
   const publicSiteId = publicDashboardSiteId(slug);
@@ -49,7 +52,7 @@ export function ShareDashboardShell({
   const routeSearchParams = useSearchParams();
   const initialFilters = parseFilterDocumentFromSearchParams(routeSearchParams);
   const initialScopePreference = parseFilterScopePreference(routeSearchParams);
-  const isGeoRoute = pathname.endsWith("/geo");
+  const isGeoRoute = hasData && pathname.endsWith("/geo");
   const navHref = useDashboardNavHref();
   const overviewPath = shareTabHref(locale, slug, "overview");
   const tabs = SHARE_TABS.map((key) => {
@@ -86,16 +89,27 @@ export function ShareDashboardShell({
               messages={messages}
               publicSiteId={publicSiteId}
               siteName={siteName}
+              showControls={hasData}
             />
           </div>
-          <NavTabs
-            label={messages.appNav.sections}
-            items={tabs}
-            className="mt-2 px-2 md:px-4"
-          />
+          {hasData ? (
+            <NavTabs
+              label={messages.appNav.sections}
+              items={tabs}
+              className="mt-2 px-2 md:px-4"
+            />
+          ) : null}
         </div>
         <main className={contentClassName}>
-          <PageTransition>{children}</PageTransition>
+          {hasData ? (
+            <PageTransition>{children}</PageTransition>
+          ) : (
+            <EmptyState
+              title={messages.share.noData}
+              variant="card"
+              className="min-h-64"
+            />
+          )}
         </main>
       </div>
     </DashboardQueryProvider>

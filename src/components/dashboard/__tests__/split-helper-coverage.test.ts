@@ -59,18 +59,14 @@ import {
   toAbsoluteHttpsUrl,
 } from "@/components/dashboard/site-pages/overview/overview-url";
 import {
-  blockingEditorLines,
-  blockingEditorValues,
-  type BlockingRuleDialogCopy,
-  blockingRuleErrorMessage,
-  type BlockingRuleFieldCopy,
-  blockingTestContext,
+  blockingRuleRows,
+  blockingRulesPatch,
   formatSampleRateValue,
+  invalidBlockingRules,
   postJson,
   randomPublicSlug,
   resolveSiteSlug,
 } from "@/components/dashboard/site-pages/settings/settings-model";
-import type { BlockingFieldId, BlockingRuleSyntaxError } from "@/lib/blocking";
 import type { SiteData } from "@/lib/dashboard-api/client/edge";
 import type { AppMessages } from "@/lib/i18n/messages";
 
@@ -200,7 +196,7 @@ describe("recently split dashboard helpers", () => {
     expect(leadingLabelLetter(" ")).toBe("?");
   });
 
-  it("covers settings helpers and blocking-rule editor conversions", async () => {
+  it("covers settings helpers and blocking-rule list conversions", async () => {
     const site = {
       id: "12345678-90",
       name: "Example",
@@ -213,64 +209,34 @@ describe("recently split dashboard helpers", () => {
     expect(formatSampleRateValue(25)).toBe("25%");
     expect(formatSampleRateValue(12.5)).toBe("12.5%");
     expect(formatSampleRateValue(12.3)).toBe("12.3%");
-    expect(blockingEditorLines("")).toEqual([]);
-    expect(blockingEditorLines("one\r\ntwo")).toEqual(["one", "two"]);
-    expect(
-      blockingEditorValues({
-        domainWhitelist: ["example.com"],
-        pathBlacklist: ["/admin"],
-      }),
-    ).toMatchObject({
-      domains: expect.any(String),
-      paths: expect.any(String),
-    });
-
-    const dialog = {
-      errorInvalidLines: "{field} lines {line}",
-      errorInvalidLine: "{field} line {line}",
-      errorLineTooLong: "{field} too long {line}",
-      errorTooManyLines: "Too many",
-      errorInvalidPattern: "{field} pattern {line}",
-      errorInvalidRule: "Invalid rule",
-    } as BlockingRuleDialogCopy;
-    const field = { title: "Domains" } as BlockingRuleFieldCopy;
-    const error = (code: string) =>
-      ({ code, line: 3 }) as BlockingRuleSyntaxError;
-    expect(
-      blockingRuleErrorMessage(error("invalid_lines"), field, dialog),
-    ).toBe("Domains lines 3");
-    expect(blockingRuleErrorMessage(error("invalid_line"), field, dialog)).toBe(
-      "Domains line 3",
+    let id = 0;
+    const rows = blockingRuleRows(
+      {
+        blockingRules: [
+          {
+            version: 2,
+            data: { paths: ["# comment", "/admin/*", "-/admin/health", ""] },
+          },
+        ],
+      },
+      () => `row-${id++}`,
     );
+    expect(rows).toEqual([
+      { id: "row-0", field: "paths", action: "block", value: "/admin/*" },
+      { id: "row-1", field: "paths", action: "allow", value: "/admin/health" },
+    ]);
     expect(
-      blockingRuleErrorMessage(error("line_too_long"), field, dialog),
-    ).toBe("Domains too long 3");
-    expect(
-      blockingRuleErrorMessage(error("too_many_lines"), field, dialog),
-    ).toBe("Too many");
-    expect(
-      blockingRuleErrorMessage(error("invalid_pattern"), field, dialog),
-    ).toBe("Domains pattern 3");
-    expect(blockingRuleErrorMessage(error("other"), field, dialog)).toBe(
-      "Invalid rule",
-    );
-
-    const contexts: Array<[BlockingFieldId, Record<string, string>]> = [
-      ["domains", { hostname: "example.com" }],
-      ["paths", { pathname: "/a" }],
-      ["queryParameters", { query: "x=1" }],
-      ["referrers", { referrer: "https://example.com" }],
-      ["userAgents", { userAgent: "Agent" }],
-      ["ips", { ip: "127.0.0.1" }],
-      ["asns", { asn: "AS123" }],
-      ["countries", { country: "US" }],
-      ["regions", { region: "CA" }],
-    ];
-    for (const [id, expected] of contexts) {
-      expect(
-        blockingTestContext(id, ` ${Object.values(expected)[0]} `),
-      ).toEqual(expected);
-    }
+      blockingRulesPatch([
+        ...rows,
+        { id: "row-2", field: "ips", action: "block", value: " " },
+      ]),
+    ).toMatchObject({ paths: ["/admin/*", "-/admin/health"], ips: [] });
+    const invalid = invalidBlockingRules([
+      ...rows,
+      { id: "row-3", field: "ips", action: "block", value: "not-an-ip" },
+    ]);
+    expect([...invalid.rowIds]).toEqual(["row-3"]);
+    expect(invalid.tooManyFields).toEqual([]);
 
     requestAdminService.mockReset().mockResolvedValue({ ok: true });
     await expect(postJson("sites", { teamId: "team-1" })).resolves.toEqual({

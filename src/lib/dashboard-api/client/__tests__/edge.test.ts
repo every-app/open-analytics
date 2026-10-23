@@ -13,7 +13,6 @@ import {
   fetchAdminSiteConfig,
   fetchAdminSites,
   fetchNotificationEmailConfig,
-  fetchNotificationEmailPreview,
   fetchNotificationMessages,
   fetchNotificationPreferences,
   fetchNotificationRules,
@@ -100,6 +99,7 @@ describe("edge client request wrappers", () => {
           slug: "public-site",
           name: "Public Site",
           domain: "example.test",
+          hasData: true,
         },
       }),
     );
@@ -109,6 +109,7 @@ describe("edge client request wrappers", () => {
       slug: "public-site",
       name: "Public Site",
       domain: "example.test",
+      hasData: true,
     });
     expect(lastFetchCall()[0]).toBe(
       "http://127.0.0.1:8787/api/public/share/public%20site/site",
@@ -450,64 +451,6 @@ describe("edge client request wrappers", () => {
         alertsCreateUnread: true,
       },
     });
-  });
-
-  it("fetches notification email previews in every supported format", async () => {
-    fetchMock().mockResolvedValueOnce(
-      jsonResponse({
-        ok: true,
-        data: {
-          subject: "Demo subject",
-          html: "<p>Demo</p>",
-          text: "Demo",
-        },
-      }),
-    );
-
-    await expect(
-      fetchNotificationEmailPreview({
-        type: "report",
-        locale: "en",
-        format: "json",
-      }),
-    ).resolves.toEqual({
-      subject: "Demo subject",
-      html: "<p>Demo</p>",
-      text: "Demo",
-    });
-    expect(new URL(lastFetchCall()[0]).searchParams.get("format")).toBe("json");
-
-    fetchMock().mockResolvedValueOnce(new Response("<p>HTML</p>"));
-    await expect(
-      fetchNotificationEmailPreview({
-        type: "health",
-        locale: "zh",
-        format: "html",
-      }),
-    ).resolves.toBe("<p>HTML</p>");
-
-    fetchMock().mockResolvedValueOnce(new Response("plain text"));
-    await expect(
-      fetchNotificationEmailPreview({
-        type: "threshold",
-        locale: "en",
-        format: "text",
-      }),
-    ).resolves.toBe("plain text");
-  });
-
-  it("throws descriptive errors for failed notification email previews", async () => {
-    fetchMock().mockResolvedValueOnce(
-      new Response("preview denied", { status: 403 }),
-    );
-
-    await expect(
-      fetchNotificationEmailPreview({
-        type: "test",
-        locale: "en",
-        format: "html",
-      }),
-    ).rejects.toThrow("Email preview failed (403): preview denied");
   });
 
   it("throws descriptive errors for non-OK edge responses", async () => {

@@ -55,6 +55,12 @@ function asBrowserTrendData(
     ...dimension,
   };
 }
+/** The two share trends, side by side: referring sites and traffic channels. */
+enum ReferrerTrendDimension {
+  Source = "source",
+  Channel = "channel",
+}
+const TREND_DIMENSIONS = Object.values(ReferrerTrendDimension);
 function ReferrerTrendPanel({
   locale,
   messages,
@@ -156,81 +162,57 @@ function ReferrerTrendPanel({
     ? (trendQueryData?.comparisonDataWindow ?? comparisonDataWindow)
     : null;
   const hydrated = Boolean(trendQueryData);
-  const sourceTrendData = useMemo(
-    () => asBrowserTrendData(trendData.interval, trendData.source),
-    [trendData.interval, trendData.source],
+  const formatSeriesLabel = useMemo(
+    () => ({
+      [ReferrerTrendDimension.Source]: (series: BrowserTrendSeries) =>
+        series.label === DIRECT_REFERRER_FILTER_VALUE
+          ? messages.overview.direct
+          : series.label,
+      [ReferrerTrendDimension.Channel]: (series: BrowserTrendSeries) =>
+        messages.overview.channelLabels[series.label as TrafficChannelId] ??
+        series.label,
+    }),
+    [messages.overview.channelLabels, messages.overview.direct],
   );
-  const channelTrendData = useMemo(
-    () => asBrowserTrendData(trendData.interval, trendData.channel),
-    [trendData.channel, trendData.interval],
-  );
-  const comparisonSourceTrendData = useMemo(
-    () =>
-      comparisonTrendData
-        ? asBrowserTrendData(
-            comparisonTrendData.interval,
-            comparisonTrendData.source,
-          )
-        : null,
-    [comparisonTrendData],
-  );
-  const comparisonChannelTrendData = useMemo(
-    () =>
-      comparisonTrendData
-        ? asBrowserTrendData(
-            comparisonTrendData.interval,
-            comparisonTrendData.channel,
-          )
-        : null,
-    [comparisonTrendData],
-  );
-
-  const formatSourceLabel = useMemo(
-    () => (series: BrowserTrendSeries) =>
-      series.label === DIRECT_REFERRER_FILTER_VALUE
-        ? messages.overview.direct
-        : series.label,
-    [messages.overview.direct],
-  );
-  const formatChannelLabel = useMemo(
-    () => (series: BrowserTrendSeries) =>
-      messages.overview.channelLabels[series.label as TrafficChannelId] ??
-      series.label,
-    [messages.overview.channelLabels],
-  );
+  const titles = {
+    [ReferrerTrendDimension.Source]: messages.overview.sourceTab,
+    [ReferrerTrendDimension.Channel]: messages.overview.channelTab,
+  };
+  const otherLabels = {
+    [ReferrerTrendDimension.Source]: messages.referrers.longTail,
+    [ReferrerTrendDimension.Channel]: messages.referrers.channelLongTail,
+  };
 
   return (
-    <div className="space-y-6">
-      <ShareTrendChartCard
-        locale={locale}
-        messages={messages}
-        title={messages.overview.sourceTab}
-        trendData={sourceTrendData}
-        dataWindow={dataWindow}
-        comparisonTrendData={comparisonSourceTrendData}
-        comparisonDataWindow={resolvedComparisonDataWindow}
-        comparisonLabel={dashboardComparisonLabel(messages, comparisonQuery)}
-        syncId={`share-trend:${siteId}:referrer-source`}
-        loading={loading}
-        hydrated={hydrated}
-        otherLabel={messages.referrers.longTail}
-        formatSeriesLabel={formatSourceLabel}
-      />
-      <ShareTrendChartCard
-        locale={locale}
-        messages={messages}
-        title={messages.overview.channelTab}
-        trendData={channelTrendData}
-        dataWindow={dataWindow}
-        comparisonTrendData={comparisonChannelTrendData}
-        comparisonDataWindow={resolvedComparisonDataWindow}
-        comparisonLabel={dashboardComparisonLabel(messages, comparisonQuery)}
-        syncId={`share-trend:${siteId}:referrer-channel`}
-        loading={loading}
-        hydrated={hydrated}
-        otherLabel={messages.referrers.channelLongTail}
-        formatSeriesLabel={formatChannelLabel}
-      />
+    <div className="grid gap-6 lg:grid-cols-2">
+      {TREND_DIMENSIONS.map((dimension) => (
+        <ShareTrendChartCard
+          key={dimension}
+          locale={locale}
+          messages={messages}
+          title={titles[dimension]}
+          trendData={asBrowserTrendData(
+            trendData.interval,
+            trendData[dimension],
+          )}
+          dataWindow={dataWindow}
+          comparisonTrendData={
+            comparisonTrendData
+              ? asBrowserTrendData(
+                  comparisonTrendData.interval,
+                  comparisonTrendData[dimension],
+                )
+              : null
+          }
+          comparisonDataWindow={resolvedComparisonDataWindow}
+          comparisonLabel={dashboardComparisonLabel(messages, comparisonQuery)}
+          syncId={`share-trend:${siteId}:referrer-${dimension}`}
+          loading={loading}
+          hydrated={hydrated}
+          otherLabel={otherLabels[dimension]}
+          formatSeriesLabel={formatSeriesLabel[dimension]}
+        />
+      ))}
     </div>
   );
 }

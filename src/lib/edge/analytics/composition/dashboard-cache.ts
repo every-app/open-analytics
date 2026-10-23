@@ -57,6 +57,8 @@ export interface DashboardCacheIdentity {
    * restricted to a subset of the team's sites.
    */
   allowedSiteIds?: readonly string[];
+  /** Changes when the data's inputs change, such as the team's site list. */
+  revision?: string;
 }
 function allowedSiteIdsFingerprint(
   allowedSiteIds: readonly string[] | undefined,
@@ -125,6 +127,9 @@ function buildCacheKeyRequest(
   const allowedSiteIdsKey = allowedSiteIdsFingerprint(identity.allowedSiteIds);
   if (allowedSiteIdsKey !== undefined) {
     cacheUrl.searchParams.set("allowedSiteIdsFingerprint", allowedSiteIdsKey);
+  }
+  if (identity.revision !== undefined) {
+    cacheUrl.searchParams.set("revision", identity.revision);
   }
   return new Request(cacheUrl.toString(), { method: "GET" });
 }

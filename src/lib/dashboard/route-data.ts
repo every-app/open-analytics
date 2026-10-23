@@ -184,13 +184,9 @@ export const loadTeamNotificationsInitialData = createServerFn({
 export const loadNotificationCenterInitialData = createServerFn({
   method: "GET",
 })
-  .validator(
-    (data: { teamId?: string; ruleId?: string; locale: Locale }) => data,
-  )
+  .validator((data: { locale: Locale }) => data)
   .handler(async ({ data }): Promise<NotificationCenterInitialData | null> => {
     const notifications = await readDashboardAdmin("notifications", {
-      teamId: data.teamId ?? "",
-      ruleId: data.ruleId ?? "",
       locale: data.locale,
       limit: 80,
     });

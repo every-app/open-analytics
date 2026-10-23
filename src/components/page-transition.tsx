@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Spinner } from "@insightflare/ui/spinner";
 import { useRouterState } from "@tanstack/react-router";
 
@@ -7,10 +7,6 @@ import { getMessages } from "@/lib/i18n/messages";
 
 interface PageTransitionProps {
   children: React.ReactNode;
-}
-
-function isDashboardDetailRoute(pathname: string): boolean {
-  return /\/(?:visitors|sessions)\/detail(?:\/|$)/.test(pathname);
 }
 
 function scrollPageToTop() {
@@ -37,19 +33,9 @@ export function PageTransition({ children }: PageTransitionProps) {
       Boolean(state.resolvedLocation) &&
       state.location.pathname !== state.resolvedLocation?.pathname,
   });
-  const previousPathnameRef = useRef(pathname);
   const messages = getMessages(resolveLocale(pathname.split("/")[1]));
 
   useEffect(() => {
-    const previousPathname = previousPathnameRef.current;
-    previousPathnameRef.current = pathname;
-    if (
-      isDashboardDetailRoute(previousPathname) ||
-      isDashboardDetailRoute(pathname)
-    ) {
-      return;
-    }
-
     scrollPageToTop();
   }, [pathname]);
 

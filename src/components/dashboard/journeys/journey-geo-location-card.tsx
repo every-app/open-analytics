@@ -10,8 +10,9 @@ import {
 import { Clickable } from "@insightflare/ui/clickable";
 import { Skeleton } from "@insightflare/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLinkIcon, InfoIcon, MapPinIcon } from "lucide-react";
+import { ExternalLinkIcon, MapPinIcon } from "lucide-react";
 
+import { InfoTooltip } from "@/components/dashboard/common/info-tooltip";
 import {
   buildLocalityLocationValue,
   buildRegionLocationValue,
@@ -930,33 +931,33 @@ export const JourneyGeoLocationCard = memo(function JourneyGeoLocationCard({
                             </p>
                           ) : null}
 
-                          {wikiSummary?.pageUrl ? (
-                            <a
-                              href={wikiSummary.pageUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-primary"
-                            >
-                              {messages.geo.viewOnWikipedia}
-                              <ExternalLinkIcon className="size-3.5 shrink-0" />
-                            </a>
-                          ) : null}
-
-                          <div className="space-y-1.5 text-[11px] leading-4 text-muted-foreground">
-                            <p>
-                              <span className="mr-1.5 inline-flex h-4 align-top items-center">
-                                <InfoIcon className="size-3.5" />
-                              </span>
-                              {messages.geo.ipNotice}
-                            </p>
-                            {entries.length > 1 ? (
-                              <p className="pl-5">
-                                {messages.geo.multipleNotice}
-                              </p>
+                          <div className="flex items-center gap-2">
+                            {wikiSummary?.pageUrl ? (
+                              <a
+                                href={wikiSummary.pageUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-primary"
+                              >
+                                {messages.geo.viewOnWikipedia}
+                                <ExternalLinkIcon className="size-3.5 shrink-0" />
+                              </a>
                             ) : null}
-                            <p className="pl-5">
-                              {messages.geo.investigationNotice}
-                            </p>
+                            <InfoTooltip label={messages.geo.ipNotice}>
+                              <span className="block space-y-1">
+                                <span className="block">
+                                  {messages.geo.ipNotice}
+                                </span>
+                                {entries.length > 1 ? (
+                                  <span className="block">
+                                    {messages.geo.multipleNotice}
+                                  </span>
+                                ) : null}
+                                <span className="block">
+                                  {messages.geo.investigationNotice}
+                                </span>
+                              </span>
+                            </InfoTooltip>
                           </div>
                         </div>
                       )}

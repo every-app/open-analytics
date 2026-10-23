@@ -1,12 +1,8 @@
 import { Hono } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { handleNotificationEmailConfigAdmin } from "@/lib/edge/admin/notifications/email";
 import {
-  handleNotificationEmailConfigAdmin,
-  handleNotificationEmailTestAdmin,
-} from "@/lib/edge/admin/notifications/email";
-import {
-  handleNotificationEmailPreviewAdmin,
   handleNotificationRulePreviewAdmin,
   handleNotificationRuleRunAdmin,
   handleNotificationRulesAdmin,
@@ -34,10 +30,8 @@ vi.mock("@/lib/edge/admin/response", () => ({
 }));
 vi.mock("@/lib/edge/admin/notifications/email", () => ({
   handleNotificationEmailConfigAdmin: vi.fn(),
-  handleNotificationEmailTestAdmin: vi.fn(),
 }));
 vi.mock("@/lib/edge/admin/notifications/handler", () => ({
-  handleNotificationEmailPreviewAdmin: vi.fn(),
   handleNotificationRulesAdmin: vi.fn(),
   handleNotificationRulePreviewAdmin: vi.fn(),
   handleNotificationRuleRunAdmin: vi.fn(),
@@ -74,8 +68,6 @@ const routeCases = [
   ["/site-config", handleSiteConfigAdmin, true],
   ["/script-snippet", handleScriptSnippetAdmin, true],
   ["/notification-email", handleNotificationEmailConfigAdmin, false],
-  ["/notification-email/test", handleNotificationEmailTestAdmin, false],
-  ["/notification-email-preview", handleNotificationEmailPreviewAdmin, true],
   ["/notification-rules", handleNotificationRulesAdmin, true],
   ["/notification-rules/preview", handleNotificationRulePreviewAdmin, false],
   ["/notification-rules/run", handleNotificationRuleRunAdmin, false],
@@ -139,20 +131,6 @@ describe("Hono private admin routes", () => {
     );
 
     expect(response.status).toBe(404);
-    expect(nf).toHaveBeenCalled();
-  });
-
-  it("does not register the removed notification email preview alias", async () => {
-    const app = createApp();
-
-    const response = await app.fetch(
-      request("/api/private/admin/notifications/email-preview"),
-      env as never,
-      ctx,
-    );
-
-    expect(response.status).toBe(404);
-    expect(handleNotificationEmailPreviewAdmin).not.toHaveBeenCalled();
     expect(nf).toHaveBeenCalled();
   });
 });

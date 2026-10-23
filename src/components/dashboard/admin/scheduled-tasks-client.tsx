@@ -6,13 +6,11 @@ import { Button } from "@insightflare/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@insightflare/ui/card";
 import { DataTableSwitch } from "@insightflare/ui/data-table-switch";
 import { MetricSummaryGrid } from "@insightflare/ui/metric-summary-grid";
-import { PageHeading } from "@insightflare/ui/page-heading";
 import {
   Select,
   SelectContent,
@@ -38,6 +36,7 @@ import type { ScheduledTasksInitialData } from "@/lib/dashboard/management-data"
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
+import { formatI18nTemplate } from "@/lib/i18n/template";
 import type {
   ScheduledTaskRunGroup,
   ScheduledTasksData,
@@ -262,65 +261,60 @@ export function ScheduledTasksClient({
 
   return (
     <div className="space-y-5">
-      <PageHeading
-        title={messages.managementNav.scheduledTasks}
-        actions={
-          <>
-            <Select
-              value={status}
-              onValueChange={(value) => {
-                setStatus(value);
-                resetSelection();
+      <div className="flex flex-wrap justify-end gap-2">
+        <Select
+          value={status}
+          onValueChange={(value) => {
+            setStatus(value);
+            resetSelection();
+          }}
+        >
+          <SelectTrigger className="w-36">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map((option) => (
+              <SelectItem key={option} value={option}>
+                {option === "all" ? t.allStatuses : t.status[option]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          type="button"
+          variant="outline"
+          className="gap-2"
+          disabled={replacingRows}
+          onClick={() => void runsQuery.refetch()}
+        >
+          <span className="inline-flex size-4 shrink-0 items-center justify-center">
+            {replacingRows ? <Spinner /> : <RefreshCwIcon />}
+          </span>
+          <AutoResizer
+            initial
+            animateWidth
+            animateHeight={false}
+            className="inline-flex shrink-0 items-center"
+          >
+            <AutoTransition
+              className="inline-block"
+              duration={0.2}
+              type="fade"
+              initial={false}
+              presenceMode="wait"
+              customVariants={{
+                initial: { opacity: 0 },
+                animate: { opacity: 1 },
+                exit: { opacity: 0 },
               }}
             >
-              <SelectTrigger className="w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option === "all" ? t.allStatuses : t.status[option]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              variant="outline"
-              className="gap-2"
-              disabled={replacingRows}
-              onClick={() => void runsQuery.refetch()}
-            >
-              <span className="inline-flex size-4 shrink-0 items-center justify-center">
-                {replacingRows ? <Spinner /> : <RefreshCwIcon />}
+              <span key={replacingRows ? "loading" : "refresh"}>
+                {replacingRows ? messages.common.loading : t.refresh}
               </span>
-              <AutoResizer
-                initial
-                animateWidth
-                animateHeight={false}
-                className="inline-flex shrink-0 items-center"
-              >
-                <AutoTransition
-                  className="inline-block"
-                  duration={0.2}
-                  type="fade"
-                  initial={false}
-                  presenceMode="wait"
-                  customVariants={{
-                    initial: { opacity: 0 },
-                    animate: { opacity: 1 },
-                    exit: { opacity: 0 },
-                  }}
-                >
-                  <span key={replacingRows ? "loading" : "refresh"}>
-                    {replacingRows ? messages.common.loading : t.refresh}
-                  </span>
-                </AutoTransition>
-              </AutoResizer>
-            </Button>
-          </>
-        }
-      />
+            </AutoTransition>
+          </AutoResizer>
+        </Button>
+      </div>
 
       <MetricSummaryGrid
         items={[
@@ -330,7 +324,9 @@ export function ScheduledTasksClient({
             label: t.runs24h,
             loading: replacingRows,
             value: numberFormat(locale, data?.health.totalRuns24h ?? 0),
-            detail: `${t.retentionPrefix} ${data?.retentionDays ?? 30} ${t.days}`,
+            detail: data
+              ? formatI18nTemplate(t.keptForDays, { days: data.retentionDays })
+              : "--",
           },
           {
             id: "success-rate-24h",
@@ -338,7 +334,6 @@ export function ScheduledTasksClient({
             label: t.successRate24h,
             loading: replacingRows,
             value: formatRate(locale, data?.health.successRate24h ?? null),
-            detail: t.successRateDescription,
             tone:
               (data?.health.successRate24h ?? 1) >= 0.95
                 ? "positive"
@@ -367,7 +362,7 @@ export function ScheduledTasksClient({
               : "--",
             detail: data?.health.staleRunningRuns
               ? `${t.staleRunning}: ${numberFormat(locale, data.health.staleRunningRuns)}`
-              : t.noStaleRunning,
+              : undefined,
             tone: data?.health.staleRunningRuns ? "warning" : "default",
           },
         ]}
@@ -379,7 +374,6 @@ export function ScheduledTasksClient({
             <CalendarClockIcon className="size-4" />
             {t.taskListTitle}
           </CardTitle>
-          <CardDescription>{t.taskListDescription}</CardDescription>
         </CardHeader>
         <CardContent>
           <DataTableSwitch
@@ -480,9 +474,11 @@ export function ScheduledTasksClient({
       <section className="space-y-3">
         <div>
           <h2 className="text-sm font-medium">{t.runHistoryTitle}</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t.runHistoryDescription}
-          </p>
+          {data ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {formatI18nTemplate(t.keptForDays, { days: data.retentionDays })}
+            </p>
+          ) : null}
         </div>
         <ScheduledTaskRunsTable
           locale={locale}

@@ -11,16 +11,13 @@ export interface AppMessages {
     realtime: string;
     pages: string;
     referrers: string;
-    sessions: string;
     events: string;
     funnels: string;
-    goals: string;
     campaigns: string;
     visitors: string;
     retention: string;
     geo: string;
     devices: string;
-    browsers: string;
     performance: string;
     settings: string;
   };
@@ -62,19 +59,16 @@ export interface AppMessages {
     screenSize: string;
     loading: string;
     noData: string;
+    loadFailed: string;
+    retry: string;
+    filteredEmpty: string;
+    clearFilters: string;
+    trend: string;
     unknown: string;
-    lastUpdated: string;
     site: string;
-    team: string;
-    management: string;
-    backToTeam: string;
     system: string;
-    account: string;
     theme: string;
     language: string;
-    role: string;
-    admin: string;
-    user: string;
     search: string;
     open: string;
     sortBy: string;
@@ -104,26 +98,17 @@ export interface AppMessages {
       dragHint: string;
       close: string;
     };
-    time: string;
-    cycle: string;
     close: string;
     sitesFiltered: string;
     cumulativeTraffic: string;
     cumulativeEvents: string;
   };
   ranges: {
-    last30m: string;
-    last1h: string;
     today: string;
     yesterday: string;
-    thisWeek: string;
-    thisMonth: string;
-    thisYear: string;
-    last24h: string;
     last7d: string;
     last30d: string;
     last90d: string;
-    last6m: string;
     last12m: string;
     custom: string;
   };
@@ -135,43 +120,25 @@ export interface AppMessages {
     month: string;
   };
   dashboardHeader: {
-    range: string;
     interval: string;
     compareButton: string;
     compareTitle: string;
-    compareSubtitle: string;
     compareTimeLabel: string;
     compareCurrentPeriod: string;
-    compareCurrentPeriodDescription: string;
     comparePreviousPeriod: string;
-    comparePreviousPeriodDescription: string;
     compareFilterLabel: string;
     compareFollowCurrentFilter: string;
-    compareFollowCurrentFilterDescription: string;
     compareCustomFilter: string;
-    compareCustomFilterDescription: string;
     compareApply: string;
     compareCancel: string;
-    compareDisabled: string;
     filterButton: string;
     filterButtonEvent: string;
     filterButtonSession: string;
     filterButtonVisitor: string;
-    customRange: string;
     customHint: string;
     customPendingEnd: string;
     customApply: string;
-    rangeGroupQuick: string;
-    rangeGroupCalendar: string;
-    rangeGroupRolling: string;
-    rangeGroupAdvanced: string;
-    intervalDisabledMinute: string;
-    intervalDisabledHour: string;
-    intervalDisabledDay: string;
-    intervalDisabledWeek: string;
     filterTitle: string;
-    filterSubtitle: string;
-    filterDisabledRealtime: string;
     previousPeriod: string;
     nextPeriod: string;
     customSelectionSummary: string;
@@ -358,15 +325,7 @@ export interface AppMessages {
     savedFiltersLoading: string;
     noSavedFilter: string;
     systemPresets: string;
-    systemPresetCategories: {
-      acquisition: string;
-      device: string;
-      visitBehavior: string;
-      sessionEngagement: string;
-      visitorBehavior: string;
-      performance: string;
-      dataQuality: string;
-    };
+    advanced: string;
     systemPresetScopes: {
       preserve: string;
       event: string;
@@ -378,15 +337,7 @@ export interface AppMessages {
         name: string;
         description: string;
       };
-      externalReferrals: {
-        name: string;
-        description: string;
-      };
       organicSearchDiscovery: {
-        name: string;
-        description: string;
-      };
-      organicSocialDiscovery: {
         name: string;
         description: string;
       };
@@ -398,131 +349,11 @@ export interface AppMessages {
         name: string;
         description: string;
       };
-      desktopTraffic: {
-        name: string;
-        description: string;
-      };
-      campaignTaggedExternalAcquisition: {
-        name: string;
-        description: string;
-      };
-      campaignTaggedDirectEntry: {
-        name: string;
-        description: string;
-      };
-      untaggedExternalReferrals: {
-        name: string;
-        description: string;
-      };
-      mobileAcquiredTraffic: {
-        name: string;
-        description: string;
-      };
-      mobileOrganicDiscovery: {
-        name: string;
-        description: string;
-      };
-      desktopDirectAudience: {
-        name: string;
-        description: string;
-      };
-      geographicAttributionGap: {
-        name: string;
-        description: string;
-      };
-      tabletTraffic: {
-        name: string;
-        description: string;
-      };
-      longPageViews: {
-        name: string;
-        description: string;
-      };
-      shortPageViews: {
-        name: string;
-        description: string;
-      };
-      identifiedActivity: {
-        name: string;
-        description: string;
-      };
-      customEventActivity: {
-        name: string;
-        description: string;
-      };
       bouncedSessions: {
         name: string;
         description: string;
       };
-      nonBouncedSessions: {
-        name: string;
-        description: string;
-      };
-      longSessions: {
-        name: string;
-        description: string;
-      };
-      shortSessions: {
-        name: string;
-        description: string;
-      };
-      deepSessions: {
-        name: string;
-        description: string;
-      };
-      eventfulSessions: {
-        name: string;
-        description: string;
-      };
-      highEngagementSessions: {
-        name: string;
-        description: string;
-      };
       returningVisitors: {
-        name: string;
-        description: string;
-      };
-      frequentVisitors: {
-        name: string;
-        description: string;
-      };
-      deepVisitors: {
-        name: string;
-        description: string;
-      };
-      eventfulVisitors: {
-        name: string;
-        description: string;
-      };
-      identifiedVisitors: {
-        name: string;
-        description: string;
-      };
-      organicSearchVisitors: {
-        name: string;
-        description: string;
-      };
-      coreWebVitalsNeedsImprovement: {
-        name: string;
-        description: string;
-      };
-      slowLcp: {
-        name: string;
-        description: string;
-      };
-      slowInp: {
-        name: string;
-        description: string;
-      };
-      highCls: {
-        name: string;
-        description: string;
-      };
-      slowTtfb: {
-        name: string;
-        description: string;
-      };
-      slowFcp: {
         name: string;
         description: string;
       };
@@ -572,9 +403,9 @@ export interface AppMessages {
   };
   realtime: {
     title: string;
-    subtitle: string;
     logTitleSeparator: string;
     activeNow: string;
+    liveCount: string;
     liveMetrics: string;
     connected: string;
     connecting: string;
@@ -665,6 +496,29 @@ export interface AppMessages {
     };
     searchInTab: string;
   };
+  install: {
+    title: string;
+    platforms: {
+      html: string;
+      wordpress: string;
+      shopify: string;
+      nextjs: string;
+      gtm: string;
+    };
+    steps: {
+      html: string;
+      wordpress: string;
+      shopify: string;
+      nextjs: string;
+      gtm: string;
+    };
+    waiting: string;
+    received: string;
+    firstViewsTitle: string;
+    nextReports: string;
+    nextInvite: string;
+    dismiss: string;
+  };
   pages: {
     title: string;
     pagesPerSession: string;
@@ -673,7 +527,6 @@ export interface AppMessages {
     percentagePointSuffix: string;
     untitled: string;
     empty: string;
-    loadError: string;
     loadMoreError: string;
     trendTitle: string;
     otherPages: string;
@@ -687,27 +540,9 @@ export interface AppMessages {
   };
   referrers: {
     title: string;
-    summaryTitle: string;
     splitTitle: string;
-    chartTitle: string;
-    radarTitle: string;
-    radarSubtitle: string;
-    radarDuration: string;
-    radarEngagement: string;
-    radarDepth: string;
-    radarLoyalty: string;
-    radarFrequency: string;
-    radarTraffic: string;
-    directSourceNote: string;
     breakdownTitle: string;
-    directViews: string;
-    uniqueDomains: string;
-    uniqueLinks: string;
-    topSource: string;
-    topSourceShare: string;
-    noExternalSource: string;
     externalLabel: string;
-    nextSources: string;
     longTail: string;
     channelLongTail: string;
   };
@@ -718,9 +553,9 @@ export interface AppMessages {
     tabCampaign: string;
     tabTerm: string;
     tabContent: string;
-    breakdownTitle: string;
     notSet: string;
     noTaggedTraffic: string;
+    taggedLinkHint: string;
   };
   sessions: {
     title: string;
@@ -791,10 +626,7 @@ export interface AppMessages {
   };
   events: {
     title: string;
-    subtitle: string;
     detailTitle: string;
-    detailSubtitle: string;
-    typeDetailSubtitle: string;
     backToEvents: string;
     totalEvents: string;
     eventTypes: string;
@@ -821,7 +653,6 @@ export interface AppMessages {
     payloadFilterInvalid: string;
     expandField: string;
     collapseField: string;
-    breakdownTitle: string;
     search: string;
     eventName: string;
     eventId: string;
@@ -854,6 +685,7 @@ export interface AppMessages {
     loadError: string;
     detailNotFound: string;
     empty: string;
+    noCustomEvents: string;
     emptyFields: string;
     noEventName: string;
     loading: string;
@@ -861,17 +693,13 @@ export interface AppMessages {
   };
   funnels: {
     title: string;
-    subtitle: string;
     listTitle: string;
-    listSubtitle: string;
     conversionRecords: string;
     converted: string;
     dropped: string;
     open: string;
     moreActions: string;
-    create: string;
     createTitle: string;
-    createDescription: string;
     nameLabel: string;
     namePlaceholder: string;
     stepsLabel: string;
@@ -906,9 +734,6 @@ export interface AppMessages {
     deleteDescription: string;
     deleteConfirm: string;
     deleting: string;
-    empty: string;
-    emptyHint: string;
-    loadError: string;
     detailLoadError: string;
     invalidFunnel: string;
     created: string;
@@ -934,11 +759,9 @@ export interface AppMessages {
   };
   goals: {
     title: string;
-    listSubtitle: string;
     conversionRecords: string;
     open: string;
     moreActions: string;
-    create: string;
     createTitle: string;
     nameLabel: string;
     namePlaceholder: string;
@@ -954,9 +777,6 @@ export interface AppMessages {
     deleteTitle: string;
     deleteDescription: string;
     deleteConfirm: string;
-    empty: string;
-    emptyHint: string;
-    loadError: string;
     detailLoadError: string;
     invalidGoal: string;
     created: string;
@@ -971,6 +791,15 @@ export interface AppMessages {
     conversion: string;
     timeseries: string;
     updated: string;
+  };
+  conversions: {
+    new: string;
+    newGoal: string;
+    newGoalDescription: string;
+    newFunnel: string;
+    newFunnelDescription: string;
+    empty: string;
+    emptyMemberHint: string;
   };
   visitors: {
     title: string;
@@ -1046,7 +875,7 @@ export interface AppMessages {
   };
   retention: {
     title: string;
-    subtitle: string;
+    cohortBy: string;
     cohortDate: string;
     cohortSize: string;
     periodLabel: string;
@@ -1070,7 +899,6 @@ export interface AppMessages {
     unavailableCell: string;
     visitorsDetail: string;
     rateDetail: string;
-    cohortDetail: string;
     sizeDetail: string;
   };
   geo: {
@@ -1113,63 +941,26 @@ export interface AppMessages {
   };
   devices: {
     title: string;
-    deviceShareTitle: string;
-    osShareTitle: string;
-    deviceTrendTitle: string;
-    osTrendTitle: string;
-    screenDistributionTitle: string;
-    screenDistributionSubtitle: string;
-    screenBucketTitle: string;
-    screenPreviewTitle: string;
-    selectedViewportLabel: string;
-    openSiteLabel: string;
-    previewUnavailableLabel: string;
-    browserByDeviceTitle: string;
-    osByDeviceTitle: string;
-    otherLabel: string;
-    screenBucketLabels: {
-      phoneCompact: string;
-      phone: string;
-      tablet: string;
-      laptop: string;
-      desktopWide: string;
-      unclassified: string;
+    shareTitle: string;
+    dimensions: {
+      device: string;
+      os: string;
+      browser: string;
+      engine: string;
+      screenSize: string;
     };
+    crossTabTitle: string;
+    crossTabRows: string;
+    crossTabColumns: string;
+    otherLabel: string;
+    screenBucketLabels: Record<string, never>;
   };
   browsers: {
-    title: string;
-    trendTitle: string;
-    engineTrendTitle: string;
-    versionBreakdownTitle: string;
-    osBreakdownTitle: string;
-    deviceTypeBreakdownTitle: string;
     otherLabel: string;
-    browserShareTitle: string;
-    engineShareTitle: string;
-    caniuseTitle: string;
-    caniuseSubtitle: string;
-    caniuseSearchPlaceholder: string;
-    caniuseHotFeatures: string;
-    caniuseTrendingFeatures: string;
-    caniuseSiteSupport: string;
-    caniuseGlobalSupport: string;
-    caniuseClearSelection: string;
-    caniuseNoMatch: string;
-    caniuseFullSupport: string;
-    caniusePartialSupport: string;
-    caniuseNoSupport: string;
-    radarTitle: string;
-    radarSubtitle: string;
-    radarDuration: string;
-    radarEngagement: string;
-    radarDepth: string;
-    radarLoyalty: string;
-    radarFrequency: string;
-    radarTraffic: string;
   };
   performance: {
     title: string;
-    subtitle: string;
+    empty: string;
     chartTitle: string;
     avgLabel: string;
     samplesLabel: string;
@@ -1206,7 +997,9 @@ export interface AppMessages {
     metricValueColumn: string;
     statusColumn: string;
   };
-  share: Record<string, never>;
+  share: {
+    noData: string;
+  };
   siteSettings: {
     title: string;
     sections: {
@@ -1223,6 +1016,12 @@ export interface AppMessages {
         title: string;
       };
       danger: {
+        title: string;
+      };
+      install: {
+        title: string;
+      };
+      advanced: {
         title: string;
       };
     };
@@ -1249,10 +1048,7 @@ export interface AppMessages {
     trackQueryParamsLabel: string;
     trackHashLabel: string;
     blockingRulesSave: string;
-    blockingRulesSaving: string;
     blockingRulesDialogs: {
-      testButton: string;
-      helpButton: string;
       searchButton: string;
       searchTitle: string;
       searchDescription: string;
@@ -1265,145 +1061,43 @@ export interface AppMessages {
       searchNoResults: string;
       searchLoadError: string;
       searchClose: string;
-      helpTitle: string;
-      helpDescription: string;
-      syntaxTitle: string;
-      examplesTitle: string;
-      actionsTitle: string;
-      actionsDescription: string;
-      actionBlock: string;
-      actionAllow: string;
-      statusEmpty: string;
-      statusValid: string;
-      statusInvalid: string;
-      errorInvalidRule: string;
-      errorInvalidLines: string;
-      errorInvalidLine: string;
-      errorLineTooLong: string;
-      errorTooManyLines: string;
-      errorInvalidPattern: string;
-      testTitle: string;
-      testDescription: string;
-      testRun: string;
-      testClose: string;
-      testInvalidRules: string;
-      testInvalidRule: string;
-      testBlocked: string;
-      testAllowed: string;
-      testNoMatch: string;
-      testMatchedRules: string;
-      testActionBlock: string;
-      testActionAllow: string;
-      testLine: string;
     };
     blockingRulesFields: {
       domains: {
         title: string;
-        label: string;
         placeholder: string;
-        hint: string;
-        syntax: string;
-        examples: string[];
-        exampleDescription: string;
-        testLabel: string;
-        testPlaceholder: string;
-        testHint: string;
       };
       paths: {
         title: string;
-        label: string;
         placeholder: string;
-        hint: string;
-        syntax: string;
-        examples: string[];
-        exampleDescription: string;
-        testLabel: string;
-        testPlaceholder: string;
-        testHint: string;
       };
       queryParameters: {
         title: string;
-        label: string;
         placeholder: string;
-        hint: string;
-        syntax: string;
-        examples: string[];
-        exampleDescription: string;
-        testLabel: string;
-        testPlaceholder: string;
-        testHint: string;
       };
       referrers: {
         title: string;
-        label: string;
         placeholder: string;
-        hint: string;
-        syntax: string;
-        examples: string[];
-        exampleDescription: string;
-        testLabel: string;
-        testPlaceholder: string;
-        testHint: string;
       };
       userAgents: {
         title: string;
-        label: string;
         placeholder: string;
-        hint: string;
-        syntax: string;
-        examples: string[];
-        exampleDescription: string;
-        testLabel: string;
-        testPlaceholder: string;
-        testHint: string;
       };
       ips: {
         title: string;
-        label: string;
         placeholder: string;
-        hint: string;
-        syntax: string;
-        examples: string[];
-        exampleDescription: string;
-        testLabel: string;
-        testPlaceholder: string;
-        testHint: string;
       };
       asns: {
         title: string;
-        label: string;
         placeholder: string;
-        hint: string;
-        syntax: string;
-        examples: string[];
-        exampleDescription: string;
-        testLabel: string;
-        testPlaceholder: string;
-        testHint: string;
       };
       countries: {
         title: string;
-        label: string;
         placeholder: string;
-        hint: string;
-        syntax: string;
-        examples: string[];
-        exampleDescription: string;
-        testLabel: string;
-        testPlaceholder: string;
-        testHint: string;
       };
       regions: {
         title: string;
-        label: string;
         placeholder: string;
-        hint: string;
-        syntax: string;
-        examples: string[];
-        exampleDescription: string;
-        testLabel: string;
-        testPlaceholder: string;
-        testHint: string;
       };
     };
     ignoreDoNotTrackLabel: string;
@@ -1411,11 +1105,8 @@ export interface AppMessages {
     autoTrackOutboundLinksHint: string;
     performanceSampleRateLabel: string;
     performanceSampleRateHint: string;
-    saveTracking: string;
-    savingTracking: string;
     save: string;
     saving: string;
-    scriptTitle: string;
     scriptHint: string;
     copyScript: string;
     copiedScript: string;
@@ -1435,6 +1126,19 @@ export interface AppMessages {
       deleteFailed: string;
       invalidInput: string;
     };
+    publicEnabledHint: string;
+    viewBlockedRequests: string;
+    blockingRulesHelp: string;
+    blockingRuleTypeLabel: string;
+    blockingRuleActionLabel: string;
+    blockingRuleValueLabel: string;
+    blockingRuleBlock: string;
+    blockingRuleAllow: string;
+    blockingRuleAdd: string;
+    blockingRuleRemove: string;
+    blockingRulesEmpty: string;
+    blockingRuleInvalid: string;
+    blockingRulesTooMany: string;
   };
   accountSettings: {
     emailManagedByGateway: string;
@@ -1442,32 +1146,15 @@ export interface AppMessages {
     nicknameLabel: string;
     nicknamePlaceholder: string;
     emailLabel: string;
-    profileSave: string;
-    profileSaving: string;
     profileSaved: string;
     profileSaveFailed: string;
-    preferredLanguageTitle: string;
-    preferredLanguageLabel: string;
-    preferredLanguageDefault: string;
-    preferredLanguageEnglish: string;
-    preferredLanguageChinese: string;
-    preferredLanguageTraditionalChinese: string;
-    preferredLanguageJapanese: string;
-    preferredLanguageSaved: string;
-    preferredLanguageSaveFailed: string;
     timeZoneTitle: string;
-    activeTimeZone: string;
-    browserTimeZone: string;
     browserUnavailable: string;
-    preferenceLabel: string;
     useBrowser: string;
-    useCustom: string;
-    customTimeZoneLabel: string;
-    invalidTimeZone: string;
-    save: string;
-    saving: string;
     saved: string;
     saveFailed: string;
+    timeZoneLabel: string;
+    languageSaveFailed: string;
   };
   notificationCenter: {
     title: string;
@@ -1475,42 +1162,13 @@ export interface AppMessages {
     loading: string;
     markRead: string;
     markAllRead: string;
-    refresh: string;
-    attention: string;
     loadFailed: string;
     markReadFailed: string;
     markAllReadSuccess: string;
     markAllReadFailed: string;
-    ruleFilterActive: string;
-    ruleFilterClear: string;
-    sections: {
-      importantTitle: string;
-      importantDescription: string;
-      importantEmpty: string;
-      reportsTitle: string;
-      reportsDescription: string;
-      reportsEmpty: string;
-    };
     tabs: {
       all: string;
       unread: string;
-      attention: string;
-      report: string;
-    };
-    tabDescriptions: {
-      all: string;
-      unread: string;
-      attention: string;
-      report: string;
-    };
-    messageTypes: {
-      report: string;
-      milestone: string;
-      threshold: string;
-      change: string;
-      health: string;
-      system: string;
-      test: string;
     };
     severities: {
       info: string;
@@ -1518,52 +1176,15 @@ export interface AppMessages {
       warning: string;
       critical: string;
     };
-    deliveryStatuses: {
-      created: string;
-      sending: string;
-      sent: string;
-      partial: string;
-      failed: string;
-      skipped: string;
-    };
-    channels: {
-      inApp: string;
-      email: string;
-    };
-    channelStatuses: {
-      sent: string;
-      skipped: string;
-      failed: string;
-      created: string;
-    };
-    emailSkipReasons: {
-      user_preference_disabled: string;
-      system_email_unconfigured: string;
-      recipient_email_invalid: string;
-      secret_decryption_failed: string;
-      provider_failed: string;
-      network_failed: string;
-      unknown: string;
-    };
-    emailAttempts: string;
-    emailRetryCount: string;
-    emailDuration: string;
-    typeFilterLabel: string;
-    severityFilterLabel: string;
-    allTypes: string;
-    allSeverities: string;
     preferencesTitle: string;
     emailNotificationsLabel: string;
-    emailNotificationsDescription: string;
     reportsUnreadLabel: string;
-    reportsUnreadDescription: string;
     milestonesUnreadLabel: string;
-    milestonesUnreadDescription: string;
     alertsUnreadLabel: string;
-    alertsUnreadDescription: string;
-    preferencesSaved: string;
     preferencesSaveFailed: string;
     detailFields: Record<string, never>;
+    noUnread: string;
+    emailFailed: string;
   };
   notificationEmail: {
     common: {
@@ -1651,17 +1272,10 @@ export interface AppMessages {
   };
   runtimeConfigError: {
     title: string;
-    eyebrow: string;
     heading: string;
-    description: string;
-    requiredTitle: string;
-    requiredDescription: string;
-    secretHint: string;
-    commandTitle: string;
-    commandDescription: string;
-    quickStartHint: string;
+    setupSummary: string;
+    setupCommand: string;
     docsLabel: string;
-    homeLabel: string;
   };
   login: Record<string, never>;
   accountLinks: {
@@ -1672,24 +1286,12 @@ export interface AppMessages {
   };
   empty: Record<string, never>;
   errorPage: {
-    notFoundEyebrow: string;
     notFoundTitle: string;
     notFoundDescription: string;
-    errorEyebrow: string;
     errorTitle: string;
     errorDescription: string;
-    statusLabel: string;
-    reasonLabel: string;
-    requestLabel: string;
-    timestampLabel: string;
-    diagnosticIdLabel: string;
-    errorTypeLabel: string;
-    errorMessageLabel: string;
-    notFoundReason: string;
-    unexpectedReason: string;
     homeAction: string;
     reportAction: string;
-    reportHint: string;
   };
   actions: {
     switchToEnglish: string;
@@ -1711,6 +1313,8 @@ export interface AppMessages {
       openAnalytics: string;
       title: string;
       pagesPerSession: string;
+      public: string;
+      openPublic: string;
     };
     widgets: Record<string, never>;
     notifications: {
@@ -1787,7 +1391,6 @@ export interface AppMessages {
       disable: string;
       delete: string;
       saveRule: string;
-      emailPreview: string;
       preview: string;
       runNow: string;
       previewFailed: string;
@@ -1843,7 +1446,6 @@ export interface AppMessages {
         title: string;
         htmlPreview: string;
         bodyText: string;
-        data: string;
         createdAt: string;
         updatedAt: string;
         loadingContent: string;
@@ -1918,27 +1520,16 @@ export interface AppMessages {
         last_24h: string;
         yesterday: string;
       };
-      emailPreviewPage: {
-        title: string;
-        typeLabel: string;
-        localeLabel: string;
-        formatLabel: string;
-        html: string;
-        text: string;
-        json: string;
-        refresh: string;
-        loading: string;
-        loadFailed: string;
-        subject: string;
+      addSiteFirst: string;
+      deleteDescription: string;
+      previewStatuses: {
+        skipped: string;
+        checked: string;
+        triggered: string;
       };
     };
     publicLinks: {
-      enabled: string;
-      disabled: string;
-      viewSettings: string;
       copyLink: string;
-      linkCopied: string;
-      noSites: string;
       columns: Record<string, never>;
     };
     apiKeys: {
@@ -1955,9 +1546,6 @@ export interface AppMessages {
       roleLabels: Record<string, never>;
     };
   };
-  managementNav: {
-    scheduledTasks: string;
-  };
   managementPages: {
     versionUpdates: Record<string, never>;
     scheduledTasks: {
@@ -1968,17 +1556,12 @@ export interface AppMessages {
       allStatuses: string;
       runs24h: string;
       successRate24h: string;
-      successRateDescription: string;
       problemRuns24h: string;
-      retentionPrefix: string;
-      days: string;
       failed: string;
       partial: string;
       lastRun: string;
       staleRunning: string;
-      noStaleRunning: string;
       taskListTitle: string;
-      taskListDescription: string;
       task: string;
       schedule: string;
       enabled: string;
@@ -1992,7 +1575,6 @@ export interface AppMessages {
       avgDuration: string;
       runHistoryTitle: string;
       nextRun: string;
-      runHistoryDescription: string;
       noRuns: string;
       scheduledAt: string;
       startedAt: string;
@@ -2040,6 +1622,7 @@ export interface AppMessages {
           schedule: string;
         };
       };
+      keptForDays: string;
     };
   };
   adminUsers: {
@@ -2049,27 +1632,17 @@ export interface AppMessages {
     createTitle: string;
     name: string;
     domain: string;
-    publicSlug: string;
     create: string;
     creating: string;
-    noData: string;
-    loadFailed: string;
     createSuccess: string;
     createFailed: string;
-    invalidInput: string;
-    open: string;
-    columns: {
-      name: string;
-      domain: string;
-      created: string;
-      action: string;
-    };
+    invalidDomain: string;
+    columns: Record<string, never>;
   };
   adminTeams: {
     columns: Record<string, never>;
   };
   requestObservation: {
-    title: string;
     blockedTotal: string;
     retentionNote: string;
     topReasons: string;
@@ -2124,34 +1697,9 @@ export interface AppMessages {
     normalDetail: Record<string, never>;
   };
   systemSettings: {
-    title: string;
-    subtitle: string;
-    guide: string;
-    analyticsEngineTitle: string;
-    analyticsEngineDescription: string;
-    analyticsEngineAccountIdLabel: string;
-    analyticsEngineApiTokenLabel: string;
-    analyticsEngineApiTokenPlaceholder: string;
-    analyticsEngineSaved: string;
-    analyticsEngineSaveFailed: string;
-    analyticsEngineDeleted: string;
-    analyticsEngineDeleteFailed: string;
-    analyticsEngineDeleteConfirm: string;
-    analyticsEngineDisabledTitle: string;
-    analyticsEngineDisabledDescription: string;
-    analyticsEngineDisabledHint: string;
-    analyticsEngineOpenCloudflare: string;
-    analyticsEngineGuideTitle: string;
-    analyticsEngineGuideDescription: string;
-    analyticsEngineGuideSteps: string[];
     notificationEmailTitle: string;
-    notificationEmailDescription: string;
-    emailGatewayReady: string;
     emailGatewayNotReady: string;
     emailSenderLabel: string;
-    notificationEmailGuideTitle: string;
-    notificationEmailGuideDescription: string;
-    notificationEmailGuideSteps: string[];
     retentionTitle: string;
     retentionDescription: string;
     scheduledTaskLogsDaysLabel: string;
@@ -2164,60 +1712,14 @@ export interface AppMessages {
     retentionSaving: string;
     retentionSaved: string;
     retentionSaveFailed: string;
-    loginTurnstileTitle: string;
-    loginTurnstileDescription: string;
-    loginTurnstileEnabledLabel: string;
-    loginTurnstileSiteKeyLabel: string;
-    loginTurnstileSecretKeyLabel: string;
-    loginTurnstileSecretKeyPlaceholder: string;
-    loginTurnstileModeLabel: string;
-    loginTurnstileModeInvisible: string;
-    loginTurnstileTest: string;
-    loginTurnstileTesting: string;
-    loginTurnstileTestPassed: string;
-    loginTurnstileTestRequired: string;
-    loginTurnstileTestMissing: string;
-    loginTurnstileTestFailed: string;
-    loginTurnstileSaved: string;
-    loginTurnstileSaveFailed: string;
-    loginTurnstileDeleted: string;
-    loginTurnstileDeleteFailed: string;
-    loginTurnstileDeleteConfirm: string;
-    loginTurnstileLoadFailed: string;
-    loginTurnstilePrivacyNotice: string;
-    loginTurnstileGuideTitle: string;
-    loginTurnstileGuideDescription: string;
-    loginTurnstileGuideSteps: string[];
-    enabledLabel: string;
     enabledOn: string;
     enabledOff: string;
-    providerLabel: string;
-    providerResend: string;
-    fromNameLabel: string;
-    fromEmailLabel: string;
-    replyToLabel: string;
-    replyToPlaceholder: string;
-    resendApiKeyLabel: string;
-    resendApiKeyPlaceholder: string;
-    testRecipientLabel: string;
-    save: string;
-    saving: string;
-    test: string;
-    testing: string;
-    saved: string;
-    saveFailed: string;
-    delete: string;
-    deleting: string;
     cancel: string;
-    deleted: string;
-    deleteFailed: string;
-    deleteConfirm: string;
-    testSent: string;
-    testFailed: string;
-    loadFailed: string;
+    retentionLowerTitle: string;
+    retentionLowerDescription: string;
+    retentionLowerConfirm: string;
   };
   systemPerformance: {
-    title: string;
     refresh: string;
     loadFailed: string;
     noData: string;
@@ -2299,7 +1801,6 @@ export interface AppMessages {
     doDiagnosticSiteNextDueHidden: string;
     doDiagnosticSiteNextDueTimeout: string;
     doDiagnosticSiteResponseMs: string;
-    doDiagnosticThresholdsHint: string;
     doDiagnosticHealthy: string;
   };
   loginForm: Record<string, never>;
@@ -2313,7 +1814,7 @@ export interface AppMessages {
     toggleSidebar: string;
     sources: string;
     audience: string;
-    conversions: string;
+    goals: string;
     sites: string;
     allSites: string;
     inbox: string;
@@ -2338,32 +1839,27 @@ export interface AppMessages {
       sharing: string;
     };
     noSitesTitle: string;
-    noSitesDescription: string;
+    memberNoSitesTitle: string;
+    memberNoSitesDescription: string;
     addSite: string;
     waitingTitle: string;
-    waitingDescription: string;
     copy: string;
     copied: string;
-    trackingSettings: string;
   };
   settingsNav: {
     label: string;
-    personal: string;
-    organization: string;
     system: string;
     account: string;
-    sites: string;
     notifications: string;
-    publicLinks: string;
-    general: string;
-    scheduledTasks: string;
-    requestObservation: string;
-    performance: string;
     cancel: string;
-    managerOnly: string;
-    dangerZone: string;
-    copy: string;
-    copied: string;
+  };
+  systemHealth: {
+    tabs: {
+      tasks: string;
+      blocked: string;
+      ingestion: string;
+      data: string;
+    };
   };
 }
 
@@ -2377,18 +1873,15 @@ const enMessages = {
     realtime: "Real-time",
     pages: "Pages",
     referrers: "Referrers",
-    sessions: "Sessions",
     events: "Events",
-    funnels: "Funnels",
-    goals: "Goals",
+    funnels: "Goals & funnels",
     campaigns: "Campaigns",
     visitors: "Visitors",
     retention: "Retention",
     geo: "Location",
     devices: "Devices",
-    browsers: "Browsers",
     performance: "Performance",
-    settings: "Settings",
+    settings: "Site settings",
   },
   common: {
     deviceLabels: {
@@ -2401,23 +1894,23 @@ const enMessages = {
     views: "Views",
     sessions: "Sessions",
     visitors: "Visitors",
-    bounceRate: "Bounce Rate",
-    avgDuration: "Avg. Duration",
+    bounceRate: "Bounce rate",
+    avgDuration: "Avg. duration",
     path: "Path",
     title: "Title",
     hostname: "Hostname",
-    referrerHost: "Referrer Host",
-    entryPage: "Entry Page",
-    exitPage: "Exit Page",
+    referrerHost: "Referrer host",
+    entryPage: "Entry page",
+    exitPage: "Exit page",
     referrer: "Referrer",
     event: "Event",
     location: "Location",
     browser: "Browser",
-    operatingSystem: "Operating System",
-    deviceType: "Device Type",
+    operatingSystem: "Operating system",
+    deviceType: "Device type",
     country: "Country",
     region: "Region",
-    regionCode: "Region Code",
+    regionCode: "Region code",
     city: "City",
     continent: "Continent",
     latitude: "Latitude",
@@ -2439,23 +1932,20 @@ const enMessages = {
       "SOUTH AMERICA": "South America",
     },
     timezone: "Time zone",
-    organization: "Organization",
-    screenSize: "Screen Size",
+    organization: "Network organization",
+    screenSize: "Screen size",
     loading: "Loading",
     noData: "No data",
+    loadFailed: "Couldn't load",
+    retry: "Retry",
+    filteredEmpty: "Nothing matches these filters",
+    clearFilters: "Clear filters",
+    trend: "Trend",
     unknown: "Unknown",
-    lastUpdated: "Last updated",
     site: "Site",
-    team: "Team",
-    management: "Management",
-    backToTeam: "Back to Team",
     system: "System",
-    account: "Account",
     theme: "Theme",
     language: "Language",
-    role: "Role",
-    admin: "Admin",
-    user: "User",
     search: "Search",
     open: "Open",
     sortBy: "Sort by {label}",
@@ -2485,28 +1975,19 @@ const enMessages = {
       dragHint: "Drag to reorder",
       close: "Close",
     },
-    time: "Time",
-    cycle: "Cycle",
     close: "Close",
     sitesFiltered: "{active} / {total} sites filtered",
     cumulativeTraffic: "Cumulative traffic",
     cumulativeEvents: "Cumulative events",
   },
   ranges: {
-    last30m: "30m",
-    last1h: "1h",
     today: "Today",
     yesterday: "Yesterday",
-    thisWeek: "This Week",
-    thisMonth: "This Month",
-    thisYear: "This Year",
-    last24h: "Last 24 hours",
     last7d: "Last 7 days",
     last30d: "Last 30 days",
     last90d: "Last 90 days",
-    last6m: "Last 6 months",
     last12m: "Last 12 months",
-    custom: "Custom Range",
+    custom: "Custom range",
   },
   intervals: {
     minute: "Minute",
@@ -2516,49 +1997,25 @@ const enMessages = {
     month: "Month",
   },
   dashboardHeader: {
-    range: "Time Range",
     interval: "Interval",
     compareButton: "Compare",
     compareTitle: "Comparison settings",
-    compareSubtitle: "Choose a comparison period and filter conditions.",
     compareTimeLabel: "Comparison period",
     compareCurrentPeriod: "Current period",
-    compareCurrentPeriodDescription: "Use the currently selected time range.",
     comparePreviousPeriod: "Previous period",
-    comparePreviousPeriodDescription:
-      "Use the same-length range before the current period.",
     compareFilterLabel: "Comparison filter",
     compareFollowCurrentFilter: "Follow current filter",
-    compareFollowCurrentFilterDescription:
-      "Use the filters currently applied to this page.",
     compareCustomFilter: "Custom filter",
-    compareCustomFilterDescription:
-      "Set separate filter conditions for the comparison.",
     compareApply: "Apply comparison",
     compareCancel: "Cancel",
-    compareDisabled: "Comparison is unavailable on this page.",
     filterButton: "Filter",
-    filterButtonEvent: "Filter (Event)",
-    filterButtonSession: "Filter (Session)",
-    filterButtonVisitor: "Filter (Visitor)",
-    customRange: "Select Custom Range",
-    customHint: "Please select a start and end date.",
-    customPendingEnd: "Start date selected. Please pick an end date.",
+    filterButtonEvent: "Filter (event)",
+    filterButtonSession: "Filter (session)",
+    filterButtonVisitor: "Filter (visitor)",
+    customHint: "Select a start and end date.",
+    customPendingEnd: "Now pick an end date.",
     customApply: "Apply date range",
-    rangeGroupQuick: "Quick Ranges",
-    rangeGroupCalendar: "Calendar Periods",
-    rangeGroupRolling: "Rolling Windows",
-    rangeGroupAdvanced: "Advanced",
-    intervalDisabledMinute: "Minute interval is only available within 1 hour.",
-    intervalDisabledHour: "Hour interval is only available within 7 days.",
-    intervalDisabledDay:
-      "Day interval is only available within the last 90 days.",
-    intervalDisabledWeek:
-      "Week interval is only available within the last 12 months.",
     filterTitle: "Filters",
-    filterSubtitle:
-      "Create and save filters, or use your personal and team saved filters.",
-    filterDisabledRealtime: "Filtering is unavailable on the real-time page.",
     previousPeriod: "Previous period",
     nextPeriod: "Next period",
     customSelectionSummary: "Selected range: {from} to {to} ({days} days)",
@@ -2637,8 +2094,8 @@ const enMessages = {
       "client.deviceType": "Device type",
       "client.language": "Language",
       "client.screenSize": "Screen size",
-      "geo.country": "Country / Region",
-      "geo.region": "Province / State / Region",
+      "geo.country": "Country / region",
+      "geo.region": "Province / state / region",
       "geo.city": "City",
       "geo.continent": "Continent",
       "geo.timeZone": "Time zone",
@@ -2724,7 +2181,7 @@ const enMessages = {
     },
     booleanTrue: "True",
     booleanFalse: "False",
-    valueUnset: "(Not set)",
+    valueUnset: "(not set)",
     valueLoading: "Loading values",
     valueSearchPlaceholder: "Search or enter a value",
     valueListPlaceholder: "Search or enter a value, then press Enter",
@@ -2742,7 +2199,7 @@ const enMessages = {
       perMille: "‰",
       pixels: "Pixels",
     },
-    jsonPointer: "JSON Pointer",
+    jsonPointer: "JSON pointer",
     jsonPointerPlaceholder: "Search or enter a JSON pointer",
     match: "Match",
     expression: "Filter expression",
@@ -2751,7 +2208,7 @@ const enMessages = {
     expressionInvalid: "Invalid expression. Click to view syntax help.",
     expressionHelpTitle: "Filter expression syntax",
     expressionHelpDescription:
-      "Available fields and operators are generated from the active filter contract.",
+      "The fields and operators you can use in a filter expression.",
     expressionHelpSyntax: "Syntax",
     expressionHelpLogicDescription:
       "AND binds more tightly than OR. Use parentheses for nesting; AND(...) and OR(...) preserve an explicit one-condition group.",
@@ -2818,7 +2275,7 @@ const enMessages = {
       coreRelationExpression: "Advanced filter expression",
       structuredEditor: "Advanced filter controls",
       unavailableForObservation:
-        "Advanced filters are unavailable for Goal and Funnel steps.",
+        "Advanced filters are unavailable for goal and funnel steps.",
       targetKinds: {
         time: "Time",
         field: "Field",
@@ -2847,17 +2304,9 @@ const enMessages = {
       },
     },
     savedFiltersLoading: "Loading saved filters...",
-    noSavedFilter: "Do not use a saved filter",
+    noSavedFilter: "No saved filter",
     systemPresets: "System presets",
-    systemPresetCategories: {
-      acquisition: "Acquisition",
-      device: "Device",
-      visitBehavior: "Visit behavior",
-      sessionEngagement: "Session engagement",
-      visitorBehavior: "Visitor behavior",
-      performance: "Performance",
-      dataQuality: "Data quality",
-    },
+    advanced: "Advanced",
     systemPresetScopes: {
       preserve: "Keep current scope",
       event: "Event scope",
@@ -2869,17 +2318,9 @@ const enMessages = {
         name: "Direct traffic",
         description: "Visits with no external referrer.",
       },
-      externalReferrals: {
-        name: "External referrals",
-        description: "Visits that arrived from an external referrer.",
-      },
       organicSearchDiscovery: {
         name: "Organic search discovery",
         description: "Search-engine referrals without campaign tags.",
-      },
-      organicSocialDiscovery: {
-        name: "Organic social discovery",
-        description: "Social-network referrals without campaign tags.",
       },
       campaignTaggedTraffic: {
         name: "Campaign-tagged traffic",
@@ -2889,143 +2330,20 @@ const enMessages = {
         name: "Mobile traffic",
         description: "Visits from mobile devices.",
       },
-      desktopTraffic: {
-        name: "Desktop traffic",
-        description: "Visits from desktop devices.",
-      },
-      campaignTaggedExternalAcquisition: {
-        name: "Tagged external acquisition",
-        description: "Externally referred visits carrying campaign tags.",
-      },
-      campaignTaggedDirectEntry: {
-        name: "Tagged direct entry",
-        description: "Direct visits carrying campaign tags.",
-      },
-      untaggedExternalReferrals: {
-        name: "Untagged external referrals",
-        description: "Externally referred visits without campaign tags.",
-      },
-      mobileAcquiredTraffic: {
-        name: "Mobile campaign acquisition",
-        description:
-          "Mobile visits from external, campaign-tagged acquisition.",
-      },
-      mobileOrganicDiscovery: {
-        name: "Mobile organic discovery",
-        description:
-          "Untagged mobile visits discovered through search or social.",
-      },
-      desktopDirectAudience: {
-        name: "Desktop direct audience",
-        description: "Untagged direct visits from desktop devices.",
-      },
-      geographicAttributionGap: {
-        name: "Geographic attribution gap",
-        description: "Externally referred visits without a recorded country.",
-      },
-      tabletTraffic: {
-        name: "Tablet traffic",
-        description: "Visits from tablet devices.",
-      },
-      longPageViews: {
-        name: "Long page views",
-        description: "Page views lasting at least 30 seconds.",
-      },
-      shortPageViews: {
-        name: "Short page views",
-        description: "Page views lasting less than 10 seconds.",
-      },
-      identifiedActivity: {
-        name: "Identified activity",
-        description: "Events associated with an identified user.",
-      },
-      customEventActivity: {
-        name: "Custom event activity",
-        description: "Events with a recorded custom event name.",
-      },
       bouncedSessions: {
         name: "Bounced sessions",
         description: "Sessions containing a single page view.",
-      },
-      nonBouncedSessions: {
-        name: "Non-bounced sessions",
-        description: "Sessions containing more than one page view.",
-      },
-      longSessions: {
-        name: "Long sessions",
-        description: "Sessions lasting at least five minutes.",
-      },
-      shortSessions: {
-        name: "Short sessions",
-        description: "Sessions lasting less than one minute.",
-      },
-      deepSessions: {
-        name: "Deep sessions",
-        description: "Sessions with at least three page views.",
-      },
-      eventfulSessions: {
-        name: "Eventful sessions",
-        description: "Sessions with at least one custom event.",
-      },
-      highEngagementSessions: {
-        name: "Highly engaged sessions",
-        description:
-          "Sessions with at least three views and two custom events.",
       },
       returningVisitors: {
         name: "Returning visitors",
         description: "Visitors with at least two sessions.",
       },
-      frequentVisitors: {
-        name: "Frequent visitors",
-        description: "Visitors with at least five sessions.",
-      },
-      deepVisitors: {
-        name: "Deep visitors",
-        description: "Visitors with at least five page views.",
-      },
-      eventfulVisitors: {
-        name: "Eventful visitors",
-        description: "Visitors with at least two custom events.",
-      },
-      identifiedVisitors: {
-        name: "Identified visitors",
-        description: "Visitors associated with an identified user.",
-      },
-      organicSearchVisitors: {
-        name: "Organic search visitors",
-        description: "Visitors with an untagged search referral.",
-      },
-      coreWebVitalsNeedsImprovement: {
-        name: "Core Web Vitals need improvement",
-        description: "Visits exceeding a Core Web Vitals threshold.",
-      },
-      slowLcp: {
-        name: "Slow LCP",
-        description: "Visits with LCP above 2.5 seconds.",
-      },
-      slowInp: {
-        name: "Slow INP",
-        description: "Visits with INP above 200 milliseconds.",
-      },
-      highCls: {
-        name: "High CLS",
-        description: "Visits with CLS above 0.1.",
-      },
-      slowTtfb: {
-        name: "Slow TTFB",
-        description: "Visits with TTFB above 800 milliseconds.",
-      },
-      slowFcp: {
-        name: "Slow FCP",
-        description: "Visits with FCP above 1.8 seconds.",
-      },
     },
     savedFiltersPersonal: "Personal filters",
-    savedFiltersTeam: "Team filters",
+    savedFiltersTeam: "Organization filters",
     savedFiltersAuthor: "Author: {name}",
     savedFiltersPrivate: "Personal",
-    savedFiltersTeamShared: "Shared with team",
+    savedFiltersTeamShared: "Shared with your organization",
     saveThisFilter: "Save this filter",
     saveAsThisFilter: "Save as this filter",
     manageThisFilter: "Manage this filter",
@@ -3041,7 +2359,7 @@ const enMessages = {
     scopeVisitor: "Filter visitors meeting these conditions",
     savedFilterVisibility: "Visibility",
     savedFilterVisibilityPrivate: "Only me",
-    savedFilterVisibilityTeam: "Share with team",
+    savedFilterVisibilityTeam: "Share with your organization",
     savedFilterCreateDescription:
       "Save the current filter expression to apply it again later.",
     savedFilterManageDescription:
@@ -3050,14 +2368,14 @@ const enMessages = {
     deleteSavedFilter: "Delete this filter",
     deleteSavedFilterTitle: "Delete this filter?",
     deleteSavedFilterDescription:
-      "This cannot be undone, and team members will no longer be able to use it.",
+      "This can't be undone, and others in your organization will lose access to it.",
     savedFilterCancel: "Cancel",
     savedFilterSave: "Save",
     savedFilterSaving: "Saving...",
     savedFilterDelete: "Delete",
     savedFilterDeleting: "Deleting...",
-    savedFilterOperationFailed: "The operation failed. Please try again.",
-    apply: "Apply Filters",
+    savedFilterOperationFailed: "Something went wrong. Try again.",
+    apply: "Apply filters",
     allConditions: "All conditions",
     anyCondition: "Any condition",
     condition: "Condition {index}",
@@ -3069,10 +2387,11 @@ const enMessages = {
   },
   realtime: {
     title: "Real-time",
-    subtitle: "View traffic from the last 30 minutes.",
     logTitleSeparator: ":",
     activeNow: "Active now",
-    liveMetrics: "Active now / Visitors in last 30m / Views in last 30m",
+    liveCount: "{count} online now",
+    liveMetrics:
+      "Active now / Visitors in the last 30 minutes / Views in the last 30 minutes",
     connected: "Connected",
     connecting: "Connecting",
     reconnecting: "Reconnecting",
@@ -3102,7 +2421,7 @@ const enMessages = {
     visibilityChange: "Page visibility changed",
     visitorHistorySection: "Visitor activity",
     visitorHistorySubtitle:
-      "All records for this visitor in the current realtime window.",
+      "All records for this visitor in the real-time window.",
     visitorHistoryRange: "Activity range",
     visitorHistoryEmpty:
       "No additional records are available for this visitor yet.",
@@ -3140,12 +2459,12 @@ const enMessages = {
     leaveAt: "Left at",
   },
   overview: {
-    title: "Traffic Overview",
-    trendTitle: "Traffic Trend",
+    title: "Overview",
+    trendTitle: "Traffic trend",
     sourceTab: "Source",
-    sourceDomainColumn: "Source (Domain)",
-    sourceLinkTab: "Source Link",
-    sourceLinkColumn: "Source Link",
+    sourceDomainColumn: "Source (domain)",
+    sourceLinkTab: "Source link",
+    sourceLinkColumn: "Source link",
     channelTab: "Channel",
     channelColumn: "Channel",
     direct: "Direct",
@@ -3164,83 +2483,88 @@ const enMessages = {
     },
     searchInTab: "Search {tab}",
   },
+  install: {
+    title: "Add the script to your site",
+    platforms: {
+      html: "HTML",
+      wordpress: "WordPress",
+      shopify: "Shopify",
+      nextjs: "Next.js",
+      gtm: "Google Tag Manager",
+    },
+    steps: {
+      html: "Paste it before {tag} on every page.",
+      wordpress:
+        "Add it with a header scripts plugin such as WPCode, or paste it before {tag} in your theme's header.php.",
+      shopify:
+        "In Online Store → Themes → Edit code, open theme.liquid and paste it before {tag}.",
+      nextjs: "Paste it inside {tag} in app/layout.tsx.",
+      gtm: "Create a Custom HTML tag with it, trigger it on All Pages, then publish.",
+    },
+    waiting: "Waiting for the first page view",
+    received: "Got your first page view. Reports fill in within a minute.",
+    firstViewsTitle: "Your first page views are in!",
+    nextReports: "Get reports by email",
+    nextInvite: "Invite members",
+    dismiss: "Dismiss",
+  },
   pages: {
     title: "Pages",
-    pagesPerSession: "Pages / Session",
+    pagesPerSession: "Pages / session",
     changePercentColumnLabel: "{metric} change (%)",
     changePointsColumnLabel: "{metric} change (pp)",
     percentagePointSuffix: "pp",
-    untitled: "Untitled Page",
-    empty: "No page data matches the current filters.",
-    loadError: "Failed to load page data. Please try again later.",
+    untitled: "Untitled page",
+    empty: "No pages yet",
     loadMoreError: "Failed to load more pages.",
-    trendTitle: "Page Traffic Trend",
-    otherPages: "Other Pages",
+    trendTitle: "Page traffic trend",
+    otherPages: "Other pages",
     hashTab: "Anchor",
-    noHash: "No Anchor",
-    queryTab: "Query Params",
-    noQuery: "No Query Params",
+    noHash: "No anchor",
+    queryTab: "Query parameters",
+    noQuery: "No query parameters",
     eventTab: "Events",
     eventsMetric: "Event count",
     viewDetails: "View details",
   },
   referrers: {
     title: "Referrers",
-    summaryTitle: "Source Summary",
-    splitTitle: "Traffic Split",
-    chartTitle: "Source Mix",
-    radarTitle: "Top 24 Source Radar",
-    radarSubtitle: "Compare the leading referrers across behavioral metrics.",
-    radarDuration: "Duration",
-    radarEngagement: "Engagement",
-    radarDepth: "Depth",
-    radarLoyalty: "Loyalty",
-    radarFrequency: "Frequency",
-    radarTraffic: "Traffic",
-    directSourceNote:
-      "This traffic arrived without an external referring website.",
-    breakdownTitle: "Source Breakdown",
-    directViews: "Direct Views",
-    uniqueDomains: "Unique Domains",
-    uniqueLinks: "Unique Links",
-    topSource: "Primary External Source",
-    topSourceShare: "Share of Views",
-    noExternalSource: "No external source",
+    splitTitle: "Traffic split",
+    breakdownTitle: "Source breakdown",
     externalLabel: "External",
-    nextSources: "Other 4 Sources",
-    longTail: "Long Tail",
+    longTail: "Long tail",
     channelLongTail: "Other channels",
   },
   campaigns: {
     title: "Campaigns",
-    tabSource: "Source",
+    tabSource: "UTM source",
     tabMedium: "Medium",
     tabCampaign: "Campaign",
     tabTerm: "Term",
     tabContent: "Content",
-    breakdownTitle: "UTM Breakdown",
     notSet: "Not set",
-    noTaggedTraffic: "No tagged campaign traffic in the selected range.",
+    noTaggedTraffic: "No UTM-tagged visits in this period",
+    taggedLinkHint: "Add UTM tags to your links, for example",
   },
   sessions: {
     title: "Sessions",
     search: "Search sessions...",
-    started: "Start Time",
+    started: "Start time",
     sessionId: "Session ID",
     visitor: "Visitor",
     anonymous: "Anonymous",
-    entryPage: "Entry Page",
-    exitPage: "Exit Page",
+    entryPage: "Entry page",
+    exitPage: "Exit page",
     duration: "Duration",
     referrer: "Referrer",
     location: "Location",
     os: "OS",
     browser: "Browser",
     device: "Device",
-    pageViews: "Page Views",
-    customEvents: "Custom Events",
-    screenSize: "Screen Size",
-    exitTime: "Exit Time",
+    pageViews: "Page views",
+    customEvents: "Custom events",
+    screenSize: "Screen size",
+    exitTime: "Exit time",
     loadError: "Unable to load sessions.",
     empty: "No sessions in this time range.",
   },
@@ -3256,29 +2580,29 @@ const enMessages = {
     inactive: "Ended",
     status: "Status",
     duration: "Duration",
-    screenViews: "Page Views",
+    screenViews: "Page views",
     events: "Events",
-    bounce: "Bounced?",
-    entryPath: "Entry Path",
-    exitPath: "Exit Path",
-    referrerName: "Referrer Name",
+    bounce: "Bounced",
+    entryPath: "Entry path",
+    exitPath: "Exit path",
+    referrerName: "Referrer name",
     os: "OS",
     browser: "Browser",
     device: "Device",
     screen: "Screen",
     yes: "Yes",
     no: "No",
-    uniquePages: "Unique Pages",
-    firstEvent: "First Event",
-    lastEvent: "Last Event",
+    uniquePages: "Unique pages",
+    firstEvent: "First event",
+    lastEvent: "Last event",
     sessionStarted: "Session started",
-    pageview: "Pageview",
+    pageview: "Page view",
     exitPage: "Exit page",
     customEvent: "Custom event",
     eventTitleSeparator: ": ",
     visitDetailsTitle: "Visit details",
     visitDetailsSubtitle:
-      "Session start, pageviews, exits, and custom events in the order they happened.",
+      "Session start, page views, exits, and custom events in the order they happened.",
     location: "Location",
     visitorId: "Visitor ID",
     sessionId: "Session ID",
@@ -3286,50 +2610,44 @@ const enMessages = {
     emptyEvents: "No events recorded.",
     emptyCustomEvents: "No custom events.",
     sincePrevious: "Since previous",
-    geoLocationTitle: "Geo location",
+    geoLocationTitle: "Location",
     performanceTitle: "Current session performance",
     range: "Range",
   },
   events: {
-    title: "Custom Events",
-    subtitle:
-      "Review event volume, context, payload fields, and raw trigger records.",
-    detailTitle: "Event Detail",
-    detailSubtitle: "Inspect a single event with its context and payload.",
-    typeDetailSubtitle:
-      "Review this event's trend, context distribution, payload schema, and trigger records.",
-    backToEvents: "Back to Events",
-    totalEvents: "Total Events",
-    eventTypes: "Event Types",
+    title: "Events",
+    detailTitle: "Event detail",
+    backToEvents: "Back to events",
+    totalEvents: "Total events",
+    eventTypes: "Event types",
     sessions: "Triggered sessions",
     visitors: "Triggered visitors",
-    avgEventsPerSession: "Avg Events / Session",
-    shareOfAllEvents: "Share of All Events",
+    avgEventsPerSession: "Avg. events / session",
+    shareOfAllEvents: "Share of all events",
     triggerCount: "Triggers",
     triggerVisitors: "Triggered visitors",
-    trendTitle: "Event Trend",
-    topEvents: "Top Events",
-    recordsTitle: "Event Records",
-    fieldsTitle: "Payload Fields",
+    trendTitle: "Event trend",
+    topEvents: "Top events",
+    recordsTitle: "Event records",
+    fieldsTitle: "Payload fields",
     fieldsSubtitle: "Select a field to inspect its values and metadata.",
-    fieldValuesTitle: "Field Values",
+    fieldValuesTitle: "Field values",
     fieldValuesSubtitle:
       "Records and occurrence counts for the selected field. Click a row to filter.",
     fieldValuesEmpty: "No values recorded for this field.",
     payloadFilter: "Filter",
-    payloadFilterTitle: "Payload Filters",
+    payloadFilterTitle: "Payload filters",
     payloadFilterSubtitle:
       "Add one condition per line. Combine filters with == or !=.",
     payloadFilterPlaceholder: 'path.value == "a"\nlevel != 0',
-    payloadFilterApply: "Apply Filters",
-    payloadFilterClear: "Clear Filters",
+    payloadFilterApply: "Apply filters",
+    payloadFilterClear: "Clear filters",
     payloadFilterInvalid:
       "Unable to parse the filter conditions. Check the field path, operator, and value.",
     expandField: "Expand field",
     collapseField: "Collapse field",
-    breakdownTitle: "Context Breakdown",
     search: "Search event name, IDs, visitor, session, page...",
-    eventName: "Event Name",
+    eventName: "Event name",
     eventId: "Event ID",
     occurredAt: "Occurred",
     receivedAt: "Received",
@@ -3343,13 +2661,13 @@ const enMessages = {
     os: "OS",
     device: "Device",
     payload: "Payload",
-    nodeCount: "Node Count",
-    payloadFields: "Payload Fields",
+    nodeCount: "Node count",
+    payloadFields: "Payload fields",
     values: "Values",
     nodes: "Nodes",
     occurrences: "Occurrences",
-    openVisitor: "Open Visitor",
-    openSession: "Open Session",
+    openVisitor: "Open visitor",
+    openSession: "Open session",
     integratingEvent: "Integrating event ({seconds}s)",
     copyJson: "Copy JSON",
     copiedJson: "JSON copied.",
@@ -3360,6 +2678,7 @@ const enMessages = {
     loadError: "Unable to load event data.",
     detailNotFound: "This event record was not found.",
     empty: "No custom events in this range.",
+    noCustomEvents: "No custom events in this period",
     emptyFields: "No payload fields for this event.",
     noEventName: "Missing event name.",
     loading: "Loading",
@@ -3367,24 +2686,19 @@ const enMessages = {
   },
   funnels: {
     title: "Funnels",
-    subtitle: "Measure conversion through multi-step user journeys.",
     listTitle: "Funnel definitions",
-    listSubtitle:
-      "Build a reusable sequence, then inspect conversion for the current dashboard window.",
     conversionRecords: "Conversion records",
     converted: "Converted",
     dropped: "Dropped off",
     open: "Open funnel",
     moreActions: "More actions",
-    create: "New funnel",
     createTitle: "Create funnel",
-    createDescription: "Define at least two ordered observation filters.",
     nameLabel: "Name",
     namePlaceholder: "Signup activation",
     stepsLabel: "Steps",
     addStep: "Add step",
     removeStep: "Remove step",
-    progression: "Progression identity",
+    progression: "Count by",
     conversionWindow: "Conversion window",
     custom: "Custom",
     customWindowHours: "Custom window in hours",
@@ -3414,10 +2728,6 @@ const enMessages = {
       "This removes the saved funnel definition. Historical analytics data is not deleted.",
     deleteConfirm: "Delete funnel",
     deleting: "Deleting...",
-    empty: "No funnels yet.",
-    emptyHint:
-      "Create a funnel from pageviews and custom events to track conversion.",
-    loadError: "Unable to load funnels.",
     detailLoadError: "Unable to load funnel analysis.",
     invalidFunnel: "Add a name and at least two complete filters.",
     created: "Funnel created.",
@@ -3443,11 +2753,9 @@ const enMessages = {
   },
   goals: {
     title: "Goals",
-    listSubtitle: "View conversion rate changes across this time range.",
     conversionRecords: "Conversion records",
     open: "Open goal",
     moreActions: "More actions",
-    create: "New goal",
     createTitle: "Create goal",
     nameLabel: "Name",
     namePlaceholder: "Purchase completed",
@@ -3464,10 +2772,6 @@ const enMessages = {
     deleteDescription:
       "This removes the saved goal definition. Historical analytics data is not deleted.",
     deleteConfirm: "Delete goal",
-    empty: "No goals yet.",
-    emptyHint:
-      "Create a goal from a page condition or custom event to track conversion.",
-    loadError: "Unable to load goals.",
     detailLoadError: "Unable to load goal analysis.",
     invalidGoal: "Add a name and a complete conversion condition.",
     created: "Goal created.",
@@ -3483,6 +2787,15 @@ const enMessages = {
     timeseries: "Conversion rate",
     updated: "Updated",
   },
+  conversions: {
+    new: "New",
+    newGoal: "Goal",
+    newGoalDescription: "One step, such as a signup",
+    newFunnel: "Funnel",
+    newFunnelDescription: "Several steps in order",
+    empty: "No goals or funnels yet",
+    emptyMemberHint: "An admin can create one.",
+  },
   visitors: {
     title: "Visitors",
     search: "Search visitors...",
@@ -3493,12 +2806,12 @@ const enMessages = {
     os: "OS",
     browser: "Browser",
     device: "Device",
-    firstSeen: "First Visit",
-    lastSeen: "Last Visit",
-    pageViews: "Page Views",
+    firstSeen: "First visit",
+    lastSeen: "Last visit",
+    pageViews: "Page views",
     sessions: "Sessions",
-    customEvents: "Custom Events",
-    screenSize: "Screen Size",
+    customEvents: "Custom events",
+    screenSize: "Screen size",
     loadError: "Unable to load visitors.",
     empty: "No visitors in this time range.",
   },
@@ -3510,66 +2823,66 @@ const enMessages = {
     missing: "Missing visitorId.",
     notFound: "Visitor not found.",
     loadError: "Unable to load visitor detail.",
-    totalDuration: "Total Duration",
+    totalDuration: "Total duration",
     events: "Events",
-    views: "Pageviews",
-    uniquePages: "Unique Pages",
-    avgPagesPerSession: "Avg Pages/Session",
-    avgEventsPerSession: "Avg Events/Session",
-    avgStay: "Avg. Visit Duration",
+    views: "Page views",
+    uniquePages: "Unique pages",
+    avgPagesPerSession: "Avg. pages / session",
+    avgEventsPerSession: "Avg. events / session",
+    avgStay: "Avg. visit duration",
     firstSeen: "First visit",
     lastSeen: "Last visit",
-    daysActive: "Days Active",
-    avgTimeBetweenSessions: "Avg Time Between Sessions",
+    daysActive: "Days active",
+    avgTimeBetweenSessions: "Avg. time between sessions",
     activity: "Activity",
     sessionRecords: "Session records",
-    started: "Start Time",
+    started: "Start time",
     visitor: "Visitor",
     duration: "Duration",
     referrer: "Referrer",
-    pageViews: "Page Views",
+    pageViews: "Page views",
     visitDetailsTitle: "Visit details",
     visitDetailsSubtitle:
-      "Session starts, pageviews, exits, and custom events for this visitor in the order they happened.",
+      "Session starts, page views, exits, and custom events for this visitor in the order they happened.",
     customEvents: "Custom events",
     emptyEvents: "No events recorded.",
     emptyCustomEvents: "No custom events.",
     emptySessions: "No sessions recorded.",
     visitorId: "Visitor ID",
     sessionId: "Session ID",
-    referrerName: "Referrer Name",
+    referrerName: "Referrer name",
     referrerUrl: "Referrer URL",
     location: "Location",
     browser: "Browser",
     os: "OS",
     device: "Device",
     screen: "Screen",
-    entryPath: "Entry Path",
-    exitPath: "Exit Path",
+    entryPath: "Entry path",
+    exitPath: "Exit path",
     sessionStarted: "Session started",
-    pageview: "Pageview",
+    pageview: "Page view",
     exitPage: "Exit page",
     customEvent: "Custom event",
     eventTitleSeparator: ": ",
     sincePrevious: "Since previous",
-    geoLocationTitle: "Geo location",
+    geoLocationTitle: "Location",
     performanceTitle: "Current visitor performance",
     range: "Range",
   },
   retention: {
     title: "Retention",
-    subtitle: "Cohort-based visitor return analysis.",
+    cohortBy: "Cohort by: {interval}",
     cohortDate: "Cohort date",
     cohortSize: "Cohort size",
     periodLabel: "Period {n}",
-    matrixTitle: "Retention Matrix",
+    matrixTitle: "Retention matrix",
     matrixSubtitle:
       "Each row is a first-seen cohort; each column shows the share that returned in a later period.",
     cohortsMetric: "Cohorts",
-    visitorsMetric: "Cohort Visitors",
-    periodOneMetric: "First Return",
-    averageReturnMetric: "Average Return",
-    strongestCohortMetric: "Best Cohort",
+    visitorsMetric: "Cohort visitors",
+    periodOneMetric: "First return",
+    averageReturnMetric: "Average return",
+    strongestCohortMetric: "Best cohort",
     eligibleVisitors: "Eligible visitors",
     periodsAnalyzed: "Periods analyzed",
     noEligibleCohorts: "No eligible cohorts",
@@ -3578,26 +2891,24 @@ const enMessages = {
     legendHigh: "High",
     periodZero: "Initial",
     empty: "Not enough return data in this time range.",
-    emptyHint:
-      "Use a wider range or choose a coarser interval from the top selector to reveal the retention shape sooner.",
+    emptyHint: "Pick a longer period, or a coarser interval, in the date menu.",
     loadError: "Unable to load retention data.",
     unavailableCell: "This cohort has not reached this period yet.",
     visitorsDetail: "Visitors",
     rateDetail: "Retention",
-    cohortDetail: "Cohort date",
     sizeDetail: "Cohort size",
   },
   geo: {
-    title: "Location Analysis",
-    mapTitle: "Request Geo Distribution",
-    countryLabel: "Country / Region",
+    title: "Location",
+    mapTitle: "Visitors by location",
+    countryLabel: "Country / region",
     regionLabel: "Region",
     cityLabel: "City",
     back: "Back",
     viewOnWikipedia: "View on Wikipedia",
     investigationNotice: "This data comes from the web and may contain errors.",
     timezoneDeltaVsLocal: "Difference from local time: {delta}",
-    visitorCoordinates: "Visitor Coordinates",
+    visitorCoordinates: "Visitor coordinates",
     ipNotice:
       "Estimated location via IP. Coordinates are approximate and do not pinpoint a precise address.",
     multipleNotice:
@@ -3608,7 +2919,7 @@ const enMessages = {
       population: "Population",
       gdp: "GDP",
       gdpPerCapita: "GDP per capita",
-      marketPenetration: "Market Penetration",
+      marketPenetration: "Market penetration",
       region: "Region",
       currency: "Currency",
       phonecode: "Phone code",
@@ -3637,77 +2948,37 @@ const enMessages = {
         municipality: "Municipality",
         territory: "Territory",
         section: "Section",
-        adm1: "Admin Level 1",
-        adm2: "Admin Level 2",
-        adm3: "Admin Level 3",
-        adm4: "Admin Level 4",
-        adm5: "Admin Level 5",
+        adm1: "Admin level 1",
+        adm2: "Admin level 2",
+        adm3: "Admin level 3",
+        adm4: "Admin level 4",
+        adm5: "Admin level 5",
       },
     },
   },
   devices: {
     title: "Devices",
-    deviceShareTitle: "Device Type Share",
-    osShareTitle: "Operating System Share",
-    deviceTrendTitle: "Device Type Trend",
-    osTrendTitle: "Operating System Trend",
-    screenDistributionTitle: "Screen Size Distribution",
-    screenDistributionSubtitle:
-      "Surface the most common viewports and responsive breakpoints.",
-    screenBucketTitle: "Breakpoint Buckets",
-    screenPreviewTitle: "Screen Preview",
-    selectedViewportLabel: "Selected viewport",
-    openSiteLabel: "Open site",
-    previewUnavailableLabel:
-      "No previewable screen sizes are available right now.",
-    browserByDeviceTitle: "Device Type × Browser",
-    osByDeviceTitle: "Device Type × Operating System",
-    otherLabel: "Other",
-    screenBucketLabels: {
-      phoneCompact: "Compact Phone",
-      phone: "Phone",
-      tablet: "Tablet",
-      laptop: "Laptop",
-      desktopWide: "Wide Desktop",
-      unclassified: "Unclassified",
+    shareTitle: "Visitor share",
+    dimensions: {
+      device: "Device",
+      os: "OS",
+      browser: "Browser",
+      engine: "Engine",
+      screenSize: "Screen size",
     },
+    crossTabTitle: "Breakdown",
+    crossTabRows: "Rows",
+    crossTabColumns: "Split by",
+    otherLabel: "Other",
+    screenBucketLabels: {},
   },
   browsers: {
-    title: "Browsers",
-    trendTitle: "Browser Share Trend",
-    engineTrendTitle: "Engine Share Trend",
-    versionBreakdownTitle: "Browser Version Breakdown",
-    osBreakdownTitle: "Browser × Operating System",
-    deviceTypeBreakdownTitle: "Browser × Device Type",
     otherLabel: "Other",
-    browserShareTitle: "Browser Share",
-    engineShareTitle: "Engine Share",
-    caniuseTitle: "Feature Compatibility",
-    caniuseSubtitle:
-      "Check browser support for web features based on your site's visitor data.",
-    caniuseSearchPlaceholder: "Search web features...",
-    caniuseHotFeatures: "Popular Features",
-    caniuseTrendingFeatures: "Recently Changed",
-    caniuseSiteSupport: "Your Site",
-    caniuseGlobalSupport: "Global",
-    caniuseClearSelection: "Clear",
-    caniuseNoMatch: "No matching features found.",
-    caniuseFullSupport: "Full Support",
-    caniusePartialSupport: "Partial Support",
-    caniuseNoSupport: "No Support",
-    radarTitle: "Browser Performance Radar",
-    radarSubtitle: "Compare top browsers across behavioral metrics.",
-    radarDuration: "Duration",
-    radarEngagement: "Engagement",
-    radarDepth: "Depth",
-    radarLoyalty: "Loyalty",
-    radarFrequency: "Frequency",
-    radarTraffic: "Traffic",
   },
   performance: {
     title: "Performance",
-    subtitle: "Review real visitor performance by metric, trend, and path.",
-    chartTitle: "Performance Trend",
+    empty: "No Web Vitals yet",
+    chartTitle: "Performance trend",
     avgLabel: "Average",
     samplesLabel: "Samples",
     p50Label: "P50",
@@ -3731,59 +3002,66 @@ const enMessages = {
     msUnit: "ms",
     secondsUnit: "s",
     clsUnit: "score",
-    score: "Experience Score",
+    score: "Experience score",
     scoreDescription:
       "Combines P75 loading, stability, and interaction metrics into a 0 to 100 experience score. Higher is better.",
     great: "Great",
-    needsImprovement: "Needs Improvement",
+    needsImprovement: "Needs improvement",
     poor: "Poor",
-    datasetTitle: "Dataset Overview",
-    interpretationTitle: "Current Reading",
+    datasetTitle: "Thresholds",
+    interpretationTitle: "Current reading",
     currentReading:
       "{metric} P75 is {value}, with an experience score of {score} across {samples} samples. Current status: {status}.",
     metricThresholdText:
       "Great: {good} or lower; needs improvement: {good} to {poor}; poor: above {poor}.",
     scoreThresholdText:
       "Great: above 90; needs improvement: 50 to 90; poor: below 50.",
-    countryHealthTitle: "Country and Region Health",
+    countryHealthTitle: "Country and region health",
     countryHealthSubtitle:
       "Boundary fill shows {metric} health by country or region.",
-    pathsTitle: "Path Performance",
+    pathsTitle: "Path performance",
     pathsAnalyzedLabel: "Paths analyzed",
     metricValueColumn: "P75 value",
     statusColumn: "Status",
   },
-  share: {},
+  share: {
+    noData: "No data yet",
+  },
   siteSettings: {
-    title: "Site Settings",
+    title: "Site settings",
     sections: {
       basic: {
-        title: "Basic Information",
+        title: "General",
       },
       tracking: {
-        title: "Tracking Settings",
+        title: "Tracking",
       },
       blocking: {
-        title: "Blocking Rules",
+        title: "Blocking rules",
       },
       protection: {
-        title: "Request Protection",
+        title: "Protection",
       },
       danger: {
-        title: "Danger Zone",
+        title: "Danger zone",
+      },
+      install: {
+        title: "Install",
+      },
+      advanced: {
+        title: "Advanced",
       },
     },
-    nameLabel: "Site Name",
+    nameLabel: "Name",
     domainLabel: "Domain",
-    publicSharingTitle: "Public Sharing",
-    publicEnabledLabel: "Enable Public Access",
-    publicSlugLabel: "Public Slug",
+    publicSharingTitle: "Sharing",
+    publicEnabledLabel: "Public dashboard",
+    publicSlugLabel: "Link path",
     publicSlugPlaceholder: "e.g. my-site",
-    publicSlugHint:
-      "Customize the URL path identifier. Leave blank to generate one.",
-    publicLinkLabel: "Public Link",
+    publicSlugHint: "The part of the link after /share/.",
+    publicLinkLabel: "Public link",
     copiedLink: "Link copied",
-    trackingStrengthGroupTitle: "Tracking Strength",
+    trackingStrengthGroupTitle: "Tracking strength",
     trackingStrengthStrong: "Strong",
     trackingStrengthSmart: "Smart",
     trackingStrengthWeak: "Weak",
@@ -3798,18 +3076,14 @@ const enMessages = {
       "High-confidence bot requests are blocked when this is enabled; otherwise they remain included in statistics.",
     hostingProxyBlockingEnabledLabel: "Block hosting and proxy traffic",
     hostingProxyBlockingEnabledHint:
-      "Block suspected bot requests from hosting or proxy networks. This is disabled by default.",
-    trackQueryParamsLabel: "Track Query Parameters",
-    trackHashLabel: "Track URL Hash",
-    blockingRulesSave: "Save Blocking Rules",
-    blockingRulesSaving: "Saving Blocking Rules...",
+      "Block suspected bot requests from hosting or proxy networks.",
+    trackQueryParamsLabel: "Track query parameters",
+    trackHashLabel: "Track URL hash",
+    blockingRulesSave: "Save rules",
     blockingRulesDialogs: {
-      testButton: "Test",
-      helpButton: "Help",
       searchButton: "Search",
       searchTitle: "Search locations",
-      searchDescription:
-        "Search by name or code, then select a result to add it to this card.",
+      searchDescription: "Search by name or code, then pick a result.",
       searchInputLabel: "Search",
       searchInputPlaceholder: "Search by name or code",
       searchCountryLabel: "Country / region",
@@ -3819,201 +3093,61 @@ const enMessages = {
       searchNoResults: "No matching locations.",
       searchLoadError: "Locations could not be loaded. Try again later.",
       searchClose: "Close",
-      helpTitle: "Rule Syntax",
-      helpDescription:
-        "Review the syntax, examples, and precedence for this field.",
-      syntaxTitle: "Syntax",
-      examplesTitle: "Example configuration",
-      actionsTitle: "Rule actions",
-      actionsDescription:
-        "A normal line blocks a match. Prefix a rule with - to allow it. If multiple lines match, the last matching line wins.",
-      actionBlock: "Blocks when {example} matches",
-      actionAllow: "Allows when {example} matches",
-      statusEmpty: "No blocking rules are currently set for {field}.",
-      statusValid: "The current rules are valid.",
-      statusInvalid:
-        "The current rules are invalid. Click Help on the right for details.",
-      errorInvalidRule: "Invalid rule.",
-      errorInvalidLines: "Rules for {field} must be provided one per line.",
-      errorInvalidLine: "Line {line} is not a valid text rule.",
-      errorLineTooLong: "Line {line} is too long.",
-      errorTooManyLines: "Too many rule lines.",
-      errorInvalidPattern: "Line {line} has an invalid rule pattern.",
-      testTitle: "Test Rules",
-      testDescription:
-        "Enter a request value to evaluate the current contents of this card. Unsaved edits are included.",
-      testRun: "Run Test",
-      testClose: "Close",
-      testInvalidRules: "Fix invalid rules before testing.",
-      testInvalidRule: "Invalid rule.",
-      testBlocked: "Blocked",
-      testAllowed: "Allowed",
-      testNoMatch: "No rule matched; this field allows the value.",
-      testMatchedRules: "Matched rules",
-      testActionBlock: "blocks",
-      testActionAllow: "allows",
-      testLine: "Line",
     },
     blockingRulesFields: {
       domains: {
         title: "Domains",
-        label: "Domain rules (one per line)",
-        placeholder: "*\n-example.com\n-*.example.com\nadmin.example.com\n",
-        hint: "Matches the page hostname. Use * with -domain.com for an allowlist.",
-        syntax:
-          "Each line: [ - ] hostname-glob\nLines starting with # are treated as comments and ignored.\nUse * as a wildcard. A leading - creates an allow rule.\nMatching is case-insensitive and uses the page hostname.\n",
-        examples: ["*", "-example.com", "-*.example.com", "admin.example.com"],
-        exampleDescription:
-          "This configuration first blocks every domain, then allows example.com and its subdomains, and finally blocks the exact admin.example.com domain again.",
-        testLabel: "Hostname",
-        testPlaceholder: "www.example.com",
-        testHint: "Enter the page hostname without a scheme or path.",
+        placeholder: "admin.example.com",
       },
       paths: {
         title: "Paths",
-        label: "Path rules (one per line)",
-        placeholder: "/admin/*\n/checkout/*/confirm\n-/admin/health\n",
-        hint: "Matches normalized URL paths with glob syntax.",
-        syntax:
-          "Each line: [ - ] /path-glob\nLines starting with # are treated as comments and ignored.\nPaths start with / and * matches any characters.\nMatching is case-sensitive after URL path normalization.\n",
-        examples: ["/admin/*", "/checkout/*/confirm", "-/admin/health"],
-        exampleDescription:
-          "This configuration blocks paths under /admin/ and paths matching /checkout/*/confirm, while allowing /admin/health.",
-        testLabel: "URL path",
-        testPlaceholder: "/admin/settings",
-        testHint: "Enter the pathname only, including its leading slash.",
+        placeholder: "/admin/*",
       },
       queryParameters: {
-        title: "Query Parameters",
-        label: "Query rules (one per line)",
-        placeholder: "utm_*\nutm_source=*\n-utm_source=trusted\n",
-        hint: "Use key or key=value patterns; * is supported in keys and values.",
-        syntax:
-          "Each line: [ - ] key-glob[=value-glob]\nLines starting with # are treated as comments and ignored.\nOmitting = matches any value for the key.\nMatching is case-sensitive and supports * in keys and values.\n",
-        examples: ["utm_*", "utm_source=*", "-utm_source=trusted"],
-        exampleDescription:
-          "This configuration blocks keys beginning with utm_ and any value of utm_source, while allowing utm_source=trusted.",
-        testLabel: "Query string",
-        testPlaceholder: "utm_source=internal&utm_campaign=spring",
-        testHint: "Enter a query string with or without the leading ?.",
+        title: "Query parameters",
+        placeholder: "utm_source=spam",
       },
       referrers: {
         title: "Referrers",
-        label: "Referrer rules (one per line)",
-        placeholder:
-          "*.example.com\nsocial.example.com\n-trusted.example.com\n",
-        hint: "Matches the referrer hostname.",
-        syntax:
-          "Each line: [ - ] hostname-glob\nLines starting with # are treated as comments and ignored.\nA URL is reduced to its hostname before matching.\nMatching is case-insensitive and supports *.\n",
-        examples: [
-          "*.example.com",
-          "social.example.com",
-          "-trusted.example.com",
-        ],
-        exampleDescription:
-          "This configuration blocks example.com referrers and social.example.com, while allowing trusted.example.com.",
-        testLabel: "Referrer",
-        testPlaceholder: "https://social.example.com/article",
-        testHint: "Enter a referrer URL or hostname.",
+        placeholder: "*.spam.example",
       },
       userAgents: {
-        title: "User Agents",
-        label: "User-agent rules (one per line)",
-        placeholder: "*bot*\nMozilla/*\n-Googlebot\n",
-        hint: "Case-insensitive glob matching against the request User-Agent.",
-        syntax:
-          "Each line: [ - ] text-glob\nLines starting with # are treated as comments and ignored.\n* matches any characters in the request User-Agent.\nMatching is case-insensitive.\n",
-        examples: ["*bot*", "Mozilla/*", "-Googlebot"],
-        exampleDescription:
-          "This configuration blocks User-Agent values containing bot and values beginning with Mozilla/, while allowing Googlebot.",
-        testLabel: "User-Agent",
-        testPlaceholder: "Mozilla/5.0 (compatible; ExampleBot/1.0)",
-        testHint: "Enter the complete or partial request User-Agent.",
+        title: "User agents",
+        placeholder: "*bot*",
       },
       ips: {
-        title: "IP Addresses",
-        label: "IP rules (one per line)",
-        placeholder:
-          "203.0.113.15\n2001:db8::1\n203.0.113.0/24\n2001:db8::/32\n-203.0.113.10..203.0.113.20\n",
-        hint: "Supports IPv4/IPv6 addresses, CIDR ranges, and start..end ranges.",
-        syntax:
-          "Each line: [ - ] address | CIDR | start..end\nLines starting with # are treated as comments and ignored.\nIPv4 and IPv6 addresses are supported.\nRanges must use the same address family and be ordered.\n",
-        examples: [
-          "203.0.113.15",
-          "2001:db8::1",
-          "203.0.113.0/24",
-          "2001:db8::/32",
-          "-203.0.113.10..203.0.113.20",
-        ],
-        exampleDescription:
-          "This configuration demonstrates individual IPv4/IPv6 addresses, CIDR ranges, and start..end ranges; the prefixed range is allowed.",
-        testLabel: "IP address",
-        testPlaceholder: "203.0.113.15",
-        testHint: "Enter one IPv4 or IPv6 address to test.",
+        title: "IP addresses",
+        placeholder: "203.0.113.0/24",
       },
       asns: {
         title: "ASNs",
-        label: "ASN rules (one per line)",
-        placeholder: "64500\n*\n-64501\n",
-        hint: "Match the numeric autonomous system number from Cloudflare metadata.",
-        syntax:
-          "Each line: [ - ] ASN-number\nLines starting with # are treated as comments and ignored.\nUse * to match any ASN.\nThe optional AS prefix is accepted when testing metadata values.\n",
-        examples: ["64500", "*", "-64501"],
-        exampleDescription:
-          "This configuration blocks ASN 64500 and any ASN, while the final rule allows ASN 64501.",
-        testLabel: "ASN",
-        testPlaceholder: "64500",
-        testHint: "Enter the numeric autonomous system number.",
+        placeholder: "64500",
       },
       countries: {
-        title: "Countries / Regions",
-        label: "Country rules (one per line)",
-        placeholder: "DE\n*\n-US\n",
-        hint: "Use ISO 3166-1 alpha-2 country codes.",
-        syntax:
-          "Each line: [ - ] ISO-3166-alpha-2\nLines starting with # are treated as comments and ignored.\nUse * to match any country.\nCountry codes are matched case-insensitively.\n",
-        examples: ["DE", "*", "-US"],
-        exampleDescription:
-          "This configuration blocks DE and any country, while the final rule allows US.",
-        testLabel: "Country code",
-        testPlaceholder: "DE",
-        testHint: "Enter an ISO 3166-1 alpha-2 country code.",
+        title: "Countries",
+        placeholder: "DE",
       },
       regions: {
-        title: "States / Provinces",
-        label: "Region rules (one per line)",
-        placeholder: "DE-BE\n*\n-US-CA\n",
-        hint: "Use COUNTRY-REGION_CODE values from Cloudflare metadata.",
-        syntax:
-          "Each line: [ - ] COUNTRY-REGION_CODE\nLines starting with # are treated as comments and ignored.\nUse * to match any region.\nRegion values are matched case-insensitively.\n",
-        examples: ["DE-BE", "*", "-US-CA"],
-        exampleDescription:
-          "This configuration blocks DE-BE and any region, while the final rule allows US-CA.",
-        testLabel: "Region code",
-        testPlaceholder: "US-CA",
-        testHint: "Enter the COUNTRY-REGION_CODE value from metadata.",
+        title: "States / provinces",
+        placeholder: "US-CA",
       },
     },
-    ignoreDoNotTrackLabel: "Ignore Browser Do Not Track",
+    ignoreDoNotTrackLabel: "Ignore Do Not Track",
     autoTrackOutboundLinksLabel: "Auto-track outbound link clicks",
     autoTrackOutboundLinksHint:
       "When enabled, clicking links to external domains automatically reports outbound_click events.",
-    performanceSampleRateLabel: "Performance Sample Rate (%)",
+    performanceSampleRateLabel: "Web Vitals sample rate",
     performanceSampleRateHint:
       "A sampled visit records TTFB, FCP, LCP, CLS, and INP on leave. Use 0 to disable sampling or 100 for full coverage.",
-    saveTracking: "Save Tracking Settings",
-    savingTracking: "Saving Tracking Settings...",
-    save: "Save Changes",
+    save: "Save",
     saving: "Saving...",
-    scriptTitle: "Install Tracking Script",
-    scriptHint:
-      "Recommended before </head>; if needed you can place it before </body>, but ensure it's loaded once per page.",
-    copyScript: "Copy Script",
+    scriptHint: "Paste it before </head> on every page.",
+    copyScript: "Copy script",
     copiedScript: "Script copied.",
     scriptUnavailable: "Script is currently unavailable.",
-    deleteTitle: "Delete Site",
-    deleteSubtitle: "This action will remove the site from this team.",
-    delete: "Delete Site",
+    deleteTitle: "Delete site",
+    deleteSubtitle: "Deletes the site and all of its analytics data.",
+    delete: "Delete site",
     deleting: "Deleting...",
     deleteConfirm: "This action cannot be undone. Continue?",
     toasts: {
@@ -4021,89 +3155,55 @@ const enMessages = {
       saveFailed: "Failed to save site settings.",
       scriptLoadFailed: "Failed to load script snippet.",
       settingsLoadFailed: "Failed to load script settings.",
-      settingsPropagationHint:
-        "Global propagation to edge nodes may take up to 1 hour.",
+      settingsPropagationHint: "Changes take up to an hour to apply.",
       deleted: "Site deleted.",
       deleteFailed: "Failed to delete site.",
-      invalidInput: "Please provide a valid site name and domain.",
+      invalidInput: "Enter a site name and a valid domain.",
     },
+    publicEnabledHint: "Anyone with the link can view this site's reports.",
+    viewBlockedRequests: "See blocked requests",
+    blockingRulesHelp:
+      "Requests that match a Block rule aren't counted. Allow makes an exception. When several rules of one type match, the last one wins. Use * as a wildcard.",
+    blockingRuleTypeLabel: "Type",
+    blockingRuleActionLabel: "Action",
+    blockingRuleValueLabel: "Value",
+    blockingRuleBlock: "Block",
+    blockingRuleAllow: "Allow",
+    blockingRuleAdd: "Add rule",
+    blockingRuleRemove: "Remove rule",
+    blockingRulesEmpty: "No blocking rules.",
+    blockingRuleInvalid: "Enter a valid value for this type.",
+    blockingRulesTooMany: "Too many {type} rules.",
   },
   accountSettings: {
     emailManagedByGateway: "Your email comes from your Every App account.",
-    profileTitle: "Personal Details",
+    profileTitle: "Personal details",
     nicknameLabel: "Display name",
     nicknamePlaceholder: "e.g. Product Analyst",
     emailLabel: "Email",
-    profileSave: "Save details",
-    profileSaving: "Saving...",
     profileSaved: "Personal details saved.",
     profileSaveFailed: "Failed to save personal details.",
-    preferredLanguageTitle: "Notification Language",
-    preferredLanguageLabel: "Email language",
-    preferredLanguageDefault: "Default",
-    preferredLanguageEnglish: "English",
-    preferredLanguageChinese: "Simplified Chinese",
-    preferredLanguageTraditionalChinese: "Traditional Chinese",
-    preferredLanguageJapanese: "Japanese",
-    preferredLanguageSaved: "Notification language saved.",
-    preferredLanguageSaveFailed: "Failed to save notification language.",
-    timeZoneTitle: "Reporting Time Zone",
-    activeTimeZone: "Active time zone",
-    browserTimeZone: "Browser time zone",
+    timeZoneTitle: "Time zone",
     browserUnavailable: "Not detected",
-    preferenceLabel: "Time zone preference",
-    useBrowser: "Use browser time zone",
-    useCustom: "Choose a time zone",
-    customTimeZoneLabel: "Time zone",
-    invalidTimeZone: "Please choose a valid IANA time zone.",
-    save: "Save preference",
-    saving: "Saving...",
-    saved: "Time zone preference saved.",
-    saveFailed: "Failed to save time zone preference.",
+    useBrowser: "Browser time zone ({zone})",
+    saved: "Time zone saved.",
+    saveFailed: "Couldn't save the time zone.",
+    timeZoneLabel: "Reporting time zone",
+    languageSaveFailed: "Couldn't save your language.",
   },
   notificationCenter: {
-    title: "Notification Center",
+    title: "Inbox",
     empty: "No notifications yet.",
     loading: "Loading notifications",
     markRead: "Mark read",
     markAllRead: "Mark all as read",
-    refresh: "Refresh",
-    attention: "Attention",
     loadFailed: "Failed to load notifications.",
     markReadFailed: "Failed to mark notification as read.",
     markAllReadSuccess: "Notifications marked as read.",
     markAllReadFailed: "Failed to mark notifications as read.",
-    ruleFilterActive: "Viewing notifications created by this rule.",
-    ruleFilterClear: "Clear rule filter",
-    sections: {
-      importantTitle: "Important Notifications",
-      importantDescription: "{count} unread attention items.",
-      importantEmpty: "No important notifications right now.",
-      reportsTitle: "Reports",
-      reportsDescription:
-        "Review recurring reports generated by notification rules.",
-      reportsEmpty: "No reports right now.",
-    },
     tabs: {
       all: "All",
       unread: "Unread",
-      attention: "Attention",
-      report: "Reports",
-    },
-    tabDescriptions: {
-      all: "Total messages",
-      unread: "Waiting for review",
-      attention: "Needs attention",
-      report: "Recurring reports",
-    },
-    messageTypes: {
-      report: "Report",
-      milestone: "Milestone",
-      threshold: "Threshold",
-      change: "Change",
-      health: "Health",
-      system: "System",
-      test: "Test",
     },
     severities: {
       info: "Info",
@@ -4111,52 +3211,15 @@ const enMessages = {
       warning: "Warning",
       critical: "Critical",
     },
-    deliveryStatuses: {
-      created: "Created",
-      sending: "Sending",
-      sent: "Sent",
-      partial: "Partial",
-      failed: "Failed",
-      skipped: "Skipped",
-    },
-    channels: {
-      inApp: "In-app",
-      email: "Email",
-    },
-    channelStatuses: {
-      sent: "sent",
-      skipped: "skipped",
-      failed: "failed",
-      created: "created",
-    },
-    emailSkipReasons: {
-      user_preference_disabled: "email disabled by user preference",
-      system_email_unconfigured: "system email is not configured",
-      recipient_email_invalid: "recipient email is invalid",
-      secret_decryption_failed: "saved email credentials cannot be decrypted",
-      provider_failed: "provider rejected the message",
-      network_failed: "unable to reach email provider",
-      unknown: "unknown reason",
-    },
-    emailAttempts: "Attempts: {count}",
-    emailRetryCount: "Retries: {count}",
-    emailDuration: "{duration} ms",
-    typeFilterLabel: "Type",
-    severityFilterLabel: "Severity",
-    allTypes: "All types",
-    allSeverities: "All severities",
     preferencesTitle: "Notification preferences",
     emailNotificationsLabel: "Email notifications",
-    emailNotificationsDescription: "Send email when a rule triggers.",
-    reportsUnreadLabel: "Reports unread",
-    reportsUnreadDescription: "Keep reports unread after creation.",
-    milestonesUnreadLabel: "Milestones unread",
-    milestonesUnreadDescription: "Reserve unread state for milestones.",
-    alertsUnreadLabel: "Alerts unread",
-    alertsUnreadDescription: "Keep threshold and health alerts unread.",
-    preferencesSaved: "Notification preferences saved.",
+    reportsUnreadLabel: "Mark new reports as unread",
+    milestonesUnreadLabel: "Mark new milestones as unread",
+    alertsUnreadLabel: "Mark new alerts as unread",
     preferencesSaveFailed: "Failed to save notification preferences.",
     detailFields: {},
+    noUnread: "No unread notifications.",
+    emailFailed: "Email failed",
   },
   notificationEmail: {
     common: {
@@ -4228,7 +3291,7 @@ const enMessages = {
         sessions: "sessions",
       },
       windows: {
-        last_1h: "Last 1 hour",
+        last_1h: "Last hour",
         last_24h: "Last 24 hours",
         yesterday: "Yesterday",
       },
@@ -4246,24 +3309,12 @@ const enMessages = {
     },
   },
   runtimeConfigError: {
-    title: "Runtime configuration required",
-    eyebrow: "Deployment paused",
-    heading:
-      "OpenAnalytics needs one runtime secret before the dashboard can load.",
-    description:
-      "The app has started, but the current runtime environment could not read the required root secret, so dashboard access is temporarily blocked.",
-    requiredTitle: "Required runtime secret",
-    requiredDescription:
-      "Set at least one of the following values in your Cloudflare runtime secrets.",
-    secretHint:
-      "MAIN_SECRET is recommended. Existing deployments can continue using DAILY_SALT_SECRET.",
-    commandTitle: "Cloudflare command",
-    commandDescription:
-      "Use the project helper command to write the recommended secret, then redeploy.",
-    quickStartHint:
-      "Or see the Quick Start section in the GitHub README to configure this variable.",
-    docsLabel: "Open GitHub",
-    homeLabel: "Retry dashboard",
+    title: "Dashboard unavailable",
+    heading: "This dashboard isn't available right now.",
+    setupSummary: "Set up this deployment",
+    setupCommand:
+      "Set the root secret with this command, then reload this page.",
+    docsLabel: "Deployment guide",
   },
   login: {},
   accountLinks: {
@@ -4274,27 +3325,13 @@ const enMessages = {
   },
   empty: {},
   errorPage: {
-    notFoundEyebrow: "Page not found",
     notFoundTitle: "We couldn't find that page",
     notFoundDescription:
       "The address may be incorrect, or the page may have moved.",
-    errorEyebrow: "Application error",
     errorTitle: "Something went wrong",
-    errorDescription:
-      "OpenAnalytics couldn't complete this request. The diagnostic details below can help us investigate.",
-    statusLabel: "Status",
-    reasonLabel: "Reason",
-    requestLabel: "Request path",
-    timestampLabel: "Timestamp",
-    diagnosticIdLabel: "Diagnostic ID",
-    errorTypeLabel: "Error type",
-    errorMessageLabel: "Error message",
-    notFoundReason: "route_not_found",
-    unexpectedReason: "unexpected_application_error",
+    errorDescription: "OpenAnalytics couldn't complete this request.",
     homeAction: "Return home",
     reportAction: "Report on GitHub",
-    reportHint:
-      "The report opens a pre-filled GitHub issue. Review it before submitting.",
   },
   actions: {
     switchToEnglish: "English",
@@ -4312,31 +3349,33 @@ const enMessages = {
     stats: {},
     toasts: {},
     sites: {
-      aggregateTitle: "Total Visits",
+      aggregateTitle: "Total visits",
       openAnalytics: "Open analytics",
       title: "All sites",
-      pagesPerSession: "Pages / Session",
+      pagesPerSession: "Pages / session",
+      public: "Public",
+      openPublic: "Open the public dashboard",
     },
     widgets: {},
     notifications: {
-      empty: "This team has no notification rules yet.",
-      rulesTitle: "Notification Rules",
-      enabledCount: "{count} enabled rules in this team.",
+      empty: "No notification rules yet.",
+      rulesTitle: "Notification rules",
+      enabledCount: "{count} enabled rules in this organization.",
       loadingRules: "Loading notification rules",
-      deliveryTestTitle: "Delivery Test",
+      deliveryTestTitle: "Delivery test",
       deliveryTestDescription:
         "Creates one in-app notification for you and attempts email when available.",
       inAppTestHint: "We will send you an in-app notification.",
       emailTestConfiguredHint: "We will send you a test email.",
       emailTestUnconfiguredHint:
-        "Email sending is not configured for this system. Contact an administrator to add it.",
+        "Email isn't set up on this Every App gateway.",
       sendTestNotification: "Send test notification",
       loadRulesFailed: "Failed to load notification rules.",
       testNotificationSent: "Test notification sent.",
       sendTestNotificationFailed: "Failed to send test notification.",
       createRule: "Create rule",
       editRule: "Edit rule",
-      dialogDescription: "Configure a basic notification rule for this team.",
+      dialogDescription: "Set up a notification rule for this organization.",
       ruleInfoSection: "Rule info",
       scheduleSection: "Schedule",
       sendScheduleSection: "Send time",
@@ -4379,8 +3418,8 @@ const enMessages = {
       cooldownDescription:
         "Notifications will not be sent again during this cooldown window.",
       noDataHoursLabel: "No data hours",
-      pleaseChooseSite: "Please choose a site.",
-      pleaseChooseRecipients: "Please choose at least one recipient.",
+      pleaseChooseSite: "Choose a site.",
+      pleaseChooseRecipients: "Choose at least one recipient.",
       ruleCreated: "Rule created.",
       ruleUpdated: "Rule updated.",
       createRuleFailed: "Failed to create rule.",
@@ -4395,7 +3434,6 @@ const enMessages = {
       disable: "Disable",
       delete: "Delete",
       saveRule: "Save rule",
-      emailPreview: "Email preview",
       preview: "Preview",
       runNow: "Run now",
       previewFailed: "Failed to preview rule.",
@@ -4438,7 +3476,7 @@ const enMessages = {
         recipient: "Recipient",
         schedule: "Schedule",
         condition: "Condition",
-        nextRun: "Next Run",
+        nextRun: "Next run",
         status: "Status",
       },
       status: {
@@ -4456,7 +3494,6 @@ const enMessages = {
         title: "Title",
         htmlPreview: "HTML preview",
         bodyText: "Body text",
-        data: "Data",
         createdAt: "Created at",
         updatedAt: "Updated at",
         loadingContent: "Loading evaluated report content",
@@ -4479,14 +3516,14 @@ const enMessages = {
       },
       recipientModes: {
         creator: "Creator",
-        team_admins: "Team admins",
+        team_admins: "Organization admins",
         all_team_members: "All members",
         users: "Selected users",
       },
       recipientKindLabel: "Recipient type",
       recipientPresetLabel: "Preset",
       customRecipientsEmpty: "No recipients selected",
-      noTeamMembers: "No team members available.",
+      noTeamMembers: "No organization members yet.",
       recipientKinds: {
         preset: "Preset",
         custom: "Custom",
@@ -4527,31 +3564,20 @@ const enMessages = {
         sessions: "Sessions",
       },
       windows: {
-        last_1h: "Last 1h",
-        last_24h: "Last 24h",
+        last_1h: "Last hour",
+        last_24h: "Last 24 hours",
         yesterday: "Yesterday",
       },
-      emailPreviewPage: {
-        title: "Notification email preview",
-        typeLabel: "Preview type",
-        localeLabel: "Preview locale",
-        formatLabel: "Preview format",
-        html: "HTML",
-        text: "Plain text",
-        json: "JSON",
-        refresh: "Preview",
-        loading: "Rendering preview...",
-        loadFailed: "Failed to render email preview.",
-        subject: "Subject",
+      addSiteFirst: "Add a site first.",
+      deleteDescription: "This can't be undone.",
+      previewStatuses: {
+        skipped: "Skipped",
+        checked: "Not triggered",
+        triggered: "Triggered",
       },
     },
     publicLinks: {
-      enabled: "Enabled",
-      disabled: "Disabled",
-      viewSettings: "View Settings",
-      copyLink: "Copy Link",
-      linkCopied: "Link copied",
-      noSites: "This team has no sites yet.",
+      copyLink: "Copy link",
       columns: {},
     },
     apiKeys: {
@@ -4568,9 +3594,6 @@ const enMessages = {
       roleLabels: {},
     },
   },
-  managementNav: {
-    scheduledTasks: "Scheduled Tasks",
-  },
   managementPages: {
     versionUpdates: {},
     scheduledTasks: {
@@ -4579,20 +3602,14 @@ const enMessages = {
       loadFailed: "Failed to load scheduled tasks.",
       loadMore: "Load more",
       allStatuses: "All statuses",
-      runs24h: "Runs in 24h",
-      successRate24h: "Success rate in 24h",
-      successRateDescription: "Counts only successful runs.",
+      runs24h: "Runs (last 24 hours)",
+      successRate24h: "Success rate (last 24 hours)",
       problemRuns24h: "Problematic runs",
-      retentionPrefix: "Retained for",
-      days: "days",
       failed: "Failed",
       partial: "Partial",
       lastRun: "Last run",
       staleRunning: "Long-running unfinished runs",
-      noStaleRunning: "No long-running unfinished runs",
       taskListTitle: "Tasks",
-      taskListDescription:
-        "Registered scheduled tasks and 30-day health status.",
       task: "Task",
       schedule: "Schedule",
       enabled: "State",
@@ -4601,12 +3618,11 @@ const enMessages = {
       taskStateSaved: "Task state updated.",
       taskStateSaveFailed: "Failed to update task state.",
       lastStatus: "Last status",
-      runs30d: "30d runs",
-      successRate30d: "30d success rate",
-      avgDuration: "Avg duration",
+      runs30d: "Runs (30 days)",
+      successRate30d: "Success rate (30 days)",
+      avgDuration: "Avg. duration",
       runHistoryTitle: "Run history",
       nextRun: "Next run",
-      runHistoryDescription: "Task runs retained over the last 30 days.",
       noRuns: "No runs yet.",
       scheduledAt: "Scheduled",
       startedAt: "Started",
@@ -4641,7 +3657,7 @@ const enMessages = {
         visit_hourly_rollup: {
           name: "Hourly visit aggregation",
           description:
-            "Aggregates closed visit rows into hourly rollups for dashboard counters and trends.",
+            "Rolls finished visits up into hourly totals for reports.",
           schedule: "Every hour",
         },
         notification_tick: {
@@ -4652,40 +3668,31 @@ const enMessages = {
         database_maintenance: {
           name: "Database maintenance",
           description:
-            "Removes expired run data and notifications, and optimizes D1 query statistics.",
+            "Removes expired task runs and notifications, and tunes the database.",
           schedule: "Every day",
         },
       },
+      keptForDays: "Kept for {days} days",
     },
   },
   adminUsers: {
     columns: {},
   },
   adminSites: {
-    createTitle: "Create Site",
-    name: "Site Name",
+    createTitle: "Add site",
+    name: "Name (optional)",
     domain: "Domain",
-    publicSlug: "Public Slug (optional)",
-    create: "Create Site",
-    creating: "Creating...",
-    noData: "No site found.",
-    loadFailed: "Failed to load sites.",
-    createSuccess: "Site created.",
-    createFailed: "Failed to create site.",
-    invalidInput: "Please provide a valid site name and domain.",
-    open: "Open analytics",
-    columns: {
-      name: "Name",
-      domain: "Domain",
-      created: "Created",
-      action: "Action",
-    },
+    create: "Add site",
+    creating: "Adding...",
+    createSuccess: "Site added.",
+    createFailed: "Couldn't add the site. Try again.",
+    invalidDomain: "Enter a domain, like example.com.",
+    columns: {},
   },
   adminTeams: {
     columns: {},
   },
   requestObservation: {
-    title: "Request Observability",
     blockedTotal: "Blocked requests",
     retentionNote:
       "Kept for 30 days. Allowed traffic is in each site's dashboards.",
@@ -4698,8 +3705,8 @@ const enMessages = {
     },
     tabs: {},
     refresh: "Refresh",
-    loadFailed: "Failed to load request observability data.",
-    noData: "No request data in this window.",
+    loadFailed: "Couldn't load blocked requests.",
+    noData: "No blocked requests in this period.",
     time: "Time",
     site: "Site",
     location: "Location",
@@ -4708,14 +3715,14 @@ const enMessages = {
     userAgent: "User agent",
     emptyValue: "Unknown",
     pathname: "Path",
-    country: "Country / Region",
-    ipPrefix: "IP Prefix",
+    country: "Country / region",
+    ipPrefix: "IP prefix",
     botReasonLabels: {
-      missing_ua: "Missing User-Agent",
-      ua_too_long: "User-Agent too long",
-      ua_isbot: "User-Agent matches bot",
-      script_ua: "Script client User-Agent",
-      cf_bot_score_low: "Low Cloudflare Bot Score",
+      missing_ua: "Missing user agent",
+      ua_too_long: "User agent too long",
+      ua_isbot: "User agent matches a bot",
+      script_ua: "Script client user agent",
+      cf_bot_score_low: "Low Cloudflare bot score",
       cf_verified_bot_category: "Cloudflare verified bot category",
       hosting_asn: "Hosting ASN",
       network_service_asn: "Network service ASN",
@@ -4728,7 +3735,7 @@ const enMessages = {
       blocked_paths: "Blocked paths",
       blocked_query_parameters: "Blocked query parameters",
       blocked_referrers: "Blocked referrers",
-      blocked_user_agents: "Blocked User-Agents",
+      blocked_user_agents: "Blocked user agents",
       blocked_ips: "Blocked IPs",
       blocked_asns: "Blocked ASNs",
       blocked_countries: "Blocked countries",
@@ -4741,57 +3748,9 @@ const enMessages = {
     normalDetail: {},
   },
   systemSettings: {
-    title: "System Settings",
-    subtitle:
-      "Manage instance-wide configuration for this OpenAnalytics deployment.",
-    guide: "Guide",
-    analyticsEngineTitle: "Analytics Engine",
-    analyticsEngineDescription:
-      "Configure the Cloudflare credentials used to read Analytics Engine data for request observation and future traffic and event analytics.",
-    analyticsEngineAccountIdLabel: "Cloudflare Account ID",
-    analyticsEngineApiTokenLabel: "Cloudflare API token",
-    analyticsEngineApiTokenPlaceholder:
-      "View the guide to get a Cloudflare API token",
-    analyticsEngineSaved: "Analytics Engine configuration saved.",
-    analyticsEngineSaveFailed: "Failed to save Analytics Engine configuration.",
-    analyticsEngineDeleted: "Analytics Engine configuration deleted.",
-    analyticsEngineDeleteFailed:
-      "Failed to delete Analytics Engine configuration.",
-    analyticsEngineDeleteConfirm:
-      "Delete the Analytics Engine read credentials? Features that depend on Analytics Engine will show configuration required until the credentials are restored.",
-    analyticsEngineDisabledTitle: "Analytics Engine is not enabled",
-    analyticsEngineDisabledDescription:
-      "This deployment automatically disabled the Analytics Engine binding because the Cloudflare account has not enabled Analytics Engine. Enable Analytics Engine in Cloudflare, then redeploy Open Analytics to activate related analysis features.",
-    analyticsEngineDisabledHint:
-      "Analytics Engine settings are locked until Analytics Engine is enabled and the Worker is redeployed.",
-    analyticsEngineOpenCloudflare: "Open Cloudflare Analytics Engine",
-    analyticsEngineGuideTitle: "Get Analytics Engine credentials",
-    analyticsEngineGuideDescription:
-      "Analytics Engine needs Cloudflare account details and an API token that can read Analytics Engine data.",
-    analyticsEngineGuideSteps: [
-      "Open the Cloudflare Dashboard, enter the target account, and copy the Account ID.",
-      "Enable Analytics Engine under Workers & Pages; the Request, Traffic, and Event datasets are created and bound automatically during deployment.",
-      "Go to My Profile → API Tokens and create a Custom token.",
-      "Grant the token Account Analytics read access and scope it to the current account.",
-      "Copy the token, then enter the Account ID and API token here.",
-    ],
-    notificationEmailTitle: "Email Notifications",
-    notificationEmailDescription:
-      "Reports, alerts and test messages are sent by email through the Every App gateway.",
-    emailGatewayReady: "The Every App gateway sends notification email.",
-    emailGatewayNotReady:
-      "The Every App gateway has no email sender set up yet. Its operator sets EMAIL_FROM and Email Sending, then notification email starts.",
+    notificationEmailTitle: "Email notifications",
+    emailGatewayNotReady: "Email isn't set up on this Every App gateway.",
     emailSenderLabel: "Sender",
-    notificationEmailGuideTitle: "Get Resend email settings",
-    notificationEmailGuideDescription:
-      "To send system email through Resend, prepare a verified sender domain and an API key.",
-    notificationEmailGuideSteps: [
-      "Open the Resend Dashboard and confirm the sender domain has passed DNS verification.",
-      "Create a new API key from the API Keys page.",
-      "Choose the permissions required to send email, then copy the generated API key.",
-      "Enter the sender name, sender email, Reply-To, and Resend API key here.",
-      "Save the configuration, then send a test email to confirm delivery works.",
-    ],
     retentionTitle: "Operational data retention",
     retentionDescription:
       "Configure how long task runs, task logs, notification messages and detailed analytics remain available. Task and notification changes affect new records only; detailed analytics older than the new limit are deleted on the next daily run.",
@@ -4806,152 +3765,91 @@ const enMessages = {
     retentionSaving: "Saving...",
     retentionSaved: "Retention settings saved.",
     retentionSaveFailed: "Failed to save retention settings.",
-    loginTurnstileTitle: "Login Turnstile Protection",
-    loginTurnstileDescription:
-      "When enabled, the login page runs Cloudflare Turnstile Invisible verification in the background and the server enforces it during sign-in.",
-    loginTurnstileEnabledLabel: "Enable login protection",
-    loginTurnstileSiteKeyLabel: "Site Key",
-    loginTurnstileSecretKeyLabel: "Secret Key",
-    loginTurnstileSecretKeyPlaceholder:
-      "View the guide to get a Turnstile Secret Key",
-    loginTurnstileModeLabel: "Verification mode",
-    loginTurnstileModeInvisible: "Invisible",
-    loginTurnstileTest: "Test configuration",
-    loginTurnstileTesting: "Verifying...",
-    loginTurnstileTestPassed: "Verification passed",
-    loginTurnstileTestRequired: "New Secret Key must be tested first",
-    loginTurnstileTestMissing: "Enter both Site Key and Secret Key first.",
-    loginTurnstileTestFailed:
-      "Verification failed. Check the Site Key and Secret Key.",
-    loginTurnstileSaved: "Login Turnstile configuration saved.",
-    loginTurnstileSaveFailed: "Failed to save login Turnstile configuration.",
-    loginTurnstileDeleted: "Login Turnstile configuration deleted.",
-    loginTurnstileDeleteFailed:
-      "Failed to delete login Turnstile configuration.",
-    loginTurnstileDeleteConfirm:
-      "Delete the login Turnstile configuration? Login protection will be disabled.",
-    loginTurnstileLoadFailed: "Failed to load login Turnstile configuration.",
-    loginTurnstilePrivacyNotice:
-      "Create an Invisible widget in the Cloudflare Turnstile console. For self-hosted deployments, confirm your privacy policy matches Cloudflare Turnstile requirements.",
-    loginTurnstileGuideTitle: "Get Turnstile credentials",
-    loginTurnstileGuideDescription:
-      "Login protection needs a Cloudflare Turnstile Site Key and Secret Key.",
-    loginTurnstileGuideSteps: [
-      "Open the Cloudflare Dashboard and go to Turnstile.",
-      "Create a new widget and choose Invisible mode.",
-      "Add the current OpenAnalytics login domain to the allowed hostnames.",
-      "Copy the Site Key and Secret Key after the widget is created.",
-      "Enter the Site Key and Secret Key here, run the verification test, then save the configuration.",
-    ],
-    enabledLabel: "Enable email sending",
     enabledOn: "Enabled",
     enabledOff: "Disabled",
-    providerLabel: "Email service",
-    providerResend: "Resend",
-    fromNameLabel: "Sender name",
-    fromEmailLabel: "Sender email",
-    replyToLabel: "Reply-To email",
-    replyToPlaceholder: "Optional, defaults to sender email",
-    resendApiKeyLabel: "Resend API Key",
-    resendApiKeyPlaceholder: "View the guide to get a Resend API key",
-    testRecipientLabel: "Test recipient",
-    save: "Save configuration",
-    saving: "Saving...",
-    test: "Send test email",
-    testing: "Sending...",
-    saved: "Email configuration saved.",
-    saveFailed: "Failed to save email configuration.",
-    delete: "Delete configuration",
-    deleting: "Deleting...",
     cancel: "Cancel",
-    deleted: "Email configuration deleted.",
-    deleteFailed: "Failed to delete email configuration.",
-    deleteConfirm:
-      "Delete the email notification configuration? The system will treat email as unconfigured and disabled.",
-    testSent: "Test email sent.",
-    testFailed: "Failed to send test email.",
-    loadFailed: "Failed to load email configuration.",
+    retentionLowerTitle: "Delete older analytics?",
+    retentionLowerDescription:
+      "Page views and events older than {days} days are deleted on the next daily run. Hourly totals are kept. This can't be undone.",
+    retentionLowerConfirm: "Save and delete",
   },
   systemPerformance: {
-    title: "System Performance",
     refresh: "Refresh",
-    loadFailed: "Failed to load system performance data.",
-    noData: "No system performance data in this window.",
+    loadFailed: "Couldn't load ingestion data.",
+    noData: "No ingestion data in this period.",
     range15m: "Last 15 minutes",
-    range1h: "Last 1 hour",
+    range1h: "Last hour",
     range6h: "Last 6 hours",
     range24h: "Last 24 hours",
-    totalEvents: "Accepted Events",
-    p95Latency: "P95 Estimated Delay",
+    totalEvents: "Accepted events",
+    p95Latency: "P95 estimated delay",
     p50Latency: "P50",
     p75Latency: "P75",
     p50Label: "P50",
     p75Label: "P75",
     p95Label: "P95",
-    dataFreshness: "Data Freshness",
+    dataFreshness: "Data freshness",
     noRecentWrite: "No recent write",
-    clockAnomalies: "Clock / Delay Anomalies",
+    clockAnomalies: "Clock / delay anomalies",
     delayed: "Delayed",
     future: "Future timestamps",
-    latencyPercentileTrend: "Latency Percentile Trend",
+    latencyPercentileTrend: "Latency percentile trend",
     latencyPercentileTrendDescription:
       "View estimated P50, P75, and P95 delay for received events.",
-    throughputTrend: "Accepted Event Throughput",
+    throughputTrend: "Accepted event throughput",
     throughputTrendDescription: "View the throughput of received events.",
     visits: "Visits",
-    customEvents: "Custom Events",
+    customEvents: "Custom events",
     anomalyBucket: "Anomaly bucket",
-    openVisitHealth: "Open Visit Backlog",
-    openVisitHealthDescription:
-      "Open rows that have not been closed by leave, route change, or timeout finalization.",
+    openVisitHealth: "Open visit backlog",
+    openVisitHealthDescription: "Visits that haven't ended yet.",
     open: "Open",
     stale: "Stale",
     timedOut: "Timed out",
     oldestOpen: "Oldest open",
     latestActivity: "Latest activity",
-    latencySampleHealth: "Latency Sample Health",
+    latencySampleHealth: "Latency sample health",
     latencySampleHealthDescription: "View the delay of trusted events.",
     trustedSamples: "Trusted samples",
-    topSitesTitle: "Top Sites by System Load",
+    topSitesTitle: "Top sites by load",
     topSitesDescription: "Sites receiving the most events in the current view.",
     events: "Events",
     avgLatency: "Avg delay",
-    slowestEventsTitle: "Slowest Estimated Events",
+    slowestEventsTitle: "Slowest events",
     slowestEventsDescription:
-      "Highest positive write-time minus event-time gaps in the selected window.",
+      "Events with the longest delay between happening and being saved.",
     eventTime: "Event time",
     serverTime: "Server write time",
     estimatedDelay: "Estimated delay",
-    doDiagnosticTitle: "DO Buffer Diagnostic",
+    doDiagnosticTitle: "Buffered data",
     doDiagnosticDescription:
-      "Diagnoses data stagnation in each site's dedicated Durable Object.",
-    doDiagnosticLoadFailed: "Failed to load DO diagnostic data.",
-    doDiagnosticLoading: "Fetching DO state per site…",
-    doDiagnosticRun: "Run DO diagnostic",
-    doDiagnosticEmpty: "No DO state available.",
-    doDiagnosticUnreachable: "Some DOs unreachable",
-    doDiagnosticReachableSites: "Reachable DOs",
+      "Checks each site for data that hasn't been saved yet.",
+    doDiagnosticLoadFailed: "Couldn't check buffered data.",
+    doDiagnosticLoading: "Checking each site…",
+    doDiagnosticRun: "Check buffered data",
+    doDiagnosticEmpty: "No buffered data.",
+    doDiagnosticUnreachable: "Unreachable sites",
+    doDiagnosticReachableSites: "Reachable sites",
     doDiagnosticTotalSites: "Total sites",
     doDiagnosticActiveAlarms: "Active alarms",
     doDiagnosticBufferedVisits: "Buffered visits",
-    doDiagnosticOpenVisits: "Buffered open rows",
-    doDiagnosticOpenStale: "Open idle >30m",
-    doDiagnosticOpenTimedOut: "Open idle >12h",
-    doDiagnosticOpenHardAged: "Started >36h ago",
+    doDiagnosticOpenVisits: "Buffered open visits",
+    doDiagnosticOpenStale: "Idle over 30 minutes",
+    doDiagnosticOpenTimedOut: "Idle over 12 hours",
+    doDiagnosticOpenHardAged: "Started over 36 hours ago",
     doDiagnosticOpenFutureSkew: "Future timestamps",
-    doDiagnosticStuckDirty: "Stuck unflushed",
+    doDiagnosticStuckDirty: "Stuck unsaved",
     doDiagnosticMaxFlushAttempts: "Max retry attempts",
     doDiagnosticBufferedCustomEvents: "Buffered custom events",
-    doDiagnosticOldestOpen: "Oldest open started_at",
+    doDiagnosticOldestOpen: "Oldest open visit",
     doDiagnosticFutureMaxActivity: "Latest future activity time",
     doDiagnosticSiteList: "Top risk sites",
-    doDiagnosticSiteListDescription:
-      "Top 20 sites by risk score, snapshotted from per-DO buffered state.",
+    doDiagnosticSiteListDescription: "The 20 sites most at risk.",
     doDiagnosticSiteFailed: "Unreachable",
     doDiagnosticSiteOpen: "Open",
     doDiagnosticSiteStuck: "Stuck",
     doDiagnosticSiteFuture: "Future timestamps",
-    doDiagnosticSiteHardAged: "Over 36h old",
+    doDiagnosticSiteHardAged: "Over 36 hours old",
     doDiagnosticSiteAlarm: "Alarm",
     doDiagnosticSiteAlarmNone: "None",
     doDiagnosticSiteAlarmDue: "Due",
@@ -4960,8 +3858,6 @@ const enMessages = {
     doDiagnosticSiteNextDueHidden: "Hidden fallback",
     doDiagnosticSiteNextDueTimeout: "Visit timeout",
     doDiagnosticSiteResponseMs: "Response time",
-    doDiagnosticThresholdsHint:
-      "Thresholds — stale {stale}, timeout {timeout}, hardAged {hardAged}, stuck flush_attempts ≥ {stuck}",
     doDiagnosticHealthy: "No abnormal buffered rows detected.",
   },
   loginForm: {},
@@ -4975,7 +3871,7 @@ const enMessages = {
     toggleSidebar: "Toggle sidebar",
     sources: "Sources",
     audience: "Audience",
-    conversions: "Conversions",
+    goals: "Goals",
     sites: "Sites",
     allSites: "All sites",
     inbox: "Inbox",
@@ -4995,38 +3891,32 @@ const enMessages = {
     steps: {
       site: "Add your first site",
       tracking: "Track your website",
-      team: "Invite your team",
+      team: "Invite members",
       notifications: "Get reports by email",
       sharing: "Share a public dashboard",
     },
-    noSitesTitle: "No sites yet",
-    noSitesDescription: "Add a site, then put its script on your pages.",
+    noSitesTitle: "Add your first site",
+    memberNoSitesTitle: "No sites yet",
+    memberNoSitesDescription: "Ask an admin to add one.",
     addSite: "Add site",
     waitingTitle: "Waiting for the first page view",
-    waitingDescription:
-      "Add this script to every page of {domain}. Page views show up here within a minute.",
     copy: "Copy",
     copied: "Copied",
-    trackingSettings: "Tracking settings",
   },
   settingsNav: {
     label: "Settings",
-    personal: "Personal",
-    organization: "Organization",
-    system: "System",
+    system: "System health",
     account: "Account",
-    sites: "Sites",
     notifications: "Notifications",
-    publicLinks: "Public links",
-    general: "General",
-    scheduledTasks: "Scheduled tasks",
-    requestObservation: "Request observation",
-    performance: "Performance",
     cancel: "Cancel",
-    managerOnly: "Only an owner or an admin can change this.",
-    dangerZone: "Danger zone",
-    copy: "Copy",
-    copied: "Copied",
+  },
+  systemHealth: {
+    tabs: {
+      tasks: "Scheduled tasks",
+      blocked: "Blocked requests",
+      ingestion: "Ingestion",
+      data: "Data",
+    },
   },
 } as AppMessages;
 
@@ -5040,18 +3930,15 @@ const zhMessages = {
     realtime: "实时",
     pages: "页面",
     referrers: "来源",
-    sessions: "会话",
     events: "事件",
-    funnels: "漏斗",
-    goals: "目标",
+    funnels: "目标与漏斗",
     campaigns: "推广",
     visitors: "访客",
     retention: "留存",
     geo: "位置",
     devices: "设备",
-    browsers: "浏览器",
     performance: "性能",
-    settings: "设置",
+    settings: "站点设置",
   },
   common: {
     deviceLabels: {
@@ -5106,19 +3993,16 @@ const zhMessages = {
     screenSize: "屏幕大小",
     loading: "加载中",
     noData: "暂无数据",
+    loadFailed: "无法加载",
+    retry: "重试",
+    filteredEmpty: "没有符合这些筛选条件的数据",
+    clearFilters: "清除筛选",
+    trend: "趋势",
     unknown: "未知",
-    lastUpdated: "更新时间",
     site: "站点",
-    team: "团队",
-    management: "管理",
-    backToTeam: "返回团队",
     system: "系统",
-    account: "账户",
     theme: "主题",
     language: "语言",
-    role: "角色",
-    admin: "管理员",
-    user: "普通用户",
     search: "搜索",
     open: "打开",
     sortBy: "按 {label} 排序",
@@ -5148,26 +4032,17 @@ const zhMessages = {
       dragHint: "拖动调整顺序",
       close: "关闭",
     },
-    time: "时间",
-    cycle: "周期",
     close: "关闭",
     sitesFiltered: "已筛选 {active} / {total} 个站点",
     cumulativeTraffic: "全部周期累计流量",
     cumulativeEvents: "全部周期累计事件",
   },
   ranges: {
-    last30m: "30分钟",
-    last1h: "1小时",
     today: "今天",
     yesterday: "昨天",
-    thisWeek: "本周",
-    thisMonth: "本月",
-    thisYear: "今年",
-    last24h: "最近 24 小时",
     last7d: "最近 7 天",
     last30d: "最近 30 天",
     last90d: "最近 90 天",
-    last6m: "最近 6 个月",
     last12m: "最近 12 个月",
     custom: "自定义时间段",
   },
@@ -5179,43 +4054,25 @@ const zhMessages = {
     month: "月",
   },
   dashboardHeader: {
-    range: "时间范围",
     interval: "时间间隔",
     compareButton: "对比",
     compareTitle: "对比设置",
-    compareSubtitle: "选择对比周期和筛选条件。",
     compareTimeLabel: "对比时间",
     compareCurrentPeriod: "当前周期",
-    compareCurrentPeriodDescription: "使用当前选定的时间范围。",
     comparePreviousPeriod: "上一周期",
-    comparePreviousPeriodDescription: "使用当前周期之前的同等长度时间范围。",
     compareFilterLabel: "对比筛选",
     compareFollowCurrentFilter: "跟随当前筛选",
-    compareFollowCurrentFilterDescription: "使用当前页面的筛选条件。",
     compareCustomFilter: "自定义筛选",
-    compareCustomFilterDescription: "为对比单独设置筛选条件。",
     compareApply: "应用对比",
     compareCancel: "取消",
-    compareDisabled: "当前页面中对比不可用。",
     filterButton: "筛选",
     filterButtonEvent: "筛选 (事件)",
     filterButtonSession: "筛选 (会话)",
     filterButtonVisitor: "筛选 (访客)",
-    customRange: "选择自定义区间",
     customHint: "请选择开始和结束日期。",
     customPendingEnd: "已选择开始日期，请继续选择结束日期。",
     customApply: "应用日期范围",
-    rangeGroupQuick: "快速范围",
-    rangeGroupCalendar: "自然周期",
-    rangeGroupRolling: "滚动窗口",
-    rangeGroupAdvanced: "高级",
-    intervalDisabledMinute: "仅在 1 小时内可选分钟间隔。",
-    intervalDisabledHour: "仅在 7 天内可选小时间隔。",
-    intervalDisabledDay: "仅在最近 90 天内可选日间隔。",
-    intervalDisabledWeek: "仅在最近 12 个月内可选周间隔。",
     filterTitle: "筛选条件",
-    filterSubtitle: "新建、保存筛选条件，或者使用个人/团队保存的筛选条件。",
-    filterDisabledRealtime: "实时页面中筛选不可用。",
     previousPeriod: "上个周期",
     nextPeriod: "下个周期",
     customSelectionSummary: "当前选择：{from} 至 {to}（共 {days} 天）",
@@ -5407,7 +4264,7 @@ const zhMessages = {
     naturalLanguageDescription: "自然语言描述",
     expressionInvalid: "表达式无效，点击查看语法帮助",
     expressionHelpTitle: "筛选表达式语法",
-    expressionHelpDescription: "可用字段和操作符由当前筛选契约动态生成。",
+    expressionHelpDescription: "可在筛选表达式中使用的字段和操作符。",
     expressionHelpSyntax: "语法",
     expressionHelpLogicDescription:
       "AND 的优先级高于 OR。使用括号表达嵌套；AND(...) 和 OR(...) 可保留显式的单条件分组。",
@@ -5504,15 +4361,7 @@ const zhMessages = {
     savedFiltersLoading: "正在获取已保存的筛选...",
     noSavedFilter: "不使用已保存的筛选",
     systemPresets: "系统预设",
-    systemPresetCategories: {
-      acquisition: "获客",
-      device: "设备",
-      visitBehavior: "访问行为",
-      sessionEngagement: "会话参与度",
-      visitorBehavior: "访客行为",
-      performance: "性能",
-      dataQuality: "数据质量",
-    },
+    advanced: "高级",
     systemPresetScopes: {
       preserve: "保留当前范围",
       event: "事件范围",
@@ -5524,17 +4373,9 @@ const zhMessages = {
         name: "直接访问",
         description: "没有外部来源的访问。",
       },
-      externalReferrals: {
-        name: "外部来源访问",
-        description: "通过外部来源进入的访问。",
-      },
       organicSearchDiscovery: {
         name: "自然搜索发现",
         description: "没有营销活动标记的搜索引擎来源访问。",
-      },
-      organicSocialDiscovery: {
-        name: "自然社交发现",
-        description: "没有营销活动标记的社交网络来源访问。",
       },
       campaignTaggedTraffic: {
         name: "带活动标记的流量",
@@ -5544,140 +4385,20 @@ const zhMessages = {
         name: "移动端流量",
         description: "来自移动设备的访问。",
       },
-      desktopTraffic: {
-        name: "桌面端流量",
-        description: "来自桌面设备的访问。",
-      },
-      campaignTaggedExternalAcquisition: {
-        name: "带标记的外部获客",
-        description: "带有营销活动标记的外部来源访问。",
-      },
-      campaignTaggedDirectEntry: {
-        name: "带标记的直接访问",
-        description: "带有营销活动标记的直接访问。",
-      },
-      untaggedExternalReferrals: {
-        name: "未标记的外部来源",
-        description: "没有营销活动标记的外部来源访问。",
-      },
-      mobileAcquiredTraffic: {
-        name: "移动端活动获客",
-        description: "来自外部且带有营销活动标记的移动端访问。",
-      },
-      mobileOrganicDiscovery: {
-        name: "移动端自然发现",
-        description: "通过搜索或社交发现、且没有活动标记的移动端访问。",
-      },
-      desktopDirectAudience: {
-        name: "桌面端直接受众",
-        description: "来自桌面设备、且没有活动标记的直接访问。",
-      },
-      geographicAttributionGap: {
-        name: "地理归因缺口",
-        description: "有外部来源但未记录国家的访问。",
-      },
-      tabletTraffic: {
-        name: "平板端流量",
-        description: "来自平板设备的访问。",
-      },
-      longPageViews: {
-        name: "长时页面浏览",
-        description: "持续至少 30 秒的页面浏览。",
-      },
-      shortPageViews: {
-        name: "短时页面浏览",
-        description: "持续少于 10 秒的页面浏览。",
-      },
-      identifiedActivity: {
-        name: "已识别活动",
-        description: "与已识别用户关联的事件。",
-      },
-      customEventActivity: {
-        name: "自定义事件活动",
-        description: "记录了自定义事件名称的事件。",
-      },
       bouncedSessions: {
         name: "跳出会话",
         description: "只包含一次页面浏览的会话。",
-      },
-      nonBouncedSessions: {
-        name: "非跳出会话",
-        description: "包含多次页面浏览的会话。",
-      },
-      longSessions: {
-        name: "长会话",
-        description: "持续至少五分钟的会话。",
-      },
-      shortSessions: {
-        name: "短会话",
-        description: "持续少于一分钟的会话。",
-      },
-      deepSessions: {
-        name: "深度会话",
-        description: "至少浏览三个页面的会话。",
-      },
-      eventfulSessions: {
-        name: "活跃会话",
-        description: "至少包含一个自定义事件的会话。",
-      },
-      highEngagementSessions: {
-        name: "高参与度会话",
-        description: "至少三次浏览且包含两个自定义事件的会话。",
       },
       returningVisitors: {
         name: "回访访客",
         description: "至少拥有两个会话的访客。",
       },
-      frequentVisitors: {
-        name: "高频访客",
-        description: "至少拥有五个会话的访客。",
-      },
-      deepVisitors: {
-        name: "深度访客",
-        description: "至少浏览五个页面的访客。",
-      },
-      eventfulVisitors: {
-        name: "活跃访客",
-        description: "至少产生两个自定义事件的访客。",
-      },
-      identifiedVisitors: {
-        name: "已识别访客",
-        description: "与已识别用户关联的访客。",
-      },
-      organicSearchVisitors: {
-        name: "自然搜索访客",
-        description: "拥有未标记搜索来源的访客。",
-      },
-      coreWebVitalsNeedsImprovement: {
-        name: "Core Web Vitals 需改进",
-        description: "超过 Core Web Vitals 阈值的访问。",
-      },
-      slowLcp: {
-        name: "LCP 较慢",
-        description: "LCP 超过 2.5 秒的访问。",
-      },
-      slowInp: {
-        name: "INP 较慢",
-        description: "INP 超过 200 毫秒的访问。",
-      },
-      highCls: {
-        name: "CLS 较高",
-        description: "CLS 超过 0.1 的访问。",
-      },
-      slowTtfb: {
-        name: "TTFB 较慢",
-        description: "TTFB 超过 800 毫秒的访问。",
-      },
-      slowFcp: {
-        name: "FCP 较慢",
-        description: "FCP 超过 1.8 秒的访问。",
-      },
     },
     savedFiltersPersonal: "个人筛选",
-    savedFiltersTeam: "团队筛选",
+    savedFiltersTeam: "组织筛选",
     savedFiltersAuthor: "作者：{name}",
     savedFiltersPrivate: "个人",
-    savedFiltersTeamShared: "已共享给团队",
+    savedFiltersTeamShared: "已与组织共享",
     saveThisFilter: "保存此筛选",
     saveAsThisFilter: "另存此筛选",
     manageThisFilter: "管理此筛选",
@@ -5693,13 +4414,14 @@ const zhMessages = {
     scopeVisitor: "筛选满足这些条件的访客",
     savedFilterVisibility: "可见性",
     savedFilterVisibilityPrivate: "仅自己可见",
-    savedFilterVisibilityTeam: "与团队共享",
+    savedFilterVisibilityTeam: "与组织共享",
     savedFilterCreateDescription: "保存当前的筛选表达式，以便之后再次套用。",
     savedFilterManageDescription: "更新此筛选的基本信息，或开始编辑筛选条件。",
     editSavedFilter: "修改此筛选",
     deleteSavedFilter: "删除此筛选",
     deleteSavedFilterTitle: "删除此筛选？",
-    deleteSavedFilterDescription: "删除后无法恢复，团队成员也将无法再使用它。",
+    deleteSavedFilterDescription:
+      "删除后无法恢复，组织中的其他成员也将无法再使用它。",
     savedFilterCancel: "取消",
     savedFilterSave: "保存",
     savedFilterSaving: "正在保存...",
@@ -5718,9 +4440,9 @@ const zhMessages = {
   },
   realtime: {
     title: "实时",
-    subtitle: "查看最近 30 分钟的访问情况",
     logTitleSeparator: "：",
     activeNow: "当前在线",
+    liveCount: "{count} 人在线",
     liveMetrics: "当前在线 / 近 30 分钟访客 / 近 30 分钟浏览量",
     connected: "已连接",
     connecting: "连接中",
@@ -5787,7 +4509,7 @@ const zhMessages = {
     leaveAt: "离开时间",
   },
   overview: {
-    title: "访问总览",
+    title: "总览",
     trendTitle: "访问趋势",
     sourceTab: "来源",
     sourceDomainColumn: "来源（域名）",
@@ -5811,15 +4533,39 @@ const zhMessages = {
     },
     searchInTab: "搜索{tab}",
   },
+  install: {
+    title: "将脚本添加到你的网站",
+    platforms: {
+      html: "HTML",
+      wordpress: "WordPress",
+      shopify: "Shopify",
+      nextjs: "Next.js",
+      gtm: "Google 跟踪代码管理器",
+    },
+    steps: {
+      html: "在每个页面的 {tag} 之前粘贴它。",
+      wordpress:
+        "用 WPCode 等页头脚本插件添加，或粘贴到主题 header.php 的 {tag} 之前。",
+      shopify:
+        "在“在线商店 → 模板 → 编辑代码”中打开 theme.liquid，粘贴到 {tag} 之前。",
+      nextjs: "在 app/layout.tsx 的 {tag} 中粘贴它。",
+      gtm: "用它创建一个“自定义 HTML”代码，触发条件选“所有网页”，然后发布。",
+    },
+    waiting: "正在等待第一次页面浏览",
+    received: "已收到第一次页面浏览，报表将在一分钟内更新。",
+    firstViewsTitle: "第一批页面浏览已到达！",
+    nextReports: "通过邮件接收报告",
+    nextInvite: "邀请成员",
+    dismiss: "关闭",
+  },
   pages: {
-    title: "页面分析",
+    title: "页面",
     pagesPerSession: "每会话页面数",
     changePercentColumnLabel: "{metric}变化（%）",
     changePointsColumnLabel: "{metric}变化（百分点）",
     percentagePointSuffix: "个百分点",
     untitled: "未命名页面",
-    empty: "当前筛选条件下暂无页面数据。",
-    loadError: "页面数据加载失败，请稍后重试。",
+    empty: "暂无页面",
     loadMoreError: "加载更多页面失败。",
     trendTitle: "页面访问趋势",
     otherPages: "其他页面",
@@ -5832,44 +4578,26 @@ const zhMessages = {
     viewDetails: "查看详情",
   },
   referrers: {
-    title: "来源分析",
-    summaryTitle: "来源概览",
+    title: "来源",
     splitTitle: "来源拆分",
-    chartTitle: "来源结构",
-    radarTitle: "前 24 来源雷达图",
-    radarSubtitle: "对比主要来源在多项行为指标上的表现",
-    radarDuration: "停留时长",
-    radarEngagement: "互动率",
-    radarDepth: "浏览深度",
-    radarLoyalty: "回访率",
-    radarFrequency: "访问频次",
-    radarTraffic: "流量占比",
-    directSourceNote: "这部分流量没有外部来源站点，属于直接访问。",
     breakdownTitle: "来源明细",
-    directViews: "直接访问量",
-    uniqueDomains: "来源域名数",
-    uniqueLinks: "来源链接数",
-    topSource: "主要外部来源",
-    topSourceShare: "访问占比",
-    noExternalSource: "暂无外部来源",
     externalLabel: "外部来源",
-    nextSources: "其他 4 个来源",
     longTail: "长尾来源",
     channelLongTail: "其他渠道",
   },
   campaigns: {
-    title: "推广活动",
-    tabSource: "来源",
+    title: "推广",
+    tabSource: "UTM 来源",
     tabMedium: "媒介",
     tabCampaign: "活动",
     tabTerm: "关键词",
     tabContent: "内容",
-    breakdownTitle: "UTM 明细",
     notSet: "未设置",
-    noTaggedTraffic: "当前筛选范围内暂无带 UTM 标签的流量。",
+    noTaggedTraffic: "此期间暂无带 UTM 标签的访问",
+    taggedLinkHint: "在链接中添加 UTM 标签，例如",
   },
   sessions: {
-    title: "会话列表",
+    title: "会话",
     search: "搜索会话...",
     started: "开始时间",
     sessionId: "会话 ID",
@@ -5937,12 +4665,8 @@ const zhMessages = {
     range: "范围",
   },
   events: {
-    title: "自定义事件",
-    subtitle: "查看事件规模、上下文、事件载荷字段与原始触发记录。",
+    title: "事件",
     detailTitle: "事件详情",
-    detailSubtitle: "查看单次事件的上下文与事件载荷。",
-    typeDetailSubtitle:
-      "查看该事件的趋势、上下文分布、事件载荷结构与触发记录。",
     backToEvents: "返回事件总览",
     totalEvents: "事件总数",
     eventTypes: "事件类型",
@@ -5969,7 +4693,6 @@ const zhMessages = {
     payloadFilterInvalid: "无法解析筛选条件，请检查字段路径、操作符和值。",
     expandField: "展开字段",
     collapseField: "收起字段",
-    breakdownTitle: "上下文分布",
     search: "搜索事件名、ID、访客、会话、页面...",
     eventName: "事件名",
     eventId: "事件 ID",
@@ -6002,30 +4725,27 @@ const zhMessages = {
     loadError: "无法加载事件数据。",
     detailNotFound: "未找到该事件记录。",
     empty: "当前筛选范围内没有自定义事件。",
+    noCustomEvents: "此期间暂无自定义事件",
     emptyFields: "当前事件暂无事件载荷字段。",
     noEventName: "缺少事件名。",
     loading: "加载中",
     other: "其他",
   },
   funnels: {
-    title: "漏斗分析",
-    subtitle: "衡量多步骤用户旅程的转化情况。",
+    title: "漏斗",
     listTitle: "漏斗定义",
-    listSubtitle: "构建可复用的步骤序列，并按当前看板时间窗查看转化。",
     conversionRecords: "转化记录",
     converted: "已转化",
     dropped: "已流失",
     open: "打开漏斗",
     moreActions: "更多操作",
-    create: "新建漏斗",
     createTitle: "创建漏斗",
-    createDescription: "至少定义两个有顺序的观察筛选步骤。",
     nameLabel: "名称",
     namePlaceholder: "注册激活",
     stepsLabel: "步骤",
     addStep: "添加步骤",
     removeStep: "移除步骤",
-    progression: "转化主体",
+    progression: "计数依据",
     conversionWindow: "转化窗口",
     custom: "自定义",
     customWindowHours: "自定义窗口（小时）",
@@ -6054,9 +4774,6 @@ const zhMessages = {
     deleteDescription: "这会移除已保存的漏斗定义，不会删除历史分析数据。",
     deleteConfirm: "删除漏斗",
     deleting: "删除中...",
-    empty: "暂无漏斗。",
-    emptyHint: "使用页面浏览和自定义事件创建漏斗来跟踪转化。",
-    loadError: "无法加载漏斗。",
     detailLoadError: "无法加载漏斗分析。",
     invalidFunnel: "请填写名称，并至少补全两个筛选步骤。",
     created: "漏斗已创建。",
@@ -6082,11 +4799,9 @@ const zhMessages = {
   },
   goals: {
     title: "目标分析",
-    listSubtitle: "查看这段时间范围内的转化率变化情况",
     conversionRecords: "转化记录",
     open: "打开目标",
     moreActions: "更多操作",
-    create: "新建目标",
     createTitle: "创建目标",
     nameLabel: "名称",
     namePlaceholder: "完成购买",
@@ -6102,9 +4817,6 @@ const zhMessages = {
     deleteTitle: "删除目标",
     deleteDescription: "这会移除已保存的目标定义，不会删除历史分析数据。",
     deleteConfirm: "删除目标",
-    empty: "暂无目标。",
-    emptyHint: "使用页面条件或自定义事件创建目标来跟踪转化。",
-    loadError: "无法加载目标。",
     detailLoadError: "无法加载目标分析。",
     invalidGoal: "请填写名称，并补全转化条件。",
     created: "目标已创建。",
@@ -6120,8 +4832,17 @@ const zhMessages = {
     timeseries: "转化率",
     updated: "更新于",
   },
+  conversions: {
+    new: "新建",
+    newGoal: "目标",
+    newGoalDescription: "单个步骤，例如注册",
+    newFunnel: "漏斗",
+    newFunnelDescription: "按顺序完成的多个步骤",
+    empty: "暂无目标或漏斗",
+    emptyMemberHint: "管理员可以创建。",
+  },
   visitors: {
-    title: "访客分析",
+    title: "访客",
     search: "搜索访客...",
     visitor: "访客",
     anonymous: "匿名访客",
@@ -6194,8 +4915,8 @@ const zhMessages = {
     range: "范围",
   },
   retention: {
-    title: "留存分析",
-    subtitle: "基于群组的访客回访分析。",
+    title: "留存",
+    cohortBy: "群组周期：{interval}",
     cohortDate: "群组日期",
     cohortSize: "人数",
     periodLabel: "第 {n} 期",
@@ -6215,18 +4936,16 @@ const zhMessages = {
     legendHigh: "高",
     periodZero: "初始",
     empty: "当前时间范围内没有足够的回访数据。",
-    emptyHint:
-      "扩大时间范围，或在顶部选择更粗的时间间隔，可以更快看到留存形态。",
+    emptyHint: "在日期菜单中选择更长的时间范围或更粗的时间间隔。",
     loadError: "无法加载留存数据。",
     unavailableCell: "该群组还没有进入这个周期。",
     visitorsDetail: "访客",
     rateDetail: "留存率",
-    cohortDetail: "群组",
     sizeDetail: "人数",
   },
   geo: {
-    title: "位置分析",
-    mapTitle: "请求地理分布",
+    title: "位置",
+    mapTitle: "访客分布",
     countryLabel: "国家/地区",
     regionLabel: "州/省",
     cityLabel: "市/县",
@@ -6281,64 +5000,27 @@ const zhMessages = {
     },
   },
   devices: {
-    title: "设备分析",
-    deviceShareTitle: "设备类型占比",
-    osShareTitle: "操作系统占比",
-    deviceTrendTitle: "设备类型趋势",
-    osTrendTitle: "操作系统趋势",
-    screenDistributionTitle: "屏幕尺寸分布",
-    screenDistributionSubtitle: "识别最常见的视口尺寸和响应式断点。",
-    screenBucketTitle: "断点分桶",
-    screenPreviewTitle: "屏幕预览",
-    selectedViewportLabel: "当前视口",
-    openSiteLabel: "打开站点",
-    previewUnavailableLabel: "当前没有可预览的屏幕尺寸。",
-    browserByDeviceTitle: "设备类型 × 浏览器",
-    osByDeviceTitle: "设备类型 × 操作系统",
-    otherLabel: "其他",
-    screenBucketLabels: {
-      phoneCompact: "小屏手机",
-      phone: "手机",
-      tablet: "平板",
-      laptop: "笔记本",
-      desktopWide: "宽屏桌面",
-      unclassified: "未归类",
+    title: "设备",
+    shareTitle: "访客占比",
+    dimensions: {
+      device: "设备",
+      os: "操作系统",
+      browser: "浏览器",
+      engine: "引擎",
+      screenSize: "屏幕尺寸",
     },
+    crossTabTitle: "交叉分析",
+    crossTabRows: "行",
+    crossTabColumns: "拆分依据",
+    otherLabel: "其他",
+    screenBucketLabels: {},
   },
   browsers: {
-    title: "浏览器分析",
-    trendTitle: "浏览器占比趋势",
-    engineTrendTitle: "内核占比趋势",
-    versionBreakdownTitle: "浏览器版本分布",
-    osBreakdownTitle: "浏览器 × 系统",
-    deviceTypeBreakdownTitle: "浏览器 × 设备类型",
     otherLabel: "其他",
-    browserShareTitle: "浏览器占比",
-    engineShareTitle: "内核占比",
-    caniuseTitle: "特性兼容性",
-    caniuseSubtitle: "根据站点访客数据检查 Web 特性的浏览器支持情况。",
-    caniuseSearchPlaceholder: "搜索 Web 特性…",
-    caniuseHotFeatures: "热门特性",
-    caniuseTrendingFeatures: "近期变动",
-    caniuseSiteSupport: "本站支持率",
-    caniuseGlobalSupport: "全球支持率",
-    caniuseClearSelection: "清除",
-    caniuseNoMatch: "未找到匹配的特性。",
-    caniuseFullSupport: "完全支持",
-    caniusePartialSupport: "部分支持",
-    caniuseNoSupport: "不支持",
-    radarTitle: "浏览器行为雷达图",
-    radarSubtitle: "对比主流浏览器在多项行为指标上的表现",
-    radarDuration: "停留时长",
-    radarEngagement: "互动率",
-    radarDepth: "浏览深度",
-    radarLoyalty: "回访率",
-    radarFrequency: "访问频次",
-    radarTraffic: "流量占比",
   },
   performance: {
-    title: "性能跟踪",
-    subtitle: "按指标、趋势与路径查看真实访客性能。",
+    title: "性能",
+    empty: "暂无 Web Vitals 数据",
     chartTitle: "性能趋势",
     avgLabel: "平均值",
     samplesLabel: "样本数",
@@ -6369,7 +5051,7 @@ const zhMessages = {
     great: "优秀",
     needsImprovement: "需要改进",
     poor: "较差",
-    datasetTitle: "数据集概览",
+    datasetTitle: "阈值",
     interpretationTitle: "当前解读",
     currentReading:
       "{metric} 当前 P75 为 {value}，体验评分为 {score}，覆盖 {samples} 个样本。当前判定：{status}。",
@@ -6383,33 +5065,41 @@ const zhMessages = {
     metricValueColumn: "P75 数值",
     statusColumn: "状态",
   },
-  share: {},
+  share: {
+    noData: "暂无数据",
+  },
   siteSettings: {
     title: "站点设置",
     sections: {
       basic: {
-        title: "基本信息",
+        title: "常规",
       },
       tracking: {
-        title: "跟踪设置",
+        title: "跟踪",
       },
       blocking: {
-        title: "屏蔽规则",
+        title: "拦截规则",
       },
       protection: {
-        title: "请求防护",
+        title: "防护",
       },
       danger: {
-        title: "危险区域",
+        title: "危险操作",
+      },
+      install: {
+        title: "安装",
+      },
+      advanced: {
+        title: "高级",
       },
     },
-    nameLabel: "站点名称",
+    nameLabel: "名称",
     domainLabel: "域名",
-    publicSharingTitle: "公开分享",
-    publicEnabledLabel: "启用公开访问",
-    publicSlugLabel: "公开 Slug",
+    publicSharingTitle: "分享",
+    publicEnabledLabel: "公开看板",
+    publicSlugLabel: "链接路径",
     publicSlugPlaceholder: "例如 my-site",
-    publicSlugHint: "自定义 URL 路径标识。留空将自动生成。",
+    publicSlugHint: "链接中 /share/ 之后的部分。",
     publicLinkLabel: "公开链接",
     copiedLink: "链接已复制",
     trackingStrengthGroupTitle: "跟踪强度",
@@ -6425,18 +5115,14 @@ const zhMessages = {
     botProtectionEnabledHint:
       "开启后拦截高置信度机器人请求；关闭后这类请求仍会计入统计。",
     hostingProxyBlockingEnabledLabel: "拦截托管/代理网络请求",
-    hostingProxyBlockingEnabledHint:
-      "开启后拦截来自托管或代理网络的疑似机器人请求，默认关闭。",
-    trackQueryParamsLabel: "开启查询参数跟踪",
-    trackHashLabel: "开启 Hash 跟踪",
-    blockingRulesSave: "保存屏蔽规则",
-    blockingRulesSaving: "正在保存屏蔽规则...",
+    hostingProxyBlockingEnabledHint: "拦截来自托管或代理网络的疑似机器人请求。",
+    trackQueryParamsLabel: "跟踪查询参数",
+    trackHashLabel: "跟踪 URL 哈希",
+    blockingRulesSave: "保存规则",
     blockingRulesDialogs: {
-      testButton: "测试",
-      helpButton: "帮助",
       searchButton: "搜索",
       searchTitle: "搜索地区",
-      searchDescription: "按名称或代码搜索，选择结果后将其添加到此卡片。",
+      searchDescription: "按名称或代码搜索，然后选择结果。",
       searchInputLabel: "搜索",
       searchInputPlaceholder: "按名称或代码搜索",
       searchCountryLabel: "国家 / 地区",
@@ -6446,198 +5132,60 @@ const zhMessages = {
       searchNoResults: "没有匹配的地区。",
       searchLoadError: "无法加载地区，请稍后重试。",
       searchClose: "关闭",
-      helpTitle: "规则语法",
-      helpDescription: "查看此字段的语法、示例和优先级规则。",
-      syntaxTitle: "语法",
-      examplesTitle: "示例配置",
-      actionsTitle: "规则动作",
-      actionsDescription:
-        "普通行表示屏蔽；在规则前加 - 表示允许。如果多行同时匹配，则最后一条匹配行决定结果。",
-      actionBlock: "匹配 {example} 时屏蔽",
-      actionAllow: "匹配 {example} 时允许",
-      statusEmpty: "当前无任何针对 {field} 的屏蔽规则。",
-      statusValid: "当前规则有效。",
-      statusInvalid: "当前规则无效，请点击右侧“帮助”获取详细信息。",
-      errorInvalidRule: "无效规则。",
-      errorInvalidLines: "{field} 的规则必须按行填写。",
-      errorInvalidLine: "第 {line} 行不是有效的文本规则。",
-      errorLineTooLong: "第 {line} 行过长。",
-      errorTooManyLines: "规则行数过多。",
-      errorInvalidPattern: "第 {line} 行的规则格式无效。",
-      testTitle: "测试规则",
-      testDescription:
-        "输入请求值以测试当前卡片中的规则，未保存的编辑内容也会参与测试。",
-      testRun: "执行测试",
-      testClose: "关闭",
-      testInvalidRules: "请先修复无效规则，然后再进行测试。",
-      testInvalidRule: "无效规则。",
-      testBlocked: "已屏蔽",
-      testAllowed: "已允许",
-      testNoMatch: "没有规则匹配，此字段允许该值通过。",
-      testMatchedRules: "匹配的规则",
-      testActionBlock: "屏蔽",
-      testActionAllow: "允许",
-      testLine: "第",
     },
     blockingRulesFields: {
       domains: {
         title: "域名",
-        label: "域名规则（每行一条）",
-        placeholder: "*\n-example.com\n-*.example.com\nadmin.example.com\n",
-        hint: "匹配页面 hostname；使用 * 和 -域名 可以实现白名单。",
-        syntax:
-          "每行格式：[ - ] hostname-glob\n以 # 开头的行将被视为注释并忽略。\n使用 * 作为通配符；以 - 开头表示允许规则。\n匹配不区分大小写，并使用页面 hostname。\n",
-        examples: ["*", "-example.com", "-*.example.com", "admin.example.com"],
-        exampleDescription:
-          "这段配置先屏蔽所有域名，再允许 example.com 及其子域名，最后重新屏蔽精确匹配的 admin.example.com。",
-        testLabel: "主机名",
-        testPlaceholder: "www.example.com",
-        testHint: "输入页面 hostname，不要包含协议或路径。",
+        placeholder: "admin.example.com",
       },
       paths: {
         title: "路径",
-        label: "路径规则（每行一条）",
-        placeholder: "/admin/*\n/checkout/*/confirm\n-/admin/health\n",
-        hint: "使用 glob 语法匹配规范化后的 URL 路径。",
-        syntax:
-          "每行格式：[ - ] /path-glob\n以 # 开头的行将被视为注释并忽略。\n路径必须以 / 开头，* 可以匹配任意字符。\nURL 路径规范化后按区分大小写的方式匹配。\n",
-        examples: ["/admin/*", "/checkout/*/confirm", "-/admin/health"],
-        exampleDescription:
-          "这段配置屏蔽 /admin/ 下的路径和符合 /checkout/*/confirm 的路径，但允许 /admin/health。",
-        testLabel: "URL 路径",
-        testPlaceholder: "/admin/settings",
-        testHint: "只输入 pathname，并保留开头的斜杠。",
+        placeholder: "/admin/*",
       },
       queryParameters: {
         title: "查询参数",
-        label: "查询参数规则（每行一条）",
-        placeholder: "utm_*\nutm_source=*\n-utm_source=trusted\n",
-        hint: "支持 key 或 key=value，键和值都支持 * 通配符。",
-        syntax:
-          "每行格式：[ - ] key-glob[=value-glob]\n以 # 开头的行将被视为注释并忽略。\n省略 = 时，表示匹配该键的任意值。\n区分大小写，键和值都支持 * 通配符。\n",
-        examples: ["utm_*", "utm_source=*", "-utm_source=trusted"],
-        exampleDescription:
-          "这段配置屏蔽所有以 utm_ 开头的参数以及 utm_source 的任意值，但允许 utm_source=trusted。",
-        testLabel: "查询字符串",
-        testPlaceholder: "utm_source=internal&utm_campaign=spring",
-        testHint: "输入查询字符串，可带或不带开头的 ?。",
+        placeholder: "utm_source=spam",
       },
       referrers: {
         title: "来源",
-        label: "来源规则（每行一条）",
-        placeholder:
-          "*.example.com\nsocial.example.com\n-trusted.example.com\n",
-        hint: "匹配来源页面的 hostname。",
-        syntax:
-          "每行格式：[ - ] hostname-glob\n以 # 开头的行将被视为注释并忽略。\nURL 会先转换为 hostname，然后再进行匹配。\n匹配不区分大小写，并支持 * 通配符。\n",
-        examples: [
-          "*.example.com",
-          "social.example.com",
-          "-trusted.example.com",
-        ],
-        exampleDescription:
-          "这段配置屏蔽 example.com 的来源域名和 social.example.com，但允许 trusted.example.com。",
-        testLabel: "来源",
-        testPlaceholder: "https://social.example.com/article",
-        testHint: "输入来源 URL 或 hostname。",
+        placeholder: "*.spam.example",
       },
       userAgents: {
         title: "User-Agent",
-        label: "User-Agent 规则（每行一条）",
-        placeholder: "*bot*\nMozilla/*\n-Googlebot\n",
-        hint: "不区分大小写地使用 glob 语法匹配请求 User-Agent。",
-        syntax:
-          "每行格式：[ - ] text-glob\n以 # 开头的行将被视为注释并忽略。\n* 可以匹配请求 User-Agent 中的任意字符。\n匹配不区分大小写。\n",
-        examples: ["*bot*", "Mozilla/*", "-Googlebot"],
-        exampleDescription:
-          "这段配置屏蔽包含 bot 的 User-Agent 和以 Mozilla/ 开头的值，但允许 Googlebot。",
-        testLabel: "User-Agent",
-        testPlaceholder: "Mozilla/5.0 (compatible; ExampleBot/1.0)",
-        testHint: "输入完整或部分请求 User-Agent。",
+        placeholder: "*bot*",
       },
       ips: {
         title: "IP 地址",
-        label: "IP 规则（每行一条）",
-        placeholder:
-          "203.0.113.15\n2001:db8::1\n203.0.113.0/24\n2001:db8::/32\n-203.0.113.10..203.0.113.20\n",
-        hint: "支持 IPv4/IPv6、CIDR 网段以及起始..结束范围。",
-        syntax:
-          "每行格式：[ - ] address | CIDR | start..end\n以 # 开头的行将被视为注释并忽略。\n支持 IPv4 和 IPv6 地址。\n范围两端必须使用相同地址族，且起点不能大于终点。\n",
-        examples: [
-          "203.0.113.15",
-          "2001:db8::1",
-          "203.0.113.0/24",
-          "2001:db8::/32",
-          "-203.0.113.10..203.0.113.20",
-        ],
-        exampleDescription:
-          "这段配置演示 IPv4/IPv6 单个地址、CIDR 网段和 start..end 范围；范围前的 - 表示允许该范围。",
-        testLabel: "IP 地址",
-        testPlaceholder: "203.0.113.15",
-        testHint: "输入一个 IPv4 或 IPv6 地址进行测试。",
+        placeholder: "203.0.113.0/24",
       },
       asns: {
         title: "ASN",
-        label: "ASN 规则（每行一条）",
-        placeholder: "64500\n*\n-64501\n",
-        hint: "匹配 Cloudflare metadata 中的数字自治系统编号。",
-        syntax:
-          "每行格式：[ - ] ASN-number\n以 # 开头的行将被视为注释并忽略。\n使用 * 匹配任意 ASN。\n测试 metadata 值时也接受可选的 AS 前缀。\n",
-        examples: ["64500", "*", "-64501"],
-        exampleDescription:
-          "这段配置屏蔽 ASN 64500 和任意 ASN，但通过最后一条规则允许 ASN 64501。",
-        testLabel: "ASN",
-        testPlaceholder: "64500",
-        testHint: "输入数字自治系统编号。",
+        placeholder: "64500",
       },
       countries: {
-        title: "国家 / 地区",
-        label: "国家规则（每行一条）",
-        placeholder: "DE\n*\n-US\n",
-        hint: "使用 ISO 3166-1 alpha-2 国家代码。",
-        syntax:
-          "每行格式：[ - ] ISO-3166-alpha-2\n以 # 开头的行将被视为注释并忽略。\n使用 * 匹配任意国家。\n国家代码匹配时不区分大小写。\n",
-        examples: ["DE", "*", "-US"],
-        exampleDescription:
-          "这段配置屏蔽 DE 和任意国家，但通过最后一条规则允许 US。",
-        testLabel: "国家代码",
-        testPlaceholder: "DE",
-        testHint: "输入 ISO 3166-1 alpha-2 国家代码。",
+        title: "国家/地区",
+        placeholder: "DE",
       },
       regions: {
-        title: "州 / 省",
-        label: "地区规则（每行一条）",
-        placeholder: "DE-BE\n*\n-US-CA\n",
-        hint: "使用 Cloudflare metadata 中的 COUNTRY-REGION_CODE 格式。",
-        syntax:
-          "每行格式：[ - ] COUNTRY-REGION_CODE\n以 # 开头的行将被视为注释并忽略。\n使用 * 匹配任意地区。\n地区值匹配时不区分大小写。\n",
-        examples: ["DE-BE", "*", "-US-CA"],
-        exampleDescription:
-          "这段配置屏蔽 DE-BE 和任意地区，但通过最后一条规则允许 US-CA。",
-        testLabel: "地区代码",
-        testPlaceholder: "US-CA",
-        testHint: "输入 metadata 中的 COUNTRY-REGION_CODE 值。",
+        title: "州/省",
+        placeholder: "US-CA",
       },
     },
-    ignoreDoNotTrackLabel: "忽略浏览器 Do Not Track",
+    ignoreDoNotTrackLabel: "忽略“请勿跟踪”",
     autoTrackOutboundLinksLabel: "自动跟踪外链点击",
     autoTrackOutboundLinksHint:
       "开启后，点击指向外部域名的链接将自动上报 outbound_click 事件。",
-    performanceSampleRateLabel: "性能采样率（%）",
+    performanceSampleRateLabel: "Web Vitals 采样率",
     performanceSampleRateHint:
       "被采样的访问会在离开页面时记录 TTFB、FCP、LCP、CLS 和 INP。填 0 表示不采样，100 表示全量采集。",
-    saveTracking: "保存跟踪设置",
-    savingTracking: "正在保存跟踪设置…",
-    save: "保存修改",
+    save: "保存",
     saving: "保存中...",
-    scriptTitle: "安装统计脚本",
-    scriptHint:
-      "推荐放在 </head> 结束标签前；若不方便，也可放在 </body> 前，但请确保每页只加载一次。",
+    scriptHint: "将其粘贴到每个页面的 </head> 之前。",
     copyScript: "复制脚本",
     copiedScript: "脚本已复制。",
     scriptUnavailable: "当前无法获取脚本。",
     deleteTitle: "删除站点",
-    deleteSubtitle: "此操作会将当前站点从团队中移除。",
+    deleteSubtitle: "删除该站点及其所有分析数据。",
     delete: "删除站点",
     deleting: "删除中...",
     deleteConfirm: "该操作不可撤销，是否继续？",
@@ -6646,11 +5194,25 @@ const zhMessages = {
       saveFailed: "站点设置保存失败。",
       scriptLoadFailed: "加载脚本片段失败。",
       settingsLoadFailed: "加载脚本设置失败。",
-      settingsPropagationHint: "设置分发到全球节点可能需要最多 1 小时。",
+      settingsPropagationHint: "更改最多需要一小时生效。",
       deleted: "站点已删除。",
       deleteFailed: "删除站点失败。",
       invalidInput: "请填写有效的站点名称和域名。",
     },
+    publicEnabledHint: "任何拿到链接的人都可以查看此站点的报表。",
+    viewBlockedRequests: "查看已拦截请求",
+    blockingRulesHelp:
+      "匹配“拦截”规则的请求不会被统计，“允许”用于设置例外。同一类型的多条规则都匹配时，以最后一条为准。可使用 * 作为通配符。",
+    blockingRuleTypeLabel: "类型",
+    blockingRuleActionLabel: "操作",
+    blockingRuleValueLabel: "值",
+    blockingRuleBlock: "拦截",
+    blockingRuleAllow: "允许",
+    blockingRuleAdd: "添加规则",
+    blockingRuleRemove: "删除规则",
+    blockingRulesEmpty: "没有拦截规则。",
+    blockingRuleInvalid: "请输入此类型的有效值。",
+    blockingRulesTooMany: "{type} 规则过多。",
   },
   accountSettings: {
     emailManagedByGateway: "邮箱来自你的 Every App 账户。",
@@ -6658,75 +5220,29 @@ const zhMessages = {
     nicknameLabel: "昵称",
     nicknamePlaceholder: "例如：产品分析师",
     emailLabel: "邮箱",
-    profileSave: "保存个人信息",
-    profileSaving: "保存中...",
     profileSaved: "个人信息已保存。",
     profileSaveFailed: "保存个人信息失败。",
-    preferredLanguageTitle: "通知语言",
-    preferredLanguageLabel: "邮件语言",
-    preferredLanguageDefault: "默认",
-    preferredLanguageEnglish: "英语",
-    preferredLanguageChinese: "简体中文",
-    preferredLanguageTraditionalChinese: "繁体中文",
-    preferredLanguageJapanese: "日语",
-    preferredLanguageSaved: "通知语言已保存。",
-    preferredLanguageSaveFailed: "保存通知语言失败。",
-    timeZoneTitle: "报表时区",
-    activeTimeZone: "当前生效时区",
-    browserTimeZone: "浏览器时区",
+    timeZoneTitle: "时区",
     browserUnavailable: "未检测到",
-    preferenceLabel: "时区偏好",
-    useBrowser: "跟随浏览器时区",
-    useCustom: "选择时区",
-    customTimeZoneLabel: "时区",
-    invalidTimeZone: "请选择有效的 IANA 时区。",
-    save: "保存偏好",
-    saving: "保存中...",
-    saved: "时区偏好已保存。",
-    saveFailed: "保存时区偏好失败。",
+    useBrowser: "浏览器时区（{zone}）",
+    saved: "时区已保存。",
+    saveFailed: "无法保存时区。",
+    timeZoneLabel: "报表时区",
+    languageSaveFailed: "无法保存语言。",
   },
   notificationCenter: {
-    title: "通知中心",
+    title: "收件箱",
     empty: "暂无通知。",
     loading: "正在加载通知",
     markRead: "标记已读",
     markAllRead: "全部标记为已读",
-    refresh: "刷新",
-    attention: "重点",
     loadFailed: "加载通知失败。",
     markReadFailed: "标记通知为已读失败。",
     markAllReadSuccess: "通知已全部标记为已读。",
     markAllReadFailed: "全部标记为已读失败。",
-    ruleFilterActive: "正在查看此规则产生的通知。",
-    ruleFilterClear: "清除筛选",
-    sections: {
-      importantTitle: "重要通知",
-      importantDescription: "{count} 条未读重点通知。",
-      importantEmpty: "当前没有重要通知。",
-      reportsTitle: "报告",
-      reportsDescription: "查看通知规则生成的定期报告。",
-      reportsEmpty: "当前没有报告。",
-    },
     tabs: {
       all: "全部",
       unread: "未读",
-      attention: "重点",
-      report: "报告",
-    },
-    tabDescriptions: {
-      all: "全部消息",
-      unread: "等待查看",
-      attention: "需要关注",
-      report: "定期报告",
-    },
-    messageTypes: {
-      report: "报告",
-      milestone: "里程碑",
-      threshold: "阈值",
-      change: "变化",
-      health: "健康",
-      system: "系统",
-      test: "测试",
     },
     severities: {
       info: "信息",
@@ -6734,52 +5250,15 @@ const zhMessages = {
       warning: "警告",
       critical: "严重",
     },
-    deliveryStatuses: {
-      created: "已创建",
-      sending: "发送中",
-      sent: "已发送",
-      partial: "部分完成",
-      failed: "失败",
-      skipped: "已跳过",
-    },
-    channels: {
-      inApp: "站内通知",
-      email: "邮件",
-    },
-    channelStatuses: {
-      sent: "已发送",
-      skipped: "已跳过",
-      failed: "失败",
-      created: "已创建",
-    },
-    emailSkipReasons: {
-      user_preference_disabled: "用户已关闭邮件通知",
-      system_email_unconfigured: "系统邮件尚未配置",
-      recipient_email_invalid: "收件人邮箱无效",
-      secret_decryption_failed: "保存的邮件凭据无法解密",
-      provider_failed: "邮件服务商拒绝发送",
-      network_failed: "无法连接邮件服务商",
-      unknown: "未知原因",
-    },
-    emailAttempts: "尝试次数：{count}",
-    emailRetryCount: "重试次数：{count}",
-    emailDuration: "{duration} 毫秒",
-    typeFilterLabel: "类型",
-    severityFilterLabel: "严重程度",
-    allTypes: "全部类型",
-    allSeverities: "全部严重程度",
     preferencesTitle: "通知偏好",
     emailNotificationsLabel: "邮件通知",
-    emailNotificationsDescription: "规则触发时发送邮件。",
-    reportsUnreadLabel: "报告保持未读",
-    reportsUnreadDescription: "报告创建后保持未读状态。",
-    milestonesUnreadLabel: "里程碑保持未读",
-    milestonesUnreadDescription: "将未读状态保留给里程碑消息。",
-    alertsUnreadLabel: "告警保持未读",
-    alertsUnreadDescription: "阈值和健康告警保持未读。",
-    preferencesSaved: "通知偏好已保存。",
+    reportsUnreadLabel: "新报告标为未读",
+    milestonesUnreadLabel: "新里程碑标为未读",
+    alertsUnreadLabel: "新提醒标为未读",
     preferencesSaveFailed: "保存通知偏好失败。",
     detailFields: {},
+    noUnread: "没有未读通知。",
+    emailFailed: "邮件发送失败",
   },
   notificationEmail: {
     common: {
@@ -6866,20 +5345,11 @@ const zhMessages = {
     },
   },
   runtimeConfigError: {
-    title: "需要运行时配置",
-    eyebrow: "部署已暂停",
-    heading: "OpenAnalytics 需要一个运行时密钥后才能加载控制台。",
-    description:
-      "应用已经启动，但当前运行环境没有读取到必需的 root secret，因此暂时阻止进入控制台。",
-    requiredTitle: "必需的运行时密钥",
-    requiredDescription: "请在 Cloudflare 运行时密钥中至少设置以下其中一个值。",
-    secretHint: "推荐使用 MAIN_SECRET。旧部署仍可继续使用 DAILY_SALT_SECRET。",
-    commandTitle: "Cloudflare 命令",
-    commandDescription: "使用项目内置命令写入推荐密钥，然后重新部署。",
-    quickStartHint:
-      "或者，请查看 GitHub README 的“快速开始”章节来设置这个变量。",
-    docsLabel: "打开 GitHub",
-    homeLabel: "重试控制台",
+    title: "仪表盘不可用",
+    heading: "此仪表盘暂时不可用。",
+    setupSummary: "配置此部署",
+    setupCommand: "用这条命令设置根密钥，然后刷新此页面。",
+    docsLabel: "部署指南",
   },
   login: {},
   accountLinks: {
@@ -6890,25 +5360,12 @@ const zhMessages = {
   },
   empty: {},
   errorPage: {
-    notFoundEyebrow: "页面未找到",
     notFoundTitle: "找不到这个页面",
     notFoundDescription: "地址可能不正确，或者页面已经被移动。",
-    errorEyebrow: "应用错误",
     errorTitle: "页面出现了问题",
-    errorDescription:
-      "OpenAnalytics 无法完成这次请求。下面的诊断信息可以帮助我们定位问题。",
-    statusLabel: "状态",
-    reasonLabel: "原因",
-    requestLabel: "请求路径",
-    timestampLabel: "时间",
-    diagnosticIdLabel: "诊断 ID",
-    errorTypeLabel: "错误类型",
-    errorMessageLabel: "错误信息",
-    notFoundReason: "route_not_found",
-    unexpectedReason: "unexpected_application_error",
+    errorDescription: "OpenAnalytics 无法完成这次请求。",
     homeAction: "返回首页",
     reportAction: "在 GitHub 反馈",
-    reportHint: "将打开一个已预填内容的 GitHub Issue，提交前请先检查信息。",
   },
   actions: {
     switchToEnglish: "English",
@@ -6930,27 +5387,28 @@ const zhMessages = {
       openAnalytics: "查看分析",
       title: "所有站点",
       pagesPerSession: "每会话页面数",
+      public: "公开",
+      openPublic: "打开公开仪表盘",
     },
     widgets: {},
     notifications: {
-      empty: "当前团队还没有通知规则。",
+      empty: "还没有通知规则。",
       rulesTitle: "通知规则",
-      enabledCount: "当前团队已启用 {count} 条规则。",
+      enabledCount: "此组织已启用 {count} 条规则。",
       loadingRules: "正在加载通知规则",
       deliveryTestTitle: "投递测试",
       deliveryTestDescription:
         "为你创建一条站内通知；如果可用，也会尝试发送邮件。",
       inAppTestHint: "我们会向你发送一条站内通知。",
       emailTestConfiguredHint: "我们会向你发送一条测试邮件。",
-      emailTestUnconfiguredHint:
-        "当前系统未设置邮件发送服务，请联系管理员添加。",
+      emailTestUnconfiguredHint: "此 Every App 网关尚未设置邮件。",
       sendTestNotification: "发送测试通知",
       loadRulesFailed: "加载通知规则失败。",
       testNotificationSent: "测试通知已发送。",
       sendTestNotificationFailed: "发送测试通知失败。",
       createRule: "创建规则",
       editRule: "编辑规则",
-      dialogDescription: "为当前团队配置一条基础通知规则。",
+      dialogDescription: "为此组织设置一条通知规则。",
       ruleInfoSection: "规则信息",
       scheduleSection: "计划",
       sendScheduleSection: "发送时间",
@@ -7008,7 +5466,6 @@ const zhMessages = {
       disable: "停用",
       delete: "删除",
       saveRule: "保存规则",
-      emailPreview: "邮件预览",
       preview: "预览",
       runNow: "立即运行",
       previewFailed: "预览规则失败。",
@@ -7065,7 +5522,6 @@ const zhMessages = {
         title: "标题",
         htmlPreview: "HTML 预览",
         bodyText: "正文",
-        data: "数据",
         createdAt: "创建时间",
         updatedAt: "更新时间",
         loadingContent: "正在加载实际报告内容",
@@ -7088,14 +5544,14 @@ const zhMessages = {
       },
       recipientModes: {
         creator: "创建者",
-        team_admins: "团队管理员",
+        team_admins: "组织管理员",
         all_team_members: "全部团队成员",
         users: "指定用户",
       },
       recipientKindLabel: "接收人类型",
       recipientPresetLabel: "预设",
       customRecipientsEmpty: "未选择接收人",
-      noTeamMembers: "当前没有可选团队成员。",
+      noTeamMembers: "此组织还没有成员。",
       recipientKinds: {
         preset: "预设",
         custom: "自定义",
@@ -7140,27 +5596,16 @@ const zhMessages = {
         last_24h: "最近 24 小时",
         yesterday: "昨天",
       },
-      emailPreviewPage: {
-        title: "通知邮件预览",
-        typeLabel: "预览类型",
-        localeLabel: "预览语言",
-        formatLabel: "预览格式",
-        html: "HTML",
-        text: "纯文本",
-        json: "JSON",
-        refresh: "预览",
-        loading: "正在渲染预览...",
-        loadFailed: "渲染邮件预览失败。",
-        subject: "主题",
+      addSiteFirst: "请先添加站点。",
+      deleteDescription: "此操作无法撤销。",
+      previewStatuses: {
+        skipped: "已跳过",
+        checked: "未触发",
+        triggered: "已触发",
       },
     },
     publicLinks: {
-      enabled: "已启用",
-      disabled: "未启用",
-      viewSettings: "查看设置",
       copyLink: "复制链接",
-      linkCopied: "链接已复制",
-      noSites: "当前团队还没有站点。",
       columns: {},
     },
     apiKeys: {
@@ -7177,9 +5622,6 @@ const zhMessages = {
       roleLabels: {},
     },
   },
-  managementNav: {
-    scheduledTasks: "定时任务",
-  },
   managementPages: {
     versionUpdates: {},
     scheduledTasks: {
@@ -7190,17 +5632,12 @@ const zhMessages = {
       allStatuses: "全部状态",
       runs24h: "24 小时内运行次数",
       successRate24h: "24 小时成功率",
-      successRateDescription: "只统计成功状态的运行。",
       problemRuns24h: "异常运行次数",
-      retentionPrefix: "保留",
-      days: "天",
       failed: "失败",
       partial: "部分完成",
       lastRun: "最近运行",
       staleRunning: "长时间未完成的运行",
-      noStaleRunning: "没有长时间未完成的运行",
       taskListTitle: "任务",
-      taskListDescription: "当前系统注册的定时任务和近 30 天健康状况。",
       task: "任务",
       schedule: "计划",
       enabled: "状态",
@@ -7214,7 +5651,6 @@ const zhMessages = {
       avgDuration: "平均耗时",
       runHistoryTitle: "运行历史",
       nextRun: "下次运行",
-      runHistoryDescription: "最近 30 天内的任务运行记录。",
       noRuns: "暂无运行记录。",
       scheduledAt: "计划时间",
       startedAt: "开始时间",
@@ -7248,8 +5684,7 @@ const zhMessages = {
       taskDefinitions: {
         visit_hourly_rollup: {
           name: "小时访问聚合",
-          description:
-            "将已关闭的访问记录聚合为小时汇总，用于仪表盘计数器和趋势。",
+          description: "将已结束的访问汇总为每小时总计，供报表使用。",
           schedule: "每小时",
         },
         notification_tick: {
@@ -7259,40 +5694,31 @@ const zhMessages = {
         },
         database_maintenance: {
           name: "数据库优化",
-          description: "分批清理过期运行数据和通知，并优化 D1 查询统计信息。",
+          description: "清理过期的任务运行记录和通知，并优化数据库。",
           schedule: "每天",
         },
       },
+      keptForDays: "保留 {days} 天",
     },
   },
   adminUsers: {
     columns: {},
   },
   adminSites: {
-    createTitle: "新建站点",
-    name: "站点名称",
+    createTitle: "添加站点",
+    name: "名称（可选）",
     domain: "域名",
-    publicSlug: "公开 Slug（可选）",
-    create: "创建站点",
-    creating: "创建中...",
-    noData: "暂无站点数据。",
-    loadFailed: "加载站点失败。",
-    createSuccess: "站点创建成功。",
-    createFailed: "站点创建失败。",
-    invalidInput: "请填写有效的站点名称和域名。",
-    open: "打开分析",
-    columns: {
-      name: "名称",
-      domain: "域名",
-      created: "创建时间",
-      action: "操作",
-    },
+    create: "添加站点",
+    creating: "添加中...",
+    createSuccess: "站点已添加。",
+    createFailed: "无法添加站点，请重试。",
+    invalidDomain: "请输入域名，例如 example.com。",
+    columns: {},
   },
   adminTeams: {
     columns: {},
   },
   requestObservation: {
-    title: "请求观测",
     blockedTotal: "已拦截请求",
     retentionNote: "保留 30 天。放行的流量见各站点的仪表盘。",
     topReasons: "原因",
@@ -7304,8 +5730,8 @@ const zhMessages = {
     },
     tabs: {},
     refresh: "刷新",
-    loadFailed: "加载请求观测数据失败。",
-    noData: "当前时间窗口内没有请求数据。",
+    loadFailed: "无法加载被拦截的请求。",
+    noData: "此期间没有被拦截的请求。",
     time: "时间",
     site: "站点",
     location: "位置",
@@ -7347,54 +5773,9 @@ const zhMessages = {
     normalDetail: {},
   },
   systemSettings: {
-    title: "系统设置",
-    subtitle: "管理当前 OpenAnalytics 实例的全站配置。",
-    guide: "教程",
-    analyticsEngineTitle: "分析引擎",
-    analyticsEngineDescription:
-      "配置用于读取请求观测以及未来流量和事件分析数据的 Cloudflare 凭据。",
-    analyticsEngineAccountIdLabel: "Cloudflare Account ID",
-    analyticsEngineApiTokenLabel: "Cloudflare API Token",
-    analyticsEngineApiTokenPlaceholder: "查看教程以获取 Cloudflare API Token",
-    analyticsEngineSaved: "分析引擎配置已保存。",
-    analyticsEngineSaveFailed: "保存分析引擎配置失败。",
-    analyticsEngineDeleted: "分析引擎配置已删除。",
-    analyticsEngineDeleteFailed: "删除分析引擎配置失败。",
-    analyticsEngineDeleteConfirm:
-      "确认删除分析引擎读取凭据吗？删除后，依赖 Analytics Engine 的功能将显示为未配置。",
-    analyticsEngineDisabledTitle: "Analytics Engine 尚未启用",
-    analyticsEngineDisabledDescription:
-      "当前部署已自动禁用 Analytics Engine 绑定，因为 Cloudflare 账户尚未启用 Analytics Engine。请先在 Cloudflare 中启用 Analytics Engine，然后重新部署 Open Analytics 以激活相关分析功能。",
-    analyticsEngineDisabledHint:
-      "在启用 Analytics Engine 并重新部署 Worker 前，分析引擎设置不可修改。",
-    analyticsEngineOpenCloudflare: "打开 Cloudflare Analytics Engine",
-    analyticsEngineGuideTitle: "获取分析引擎配置",
-    analyticsEngineGuideDescription:
-      "分析引擎需要 Cloudflare 账号信息和一个可读取 Analytics Engine 的 API Token。",
-    analyticsEngineGuideSteps: [
-      "打开 Cloudflare Dashboard，进入目标账号并复制 Account ID。",
-      "在 Workers & Pages 中启用 Analytics Engine；Request、Traffic 和 Event 三个数据集会随部署自动创建并绑定。",
-      "前往 My Profile → API Tokens，创建 Custom token。",
-      "为 Token 添加 Account Analytics 读取权限，并限制到当前账号。",
-      "保存后复制 Token，回到这里填写 Account ID 和 API Token。",
-    ],
     notificationEmailTitle: "邮件通知",
-    notificationEmailDescription:
-      "报告、提醒和测试消息通过 Every App 网关以邮件发送。",
-    emailGatewayReady: "Every App 网关负责发送通知邮件。",
-    emailGatewayNotReady:
-      "Every App 网关尚未配置邮件发件人。网关管理员设置 EMAIL_FROM 和 Email Sending 后即可发送通知邮件。",
+    emailGatewayNotReady: "此 Every App 网关尚未设置邮件。",
     emailSenderLabel: "发件人",
-    notificationEmailGuideTitle: "获取 Resend 邮件配置",
-    notificationEmailGuideDescription:
-      "使用 Resend 发送系统邮件前，需要准备发件域名和 API Key。",
-    notificationEmailGuideSteps: [
-      "打开 Resend Dashboard，并确认要作为发件人的域名已完成 DNS 验证。",
-      "在 API Keys 页面创建新的 API Key。",
-      "选择发送邮件所需的权限，并复制生成后的 API Key。",
-      "回到这里填写发件人名称、发件邮箱、Reply-To 和 Resend API Key。",
-      "保存后使用测试收件人发送一封测试邮件，确认投递链路正常。",
-    ],
     retentionTitle: "运行数据保留期",
     retentionDescription:
       "配置任务运行记录、任务日志、通知消息和详细分析数据的保留时间。任务和通知的修改只影响新建记录；超出新期限的详细分析数据会在下一次每日运行时删除。",
@@ -7409,74 +5790,18 @@ const zhMessages = {
     retentionSaving: "保存中...",
     retentionSaved: "保留期配置已保存。",
     retentionSaveFailed: "保存保留期配置失败。",
-    loginTurnstileTitle: "登录 Turnstile 防护",
-    loginTurnstileDescription:
-      "启用后，登录页会在后台执行 Cloudflare Turnstile Invisible 验证，并在服务端登录流程中强制校验。",
-    loginTurnstileEnabledLabel: "启用登录保护",
-    loginTurnstileSiteKeyLabel: "Site Key",
-    loginTurnstileSecretKeyLabel: "Secret Key",
-    loginTurnstileSecretKeyPlaceholder: "查看教程以获取 Turnstile Secret Key",
-    loginTurnstileModeLabel: "验证模式",
-    loginTurnstileModeInvisible: "隐形（Invisible）",
-    loginTurnstileTest: "测试配置",
-    loginTurnstileTesting: "验证中...",
-    loginTurnstileTestPassed: "验证成功",
-    loginTurnstileTestRequired: "新 Secret Key 需要先测试",
-    loginTurnstileTestMissing: "请先填写 Site Key 和 Secret Key。",
-    loginTurnstileTestFailed: "验证失败，请检查 Site Key 与 Secret Key。",
-    loginTurnstileSaved: "登录 Turnstile 配置已保存。",
-    loginTurnstileSaveFailed: "保存登录 Turnstile 配置失败。",
-    loginTurnstileDeleted: "登录 Turnstile 配置已删除。",
-    loginTurnstileDeleteFailed: "删除登录 Turnstile 配置失败。",
-    loginTurnstileDeleteConfirm:
-      "确认删除登录 Turnstile 配置吗？删除后登录保护将关闭。",
-    loginTurnstileLoadFailed: "加载登录 Turnstile 配置失败。",
-    loginTurnstilePrivacyNotice:
-      "请在 Cloudflare Turnstile 控制台创建 Invisible widget。自托管站点启用后，请自行确认隐私政策与 Cloudflare Turnstile 要求匹配。",
-    loginTurnstileGuideTitle: "获取 Turnstile 配置",
-    loginTurnstileGuideDescription:
-      "登录保护需要 Cloudflare Turnstile 的 Site Key 和 Secret Key。",
-    loginTurnstileGuideSteps: [
-      "打开 Cloudflare Dashboard，进入 Turnstile。",
-      "新建一个 widget，并选择 Invisible 模式。",
-      "添加当前 OpenAnalytics 登录域名到允许的主机名列表。",
-      "创建后复制 Site Key 和 Secret Key。",
-      "回到这里填写 Site Key 和 Secret Key，先运行测试验证，再保存配置。",
-    ],
-    enabledLabel: "启用邮件发送",
     enabledOn: "开启",
     enabledOff: "关闭",
-    providerLabel: "邮件服务",
-    providerResend: "Resend",
-    fromNameLabel: "发件人名称",
-    fromEmailLabel: "发件人邮箱",
-    replyToLabel: "Reply-To 邮箱",
-    replyToPlaceholder: "可选，默认使用发件人邮箱",
-    resendApiKeyLabel: "Resend API Key",
-    resendApiKeyPlaceholder: "查看教程以获取 Resend API Key",
-    testRecipientLabel: "测试收件人",
-    save: "保存配置",
-    saving: "保存中...",
-    test: "发送测试邮件",
-    testing: "发送中...",
-    saved: "邮件配置已保存。",
-    saveFailed: "保存邮件配置失败。",
-    delete: "删除配置",
-    deleting: "删除中...",
     cancel: "取消",
-    deleted: "邮件配置已删除。",
-    deleteFailed: "删除邮件配置失败。",
-    deleteConfirm:
-      "确认删除邮件通知配置吗？删除后系统将视为未配置并关闭邮件发送。",
-    testSent: "测试邮件已发送。",
-    testFailed: "测试邮件发送失败。",
-    loadFailed: "加载邮件配置失败。",
+    retentionLowerTitle: "删除较早的分析数据？",
+    retentionLowerDescription:
+      "超过 {days} 天的页面浏览和事件会在下一次每日运行时删除，小时汇总会保留。此操作无法撤销。",
+    retentionLowerConfirm: "保存并删除",
   },
   systemPerformance: {
-    title: "系统性能",
     refresh: "刷新",
-    loadFailed: "加载系统性能数据失败。",
-    noData: "当前时间窗口内暂无系统性能数据。",
+    loadFailed: "无法加载接收数据。",
+    noData: "此期间没有接收数据。",
     range15m: "最近 15 分钟",
     range1h: "最近 1 小时",
     range6h: "最近 6 小时",
@@ -7502,8 +5827,7 @@ const zhMessages = {
     customEvents: "自定义事件",
     anomalyBucket: "异常分桶",
     openVisitHealth: "未关闭访问堆积",
-    openVisitHealthDescription:
-      "尚未被离开事件、路由切换或超时收尾关闭的访问行。",
+    openVisitHealthDescription: "尚未结束的访问。",
     open: "未关闭",
     stale: "停滞",
     timedOut: "已超时",
@@ -7517,20 +5841,18 @@ const zhMessages = {
     events: "事件",
     avgLatency: "平均延迟",
     slowestEventsTitle: "估算最慢事件",
-    slowestEventsDescription:
-      "当前窗口内服务端写入时间与事件时间正向差值最大的记录。",
+    slowestEventsDescription: "从发生到保存延迟最长的事件。",
     eventTime: "事件时间",
     serverTime: "服务端写入时间",
     estimatedDelay: "估算延迟",
-    doDiagnosticTitle: "DO 内部缓冲诊断",
-    doDiagnosticDescription:
-      "诊断每个站点的专用 Durable Object 中的数据停滞情况。",
-    doDiagnosticLoadFailed: "加载 DO 诊断数据失败。",
-    doDiagnosticLoading: "正在拉取每个 DO 的状态…",
-    doDiagnosticRun: "运行 DO 诊断",
-    doDiagnosticEmpty: "暂无站点 DO 状态。",
-    doDiagnosticUnreachable: "部分站点 DO 不可达",
-    doDiagnosticReachableSites: "可达 DO",
+    doDiagnosticTitle: "缓冲数据",
+    doDiagnosticDescription: "检查每个站点尚未保存的数据。",
+    doDiagnosticLoadFailed: "无法检查缓冲数据。",
+    doDiagnosticLoading: "正在检查每个站点…",
+    doDiagnosticRun: "检查缓冲数据",
+    doDiagnosticEmpty: "暂无缓冲数据。",
+    doDiagnosticUnreachable: "不可达站点",
+    doDiagnosticReachableSites: "可达站点",
     doDiagnosticTotalSites: "总站点",
     doDiagnosticActiveAlarms: "活跃 Alarm 定时器",
     doDiagnosticBufferedVisits: "缓冲访问",
@@ -7542,11 +5864,10 @@ const zhMessages = {
     doDiagnosticStuckDirty: "未刷新且卡住",
     doDiagnosticMaxFlushAttempts: "最大重试次数",
     doDiagnosticBufferedCustomEvents: "缓冲自定义事件",
-    doDiagnosticOldestOpen: "最早未关闭起始",
+    doDiagnosticOldestOpen: "最早未关闭的访问",
     doDiagnosticFutureMaxActivity: "最晚的未来活动时间",
     doDiagnosticSiteList: "风险最高的站点",
-    doDiagnosticSiteListDescription:
-      "按风险评分排序，前 20 个站点的 DO 内部缓冲快照。",
+    doDiagnosticSiteListDescription: "风险最高的 20 个站点。",
     doDiagnosticSiteFailed: "不可达",
     doDiagnosticSiteOpen: "未关闭",
     doDiagnosticSiteStuck: "卡滞",
@@ -7560,8 +5881,6 @@ const zhMessages = {
     doDiagnosticSiteNextDueHidden: "隐藏回退",
     doDiagnosticSiteNextDueTimeout: "访问超时",
     doDiagnosticSiteResponseMs: "响应耗时",
-    doDiagnosticThresholdsHint:
-      "阈值：stale {stale}，timeout {timeout}，hardAged {hardAged}，stuck flush_attempts ≥ {stuck}",
     doDiagnosticHealthy: "当前未发现异常缓冲行。",
   },
   loginForm: {},
@@ -7575,7 +5894,7 @@ const zhMessages = {
     toggleSidebar: "切换侧边栏",
     sources: "来源",
     audience: "受众",
-    conversions: "转化",
+    goals: "目标",
     sites: "站点",
     allSites: "所有站点",
     inbox: "收件箱",
@@ -7595,38 +5914,32 @@ const zhMessages = {
     steps: {
       site: "添加第一个站点",
       tracking: "跟踪你的网站",
-      team: "邀请团队成员",
+      team: "邀请成员",
       notifications: "通过邮件接收报告",
       sharing: "分享公开仪表盘",
     },
-    noSitesTitle: "还没有站点",
-    noSitesDescription: "添加一个站点，然后把它的脚本放到你的页面上。",
+    noSitesTitle: "添加第一个站点",
+    memberNoSitesTitle: "还没有站点",
+    memberNoSitesDescription: "请让管理员添加一个。",
     addSite: "添加站点",
     waitingTitle: "正在等待第一次页面浏览",
-    waitingDescription:
-      "把这段脚本添加到 {domain} 的每个页面。页面浏览会在一分钟内显示在这里。",
     copy: "复制",
     copied: "已复制",
-    trackingSettings: "跟踪设置",
   },
   settingsNav: {
     label: "设置",
-    personal: "个人",
-    organization: "组织",
-    system: "系统",
+    system: "系统健康",
     account: "账户",
-    sites: "站点",
     notifications: "通知",
-    publicLinks: "公开链接",
-    general: "通用",
-    scheduledTasks: "计划任务",
-    requestObservation: "请求观测",
-    performance: "性能",
     cancel: "取消",
-    managerOnly: "只有所有者或管理员可以修改。",
-    dangerZone: "危险操作",
-    copy: "复制",
-    copied: "已复制",
+  },
+  systemHealth: {
+    tabs: {
+      tasks: "计划任务",
+      blocked: "已拦截请求",
+      ingestion: "数据接收",
+      data: "数据",
+    },
   },
 } as AppMessages;
 
@@ -7640,18 +5953,15 @@ const zhTwMessages = {
     realtime: "即時",
     pages: "頁面",
     referrers: "來源",
-    sessions: "工作階段",
     events: "事件",
-    funnels: "漏斗",
-    goals: "目標",
+    funnels: "目標與漏斗",
     campaigns: "推廣",
     visitors: "訪客",
     retention: "留存",
     geo: "位置",
     devices: "裝置",
-    browsers: "瀏覽器",
     performance: "效能",
-    settings: "設定",
+    settings: "站點設定",
   },
   common: {
     deviceLabels: {
@@ -7706,19 +6016,16 @@ const zhTwMessages = {
     screenSize: "螢幕大小",
     loading: "載入中",
     noData: "暫無資料",
+    loadFailed: "無法載入",
+    retry: "重試",
+    filteredEmpty: "沒有符合這些篩選條件的資料",
+    clearFilters: "清除篩選",
+    trend: "趨勢",
     unknown: "未知",
-    lastUpdated: "更新時間",
     site: "站點",
-    team: "團隊",
-    management: "管理",
-    backToTeam: "返回團隊",
     system: "系統",
-    account: "帳戶",
     theme: "主題",
     language: "語言",
-    role: "角色",
-    admin: "管理員",
-    user: "普通使用者",
     search: "搜尋",
     open: "開啟",
     sortBy: "按 {label} 排序",
@@ -7748,26 +6055,17 @@ const zhTwMessages = {
       dragHint: "拖動調整順序",
       close: "關閉",
     },
-    time: "時間",
-    cycle: "週期",
     close: "關閉",
     sitesFiltered: "已篩選 {active} / {total} 個站點",
     cumulativeTraffic: "全部週期累計流量",
     cumulativeEvents: "全部週期累計事件",
   },
   ranges: {
-    last30m: "30分鐘",
-    last1h: "1小時",
     today: "今天",
     yesterday: "昨天",
-    thisWeek: "本週",
-    thisMonth: "本月",
-    thisYear: "今年",
-    last24h: "最近 24 小時",
     last7d: "最近 7 天",
     last30d: "最近 30 天",
     last90d: "最近 90 天",
-    last6m: "最近 6 個月",
     last12m: "最近 12 個月",
     custom: "自訂時間段",
   },
@@ -7779,43 +6077,25 @@ const zhTwMessages = {
     month: "月",
   },
   dashboardHeader: {
-    range: "時間範圍",
     interval: "時間間隔",
     compareButton: "對比",
     compareTitle: "對比設定",
-    compareSubtitle: "選擇對比周期和篩選條件。",
     compareTimeLabel: "對比時間",
     compareCurrentPeriod: "目前週期",
-    compareCurrentPeriodDescription: "使用目前選定的時間範圍。",
     comparePreviousPeriod: "上一週期",
-    comparePreviousPeriodDescription: "使用目前週期之前的同等長度時間範圍。",
     compareFilterLabel: "對比篩選",
     compareFollowCurrentFilter: "跟隨目前篩選",
-    compareFollowCurrentFilterDescription: "使用目前頁面的篩選條件。",
     compareCustomFilter: "自訂篩選",
-    compareCustomFilterDescription: "為對比單獨設定篩選條件。",
     compareApply: "應用對比",
     compareCancel: "取消",
-    compareDisabled: "目前頁面中對比不可用。",
     filterButton: "篩選",
     filterButtonEvent: "篩選 (事件)",
     filterButtonSession: "篩選 (工作階段)",
     filterButtonVisitor: "篩選 (訪客)",
-    customRange: "選擇自訂區間",
     customHint: "請選擇開始和結束日期。",
     customPendingEnd: "已選擇開始日期，請繼續選擇結束日期。",
     customApply: "應用日期範圍",
-    rangeGroupQuick: "快速範圍",
-    rangeGroupCalendar: "自然週期",
-    rangeGroupRolling: "滾動視窗",
-    rangeGroupAdvanced: "高階",
-    intervalDisabledMinute: "僅在 1 小時內可選分鐘間隔。",
-    intervalDisabledHour: "僅在 7 天內可選小時間隔。",
-    intervalDisabledDay: "僅在最近 90 天內可選日間隔。",
-    intervalDisabledWeek: "僅在最近 12 個月內可選周間隔。",
     filterTitle: "篩選條件",
-    filterSubtitle: "新建、儲存篩選條件，或者使用個人/團隊儲存的篩選條件。",
-    filterDisabledRealtime: "即時頁面中篩選不可用。",
     previousPeriod: "上個週期",
     nextPeriod: "下個週期",
     customSelectionSummary: "目前選擇：{from} 至 {to}（共 {days} 天）",
@@ -8007,7 +6287,7 @@ const zhTwMessages = {
     naturalLanguageDescription: "自然語言描述",
     expressionInvalid: "表示式無效，點選檢視語法幫助",
     expressionHelpTitle: "篩選表示式語法",
-    expressionHelpDescription: "可用欄位和運算子由目前篩選契約動態產生。",
+    expressionHelpDescription: "可在篩選運算式中使用的欄位和運算子。",
     expressionHelpSyntax: "語法",
     expressionHelpLogicDescription:
       "AND 的優先順序高於 OR。使用括號表達巢狀；AND(...) 和 OR(...) 可保留明確的單條件分組。",
@@ -8104,15 +6384,7 @@ const zhTwMessages = {
     savedFiltersLoading: "正在取得已儲存的篩選...",
     noSavedFilter: "不使用已儲存的篩選",
     systemPresets: "系統預設",
-    systemPresetCategories: {
-      acquisition: "獲客",
-      device: "裝置",
-      visitBehavior: "造訪行為",
-      sessionEngagement: "工作階段參與度",
-      visitorBehavior: "訪客行為",
-      performance: "效能",
-      dataQuality: "資料品質",
-    },
+    advanced: "進階",
     systemPresetScopes: {
       preserve: "保留目前範圍",
       event: "事件範圍",
@@ -8124,17 +6396,9 @@ const zhTwMessages = {
         name: "直接造訪",
         description: "沒有外部來源的造訪。",
       },
-      externalReferrals: {
-        name: "外部來源造訪",
-        description: "透過外部來源進入的造訪。",
-      },
       organicSearchDiscovery: {
         name: "自然搜尋發現",
         description: "沒有行銷活動標記的搜尋引擎來源造訪。",
-      },
-      organicSocialDiscovery: {
-        name: "自然社交發現",
-        description: "沒有行銷活動標記的社交網路來源造訪。",
       },
       campaignTaggedTraffic: {
         name: "帶活動標記的流量",
@@ -8144,140 +6408,20 @@ const zhTwMessages = {
         name: "行動裝置流量",
         description: "來自行動裝置的造訪。",
       },
-      desktopTraffic: {
-        name: "電腦端流量",
-        description: "來自桌上型裝置的造訪。",
-      },
-      campaignTaggedExternalAcquisition: {
-        name: "帶標記的外部獲客",
-        description: "帶有行銷活動標記的外部來源造訪。",
-      },
-      campaignTaggedDirectEntry: {
-        name: "帶標記的直接造訪",
-        description: "帶有行銷活動標記的直接造訪。",
-      },
-      untaggedExternalReferrals: {
-        name: "未標記的外部來源",
-        description: "沒有行銷活動標記的外部來源造訪。",
-      },
-      mobileAcquiredTraffic: {
-        name: "行動裝置活動獲客",
-        description: "來自外部且帶有行銷活動標記的行動裝置造訪。",
-      },
-      mobileOrganicDiscovery: {
-        name: "行動裝置自然發現",
-        description: "透過搜尋或社群發現、且沒有活動標記的行動裝置造訪。",
-      },
-      desktopDirectAudience: {
-        name: "電腦端直接受眾",
-        description: "來自桌上型裝置、且沒有活動標記的直接造訪。",
-      },
-      geographicAttributionGap: {
-        name: "地理歸因缺口",
-        description: "有外部來源但未記錄國家的造訪。",
-      },
-      tabletTraffic: {
-        name: "平板電腦流量",
-        description: "來自平板裝置的造訪。",
-      },
-      longPageViews: {
-        name: "長時頁面瀏覽",
-        description: "持續至少 30 秒的頁面瀏覽。",
-      },
-      shortPageViews: {
-        name: "短時頁面瀏覽",
-        description: "持續少於 10 秒的頁面瀏覽。",
-      },
-      identifiedActivity: {
-        name: "已識別活動",
-        description: "與已識別使用者關聯的事件。",
-      },
-      customEventActivity: {
-        name: "自訂事件活動",
-        description: "記錄了自訂事件名稱的事件。",
-      },
       bouncedSessions: {
         name: "跳出工作階段",
         description: "只包含一次頁面瀏覽的工作階段。",
-      },
-      nonBouncedSessions: {
-        name: "非跳出工作階段",
-        description: "包含多次頁面瀏覽的工作階段。",
-      },
-      longSessions: {
-        name: "長工作階段",
-        description: "持續至少五分鐘的工作階段。",
-      },
-      shortSessions: {
-        name: "短工作階段",
-        description: "持續少於一分鐘的工作階段。",
-      },
-      deepSessions: {
-        name: "深度工作階段",
-        description: "至少瀏覽三個頁面的工作階段。",
-      },
-      eventfulSessions: {
-        name: "活躍工作階段",
-        description: "至少包含一個自訂事件的工作階段。",
-      },
-      highEngagementSessions: {
-        name: "高參與度工作階段",
-        description: "至少三次瀏覽且包含兩個自訂事件的工作階段。",
       },
       returningVisitors: {
         name: "回訪訪客",
         description: "至少擁有兩個工作階段的訪客。",
       },
-      frequentVisitors: {
-        name: "高頻訪客",
-        description: "至少擁有五個工作階段的訪客。",
-      },
-      deepVisitors: {
-        name: "深度訪客",
-        description: "至少瀏覽五個頁面的訪客。",
-      },
-      eventfulVisitors: {
-        name: "活躍訪客",
-        description: "至少產生兩個自訂事件的訪客。",
-      },
-      identifiedVisitors: {
-        name: "已識別訪客",
-        description: "與已識別使用者關聯的訪客。",
-      },
-      organicSearchVisitors: {
-        name: "自然搜尋訪客",
-        description: "擁有未標記搜尋來源的訪客。",
-      },
-      coreWebVitalsNeedsImprovement: {
-        name: "Core Web Vitals 需改進",
-        description: "超過 Core Web Vitals 閾值的造訪。",
-      },
-      slowLcp: {
-        name: "LCP 較慢",
-        description: "LCP 超過 2.5 秒的造訪。",
-      },
-      slowInp: {
-        name: "INP 較慢",
-        description: "INP 超過 200 毫秒的造訪。",
-      },
-      highCls: {
-        name: "CLS 較高",
-        description: "CLS 超過 0.1 的造訪。",
-      },
-      slowTtfb: {
-        name: "TTFB 較慢",
-        description: "TTFB 超過 800 毫秒的造訪。",
-      },
-      slowFcp: {
-        name: "FCP 較慢",
-        description: "FCP 超過 1.8 秒的造訪。",
-      },
     },
     savedFiltersPersonal: "個人篩選",
-    savedFiltersTeam: "團隊篩選",
+    savedFiltersTeam: "組織篩選",
     savedFiltersAuthor: "作者：{name}",
     savedFiltersPrivate: "個人",
-    savedFiltersTeamShared: "已共享給團隊",
+    savedFiltersTeamShared: "已與組織共享",
     saveThisFilter: "儲存此篩選",
     saveAsThisFilter: "另存此篩選",
     manageThisFilter: "管理此篩選",
@@ -8293,13 +6437,14 @@ const zhTwMessages = {
     scopeVisitor: "篩選滿足這些條件的訪客",
     savedFilterVisibility: "可見性",
     savedFilterVisibilityPrivate: "僅自己可見",
-    savedFilterVisibilityTeam: "與團隊共享",
+    savedFilterVisibilityTeam: "與組織共享",
     savedFilterCreateDescription: "儲存目前的篩選表示式，以便之後再次套用。",
     savedFilterManageDescription: "更新此篩選的基本資訊，或開始編輯篩選條件。",
     editSavedFilter: "修改此篩選",
     deleteSavedFilter: "刪除此篩選",
     deleteSavedFilterTitle: "刪除此篩選？",
-    deleteSavedFilterDescription: "刪除後無法恢復，團隊成員也將無法再使用它。",
+    deleteSavedFilterDescription:
+      "刪除後無法恢復，組織中的其他成員也將無法再使用它。",
     savedFilterCancel: "取消",
     savedFilterSave: "儲存",
     savedFilterSaving: "正在儲存...",
@@ -8318,9 +6463,9 @@ const zhTwMessages = {
   },
   realtime: {
     title: "即時",
-    subtitle: "檢視最近 30 分鐘的造訪情況",
     logTitleSeparator: "：",
     activeNow: "目前線上",
+    liveCount: "{count} 人在線",
     liveMetrics: "目前線上 / 近 30 分鐘訪客 / 近 30 分鐘瀏覽量",
     connected: "已連線",
     connecting: "連線中",
@@ -8387,7 +6532,7 @@ const zhTwMessages = {
     leaveAt: "離開時間",
   },
   overview: {
-    title: "造訪總覽",
+    title: "總覽",
     trendTitle: "造訪趨勢",
     sourceTab: "來源",
     sourceDomainColumn: "來源（網域）",
@@ -8411,15 +6556,39 @@ const zhTwMessages = {
     },
     searchInTab: "搜尋{tab}",
   },
+  install: {
+    title: "將指令碼加入你的網站",
+    platforms: {
+      html: "HTML",
+      wordpress: "WordPress",
+      shopify: "Shopify",
+      nextjs: "Next.js",
+      gtm: "Google 代碼管理工具",
+    },
+    steps: {
+      html: "在每個頁面的 {tag} 之前貼上它。",
+      wordpress:
+        "用 WPCode 等頁首指令碼外掛加入，或貼到佈景主題 header.php 的 {tag} 之前。",
+      shopify:
+        "在「線上商店 → 佈景主題 → 編輯程式碼」中開啟 theme.liquid，貼到 {tag} 之前。",
+      nextjs: "在 app/layout.tsx 的 {tag} 中貼上它。",
+      gtm: "用它建立一個「自訂 HTML」代碼，觸發條件選「所有網頁」，然後發布。",
+    },
+    waiting: "正在等待第一次頁面瀏覽",
+    received: "已收到第一次頁面瀏覽，報表將在一分鐘內更新。",
+    firstViewsTitle: "第一批頁面瀏覽已到達！",
+    nextReports: "透過電子郵件接收報告",
+    nextInvite: "邀請成員",
+    dismiss: "關閉",
+  },
   pages: {
-    title: "頁面分析",
+    title: "頁面",
     pagesPerSession: "每工作階段頁面數",
     changePercentColumnLabel: "{metric}變化（%）",
     changePointsColumnLabel: "{metric}變化（百分點）",
     percentagePointSuffix: "個百分點",
     untitled: "未命名頁面",
-    empty: "目前篩選條件下暫無頁面資料。",
-    loadError: "頁面資料載入失敗，請稍後重試。",
+    empty: "尚無頁面",
     loadMoreError: "載入更多頁面失敗。",
     trendTitle: "頁面造訪趨勢",
     otherPages: "其他頁面",
@@ -8432,44 +6601,26 @@ const zhTwMessages = {
     viewDetails: "檢視詳情",
   },
   referrers: {
-    title: "來源分析",
-    summaryTitle: "來源概覽",
+    title: "來源",
     splitTitle: "來源拆分",
-    chartTitle: "來源結構",
-    radarTitle: "前 24 來源雷達圖",
-    radarSubtitle: "對比主要來源在多項行為指標上的表現",
-    radarDuration: "停留時長",
-    radarEngagement: "互動率",
-    radarDepth: "瀏覽深度",
-    radarLoyalty: "回訪率",
-    radarFrequency: "造訪頻次",
-    radarTraffic: "流量佔比",
-    directSourceNote: "這部分流量沒有外部來源站點，屬於直接造訪。",
     breakdownTitle: "來源明細",
-    directViews: "直接造訪量",
-    uniqueDomains: "來源網域數",
-    uniqueLinks: "來源連結數",
-    topSource: "主要外部來源",
-    topSourceShare: "造訪佔比",
-    noExternalSource: "暫無外部來源",
     externalLabel: "外部來源",
-    nextSources: "其他 4 個來源",
     longTail: "長尾來源",
     channelLongTail: "其他管道",
   },
   campaigns: {
-    title: "推廣活動",
-    tabSource: "來源",
+    title: "推廣",
+    tabSource: "UTM 來源",
     tabMedium: "媒介",
     tabCampaign: "活動",
     tabTerm: "關鍵詞",
     tabContent: "內容",
-    breakdownTitle: "UTM 明細",
     notSet: "未設定",
-    noTaggedTraffic: "目前篩選範圍內暫無帶 UTM 標籤的流量。",
+    noTaggedTraffic: "此期間尚無帶 UTM 標籤的造訪",
+    taggedLinkHint: "在連結中加入 UTM 標籤，例如",
   },
   sessions: {
-    title: "工作階段列表",
+    title: "工作階段",
     search: "搜尋工作階段...",
     started: "開始時間",
     sessionId: "工作階段 ID",
@@ -8537,12 +6688,8 @@ const zhTwMessages = {
     range: "範圍",
   },
   events: {
-    title: "自訂事件",
-    subtitle: "檢視事件規模、上下文、事件載荷欄位與原始觸發記錄。",
+    title: "事件",
     detailTitle: "事件詳情",
-    detailSubtitle: "檢視單次事件的上下文與事件載荷。",
-    typeDetailSubtitle:
-      "檢視該事件的趨勢、上下文分佈、事件載荷結構與觸發記錄。",
     backToEvents: "返回事件總覽",
     totalEvents: "事件總數",
     eventTypes: "事件型別",
@@ -8569,7 +6716,6 @@ const zhTwMessages = {
     payloadFilterInvalid: "無法解析篩選條件，請檢查欄位路徑、運算子和值。",
     expandField: "展開欄位",
     collapseField: "收起欄位",
-    breakdownTitle: "上下文分佈",
     search: "搜尋事件名、ID、訪客、工作階段、頁面...",
     eventName: "事件名",
     eventId: "事件 ID",
@@ -8602,30 +6748,27 @@ const zhTwMessages = {
     loadError: "無法載入事件資料。",
     detailNotFound: "未找到該事件記錄。",
     empty: "目前篩選範圍內沒有自訂事件。",
+    noCustomEvents: "此期間尚無自訂事件",
     emptyFields: "目前事件暫無事件載荷欄位。",
     noEventName: "缺少事件名。",
     loading: "載入中",
     other: "其他",
   },
   funnels: {
-    title: "漏斗分析",
-    subtitle: "衡量多步驟使用者旅程的轉換情況。",
+    title: "漏斗",
     listTitle: "漏斗定義",
-    listSubtitle: "建立可重複使用的步驟序列，並按目前看板時間窗檢視轉換。",
     conversionRecords: "轉換記錄",
     converted: "已轉換",
     dropped: "已流失",
     open: "開啟漏斗",
     moreActions: "更多操作",
-    create: "新建漏斗",
     createTitle: "建立漏斗",
-    createDescription: "至少定義兩個有順序的觀察篩選步驟。",
     nameLabel: "名稱",
     namePlaceholder: "註冊啟用",
     stepsLabel: "步驟",
     addStep: "新增步驟",
     removeStep: "移除步驟",
-    progression: "轉換主體",
+    progression: "計數依據",
     conversionWindow: "轉換視窗",
     custom: "自訂",
     customWindowHours: "自訂視窗（小時）",
@@ -8654,9 +6797,6 @@ const zhTwMessages = {
     deleteDescription: "這會移除已儲存的漏斗定義，不會刪除歷史分析資料。",
     deleteConfirm: "刪除漏斗",
     deleting: "刪除中...",
-    empty: "暫無漏斗。",
-    emptyHint: "使用頁面瀏覽和自訂事件建立漏斗來追蹤轉換。",
-    loadError: "無法載入漏斗。",
     detailLoadError: "無法載入漏斗分析。",
     invalidFunnel: "請填寫名稱，並至少補全兩個篩選步驟。",
     created: "漏斗已建立。",
@@ -8682,11 +6822,9 @@ const zhTwMessages = {
   },
   goals: {
     title: "目標分析",
-    listSubtitle: "檢視這段時間範圍內的轉換率變化情況",
     conversionRecords: "轉換記錄",
     open: "開啟目標",
     moreActions: "更多操作",
-    create: "新建目標",
     createTitle: "建立目標",
     nameLabel: "名稱",
     namePlaceholder: "完成購買",
@@ -8702,9 +6840,6 @@ const zhTwMessages = {
     deleteTitle: "刪除目標",
     deleteDescription: "這會移除已儲存的目標定義，不會刪除歷史分析資料。",
     deleteConfirm: "刪除目標",
-    empty: "暫無目標。",
-    emptyHint: "使用頁面條件或自訂事件建立目標來追蹤轉換。",
-    loadError: "無法載入目標。",
     detailLoadError: "無法載入目標分析。",
     invalidGoal: "請填寫名稱，並補全轉換條件。",
     created: "目標已建立。",
@@ -8720,8 +6855,17 @@ const zhTwMessages = {
     timeseries: "轉換率",
     updated: "更新於",
   },
+  conversions: {
+    new: "新增",
+    newGoal: "目標",
+    newGoalDescription: "單一步驟，例如註冊",
+    newFunnel: "漏斗",
+    newFunnelDescription: "依序完成的多個步驟",
+    empty: "尚無目標或漏斗",
+    emptyMemberHint: "管理員可以建立。",
+  },
   visitors: {
-    title: "訪客分析",
+    title: "訪客",
     search: "搜尋訪客...",
     visitor: "訪客",
     anonymous: "匿名訪客",
@@ -8794,8 +6938,8 @@ const zhTwMessages = {
     range: "範圍",
   },
   retention: {
-    title: "留存分析",
-    subtitle: "基於群組的訪客回訪分析。",
+    title: "留存",
+    cohortBy: "群組週期：{interval}",
     cohortDate: "群組日期",
     cohortSize: "人數",
     periodLabel: "第 {n} 期",
@@ -8815,18 +6959,16 @@ const zhTwMessages = {
     legendHigh: "高",
     periodZero: "初始",
     empty: "目前時間範圍內沒有足夠的回訪資料。",
-    emptyHint:
-      "擴大時間範圍，或在頂部選擇更粗的時間間隔，可以更快看到留存形態。",
+    emptyHint: "在日期選單中選擇更長的時間範圍或更粗的時間間隔。",
     loadError: "無法載入留存資料。",
     unavailableCell: "該群組還沒有進入這個週期。",
     visitorsDetail: "訪客",
     rateDetail: "留存率",
-    cohortDetail: "群組",
     sizeDetail: "人數",
   },
   geo: {
-    title: "位置分析",
-    mapTitle: "請求地理分佈",
+    title: "位置",
+    mapTitle: "訪客分布",
     countryLabel: "國家/地區",
     regionLabel: "州/省",
     cityLabel: "市/縣",
@@ -8881,64 +7023,27 @@ const zhTwMessages = {
     },
   },
   devices: {
-    title: "裝置分析",
-    deviceShareTitle: "裝置型別佔比",
-    osShareTitle: "作業系統佔比",
-    deviceTrendTitle: "裝置型別趨勢",
-    osTrendTitle: "作業系統趨勢",
-    screenDistributionTitle: "螢幕尺寸分佈",
-    screenDistributionSubtitle: "識別最常見的視口尺寸和響應式斷點。",
-    screenBucketTitle: "斷點分桶",
-    screenPreviewTitle: "螢幕預覽",
-    selectedViewportLabel: "目前視口",
-    openSiteLabel: "開啟站點",
-    previewUnavailableLabel: "目前沒有可預覽的螢幕尺寸。",
-    browserByDeviceTitle: "裝置型別 × 瀏覽器",
-    osByDeviceTitle: "裝置型別 × 作業系統",
-    otherLabel: "其他",
-    screenBucketLabels: {
-      phoneCompact: "小屏手機",
-      phone: "手機",
-      tablet: "平板",
-      laptop: "筆記本",
-      desktopWide: "寬屏桌面",
-      unclassified: "未歸類",
+    title: "裝置",
+    shareTitle: "訪客佔比",
+    dimensions: {
+      device: "裝置",
+      os: "作業系統",
+      browser: "瀏覽器",
+      engine: "引擎",
+      screenSize: "螢幕尺寸",
     },
+    crossTabTitle: "交叉分析",
+    crossTabRows: "列",
+    crossTabColumns: "拆分依據",
+    otherLabel: "其他",
+    screenBucketLabels: {},
   },
   browsers: {
-    title: "瀏覽器分析",
-    trendTitle: "瀏覽器佔比趨勢",
-    engineTrendTitle: "核心佔比趨勢",
-    versionBreakdownTitle: "瀏覽器版本分佈",
-    osBreakdownTitle: "瀏覽器 × 系統",
-    deviceTypeBreakdownTitle: "瀏覽器 × 裝置型別",
     otherLabel: "其他",
-    browserShareTitle: "瀏覽器佔比",
-    engineShareTitle: "核心佔比",
-    caniuseTitle: "特性相容性",
-    caniuseSubtitle: "根據站點訪客資料檢查 Web 特性的瀏覽器支援情況。",
-    caniuseSearchPlaceholder: "搜尋 Web 特性…",
-    caniuseHotFeatures: "熱門特性",
-    caniuseTrendingFeatures: "近期變動",
-    caniuseSiteSupport: "本站支援率",
-    caniuseGlobalSupport: "全球支援率",
-    caniuseClearSelection: "清除",
-    caniuseNoMatch: "找不到相符的功能。",
-    caniuseFullSupport: "完全支援",
-    caniusePartialSupport: "部分支援",
-    caniuseNoSupport: "不支援",
-    radarTitle: "瀏覽器行為雷達圖",
-    radarSubtitle: "對比主流瀏覽器在多項行為指標上的表現",
-    radarDuration: "停留時長",
-    radarEngagement: "互動率",
-    radarDepth: "瀏覽深度",
-    radarLoyalty: "回訪率",
-    radarFrequency: "造訪頻次",
-    radarTraffic: "流量佔比",
   },
   performance: {
-    title: "效能追蹤",
-    subtitle: "按指標、趨勢與路徑檢視真實訪客效能。",
+    title: "效能",
+    empty: "尚無 Web Vitals 資料",
     chartTitle: "效能趨勢",
     avgLabel: "平均值",
     samplesLabel: "樣本數",
@@ -8969,7 +7074,7 @@ const zhTwMessages = {
     great: "優秀",
     needsImprovement: "需要改進",
     poor: "較差",
-    datasetTitle: "資料集概覽",
+    datasetTitle: "門檻",
     interpretationTitle: "目前解讀",
     currentReading:
       "{metric} 目前 P75 為 {value}，體驗評分為 {score}，覆蓋 {samples} 個樣本。目前判定：{status}。",
@@ -8983,33 +7088,41 @@ const zhTwMessages = {
     metricValueColumn: "P75 數值",
     statusColumn: "狀態",
   },
-  share: {},
+  share: {
+    noData: "尚無資料",
+  },
   siteSettings: {
     title: "站點設定",
     sections: {
       basic: {
-        title: "基本資訊",
+        title: "一般",
       },
       tracking: {
-        title: "追蹤設定",
+        title: "追蹤",
       },
       blocking: {
-        title: "遮蔽規則",
+        title: "攔截規則",
       },
       protection: {
-        title: "請求防護",
+        title: "防護",
       },
       danger: {
-        title: "危險區域",
+        title: "危險操作",
+      },
+      install: {
+        title: "安裝",
+      },
+      advanced: {
+        title: "進階",
       },
     },
-    nameLabel: "站點名稱",
+    nameLabel: "名稱",
     domainLabel: "網域",
-    publicSharingTitle: "公開分享",
-    publicEnabledLabel: "啟用公開存取",
-    publicSlugLabel: "公開 Slug",
+    publicSharingTitle: "分享",
+    publicEnabledLabel: "公開看板",
+    publicSlugLabel: "連結路徑",
     publicSlugPlaceholder: "例如 my-site",
-    publicSlugHint: "自訂 URL 路徑標識。留空將自動產生。",
+    publicSlugHint: "連結中 /share/ 之後的部分。",
     publicLinkLabel: "公開連結",
     copiedLink: "連結已複製",
     trackingStrengthGroupTitle: "追蹤強度",
@@ -9025,18 +7138,14 @@ const zhTwMessages = {
     botProtectionEnabledHint:
       "開啟後攔截高置信度機器人請求；關閉後這類請求仍會計入統計。",
     hostingProxyBlockingEnabledLabel: "攔截託管/代理網路請求",
-    hostingProxyBlockingEnabledHint:
-      "開啟後攔截來自託管或代理網路的疑似機器人請求，預設關閉。",
-    trackQueryParamsLabel: "開啟查詢參數追蹤",
-    trackHashLabel: "開啟 Hash 追蹤",
-    blockingRulesSave: "儲存遮蔽規則",
-    blockingRulesSaving: "正在儲存遮蔽規則...",
+    hostingProxyBlockingEnabledHint: "攔截來自託管或代理網路的疑似機器人請求。",
+    trackQueryParamsLabel: "追蹤查詢參數",
+    trackHashLabel: "追蹤 URL 雜湊",
+    blockingRulesSave: "儲存規則",
     blockingRulesDialogs: {
-      testButton: "測試",
-      helpButton: "幫助",
       searchButton: "搜尋",
       searchTitle: "搜尋地區",
-      searchDescription: "按名稱或程式碼搜尋，選擇結果後將其新增到此卡片。",
+      searchDescription: "依名稱或代碼搜尋，然後選擇結果。",
       searchInputLabel: "搜尋",
       searchInputPlaceholder: "按名稱或程式碼搜尋",
       searchCountryLabel: "國家 / 地區",
@@ -9046,198 +7155,60 @@ const zhTwMessages = {
       searchNoResults: "找不到符合條件的地區。",
       searchLoadError: "無法載入地區，請稍後重試。",
       searchClose: "關閉",
-      helpTitle: "規則語法",
-      helpDescription: "檢視此欄位的語法、示例和優先順序規則。",
-      syntaxTitle: "語法",
-      examplesTitle: "示例設定",
-      actionsTitle: "規則動作",
-      actionsDescription:
-        "一般規則會遮蔽；在規則前加上 - 表示允許。如果多條規則同時符合，則以最後符合的規則為準。",
-      actionBlock: "符合 {example} 時遮蔽",
-      actionAllow: "符合 {example} 時允許",
-      statusEmpty: "目前無任何針對 {field} 的遮蔽規則。",
-      statusValid: "目前規則有效。",
-      statusInvalid: "目前規則無效，請點選右側“幫助”取得詳細資訊。",
-      errorInvalidRule: "無效規則。",
-      errorInvalidLines: "{field} 的規則必須按行填寫。",
-      errorInvalidLine: "第 {line} 行不是有效的文字規則。",
-      errorLineTooLong: "第 {line} 行過長。",
-      errorTooManyLines: "規則行數過多。",
-      errorInvalidPattern: "第 {line} 行的規則格式無效。",
-      testTitle: "測試規則",
-      testDescription:
-        "輸入請求值以測試目前卡片中的規則，未儲存的編輯內容也會參與測試。",
-      testRun: "執行測試",
-      testClose: "關閉",
-      testInvalidRules: "請先修復無效規則，然後再進行測試。",
-      testInvalidRule: "無效規則。",
-      testBlocked: "已遮蔽",
-      testAllowed: "已允許",
-      testNoMatch: "沒有任何規則符合，因此允許此欄位的值。",
-      testMatchedRules: "符合的規則",
-      testActionBlock: "遮蔽",
-      testActionAllow: "允許",
-      testLine: "第",
     },
     blockingRulesFields: {
       domains: {
         title: "網域",
-        label: "網域規則（每行一條）",
-        placeholder: "*\n-example.com\n-*.example.com\nadmin.example.com\n",
-        hint: "比對頁面 hostname；使用 * 與 -網域 規則可建立允許清單。",
-        syntax:
-          "每行格式：[ - ] hostname-glob\n以 # 開頭的行將被視為註釋並忽略。\n使用 * 作為萬用字元；以 - 開頭表示允許規則。\n比對時不區分大小寫，並使用頁面 hostname。\n",
-        examples: ["*", "-example.com", "-*.example.com", "admin.example.com"],
-        exampleDescription:
-          "這段設定先遮蔽所有網域，再允許 example.com 及其子網域，最後再遮蔽與 admin.example.com 完全相符的網域。",
-        testLabel: "主機名稱",
-        testPlaceholder: "www.example.com",
-        testHint: "輸入頁面 hostname，不要包含協議或路徑。",
+        placeholder: "admin.example.com",
       },
       paths: {
         title: "路徑",
-        label: "路徑規則（每行一條）",
-        placeholder: "/admin/*\n/checkout/*/confirm\n-/admin/health\n",
-        hint: "使用 glob 語法比對正規化後的 URL 路徑。",
-        syntax:
-          "每行格式：[ - ] /path-glob\n以 # 開頭的行將被視為註釋並忽略。\n路徑必須以 / 開頭，* 可以比對任意字元。\nURL 路徑正規化後按區分大小寫的方式比對。\n",
-        examples: ["/admin/*", "/checkout/*/confirm", "-/admin/health"],
-        exampleDescription:
-          "這段設定遮蔽 /admin/ 下的路徑和符合 /checkout/*/confirm 的路徑，但允許 /admin/health。",
-        testLabel: "URL 路徑",
-        testPlaceholder: "/admin/settings",
-        testHint: "只輸入 pathname，並保留開頭的斜槓。",
+        placeholder: "/admin/*",
       },
       queryParameters: {
         title: "查詢參數",
-        label: "查詢參數規則（每行一條）",
-        placeholder: "utm_*\nutm_source=*\n-utm_source=trusted\n",
-        hint: "支援 key 或 key=value，鍵和值都支援 * 萬用字元。",
-        syntax:
-          "每行格式：[ - ] key-glob[=value-glob]\n以 # 開頭的行將被視為註釋並忽略。\n省略 = 時，表示比對該鍵的任意值。\n區分大小寫，鍵和值都支援 * 萬用字元。\n",
-        examples: ["utm_*", "utm_source=*", "-utm_source=trusted"],
-        exampleDescription:
-          "這段設定遮蔽所有以 utm_ 開頭的參數以及 utm_source 的任意值，但允許 utm_source=trusted。",
-        testLabel: "查詢字串",
-        testPlaceholder: "utm_source=internal&utm_campaign=spring",
-        testHint: "輸入查詢字串，可帶或不帶開頭的 ?。",
+        placeholder: "utm_source=spam",
       },
       referrers: {
         title: "來源",
-        label: "來源規則（每行一條）",
-        placeholder:
-          "*.example.com\nsocial.example.com\n-trusted.example.com\n",
-        hint: "比對來源頁面的 hostname。",
-        syntax:
-          "每行格式：[ - ] hostname-glob\n以 # 開頭的行將被視為註釋並忽略。\nURL 會先轉換為 hostname，然後再進行比對。\n比對時不區分大小寫，並支援 * 萬用字元。\n",
-        examples: [
-          "*.example.com",
-          "social.example.com",
-          "-trusted.example.com",
-        ],
-        exampleDescription:
-          "這段設定遮蔽 example.com 的來源網域和 social.example.com，但允許 trusted.example.com。",
-        testLabel: "來源",
-        testPlaceholder: "https://social.example.com/article",
-        testHint: "輸入來源 URL 或 hostname。",
+        placeholder: "*.spam.example",
       },
       userAgents: {
         title: "User-Agent",
-        label: "User-Agent 規則（每行一條）",
-        placeholder: "*bot*\nMozilla/*\n-Googlebot\n",
-        hint: "不區分大小寫地使用 glob 語法比對請求 User-Agent。",
-        syntax:
-          "每行格式：[ - ] text-glob\n以 # 開頭的行將被視為註釋並忽略。\n* 可以比對請求 User-Agent 中的任意字元。\n比對時不區分大小寫。\n",
-        examples: ["*bot*", "Mozilla/*", "-Googlebot"],
-        exampleDescription:
-          "這段設定遮蔽包含 bot 的 User-Agent 和以 Mozilla/ 開頭的值，但允許 Googlebot。",
-        testLabel: "User-Agent",
-        testPlaceholder: "Mozilla/5.0 (compatible; ExampleBot/1.0)",
-        testHint: "輸入完整或部分請求 User-Agent。",
+        placeholder: "*bot*",
       },
       ips: {
-        title: "IP 地址",
-        label: "IP 規則（每行一條）",
-        placeholder:
-          "203.0.113.15\n2001:db8::1\n203.0.113.0/24\n2001:db8::/32\n-203.0.113.10..203.0.113.20\n",
-        hint: "支援 IPv4/IPv6、CIDR 網段以及起始..結束範圍。",
-        syntax:
-          "每行格式：[ - ] address | CIDR | start..end\n以 # 開頭的行將被視為註釋並忽略。\n支援 IPv4 和 IPv6 地址。\n範圍兩端必須使用相同地址族，且起點不能大於終點。\n",
-        examples: [
-          "203.0.113.15",
-          "2001:db8::1",
-          "203.0.113.0/24",
-          "2001:db8::/32",
-          "-203.0.113.10..203.0.113.20",
-        ],
-        exampleDescription:
-          "這段設定演示 IPv4/IPv6 單個地址、CIDR 網段和 start..end 範圍；範圍前的 - 表示允許該範圍。",
-        testLabel: "IP 地址",
-        testPlaceholder: "203.0.113.15",
-        testHint: "輸入一個 IPv4 或 IPv6 地址進行測試。",
+        title: "IP 位址",
+        placeholder: "203.0.113.0/24",
       },
       asns: {
         title: "ASN",
-        label: "ASN 規則（每行一條）",
-        placeholder: "64500\n*\n-64501\n",
-        hint: "比對 Cloudflare metadata 中的數字自治系統編號。",
-        syntax:
-          "每行格式：[ - ] ASN-number\n以 # 開頭的行將被視為註釋並忽略。\n使用 * 比對任意 ASN。\n測試 metadata 值時也接受可選的 AS 字首。\n",
-        examples: ["64500", "*", "-64501"],
-        exampleDescription:
-          "這段設定遮蔽 ASN 64500 和任意 ASN，但透過最後一條規則放行 ASN 64501。",
-        testLabel: "ASN",
-        testPlaceholder: "64500",
-        testHint: "輸入數字自治系統編號。",
+        placeholder: "64500",
       },
       countries: {
-        title: "國家 / 地區",
-        label: "國家規則（每行一條）",
-        placeholder: "DE\n*\n-US\n",
-        hint: "使用 ISO 3166-1 alpha-2 國家程式碼。",
-        syntax:
-          "每行格式：[ - ] ISO-3166-alpha-2\n以 # 開頭的行將被視為註釋並忽略。\n使用 * 比對任意國家。\n國家程式碼比對時不區分大小寫。\n",
-        examples: ["DE", "*", "-US"],
-        exampleDescription:
-          "這段設定遮蔽 DE 和任意國家，但透過最後一條規則放行 US。",
-        testLabel: "國家程式碼",
-        testPlaceholder: "DE",
-        testHint: "輸入 ISO 3166-1 alpha-2 國家程式碼。",
+        title: "國家/地區",
+        placeholder: "DE",
       },
       regions: {
-        title: "州 / 省",
-        label: "地區規則（每行一條）",
-        placeholder: "DE-BE\n*\n-US-CA\n",
-        hint: "使用 Cloudflare metadata 中的 COUNTRY-REGION_CODE 格式。",
-        syntax:
-          "每行格式：[ - ] COUNTRY-REGION_CODE\n以 # 開頭的行將被視為註釋並忽略。\n使用 * 比對任意地區。\n地區值比對時不區分大小寫。\n",
-        examples: ["DE-BE", "*", "-US-CA"],
-        exampleDescription:
-          "這段設定遮蔽 DE-BE 和任意地區，但透過最後一條規則放行 US-CA。",
-        testLabel: "地區程式碼",
-        testPlaceholder: "US-CA",
-        testHint: "輸入 metadata 中的 COUNTRY-REGION_CODE 值。",
+        title: "州/省",
+        placeholder: "US-CA",
       },
     },
-    ignoreDoNotTrackLabel: "忽略瀏覽器 Do Not Track",
+    ignoreDoNotTrackLabel: "忽略「請勿追蹤」",
     autoTrackOutboundLinksLabel: "自動追蹤外鏈點選",
     autoTrackOutboundLinksHint:
       "開啟後，點選指向外部網域的連結將自動回報 outbound_click 事件。",
-    performanceSampleRateLabel: "效能取樣率（%）",
+    performanceSampleRateLabel: "Web Vitals 取樣率",
     performanceSampleRateHint:
       "被取樣的造訪會在離開頁面時記錄 TTFB、FCP、LCP、CLS 和 INP。填 0 表示不採樣，100 表示全量採集。",
-    saveTracking: "儲存追蹤設定",
-    savingTracking: "正在儲存追蹤設定…",
-    save: "儲存修改",
+    save: "儲存",
     saving: "儲存中...",
-    scriptTitle: "安裝統計指令碼",
-    scriptHint:
-      "推薦放在 </head> 結束標籤前；若不方便，也可放在 </body> 前，但請確保每頁只加載一次。",
+    scriptHint: "將其貼到每個頁面的 </head> 之前。",
     copyScript: "複製指令碼",
     copiedScript: "指令碼已複製。",
     scriptUnavailable: "目前無法取得指令碼。",
     deleteTitle: "刪除站點",
-    deleteSubtitle: "此操作會將目前站點從團隊中移除。",
+    deleteSubtitle: "刪除該站點及其所有分析資料。",
     delete: "刪除站點",
     deleting: "刪除中...",
     deleteConfirm: "該操作不可撤銷，是否繼續？",
@@ -9246,11 +7217,25 @@ const zhTwMessages = {
       saveFailed: "站點設定儲存失敗。",
       scriptLoadFailed: "載入指令碼片段失敗。",
       settingsLoadFailed: "載入指令碼設定失敗。",
-      settingsPropagationHint: "設定分發到全球節點可能需要最多 1 小時。",
+      settingsPropagationHint: "變更最多需要一小時生效。",
       deleted: "站點已刪除。",
       deleteFailed: "刪除站點失敗。",
       invalidInput: "請填寫有效的站點名稱和網域。",
     },
+    publicEnabledHint: "任何取得連結的人都可以查看此站點的報表。",
+    viewBlockedRequests: "查看已攔截請求",
+    blockingRulesHelp:
+      "符合「攔截」規則的請求不會被統計，「允許」用於設定例外。同一類型的多條規則都符合時，以最後一條為準。可使用 * 作為萬用字元。",
+    blockingRuleTypeLabel: "類型",
+    blockingRuleActionLabel: "動作",
+    blockingRuleValueLabel: "值",
+    blockingRuleBlock: "攔截",
+    blockingRuleAllow: "允許",
+    blockingRuleAdd: "新增規則",
+    blockingRuleRemove: "移除規則",
+    blockingRulesEmpty: "沒有攔截規則。",
+    blockingRuleInvalid: "請輸入此類型的有效值。",
+    blockingRulesTooMany: "{type} 規則過多。",
   },
   accountSettings: {
     emailManagedByGateway: "電子郵件來自你的 Every App 帳戶。",
@@ -9258,75 +7243,29 @@ const zhTwMessages = {
     nicknameLabel: "暱稱",
     nicknamePlaceholder: "例如：產品分析師",
     emailLabel: "電子郵件",
-    profileSave: "儲存個人資訊",
-    profileSaving: "儲存中...",
     profileSaved: "個人資訊已儲存。",
     profileSaveFailed: "儲存個人資訊失敗。",
-    preferredLanguageTitle: "通知語言",
-    preferredLanguageLabel: "郵件語言",
-    preferredLanguageDefault: "預設",
-    preferredLanguageEnglish: "英語",
-    preferredLanguageChinese: "簡體中文",
-    preferredLanguageTraditionalChinese: "繁體中文",
-    preferredLanguageJapanese: "日語",
-    preferredLanguageSaved: "通知語言已儲存。",
-    preferredLanguageSaveFailed: "儲存通知語言失敗。",
-    timeZoneTitle: "報表時區",
-    activeTimeZone: "目前生效時區",
-    browserTimeZone: "瀏覽器時區",
+    timeZoneTitle: "時區",
     browserUnavailable: "未檢測到",
-    preferenceLabel: "時區偏好",
-    useBrowser: "跟隨瀏覽器時區",
-    useCustom: "選擇時區",
-    customTimeZoneLabel: "時區",
-    invalidTimeZone: "請選擇有效的 IANA 時區。",
-    save: "儲存偏好",
-    saving: "儲存中...",
-    saved: "時區偏好已儲存。",
-    saveFailed: "儲存時區偏好失敗。",
+    useBrowser: "瀏覽器時區（{zone}）",
+    saved: "時區已儲存。",
+    saveFailed: "無法儲存時區。",
+    timeZoneLabel: "報表時區",
+    languageSaveFailed: "無法儲存語言。",
   },
   notificationCenter: {
-    title: "通知中心",
+    title: "收件匣",
     empty: "暫無通知。",
     loading: "正在載入通知",
     markRead: "標記已讀",
     markAllRead: "全部標記為已讀",
-    refresh: "重新整理",
-    attention: "重點",
     loadFailed: "載入通知失敗。",
     markReadFailed: "標記通知為已讀失敗。",
     markAllReadSuccess: "通知已全部標記為已讀。",
     markAllReadFailed: "全部標記為已讀失敗。",
-    ruleFilterActive: "正在檢視此規則產生的通知。",
-    ruleFilterClear: "清除篩選",
-    sections: {
-      importantTitle: "重要通知",
-      importantDescription: "{count} 條未讀重點通知。",
-      importantEmpty: "目前沒有重要通知。",
-      reportsTitle: "報告",
-      reportsDescription: "檢視通知規則產生的定期報告。",
-      reportsEmpty: "目前沒有報告。",
-    },
     tabs: {
       all: "全部",
       unread: "未讀",
-      attention: "重點",
-      report: "報告",
-    },
-    tabDescriptions: {
-      all: "全部訊息",
-      unread: "等待檢視",
-      attention: "需要關注",
-      report: "定期報告",
-    },
-    messageTypes: {
-      report: "報告",
-      milestone: "里程碑",
-      threshold: "閾值",
-      change: "變化",
-      health: "健康",
-      system: "系統",
-      test: "測試",
     },
     severities: {
       info: "資訊",
@@ -9334,52 +7273,15 @@ const zhTwMessages = {
       warning: "警告",
       critical: "嚴重",
     },
-    deliveryStatuses: {
-      created: "已建立",
-      sending: "傳送中",
-      sent: "已傳送",
-      partial: "部分完成",
-      failed: "失敗",
-      skipped: "已跳過",
-    },
-    channels: {
-      inApp: "站內通知",
-      email: "郵件",
-    },
-    channelStatuses: {
-      sent: "已傳送",
-      skipped: "已跳過",
-      failed: "失敗",
-      created: "已建立",
-    },
-    emailSkipReasons: {
-      user_preference_disabled: "使用者已關閉郵件通知",
-      system_email_unconfigured: "系統郵件尚未設定",
-      recipient_email_invalid: "收件人電子郵件無效",
-      secret_decryption_failed: "儲存的郵件憑據無法解密",
-      provider_failed: "郵件服務商拒絕傳送",
-      network_failed: "無法連線郵件服務商",
-      unknown: "未知原因",
-    },
-    emailAttempts: "嘗試次數：{count}",
-    emailRetryCount: "重試次數：{count}",
-    emailDuration: "{duration} 毫秒",
-    typeFilterLabel: "型別",
-    severityFilterLabel: "嚴重程度",
-    allTypes: "全部型別",
-    allSeverities: "全部嚴重程度",
     preferencesTitle: "通知偏好",
     emailNotificationsLabel: "郵件通知",
-    emailNotificationsDescription: "規則觸發時傳送郵件。",
-    reportsUnreadLabel: "報告保持未讀",
-    reportsUnreadDescription: "報告建立後保持未讀狀態。",
-    milestonesUnreadLabel: "里程碑保持未讀",
-    milestonesUnreadDescription: "將未讀狀態保留給里程碑訊息。",
-    alertsUnreadLabel: "告警保持未讀",
-    alertsUnreadDescription: "閾值和健康告警保持未讀。",
-    preferencesSaved: "通知偏好已儲存。",
+    reportsUnreadLabel: "新報告標為未讀",
+    milestonesUnreadLabel: "新里程碑標為未讀",
+    alertsUnreadLabel: "新提醒標為未讀",
     preferencesSaveFailed: "儲存通知偏好失敗。",
     detailFields: {},
+    noUnread: "沒有未讀通知。",
+    emailFailed: "郵件傳送失敗",
   },
   notificationEmail: {
     common: {
@@ -9466,20 +7368,11 @@ const zhTwMessages = {
     },
   },
   runtimeConfigError: {
-    title: "需要執行時設定",
-    eyebrow: "部署已暫停",
-    heading: "OpenAnalytics 需要一個執行時金鑰後才能載入控制台。",
-    description:
-      "應用已經啟動，但目前執行環境沒有讀取到必需的 root secret，因此暫時阻止進入控制台。",
-    requiredTitle: "必需的執行時金鑰",
-    requiredDescription: "請在 Cloudflare 執行時金鑰中至少設定以下其中一個值。",
-    secretHint: "推薦使用 MAIN_SECRET。舊部署仍可繼續使用 DAILY_SALT_SECRET。",
-    commandTitle: "Cloudflare 命令",
-    commandDescription: "使用專案內建命令寫入推薦金鑰，然後重新部署。",
-    quickStartHint:
-      "或者，請檢視 GitHub README 的“快速開始”章節來設定這個變數。",
-    docsLabel: "開啟 GitHub",
-    homeLabel: "重試控制台",
+    title: "儀表板無法使用",
+    heading: "此儀表板暫時無法使用。",
+    setupSummary: "設定此部署",
+    setupCommand: "用這條命令設定根金鑰，然後重新整理此頁面。",
+    docsLabel: "部署指南",
   },
   login: {},
   accountLinks: {
@@ -9490,25 +7383,12 @@ const zhTwMessages = {
   },
   empty: {},
   errorPage: {
-    notFoundEyebrow: "頁面未找到",
     notFoundTitle: "找不到這個頁面",
     notFoundDescription: "地址可能不正確，或者頁面已經被移動。",
-    errorEyebrow: "應用錯誤",
     errorTitle: "頁面出現了問題",
-    errorDescription:
-      "OpenAnalytics 無法完成這次請求。下面的診斷資訊可以幫助我們定位問題。",
-    statusLabel: "狀態",
-    reasonLabel: "原因",
-    requestLabel: "請求路徑",
-    timestampLabel: "時間",
-    diagnosticIdLabel: "診斷 ID",
-    errorTypeLabel: "錯誤型別",
-    errorMessageLabel: "錯誤資訊",
-    notFoundReason: "route_not_found",
-    unexpectedReason: "unexpected_application_error",
+    errorDescription: "OpenAnalytics 無法完成這次請求。",
     homeAction: "返回首頁",
     reportAction: "在 GitHub 反饋",
-    reportHint: "將開啟一個已預填內容的 GitHub Issue，提交前請先檢查資訊。",
   },
   actions: {
     switchToEnglish: "English",
@@ -9530,27 +7410,28 @@ const zhTwMessages = {
       openAnalytics: "檢視分析",
       title: "所有站點",
       pagesPerSession: "每工作階段頁面數",
+      public: "公開",
+      openPublic: "開啟公開儀表板",
     },
     widgets: {},
     notifications: {
-      empty: "目前團隊還沒有通知規則。",
+      empty: "還沒有通知規則。",
       rulesTitle: "通知規則",
-      enabledCount: "目前團隊已啟用 {count} 條規則。",
+      enabledCount: "此組織已啟用 {count} 條規則。",
       loadingRules: "正在載入通知規則",
       deliveryTestTitle: "投遞測試",
       deliveryTestDescription:
         "為你建立一條站內通知；如果可用，也會嘗試傳送郵件。",
       inAppTestHint: "我們會向你傳送一條站內通知。",
       emailTestConfiguredHint: "我們會向你傳送一條測試郵件。",
-      emailTestUnconfiguredHint:
-        "目前系統未設定郵件傳送服務，請聯絡管理員新增。",
+      emailTestUnconfiguredHint: "此 Every App 閘道尚未設定郵件。",
       sendTestNotification: "傳送測試通知",
       loadRulesFailed: "載入通知規則失敗。",
       testNotificationSent: "測試通知已傳送。",
       sendTestNotificationFailed: "傳送測試通知失敗。",
       createRule: "建立規則",
       editRule: "編輯規則",
-      dialogDescription: "為目前團隊設定一條基礎通知規則。",
+      dialogDescription: "為此組織設定一條通知規則。",
       ruleInfoSection: "規則資訊",
       scheduleSection: "計劃",
       sendScheduleSection: "傳送時間",
@@ -9608,7 +7489,6 @@ const zhTwMessages = {
       disable: "停用",
       delete: "刪除",
       saveRule: "儲存規則",
-      emailPreview: "郵件預覽",
       preview: "預覽",
       runNow: "立即執行",
       previewFailed: "預覽規則失敗。",
@@ -9665,7 +7545,6 @@ const zhTwMessages = {
         title: "標題",
         htmlPreview: "HTML 預覽",
         bodyText: "正文",
-        data: "資料",
         createdAt: "建立時間",
         updatedAt: "更新時間",
         loadingContent: "正在載入實際報告內容",
@@ -9688,14 +7567,14 @@ const zhTwMessages = {
       },
       recipientModes: {
         creator: "建立者",
-        team_admins: "團隊管理員",
+        team_admins: "組織管理員",
         all_team_members: "全部團隊成員",
         users: "指定使用者",
       },
       recipientKindLabel: "接收人型別",
       recipientPresetLabel: "預設",
       customRecipientsEmpty: "未選擇接收人",
-      noTeamMembers: "目前沒有可選團隊成員。",
+      noTeamMembers: "此組織還沒有成員。",
       recipientKinds: {
         preset: "預設",
         custom: "自訂",
@@ -9740,27 +7619,16 @@ const zhTwMessages = {
         last_24h: "最近 24 小時",
         yesterday: "昨天",
       },
-      emailPreviewPage: {
-        title: "通知郵件預覽",
-        typeLabel: "預覽型別",
-        localeLabel: "預覽語言",
-        formatLabel: "預覽格式",
-        html: "HTML",
-        text: "純文字",
-        json: "JSON",
-        refresh: "預覽",
-        loading: "正在渲染預覽...",
-        loadFailed: "渲染郵件預覽失敗。",
-        subject: "主題",
+      addSiteFirst: "請先新增站點。",
+      deleteDescription: "此操作無法復原。",
+      previewStatuses: {
+        skipped: "已略過",
+        checked: "未觸發",
+        triggered: "已觸發",
       },
     },
     publicLinks: {
-      enabled: "已啟用",
-      disabled: "未啟用",
-      viewSettings: "檢視設定",
       copyLink: "複製連結",
-      linkCopied: "連結已複製",
-      noSites: "目前團隊還沒有站點。",
       columns: {},
     },
     apiKeys: {
@@ -9777,9 +7645,6 @@ const zhTwMessages = {
       roleLabels: {},
     },
   },
-  managementNav: {
-    scheduledTasks: "排程任務",
-  },
   managementPages: {
     versionUpdates: {},
     scheduledTasks: {
@@ -9790,17 +7655,12 @@ const zhTwMessages = {
       allStatuses: "全部狀態",
       runs24h: "24 小時內執行次數",
       successRate24h: "24 小時成功率",
-      successRateDescription: "只統計成功狀態的執行。",
       problemRuns24h: "異常執行次數",
-      retentionPrefix: "保留",
-      days: "天",
       failed: "失敗",
       partial: "部分完成",
       lastRun: "最近執行",
       staleRunning: "長時間未完成的執行",
-      noStaleRunning: "沒有長時間未完成的執行",
       taskListTitle: "任務",
-      taskListDescription: "目前系統註冊的排程任務和近 30 天健康狀況。",
       task: "任務",
       schedule: "計劃",
       enabled: "狀態",
@@ -9814,7 +7674,6 @@ const zhTwMessages = {
       avgDuration: "平均耗時",
       runHistoryTitle: "執行歷史",
       nextRun: "下次執行",
-      runHistoryDescription: "最近 30 天內的任務執行記錄。",
       noRuns: "暫無執行記錄。",
       scheduledAt: "計劃時間",
       startedAt: "開始時間",
@@ -9848,8 +7707,7 @@ const zhTwMessages = {
       taskDefinitions: {
         visit_hourly_rollup: {
           name: "小時造訪聚合",
-          description:
-            "將已關閉的造訪記錄聚合為小時彙總，用於儀表盤計數器和趨勢。",
+          description: "將已結束的造訪彙總為每小時總計，供報表使用。",
           schedule: "每小時",
         },
         notification_tick: {
@@ -9859,40 +7717,31 @@ const zhTwMessages = {
         },
         database_maintenance: {
           name: "資料庫最佳化",
-          description: "分批清理過期執行資料和通知，並最佳化 D1 查詢統計資訊。",
+          description: "清理過期的任務執行記錄和通知，並最佳化資料庫。",
           schedule: "每天",
         },
       },
+      keptForDays: "保留 {days} 天",
     },
   },
   adminUsers: {
     columns: {},
   },
   adminSites: {
-    createTitle: "新建站點",
-    name: "站點名稱",
+    createTitle: "新增站點",
+    name: "名稱（選填）",
     domain: "網域",
-    publicSlug: "公開 Slug（可選）",
-    create: "建立站點",
-    creating: "建立中...",
-    noData: "暫無站點資料。",
-    loadFailed: "載入站點失敗。",
-    createSuccess: "站點建立成功。",
-    createFailed: "站點建立失敗。",
-    invalidInput: "請填寫有效的站點名稱和網域。",
-    open: "開啟分析",
-    columns: {
-      name: "名稱",
-      domain: "網域",
-      created: "建立時間",
-      action: "操作",
-    },
+    create: "新增站點",
+    creating: "新增中...",
+    createSuccess: "站點已新增。",
+    createFailed: "無法新增站點，請重試。",
+    invalidDomain: "請輸入網域，例如 example.com。",
+    columns: {},
   },
   adminTeams: {
     columns: {},
   },
   requestObservation: {
-    title: "請求觀測",
     blockedTotal: "已封鎖請求",
     retentionNote: "保留 30 天。放行的流量見各站點的儀表板。",
     topReasons: "原因",
@@ -9904,8 +7753,8 @@ const zhTwMessages = {
     },
     tabs: {},
     refresh: "重新整理",
-    loadFailed: "載入請求觀測資料失敗。",
-    noData: "目前時間視窗內沒有請求資料。",
+    loadFailed: "無法載入被攔截的請求。",
+    noData: "此期間沒有被攔截的請求。",
     time: "時間",
     site: "站點",
     location: "位置",
@@ -9947,54 +7796,9 @@ const zhTwMessages = {
     normalDetail: {},
   },
   systemSettings: {
-    title: "系統設定",
-    subtitle: "管理目前 OpenAnalytics 例項的全站設定。",
-    guide: "教程",
-    analyticsEngineTitle: "分析引擎",
-    analyticsEngineDescription:
-      "設定用於讀取請求觀測以及未來流量和事件分析資料的 Cloudflare 憑據。",
-    analyticsEngineAccountIdLabel: "Cloudflare Account ID",
-    analyticsEngineApiTokenLabel: "Cloudflare API Token",
-    analyticsEngineApiTokenPlaceholder: "檢視教程以取得 Cloudflare API Token",
-    analyticsEngineSaved: "分析引擎設定已儲存。",
-    analyticsEngineSaveFailed: "儲存分析引擎設定失敗。",
-    analyticsEngineDeleted: "分析引擎設定已刪除。",
-    analyticsEngineDeleteFailed: "刪除分析引擎設定失敗。",
-    analyticsEngineDeleteConfirm:
-      "確認刪除分析引擎讀取憑據嗎？刪除後，依賴 Analytics Engine 的功能將顯示為未設定。",
-    analyticsEngineDisabledTitle: "Analytics Engine 尚未啟用",
-    analyticsEngineDisabledDescription:
-      "目前部署已自動停用 Analytics Engine 繫結，因為 Cloudflare 帳戶尚未啟用 Analytics Engine。請先在 Cloudflare 中啟用 Analytics Engine，然後重新部署 Open Analytics 以啟用相關分析功能。",
-    analyticsEngineDisabledHint:
-      "在啟用 Analytics Engine 並重新部署 Worker 前，分析引擎設定不可修改。",
-    analyticsEngineOpenCloudflare: "開啟 Cloudflare Analytics Engine",
-    analyticsEngineGuideTitle: "取得分析引擎設定",
-    analyticsEngineGuideDescription:
-      "分析引擎需要 Cloudflare 帳號資訊和一個可讀取 Analytics Engine 的 API Token。",
-    analyticsEngineGuideSteps: [
-      "開啟 Cloudflare Dashboard，進入目標帳號並複製 Account ID。",
-      "在 Workers & Pages 中啟用 Analytics Engine；Request、Traffic 和 Event 三個資料集會隨部署自動建立並繫結。",
-      "前往 My Profile → API Tokens，建立 Custom token。",
-      "為 Token 新增 Account Analytics 讀取權限，並限制到目前帳號。",
-      "儲存後複製 Token，回到這裡填寫 Account ID 和 API Token。",
-    ],
     notificationEmailTitle: "郵件通知",
-    notificationEmailDescription:
-      "報告、提醒和測試訊息透過 Every App 閘道以電子郵件寄送。",
-    emailGatewayReady: "Every App 閘道負責寄送通知郵件。",
-    emailGatewayNotReady:
-      "Every App 閘道尚未設定郵件寄件人。閘道管理員設定 EMAIL_FROM 和 Email Sending 後即可寄送通知郵件。",
+    emailGatewayNotReady: "此 Every App 閘道尚未設定郵件。",
     emailSenderLabel: "寄件人",
-    notificationEmailGuideTitle: "取得 Resend 郵件設定",
-    notificationEmailGuideDescription:
-      "使用 Resend 傳送系統郵件前，需要準備寄件網域和 API Key。",
-    notificationEmailGuideSteps: [
-      "開啟 Resend Dashboard，並確認寄件網域已完成 DNS 驗證。",
-      "在 API Keys 頁面建立新的 API Key。",
-      "選擇傳送郵件所需的權限，並複製產生後的 API Key。",
-      "回到這裡填寫發件人名稱、發件電子郵件、Reply-To 和 Resend API Key。",
-      "儲存後使用測試收件人傳送一封測試郵件，確認投遞鏈路正常。",
-    ],
     retentionTitle: "執行資料保留期",
     retentionDescription:
       "設定任務執行記錄、任務日誌、通知訊息和詳細分析資料的保留時間。任務和通知的修改只影響新建記錄；超出新期限的詳細分析資料會在下一次每日執行時刪除。",
@@ -10009,74 +7813,18 @@ const zhTwMessages = {
     retentionSaving: "儲存中...",
     retentionSaved: "保留期設定已儲存。",
     retentionSaveFailed: "儲存保留期設定失敗。",
-    loginTurnstileTitle: "登入 Turnstile 防護",
-    loginTurnstileDescription:
-      "啟用後，登入頁會在後臺執行 Cloudflare Turnstile Invisible 驗證，並在服務端登入流程中強制校驗。",
-    loginTurnstileEnabledLabel: "啟用登入保護",
-    loginTurnstileSiteKeyLabel: "Site Key",
-    loginTurnstileSecretKeyLabel: "Secret Key",
-    loginTurnstileSecretKeyPlaceholder: "檢視教程以取得 Turnstile Secret Key",
-    loginTurnstileModeLabel: "驗證模式",
-    loginTurnstileModeInvisible: "隱形（Invisible）",
-    loginTurnstileTest: "測試設定",
-    loginTurnstileTesting: "驗證中...",
-    loginTurnstileTestPassed: "驗證成功",
-    loginTurnstileTestRequired: "新 Secret Key 需要先測試",
-    loginTurnstileTestMissing: "請先填寫 Site Key 和 Secret Key。",
-    loginTurnstileTestFailed: "驗證失敗，請檢查 Site Key 與 Secret Key。",
-    loginTurnstileSaved: "登入 Turnstile 設定已儲存。",
-    loginTurnstileSaveFailed: "儲存登入 Turnstile 設定失敗。",
-    loginTurnstileDeleted: "登入 Turnstile 設定已刪除。",
-    loginTurnstileDeleteFailed: "刪除登入 Turnstile 設定失敗。",
-    loginTurnstileDeleteConfirm:
-      "確認刪除登入 Turnstile 設定嗎？刪除後登入保護將關閉。",
-    loginTurnstileLoadFailed: "載入登入 Turnstile 設定失敗。",
-    loginTurnstilePrivacyNotice:
-      "請在 Cloudflare Turnstile 控制台建立 Invisible widget。自託管站點啟用後，請自行確認隱私權政策符合 Cloudflare Turnstile 的使用要求。",
-    loginTurnstileGuideTitle: "取得 Turnstile 設定",
-    loginTurnstileGuideDescription:
-      "登入保護需要 Cloudflare Turnstile 的 Site Key 和 Secret Key。",
-    loginTurnstileGuideSteps: [
-      "開啟 Cloudflare Dashboard，進入 Turnstile。",
-      "建立 widget，並選擇 Invisible 模式。",
-      "將目前 OpenAnalytics 登入網域加入允許的主機名稱清單。",
-      "建立後複製 Site Key 和 Secret Key。",
-      "回到這裡填寫 Site Key 和 Secret Key，先執行測試驗證，再儲存設定。",
-    ],
-    enabledLabel: "啟用郵件傳送",
     enabledOn: "開啟",
     enabledOff: "關閉",
-    providerLabel: "郵件服務",
-    providerResend: "Resend",
-    fromNameLabel: "發件人名稱",
-    fromEmailLabel: "發件人電子郵件",
-    replyToLabel: "Reply-To 電子郵件",
-    replyToPlaceholder: "可選，預設使用發件人電子郵件",
-    resendApiKeyLabel: "Resend API Key",
-    resendApiKeyPlaceholder: "檢視教程以取得 Resend API Key",
-    testRecipientLabel: "測試收件人",
-    save: "儲存設定",
-    saving: "儲存中...",
-    test: "傳送測試郵件",
-    testing: "傳送中...",
-    saved: "郵件設定已儲存。",
-    saveFailed: "儲存郵件設定失敗。",
-    delete: "刪除設定",
-    deleting: "刪除中...",
     cancel: "取消",
-    deleted: "郵件設定已刪除。",
-    deleteFailed: "刪除郵件設定失敗。",
-    deleteConfirm:
-      "確認刪除郵件通知設定嗎？刪除後系統將視為未設定並關閉郵件傳送。",
-    testSent: "測試郵件已傳送。",
-    testFailed: "測試郵件傳送失敗。",
-    loadFailed: "載入郵件設定失敗。",
+    retentionLowerTitle: "刪除較早的分析資料？",
+    retentionLowerDescription:
+      "超過 {days} 天的頁面瀏覽和事件會在下一次每日執行時刪除，小時彙總會保留。此操作無法復原。",
+    retentionLowerConfirm: "儲存並刪除",
   },
   systemPerformance: {
-    title: "系統效能",
     refresh: "重新整理",
-    loadFailed: "載入系統效能資料失敗。",
-    noData: "目前時間視窗內暫無系統效能資料。",
+    loadFailed: "無法載入接收資料。",
+    noData: "此期間沒有接收資料。",
     range15m: "最近 15 分鐘",
     range1h: "最近 1 小時",
     range6h: "最近 6 小時",
@@ -10102,8 +7850,7 @@ const zhTwMessages = {
     customEvents: "自訂事件",
     anomalyBucket: "異常分桶",
     openVisitHealth: "未關閉造訪堆積",
-    openVisitHealthDescription:
-      "尚未被離開事件、路由切換或超時收尾關閉的造訪行。",
+    openVisitHealthDescription: "尚未結束的造訪。",
     open: "未關閉",
     stale: "停滯",
     timedOut: "已超時",
@@ -10117,20 +7864,18 @@ const zhTwMessages = {
     events: "事件",
     avgLatency: "平均延遲",
     slowestEventsTitle: "估算最慢事件",
-    slowestEventsDescription:
-      "目前視窗內伺服器端寫入時間與事件時間正向差值最大的記錄。",
+    slowestEventsDescription: "從發生到儲存延遲最長的事件。",
     eventTime: "事件時間",
     serverTime: "伺服器端寫入時間",
     estimatedDelay: "估算延遲",
-    doDiagnosticTitle: "DO 內部緩衝診斷",
-    doDiagnosticDescription:
-      "診斷每個站點的專用 Durable Object 中的資料停滯情況。",
-    doDiagnosticLoadFailed: "載入 DO 診斷資料失敗。",
-    doDiagnosticLoading: "正在拉取每個 DO 的狀態…",
-    doDiagnosticRun: "執行 DO 診斷",
-    doDiagnosticEmpty: "暫無站點 DO 狀態。",
-    doDiagnosticUnreachable: "部分站點 DO 不可達",
-    doDiagnosticReachableSites: "可達 DO",
+    doDiagnosticTitle: "緩衝資料",
+    doDiagnosticDescription: "檢查每個站點尚未儲存的資料。",
+    doDiagnosticLoadFailed: "無法檢查緩衝資料。",
+    doDiagnosticLoading: "正在檢查每個站點…",
+    doDiagnosticRun: "檢查緩衝資料",
+    doDiagnosticEmpty: "暫無緩衝資料。",
+    doDiagnosticUnreachable: "不可達站點",
+    doDiagnosticReachableSites: "可達站點",
     doDiagnosticTotalSites: "總站點",
     doDiagnosticActiveAlarms: "活躍 Alarm 定時器",
     doDiagnosticBufferedVisits: "緩衝造訪",
@@ -10142,11 +7887,10 @@ const zhTwMessages = {
     doDiagnosticStuckDirty: "未重新整理且卡住",
     doDiagnosticMaxFlushAttempts: "最大重試次數",
     doDiagnosticBufferedCustomEvents: "緩衝自訂事件",
-    doDiagnosticOldestOpen: "最早未關閉起始",
+    doDiagnosticOldestOpen: "最早未關閉的造訪",
     doDiagnosticFutureMaxActivity: "最晚的未來活動時間",
     doDiagnosticSiteList: "風險最高的站點",
-    doDiagnosticSiteListDescription:
-      "按風險評分排序，前 20 個站點的 DO 內部緩衝快照。",
+    doDiagnosticSiteListDescription: "風險最高的 20 個站點。",
     doDiagnosticSiteFailed: "不可達",
     doDiagnosticSiteOpen: "未關閉",
     doDiagnosticSiteStuck: "卡滯",
@@ -10160,8 +7904,6 @@ const zhTwMessages = {
     doDiagnosticSiteNextDueHidden: "隱藏回退",
     doDiagnosticSiteNextDueTimeout: "造訪超時",
     doDiagnosticSiteResponseMs: "響應耗時",
-    doDiagnosticThresholdsHint:
-      "閾值：stale {stale}，timeout {timeout}，hardAged {hardAged}，stuck flush_attempts ≥ {stuck}",
     doDiagnosticHealthy: "目前未發現異常緩衝行。",
   },
   loginForm: {},
@@ -10175,7 +7917,7 @@ const zhTwMessages = {
     toggleSidebar: "切換側邊欄",
     sources: "來源",
     audience: "受眾",
-    conversions: "轉換",
+    goals: "目標",
     sites: "站點",
     allSites: "所有站點",
     inbox: "收件匣",
@@ -10195,38 +7937,32 @@ const zhTwMessages = {
     steps: {
       site: "新增第一個站點",
       tracking: "追蹤你的網站",
-      team: "邀請團隊成員",
+      team: "邀請成員",
       notifications: "透過電子郵件接收報告",
       sharing: "分享公開儀表板",
     },
-    noSitesTitle: "還沒有站點",
-    noSitesDescription: "新增一個站點，然後把它的腳本放到你的頁面上。",
+    noSitesTitle: "新增第一個站點",
+    memberNoSitesTitle: "還沒有站點",
+    memberNoSitesDescription: "請管理員新增一個。",
     addSite: "新增站點",
     waitingTitle: "正在等待第一次頁面瀏覽",
-    waitingDescription:
-      "把這段腳本加入 {domain} 的每個頁面。頁面瀏覽會在一分鐘內顯示在這裡。",
     copy: "複製",
     copied: "已複製",
-    trackingSettings: "追蹤設定",
   },
   settingsNav: {
     label: "設定",
-    personal: "個人",
-    organization: "組織",
-    system: "系統",
+    system: "系統健康",
     account: "帳戶",
-    sites: "站點",
     notifications: "通知",
-    publicLinks: "公開連結",
-    general: "一般",
-    scheduledTasks: "排程任務",
-    requestObservation: "請求觀測",
-    performance: "效能",
     cancel: "取消",
-    managerOnly: "只有擁有者或管理員可以修改。",
-    dangerZone: "危險操作",
-    copy: "複製",
-    copied: "已複製",
+  },
+  systemHealth: {
+    tabs: {
+      tasks: "排程任務",
+      blocked: "已攔截請求",
+      ingestion: "資料接收",
+      data: "資料",
+    },
   },
 } as AppMessages;
 
@@ -10240,18 +7976,15 @@ const jaMessages = {
     realtime: "リアルタイム",
     pages: "ページ",
     referrers: "参照元",
-    sessions: "セッション",
     events: "イベント",
-    funnels: "ファネル",
-    goals: "目標",
+    funnels: "目標とファネル",
     campaigns: "キャンペーン",
     visitors: "訪問者",
     retention: "リテンション",
     geo: "地域",
     devices: "デバイス",
-    browsers: "ブラウザー",
     performance: "パフォーマンス",
-    settings: "設定",
+    settings: "サイト設定",
   },
   common: {
     deviceLabels: {
@@ -10302,23 +8035,20 @@ const jaMessages = {
       "SOUTH AMERICA": "南アメリカ",
     },
     timezone: "タイムゾーン",
-    organization: "組織",
+    organization: "ネットワーク組織",
     screenSize: "画面サイズ",
     loading: "読み込み中",
     noData: "データなし",
+    loadFailed: "読み込めませんでした",
+    retry: "再試行",
+    filteredEmpty: "このフィルターに一致するデータはありません",
+    clearFilters: "フィルターをクリア",
+    trend: "推移",
     unknown: "不明",
-    lastUpdated: "最終更新",
     site: "サイト",
-    team: "チーム",
-    management: "管理",
-    backToTeam: "チームへ戻る",
     system: "システム",
-    account: "アカウント",
     theme: "テーマ",
     language: "言語",
-    role: "権限",
-    admin: "管理者",
-    user: "ユーザー",
     search: "検索",
     open: "開く",
     sortBy: "{label}で並べ替え",
@@ -10348,26 +8078,17 @@ const jaMessages = {
       dragHint: "ドラッグして並べ替え",
       close: "閉じる",
     },
-    time: "時刻",
-    cycle: "サイクル",
     close: "閉じる",
     sitesFiltered: "{active} / {total} サイトを絞り込み中",
     cumulativeTraffic: "期間累計トラフィック",
     cumulativeEvents: "期間累計イベント",
   },
   ranges: {
-    last30m: "30分",
-    last1h: "1時間",
     today: "今日",
     yesterday: "昨日",
-    thisWeek: "今週",
-    thisMonth: "今月",
-    thisYear: "今年",
-    last24h: "過去 24 時間",
     last7d: "過去 7 日",
     last30d: "過去 30 日",
     last90d: "過去 90 日",
-    last6m: "過去 6 か月",
     last12m: "過去 12 か月",
     custom: "カスタム範囲",
   },
@@ -10379,47 +8100,25 @@ const jaMessages = {
     month: "月",
   },
   dashboardHeader: {
-    range: "期間",
     interval: "間隔",
     compareButton: "比較",
     compareTitle: "比較設定",
-    compareSubtitle: "比較する期間とフィルター条件を選択します。",
     compareTimeLabel: "比較期間",
     compareCurrentPeriod: "現在の期間",
-    compareCurrentPeriodDescription: "現在選択されている期間を使用します。",
     comparePreviousPeriod: "前の期間",
-    comparePreviousPeriodDescription:
-      "現在の期間と同じ長さの直前の期間を使用します。",
     compareFilterLabel: "比較フィルター",
     compareFollowCurrentFilter: "現在のフィルターに従う",
-    compareFollowCurrentFilterDescription:
-      "このページで現在適用されているフィルターを使用します。",
     compareCustomFilter: "カスタムフィルター",
-    compareCustomFilterDescription: "比較用に別のフィルター条件を設定します。",
     compareApply: "比較を適用",
     compareCancel: "キャンセル",
-    compareDisabled: "このページでは比較を利用できません。",
     filterButton: "フィルター",
     filterButtonEvent: "フィルター（イベント）",
     filterButtonSession: "フィルター（セッション）",
     filterButtonVisitor: "フィルター（訪問者）",
-    customRange: "カスタム範囲を選択",
     customHint: "開始日と終了日を選択してください。",
     customPendingEnd: "開始日が選択されました。終了日を選択してください。",
     customApply: "日付範囲を適用",
-    rangeGroupQuick: "クイック範囲",
-    rangeGroupCalendar: "カレンダー期間",
-    rangeGroupRolling: "ローリング期間",
-    rangeGroupAdvanced: "詳細",
-    intervalDisabledMinute: "分単位の間隔は 1 時間以内でのみ利用できます。",
-    intervalDisabledHour: "時間単位の間隔は 7 日以内でのみ利用できます。",
-    intervalDisabledDay: "日単位の間隔は過去 90 日以内でのみ利用できます。",
-    intervalDisabledWeek: "週単位の間隔は過去 12 か月以内でのみ利用できます。",
     filterTitle: "フィルター",
-    filterSubtitle:
-      "フィルターを新規作成・保存するか、個人またはチームで保存したフィルターを使用します。",
-    filterDisabledRealtime:
-      "リアルタイムページではフィルタリングを利用できません。",
     previousPeriod: "前の期間",
     nextPeriod: "次の期間",
     customSelectionSummary: "選択範囲：{from} から {to}（{days} 日）",
@@ -10612,8 +8311,7 @@ const jaMessages = {
     expressionInvalid:
       "式が無効です。クリックして構文ヘルプを確認してください。",
     expressionHelpTitle: "フィルター式の構文",
-    expressionHelpDescription:
-      "利用可能なフィールドと演算子は、現在のフィルター契約から動的に生成されます。",
+    expressionHelpDescription: "フィルター式で使えるフィールドと演算子です。",
     expressionHelpSyntax: "構文",
     expressionHelpLogicDescription:
       "AND は OR より優先されます。ネストには括弧を使用し、AND(...) と OR(...) は明示的な単一条件グループを保持します。",
@@ -10711,15 +8409,7 @@ const jaMessages = {
     savedFiltersLoading: "保存済みフィルターを取得中...",
     noSavedFilter: "保存済みフィルターを使用しない",
     systemPresets: "システムプリセット",
-    systemPresetCategories: {
-      acquisition: "獲得",
-      device: "デバイス",
-      visitBehavior: "訪問行動",
-      sessionEngagement: "セッションエンゲージメント",
-      visitorBehavior: "訪問者行動",
-      performance: "パフォーマンス",
-      dataQuality: "データ品質",
-    },
+    advanced: "詳細設定",
     systemPresetScopes: {
       preserve: "現在のスコープを維持",
       event: "イベントスコープ",
@@ -10731,18 +8421,9 @@ const jaMessages = {
         name: "直接トラフィック",
         description: "外部リファラーのない訪問です。",
       },
-      externalReferrals: {
-        name: "外部リファラー",
-        description: "外部リファラーから到達した訪問です。",
-      },
       organicSearchDiscovery: {
         name: "自然検索による流入",
         description: "キャンペーンタグのない検索エンジン経由の訪問です。",
-      },
-      organicSocialDiscovery: {
-        name: "自然ソーシャルによる流入",
-        description:
-          "キャンペーンタグのないソーシャルネットワーク経由の訪問です。",
       },
       campaignTaggedTraffic: {
         name: "キャンペーンタグ付きトラフィック",
@@ -10752,144 +8433,20 @@ const jaMessages = {
         name: "モバイルトラフィック",
         description: "モバイル端末からの訪問です。",
       },
-      desktopTraffic: {
-        name: "デスクトップトラフィック",
-        description: "デスクトップ端末からの訪問です。",
-      },
-      campaignTaggedExternalAcquisition: {
-        name: "タグ付き外部獲得",
-        description: "キャンペーンタグを持つ外部リファラー経由の訪問です。",
-      },
-      campaignTaggedDirectEntry: {
-        name: "タグ付き直接流入",
-        description: "キャンペーンタグを持つ直接訪問です。",
-      },
-      untaggedExternalReferrals: {
-        name: "タグなし外部リファラー",
-        description: "キャンペーンタグのない外部リファラー経由の訪問です。",
-      },
-      mobileAcquiredTraffic: {
-        name: "モバイルキャンペーン獲得",
-        description:
-          "外部から獲得した、キャンペーンタグ付きのモバイル訪問です。",
-      },
-      mobileOrganicDiscovery: {
-        name: "モバイル自然発見",
-        description:
-          "検索またはソーシャルから発見された、タグなしのモバイル訪問です。",
-      },
-      desktopDirectAudience: {
-        name: "デスクトップ直接訪問者",
-        description:
-          "キャンペーンタグのないデスクトップ端末からの直接訪問です。",
-      },
-      geographicAttributionGap: {
-        name: "地域帰属の欠落",
-        description: "国が記録されていない外部リファラー経由の訪問です。",
-      },
-      tabletTraffic: {
-        name: "タブレットトラフィック",
-        description: "タブレット端末からの訪問です。",
-      },
-      longPageViews: {
-        name: "長いページビュー",
-        description: "30 秒以上続いたページビューです。",
-      },
-      shortPageViews: {
-        name: "短いページビュー",
-        description: "10 秒未満で終わったページビューです。",
-      },
-      identifiedActivity: {
-        name: "識別済みアクティビティ",
-        description: "識別済みユーザーに関連するイベントです。",
-      },
-      customEventActivity: {
-        name: "カスタムイベントアクティビティ",
-        description: "カスタムイベント名が記録されたイベントです。",
-      },
       bouncedSessions: {
         name: "バウンスセッション",
         description: "ページビューが 1 回だけのセッションです。",
-      },
-      nonBouncedSessions: {
-        name: "非バウンスセッション",
-        description: "複数のページビューを含むセッションです。",
-      },
-      longSessions: {
-        name: "長いセッション",
-        description: "5 分以上続いたセッションです。",
-      },
-      shortSessions: {
-        name: "短いセッション",
-        description: "1 分未満のセッションです。",
-      },
-      deepSessions: {
-        name: "深いセッション",
-        description: "3 ページ以上を閲覧したセッションです。",
-      },
-      eventfulSessions: {
-        name: "イベントの多いセッション",
-        description: "カスタムイベントを 1 件以上含むセッションです。",
-      },
-      highEngagementSessions: {
-        name: "高エンゲージメントセッション",
-        description:
-          "3 ビュー以上かつ 2 件以上のカスタムイベントを含むセッションです。",
       },
       returningVisitors: {
         name: "リピーター訪問者",
         description: "2 セッション以上を持つ訪問者です。",
       },
-      frequentVisitors: {
-        name: "頻繁な訪問者",
-        description: "5 セッション以上を持つ訪問者です。",
-      },
-      deepVisitors: {
-        name: "深い訪問者",
-        description: "5 ページ以上を閲覧した訪問者です。",
-      },
-      eventfulVisitors: {
-        name: "イベントの多い訪問者",
-        description: "2 件以上のカスタムイベントを持つ訪問者です。",
-      },
-      identifiedVisitors: {
-        name: "識別済み訪問者",
-        description: "識別済みユーザーに関連する訪問者です。",
-      },
-      organicSearchVisitors: {
-        name: "自然検索訪問者",
-        description: "タグのない検索リファラーを持つ訪問者です。",
-      },
-      coreWebVitalsNeedsImprovement: {
-        name: "Core Web Vitals の改善が必要",
-        description: "Core Web Vitals のしきい値を超えた訪問です。",
-      },
-      slowLcp: {
-        name: "LCP が遅い",
-        description: "LCP が 2.5 秒を超える訪問です。",
-      },
-      slowInp: {
-        name: "INP が遅い",
-        description: "INP が 200 ミリ秒を超える訪問です。",
-      },
-      highCls: {
-        name: "CLS が高い",
-        description: "CLS が 0.1 を超える訪問です。",
-      },
-      slowTtfb: {
-        name: "TTFB が遅い",
-        description: "TTFB が 800 ミリ秒を超える訪問です。",
-      },
-      slowFcp: {
-        name: "FCP が遅い",
-        description: "FCP が 1.8 秒を超える訪問です。",
-      },
     },
     savedFiltersPersonal: "個人用フィルター",
-    savedFiltersTeam: "チームのフィルター",
+    savedFiltersTeam: "組織のフィルター",
     savedFiltersAuthor: "作成者: {name}",
     savedFiltersPrivate: "個人用",
-    savedFiltersTeamShared: "チームと共有済み",
+    savedFiltersTeamShared: "組織と共有済み",
     saveThisFilter: "このフィルターを保存",
     saveAsThisFilter: "このフィルターを別名で保存",
     manageThisFilter: "このフィルターを管理",
@@ -10905,7 +8462,7 @@ const jaMessages = {
     scopeVisitor: "これらの条件を満たす訪問者を絞り込む",
     savedFilterVisibility: "公開範囲",
     savedFilterVisibilityPrivate: "自分のみ",
-    savedFilterVisibilityTeam: "チームと共有",
+    savedFilterVisibilityTeam: "組織と共有",
     savedFilterCreateDescription:
       "現在のフィルター式を保存して、あとで再び適用できます。",
     savedFilterManageDescription:
@@ -10914,7 +8471,7 @@ const jaMessages = {
     deleteSavedFilter: "このフィルターを削除",
     deleteSavedFilterTitle: "このフィルターを削除しますか？",
     deleteSavedFilterDescription:
-      "この操作は取り消せません。チームメンバーも使用できなくなります。",
+      "この操作は取り消せません。組織の他のメンバーも使用できなくなります。",
     savedFilterCancel: "キャンセル",
     savedFilterSave: "保存",
     savedFilterSaving: "保存中...",
@@ -10933,9 +8490,9 @@ const jaMessages = {
   },
   realtime: {
     title: "リアルタイム",
-    subtitle: "直近 30 分間のトラフィックを確認します。",
     logTitleSeparator: ":",
     activeNow: "現在アクティブ",
+    liveCount: "{count} 人がアクセス中",
     liveMetrics:
       "現在アクティブ / 過去30分の訪問者数 / 過去30分のページビュー数",
     connected: "接続済み",
@@ -11004,7 +8561,7 @@ const jaMessages = {
     leaveAt: "離脱時刻",
   },
   overview: {
-    title: "トラフィック概要",
+    title: "概要",
     trendTitle: "トラフィック推移",
     sourceTab: "ソース",
     sourceDomainColumn: "ソース（ドメイン）",
@@ -11028,6 +8585,32 @@ const jaMessages = {
     },
     searchInTab: "{tab} を検索",
   },
+  install: {
+    title: "サイトにスクリプトを追加",
+    platforms: {
+      html: "HTML",
+      wordpress: "WordPress",
+      shopify: "Shopify",
+      nextjs: "Next.js",
+      gtm: "Google タグ マネージャー",
+    },
+    steps: {
+      html: "すべてのページの {tag} の直前に貼り付けます。",
+      wordpress:
+        "WPCode などのヘッダースクリプト用プラグインで追加するか、テーマの header.php の {tag} の直前に貼り付けます。",
+      shopify:
+        "「オンラインストア → テーマ → コードを編集」で theme.liquid を開き、{tag} の直前に貼り付けます。",
+      nextjs: "app/layout.tsx の {tag} 内に貼り付けます。",
+      gtm: "このスクリプトでカスタム HTML タグを作成し、トリガーを「All Pages」にして公開します。",
+    },
+    waiting: "最初のページビューを待っています",
+    received:
+      "最初のページビューを受け取りました。レポートは 1 分以内に表示されます。",
+    firstViewsTitle: "最初のページビューが届きました！",
+    nextReports: "メールでレポートを受け取る",
+    nextInvite: "メンバーを招待",
+    dismiss: "閉じる",
+  },
   pages: {
     title: "ページ",
     pagesPerSession: "ページ / セッション",
@@ -11035,9 +8618,7 @@ const jaMessages = {
     changePointsColumnLabel: "{metric}の変化（ポイント）",
     percentagePointSuffix: "ポイント",
     untitled: "無題のページ",
-    empty: "現在のフィルターに一致するページデータはありません。",
-    loadError:
-      "ページデータを読み込めませんでした。後でもう一度お試しください。",
+    empty: "ページはまだありません",
     loadMoreError: "追加のページを読み込めませんでした。",
     trendTitle: "ページトラフィック推移",
     otherPages: "その他のページ",
@@ -11051,41 +8632,22 @@ const jaMessages = {
   },
   referrers: {
     title: "参照元",
-    summaryTitle: "ソース概要",
     splitTitle: "トラフィック内訳",
-    chartTitle: "ソース構成",
-    radarTitle: "上位 24 ソースのレーダー",
-    radarSubtitle: "主要な参照元を行動指標で比較します。",
-    radarDuration: "滞在時間",
-    radarEngagement: "エンゲージメント",
-    radarDepth: "深さ",
-    radarLoyalty: "ロイヤルティ",
-    radarFrequency: "頻度",
-    radarTraffic: "トラフィック",
-    directSourceNote:
-      "このトラフィックは外部の参照元サイトなしで到達しました。",
     breakdownTitle: "ソース内訳",
-    directViews: "直接表示回数",
-    uniqueDomains: "ユニークドメイン数",
-    uniqueLinks: "ユニークリンク数",
-    topSource: "主要な外部ソース",
-    topSourceShare: "表示回数シェア",
-    noExternalSource: "外部ソースなし",
     externalLabel: "外部",
-    nextSources: "その他 4 件のソース",
     longTail: "ロングテール",
     channelLongTail: "その他のチャネル",
   },
   campaigns: {
     title: "キャンペーン",
-    tabSource: "ソース",
+    tabSource: "UTM ソース",
     tabMedium: "メディア",
     tabCampaign: "キャンペーン",
     tabTerm: "キーワード",
     tabContent: "コンテンツ",
-    breakdownTitle: "UTM 内訳",
     notSet: "未設定",
-    noTaggedTraffic: "選択範囲にタグ付きキャンペーントラフィックはありません。",
+    noTaggedTraffic: "この期間に UTM タグ付きの訪問はありません",
+    taggedLinkHint: "リンクに UTM タグを付けます。例：",
   },
   sessions: {
     title: "セッション",
@@ -11156,13 +8718,8 @@ const jaMessages = {
     range: "範囲",
   },
   events: {
-    title: "カスタムイベント",
-    subtitle:
-      "イベント数、コンテキスト、ペイロードフィールド、元の発火記録を確認します。",
+    title: "イベント",
     detailTitle: "イベント詳細",
-    detailSubtitle: "1 件のイベントのコンテキストとペイロードを確認します。",
-    typeDetailSubtitle:
-      "このイベントの推移、コンテキスト分布、ペイロード構造、発火記録を確認します。",
     backToEvents: "イベントへ戻る",
     totalEvents: "総イベント数",
     eventTypes: "イベント種別",
@@ -11192,7 +8749,6 @@ const jaMessages = {
       "フィルター条件を解析できません。フィールドパス、演算子、値を確認してください。",
     expandField: "項目を展開",
     collapseField: "項目を折りたたむ",
-    breakdownTitle: "コンテキスト内訳",
     search: "イベント名、ID、訪問者、セッション、ページを検索...",
     eventName: "イベント名",
     eventId: "イベント ID",
@@ -11225,6 +8781,7 @@ const jaMessages = {
     loadError: "イベントデータを読み込めません。",
     detailNotFound: "このイベント記録が見つかりません。",
     empty: "この範囲にカスタムイベントはありません。",
+    noCustomEvents: "この期間のカスタムイベントはありません",
     emptyFields: "このイベントにペイロードフィールドはありません。",
     noEventName: "イベント名がありません。",
     loading: "読み込み中",
@@ -11232,25 +8789,19 @@ const jaMessages = {
   },
   funnels: {
     title: "ファネル",
-    subtitle: "複数ステップのユーザージャーニーでコンバージョンを測定します。",
     listTitle: "ファネル定義",
-    listSubtitle:
-      "再利用可能なシーケンスを作成し、現在のダッシュボード期間でコンバージョンを確認します。",
     conversionRecords: "コンバージョン記録",
     converted: "コンバージョン済み",
     dropped: "離脱",
     open: "ファネルを開く",
     moreActions: "その他の操作",
-    create: "新規ファネル",
     createTitle: "ファネルを作成",
-    createDescription:
-      "順序付きの観測フィルターを少なくとも 2 つ定義してください。",
     nameLabel: "名前",
     namePlaceholder: "登録アクティベーション",
     stepsLabel: "ステップ",
     addStep: "ステップを追加",
     removeStep: "削除",
-    progression: "コンバージョン単位",
+    progression: "集計単位",
     conversionWindow: "コンバージョン期間",
     custom: "カスタム",
     customWindowHours: "カスタム期間（時間）",
@@ -11280,10 +8831,6 @@ const jaMessages = {
       "保存済みのファネル定義を削除します。過去の分析データは削除されません。",
     deleteConfirm: "ファネルを削除",
     deleting: "削除中...",
-    empty: "ファネルはまだありません。",
-    emptyHint:
-      "ページビューとカスタムイベントからファネルを作成し、コンバージョンを追跡します。",
-    loadError: "ファネルを読み込めません。",
     detailLoadError: "ファネル分析を読み込めません。",
     invalidFunnel:
       "名前と、完全なフィルターステップを少なくとも 2 つ追加してください。",
@@ -11310,11 +8857,9 @@ const jaMessages = {
   },
   goals: {
     title: "目標",
-    listSubtitle: "この期間のコンバージョン率の変化を確認します。",
     conversionRecords: "コンバージョン記録",
     open: "目標を開く",
     moreActions: "その他の操作",
-    create: "新しい目標",
     createTitle: "目標を作成",
     nameLabel: "名前",
     namePlaceholder: "購入完了",
@@ -11331,9 +8876,6 @@ const jaMessages = {
     deleteDescription:
       "保存した目標定義を削除します。過去の分析データは削除されません。",
     deleteConfirm: "目標を削除",
-    empty: "目標はまだありません。",
-    emptyHint: "ページ条件またはカスタムイベントから目標を作成します。",
-    loadError: "目標を読み込めません。",
     detailLoadError: "目標分析を読み込めません。",
     invalidGoal: "名前と完全なコンバージョン条件を入力してください。",
     created: "目標を作成しました。",
@@ -11348,6 +8890,15 @@ const jaMessages = {
     conversion: "転換率",
     timeseries: "コンバージョン率",
     updated: "更新",
+  },
+  conversions: {
+    new: "新規作成",
+    newGoal: "目標",
+    newGoalDescription: "登録などの 1 ステップ",
+    newFunnel: "ファネル",
+    newFunnelDescription: "順番に進む複数のステップ",
+    empty: "目標とファネルはまだありません",
+    emptyMemberHint: "管理者が作成できます。",
   },
   visitors: {
     title: "訪問者",
@@ -11424,7 +8975,7 @@ const jaMessages = {
   },
   retention: {
     title: "リテンション",
-    subtitle: "コホートベースの訪問者再訪分析です。",
+    cohortBy: "コホート単位：{interval}",
     cohortDate: "コホート日付",
     cohortSize: "コホート人数",
     periodLabel: "期間 {n}",
@@ -11444,18 +8995,16 @@ const jaMessages = {
     legendHigh: "高",
     periodZero: "初回",
     empty: "この時間範囲には十分な再訪データがありません。",
-    emptyHint:
-      "より広い範囲を使うか、上部セレクターでより粗い間隔を選ぶと、リテンションの形が早く見えます。",
+    emptyHint: "日付メニューでより長い期間か、より粗い間隔を選んでください。",
     loadError: "リテンションデータを読み込めません。",
     unavailableCell: "このコホートはまだこの期間に到達していません。",
     visitorsDetail: "訪問者",
     rateDetail: "リテンション",
-    cohortDetail: "コホート日付",
     sizeDetail: "コホート人数",
   },
   geo: {
-    title: "地域分析",
-    mapTitle: "リクエスト地域分布",
+    title: "地域",
+    mapTitle: "地域別の訪問者",
     countryLabel: "国 / 地域",
     regionLabel: "地域",
     cityLabel: "都市",
@@ -11514,65 +9063,26 @@ const jaMessages = {
   },
   devices: {
     title: "デバイス",
-    deviceShareTitle: "デバイス種別シェア",
-    osShareTitle: "OS シェア",
-    deviceTrendTitle: "デバイス種別推移",
-    osTrendTitle: "OS 推移",
-    screenDistributionTitle: "画面サイズ分布",
-    screenDistributionSubtitle:
-      "よく使われるビューポートとレスポンシブ境界を確認します。",
-    screenBucketTitle: "ブレークポイント分類",
-    screenPreviewTitle: "画面プレビュー",
-    selectedViewportLabel: "選択中のビューポート",
-    openSiteLabel: "サイトを開く",
-    previewUnavailableLabel: "現在プレビュー可能な画面サイズはありません。",
-    browserByDeviceTitle: "デバイス種別 × ブラウザー",
-    osByDeviceTitle: "デバイス種別 × OS",
-    otherLabel: "その他",
-    screenBucketLabels: {
-      phoneCompact: "小型スマートフォン",
-      phone: "スマートフォン",
-      tablet: "タブレット",
-      laptop: "ノート PC",
-      desktopWide: "ワイドデスクトップ",
-      unclassified: "未分類",
+    shareTitle: "訪問者の割合",
+    dimensions: {
+      device: "デバイス",
+      os: "OS",
+      browser: "ブラウザー",
+      engine: "エンジン",
+      screenSize: "画面サイズ",
     },
+    crossTabTitle: "クロス集計",
+    crossTabRows: "行",
+    crossTabColumns: "内訳",
+    otherLabel: "その他",
+    screenBucketLabels: {},
   },
   browsers: {
-    title: "ブラウザー",
-    trendTitle: "ブラウザーシェア推移",
-    engineTrendTitle: "エンジンシェア推移",
-    versionBreakdownTitle: "ブラウザーバージョン内訳",
-    osBreakdownTitle: "ブラウザー × OS",
-    deviceTypeBreakdownTitle: "ブラウザー × デバイス種別",
     otherLabel: "その他",
-    browserShareTitle: "ブラウザーシェア",
-    engineShareTitle: "エンジンシェア",
-    caniuseTitle: "機能互換性",
-    caniuseSubtitle:
-      "サイト訪問者のブラウザー構成に基づいて Web 機能の対応状況を確認します。",
-    caniuseSearchPlaceholder: "Web 機能を検索...",
-    caniuseHotFeatures: "人気の機能",
-    caniuseTrendingFeatures: "最近変更された機能",
-    caniuseSiteSupport: "あなたのサイト",
-    caniuseGlobalSupport: "全世界",
-    caniuseClearSelection: "クリア",
-    caniuseNoMatch: "一致する機能がありません。",
-    caniuseFullSupport: "完全対応",
-    caniusePartialSupport: "部分対応",
-    caniuseNoSupport: "非対応",
-    radarTitle: "ブラウザーパフォーマンスレーダー",
-    radarSubtitle: "上位ブラウザーを行動指標で比較します。",
-    radarDuration: "滞在時間",
-    radarEngagement: "エンゲージメント",
-    radarDepth: "深さ",
-    radarLoyalty: "ロイヤルティ",
-    radarFrequency: "頻度",
-    radarTraffic: "トラフィック",
   },
   performance: {
     title: "パフォーマンス",
-    subtitle: "実際の訪問者パフォーマンスを指標、推移、パスごとに確認します。",
+    empty: "Web Vitals はまだありません",
     chartTitle: "パフォーマンス推移",
     avgLabel: "平均",
     samplesLabel: "サンプル",
@@ -11603,7 +9113,7 @@ const jaMessages = {
     great: "良好",
     needsImprovement: "改善が必要",
     poor: "不良",
-    datasetTitle: "データセット概要",
+    datasetTitle: "しきい値",
     interpretationTitle: "現在の読み取り",
     currentReading:
       "{metric} の P75 は {value}、{samples} 件のサンプルに基づく体験スコアは {score} です。現在の判定：{status}。",
@@ -11618,34 +9128,41 @@ const jaMessages = {
     metricValueColumn: "P75 値",
     statusColumn: "状態",
   },
-  share: {},
+  share: {
+    noData: "データはまだありません",
+  },
   siteSettings: {
     title: "サイト設定",
     sections: {
       basic: {
-        title: "基本情報",
+        title: "一般",
       },
       tracking: {
-        title: "トラッキング設定",
+        title: "トラッキング",
       },
       blocking: {
         title: "ブロックルール",
       },
       protection: {
-        title: "リクエスト保護",
+        title: "保護",
       },
       danger: {
         title: "危険な操作",
       },
+      install: {
+        title: "インストール",
+      },
+      advanced: {
+        title: "詳細設定",
+      },
     },
-    nameLabel: "サイト名",
+    nameLabel: "名前",
     domainLabel: "ドメイン",
-    publicSharingTitle: "公開共有",
-    publicEnabledLabel: "公開アクセスを有効化",
-    publicSlugLabel: "公開スラッグ",
+    publicSharingTitle: "共有",
+    publicEnabledLabel: "公開ダッシュボード",
+    publicSlugLabel: "リンクのパス",
     publicSlugPlaceholder: "例: my-site",
-    publicSlugHint:
-      "URL パス識別子をカスタマイズします。空のままなら自動生成されます。",
+    publicSlugHint: "リンクの /share/ 以降の部分です。",
     publicLinkLabel: "公開リンク",
     copiedLink: "リンクをコピーしました",
     trackingStrengthGroupTitle: "トラッキング強度",
@@ -11664,18 +9181,14 @@ const jaMessages = {
     hostingProxyBlockingEnabledLabel:
       "ホスティング・プロキシネットワークをブロック",
     hostingProxyBlockingEnabledHint:
-      "有効にするとホスティングまたはプロキシネットワークからの疑わしいボットリクエストをブロックします。デフォルトはオフです。",
-    trackQueryParamsLabel: "クエリパラメータを追跡",
-    trackHashLabel: "URL ハッシュを追跡",
-    blockingRulesSave: "ブロックルールを保存",
-    blockingRulesSaving: "ブロックルールを保存中...",
+      "ホスティングまたはプロキシネットワークからの疑わしいボットリクエストをブロックします。",
+    trackQueryParamsLabel: "クエリパラメーターを記録",
+    trackHashLabel: "URL ハッシュを記録",
+    blockingRulesSave: "ルールを保存",
     blockingRulesDialogs: {
-      testButton: "テスト",
-      helpButton: "ヘルプ",
       searchButton: "検索",
       searchTitle: "地域を検索",
-      searchDescription:
-        "名前またはコードで検索し、結果を選択してこのカードに追加します。",
+      searchDescription: "名前またはコードで検索し、結果を選んでください。",
       searchInputLabel: "検索",
       searchInputPlaceholder: "名前またはコードで検索",
       searchCountryLabel: "国 / 地域",
@@ -11686,201 +9199,60 @@ const jaMessages = {
       searchLoadError:
         "地域を読み込めません。しばらくしてから再試行してください。",
       searchClose: "閉じる",
-      helpTitle: "ルール構文",
-      helpDescription: "このフィールドの構文、例、優先順位を確認します。",
-      syntaxTitle: "構文",
-      examplesTitle: "設定例",
-      actionsTitle: "ルールの動作",
-      actionsDescription:
-        "通常の行は一致をブロックします。ルールの先頭に - を付けると許可します。複数の行が一致した場合は、最後に一致した行が結果を決めます。",
-      actionBlock: "{example} に一致した場合はブロック",
-      actionAllow: "{example} に一致した場合は許可",
-      statusEmpty: "{field} に対するブロックルールは現在ありません。",
-      statusValid: "現在のルールは有効です。",
-      statusInvalid:
-        "現在のルールは無効です。詳しくは右側の「ヘルプ」をクリックしてください。",
-      errorInvalidRule: "無効なルールです。",
-      errorInvalidLines:
-        "{field} のルールは 1 行に 1 件のテキストで指定してください。",
-      errorInvalidLine: "{line} 行目は有効なテキストルールではありません。",
-      errorLineTooLong: "{line} 行目が長すぎます。",
-      errorTooManyLines: "ルールの行数が多すぎます。",
-      errorInvalidPattern: "{line} 行目のルール形式が無効です。",
-      testTitle: "ルールをテスト",
-      testDescription:
-        "このカードの現在のルールに対してリクエスト値をテストします。未保存の編集内容も使用されます。",
-      testRun: "テストを実行",
-      testClose: "閉じる",
-      testInvalidRules: "テストする前に無効なルールを修正してください。",
-      testInvalidRule: "無効なルールです。",
-      testBlocked: "ブロック",
-      testAllowed: "許可",
-      testNoMatch:
-        "一致するルールがないため、このフィールドでは値が許可されます。",
-      testMatchedRules: "一致したルール",
-      testActionBlock: "ブロック",
-      testActionAllow: "許可",
-      testLine: "行",
     },
     blockingRulesFields: {
       domains: {
         title: "ドメイン",
-        label: "ドメインルール（1 行に 1 件）",
-        placeholder: "*\n-example.com\n-*.example.com\nadmin.example.com\n",
-        hint: "ページの hostname に一致します。* と -ドメインで許可リストを作れます。",
-        syntax:
-          "各行: [ - ] hostname-glob\n# で始まる行はコメントとして扱われ、無視されます。\n* をワイルドカードとして使います。先頭の - は許可ルールを作ります。\n大文字と小文字を区別せず、ページの hostname に一致します。\n",
-        examples: ["*", "-example.com", "-*.example.com", "admin.example.com"],
-        exampleDescription:
-          "この設定はすべてのドメインをブロックし、example.com とそのサブドメインを許可した後、完全一致する admin.example.com を再びブロックします。",
-        testLabel: "ホスト名",
-        testPlaceholder: "www.example.com",
-        testHint: "スキームやパスを含めず、ページの hostname を入力します。",
+        placeholder: "admin.example.com",
       },
       paths: {
         title: "パス",
-        label: "パスルール（1 行に 1 件）",
-        placeholder: "/admin/*\n/checkout/*/confirm\n-/admin/health\n",
-        hint: "glob 構文で正規化された URL パスに一致します。",
-        syntax:
-          "各行: [ - ] /path-glob\n# で始まる行はコメントとして扱われ、無視されます。\nパスは / で始まり、* は任意の文字に一致します。\nURL パスの正規化後、大文字と小文字を区別して一致します。\n",
-        examples: ["/admin/*", "/checkout/*/confirm", "-/admin/health"],
-        exampleDescription:
-          "この設定は /admin/ 配下と /checkout/*/confirm に一致するパスをブロックし、/admin/health を許可します。",
-        testLabel: "URL パス",
-        testPlaceholder: "/admin/settings",
-        testHint: "先頭のスラッシュを含む pathname のみを入力します。",
+        placeholder: "/admin/*",
       },
       queryParameters: {
-        title: "クエリパラメータ",
-        label: "クエリルール（1 行に 1 件）",
-        placeholder: "utm_*\nutm_source=*\n-utm_source=trusted\n",
-        hint: "key または key=value を指定でき、キーと値で * が使えます。",
-        syntax:
-          "各行: [ - ] key-glob[=value-glob]\n# で始まる行はコメントとして扱われ、無視されます。\n= を省略すると、そのキーの任意の値に一致します。\n大文字と小文字を区別し、キーと値で * を使用できます。\n",
-        examples: ["utm_*", "utm_source=*", "-utm_source=trusted"],
-        exampleDescription:
-          "この設定は utm_ で始まるキーと utm_source の任意の値をブロックし、utm_source=trusted を許可します。",
-        testLabel: "クエリ文字列",
-        testPlaceholder: "utm_source=internal&utm_campaign=spring",
-        testHint: "先頭の ? はあってもなくてもかまいません。",
+        title: "クエリパラメーター",
+        placeholder: "utm_source=spam",
       },
       referrers: {
         title: "リファラー",
-        label: "リファラールール（1 行に 1 件）",
-        placeholder:
-          "*.example.com\nsocial.example.com\n-trusted.example.com\n",
-        hint: "リファラーの hostname に一致します。",
-        syntax:
-          "各行: [ - ] hostname-glob\n# で始まる行はコメントとして扱われ、無視されます。\nURL は hostname に変換してから一致させます。\n大文字と小文字を区別せず、* を使用できます。\n",
-        examples: [
-          "*.example.com",
-          "social.example.com",
-          "-trusted.example.com",
-        ],
-        exampleDescription:
-          "この設定は example.com の参照元ドメインと social.example.com をブロックし、trusted.example.com を許可します。",
-        testLabel: "参照元",
-        testPlaceholder: "https://social.example.com/article",
-        testHint: "参照元の URL または hostname を入力します。",
+        placeholder: "*.spam.example",
       },
       userAgents: {
         title: "User-Agent",
-        label: "User-Agent ルール（1 行に 1 件）",
-        placeholder: "*bot*\nMozilla/*\n-Googlebot\n",
-        hint: "大文字と小文字を区別せず、glob 構文でリクエストの User-Agent に一致します。",
-        syntax:
-          "各行: [ - ] text-glob\n# で始まる行はコメントとして扱われ、無視されます。\n* はリクエスト User-Agent 内の任意の文字に一致します。\n大文字と小文字を区別しません。\n",
-        examples: ["*bot*", "Mozilla/*", "-Googlebot"],
-        exampleDescription:
-          "この設定は bot を含む User-Agent と Mozilla/ で始まる値をブロックし、Googlebot を許可します。",
-        testLabel: "User-Agent",
-        testPlaceholder: "Mozilla/5.0 (compatible; ExampleBot/1.0)",
-        testHint: "リクエスト User-Agent の全体または一部を入力します。",
+        placeholder: "*bot*",
       },
       ips: {
         title: "IP アドレス",
-        label: "IP ルール（1 行に 1 件）",
-        placeholder:
-          "203.0.113.15\n2001:db8::1\n203.0.113.0/24\n2001:db8::/32\n-203.0.113.10..203.0.113.20\n",
-        hint: "IPv4/IPv6 アドレス、CIDR、開始..終了の範囲に対応します。",
-        syntax:
-          "各行: [ - ] address | CIDR | start..end\n# で始まる行はコメントとして扱われ、無視されます。\nIPv4 と IPv6 のアドレスに対応します。\n範囲の両端は同じアドレスファミリーで、開始値以下にします。\n",
-        examples: [
-          "203.0.113.15",
-          "2001:db8::1",
-          "203.0.113.0/24",
-          "2001:db8::/32",
-          "-203.0.113.10..203.0.113.20",
-        ],
-        exampleDescription:
-          "この設定は IPv4/IPv6 の単一アドレス、CIDR 範囲、start..end 範囲を示します。- 付きの範囲は許可されます。",
-        testLabel: "IP アドレス",
-        testPlaceholder: "203.0.113.15",
-        testHint: "テストする IPv4 または IPv6 アドレスを入力します。",
+        placeholder: "203.0.113.0/24",
       },
       asns: {
         title: "ASN",
-        label: "ASN ルール（1 行に 1 件）",
-        placeholder: "64500\n*\n-64501\n",
-        hint: "Cloudflare metadata の数値 ASN に一致します。",
-        syntax:
-          "各行: [ - ] ASN-number\n# で始まる行はコメントとして扱われ、無視されます。\n* で任意の ASN に一致します。\nメタデータ値のテストでは、任意の AS プレフィックスも使用できます。\n",
-        examples: ["64500", "*", "-64501"],
-        exampleDescription:
-          "この設定は ASN 64500 と任意の ASN をブロックし、最後のルールで ASN 64501 を許可します。",
-        testLabel: "ASN",
-        testPlaceholder: "64500",
-        testHint: "数値の自律システム番号を入力します。",
+        placeholder: "64500",
       },
       countries: {
-        title: "国 / 地域",
-        label: "国ルール（1 行に 1 件）",
-        placeholder: "DE\n*\n-US\n",
-        hint: "ISO 3166-1 alpha-2 国コードを使用します。",
-        syntax:
-          "各行: [ - ] ISO-3166-alpha-2\n# で始まる行はコメントとして扱われ、無視されます。\n* で任意の国に一致します。\n国コードは大文字と小文字を区別しません。\n",
-        examples: ["DE", "*", "-US"],
-        exampleDescription:
-          "この設定は DE と任意の国をブロックし、最後のルールで US を許可します。",
-        testLabel: "国コード",
-        testPlaceholder: "DE",
-        testHint: "ISO 3166-1 alpha-2 の国コードを入力します。",
+        title: "国・地域",
+        placeholder: "DE",
       },
       regions: {
-        title: "州 / 省",
-        label: "地域ルール（1 行に 1 件）",
-        placeholder: "DE-BE\n*\n-US-CA\n",
-        hint: "Cloudflare metadata の COUNTRY-REGION_CODE 形式を使用します。",
-        syntax:
-          "各行: [ - ] COUNTRY-REGION_CODE\n# で始まる行はコメントとして扱われ、無視されます。\n* で任意の地域に一致します。\n地域の値は大文字と小文字を区別しません。\n",
-        examples: ["DE-BE", "*", "-US-CA"],
-        exampleDescription:
-          "この設定は DE-BE と任意の地域をブロックし、最後のルールで US-CA を許可します。",
-        testLabel: "地域コード",
-        testPlaceholder: "US-CA",
-        testHint: "メタデータの COUNTRY-REGION_CODE 値を入力します。",
+        title: "州・省",
+        placeholder: "US-CA",
       },
     },
-    ignoreDoNotTrackLabel: "ブラウザーの Do Not Track を無視",
+    ignoreDoNotTrackLabel: "Do Not Track を無視",
     autoTrackOutboundLinksLabel: "外部リンククリックを自動追跡",
     autoTrackOutboundLinksHint:
       "有効にすると、外部ドメインへのリンククリックで outbound_click イベントを自動送信します。",
-    performanceSampleRateLabel: "パフォーマンスサンプリング率（%）",
+    performanceSampleRateLabel: "Web Vitals のサンプリング率",
     performanceSampleRateHint:
       "サンプリングされた訪問では、離脱時に TTFB、FCP、LCP、CLS、INP を記録します。0 で無効、100 で全量収集です。",
-    saveTracking: "トラッキング設定を保存",
-    savingTracking: "トラッキング設定を保存中...",
-    save: "変更を保存",
+    save: "保存",
     saving: "保存中...",
-    scriptTitle: "トラッキングスクリプトを設置",
-    scriptHint:
-      "</head> の前を推奨します。必要なら </body> の前にも配置できますが、各ページで 1 回だけ読み込まれるようにしてください。",
+    scriptHint: "各ページの </head> の直前に貼り付けてください。",
     copyScript: "スクリプトをコピー",
     copiedScript: "スクリプトをコピーしました。",
     scriptUnavailable: "現在スクリプトを利用できません。",
     deleteTitle: "サイトを削除",
-    deleteSubtitle: "この操作により、サイトはこのチームから削除されます。",
+    deleteSubtitle: "サイトとそのすべての分析データを削除します。",
     delete: "サイトを削除",
     deleting: "削除中...",
     deleteConfirm: "この操作は元に戻せません。続行しますか？",
@@ -11889,12 +9261,26 @@ const jaMessages = {
       saveFailed: "サイト設定を保存できません。",
       scriptLoadFailed: "スクリプトスニペットを読み込めません。",
       settingsLoadFailed: "スクリプト設定を読み込めません。",
-      settingsPropagationHint:
-        "エッジノードへのグローバル反映には最大 1 時間かかる場合があります。",
+      settingsPropagationHint: "変更の反映には最大 1 時間かかります。",
       deleted: "サイトを削除しました。",
       deleteFailed: "サイトを削除できません。",
       invalidInput: "有効なサイト名とドメインを入力してください。",
     },
+    publicEnabledHint:
+      "リンクを知っている人は誰でもこのサイトのレポートを閲覧できます。",
+    viewBlockedRequests: "ブロックされたリクエストを見る",
+    blockingRulesHelp:
+      "「ブロック」ルールに一致したリクエストは集計されません。「許可」は例外を作ります。同じ種類の複数のルールに一致した場合は、最後のルールが優先されます。* はワイルドカードとして使えます。",
+    blockingRuleTypeLabel: "種類",
+    blockingRuleActionLabel: "動作",
+    blockingRuleValueLabel: "値",
+    blockingRuleBlock: "ブロック",
+    blockingRuleAllow: "許可",
+    blockingRuleAdd: "ルールを追加",
+    blockingRuleRemove: "ルールを削除",
+    blockingRulesEmpty: "ブロックルールはありません。",
+    blockingRuleInvalid: "この種類に有効な値を入力してください。",
+    blockingRulesTooMany: "{type} のルールが多すぎます。",
   },
   accountSettings: {
     emailManagedByGateway:
@@ -11903,75 +9289,29 @@ const jaMessages = {
     nicknameLabel: "表示名",
     nicknamePlaceholder: "例: プロダクトアナリスト",
     emailLabel: "メール",
-    profileSave: "詳細を保存",
-    profileSaving: "保存中...",
     profileSaved: "個人情報を保存しました。",
     profileSaveFailed: "個人情報を保存できません。",
-    preferredLanguageTitle: "通知言語",
-    preferredLanguageLabel: "メール言語",
-    preferredLanguageDefault: "デフォルト",
-    preferredLanguageEnglish: "英語",
-    preferredLanguageChinese: "簡体字中国語",
-    preferredLanguageTraditionalChinese: "繁体字中国語",
-    preferredLanguageJapanese: "日本語",
-    preferredLanguageSaved: "通知言語を保存しました。",
-    preferredLanguageSaveFailed: "通知言語を保存できません。",
-    timeZoneTitle: "レポートタイムゾーン",
-    activeTimeZone: "有効なタイムゾーン",
-    browserTimeZone: "ブラウザーのタイムゾーン",
+    timeZoneTitle: "タイムゾーン",
     browserUnavailable: "検出されません",
-    preferenceLabel: "タイムゾーン設定",
-    useBrowser: "ブラウザーのタイムゾーンを使用",
-    useCustom: "タイムゾーンを選択",
-    customTimeZoneLabel: "タイムゾーン",
-    invalidTimeZone: "有効な IANA タイムゾーンを選択してください。",
-    save: "設定を保存",
-    saving: "保存中...",
-    saved: "タイムゾーン設定を保存しました。",
-    saveFailed: "タイムゾーン設定を保存できません。",
+    useBrowser: "ブラウザーのタイムゾーン（{zone}）",
+    saved: "タイムゾーンを保存しました。",
+    saveFailed: "タイムゾーンを保存できません。",
+    timeZoneLabel: "レポートのタイムゾーン",
+    languageSaveFailed: "言語を保存できません。",
   },
   notificationCenter: {
-    title: "通知センター",
+    title: "受信トレイ",
     empty: "通知はまだありません。",
     loading: "通知を読み込み中",
     markRead: "既読にする",
     markAllRead: "すべて既読にする",
-    refresh: "更新",
-    attention: "要対応",
     loadFailed: "通知を読み込めません。",
     markReadFailed: "通知を既読にできません。",
     markAllReadSuccess: "通知を既読にしました。",
     markAllReadFailed: "すべての通知を既読にできません。",
-    ruleFilterActive: "このルールで作成された通知を表示しています。",
-    ruleFilterClear: "ルールフィルターをクリア",
-    sections: {
-      importantTitle: "重要な通知",
-      importantDescription: "{count} 件の未読要対応項目があります。",
-      importantEmpty: "現在、重要な通知はありません。",
-      reportsTitle: "レポート",
-      reportsDescription: "通知ルールで生成された定期レポートを確認します。",
-      reportsEmpty: "現在、レポートはありません。",
-    },
     tabs: {
       all: "すべて",
       unread: "未読",
-      attention: "要対応",
-      report: "レポート",
-    },
-    tabDescriptions: {
-      all: "メッセージ総数",
-      unread: "確認待ち",
-      attention: "対応が必要",
-      report: "定期レポート",
-    },
-    messageTypes: {
-      report: "レポート",
-      milestone: "マイルストーン",
-      threshold: "しきい値",
-      change: "変化",
-      health: "健全性",
-      system: "システム",
-      test: "テスト",
     },
     severities: {
       info: "情報",
@@ -11979,53 +9319,15 @@ const jaMessages = {
       warning: "警告",
       critical: "重大",
     },
-    deliveryStatuses: {
-      created: "作成済み",
-      sending: "送信中",
-      sent: "送信済み",
-      partial: "一部完了",
-      failed: "失敗",
-      skipped: "スキップ",
-    },
-    channels: {
-      inApp: "アプリ内",
-      email: "メール",
-    },
-    channelStatuses: {
-      sent: "送信済み",
-      skipped: "スキップ",
-      failed: "失敗",
-      created: "作成済み",
-    },
-    emailSkipReasons: {
-      user_preference_disabled: "ユーザー設定でメールが無効です",
-      system_email_unconfigured: "システムメールが設定されていません",
-      recipient_email_invalid: "宛先メールアドレスが無効です",
-      secret_decryption_failed: "保存済みメール認証情報を復号できません",
-      provider_failed: "プロバイダーがメッセージを拒否しました",
-      network_failed: "メールプロバイダーに接続できません",
-      unknown: "不明な理由",
-    },
-    emailAttempts: "試行回数：{count}",
-    emailRetryCount: "再試行：{count}",
-    emailDuration: "{duration} ms",
-    typeFilterLabel: "種別",
-    severityFilterLabel: "重要度",
-    allTypes: "すべての種別",
-    allSeverities: "すべての重要度",
     preferencesTitle: "通知設定",
     emailNotificationsLabel: "メール通知",
-    emailNotificationsDescription: "ルールが発火したときにメールを送信します。",
-    reportsUnreadLabel: "レポートを未読にする",
-    reportsUnreadDescription: "作成後のレポートを未読のままにします。",
-    milestonesUnreadLabel: "マイルストーンを未読にする",
-    milestonesUnreadDescription: "未読状態をマイルストーン用に残します。",
-    alertsUnreadLabel: "アラートを未読にする",
-    alertsUnreadDescription:
-      "しきい値アラートと健全性アラートを未読のままにします。",
-    preferencesSaved: "通知設定を保存しました。",
+    reportsUnreadLabel: "新しいレポートを未読にする",
+    milestonesUnreadLabel: "新しいマイルストーンを未読にする",
+    alertsUnreadLabel: "新しいアラートを未読にする",
     preferencesSaveFailed: "通知設定を保存できません。",
     detailFields: {},
+    noUnread: "未読の通知はありません。",
+    emailFailed: "メール送信失敗",
   },
   notificationEmail: {
     common: {
@@ -12116,24 +9418,12 @@ const jaMessages = {
     },
   },
   runtimeConfigError: {
-    title: "ランタイム設定が必要です",
-    eyebrow: "デプロイを一時停止中",
-    heading:
-      "UI を読み込む前に、OpenAnalytics にはランタイムシークレットが 1 つ必要です。",
-    description:
-      "アプリは起動していますが、現在のランタイム環境で必須の root secret を取得できないため、ダッシュボードへのアクセスを一時的にブロックしています。",
-    requiredTitle: "必須のランタイムシークレット",
-    requiredDescription:
-      "Cloudflare のランタイムシークレットに、次の値のいずれかを少なくとも 1 つ設定してください。",
-    secretHint:
-      "MAIN_SECRET を推奨します。既存のデプロイでは DAILY_SALT_SECRET も引き続き使用できます。",
-    commandTitle: "Cloudflare コマンド",
-    commandDescription:
-      "プロジェクトの補助コマンドで推奨シークレットを追加し、その後再デプロイしてください。",
-    quickStartHint:
-      "または、GitHub README の Quick Start セクションを参照してこの変数を設定してください。",
-    docsLabel: "GitHub を開く",
-    homeLabel: "ダッシュボードを再試行",
+    title: "ダッシュボードを利用できません",
+    heading: "このダッシュボードは現在利用できません。",
+    setupSummary: "このデプロイを設定する",
+    setupCommand:
+      "このコマンドでルートシークレットを設定してから、このページを再読み込みしてください。",
+    docsLabel: "デプロイガイド",
   },
   login: {},
   accountLinks: {
@@ -12144,26 +9434,13 @@ const jaMessages = {
   },
   empty: {},
   errorPage: {
-    notFoundEyebrow: "ページが見つかりません",
     notFoundTitle: "お探しのページが見つかりません",
     notFoundDescription:
       "アドレスが正しくないか、ページが移動した可能性があります。",
-    errorEyebrow: "アプリケーションエラー",
     errorTitle: "問題が発生しました",
-    errorDescription:
-      "OpenAnalytics はリクエストを完了できませんでした。以下の診断情報が調査に役立ちます。",
-    statusLabel: "ステータス",
-    reasonLabel: "原因",
-    requestLabel: "リクエストパス",
-    timestampLabel: "タイムスタンプ",
-    diagnosticIdLabel: "診断 ID",
-    errorTypeLabel: "エラー種別",
-    errorMessageLabel: "エラーメッセージ",
-    notFoundReason: "route_not_found",
-    unexpectedReason: "unexpected_application_error",
+    errorDescription: "OpenAnalytics はリクエストを完了できませんでした。",
     homeAction: "ホームに戻る",
     reportAction: "GitHub で報告",
-    reportHint: "内容を確認できるよう、入力済みの GitHub Issue が開きます。",
   },
   actions: {
     switchToEnglish: "English",
@@ -12185,12 +9462,14 @@ const jaMessages = {
       openAnalytics: "アナリティクスを開く",
       title: "すべてのサイト",
       pagesPerSession: "ページ / セッション",
+      public: "公開",
+      openPublic: "公開ダッシュボードを開く",
     },
     widgets: {},
     notifications: {
-      empty: "このチームには通知ルールがありません。",
+      empty: "通知ルールはまだありません。",
       rulesTitle: "通知ルール",
-      enabledCount: "このチームで {count} 件のルールが有効です。",
+      enabledCount: "この組織で {count} 件のルールが有効です。",
       loadingRules: "通知ルールを読み込み中",
       deliveryTestTitle: "配信テスト",
       deliveryTestDescription:
@@ -12198,14 +9477,14 @@ const jaMessages = {
       inAppTestHint: "アプリ内通知を送信します。",
       emailTestConfiguredHint: "テストメールを送信します。",
       emailTestUnconfiguredHint:
-        "このシステムではメール送信が設定されていません。追加するには管理者に連絡してください。",
+        "この Every App ゲートウェイではメールが設定されていません。",
       sendTestNotification: "テスト通知を送信",
       loadRulesFailed: "通知ルールを読み込めません。",
       testNotificationSent: "テスト通知を送信しました。",
       sendTestNotificationFailed: "テスト通知を送信できません。",
       createRule: "ルールを作成",
       editRule: "ルールを編集",
-      dialogDescription: "このチームの基本通知ルールを設定します。",
+      dialogDescription: "この組織の通知ルールを設定します。",
       ruleInfoSection: "ルール情報",
       scheduleSection: "スケジュール",
       sendScheduleSection: "送信時刻",
@@ -12263,7 +9542,6 @@ const jaMessages = {
       disable: "無効化",
       delete: "削除",
       saveRule: "ルールを保存",
-      emailPreview: "メールプレビュー",
       preview: "プレビュー",
       runNow: "今すぐ実行",
       previewFailed: "ルールをプレビューできません。",
@@ -12324,7 +9602,6 @@ const jaMessages = {
         title: "タイトル",
         htmlPreview: "HTML プレビュー",
         bodyText: "本文テキスト",
-        data: "データ",
         createdAt: "作成日時",
         updatedAt: "更新日時",
         loadingContent: "評価済みレポート内容を読み込み中",
@@ -12347,14 +9624,14 @@ const jaMessages = {
       },
       recipientModes: {
         creator: "作成者",
-        team_admins: "チーム管理者",
+        team_admins: "組織の管理者",
         all_team_members: "全メンバー",
         users: "選択したユーザー",
       },
       recipientKindLabel: "受信者種別",
       recipientPresetLabel: "プリセット",
       customRecipientsEmpty: "受信者が選択されていません",
-      noTeamMembers: "利用可能なチームメンバーがいません。",
+      noTeamMembers: "組織のメンバーはまだいません。",
       recipientKinds: {
         preset: "プリセット",
         custom: "カスタム",
@@ -12399,27 +9676,16 @@ const jaMessages = {
         last_24h: "直近 24 時間",
         yesterday: "昨日",
       },
-      emailPreviewPage: {
-        title: "通知メールプレビュー",
-        typeLabel: "プレビュー種別",
-        localeLabel: "プレビューロケール",
-        formatLabel: "プレビュー形式",
-        html: "HTML",
-        text: "プレーンテキスト",
-        json: "JSON",
-        refresh: "プレビュー",
-        loading: "プレビューをレンダリング中...",
-        loadFailed: "メールプレビューをレンダリングできません。",
-        subject: "件名",
+      addSiteFirst: "先にサイトを追加してください。",
+      deleteDescription: "この操作は元に戻せません。",
+      previewStatuses: {
+        skipped: "スキップ",
+        checked: "未発火",
+        triggered: "発火",
       },
     },
     publicLinks: {
-      enabled: "有効",
-      disabled: "無効",
-      viewSettings: "設定を表示",
       copyLink: "リンクをコピー",
-      linkCopied: "リンクをコピーしました",
-      noSites: "このチームにはまだサイトがありません。",
       columns: {},
     },
     apiKeys: {
@@ -12436,9 +9702,6 @@ const jaMessages = {
       roleLabels: {},
     },
   },
-  managementNav: {
-    scheduledTasks: "スケジュールタスク",
-  },
   managementPages: {
     versionUpdates: {},
     scheduledTasks: {
@@ -12449,18 +9712,12 @@ const jaMessages = {
       allStatuses: "すべてのステータス",
       runs24h: "24時間以内の実行回数",
       successRate24h: "24時間以内の成功率",
-      successRateDescription: "成功した実行のみを数えます。",
       problemRuns24h: "異常な実行回数",
-      retentionPrefix: "保持期間",
-      days: "日",
       failed: "失敗",
       partial: "一部完了",
       lastRun: "最終実行",
       staleRunning: "長時間未完了の実行",
-      noStaleRunning: "長時間未完了の実行なし",
       taskListTitle: "タスク",
-      taskListDescription:
-        "登録済みスケジュールタスクと過去 30 日間の健全性です。",
       task: "タスク",
       schedule: "スケジュール",
       enabled: "状態",
@@ -12474,7 +9731,6 @@ const jaMessages = {
       avgDuration: "平均所要時間",
       runHistoryTitle: "実行履歴",
       nextRun: "次回実行",
-      runHistoryDescription: "過去 30 日間に保持されたタスク実行です。",
       noRuns: "実行はまだありません。",
       scheduledAt: "予定",
       startedAt: "開始",
@@ -12509,7 +9765,7 @@ const jaMessages = {
         visit_hourly_rollup: {
           name: "時間別訪問集計",
           description:
-            "閉じた訪問行を時間別ロールアップに集計し、ダッシュボードのカウンターと推移に使用します。",
+            "終了した訪問を時間ごとの合計に集計し、レポートに使用します。",
           schedule: "毎時",
         },
         notification_tick: {
@@ -12520,40 +9776,31 @@ const jaMessages = {
         database_maintenance: {
           name: "データベースメンテナンス",
           description:
-            "期限切れの実行データと通知を削除し、D1 の統計情報を最適化します。",
+            "期限切れのタスク実行記録と通知を削除し、データベースを最適化します。",
           schedule: "毎日",
         },
       },
+      keptForDays: "{days} 日間保持",
     },
   },
   adminUsers: {
     columns: {},
   },
   adminSites: {
-    createTitle: "サイトを作成",
-    name: "サイト名",
+    createTitle: "サイトを追加",
+    name: "名前（任意）",
     domain: "ドメイン",
-    publicSlug: "公開スラッグ（任意）",
-    create: "サイトを作成",
-    creating: "作成中...",
-    noData: "サイトが見つかりません。",
-    loadFailed: "サイトを読み込めません。",
-    createSuccess: "サイトを作成しました。",
-    createFailed: "サイトを作成できません。",
-    invalidInput: "有効なサイト名とドメインを入力してください。",
-    open: "アナリティクスを開く",
-    columns: {
-      name: "名前",
-      domain: "ドメイン",
-      created: "作成日時",
-      action: "操作",
-    },
+    create: "サイトを追加",
+    creating: "追加中...",
+    createSuccess: "サイトを追加しました。",
+    createFailed: "サイトを追加できませんでした。もう一度お試しください。",
+    invalidDomain: "example.com のようなドメインを入力してください。",
+    columns: {},
   },
   adminTeams: {
     columns: {},
   },
   requestObservation: {
-    title: "リクエスト監視",
     blockedTotal: "ブロックしたリクエスト",
     retentionNote:
       "30 日間保持します。許可されたトラフィックは各サイトのダッシュボードにあります。",
@@ -12566,8 +9813,8 @@ const jaMessages = {
     },
     tabs: {},
     refresh: "更新",
-    loadFailed: "リクエスト監視データを読み込めません。",
-    noData: "この期間にリクエストデータはありません。",
+    loadFailed: "ブロックされたリクエストを読み込めません。",
+    noData: "この期間にブロックされたリクエストはありません。",
     time: "時刻",
     site: "サイト",
     location: "地域",
@@ -12609,55 +9856,10 @@ const jaMessages = {
     normalDetail: {},
   },
   systemSettings: {
-    title: "システム設定",
-    subtitle: "この OpenAnalytics デプロイ全体の設定を管理します。",
-    guide: "ガイド",
-    analyticsEngineTitle: "Analytics Engine",
-    analyticsEngineDescription:
-      "リクエスト監視と将来のトラフィック・イベント分析で使用する Analytics Engine の Cloudflare 認証情報を設定します。",
-    analyticsEngineAccountIdLabel: "Cloudflare Account ID",
-    analyticsEngineApiTokenLabel: "Cloudflare API トークン",
-    analyticsEngineApiTokenPlaceholder:
-      "ガイドを見て Cloudflare API トークンを取得",
-    analyticsEngineSaved: "Analytics Engine 設定を保存しました。",
-    analyticsEngineSaveFailed: "Analytics Engine 設定を保存できません。",
-    analyticsEngineDeleted: "Analytics Engine 設定を削除しました。",
-    analyticsEngineDeleteFailed: "Analytics Engine 設定を削除できません。",
-    analyticsEngineDeleteConfirm:
-      "Analytics Engine の読み取り用認証情報を削除しますか？依存する機能は認証情報が復元されるまで設定が必要な状態になります。",
-    analyticsEngineDisabledTitle: "Analytics Engine が有効ではありません",
-    analyticsEngineDisabledDescription:
-      "Cloudflare アカウントで Analytics Engine が有効化されていないため、このデプロイでは Analytics Engine バインディングが自動的に無効化されました。Cloudflare で Analytics Engine を有効化し、OpenAnalytics を再デプロイすると関連分析機能が有効になります。",
-    analyticsEngineDisabledHint:
-      "Analytics Engine が有効化され Worker が再デプロイされるまで、Analytics Engine 設定はロックされます。",
-    analyticsEngineOpenCloudflare: "Cloudflare Analytics Engine を開く",
-    analyticsEngineGuideTitle: "Analytics Engine 認証情報を取得",
-    analyticsEngineGuideDescription:
-      "Analytics Engine には Cloudflare アカウント情報と、Analytics Engine データを読み取れる API トークンが必要です。",
-    analyticsEngineGuideSteps: [
-      "Cloudflare Dashboard を開き、対象アカウントに入り、Account ID をコピーします。",
-      "Workers & Pages で Analytics Engine を有効化します。Request、Traffic、Event の 3 データセットはデプロイ時に自動作成・バインドされます。",
-      "My Profile → API Tokens に移動し、Custom token を作成します。",
-      "トークンに Account Analytics の読み取り権限を付与し、現在のアカウントにスコープします。",
-      "トークンをコピーし、ここに Account ID と API トークンを入力します。",
-    ],
     notificationEmailTitle: "メール通知",
-    notificationEmailDescription:
-      "レポート、アラート、テストメッセージは Every App ゲートウェイ経由でメール送信されます。",
-    emailGatewayReady: "通知メールは Every App ゲートウェイが送信します。",
     emailGatewayNotReady:
-      "Every App ゲートウェイにメール送信者がまだ設定されていません。運用者が EMAIL_FROM と Email Sending を設定すると通知メールが送信されます。",
+      "この Every App ゲートウェイではメールが設定されていません。",
     emailSenderLabel: "送信者",
-    notificationEmailGuideTitle: "Resend メール設定を取得",
-    notificationEmailGuideDescription:
-      "Resend 経由でシステムメールを送るには、検証済み送信ドメインと API キーを用意してください。",
-    notificationEmailGuideSteps: [
-      "Resend Dashboard を開き、送信ドメインの DNS 検証が完了していることを確認します。",
-      "API Keys ページから新しい API キーを作成します。",
-      "メール送信に必要な権限を選び、生成された API キーをコピーします。",
-      "ここに送信者名、送信者メール、Reply-To、Resend API キーを入力します。",
-      "設定を保存し、テストメールを送信して配信を確認します。",
-    ],
     retentionTitle: "運用データの保持期間",
     retentionDescription:
       "タスク実行、タスクログ、通知メッセージ、詳細な分析データの保持期間を設定します。タスクと通知の変更は新しいレコードにのみ適用されます。新しい期間より古い詳細な分析データは、次回の日次実行で削除されます。",
@@ -12672,77 +9874,18 @@ const jaMessages = {
     retentionSaving: "保存中...",
     retentionSaved: "保持期間を保存しました。",
     retentionSaveFailed: "保持期間を保存できません。",
-    loginTurnstileTitle: "ログイン Turnstile 保護",
-    loginTurnstileDescription:
-      "有効にすると、ログインページはバックグラウンドで Cloudflare Turnstile Invisible 検証を実行し、サーバー側のサインイン処理で強制します。",
-    loginTurnstileEnabledLabel: "ログイン保護を有効化",
-    loginTurnstileSiteKeyLabel: "Site Key",
-    loginTurnstileSecretKeyLabel: "Secret Key",
-    loginTurnstileSecretKeyPlaceholder:
-      "ガイドを見て Turnstile Secret Key を取得",
-    loginTurnstileModeLabel: "検証モード",
-    loginTurnstileModeInvisible: "Invisible",
-    loginTurnstileTest: "設定をテスト",
-    loginTurnstileTesting: "検証中...",
-    loginTurnstileTestPassed: "検証に成功しました",
-    loginTurnstileTestRequired: "新しい Secret Key は先にテストが必要です",
-    loginTurnstileTestMissing:
-      "先に Site Key と Secret Key の両方を入力してください。",
-    loginTurnstileTestFailed:
-      "検証に失敗しました。Site Key と Secret Key を確認してください。",
-    loginTurnstileSaved: "ログイン Turnstile 設定を保存しました。",
-    loginTurnstileSaveFailed: "ログイン Turnstile 設定を保存できません。",
-    loginTurnstileDeleted: "ログイン Turnstile 設定を削除しました。",
-    loginTurnstileDeleteFailed: "ログイン Turnstile 設定を削除できません。",
-    loginTurnstileDeleteConfirm:
-      "ログイン Turnstile 設定を削除しますか？ログイン保護は無効になります。",
-    loginTurnstileLoadFailed: "ログイン Turnstile 設定を読み込めません。",
-    loginTurnstilePrivacyNotice:
-      "Cloudflare Turnstile コンソールで Invisible ウィジェットを作成してください。 セルフホスト環境では、プライバシーポリシーが Cloudflare Turnstile の要件に合っていることを確認してください。",
-    loginTurnstileGuideTitle: "Turnstile 認証情報を取得",
-    loginTurnstileGuideDescription:
-      "ログイン保護には Cloudflare Turnstile の Site Key と Secret Key が必要です。",
-    loginTurnstileGuideSteps: [
-      "Cloudflare Dashboard を開き、Turnstile に移動します。",
-      "新しいウィジェットを作成し、Invisible モードを選択します。",
-      "現在の OpenAnalytics ログインドメインを許可ホスト名に追加します。",
-      "ウィジェット作成後に Site Key と Secret Key をコピーします。",
-      "ここに Site Key と Secret Key を入力し、検証テストを実行してから設定を保存します。",
-    ],
-    enabledLabel: "メール送信を有効化",
     enabledOn: "有効",
     enabledOff: "無効",
-    providerLabel: "メールサービス",
-    providerResend: "Resend",
-    fromNameLabel: "送信者名",
-    fromEmailLabel: "送信者メール",
-    replyToLabel: "Reply-To メール",
-    replyToPlaceholder: "任意。未指定の場合は送信者メールを使用",
-    resendApiKeyLabel: "Resend API Key",
-    resendApiKeyPlaceholder: "ガイドを見て Resend API キーを取得",
-    testRecipientLabel: "テスト宛先",
-    save: "設定を保存",
-    saving: "保存中...",
-    test: "テストメールを送信",
-    testing: "送信中...",
-    saved: "メール設定を保存しました。",
-    saveFailed: "メール設定を保存できません。",
-    delete: "設定を削除",
-    deleting: "削除中...",
     cancel: "キャンセル",
-    deleted: "メール設定を削除しました。",
-    deleteFailed: "メール設定を削除できません。",
-    deleteConfirm:
-      "メール通知設定を削除しますか？削除後、システムはメール未設定かつ無効として扱います。",
-    testSent: "テストメールを送信しました。",
-    testFailed: "テストメールを送信できません。",
-    loadFailed: "メール設定を読み込めません。",
+    retentionLowerTitle: "古い分析データを削除しますか？",
+    retentionLowerDescription:
+      "{days} 日より古いページビューとイベントは、次回の日次実行で削除されます。時間ごとの合計は保持されます。この操作は元に戻せません。",
+    retentionLowerConfirm: "保存して削除",
   },
   systemPerformance: {
-    title: "システムパフォーマンス",
     refresh: "更新",
-    loadFailed: "システムパフォーマンスデータを読み込めません。",
-    noData: "この期間にシステムパフォーマンスデータはありません。",
+    loadFailed: "取り込みデータを読み込めません。",
+    noData: "この期間に取り込みデータはありません。",
     range15m: "過去 15 分",
     range1h: "過去 1 時間",
     range6h: "過去 6 時間",
@@ -12768,8 +9911,7 @@ const jaMessages = {
     customEvents: "カスタムイベント",
     anomalyBucket: "異常分類",
     openVisitHealth: "未終了訪問バックログ",
-    openVisitHealthDescription:
-      "leave、ルート変更、タイムアウト確定でまだ閉じられていない未終了行です。",
+    openVisitHealthDescription: "まだ終了していない訪問です。",
     open: "未終了",
     stale: "停滞",
     timedOut: "タイムアウト",
@@ -12783,20 +9925,19 @@ const jaMessages = {
     events: "イベント",
     avgLatency: "平均遅延",
     slowestEventsTitle: "推定最遅イベント",
-    slowestEventsDescription:
-      "選択期間で書き込み時刻とイベント時刻の正の差が最大の記録です。",
+    slowestEventsDescription: "発生から保存までの遅延が最も長いイベントです。",
     eventTime: "イベント時刻",
     serverTime: "サーバー書き込み時刻",
     estimatedDelay: "推定遅延",
-    doDiagnosticTitle: "DO バッファ診断",
+    doDiagnosticTitle: "バッファ中のデータ",
     doDiagnosticDescription:
-      "各サイトの専用 Durable Object のデータ停滞状況を診断します。",
-    doDiagnosticLoadFailed: "DO 診断データを読み込めません。",
-    doDiagnosticLoading: "サイトごとに DO 状態を取得中…",
-    doDiagnosticRun: "DO 診断を実行",
-    doDiagnosticEmpty: "DO 状態はありません。",
-    doDiagnosticUnreachable: "一部の DO に到達できません",
-    doDiagnosticReachableSites: "到達可能 DO",
+      "各サイトでまだ保存されていないデータを確認します。",
+    doDiagnosticLoadFailed: "バッファ中のデータを確認できません。",
+    doDiagnosticLoading: "各サイトを確認中…",
+    doDiagnosticRun: "バッファ中のデータを確認",
+    doDiagnosticEmpty: "バッファ中のデータはありません。",
+    doDiagnosticUnreachable: "到達できないサイト",
+    doDiagnosticReachableSites: "到達可能なサイト",
     doDiagnosticTotalSites: "総サイト数",
     doDiagnosticActiveAlarms: "アクティブなアラームタイマー",
     doDiagnosticBufferedVisits: "バッファ済み訪問",
@@ -12808,11 +9949,10 @@ const jaMessages = {
     doDiagnosticStuckDirty: "未フラッシュで停滞",
     doDiagnosticMaxFlushAttempts: "最大再試行回数",
     doDiagnosticBufferedCustomEvents: "バッファ済みカスタムイベント",
-    doDiagnosticOldestOpen: "最古の未終了 started_at",
+    doDiagnosticOldestOpen: "最も古い未終了の訪問",
     doDiagnosticFutureMaxActivity: "未来側に最もずれた最終活動時刻",
     doDiagnosticSiteList: "リスク上位サイト",
-    doDiagnosticSiteListDescription:
-      "DO ごとのバッファ状態スナップショットをリスクスコア順に並べた上位 20 サイトです。",
+    doDiagnosticSiteListDescription: "リスクが最も高い 20 サイト。",
     doDiagnosticSiteFailed: "到達不能",
     doDiagnosticSiteOpen: "未終了",
     doDiagnosticSiteStuck: "停滞",
@@ -12826,8 +9966,6 @@ const jaMessages = {
     doDiagnosticSiteNextDueHidden: "非表示フォールバック",
     doDiagnosticSiteNextDueTimeout: "訪問タイムアウト",
     doDiagnosticSiteResponseMs: "応答時間",
-    doDiagnosticThresholdsHint:
-      "しきい値：stale {stale}、timeout {timeout}、hardAged {hardAged}、stuck flush_attempts ≥ {stuck}",
     doDiagnosticHealthy: "異常なバッファ行は検出されませんでした。",
   },
   loginForm: {},
@@ -12841,7 +9979,7 @@ const jaMessages = {
     toggleSidebar: "サイドバーを切り替え",
     sources: "流入元",
     audience: "オーディエンス",
-    conversions: "コンバージョン",
+    goals: "目標",
     sites: "サイト",
     allSites: "すべてのサイト",
     inbox: "受信トレイ",
@@ -12861,39 +9999,32 @@ const jaMessages = {
     steps: {
       site: "最初のサイトを追加",
       tracking: "ウェブサイトを計測する",
-      team: "チームを招待",
+      team: "メンバーを招待",
       notifications: "レポートをメールで受け取る",
       sharing: "公開ダッシュボードを共有",
     },
-    noSitesTitle: "サイトはまだありません",
-    noSitesDescription:
-      "サイトを追加して、そのスクリプトをページに設置してください。",
+    noSitesTitle: "最初のサイトを追加",
+    memberNoSitesTitle: "サイトはまだありません",
+    memberNoSitesDescription: "管理者に追加を依頼してください。",
     addSite: "サイトを追加",
     waitingTitle: "最初のページビューを待っています",
-    waitingDescription:
-      "このスクリプトを {domain} のすべてのページに追加してください。ページビューは1分以内にここに表示されます。",
     copy: "コピー",
     copied: "コピーしました",
-    trackingSettings: "トラッキング設定",
   },
   settingsNav: {
     label: "設定",
-    personal: "個人",
-    organization: "組織",
-    system: "システム",
+    system: "システムの状態",
     account: "アカウント",
-    sites: "サイト",
     notifications: "通知",
-    publicLinks: "公開リンク",
-    general: "一般",
-    scheduledTasks: "スケジュールタスク",
-    requestObservation: "リクエスト監視",
-    performance: "パフォーマンス",
     cancel: "キャンセル",
-    managerOnly: "変更できるのはオーナーまたは管理者のみです。",
-    dangerZone: "危険な操作",
-    copy: "コピー",
-    copied: "コピーしました",
+  },
+  systemHealth: {
+    tabs: {
+      tasks: "スケジュールタスク",
+      blocked: "ブロックされたリクエスト",
+      ingestion: "データ受信",
+      data: "データ",
+    },
   },
 } as AppMessages;
 

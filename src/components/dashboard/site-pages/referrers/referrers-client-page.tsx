@@ -12,9 +12,8 @@ import {
   ReferrerBreakdownCard,
   type ReferrerBreakdownGroupKey,
 } from "@/components/dashboard/referrers/referrer-breakdown-card";
-import { ReferrerPerformanceRadarCard } from "@/components/dashboard/referrers/referrer-performance-radar-card";
 import { ReferrerShareTrendCard } from "@/components/dashboard/referrers/referrer-share-trend-card";
-import { ReferrerSummarySection } from "@/components/dashboard/referrers/referrer-summary-section";
+import { ReferrerSplitCard } from "@/components/dashboard/referrers/referrer-split-card";
 import {
   buildReferrerRowsByTab,
   type ReferrerSortKey,
@@ -184,27 +183,18 @@ export function ReferrersClientPage({
 
   return (
     <div className="space-y-6">
-      <PageHeading title={messages.referrers.title} />
+      <PageHeading title={messages.navigation.referrers} />
 
-      <ReferrerSummarySection
+      <ReferrerSplitCard
         locale={locale}
         messages={messages}
         summary={summaryQuery.data?.current.data ?? null}
         comparisonSummary={summaryQuery.data?.comparison?.data ?? null}
         comparisonLabel={dashboardComparisonLabel(messages, comparisonQuery)}
         loading={summaryQuery.isPending}
-        hideSummaryCard
       />
 
       <ReferrerShareTrendCard
-        locale={locale}
-        messages={messages}
-        siteId={siteId}
-        window={requestWindow}
-        filters={requestFilters}
-      />
-
-      <ReferrerPerformanceRadarCard
         locale={locale}
         messages={messages}
         siteId={siteId}

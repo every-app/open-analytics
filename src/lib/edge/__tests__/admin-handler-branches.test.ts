@@ -250,7 +250,6 @@ describe("admin handler low branches", () => {
     const siteUuid = vi
       .spyOn(crypto, "randomUUID")
       .mockReturnValue("00000000-0000-4000-8000-000000000456");
-    const slugCheck = statement({ first: null });
     const insertSite = statement();
 
     const created = await handleSitesAdmin(
@@ -260,10 +259,9 @@ describe("admin handler low branches", () => {
           teamId: "team-1",
           name: "Docs Site",
           domain: "docs.example.test",
-          publicEnabled: "on",
         }),
       ),
-      createEnv([slugCheck, insertSite]).env,
+      createEnv([insertSite]).env,
       new URL("https://edge.test/admin/sites"),
     );
     expect(created.status).toBe(200);
@@ -273,8 +271,8 @@ describe("admin handler low branches", () => {
       "team-1",
       "Docs Site",
       "docs.example.test",
-      1,
-      "docs-site",
+      0,
+      null,
     );
     expect(upsertSiteScriptSettingsMock).toHaveBeenCalledWith(
       expect.anything(),

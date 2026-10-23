@@ -3,7 +3,6 @@ import { Button } from "@insightflare/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@insightflare/ui/card";
@@ -202,7 +201,7 @@ export function GoalDetail({
   readonly filters: FilterDocument;
   readonly filterKey: string;
   readonly comparisonQuery?: DashboardComparisonQuery | null;
-  readonly comparisonLabel?: string;
+  readonly comparisonLabel: string;
   readonly canManage: boolean;
   readonly actionPending: boolean;
   readonly onEdit: () => void;
@@ -333,11 +332,9 @@ export function GoalDetail({
   const fullMessages = getMessages(locale);
   const metricLoading = !summary.data;
   const comparisonDetail = (value: string) =>
-    comparisonGoalSummary && comparisonLabel
-      ? `${comparisonLabel}: ${value}`
-      : undefined;
+    comparisonGoalSummary ? `${comparisonLabel}: ${value}` : undefined;
   const conversionChange = (audience: "visitors" | "sessions") => {
-    if (!comparisonGoalSummary || !comparisonLabel) return undefined;
+    if (!comparisonGoalSummary) return undefined;
     const value = conversionRateChange(
       goalSummary?.[audience],
       comparisonGoalSummary[audience],
@@ -358,7 +355,7 @@ export function GoalDetail({
         comparisonDetail(
           goalMetricValue(comparisonGoalSummary, "visitors", locale),
         ) ?? `${labels.converted} / ${labels.total}`,
-      detailLoading: comparisonLoading && Boolean(comparisonLabel),
+      detailLoading: comparisonLoading,
       loading: metricLoading,
     },
     {
@@ -369,7 +366,7 @@ export function GoalDetail({
         comparisonDetail(
           goalMetricValue(comparisonGoalSummary, "sessions", locale),
         ) ?? `${labels.converted} / ${labels.total}`,
-      detailLoading: comparisonLoading && Boolean(comparisonLabel),
+      detailLoading: comparisonLoading,
       loading: metricLoading,
     },
     {
@@ -381,7 +378,7 @@ export function GoalDetail({
           goalMetricRate(comparisonGoalSummary, "visitors", locale),
         ) ?? goalMetricValue(goalSummary, "visitors", locale),
       change: conversionChange("visitors"),
-      detailLoading: comparisonLoading && Boolean(comparisonLabel),
+      detailLoading: comparisonLoading,
       loading: metricLoading,
     },
     {
@@ -393,7 +390,7 @@ export function GoalDetail({
           goalMetricRate(comparisonGoalSummary, "sessions", locale),
         ) ?? goalMetricValue(goalSummary, "sessions", locale),
       change: conversionChange("sessions"),
-      detailLoading: comparisonLoading && Boolean(comparisonLabel),
+      detailLoading: comparisonLoading,
       loading: metricLoading,
     },
   ];
@@ -450,7 +447,6 @@ export function GoalDetail({
             <ChartLineIcon className="size-4" />
             {labels.timeseries}
           </CardTitle>
-          <CardDescription>{labels.listSubtitle}</CardDescription>
         </CardHeader>
         <CardContent>
           {timeseries.isError ? (

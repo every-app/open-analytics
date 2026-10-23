@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  handleNotificationEmailPreviewAdmin,
   handleNotificationPreferences,
   handleNotificationRead,
   handleNotificationRulePreviewAdmin,
@@ -31,7 +30,6 @@ const createManualTestNotification = vi.hoisted(() => vi.fn());
 const createNotificationRulePreview = vi.hoisted(() => vi.fn());
 const runNotificationRuleManually = vi.hoisted(() => vi.fn());
 const runScheduledTask = vi.hoisted(() => vi.fn());
-const renderNotificationEmail = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/edge/admin/auth", () => ({
   requireActor,
 }));
@@ -67,9 +65,6 @@ vi.mock("@/lib/notifications/edge/notification-task", () => ({
 }));
 vi.mock("@/lib/edge/scheduled-tasks/runner", () => ({
   runScheduledTask,
-}));
-vi.mock("@/lib/notifications/edge/email-renderer", () => ({
-  renderNotificationEmail,
 }));
 function request(path: string, body: Record<string, unknown>): Request {
   return new Request(`https://edge.test${path}`, {
@@ -131,11 +126,6 @@ describe("admin notification handlers", () => {
     runNotificationRuleManually.mockResolvedValue({
       summary: { emailFailed: 0 },
       messageCount: 0,
-    });
-    renderNotificationEmail.mockResolvedValue({
-      subject: "Preview",
-      html: "<p>Preview</p>",
-      text: "Preview text",
     });
     createManualTestNotification.mockResolvedValue({
       message: { id: "msg-test", deliveryStatus: "sent" },
@@ -786,76 +776,11 @@ describe("admin notification handlers", () => {
         request("/api/private/admin/notification-test", { teamId: "team-1" }),
         {} as never,
       ),
-      handleNotificationEmailPreviewAdmin(
-        getRequest("/api/private/admin/notification-email-preview"),
-        {} as never,
-        new URL(
-          "https://edge.test/api/private/admin/notification-email-preview",
-        ),
-      ),
     ]);
 
     expect(responses.map((response) => response.status)).toEqual([
-      401, 401, 401, 401, 401, 401, 401, 401,
+      401, 401, 401, 401, 401, 401, 401,
     ]);
-  });
-
-  it("renders notification email previews for admins", async () => {
-    requireActor.mockResolvedValue({
-      user: { id: "admin-1" },
-      isAdmin: true,
-    });
-
-    const html = await handleNotificationEmailPreviewAdmin(
-      getRequest("/api/private/admin/notification-email-preview?type=bad"),
-      {} as never,
-      new URL(
-        "https://edge.test/api/private/admin/notification-email-preview?type=bad&locale=bad",
-      ),
-    );
-    const text = await handleNotificationEmailPreviewAdmin(
-      getRequest("/api/private/admin/notification-email-preview?format=text"),
-      {} as never,
-      new URL(
-        "https://edge.test/api/private/admin/notification-email-preview?type=health&format=text",
-      ),
-    );
-    const json = await handleNotificationEmailPreviewAdmin(
-      getRequest("/api/private/admin/notification-email-preview?format=json"),
-      {} as never,
-      new URL(
-        "https://edge.test/api/private/admin/notification-email-preview?type=test&format=json",
-      ),
-    );
-
-    expect(html.headers.get("content-type")).toContain("text/html");
-    expect(await html.text()).toBe("<p>Preview</p>");
-    expect(await text.text()).toBe("Preview text");
-    expect(await json.json()).toMatchObject({
-      ok: true,
-      data: { subject: "Preview" },
-    });
-    expect(renderNotificationEmail).toHaveBeenCalledTimes(3);
-  });
-
-  it("rejects non-admin and non-GET email preview requests", async () => {
-    const forbidden = await handleNotificationEmailPreviewAdmin(
-      getRequest("/api/private/admin/notification-email-preview"),
-      {} as never,
-      new URL("https://edge.test/api/private/admin/notification-email-preview"),
-    );
-    requireActor.mockResolvedValueOnce({
-      user: { id: "admin-1" },
-      isAdmin: true,
-    });
-    const method = await handleNotificationEmailPreviewAdmin(
-      methodRequest("POST", "/api/private/admin/notification-email-preview"),
-      {} as never,
-      new URL("https://edge.test/api/private/admin/notification-email-preview"),
-    );
-
-    expect(forbidden.status).toBe(403);
-    expect(method.status).toBe(405);
   });
 
   it("returns method and validation errors for preferences and read handlers", async () => {
