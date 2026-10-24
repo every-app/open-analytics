@@ -23,6 +23,7 @@ function Page() {
       locale={locale}
       messages={messages}
       user={teamContext.user}
+      gatewayUrl={teamContext.gatewayUrl}
     />
   );
 }

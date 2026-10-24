@@ -92,7 +92,12 @@ export function InstallScriptPage({
             if (isInstallPlatform(value)) setPlatform(value);
           }}
         >
-          <TabsList variant="line" className="flex-wrap">
+          {/* On a phone the five tabs wrap; h-auto lets the strip grow with
+              them (the variant fixes h-9) and min-h-9 keeps the desktop height. */}
+          <TabsList
+            variant="line"
+            className="flex-wrap gap-y-1 group-data-horizontal/tabs:h-auto group-data-horizontal/tabs:min-h-9"
+          >
             {PLATFORMS.map((item) => (
               <TabsTrigger key={item} value={item}>
                 {copy.platforms[item]}

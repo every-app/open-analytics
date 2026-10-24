@@ -1216,6 +1216,10 @@ accountSettings:
   saveFailed: タイムゾーンを保存できません。
   timeZoneLabel: レポートのタイムゾーン
   languageSaveFailed: 言語を保存できません。
+  aiClientsTitle: AI クライアント
+  aiClientsLabel: AI クライアントを接続
+  aiClientsDescription: このアドレスを Claude、ChatGPT、Claude Code に一度追加してください。Every App でサインインし、OpenAnalytics を含む開けるすべてのアプリで使えます。
+  aiClientsDocs: 接続方法
 notificationCenter:
   title: 受信トレイ
   empty: 通知はまだありません。
@@ -1243,6 +1247,7 @@ notificationCenter:
   detailFields: {}
   noUnread: 未読の通知はありません。
   emailFailed: メール送信失敗
+  emailSkipped: "メールは送信されませんでした: このゲートウェイではメールが設定されていません。"
 notificationEmail:
   common:
     brand: OpenAnalytics
@@ -1280,7 +1285,7 @@ notificationEmail:
     subject: OpenAnalytics 通知テスト
     title: OpenAnalytics 通知テスト
     summary: これは OpenAnalytics からのテスト通知です。
-    body: これは OpenAnalytics からのテスト通知です。メールが設定され有効になっている場合、このメッセージは Resend の配信も確認します。
+    body: オンにしたレポートとアラートは OpenAnalytics の受信トレイに届きます。このゲートウェイでメールが設定されていればメールでも届きます。
   report:
     subject: "{site} の{periodLabel}トラフィックレポート"
     title: "{site} の{periodLabel}トラフィックレポート"
@@ -1360,7 +1365,7 @@ teamManagement:
   notifications:
     empty: 通知ルールはまだありません。
     rulesTitle: 通知ルール
-    enabledCount: この組織で {count} 件のルールが有効です。
+    enabledCount: "{total} 件中 {count} 件が有効です。"
     loadingRules: 通知ルールを読み込み中
     deliveryTestTitle: 配信テスト
     deliveryTestDescription: あなた宛てのアプリ内通知を 1 件作成し、利用可能な場合はメール送信も試行します。
@@ -1369,6 +1374,7 @@ teamManagement:
     sendTestNotification: テスト通知を送信
     loadRulesFailed: 通知ルールを読み込めません。
     testNotificationSent: テスト通知を送信しました。
+    testNotificationSentNoEmail: "テストを受信トレイに送信しました。メールは送信されませんでした: このゲートウェイではメールが設定されていません。"
     sendTestNotificationFailed: テスト通知を送信できません。
     createRule: ルールを作成
     editRule: ルールを編集
@@ -1434,7 +1440,17 @@ teamManagement:
     runNow: 今すぐ実行
     previewFailed: ルールをプレビューできません。
     runFailed: ルールを実行できません。
-    runResultToast: "{messages} 件のメッセージを作成しました。メール送信 {sent} 件、失敗 {failed} 件。"
+    runFailedWithReason: "ルールを実行できませんでした: {reason}"
+    previewFailedWithReason: "ルールをプレビューできませんでした: {reason}"
+    runNotTriggered: 確認しました。今は送るものがありません。
+    runSkipped: "このルールを確認できません: サイトがないか、条件が無効です。ルールを編集してください。"
+    runNoRecipients: "送信先がありません: この組織にこのルールの受信者に該当するメンバーがいません。"
+    runSentOne: 受信トレイに 1 件送信しました。
+    runSentMany: 受信トレイに {count} 件送信しました。
+    runEmailFailed: "{failed} 件のメール送信に失敗しました。"
+    runEmailNotSetUp: "メールは送信されませんでした: このゲートウェイではメールが設定されていません。"
+    runEmailSent: "{sent} 人にメールを送信しました。"
+    runEmailOff: 受信者は通知設定でメールをオフにしています。
     previewDialogTitle: ルールプレビュー
     previewDialogDescription: メッセージ作成やメール送信をせずに、このルールを評価します。
     coolingDownUntil: "{time} までクールダウン中"
@@ -1445,7 +1461,7 @@ teamManagement:
     scheduleYearly: 毎年 {month}/{day} {time}
     scheduleInterval: "{minutes} 分ごと"
     scheduleCustom: カスタム
-    conditionReport: "{period} レポート"
+    conditionReport: "{period}"
     summaryWhenConditions: "次の条件のうち {combinator} が一致したら、{type} 通知を送信します："
     summaryWhenSingleCondition: "この条件が一致したら、{type} 通知を送信します："
     summaryConditionThreshold: "{window} {metric} {operator} {value}"
@@ -1709,7 +1725,7 @@ requestObservation:
   normalDetail: {}
 systemSettings:
   notificationEmailTitle: メール通知
-  emailGatewayNotReady: "このゲートウェイではメールが設定されていません。管理者が送信ドメインを設定したうえで、{command} で {name} を設定します。"
+  emailGatewayNotReady: "このゲートウェイではメールが設定されていません。管理者が送信ドメインを設定したうえで、{command} で送信者を設定します。"
   emailSenderLabel: "送信者"
   retentionTitle: 運用データの保持期間
   retentionDescription: タスク実行、タスクログ、通知メッセージ、詳細な分析データの保持期間を設定します。タスクと通知の変更は新しいレコードにのみ適用されます。新しい期間より古い詳細な分析データは、次回の日次実行で削除されます。

@@ -36,13 +36,35 @@ function isUnread(item: NotificationMessageData): boolean {
   return item.readAt === null;
 }
 
-function emailFailed(item: NotificationMessageData): boolean {
+function emailResult(
+  item: NotificationMessageData,
+): Record<string, unknown> | null {
   const email = item.deliveryResults.email;
+  return typeof email === "object" && email !== null
+    ? (email as Record<string, unknown>)
+    : null;
+}
+
+function emailFailed(item: NotificationMessageData): boolean {
+  return emailResult(item)?.status === "failed";
+}
+
+/** Delivery skipped the email because the gateway has no sender. */
+function emailSkippedUnconfigured(item: NotificationMessageData): boolean {
+  const email = emailResult(item);
   return (
-    typeof email === "object" &&
-    email !== null &&
-    (email as Record<string, unknown>).status === "failed"
+    email?.status === "skipped" && email.reason === "system_email_unconfigured"
   );
+}
+
+/**
+ * The stored body of a generic message starts with its title (the plain-text
+ * renderer puts it there for email), and the card already shows the title.
+ */
+function bodyWithoutTitle(item: NotificationMessageData): string {
+  return item.bodyText.startsWith(item.title)
+    ? item.bodyText.slice(item.title.length).trim()
+    : item.bodyText;
 }
 
 /** The viewer's notifications: one list, all or unread. */
@@ -230,6 +252,8 @@ function NotificationCard({
   onRead: () => void;
 }) {
   const unread = isUnread(item);
+  const body = bodyWithoutTitle(item);
+  const emailSkipped = emailSkippedUnconfigured(item);
   return (
     <Card>
       <CardContent className="space-y-3 p-4 md:p-5">
@@ -285,13 +309,18 @@ function NotificationCard({
             </Button>
           ) : null}
         </div>
-        {item.summary || item.bodyText ? (
+        {item.summary || body || emailSkipped ? (
           <div className="space-y-3 border-t pt-3 text-sm leading-6 text-foreground/85">
             {item.summary ? (
               <p className="whitespace-pre-wrap break-words">{item.summary}</p>
             ) : null}
-            {item.bodyText ? (
-              <p className="whitespace-pre-wrap break-words">{item.bodyText}</p>
+            {body ? (
+              <p className="whitespace-pre-wrap break-words">{body}</p>
+            ) : null}
+            {emailSkipped ? (
+              <p className="text-xs text-muted-foreground">
+                {copy.emailSkipped}
+              </p>
             ) : null}
           </div>
         ) : null}

@@ -1211,6 +1211,10 @@ accountSettings:
   saveFailed: 无法保存时区。
   timeZoneLabel: 报表时区
   languageSaveFailed: 无法保存语言。
+  aiClientsTitle: AI 客户端
+  aiClientsLabel: 连接 AI 客户端
+  aiClientsDescription: 把这个地址添加到 Claude、ChatGPT 或 Claude Code 一次即可。它通过 Every App 登录，并覆盖你能打开的每个应用，包括 OpenAnalytics。
+  aiClientsDocs: 如何连接
 notificationCenter:
   title: 收件箱
   empty: 暂无通知。
@@ -1238,6 +1242,7 @@ notificationCenter:
   detailFields: {}
   noUnread: 没有未读通知。
   emailFailed: 邮件发送失败
+  emailSkipped: 未发送邮件：此网关尚未设置邮件。
 notificationEmail:
   common:
     brand: OpenAnalytics
@@ -1275,7 +1280,7 @@ notificationEmail:
     subject: OpenAnalytics 通知测试
     title: OpenAnalytics 通知测试
     summary: 这是一条来自 OpenAnalytics 的测试通知。
-    body: 这是一条来自 OpenAnalytics 的测试通知。如果邮件已配置并启用，它也会验证 Resend 投递是否正常。
+    body: 你开启的报告和提醒会送达 OpenAnalytics 收件箱；如果此网关已设置邮件，也会通过邮件送达。
   report:
     subject: "{site} {periodLabel}访问报告"
     title: "{site} {periodLabel}访问报告"
@@ -1355,7 +1360,7 @@ teamManagement:
   notifications:
     empty: 还没有通知规则。
     rulesTitle: 通知规则
-    enabledCount: "此组织已启用 {count} 条规则。"
+    enabledCount: "已启用 {count} / {total} 条。"
     loadingRules: 正在加载通知规则
     deliveryTestTitle: 投递测试
     deliveryTestDescription: 为你创建一条站内通知；如果可用，也会尝试发送邮件。
@@ -1364,6 +1369,7 @@ teamManagement:
     sendTestNotification: 发送测试通知
     loadRulesFailed: 加载通知规则失败。
     testNotificationSent: 测试通知已发送。
+    testNotificationSentNoEmail: 测试已送达收件箱。未发送邮件：此网关尚未设置邮件。
     sendTestNotificationFailed: 发送测试通知失败。
     createRule: 创建规则
     editRule: 编辑规则
@@ -1429,7 +1435,17 @@ teamManagement:
     runNow: 立即运行
     previewFailed: 预览规则失败。
     runFailed: 运行规则失败。
-    runResultToast: "已创建 {messages} 条消息。邮件发送 {sent} 条，失败 {failed} 条。"
+    runFailedWithReason: "无法运行规则：{reason}"
+    previewFailedWithReason: "无法预览规则：{reason}"
+    runNotTriggered: 已检查，目前没有可发送的内容。
+    runSkipped: 无法检查此规则：站点不存在或条件无效。请编辑规则。
+    runNoRecipients: 没有收件人：此组织中没有成员匹配此规则的收件人。
+    runSentOne: 已向收件箱发送 1 条消息。
+    runSentMany: 已向收件箱发送 {count} 条消息。
+    runEmailFailed: "{failed} 封邮件发送失败。"
+    runEmailNotSetUp: 未发送邮件：此网关尚未设置邮件。
+    runEmailSent: 已向 {sent} 人发送邮件。
+    runEmailOff: 收件人已在通知偏好中关闭邮件。
     previewDialogTitle: 规则预览
     previewDialogDescription: 仅评估规则，不创建消息，也不发送邮件。
     coolingDownUntil: "冷却至 {time}"
@@ -1440,7 +1456,7 @@ teamManagement:
     scheduleYearly: "每年 {month}/{day} {time}"
     scheduleInterval: "每 {minutes} 分钟"
     scheduleCustom: 自定义
-    conditionReport: "{period}报告"
+    conditionReport: "{period}"
     summaryWhenConditions: "当满足下列{combinator}条件时，发送{type}通知："
     summaryWhenSingleCondition: "当满足此条件时，发送{type}通知："
     summaryConditionThreshold: "{window}{metric}{operator}{value}"
@@ -1704,7 +1720,7 @@ requestObservation:
   normalDetail: {}
 systemSettings:
   notificationEmailTitle: 邮件通知
-  emailGatewayNotReady: "此网关尚未设置邮件。管理员在设置好发信域名后，用 {command} 设置 {name}。"
+  emailGatewayNotReady: "此网关尚未设置邮件。管理员在设置好发信域名后，用 {command} 设置发件人。"
   emailSenderLabel: "发件人"
   retentionTitle: 运行数据保留期
   retentionDescription: 配置任务运行记录、任务日志、通知消息和详细分析数据的保留时间。任务和通知的修改只影响新建记录；超出新期限的详细分析数据会在下一次每日运行时删除。

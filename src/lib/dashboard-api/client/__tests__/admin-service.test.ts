@@ -58,4 +58,28 @@ describe("admin service client", () => {
       "Site access denied",
     );
   });
+
+  it("reads the server's sentence out of a failed transport", async () => {
+    fetchEdgeJsonMock.mockRejectedValue(
+      new Error(
+        'Edge API failed (404 POST /api/private/admin/notification-rules/run): {"ok":false,"requestId":"req-1","timestamp":"2026-10-24T00:00:00.000Z","error":{"code":"not_found","message":"Not Found"}}',
+      ),
+    );
+
+    await expect(
+      requestAdminService("notification-rules/run", {
+        method: "POST",
+        body: { ruleId: "gone" },
+      }),
+    ).rejects.toThrow(/^Not Found$/);
+  });
+
+  it("keeps a transport error that carries no envelope", async () => {
+    const error = new Error(
+      "Edge API failed (502 GET /api/private/admin/sites): <html>Bad Gateway</html>",
+    );
+    fetchEdgeJsonMock.mockRejectedValue(error);
+
+    await expect(requestAdminService("sites")).rejects.toBe(error);
+  });
 });

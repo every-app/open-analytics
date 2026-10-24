@@ -1155,6 +1155,10 @@ export interface AppMessages {
     saveFailed: string;
     timeZoneLabel: string;
     languageSaveFailed: string;
+    aiClientsTitle: string;
+    aiClientsLabel: string;
+    aiClientsDescription: string;
+    aiClientsDocs: string;
   };
   notificationCenter: {
     title: string;
@@ -1185,6 +1189,7 @@ export interface AppMessages {
     detailFields: Record<string, never>;
     noUnread: string;
     emailFailed: string;
+    emailSkipped: string;
   };
   notificationEmail: {
     common: {
@@ -1331,6 +1336,7 @@ export interface AppMessages {
       sendTestNotification: string;
       loadRulesFailed: string;
       testNotificationSent: string;
+      testNotificationSentNoEmail: string;
       sendTestNotificationFailed: string;
       createRule: string;
       editRule: string;
@@ -1396,7 +1402,17 @@ export interface AppMessages {
       runNow: string;
       previewFailed: string;
       runFailed: string;
-      runResultToast: string;
+      runFailedWithReason: string;
+      previewFailedWithReason: string;
+      runNotTriggered: string;
+      runSkipped: string;
+      runNoRecipients: string;
+      runSentOne: string;
+      runSentMany: string;
+      runEmailFailed: string;
+      runEmailNotSetUp: string;
+      runEmailSent: string;
+      runEmailOff: string;
       previewDialogTitle: string;
       previewDialogDescription: string;
       coolingDownUntil: string;
@@ -3191,6 +3207,11 @@ const enMessages = {
     saveFailed: "Couldn't save the time zone.",
     timeZoneLabel: "Reporting time zone",
     languageSaveFailed: "Couldn't save your language.",
+    aiClientsTitle: "AI clients",
+    aiClientsLabel: "Connect an AI client",
+    aiClientsDescription:
+      "Add this address to Claude, ChatGPT or Claude Code once. It signs you in through Every App and covers every app you can open, OpenAnalytics included.",
+    aiClientsDocs: "How to connect",
   },
   notificationCenter: {
     title: "Inbox",
@@ -3221,6 +3242,7 @@ const enMessages = {
     detailFields: {},
     noUnread: "No unread notifications.",
     emailFailed: "Email failed",
+    emailSkipped: "No email went out: email isn't set up on this gateway.",
   },
   notificationEmail: {
     common: {
@@ -3262,7 +3284,7 @@ const enMessages = {
       subject: "OpenAnalytics notification test",
       title: "OpenAnalytics notification test",
       summary: "This is a test notification from OpenAnalytics.",
-      body: "This is a test notification from OpenAnalytics. If email is set up on the Every App gateway, it also checks email delivery.",
+      body: "Reports and alerts you turn on arrive in your OpenAnalytics inbox and, when email is set up on this gateway, by email too.",
     },
     report: {
       subject: "{site} {periodLabel} traffic report",
@@ -3364,7 +3386,7 @@ const enMessages = {
     notifications: {
       empty: "No notification rules yet.",
       rulesTitle: "Notification rules",
-      enabledCount: "{count} enabled rules in this organization.",
+      enabledCount: "{count} of {total} enabled.",
       loadingRules: "Loading notification rules",
       deliveryTestTitle: "Delivery test",
       deliveryTestDescription:
@@ -3374,6 +3396,8 @@ const enMessages = {
       sendTestNotification: "Send test notification",
       loadRulesFailed: "Failed to load notification rules.",
       testNotificationSent: "Test notification sent.",
+      testNotificationSentNoEmail:
+        "Test sent to your inbox. No email went out: email isn't set up on this gateway.",
       sendTestNotificationFailed: "Failed to send test notification.",
       createRule: "Create rule",
       editRule: "Edit rule",
@@ -3440,8 +3464,20 @@ const enMessages = {
       runNow: "Run now",
       previewFailed: "Failed to preview rule.",
       runFailed: "Failed to run rule.",
-      runResultToast:
-        "Created {messages} messages. Email sent {sent}, failed {failed}.",
+      runFailedWithReason: "Couldn't run the rule: {reason}",
+      previewFailedWithReason: "Couldn't preview the rule: {reason}",
+      runNotTriggered: "Checked. Nothing to send right now.",
+      runSkipped:
+        "Couldn't check this rule: its site is missing or its condition isn't valid. Edit the rule.",
+      runNoRecipients:
+        "No one to send to: no member of this organization matches this rule's recipients.",
+      runSentOne: "Sent 1 message to the inbox.",
+      runSentMany: "Sent {count} messages to the inbox.",
+      runEmailFailed: "Email failed for {failed} of them.",
+      runEmailNotSetUp:
+        "No email went out: email isn't set up on this gateway.",
+      runEmailSent: "Email went out to {sent} of them.",
+      runEmailOff: "Email is off in their notification preferences.",
       previewDialogTitle: "Rule preview",
       previewDialogDescription:
         "Evaluate this rule without creating messages or sending email.",
@@ -3453,7 +3489,7 @@ const enMessages = {
       scheduleYearly: "Yearly {month}/{day} {time}",
       scheduleInterval: "Every {minutes} min",
       scheduleCustom: "Custom",
-      conditionReport: "{period} report",
+      conditionReport: "{period}",
       summaryWhenConditions:
         "When {combinator} of the following conditions match, send a {type} notification:",
       summaryWhenSingleCondition:
@@ -3752,7 +3788,7 @@ const enMessages = {
   systemSettings: {
     notificationEmailTitle: "Email notifications",
     emailGatewayNotReady:
-      "Email isn't set up on this gateway. An admin sets {name} with {command} after setting up a sending domain.",
+      "Email isn't set up on this gateway. An admin sets the sender with {command} after setting up a sending domain.",
     emailSenderLabel: "Sender",
     retentionTitle: "Operational data retention",
     retentionDescription:
@@ -5232,6 +5268,11 @@ const zhMessages = {
     saveFailed: "无法保存时区。",
     timeZoneLabel: "报表时区",
     languageSaveFailed: "无法保存语言。",
+    aiClientsTitle: "AI 客户端",
+    aiClientsLabel: "连接 AI 客户端",
+    aiClientsDescription:
+      "把这个地址添加到 Claude、ChatGPT 或 Claude Code 一次即可。它通过 Every App 登录，并覆盖你能打开的每个应用，包括 OpenAnalytics。",
+    aiClientsDocs: "如何连接",
   },
   notificationCenter: {
     title: "收件箱",
@@ -5262,6 +5303,7 @@ const zhMessages = {
     detailFields: {},
     noUnread: "没有未读通知。",
     emailFailed: "邮件发送失败",
+    emailSkipped: "未发送邮件：此网关尚未设置邮件。",
   },
   notificationEmail: {
     common: {
@@ -5302,7 +5344,7 @@ const zhMessages = {
       subject: "OpenAnalytics 通知测试",
       title: "OpenAnalytics 通知测试",
       summary: "这是一条来自 OpenAnalytics 的测试通知。",
-      body: "这是一条来自 OpenAnalytics 的测试通知。如果邮件已配置并启用，它也会验证 Resend 投递是否正常。",
+      body: "你开启的报告和提醒会送达 OpenAnalytics 收件箱；如果此网关已设置邮件，也会通过邮件送达。",
     },
     report: {
       subject: "{site} {periodLabel}访问报告",
@@ -5401,7 +5443,7 @@ const zhMessages = {
     notifications: {
       empty: "还没有通知规则。",
       rulesTitle: "通知规则",
-      enabledCount: "此组织已启用 {count} 条规则。",
+      enabledCount: "已启用 {count} / {total} 条。",
       loadingRules: "正在加载通知规则",
       deliveryTestTitle: "投递测试",
       deliveryTestDescription:
@@ -5411,6 +5453,8 @@ const zhMessages = {
       sendTestNotification: "发送测试通知",
       loadRulesFailed: "加载通知规则失败。",
       testNotificationSent: "测试通知已发送。",
+      testNotificationSentNoEmail:
+        "测试已送达收件箱。未发送邮件：此网关尚未设置邮件。",
       sendTestNotificationFailed: "发送测试通知失败。",
       createRule: "创建规则",
       editRule: "编辑规则",
@@ -5476,8 +5520,17 @@ const zhMessages = {
       runNow: "立即运行",
       previewFailed: "预览规则失败。",
       runFailed: "运行规则失败。",
-      runResultToast:
-        "已创建 {messages} 条消息。邮件发送 {sent} 条，失败 {failed} 条。",
+      runFailedWithReason: "无法运行规则：{reason}",
+      previewFailedWithReason: "无法预览规则：{reason}",
+      runNotTriggered: "已检查，目前没有可发送的内容。",
+      runSkipped: "无法检查此规则：站点不存在或条件无效。请编辑规则。",
+      runNoRecipients: "没有收件人：此组织中没有成员匹配此规则的收件人。",
+      runSentOne: "已向收件箱发送 1 条消息。",
+      runSentMany: "已向收件箱发送 {count} 条消息。",
+      runEmailFailed: "{failed} 封邮件发送失败。",
+      runEmailNotSetUp: "未发送邮件：此网关尚未设置邮件。",
+      runEmailSent: "已向 {sent} 人发送邮件。",
+      runEmailOff: "收件人已在通知偏好中关闭邮件。",
       previewDialogTitle: "规则预览",
       previewDialogDescription: "仅评估规则，不创建消息，也不发送邮件。",
       coolingDownUntil: "冷却至 {time}",
@@ -5488,7 +5541,7 @@ const zhMessages = {
       scheduleYearly: "每年 {month}/{day} {time}",
       scheduleInterval: "每 {minutes} 分钟",
       scheduleCustom: "自定义",
-      conditionReport: "{period}报告",
+      conditionReport: "{period}",
       summaryWhenConditions: "当满足下列{combinator}条件时，发送{type}通知：",
       summaryWhenSingleCondition: "当满足此条件时，发送{type}通知：",
       summaryConditionThreshold: "{window}{metric}{operator}{value}",
@@ -5781,7 +5834,7 @@ const zhMessages = {
   systemSettings: {
     notificationEmailTitle: "邮件通知",
     emailGatewayNotReady:
-      "此网关尚未设置邮件。管理员在设置好发信域名后，用 {command} 设置 {name}。",
+      "此网关尚未设置邮件。管理员在设置好发信域名后，用 {command} 设置发件人。",
     emailSenderLabel: "发件人",
     retentionTitle: "运行数据保留期",
     retentionDescription:
@@ -7259,6 +7312,11 @@ const zhTwMessages = {
     saveFailed: "無法儲存時區。",
     timeZoneLabel: "報表時區",
     languageSaveFailed: "無法儲存語言。",
+    aiClientsTitle: "AI 用戶端",
+    aiClientsLabel: "連接 AI 用戶端",
+    aiClientsDescription:
+      "把這個位址加到 Claude、ChatGPT 或 Claude Code 一次即可。它透過 Every App 登入，並涵蓋你能開啟的每個應用程式，包括 OpenAnalytics。",
+    aiClientsDocs: "如何連接",
   },
   notificationCenter: {
     title: "收件匣",
@@ -7289,6 +7347,7 @@ const zhTwMessages = {
     detailFields: {},
     noUnread: "沒有未讀通知。",
     emailFailed: "郵件傳送失敗",
+    emailSkipped: "未傳送郵件：此閘道尚未設定郵件。",
   },
   notificationEmail: {
     common: {
@@ -7329,7 +7388,7 @@ const zhTwMessages = {
       subject: "OpenAnalytics 通知測試",
       title: "OpenAnalytics 通知測試",
       summary: "這是一條來自 OpenAnalytics 的測試通知。",
-      body: "這是一條來自 OpenAnalytics 的測試通知。如果郵件已設定並啟用，它也會驗證 Resend 投遞是否正常。",
+      body: "你開啟的報告和提醒會送達 OpenAnalytics 收件匣；如果此閘道已設定郵件，也會透過郵件送達。",
     },
     report: {
       subject: "{site} {periodLabel}造訪報告",
@@ -7428,7 +7487,7 @@ const zhTwMessages = {
     notifications: {
       empty: "還沒有通知規則。",
       rulesTitle: "通知規則",
-      enabledCount: "此組織已啟用 {count} 條規則。",
+      enabledCount: "已啟用 {count} / {total} 條。",
       loadingRules: "正在載入通知規則",
       deliveryTestTitle: "投遞測試",
       deliveryTestDescription:
@@ -7438,6 +7497,8 @@ const zhTwMessages = {
       sendTestNotification: "傳送測試通知",
       loadRulesFailed: "載入通知規則失敗。",
       testNotificationSent: "測試通知已傳送。",
+      testNotificationSentNoEmail:
+        "測試已送達收件匣。未傳送郵件：此閘道尚未設定郵件。",
       sendTestNotificationFailed: "傳送測試通知失敗。",
       createRule: "建立規則",
       editRule: "編輯規則",
@@ -7503,8 +7564,17 @@ const zhTwMessages = {
       runNow: "立即執行",
       previewFailed: "預覽規則失敗。",
       runFailed: "執行規則失敗。",
-      runResultToast:
-        "已建立 {messages} 條訊息。郵件傳送 {sent} 條，失敗 {failed} 條。",
+      runFailedWithReason: "無法執行規則：{reason}",
+      previewFailedWithReason: "無法預覽規則：{reason}",
+      runNotTriggered: "已檢查，目前沒有可傳送的內容。",
+      runSkipped: "無法檢查此規則：網站不存在或條件無效。請編輯規則。",
+      runNoRecipients: "沒有收件人：此組織中沒有成員符合此規則的收件人。",
+      runSentOne: "已向收件匣傳送 1 條訊息。",
+      runSentMany: "已向收件匣傳送 {count} 條訊息。",
+      runEmailFailed: "{failed} 封郵件傳送失敗。",
+      runEmailNotSetUp: "未傳送郵件：此閘道尚未設定郵件。",
+      runEmailSent: "已向 {sent} 人傳送郵件。",
+      runEmailOff: "收件人已在通知偏好中關閉郵件。",
       previewDialogTitle: "規則預覽",
       previewDialogDescription: "僅評估規則，不建立訊息，也不傳送郵件。",
       coolingDownUntil: "冷卻至 {time}",
@@ -7515,7 +7585,7 @@ const zhTwMessages = {
       scheduleYearly: "每年 {month}/{day} {time}",
       scheduleInterval: "每 {minutes} 分鐘",
       scheduleCustom: "自訂",
-      conditionReport: "{period}報告",
+      conditionReport: "{period}",
       summaryWhenConditions: "當滿足下列{combinator}條件時，傳送{type}通知：",
       summaryWhenSingleCondition: "當滿足此條件時，傳送{type}通知：",
       summaryConditionThreshold: "{window}{metric}{operator}{value}",
@@ -7808,7 +7878,7 @@ const zhTwMessages = {
   systemSettings: {
     notificationEmailTitle: "郵件通知",
     emailGatewayNotReady:
-      "此閘道尚未設定郵件。管理員在設定好寄信網域後，用 {command} 設定 {name}。",
+      "此閘道尚未設定郵件。管理員在設定好寄信網域後，用 {command} 設定寄件人。",
     emailSenderLabel: "寄件人",
     retentionTitle: "執行資料保留期",
     retentionDescription:
@@ -9309,6 +9379,11 @@ const jaMessages = {
     saveFailed: "タイムゾーンを保存できません。",
     timeZoneLabel: "レポートのタイムゾーン",
     languageSaveFailed: "言語を保存できません。",
+    aiClientsTitle: "AI クライアント",
+    aiClientsLabel: "AI クライアントを接続",
+    aiClientsDescription:
+      "このアドレスを Claude、ChatGPT、Claude Code に一度追加してください。Every App でサインインし、OpenAnalytics を含む開けるすべてのアプリで使えます。",
+    aiClientsDocs: "接続方法",
   },
   notificationCenter: {
     title: "受信トレイ",
@@ -9339,6 +9414,8 @@ const jaMessages = {
     detailFields: {},
     noUnread: "未読の通知はありません。",
     emailFailed: "メール送信失敗",
+    emailSkipped:
+      "メールは送信されませんでした: このゲートウェイではメールが設定されていません。",
   },
   notificationEmail: {
     common: {
@@ -9380,7 +9457,7 @@ const jaMessages = {
       subject: "OpenAnalytics 通知テスト",
       title: "OpenAnalytics 通知テスト",
       summary: "これは OpenAnalytics からのテスト通知です。",
-      body: "これは OpenAnalytics からのテスト通知です。メールが設定され有効になっている場合、このメッセージは Resend の配信も確認します。",
+      body: "オンにしたレポートとアラートは OpenAnalytics の受信トレイに届きます。このゲートウェイでメールが設定されていればメールでも届きます。",
     },
     report: {
       subject: "{site} の{periodLabel}トラフィックレポート",
@@ -9483,7 +9560,7 @@ const jaMessages = {
     notifications: {
       empty: "通知ルールはまだありません。",
       rulesTitle: "通知ルール",
-      enabledCount: "この組織で {count} 件のルールが有効です。",
+      enabledCount: "{total} 件中 {count} 件が有効です。",
       loadingRules: "通知ルールを読み込み中",
       deliveryTestTitle: "配信テスト",
       deliveryTestDescription:
@@ -9493,6 +9570,8 @@ const jaMessages = {
       sendTestNotification: "テスト通知を送信",
       loadRulesFailed: "通知ルールを読み込めません。",
       testNotificationSent: "テスト通知を送信しました。",
+      testNotificationSentNoEmail:
+        "テストを受信トレイに送信しました。メールは送信されませんでした: このゲートウェイではメールが設定されていません。",
       sendTestNotificationFailed: "テスト通知を送信できません。",
       createRule: "ルールを作成",
       editRule: "ルールを編集",
@@ -9558,8 +9637,20 @@ const jaMessages = {
       runNow: "今すぐ実行",
       previewFailed: "ルールをプレビューできません。",
       runFailed: "ルールを実行できません。",
-      runResultToast:
-        "{messages} 件のメッセージを作成しました。メール送信 {sent} 件、失敗 {failed} 件。",
+      runFailedWithReason: "ルールを実行できませんでした: {reason}",
+      previewFailedWithReason: "ルールをプレビューできませんでした: {reason}",
+      runNotTriggered: "確認しました。今は送るものがありません。",
+      runSkipped:
+        "このルールを確認できません: サイトがないか、条件が無効です。ルールを編集してください。",
+      runNoRecipients:
+        "送信先がありません: この組織にこのルールの受信者に該当するメンバーがいません。",
+      runSentOne: "受信トレイに 1 件送信しました。",
+      runSentMany: "受信トレイに {count} 件送信しました。",
+      runEmailFailed: "{failed} 件のメール送信に失敗しました。",
+      runEmailNotSetUp:
+        "メールは送信されませんでした: このゲートウェイではメールが設定されていません。",
+      runEmailSent: "{sent} 人にメールを送信しました。",
+      runEmailOff: "受信者は通知設定でメールをオフにしています。",
       previewDialogTitle: "ルールプレビュー",
       previewDialogDescription:
         "メッセージ作成やメール送信をせずに、このルールを評価します。",
@@ -9571,7 +9662,7 @@ const jaMessages = {
       scheduleYearly: "毎年 {month}/{day} {time}",
       scheduleInterval: "{minutes} 分ごと",
       scheduleCustom: "カスタム",
-      conditionReport: "{period} レポート",
+      conditionReport: "{period}",
       summaryWhenConditions:
         "次の条件のうち {combinator} が一致したら、{type} 通知を送信します：",
       summaryWhenSingleCondition:
@@ -9870,7 +9961,7 @@ const jaMessages = {
   systemSettings: {
     notificationEmailTitle: "メール通知",
     emailGatewayNotReady:
-      "このゲートウェイではメールが設定されていません。管理者が送信ドメインを設定したうえで、{command} で {name} を設定します。",
+      "このゲートウェイではメールが設定されていません。管理者が送信ドメインを設定したうえで、{command} で送信者を設定します。",
     emailSenderLabel: "送信者",
     retentionTitle: "運用データの保持期間",
     retentionDescription:

@@ -7,8 +7,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@insightflare/ui/select";
+import { ExternalLinkIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { CodeBlock } from "@/components/common/code-block";
 import { AppearanceSettings } from "@/components/settings/appearance-settings";
 import {
   SettingsCard,
@@ -34,15 +36,21 @@ import { useRouter } from "@/lib/router";
 // The time zone select's value for "follow the browser".
 const BROWSER_TIME_ZONE = "browser";
 
+/** How to add the gateway's connector to an AI client. */
+const CONNECT_AI_DOCS_URL = "https://everyapp.com/docs/connect-ai";
+
 /** The viewer's own settings. Every control saves as soon as it changes. */
 export function AccountSettingsClient({
   locale,
   messages,
   user,
+  gatewayUrl,
 }: {
   locale: Locale;
   messages: AppMessages;
   user: AccountUserData;
+  /** The gateway's home; "/" under `everyapp dev`, where it is unset. */
+  gatewayUrl: string;
 }) {
   const copy = messages.accountSettings;
   const router = useRouter();
@@ -63,6 +71,11 @@ export function AccountSettingsClient({
       }),
     [locale, timeZonePreference, timestampMs],
   );
+  // The gateway serves one MCP connector for every app a person can open,
+  // so the address is the gateway's, and only when the app knows it.
+  const mcpUrl = gatewayUrl.startsWith("http")
+    ? `${gatewayUrl.replace(/\/$/, "")}/mcp`
+    : null;
   const browserLabel = browserTimeZone
     ? formatTimeZoneOptionLabel({
         locale: intlLocale(locale),
@@ -173,6 +186,37 @@ export function AccountSettingsClient({
           </SettingsRow>
         </SettingsCard>
       </SettingsSection>
+
+      {mcpUrl ? (
+        <SettingsSection title={copy.aiClientsTitle}>
+          <SettingsCard>
+            <SettingsRow
+              label={copy.aiClientsLabel}
+              description={
+                <>
+                  {copy.aiClientsDescription}{" "}
+                  <a
+                    href={CONNECT_AI_DOCS_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 font-medium text-foreground hover:underline"
+                  >
+                    {copy.aiClientsDocs}
+                    <ExternalLinkIcon className="size-3.5" />
+                  </a>
+                </>
+              }
+              stacked
+            >
+              <CodeBlock
+                value={mcpUrl}
+                copyLabel={messages.getStarted.copy}
+                copiedLabel={messages.getStarted.copied}
+              />
+            </SettingsRow>
+          </SettingsCard>
+        </SettingsSection>
+      ) : null}
     </SettingsPage>
   );
 }

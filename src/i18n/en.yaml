@@ -1244,6 +1244,10 @@ accountSettings:
   saveFailed: Couldn't save the time zone.
   timeZoneLabel: Reporting time zone
   languageSaveFailed: Couldn't save your language.
+  aiClientsTitle: AI clients
+  aiClientsLabel: Connect an AI client
+  aiClientsDescription: Add this address to Claude, ChatGPT or Claude Code once. It signs you in through Every App and covers every app you can open, OpenAnalytics included.
+  aiClientsDocs: How to connect
 notificationCenter:
   title: Inbox
   empty: No notifications yet.
@@ -1271,6 +1275,7 @@ notificationCenter:
   detailFields: {}
   noUnread: No unread notifications.
   emailFailed: Email failed
+  emailSkipped: "No email went out: email isn't set up on this gateway."
 notificationEmail:
   common:
     brand: OpenAnalytics
@@ -1309,8 +1314,7 @@ notificationEmail:
     subject: OpenAnalytics notification test
     title: OpenAnalytics notification test
     summary: This is a test notification from OpenAnalytics.
-    body: This is a test notification from OpenAnalytics. If email is set up on the
-      Every App gateway, it also checks email delivery.
+    body: Reports and alerts you turn on arrive in your OpenAnalytics inbox and, when email is set up on this gateway, by email too.
   report:
     subject: "{site} {periodLabel} traffic report"
     title: "{site} {periodLabel} traffic report"
@@ -1391,7 +1395,7 @@ teamManagement:
   notifications:
     empty: No notification rules yet.
     rulesTitle: Notification rules
-    enabledCount: "{count} enabled rules in this organization."
+    enabledCount: "{count} of {total} enabled."
     loadingRules: Loading notification rules
     deliveryTestTitle: Delivery test
     deliveryTestDescription: Creates one in-app notification for you and attempts email when available.
@@ -1400,6 +1404,7 @@ teamManagement:
     sendTestNotification: Send test notification
     loadRulesFailed: Failed to load notification rules.
     testNotificationSent: Test notification sent.
+    testNotificationSentNoEmail: "Test sent to your inbox. No email went out: email isn't set up on this gateway."
     sendTestNotificationFailed: Failed to send test notification.
     createRule: Create rule
     editRule: Edit rule
@@ -1465,7 +1470,17 @@ teamManagement:
     runNow: Run now
     previewFailed: Failed to preview rule.
     runFailed: Failed to run rule.
-    runResultToast: Created {messages} messages. Email sent {sent}, failed {failed}.
+    runFailedWithReason: "Couldn't run the rule: {reason}"
+    previewFailedWithReason: "Couldn't preview the rule: {reason}"
+    runNotTriggered: Checked. Nothing to send right now.
+    runSkipped: "Couldn't check this rule: its site is missing or its condition isn't valid. Edit the rule."
+    runNoRecipients: "No one to send to: no member of this organization matches this rule's recipients."
+    runSentOne: Sent 1 message to the inbox.
+    runSentMany: Sent {count} messages to the inbox.
+    runEmailFailed: Email failed for {failed} of them.
+    runEmailNotSetUp: "No email went out: email isn't set up on this gateway."
+    runEmailSent: Email went out to {sent} of them.
+    runEmailOff: Email is off in their notification preferences.
     previewDialogTitle: Rule preview
     previewDialogDescription: Evaluate this rule without creating messages or sending email.
     coolingDownUntil: Cooling down until {time}
@@ -1476,7 +1491,7 @@ teamManagement:
     scheduleYearly: Yearly {month}/{day} {time}
     scheduleInterval: Every {minutes} min
     scheduleCustom: Custom
-    conditionReport: "{period} report"
+    conditionReport: "{period}"
     summaryWhenConditions: "When {combinator} of the following conditions match,
       send a {type} notification:"
     summaryWhenSingleCondition: "When this condition matches, send a {type} notification:"
@@ -1741,7 +1756,7 @@ requestObservation:
   normalDetail: {}
 systemSettings:
   notificationEmailTitle: Email notifications
-  emailGatewayNotReady: "Email isn't set up on this gateway. An admin sets {name} with {command} after setting up a sending domain."
+  emailGatewayNotReady: "Email isn't set up on this gateway. An admin sets the sender with {command} after setting up a sending domain."
   emailSenderLabel: "Sender"
   retentionTitle: Operational data retention
   retentionDescription: Configure how long task runs, task logs, notification

@@ -71,7 +71,11 @@ function Page() {
             void navigate({ search: { tab: value } });
         }}
       >
-        <TabsList aria-label={messages.settingsNav.system}>
+        {/* Four tabs overflow a phone; the strip wraps and grows instead. */}
+        <TabsList
+          className="max-w-full flex-wrap group-data-horizontal/tabs:h-auto group-data-horizontal/tabs:min-h-9"
+          aria-label={messages.settingsNav.system}
+        >
           {SYSTEM_HEALTH_TABS.map((tab) => (
             <TabsTrigger key={tab} value={tab}>
               {copy.tabs[tab]}

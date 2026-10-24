@@ -1211,6 +1211,10 @@ accountSettings:
   saveFailed: 無法儲存時區。
   timeZoneLabel: 報表時區
   languageSaveFailed: 無法儲存語言。
+  aiClientsTitle: AI 用戶端
+  aiClientsLabel: 連接 AI 用戶端
+  aiClientsDescription: 把這個位址加到 Claude、ChatGPT 或 Claude Code 一次即可。它透過 Every App 登入，並涵蓋你能開啟的每個應用程式，包括 OpenAnalytics。
+  aiClientsDocs: 如何連接
 notificationCenter:
   title: 收件匣
   empty: 暫無通知。
@@ -1238,6 +1242,7 @@ notificationCenter:
   detailFields: {}
   noUnread: 沒有未讀通知。
   emailFailed: 郵件傳送失敗
+  emailSkipped: 未傳送郵件：此閘道尚未設定郵件。
 notificationEmail:
   common:
     brand: OpenAnalytics
@@ -1275,7 +1280,7 @@ notificationEmail:
     subject: OpenAnalytics 通知測試
     title: OpenAnalytics 通知測試
     summary: 這是一條來自 OpenAnalytics 的測試通知。
-    body: 這是一條來自 OpenAnalytics 的測試通知。如果郵件已設定並啟用，它也會驗證 Resend 投遞是否正常。
+    body: 你開啟的報告和提醒會送達 OpenAnalytics 收件匣；如果此閘道已設定郵件，也會透過郵件送達。
   report:
     subject: "{site} {periodLabel}造訪報告"
     title: "{site} {periodLabel}造訪報告"
@@ -1355,7 +1360,7 @@ teamManagement:
   notifications:
     empty: 還沒有通知規則。
     rulesTitle: 通知規則
-    enabledCount: "此組織已啟用 {count} 條規則。"
+    enabledCount: "已啟用 {count} / {total} 條。"
     loadingRules: 正在載入通知規則
     deliveryTestTitle: 投遞測試
     deliveryTestDescription: 為你建立一條站內通知；如果可用，也會嘗試傳送郵件。
@@ -1364,6 +1369,7 @@ teamManagement:
     sendTestNotification: 傳送測試通知
     loadRulesFailed: 載入通知規則失敗。
     testNotificationSent: 測試通知已傳送。
+    testNotificationSentNoEmail: 測試已送達收件匣。未傳送郵件：此閘道尚未設定郵件。
     sendTestNotificationFailed: 傳送測試通知失敗。
     createRule: 建立規則
     editRule: 編輯規則
@@ -1429,7 +1435,17 @@ teamManagement:
     runNow: 立即執行
     previewFailed: 預覽規則失敗。
     runFailed: 執行規則失敗。
-    runResultToast: "已建立 {messages} 條訊息。郵件傳送 {sent} 條，失敗 {failed} 條。"
+    runFailedWithReason: "無法執行規則：{reason}"
+    previewFailedWithReason: "無法預覽規則：{reason}"
+    runNotTriggered: 已檢查，目前沒有可傳送的內容。
+    runSkipped: 無法檢查此規則：網站不存在或條件無效。請編輯規則。
+    runNoRecipients: 沒有收件人：此組織中沒有成員符合此規則的收件人。
+    runSentOne: 已向收件匣傳送 1 條訊息。
+    runSentMany: 已向收件匣傳送 {count} 條訊息。
+    runEmailFailed: "{failed} 封郵件傳送失敗。"
+    runEmailNotSetUp: 未傳送郵件：此閘道尚未設定郵件。
+    runEmailSent: 已向 {sent} 人傳送郵件。
+    runEmailOff: 收件人已在通知偏好中關閉郵件。
     previewDialogTitle: 規則預覽
     previewDialogDescription: 僅評估規則，不建立訊息，也不傳送郵件。
     coolingDownUntil: "冷卻至 {time}"
@@ -1440,7 +1456,7 @@ teamManagement:
     scheduleYearly: "每年 {month}/{day} {time}"
     scheduleInterval: "每 {minutes} 分鐘"
     scheduleCustom: 自訂
-    conditionReport: "{period}報告"
+    conditionReport: "{period}"
     summaryWhenConditions: "當滿足下列{combinator}條件時，傳送{type}通知："
     summaryWhenSingleCondition: "當滿足此條件時，傳送{type}通知："
     summaryConditionThreshold: "{window}{metric}{operator}{value}"
@@ -1704,7 +1720,7 @@ requestObservation:
   normalDetail: {}
 systemSettings:
   notificationEmailTitle: 郵件通知
-  emailGatewayNotReady: "此閘道尚未設定郵件。管理員在設定好寄信網域後，用 {command} 設定 {name}。"
+  emailGatewayNotReady: "此閘道尚未設定郵件。管理員在設定好寄信網域後，用 {command} 設定寄件人。"
   emailSenderLabel: "寄件人"
   retentionTitle: 執行資料保留期
   retentionDescription: 設定任務執行記錄、任務日誌、通知訊息和詳細分析資料的保留時間。任務和通知的修改只影響新建記錄；超出新期限的詳細分析資料會在下一次每日執行時刪除。

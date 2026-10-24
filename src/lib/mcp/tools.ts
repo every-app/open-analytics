@@ -682,6 +682,6 @@ export const tools = defineTools(
   },
   {
     instructions:
-      "OpenAnalytics: privacy-friendly web analytics for the organization's sites. Call list_sites first; every site tool takes its site_id. Times default to the last 7 days. Filters use the filter expression language described on the filter argument.",
+      "OpenAnalytics: privacy-friendly web analytics for the organization's sites. Call list_sites first; every site tool takes its site_id. Times default to the last 7 days. Filters use the filter expression language described on the filter argument. Deleting sites, funnels and goals and turning public sharing on or off are done in the app's Settings, not through tools.",
   },
 );

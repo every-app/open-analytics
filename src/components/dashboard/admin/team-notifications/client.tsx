@@ -72,6 +72,7 @@ import {
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
 import {
   type MemberData,
+  type NotificationMessageData,
   type NotificationRuleData,
   type NotificationRuleEvaluationData,
   type NotificationRuleRunData,
@@ -283,11 +284,25 @@ export function TeamNotificationsClient({
     if (testing) return;
     setTesting(true);
     try {
-      await requestAdminService("notification-test", {
+      const { message } = await requestAdminService<{
+        message: NotificationMessageData | null;
+      }>("notification-test", {
         method: "POST",
         body: { teamId, userId: currentUserId },
       });
-      toast.success(copy.testNotificationSent);
+      // Email is optional on the gateway: the test still lands in the inbox,
+      // and this says so instead of leaving the person waiting for an email.
+      const email = message?.deliveryResults.email;
+      const emailSkipped =
+        typeof email === "object" &&
+        email !== null &&
+        (email as Record<string, unknown>).reason ===
+          "system_email_unconfigured";
+      toast.success(
+        emailSkipped
+          ? copy.testNotificationSentNoEmail
+          : copy.testNotificationSent,
+      );
       setTestDialogOpen(false);
     } catch {
       toast.error(copy.sendTestNotificationFailed);
@@ -311,11 +326,48 @@ export function TeamNotificationsClient({
         },
       );
       setPreviewResult(result);
-    } catch {
-      toast.error(copy.previewFailed);
+    } catch (error) {
+      // requestAdminService throws the server's sentence, so a refusal (a
+      // members list the gateway wouldn't give, say) reads at the button.
+      toast.error(
+        error instanceof Error && error.message
+          ? formatI18nTemplate(copy.previewFailedWithReason, {
+              reason: error.message,
+            })
+          : copy.previewFailed,
+      );
     } finally {
       setPreviewingId("");
     }
+  }
+
+  /**
+   * What a manual run did, in one or two sentences: the rule didn't trigger,
+   * nobody matched its recipients, or N messages reached the inbox and what
+   * happened to their email (failed, skipped because the gateway has no
+   * sender, sent, or off in the recipients' preferences).
+   */
+  function describeRunResult(result: NotificationRuleRunData): string {
+    if (result.evaluation.status !== "triggered") return copy.runNotTriggered;
+    if (result.messageCount === 0) return copy.runNoRecipients;
+    const count = (key: string) => Number(result.summary[key] ?? 0);
+    const inbox =
+      result.messageCount === 1
+        ? copy.runSentOne
+        : formatI18nTemplate(copy.runSentMany, { count: result.messageCount });
+    const failed = count("emailFailed");
+    const sent = count("emailSent");
+    const email =
+      failed > 0
+        ? formatI18nTemplate(copy.runEmailFailed, { failed })
+        : count("emailSkippedBySystem") > 0
+          ? copy.runEmailNotSetUp
+          : sent > 0
+            ? formatI18nTemplate(copy.runEmailSent, { sent })
+            : count("emailSkippedByPreference") > 0
+              ? copy.runEmailOff
+              : "";
+    return email ? `${inbox} ${email}` : inbox;
   }
 
   async function handleRunNow(rule: NotificationRuleData) {
@@ -329,16 +381,19 @@ export function TeamNotificationsClient({
           body: { ruleId: rule.id },
         },
       );
-      toast.success(
-        formatI18nTemplate(copy.runResultToast, {
-          messages: result.messageCount,
-          sent: Number(result.summary.emailSent ?? 0),
-          failed: Number(result.summary.emailFailed ?? 0),
-        }),
-      );
+      // A skipped evaluation checked nothing: the rule's site is gone or its
+      // condition is broken, which "nothing to send" would hide.
+      if (result.evaluation.status === "skipped") toast.error(copy.runSkipped);
+      else toast.success(describeRunResult(result));
       await queryClient.invalidateQueries({ queryKey: rulesQueryKey });
-    } catch {
-      toast.error(copy.runFailed);
+    } catch (error) {
+      toast.error(
+        error instanceof Error && error.message
+          ? formatI18nTemplate(copy.runFailedWithReason, {
+              reason: error.message,
+            })
+          : copy.runFailed,
+      );
     } finally {
       setRunningId("");
     }
@@ -388,6 +443,7 @@ export function TeamNotificationsClient({
         title={copy.rulesTitle}
         description={formatI18nTemplate(copy.enabledCount, {
           count: enabledCount,
+          total: rules.length,
         })}
       >
         {/* Email is optional on the gateway: reports and alerts still arrive
@@ -546,16 +602,20 @@ export function TeamNotificationsClient({
             </div>
             {emailConfigured !== null ? (
               <div
-                className={`flex items-center gap-2${emailConfigured ? " text-foreground" : ""}`}
+                className={`flex items-start gap-2${emailConfigured ? " text-foreground" : ""}`}
               >
                 <SendIcon
-                  className={`size-4${emailConfigured ? " text-success" : ""}`}
+                  className={`mt-0.5 size-4 shrink-0${emailConfigured ? " text-success" : ""}`}
                 />
-                {emailConfigured ? (
-                  copy.emailTestConfiguredHint
-                ) : (
-                  <EmailNotSetUp messages={messages} />
-                )}
+                {/* One span, so the sentence wraps as prose: its text and
+                    code fragments would otherwise each be a flex column. */}
+                <span>
+                  {emailConfigured ? (
+                    copy.emailTestConfiguredHint
+                  ) : (
+                    <EmailNotSetUp messages={messages} />
+                  )}
+                </span>
               </div>
             ) : null}
           </div>

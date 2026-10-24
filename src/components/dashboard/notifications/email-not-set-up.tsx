@@ -1,22 +1,23 @@
 import type { AppMessages } from "@/lib/i18n/messages";
 import { splitI18nTemplate } from "@/lib/i18n/template";
 
-/** The gateway setting that turns email on; optional in everyapp.config.ts. */
-const EMAIL_SETTING = "EMAIL_FROM";
-const SET_COMMAND = `pnpm everyapp secret set ${EMAIL_SETTING}`;
+/**
+ * The gateway settings that turn email on; optional in everyapp.config.ts.
+ * Both are needed: the gateway's parseEmailSender() returns null without a
+ * display name and refuses to send ("Set EMAIL_FROM and EMAIL_FROM_NAME"),
+ * so a sentence naming EMAIL_FROM alone sends an admin in a circle.
+ */
+const SET_COMMAND = "pnpm everyapp secret set EMAIL_FROM EMAIL_FROM_NAME";
 
 /**
- * "Email isn't set up on this gateway. An admin sets EMAIL_FROM with
- * `pnpm everyapp secret set EMAIL_FROM`…": the one sentence every surface
- * that turns email on shows when the gateway has no sender, with the name
- * and the command as code. The message is a template ({name}, {command}) so
- * each locale orders them its own way.
+ * "Email isn't set up on this gateway. An admin sets the sender with
+ * `pnpm everyapp secret set EMAIL_FROM EMAIL_FROM_NAME`…": the one sentence
+ * every surface that turns email on shows when the gateway has no sender,
+ * with the command as code. The message is a template ({command}) so each
+ * locale places it its own way.
  */
 export function EmailNotSetUp({ messages }: { messages: AppMessages }) {
-  const values: Record<string, string> = {
-    name: EMAIL_SETTING,
-    command: SET_COMMAND,
-  };
+  const values: Record<string, string> = { command: SET_COMMAND };
   return (
     <>
       {splitI18nTemplate(messages.systemSettings.emailGatewayNotReady).map(

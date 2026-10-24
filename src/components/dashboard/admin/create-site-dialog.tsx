@@ -113,7 +113,6 @@ export function CreateSiteDialog({
               value={domain}
               placeholder="example.com"
               autoComplete="off"
-              required
               onChange={(event) => setDomain(event.target.value)}
             />
           </div>

@@ -464,7 +464,7 @@ export async function createManualTestNotification(input: {
       title: "OpenAnalytics notification test",
       summary: "This is a test notification from OpenAnalytics.",
       bodyText:
-        "This is a test notification from OpenAnalytics. If email is set up on the Every App gateway, this message also checks email delivery.",
+        "Reports and alerts you turn on arrive in your OpenAnalytics inbox and, when email is set up on this gateway, by email too.",
       data: { source: "manual_test" },
     },
     locale,
