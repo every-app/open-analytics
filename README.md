@@ -10,7 +10,7 @@ OpenAnalytics is a fork of [InsightFlare](https://github.com/RavelloH/InsightFla
 - Read-only public share links for any site.
 - Scheduled and threshold email notifications sent through the gateway.
 - Bot filtering, with a Request Observation page for what was blocked.
-- Agent tools, served by the gateway to AI clients at its `/mcp` connector (one address for every app you can open) and at `https://analytics.<your gateway domain>/mcp` for a token bound to this app, so your organization's agents can query reports and manage sites. Deleting sites, funnels and goals and public sharing stay in the app.
+- Agent tools, served by the gateway to AI clients at its `/mcp` connector (one address for every app you can open) (a token bound to this app works there too), so your organization's agents can query reports and manage sites. Deleting sites, funnels and goals and public sharing stay in the app.
 - Dashboard in English, Chinese (Simplified and Traditional) and Japanese.
 
 ## How it fits the gateway
