@@ -6,7 +6,7 @@ This project is still early, so the most useful contributions are focused bug fi
 
 ## Development Setup
 
-OpenAnalytics uses Node.js 24 and pnpm 10.33.0.
+OpenAnalytics uses Node.js 24 and pnpm 10.33.0. The platform is linked by path, so clone `every-app/private-every-app` next to this repository and run `pnpm install` there first (see the README's [Deploy](README.md#deploy) section).
 
 ```bash
 pnpm install --frozen-lockfile

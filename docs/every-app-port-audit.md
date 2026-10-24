@@ -1,5 +1,7 @@
 # Porting InsightFlare to the Every App gateway: audit
 
+> Historical. This is the plan written before the port (Wrangler, API keys, `skills.json`, a draft manifest); it no longer describes the app. What the app is now is in [`everyapp.config.ts`](../everyapp.config.ts) and the [README](../README.md).
+
 Audited 2026-10-19 against InsightFlare v0.7.1 (`a4b67dd4`, cloned here as `open-analytics`) and `private-every-app` main (`666013dd`). Goal: a feature-complete replica of InsightFlare, open source, deployable as an app on an Every App gateway.
 
 ## Outcome

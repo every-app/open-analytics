@@ -33,35 +33,41 @@ Everything else needs a signed-in member of the organization. The public routes 
 
 You need a running Every App gateway, Node.js 24 and pnpm 10.
 
+This repository links the platform by path ([`package.json`](package.json) has `"everyapp": "link:../private-every-app/packages/cli"`), so clone [every-app/private-every-app](https://github.com/every-app/private-every-app) next to this repository, in the same parent directory, and run `pnpm install` there once: it builds the SDK. A lone clone installs with dangling symlinks, and `pnpm dev` fails with `everyapp: command not found`.
+
 ```bash
+git clone git@github.com:every-app/private-every-app.git ../private-every-app
+pnpm -C ../private-every-app install     # once: builds the SDK and the CLI
 pnpm install
 pnpm run deploy                          # everyapp deploy: builds, provisions D1, KV and the Durable Object, migrates, registers
-pnpm exec everyapp secret set MAIN_SECRET
+MAIN_SECRET="$(openssl rand -hex 32)" pnpm everyapp secret set MAIN_SECRET --from-env MAIN_SECRET
 ```
 
-`MAIN_SECRET` signs collect tokens and derives visitor hashes. Use a long random value and keep it stable: changing it splits visitor counts.
+`MAIN_SECRET` signs collect tokens and derives visitor hashes. Generate it once with `openssl rand -hex 32`, as above, and keep it stable: changing it splits visitor counts.
 
 Then open `https://analytics.<your gateway domain>`, create a site, and add its tracking snippet to your website.
 
 ### Settings
 
-[`everyapp.config.ts`](everyapp.config.ts) declares what the app needs. The gateway doesn't open the app until its required settings are set; `pnpm exec everyapp status` shows what is missing.
+[`everyapp.config.ts`](everyapp.config.ts) declares what the app needs. The gateway doesn't open the app until its required settings are set; `pnpm everyapp status` shows what is missing, and `pnpm everyapp secret list` in this directory lists each setting as required or optional.
 
-| Setting       | Need     | Where            | Set it with                                                                                                                                      |
-| ------------- | -------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `MAIN_SECRET` | required | the app's Worker | `pnpm exec everyapp secret set MAIN_SECRET`: 32 or more random characters, e.g. `openssl rand -base64 32`                                         |
-| `members`     | required | the gateway      | Nothing: the gateway lists who can open the app                                                                                                  |
-| `email`       | optional | the gateway      | `pnpm exec everyapp secret set EMAIL_FROM` after setting up a sending domain. Without it, reports and alerts stay in the inbox and the app says so |
+| Setting       | Need     | Where            | Set it with                                                                                                                                                  |
+| ------------- | -------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `MAIN_SECRET` | required | the app's Worker | `pnpm everyapp secret set MAIN_SECRET`: 32 or more random characters, e.g. `openssl rand -hex 32`                                                            |
+| `members`     | required | the gateway      | Nothing: the gateway lists who can open the app                                                                                                              |
+| `email`       | optional | the gateway      | `pnpm everyapp secret set EMAIL_FROM EMAIL_FROM_NAME` after setting up a sending domain. Without it, reports and alerts stay in the inbox and the app says so |
 
 `MAIN_SECRET` is the name to set; the Worker reads `DAILY_SALT_SECRET` (InsightFlare's name for it) only as a legacy fallback.
 
 ### Configuration
 
-| Name                       | Meaning                                                                 |
-| -------------------------- | ----------------------------------------------------------------------- |
-| `SESSION_WINDOW_MINUTES`   | Session window in minutes (default `30`)                                 |
-| `SCRIPT_CACHE_TTL_SECONDS` | Cache TTL for `/script.js` (default `600`)                               |
-| `MAP_STYLE_BASE_URL`       | Optional OpenMapTiles style host (default OpenFreeMap)                   |
+| Name                       | Meaning                                                | Where                                                          |
+| -------------------------- | ------------------------------------------------------ | -------------------------------------------------------------- |
+| `SESSION_WINDOW_MINUTES`   | Session window in minutes (default `30`)               | `bindings.text` in `cloudflare.config.ts`                      |
+| `SCRIPT_CACHE_TTL_SECONDS` | Cache TTL for `/script.js` (default `600`)             | `bindings.text` in `cloudflare.config.ts`                      |
+| `MAP_STYLE_BASE_URL`       | Optional OpenMapTiles style host (default OpenFreeMap) | Not set by default; add it to `cloudflare.config.ts` to use it |
+
+These are plain Worker variables, not secrets: edit `env` in [`cloudflare.config.ts`](cloudflare.config.ts) and run `pnpm run deploy`. `MAP_STYLE_BASE_URL` is read by the map style relay (`src/lib/edge/resources/map-relay.ts`); to point at another host, add `MAP_STYLE_BASE_URL: bindings.text("https://…")` next to the other two and redeploy.
 
 **System Settings** shows whether the gateway can send email and can send a test message.
 
@@ -113,6 +119,8 @@ window.openAnalytics.identify("user-123", { name: "Alice" });
 Call `identify` after sign-in so the visit can be analyzed with that user's other visits. On sign-out or before switching accounts, call `reset()` to start a new anonymous visitor.
 
 ## Development
+
+Clone and install the platform next to this repository first, as under [Deploy](#deploy). Then:
 
 ```bash
 cp .dev.vars.example .dev.vars
