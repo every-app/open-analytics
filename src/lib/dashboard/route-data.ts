@@ -177,7 +177,7 @@ export const loadTeamNotificationsInitialData = createServerFn({
       rules: rules.map(serializeNotificationRule),
       sites,
       members,
-      emailConfigured: Boolean(emailConfig?.enabled),
+      emailConfigured: emailConfig?.enabled ?? null,
       fetchedAt: Date.now(),
     };
   });
@@ -202,10 +202,14 @@ export const loadAccountNotificationPreferences = createServerFn({
   method: "GET",
 }).handler(
   async (): Promise<AccountNotificationPreferencesInitialData | null> => {
-    const data = await readDashboardAdmin("notifications/preferences");
+    const [data, notificationEmail] = await Promise.all([
+      readDashboardAdmin("notifications/preferences"),
+      readDashboardAdmin("notification-email"),
+    ]);
     return data
       ? {
           preferences: normalizeNotificationPreferencesData(data),
+          notificationEmail,
           fetchedAt: Date.now(),
         }
       : null;
@@ -278,5 +282,17 @@ export const loadRequestOrigin = createServerFn({ method: "GET" }).handler(
         ? "http"
         : "https");
     return `${proto}://${host}`;
+  },
+);
+/**
+ * Whether this Worker runs under `everyapp dev`, for the setup error
+ * (runtime-config-error): there the root secret comes from .dev.vars, on a
+ * deployment from `everyapp secret set`. The SDK sets EVERYAPP_DEV in
+ * development only; a deploy never does.
+ */
+export const loadRuntimeSetupMode = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ dev: boolean }> => {
+    const runtime = await resolveEdgeRuntime(getRequest());
+    return { dev: Boolean(runtime.env.EVERYAPP_DEV) };
   },
 );

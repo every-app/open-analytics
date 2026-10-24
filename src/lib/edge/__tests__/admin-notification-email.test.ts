@@ -25,6 +25,8 @@ describe("admin notification email handlers", () => {
     vi.resetAllMocks();
     vi.mocked(requireActor).mockResolvedValue(actor);
     integrationStatus.mockResolvedValue({
+      requested: true,
+      configured: true,
       ready: true,
       sender: { address: "noreply@example.test", name: "Every App" },
     });
@@ -39,6 +41,58 @@ describe("admin notification email handlers", () => {
     expect(await response.json()).toMatchObject({
       ok: true,
       data: { enabled: true, sender: "noreply@example.test" },
+    });
+  });
+
+  it("reports email as not set up when the gateway has no sender", async () => {
+    integrationStatus.mockResolvedValue({
+      requested: true,
+      configured: false,
+      ready: false,
+      sender: null,
+    });
+
+    const response = await handleNotificationEmailConfigAdmin(
+      new Request("https://app.test/api/private/admin/notification-email"),
+      env,
+    );
+
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      data: { enabled: false, sender: null },
+    });
+  });
+
+  it("reads configured, not ready: the sender the gateway holds", async () => {
+    integrationStatus.mockResolvedValue({
+      requested: true,
+      configured: true,
+      ready: false,
+      sender: { address: "noreply@example.test", name: "Every App" },
+    });
+
+    const response = await handleNotificationEmailConfigAdmin(
+      new Request("https://app.test/api/private/admin/notification-email"),
+      env,
+    );
+
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      data: { enabled: true, sender: "noreply@example.test" },
+    });
+  });
+
+  it("answers unknown, not 'not set up', when the status can't be read", async () => {
+    integrationStatus.mockRejectedValue(new Error("gateway unreachable"));
+
+    const response = await handleNotificationEmailConfigAdmin(
+      new Request("https://app.test/api/private/admin/notification-email"),
+      env,
+    );
+
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      data: { enabled: null, sender: null },
     });
   });
 });

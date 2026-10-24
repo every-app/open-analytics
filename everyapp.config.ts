@@ -22,10 +22,14 @@ export default {
     durableObjects: [{ name: "INGEST_DO", className: "IngestDurableObject" }],
   },
   migrations: { engine: "d1-sql", dir: "migrations", binding: "DB" },
-  // The root secret for visitor salts and collect tokens (src/lib/secrets.ts):
-  // `everyapp secret set MAIN_SECRET`, 32 or more random characters. In dev,
+  // Required: the app doesn't open without it (src/lib/secrets.ts). In dev,
   // .dev.vars sets it.
-  secrets: ["MAIN_SECRET"],
+  secrets: [
+    {
+      name: "MAIN_SECRET",
+      why: "The root secret for visitor salts and collect tokens; 32 or more random characters, e.g. openssl rand -base64 32.",
+    },
+  ],
   // Builds the UI packages and the tracker bundles before `vite build`, and
   // watches the translations while `vite dev` runs (scripts/dev.ts).
   build: "pnpm run build",
@@ -39,8 +43,11 @@ export default {
       access: "read",
       why: "Sends reports and alerts only to people who can still open the app.",
     },
+    // Optional: without it reports and alerts stay in the inbox, and the app
+    // says so where email is turned on.
     email: {
       access: "write",
+      optional: true,
       why: "Emails scheduled reports and alerts to members who turned email notifications on.",
     },
   },

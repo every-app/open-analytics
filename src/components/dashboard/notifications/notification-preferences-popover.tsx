@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Settings2Icon } from "lucide-react";
 import { toast } from "sonner";
 
+import { EmailNotSetUp } from "@/components/dashboard/notifications/email-not-set-up";
 import type { AccountNotificationPreferencesInitialData } from "@/lib/dashboard/management-data";
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
 import {
@@ -13,6 +14,7 @@ import {
   type NotificationPreferencesData,
 } from "@/lib/dashboard-api/client/edge";
 import type { AppMessages } from "@/lib/i18n/messages";
+import type { PublicNotificationEmailConfig } from "@/lib/notifications/email-config";
 
 type AttentionKey = keyof NotificationPreferencesData["attention"];
 
@@ -45,6 +47,18 @@ export function NotificationPreferencesPopover({
     enabled: typeof window !== "undefined",
   });
   const preferences = query.data;
+  // Email is optional on the gateway; the switch says so when it isn't set.
+  const emailStatusQuery = useQuery({
+    queryKey: ["dashboard", "notification-email-config"],
+    queryFn: ({ signal }) =>
+      requestAdminService<PublicNotificationEmailConfig>("notification-email", {
+        signal,
+      }),
+    initialData: initialData?.notificationEmail ?? undefined,
+    initialDataUpdatedAt: initialData?.fetchedAt,
+    enabled: typeof window !== "undefined",
+  });
+  const emailNotSetUp = emailStatusQuery.data?.enabled === false;
 
   async function save(next: NotificationPreferencesData) {
     setSaving(true);
@@ -101,6 +115,11 @@ export function NotificationPreferencesPopover({
                 disabled={saving}
                 onChange={(email) => void save({ ...preferences, email })}
               />
+              {emailNotSetUp ? (
+                <p className="px-3 pb-2 text-xs text-muted-foreground">
+                  <EmailNotSetUp messages={messages} />
+                </p>
+              ) : null}
               {attentionRows.map((row) => (
                 <PreferenceRow
                   key={row.key}

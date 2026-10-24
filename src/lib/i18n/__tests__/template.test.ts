@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatI18nTemplate } from "@/lib/i18n/template";
+import { formatI18nTemplate, splitI18nTemplate } from "@/lib/i18n/template";
 
 describe("Translation Template Interpolator", () => {
   it("should interpolate single string parameters correctly", () => {
@@ -50,5 +50,23 @@ describe("Translation Template Interpolator", () => {
     expect(formatI18nTemplate("Static text only", { unused: "param" })).toBe(
       "Static text only",
     );
+  });
+});
+
+describe("splitI18nTemplate", () => {
+  it("alternates text and placeholder names in the template's order", () => {
+    expect(splitI18nTemplate("Set {name} with {command}.")).toEqual([
+      { text: "Set " },
+      { placeholder: "name" },
+      { text: " with " },
+      { placeholder: "command" },
+      { text: "." },
+    ]);
+  });
+
+  it("keeps a template without placeholders as one piece of text", () => {
+    expect(splitI18nTemplate("Email isn't set up.")).toEqual([
+      { text: "Email isn't set up." },
+    ]);
   });
 });

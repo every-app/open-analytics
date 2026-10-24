@@ -89,6 +89,7 @@ import {
   loadDashboardTeam,
   loadNotificationCenterInitialData,
   loadRequestOrigin,
+  loadRuntimeSetupMode,
   loadScheduledTasksInitialData,
   loadShareSite,
   loadSiteSettingsInitialData,
@@ -453,10 +454,14 @@ describe("Dashboard route data loaders", () => {
           alertsCreateUnread: true,
         },
       };
-      mockAdminReads({ "notifications/preferences": preferences });
+      mockAdminReads({
+        "notifications/preferences": preferences,
+        "notification-email": { enabled: false, sender: null },
+      });
 
       await expect(loadAccountNotificationPreferences()).resolves.toEqual({
         preferences,
+        notificationEmail: { enabled: false, sender: null },
         fetchedAt: expect.any(Number),
       });
       expect(normalizeNotificationPreferencesData).toHaveBeenCalledWith(
@@ -536,6 +541,20 @@ describe("Dashboard route data loaders", () => {
       expect(readDashboardAdmin).toHaveBeenCalledWith("system-performance", {
         minutes: 60,
       });
+    });
+  });
+
+  describe("loadRuntimeSetupMode", () => {
+    it("reports dev when the SDK set EVERYAPP_DEV", async () => {
+      vi.mocked(resolveEdgeRuntime).mockResolvedValue({
+        env: { DB: {}, EVERYAPP_DEV: "1" },
+      } as never);
+
+      await expect(loadRuntimeSetupMode()).resolves.toEqual({ dev: true });
+    });
+
+    it("reports a deployment when EVERYAPP_DEV is unset", async () => {
+      await expect(loadRuntimeSetupMode()).resolves.toEqual({ dev: false });
     });
   });
 });

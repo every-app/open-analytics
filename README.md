@@ -43,16 +43,27 @@ pnpm exec everyapp secret set MAIN_SECRET
 
 Then open `https://analytics.<your gateway domain>`, create a site, and add its tracking snippet to your website.
 
+### Settings
+
+[`everyapp.config.ts`](everyapp.config.ts) declares what the app needs. The gateway doesn't open the app until its required settings are set; `pnpm exec everyapp status` shows what is missing.
+
+| Setting       | Need     | Where            | Set it with                                                                                                                                      |
+| ------------- | -------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `MAIN_SECRET` | required | the app's Worker | `pnpm exec everyapp secret set MAIN_SECRET`: 32 or more random characters, e.g. `openssl rand -base64 32`                                         |
+| `members`     | required | the gateway      | Nothing: the gateway lists who can open the app                                                                                                  |
+| `email`       | optional | the gateway      | `pnpm exec everyapp secret set EMAIL_FROM` after setting up a sending domain. Without it, reports and alerts stay in the inbox and the app says so |
+
+`MAIN_SECRET` is the name to set; the Worker reads `DAILY_SALT_SECRET` (InsightFlare's name for it) only as a legacy fallback.
+
 ### Configuration
 
 | Name                       | Meaning                                                                 |
 | -------------------------- | ----------------------------------------------------------------------- |
-| `MAIN_SECRET` (secret)     | Root secret for collect tokens and visitor hashes                        |
 | `SESSION_WINDOW_MINUTES`   | Session window in minutes (default `30`)                                 |
 | `SCRIPT_CACHE_TTL_SECONDS` | Cache TTL for `/script.js` (default `600`)                               |
 | `MAP_STYLE_BASE_URL`       | Optional OpenMapTiles style host (default OpenFreeMap)                   |
 
-Email notifications need the gateway's email integration. **System Settings** shows whether it is ready and can send a test message.
+**System Settings** shows whether the gateway can send email and can send a test message.
 
 Page views and events are kept for 396 days by default, and hourly totals are kept indefinitely. Change this in **System Settings**.
 

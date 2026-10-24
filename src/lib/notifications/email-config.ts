@@ -4,8 +4,12 @@
  * budgets. There is nothing to configure in the app.
  */
 export interface PublicNotificationEmailConfig {
-  /** The gateway has a sender and a transport set up. */
-  enabled: boolean;
+  /**
+   * The gateway has a sender set (EMAIL_FROM). Null when its status couldn't
+   * be read: unknown, so no surface tells an admin to set a name that may
+   * already be set.
+   */
+  enabled: boolean | null;
   /** The address mail goes out from, when the gateway reports one. */
   sender: string | null;
 }

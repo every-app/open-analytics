@@ -1275,6 +1275,8 @@ export interface AppMessages {
     heading: string;
     setupSummary: string;
     setupCommand: string;
+    generateHint: string;
+    devSetup: string;
     docsLabel: string;
   };
   login: Record<string, never>;
@@ -1326,7 +1328,6 @@ export interface AppMessages {
       deliveryTestDescription: string;
       inAppTestHint: string;
       emailTestConfiguredHint: string;
-      emailTestUnconfiguredHint: string;
       sendTestNotification: string;
       loadRulesFailed: string;
       testNotificationSent: string;
@@ -3313,7 +3314,10 @@ const enMessages = {
     heading: "This dashboard isn't available right now.",
     setupSummary: "Set up this deployment",
     setupCommand:
-      "Set the root secret with this command, then reload this page.",
+      "Set {name} to 32 or more random characters with this command, then reload this page.",
+    generateHint: "Make one with {command}.",
+    devSetup:
+      "This app is running under {command}. Set {name} in {file}, then reload this page.",
     docsLabel: "Deployment guide",
   },
   login: {},
@@ -3367,8 +3371,6 @@ const enMessages = {
         "Creates one in-app notification for you and attempts email when available.",
       inAppTestHint: "We will send you an in-app notification.",
       emailTestConfiguredHint: "We will send you a test email.",
-      emailTestUnconfiguredHint:
-        "Email isn't set up on this Every App gateway.",
       sendTestNotification: "Send test notification",
       loadRulesFailed: "Failed to load notification rules.",
       testNotificationSent: "Test notification sent.",
@@ -3749,7 +3751,8 @@ const enMessages = {
   },
   systemSettings: {
     notificationEmailTitle: "Email notifications",
-    emailGatewayNotReady: "Email isn't set up on this Every App gateway.",
+    emailGatewayNotReady:
+      "Email isn't set up on this gateway. An admin sets {name} with {command} after setting up a sending domain.",
     emailSenderLabel: "Sender",
     retentionTitle: "Operational data retention",
     retentionDescription:
@@ -5348,7 +5351,11 @@ const zhMessages = {
     title: "仪表盘不可用",
     heading: "此仪表盘暂时不可用。",
     setupSummary: "配置此部署",
-    setupCommand: "用这条命令设置根密钥，然后刷新此页面。",
+    setupCommand:
+      "用这条命令把 {name} 设为 32 个或更多随机字符，然后刷新此页面。",
+    generateHint: "可用 {command} 生成一个。",
+    devSetup:
+      "此应用正运行在 {command} 下。请在 {file} 中设置 {name}，然后刷新此页面。",
     docsLabel: "部署指南",
   },
   login: {},
@@ -5401,7 +5408,6 @@ const zhMessages = {
         "为你创建一条站内通知；如果可用，也会尝试发送邮件。",
       inAppTestHint: "我们会向你发送一条站内通知。",
       emailTestConfiguredHint: "我们会向你发送一条测试邮件。",
-      emailTestUnconfiguredHint: "此 Every App 网关尚未设置邮件。",
       sendTestNotification: "发送测试通知",
       loadRulesFailed: "加载通知规则失败。",
       testNotificationSent: "测试通知已发送。",
@@ -5774,7 +5780,8 @@ const zhMessages = {
   },
   systemSettings: {
     notificationEmailTitle: "邮件通知",
-    emailGatewayNotReady: "此 Every App 网关尚未设置邮件。",
+    emailGatewayNotReady:
+      "此网关尚未设置邮件。管理员在设置好发信域名后，用 {command} 设置 {name}。",
     emailSenderLabel: "发件人",
     retentionTitle: "运行数据保留期",
     retentionDescription:
@@ -7371,7 +7378,11 @@ const zhTwMessages = {
     title: "儀表板無法使用",
     heading: "此儀表板暫時無法使用。",
     setupSummary: "設定此部署",
-    setupCommand: "用這條命令設定根金鑰，然後重新整理此頁面。",
+    setupCommand:
+      "用這條命令把 {name} 設為 32 個或更多隨機字元，然後重新整理此頁面。",
+    generateHint: "可用 {command} 產生一個。",
+    devSetup:
+      "此應用程式正執行於 {command} 下。請在 {file} 中設定 {name}，然後重新整理此頁面。",
     docsLabel: "部署指南",
   },
   login: {},
@@ -7424,7 +7435,6 @@ const zhTwMessages = {
         "為你建立一條站內通知；如果可用，也會嘗試傳送郵件。",
       inAppTestHint: "我們會向你傳送一條站內通知。",
       emailTestConfiguredHint: "我們會向你傳送一條測試郵件。",
-      emailTestUnconfiguredHint: "此 Every App 閘道尚未設定郵件。",
       sendTestNotification: "傳送測試通知",
       loadRulesFailed: "載入通知規則失敗。",
       testNotificationSent: "測試通知已傳送。",
@@ -7797,7 +7807,8 @@ const zhTwMessages = {
   },
   systemSettings: {
     notificationEmailTitle: "郵件通知",
-    emailGatewayNotReady: "此 Every App 閘道尚未設定郵件。",
+    emailGatewayNotReady:
+      "此閘道尚未設定郵件。管理員在設定好寄信網域後，用 {command} 設定 {name}。",
     emailSenderLabel: "寄件人",
     retentionTitle: "執行資料保留期",
     retentionDescription:
@@ -9422,7 +9433,10 @@ const jaMessages = {
     heading: "このダッシュボードは現在利用できません。",
     setupSummary: "このデプロイを設定する",
     setupCommand:
-      "このコマンドでルートシークレットを設定してから、このページを再読み込みしてください。",
+      "このコマンドで {name} を 32 文字以上のランダムな文字列に設定してから、このページを再読み込みしてください。",
+    generateHint: "{command} で生成できます。",
+    devSetup:
+      "このアプリは {command} で実行中です。{file} に {name} を設定してから、このページを再読み込みしてください。",
     docsLabel: "デプロイガイド",
   },
   login: {},
@@ -9476,8 +9490,6 @@ const jaMessages = {
         "あなた宛てのアプリ内通知を 1 件作成し、利用可能な場合はメール送信も試行します。",
       inAppTestHint: "アプリ内通知を送信します。",
       emailTestConfiguredHint: "テストメールを送信します。",
-      emailTestUnconfiguredHint:
-        "この Every App ゲートウェイではメールが設定されていません。",
       sendTestNotification: "テスト通知を送信",
       loadRulesFailed: "通知ルールを読み込めません。",
       testNotificationSent: "テスト通知を送信しました。",
@@ -9858,7 +9870,7 @@ const jaMessages = {
   systemSettings: {
     notificationEmailTitle: "メール通知",
     emailGatewayNotReady:
-      "この Every App ゲートウェイではメールが設定されていません。",
+      "このゲートウェイではメールが設定されていません。管理者が送信ドメインを設定したうえで、{command} で {name} を設定します。",
     emailSenderLabel: "送信者",
     retentionTitle: "運用データの保持期間",
     retentionDescription:

@@ -1319,7 +1319,9 @@ runtimeConfigError:
   title: ダッシュボードを利用できません
   heading: このダッシュボードは現在利用できません。
   setupSummary: このデプロイを設定する
-  setupCommand: このコマンドでルートシークレットを設定してから、このページを再読み込みしてください。
+  setupCommand: このコマンドで {name} を 32 文字以上のランダムな文字列に設定してから、このページを再読み込みしてください。
+  generateHint: "{command} で生成できます。"
+  devSetup: このアプリは {command} で実行中です。{file} に {name} を設定してから、このページを再読み込みしてください。
   docsLabel: デプロイガイド
 login: {}
 accountLinks:
@@ -1364,7 +1366,6 @@ teamManagement:
     deliveryTestDescription: あなた宛てのアプリ内通知を 1 件作成し、利用可能な場合はメール送信も試行します。
     inAppTestHint: アプリ内通知を送信します。
     emailTestConfiguredHint: テストメールを送信します。
-    emailTestUnconfiguredHint: "この Every App ゲートウェイではメールが設定されていません。"
     sendTestNotification: テスト通知を送信
     loadRulesFailed: 通知ルールを読み込めません。
     testNotificationSent: テスト通知を送信しました。
@@ -1708,7 +1709,7 @@ requestObservation:
   normalDetail: {}
 systemSettings:
   notificationEmailTitle: メール通知
-  emailGatewayNotReady: "この Every App ゲートウェイではメールが設定されていません。"
+  emailGatewayNotReady: "このゲートウェイではメールが設定されていません。管理者が送信ドメインを設定したうえで、{command} で {name} を設定します。"
   emailSenderLabel: "送信者"
   retentionTitle: 運用データの保持期間
   retentionDescription: タスク実行、タスクログ、通知メッセージ、詳細な分析データの保持期間を設定します。タスクと通知の変更は新しいレコードにのみ適用されます。新しい期間より古い詳細な分析データは、次回の日次実行で削除されます。

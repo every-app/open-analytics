@@ -63,6 +63,7 @@ import {
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/common/empty-state";
+import { EmailNotSetUp } from "@/components/dashboard/notifications/email-not-set-up";
 import {
   SettingsCard,
   SettingsPage,
@@ -156,7 +157,7 @@ export function TeamNotificationsClient({
         rules,
         sites,
         members,
-        emailConfigured: Boolean(emailConfig?.enabled),
+        emailConfigured: emailConfig?.enabled ?? null,
       };
     },
     initialData: initialData
@@ -173,7 +174,7 @@ export function TeamNotificationsClient({
   const rules = rulesQuery.data?.rules ?? [];
   const sites = rulesQuery.data?.sites ?? [];
   const members = rulesQuery.data?.members ?? [];
-  const emailConfigured = rulesQuery.data?.emailConfigured ?? false;
+  const emailConfigured = rulesQuery.data?.emailConfigured ?? null;
   const loading = rulesQuery.isPending;
 
   const siteById = useMemo(
@@ -389,6 +390,20 @@ export function TeamNotificationsClient({
           count: enabledCount,
         })}
       >
+        {/* Email is optional on the gateway: reports and alerts still arrive
+            in the inbox, and this says what an admin sets. Null is unknown
+            (the status couldn't be read) and says nothing. */}
+        {!loading && emailConfigured === false ? (
+          <p
+            role="status"
+            className="flex items-start gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-xs"
+          >
+            <SendIcon className="mt-0.5 size-4 shrink-0" />
+            <span>
+              <EmailNotSetUp messages={messages} />
+            </span>
+          </p>
+        ) : null}
         <SettingsCard className="divide-y-0">
           {loading ? (
             <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
@@ -529,16 +544,20 @@ export function TeamNotificationsClient({
               <CircleCheckIcon className="size-4 text-success" />
               {copy.inAppTestHint}
             </div>
-            <div
-              className={`flex items-center gap-2${emailConfigured ? " text-foreground" : ""}`}
-            >
-              <SendIcon
-                className={`size-4${emailConfigured ? " text-success" : ""}`}
-              />
-              {emailConfigured
-                ? copy.emailTestConfiguredHint
-                : copy.emailTestUnconfiguredHint}
-            </div>
+            {emailConfigured !== null ? (
+              <div
+                className={`flex items-center gap-2${emailConfigured ? " text-foreground" : ""}`}
+              >
+                <SendIcon
+                  className={`size-4${emailConfigured ? " text-success" : ""}`}
+                />
+                {emailConfigured ? (
+                  copy.emailTestConfiguredHint
+                ) : (
+                  <EmailNotSetUp messages={messages} />
+                )}
+              </div>
+            ) : null}
           </div>
           <DialogFooter>
             <Button

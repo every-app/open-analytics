@@ -94,7 +94,8 @@ export interface TeamNotificationsInitialData {
   rules: SerializableNotificationRuleData[];
   sites: SiteData[];
   members: MemberData[];
-  emailConfigured: boolean;
+  /** Null when the gateway's email status couldn't be read. */
+  emailConfigured: boolean | null;
   fetchedAt: number;
 }
 export interface NotificationCenterInitialData {
@@ -104,6 +105,8 @@ export interface NotificationCenterInitialData {
 }
 export interface AccountNotificationPreferencesInitialData {
   preferences: NotificationPreferencesData;
+  /** For the note under the email switch; null when it couldn't be read. */
+  notificationEmail: PublicNotificationEmailConfig | null;
   fetchedAt: number;
 }
 export interface SystemSettingsInitialData {

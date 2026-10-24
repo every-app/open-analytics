@@ -1314,7 +1314,9 @@ runtimeConfigError:
   title: 仪表盘不可用
   heading: 此仪表盘暂时不可用。
   setupSummary: 配置此部署
-  setupCommand: 用这条命令设置根密钥，然后刷新此页面。
+  setupCommand: 用这条命令把 {name} 设为 32 个或更多随机字符，然后刷新此页面。
+  generateHint: 可用 {command} 生成一个。
+  devSetup: 此应用正运行在 {command} 下。请在 {file} 中设置 {name}，然后刷新此页面。
   docsLabel: 部署指南
 login: {}
 accountLinks:
@@ -1359,7 +1361,6 @@ teamManagement:
     deliveryTestDescription: 为你创建一条站内通知；如果可用，也会尝试发送邮件。
     inAppTestHint: 我们会向你发送一条站内通知。
     emailTestConfiguredHint: 我们会向你发送一条测试邮件。
-    emailTestUnconfiguredHint: "此 Every App 网关尚未设置邮件。"
     sendTestNotification: 发送测试通知
     loadRulesFailed: 加载通知规则失败。
     testNotificationSent: 测试通知已发送。
@@ -1703,7 +1704,7 @@ requestObservation:
   normalDetail: {}
 systemSettings:
   notificationEmailTitle: 邮件通知
-  emailGatewayNotReady: "此 Every App 网关尚未设置邮件。"
+  emailGatewayNotReady: "此网关尚未设置邮件。管理员在设置好发信域名后，用 {command} 设置 {name}。"
   emailSenderLabel: "发件人"
   retentionTitle: 运行数据保留期
   retentionDescription: 配置任务运行记录、任务日志、通知消息和详细分析数据的保留时间。任务和通知的修改只影响新建记录；超出新期限的详细分析数据会在下一次每日运行时删除。

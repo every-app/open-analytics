@@ -1314,7 +1314,9 @@ runtimeConfigError:
   title: 儀表板無法使用
   heading: 此儀表板暫時無法使用。
   setupSummary: 設定此部署
-  setupCommand: 用這條命令設定根金鑰，然後重新整理此頁面。
+  setupCommand: 用這條命令把 {name} 設為 32 個或更多隨機字元，然後重新整理此頁面。
+  generateHint: 可用 {command} 產生一個。
+  devSetup: 此應用程式正執行於 {command} 下。請在 {file} 中設定 {name}，然後重新整理此頁面。
   docsLabel: 部署指南
 login: {}
 accountLinks:
@@ -1359,7 +1361,6 @@ teamManagement:
     deliveryTestDescription: 為你建立一條站內通知；如果可用，也會嘗試傳送郵件。
     inAppTestHint: 我們會向你傳送一條站內通知。
     emailTestConfiguredHint: 我們會向你傳送一條測試郵件。
-    emailTestUnconfiguredHint: "此 Every App 閘道尚未設定郵件。"
     sendTestNotification: 傳送測試通知
     loadRulesFailed: 載入通知規則失敗。
     testNotificationSent: 測試通知已傳送。
@@ -1703,7 +1704,7 @@ requestObservation:
   normalDetail: {}
 systemSettings:
   notificationEmailTitle: 郵件通知
-  emailGatewayNotReady: "此 Every App 閘道尚未設定郵件。"
+  emailGatewayNotReady: "此閘道尚未設定郵件。管理員在設定好寄信網域後，用 {command} 設定 {name}。"
   emailSenderLabel: "寄件人"
   retentionTitle: 執行資料保留期
   retentionDescription: 設定任務執行記錄、任務日誌、通知訊息和詳細分析資料的保留時間。任務和通知的修改只影響新建記錄；超出新期限的詳細分析資料會在下一次每日執行時刪除。

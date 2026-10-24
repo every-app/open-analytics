@@ -1350,7 +1350,9 @@ runtimeConfigError:
   title: Dashboard unavailable
   heading: This dashboard isn't available right now.
   setupSummary: Set up this deployment
-  setupCommand: Set the root secret with this command, then reload this page.
+  setupCommand: Set {name} to 32 or more random characters with this command, then reload this page.
+  generateHint: Make one with {command}.
+  devSetup: This app is running under {command}. Set {name} in {file}, then reload this page.
   docsLabel: Deployment guide
 login: {}
 accountLinks:
@@ -1395,7 +1397,6 @@ teamManagement:
     deliveryTestDescription: Creates one in-app notification for you and attempts email when available.
     inAppTestHint: We will send you an in-app notification.
     emailTestConfiguredHint: We will send you a test email.
-    emailTestUnconfiguredHint: Email isn't set up on this Every App gateway.
     sendTestNotification: Send test notification
     loadRulesFailed: Failed to load notification rules.
     testNotificationSent: Test notification sent.
@@ -1740,7 +1741,7 @@ requestObservation:
   normalDetail: {}
 systemSettings:
   notificationEmailTitle: Email notifications
-  emailGatewayNotReady: "Email isn't set up on this Every App gateway."
+  emailGatewayNotReady: "Email isn't set up on this gateway. An admin sets {name} with {command} after setting up a sending domain."
   emailSenderLabel: "Sender"
   retentionTitle: Operational data retention
   retentionDescription: Configure how long task runs, task logs, notification

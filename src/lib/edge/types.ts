@@ -13,6 +13,11 @@ export interface Env {
   EVERY_APP_ORG_ID?: string;
   /** The Every App gateway's URL (everyAppWorker). */
   GATEWAY_URL?: string;
+  /**
+   * Set by `everyapp dev` (everyAppWorker), never by a deploy: the setup
+   * error then says .dev.vars instead of the secret command.
+   */
+  EVERYAPP_DEV?: string;
 }
 
 export interface SerializedRequestPayload {

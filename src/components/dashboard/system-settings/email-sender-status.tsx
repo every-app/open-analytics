@@ -1,6 +1,7 @@
 import { Badge } from "@insightflare/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 
+import { EmailNotSetUp } from "@/components/dashboard/notifications/email-not-set-up";
 import {
   SettingsCard,
   SettingsRow,
@@ -41,7 +42,9 @@ export function EmailSenderStatus({
         <SettingsRow
           label={copy.emailSenderLabel}
           description={
-            status && !status.enabled ? copy.emailGatewayNotReady : undefined
+            status?.enabled === false ? (
+              <EmailNotSetUp messages={messages} />
+            ) : undefined
           }
         >
           {status?.enabled && status.sender ? (
@@ -49,7 +52,8 @@ export function EmailSenderStatus({
               {status.sender}
             </span>
           ) : null}
-          {status ? (
+          {/* Null: the status couldn't be read; say nothing rather than Off. */}
+          {status && status.enabled !== null ? (
             <Badge variant={status.enabled ? "success" : "warning"}>
               {status.enabled ? copy.enabledOn : copy.enabledOff}
             </Badge>
