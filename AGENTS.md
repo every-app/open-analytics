@@ -1,6 +1,6 @@
 # Agent guidance
 
-OpenAnalytics runs as an app on an Every App gateway. The platform is linked by path: clone `every-app/private-every-app` next to this repository and run `pnpm install` there before `pnpm install` here (README, [Deploy](README.md#deploy)). The everyapp skill lives in that checkout at `packages/cli/skills/everyapp/SKILL.md`; read it before running any `everyapp` command.
+OpenAnalytics runs as an app on an Every App gateway. The Every App SDK and CLI are vendored tarballs (`vendor/README.md`, `file:` dependencies in `package.json`), so `pnpm install` here is all a clone needs. The everyapp skill, with every command and flag, is in the vendored CLI at `node_modules/everyapp/skills/everyapp/SKILL.md`. Read it before running an everyapp command; never guess a flag. `pnpm everyapp deploy` from here can't update the Gateway: deploys run from an Every App checkout (README, [Deploy](README.md#deploy)).
 
 - Run with `pnpm run dev` (`everyapp dev`): the app behind a local gateway at `http://analytics.localhost:8787`, signed in as a development user. Copy `.dev.vars.example` to `.dev.vars` first; it sets `MAIN_SECRET` for local runs.
 - Deploy only with `pnpm run deploy` (`everyapp deploy`), never `wrangler deploy` or `cf deploy`. `cloudflare.config.ts` builds the Worker from `everyapp.config.ts`, and only `everyapp deploy` provisions D1, KV and the Durable Object, migrates and registers the app with the gateway.

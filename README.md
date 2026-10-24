@@ -32,14 +32,14 @@ Everything else needs a signed-in member of the organization or a personal acces
 
 You need a running Every App gateway, Node.js 24 and pnpm 10.
 
-This repository links the platform by path ([`package.json`](package.json) has `"everyapp": "link:../private-every-app/packages/cli"`), so clone [every-app/private-every-app](https://github.com/every-app/private-every-app) next to this repository, in the same parent directory, and run `pnpm install` there once: it builds the SDK. A lone clone installs with dangling symlinks, and `pnpm dev` fails with `everyapp: command not found`.
+The Every App SDK and CLI it builds with are vendored in [`vendor/`](vendor/README.md) (`file:` dependencies in `package.json`), so a clone of this repository installs and builds on its own: no checkout of the Every App repository beside it.
+
+To put it on your Gateway, run `pnpm everyapp install https://github.com/every-app/open-analytics` from your [Every App](https://github.com/every-app/every-app) checkout: it installs the latest release, which the Release workflow publishes on every push to the default branch, and the same command updates it later. To deploy your own changes instead, run that checkout's CLI from this directory: `node ../every-app/packages/cli/bin/everyapp.js deploy` (the vendored CLI runs `dev`, `db migrate` and `release`; a deploy also updates the Gateway, which only a checkout can build).
 
 ```bash
-git clone git@github.com:every-app/private-every-app.git ../private-every-app
-pnpm -C ../private-every-app install     # once: builds the SDK and the CLI
-pnpm install
-pnpm run deploy                          # everyapp deploy: builds, provisions D1, KV and the Durable Object, migrates, registers
-MAIN_SECRET="$(openssl rand -hex 32)" pnpm everyapp secret set MAIN_SECRET --from-env MAIN_SECRET
+# from your Every App checkout
+pnpm everyapp install https://github.com/every-app/open-analytics
+MAIN_SECRET="$(openssl rand -hex 32)" pnpm everyapp secret set MAIN_SECRET --app analytics --from-env MAIN_SECRET
 ```
 
 `MAIN_SECRET` signs collect tokens and derives visitor hashes. Generate it once with `openssl rand -hex 32`, as above, and keep it stable: changing it splits visitor counts.
