@@ -202,9 +202,11 @@ export function TeamManagementSitesPanel() {
                           </Badge>
                         ) : null}
                       </CardTitle>
-                      <CardDescription className="truncate">
-                        {site.domain}
-                      </CardDescription>
+                      {site.name !== site.domain ? (
+                        <CardDescription className="truncate">
+                          {site.domain}
+                        </CardDescription>
+                      ) : null}
                     </div>
                     <div className="flex shrink-0 items-center gap-1 text-muted-foreground">
                       {canManageSites ? (

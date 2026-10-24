@@ -77,9 +77,11 @@ export function RequestObservationClient({
             variant={window === days ? "default" : "outline"}
             onClick={() => setDays(window)}
           >
-            {formatI18nTemplate(copy.overviewLabels.windowDays, {
-              days: window,
-            })}
+            {window === 1
+              ? copy.overviewLabels.windowDay
+              : formatI18nTemplate(copy.overviewLabels.windowDays, {
+                  days: window,
+                })}
           </Button>
         ))}
         <Button

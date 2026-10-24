@@ -601,7 +601,7 @@ install:
     gtm: Create a Custom HTML tag with it, trigger it on All Pages, then publish.
   waiting: Waiting for the first page view
   received: Got your first page view. Reports fill in within a minute.
-  firstViewsTitle: Your first page views are in!
+  firstViewsTitle: Your first page views are in.
   nextReports: Get reports by email
   nextInvite: Invite members
   dismiss: Dismiss
@@ -613,7 +613,7 @@ pages:
   percentagePointSuffix: pp
   untitled: Untitled page
   empty: No pages yet
-  loadMoreError: Failed to load more pages.
+  loadMoreError: Couldn't load more pages.
   trendTitle: Page traffic trend
   otherPages: Other pages
   hashTab: Anchor
@@ -659,7 +659,7 @@ sessions:
   customEvents: Custom events
   screenSize: Screen size
   exitTime: Exit time
-  loadError: Unable to load sessions.
+  loadError: Couldn't load sessions.
   empty: No sessions in this time range.
 sessionDetail:
   anonymous: Anonymous
@@ -668,7 +668,7 @@ sessionDetail:
   back: Back to sessions
   missing: Missing sessionId.
   notFound: Session not found.
-  loadError: Unable to load session detail.
+  loadError: Couldn't load session detail.
   active: Active
   inactive: Ended
   status: Status
@@ -734,7 +734,7 @@ events:
     level != 0
   payloadFilterApply: Apply filters
   payloadFilterClear: Clear filters
-  payloadFilterInvalid: Unable to parse the filter conditions. Check the field
+  payloadFilterInvalid: Couldn't parse the filter conditions. Check the field
     path, operator, and value.
   expandField: Expand field
   collapseField: Collapse field
@@ -763,11 +763,11 @@ events:
   integratingEvent: Integrating event ({seconds}s)
   copyJson: Copy JSON
   copiedJson: JSON copied.
-  copyJsonFailed: Unable to copy JSON.
+  copyJsonFailed: Couldn't copy JSON.
   copyValue: Copy value
   copiedValue: Value copied.
-  copyValueFailed: Failed to copy value.
-  loadError: Unable to load event data.
+  copyValueFailed: Couldn't copy value.
+  loadError: Couldn't load event data.
   detailNotFound: This event record was not found.
   empty: No custom events in this range.
   noCustomEvents: No custom events in this period
@@ -819,14 +819,14 @@ funnels:
     analytics data is not deleted.
   deleteConfirm: Delete funnel
   deleting: Deleting...
-  detailLoadError: Unable to load funnel analysis.
+  detailLoadError: Couldn't load funnel analysis.
   invalidFunnel: Add a name and at least two complete filters.
   created: Funnel created.
-  createFailed: Unable to create funnel.
+  createFailed: Couldn't create the funnel.
   updatedSuccess: Funnel updated.
-  saveFailed: Unable to save funnel.
+  saveFailed: Couldn't save the funnel.
   deleted: Funnel deleted.
-  deleteFailed: Unable to delete funnel.
+  deleteFailed: Couldn't delete the funnel.
   overallConversion: Overall conversion
   startedSessions: Started sessions
   startedVisitors: Started visitors
@@ -862,13 +862,13 @@ goals:
   deleteDescription: This removes the saved goal definition. Historical analytics
     data is not deleted.
   deleteConfirm: Delete goal
-  detailLoadError: Unable to load goal analysis.
+  detailLoadError: Couldn't load goal analysis.
   invalidGoal: Add a name and a complete conversion condition.
   created: Goal created.
   updatedSuccess: Goal updated.
-  saveFailed: Unable to save goal.
+  saveFailed: Couldn't save the goal.
   deleted: Goal deleted.
-  deleteFailed: Unable to delete goal.
+  deleteFailed: Couldn't delete the goal.
   sessions: Sessions
   visitors: Visitors
   total: Total
@@ -900,7 +900,7 @@ visitors:
   sessions: Sessions
   customEvents: Custom events
   screenSize: Screen size
-  loadError: Unable to load visitors.
+  loadError: Couldn't load visitors.
   empty: No visitors in this time range.
 visitorDetail:
   anonymous: Anonymous
@@ -909,7 +909,7 @@ visitorDetail:
   back: Back to visitors
   missing: Missing visitorId.
   notFound: Visitor not found.
-  loadError: Unable to load visitor detail.
+  loadError: Couldn't load visitor detail.
   totalDuration: Total duration
   events: Events
   views: Page views
@@ -978,7 +978,7 @@ retention:
   periodZero: Initial
   empty: Not enough return data in this time range.
   emptyHint: Pick a longer period, or a coarser interval, in the date menu.
-  loadError: Unable to load retention data.
+  loadError: Couldn't load retention data.
   unavailableCell: This cohort has not reached this period yet.
   visitorsDetail: Visitors
   rateDetail: Retention
@@ -1112,7 +1112,7 @@ siteSettings:
     blocking:
       title: Blocking rules
     protection:
-      title: Protection
+      title: Bot blocking
     danger:
       title: Danger zone
     install:
@@ -1128,10 +1128,10 @@ siteSettings:
   publicSlugHint: The part of the link after /share/.
   publicLinkLabel: Public link
   copiedLink: Link copied
-  trackingStrengthGroupTitle: Tracking strength
-  trackingStrengthStrong: Strong
-  trackingStrengthSmart: Smart
-  trackingStrengthWeak: Weak
+  trackingStrengthGroupTitle: Visitor tracking
+  trackingStrengthStrong: Precise
+  trackingStrengthSmart: Anonymous in the EU
+  trackingStrengthWeak: Anonymous
   trackingStrengthStrongDescription: Always use high-precision visitor tracking.
     This may conflict with privacy regulations such as GDPR in some regions.
   trackingStrengthSmartDescription: Automatically switch tracking strength based on the visitor's country.
@@ -1204,15 +1204,15 @@ siteSettings:
   deleteSubtitle: Deletes the site and all of its analytics data.
   delete: Delete site
   deleting: Deleting...
-  deleteConfirm: This action cannot be undone. Continue?
+  deleteConfirm: Deletes the site and all of its analytics data. This can't be undone.
   toasts:
     saved: Site settings saved.
-    saveFailed: Failed to save site settings.
-    scriptLoadFailed: Failed to load script snippet.
-    settingsLoadFailed: Failed to load script settings.
+    saveFailed: Couldn't save site settings.
+    scriptLoadFailed: Couldn't load the script snippet.
+    settingsLoadFailed: Couldn't load script settings.
     settingsPropagationHint: Changes take up to an hour to apply.
     deleted: Site deleted.
-    deleteFailed: Failed to delete site.
+    deleteFailed: Couldn't delete the site.
     invalidInput: Enter a site name and a valid domain.
   publicEnabledHint: Anyone with the link can view this site's reports.
   viewBlockedRequests: See blocked requests
@@ -1233,10 +1233,10 @@ accountSettings:
   emailManagedByGateway: Your email comes from your Every App account.
   profileTitle: Personal details
   nicknameLabel: Display name
-  nicknamePlaceholder: e.g. Product Analyst
+  nicknamePlaceholder: Your name
   emailLabel: Email
   profileSaved: Personal details saved.
-  profileSaveFailed: Failed to save personal details.
+  profileSaveFailed: Couldn't save personal details.
   timeZoneTitle: Time zone
   browserUnavailable: Not detected
   useBrowser: Browser time zone ({zone})
@@ -1249,15 +1249,15 @@ accountSettings:
   aiClientsDescription: Add this address to Claude, ChatGPT or Claude Code once. It signs you in through Every App and covers every app you can open, OpenAnalytics included.
   aiClientsDocs: How to connect
 notificationCenter:
-  title: Inbox
-  empty: No notifications yet.
+  title: Notifications
+  empty: Reports and alerts from notification rules arrive here.
   loading: Loading notifications
-  markRead: Mark read
+  markRead: Mark as read
   markAllRead: Mark all as read
-  loadFailed: Failed to load notifications.
-  markReadFailed: Failed to mark notification as read.
+  loadFailed: Couldn't load notifications.
+  markReadFailed: Couldn't mark the notification as read.
   markAllReadSuccess: Notifications marked as read.
-  markAllReadFailed: Failed to mark notifications as read.
+  markAllReadFailed: Couldn't mark notifications as read.
   tabs:
     all: All
     unread: Unread
@@ -1268,10 +1268,10 @@ notificationCenter:
     critical: Critical
   preferencesTitle: Notification preferences
   emailNotificationsLabel: Email notifications
-  reportsUnreadLabel: Mark new reports as unread
-  milestonesUnreadLabel: Mark new milestones as unread
-  alertsUnreadLabel: Mark new alerts as unread
-  preferencesSaveFailed: Failed to save notification preferences.
+  reportsUnreadLabel: Unread badge for reports
+  milestonesUnreadLabel: Unread badge for milestones
+  alertsUnreadLabel: Unread badge for alerts
+  preferencesSaveFailed: Couldn't save notification preferences.
   detailFields: {}
   noUnread: No unread notifications.
   emailFailed: Email failed
@@ -1314,7 +1314,7 @@ notificationEmail:
     subject: OpenAnalytics notification test
     title: OpenAnalytics notification test
     summary: This is a test notification from OpenAnalytics.
-    body: Reports and alerts you turn on arrive in your OpenAnalytics inbox and, when email is set up on this gateway, by email too.
+    body: Reports and alerts you turn on arrive under Notifications in OpenAnalytics and, when email is set up on this gateway, by email too.
   report:
     subject: "{site} {periodLabel} traffic report"
     title: "{site} {periodLabel} traffic report"
@@ -1394,22 +1394,19 @@ teamManagement:
   widgets: {}
   notifications:
     empty: No notification rules yet.
-    rulesTitle: Notification rules
     enabledCount: "{count} of {total} enabled."
     loadingRules: Loading notification rules
     deliveryTestTitle: Delivery test
-    deliveryTestDescription: Creates one in-app notification for you and attempts email when available.
-    inAppTestHint: We will send you an in-app notification.
-    emailTestConfiguredHint: We will send you a test email.
+    inAppTestHint: Sends you an in-app notification.
+    emailTestConfiguredHint: Sends you a test email.
     sendTestNotification: Send test notification
-    loadRulesFailed: Failed to load notification rules.
+    loadRulesFailed: Couldn't load notification rules.
     testNotificationSent: Test notification sent.
-    testNotificationSentNoEmail: "Test sent to your inbox. No email went out: email isn't set up on this gateway."
-    sendTestNotificationFailed: Failed to send test notification.
+    testNotificationSentNoEmail: "Test notification sent. No email went out: email isn't set up on this gateway."
+    sendTestNotificationFailed: Couldn't send the test notification.
     createRule: Create rule
     editRule: Edit rule
     dialogDescription: Set up a notification rule for this organization.
-    ruleInfoSection: Rule info
     scheduleSection: Schedule
     sendScheduleSection: Send time
     checkSection: Check frequency
@@ -1448,17 +1445,17 @@ teamManagement:
     operatorLabel: Operator
     valueLabel: Value
     cooldownLabel: Cooldown
-    cooldownDescription: Notifications will not be sent again during this cooldown window.
-    noDataHoursLabel: No data hours
+    cooldownDescription: Wait this long before notifying again.
+    noDataHoursLabel: Hours without data
     pleaseChooseSite: Choose a site.
     pleaseChooseRecipients: Choose at least one recipient.
     ruleCreated: Rule created.
     ruleUpdated: Rule updated.
-    createRuleFailed: Failed to create rule.
-    updateRuleFailed: Failed to update rule.
+    createRuleFailed: Couldn't create the rule.
+    updateRuleFailed: Couldn't update the rule.
     deleteConfirm: Delete "{name}"?
     ruleDeleted: Rule deleted.
-    deleteRuleFailed: Failed to delete rule.
+    deleteRuleFailed: Couldn't delete the rule.
     lastChecked: Last checked
     actions: Actions
     edit: Edit
@@ -1468,15 +1465,15 @@ teamManagement:
     saveRule: Save rule
     preview: Preview
     runNow: Run now
-    previewFailed: Failed to preview rule.
-    runFailed: Failed to run rule.
+    previewFailed: Couldn't preview the rule.
+    runFailed: Couldn't run the rule.
     runFailedWithReason: "Couldn't run the rule: {reason}"
     previewFailedWithReason: "Couldn't preview the rule: {reason}"
     runNotTriggered: Checked. Nothing to send right now.
     runSkipped: "Couldn't check this rule: its site is missing or its condition isn't valid. Edit the rule."
     runNoRecipients: "No one to send to: no member of this organization matches this rule's recipients."
-    runSentOne: Sent 1 message to the inbox.
-    runSentMany: Sent {count} messages to the inbox.
+    runSentOne: Sent 1 notification.
+    runSentMany: Sent {count} notifications.
     runEmailFailed: Email failed for {failed} of them.
     runEmailNotSetUp: "No email went out: email isn't set up on this gateway."
     runEmailSent: Email went out to {sent} of them.
@@ -1523,7 +1520,7 @@ teamManagement:
       coolingDown: Cooling down
       dueNow: Due now
     previewFields:
-      status: Status
+      status: Result
       summary: Summary
       title: Title
       htmlPreview: HTML preview
@@ -1546,17 +1543,17 @@ teamManagement:
       change: Notify on period-over-period movement
       health: Notify when tracking goes quiet
     recipientModes:
-      creator: Creator
+      creator: Rule creator
       team_admins: Organization admins
       all_team_members: All members
       users: Selected users
-    recipientKindLabel: Recipient type
-    recipientPresetLabel: Preset
+    recipientKindLabel: Send to
+    recipientPresetLabel: Group
     customRecipientsEmpty: No recipients selected
     noTeamMembers: No organization members yet.
     recipientKinds:
-      preset: Preset
-      custom: Custom
+      preset: A group
+      custom: Specific people
     scheduleKinds:
       daily: Daily
       weekly: Weekly
@@ -1623,12 +1620,12 @@ managementPages:
   scheduledTasks:
     empty: No scheduled tasks yet.
     refresh: Refresh
-    loadFailed: Failed to load scheduled tasks.
+    loadFailed: Couldn't load scheduled tasks.
     loadMore: Load more
     allStatuses: All statuses
     runs24h: Runs (last 24 hours)
     successRate24h: Success rate (last 24 hours)
-    problemRuns24h: Problematic runs
+    problemRuns24h: Failed or partial runs
     failed: Failed
     partial: Partial
     lastRun: Last run
@@ -1640,7 +1637,7 @@ managementPages:
     enabledYes: Enabled
     enabledNo: Disabled
     taskStateSaved: Task state updated.
-    taskStateSaveFailed: Failed to update task state.
+    taskStateSaveFailed: Couldn't update task state.
     lastStatus: Last status
     runs30d: Runs (30 days)
     successRate30d: Success rate (30 days)
@@ -1652,6 +1649,10 @@ managementPages:
     startedAt: Started
     finishedAt: Finished
     trigger: Trigger
+    triggerTypes:
+      manual: Manual
+      cron: Scheduled
+      retry: Retry
     tasks: Tasks
     taskCount: Tasks
     subtaskCount: Subtasks
@@ -1688,6 +1689,10 @@ managementPages:
       database_maintenance:
         name: Database maintenance
         description: Removes expired task runs and notifications, and tunes the database.
+        schedule: Every day
+      analytics_retention:
+        name: Analytics retention
+        description: Deletes expired page views and events. Hourly totals are kept.
         schedule: Every day
     keptForDays: Kept for {days} days
 adminUsers:
@@ -1752,13 +1757,14 @@ requestObservation:
     blocked_regions: Blocked regions
   requestKindLabels: {}
   overviewLabels:
+    windowDay: Last 24 hours
     windowDays: "Last {days} days"
   normalDetail: {}
 systemSettings:
   notificationEmailTitle: Email notifications
   emailGatewayNotReady: "Email isn't set up on this gateway. An admin sets the sender with {command} after setting up a sending domain."
   emailSenderLabel: "Sender"
-  retentionTitle: Operational data retention
+  retentionTitle: Data retention
   retentionDescription: Configure how long task runs, task logs, notification
     messages and detailed analytics remain available. Task and notification
     changes affect new records only; detailed analytics older than the new limit
@@ -1767,12 +1773,12 @@ systemSettings:
   notificationTestDaysLabel: Test notifications (days)
   notificationAttentionDaysLabel: Warning and critical notifications (days)
   notificationDefaultDaysLabel: Other notifications (days)
-  analyticsDetailDaysLabel: "Detailed analytics: page views and events (days; hourly totals are kept)"
+  analyticsDetailDaysLabel: Page views and events (days; hourly totals are kept)
   retentionRangeHint: Enter an integer from 1 to 3650 days.
   retentionSave: Save retention settings
   retentionSaving: Saving...
   retentionSaved: Retention settings saved.
-  retentionSaveFailed: Failed to save retention settings.
+  retentionSaveFailed: Couldn't save retention settings.
   enabledOn: Enabled
   enabledOff: Disabled
   cancel: Cancel
@@ -1865,18 +1871,19 @@ systemPerformance:
   doDiagnosticHealthy: No abnormal buffered rows detected.
 loginForm: {}
 logoutAction: {}
-sidebarFooter:
-  gateway: Back to Every App
+sidebarHeader:
+  everyApp: Every App
+  backToEveryApp: Back to Every App
 appNav:
   appearance: Appearance
   mainNavigation: Main navigation
   toggleSidebar: Toggle sidebar
   sources: Sources
   audience: Audience
-  goals: Goals
+  goals: Conversions
   sites: Sites
   allSites: All sites
-  inbox: Inbox
+  inbox: Notifications
   settings: Settings
   switchSite: Switch site
   siteSettings: Site settings
@@ -1891,7 +1898,7 @@ getStarted:
   completed: "{count} completed"
   steps:
     site: Add your first site
-    tracking: Track your website
+    tracking: Add the script to your site
     team: Invite members
     notifications: Get reports by email
     sharing: Share a public dashboard
@@ -1906,7 +1913,7 @@ settingsNav:
   label: Settings
   system: System health
   account: Account
-  notifications: Notifications
+  notifications: Notification rules
   cancel: Cancel
 systemHealth:
   tabs:

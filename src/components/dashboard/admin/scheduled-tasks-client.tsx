@@ -324,9 +324,6 @@ export function ScheduledTasksClient({
             label: t.runs24h,
             loading: replacingRows,
             value: numberFormat(locale, data?.health.totalRuns24h ?? 0),
-            detail: data
-              ? formatI18nTemplate(t.keptForDays, { days: data.retentionDays })
-              : "--",
           },
           {
             id: "success-rate-24h",

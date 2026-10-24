@@ -11,6 +11,7 @@ import { Input } from "@insightflare/ui/input";
 import { Label } from "@insightflare/ui/label";
 import { Spinner } from "@insightflare/ui/spinner";
 import { useQueryClient } from "@tanstack/react-query";
+import { PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { getSiteSlug } from "@/components/dashboard/admin/team-management/model";
@@ -97,7 +98,7 @@ export function CreateSiteDialog({
     >
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t.createTitle}</DialogTitle>
+          <DialogTitle icon={PlusIcon}>{t.createTitle}</DialogTitle>
         </DialogHeader>
         <form
           className="space-y-4"

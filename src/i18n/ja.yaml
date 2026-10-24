@@ -595,7 +595,7 @@ install:
     gtm: このスクリプトでカスタム HTML タグを作成し、トリガーを「All Pages」にして公開します。
   waiting: 最初のページビューを待っています
   received: 最初のページビューを受け取りました。レポートは 1 分以内に表示されます。
-  firstViewsTitle: 最初のページビューが届きました！
+  firstViewsTitle: 最初のページビューが届きました。
   nextReports: メールでレポートを受け取る
   nextInvite: メンバーを招待
   dismiss: 閉じる
@@ -1091,7 +1091,7 @@ siteSettings:
     blocking:
       title: ブロックルール
     protection:
-      title: 保護
+      title: ボットのブロック
     danger:
       title: 危険な操作
     install:
@@ -1107,10 +1107,10 @@ siteSettings:
   publicSlugHint: リンクの /share/ 以降の部分です。
   publicLinkLabel: 公開リンク
   copiedLink: リンクをコピーしました
-  trackingStrengthGroupTitle: トラッキング強度
-  trackingStrengthStrong: 強
-  trackingStrengthSmart: スマート
-  trackingStrengthWeak: 弱
+  trackingStrengthGroupTitle: 訪問者トラッキング
+  trackingStrengthStrong: 高精度
+  trackingStrengthSmart: EU では匿名
+  trackingStrengthWeak: 匿名
   trackingStrengthStrongDescription: 常に高精度の訪問者トラッキングを使用します。GDPR など、一部地域のプライバシー規制に抵触する可能性があります。
   trackingStrengthSmartDescription: 訪問者の国に基づいてトラッキング強度を自動で切り替えます。
   trackingStrengthWeakDescription: 常にトラッキング精度を下げます。同じ訪問者が複数回カウントされ、リテンション分析ができなくなる場合があります。
@@ -1177,7 +1177,7 @@ siteSettings:
   deleteSubtitle: サイトとそのすべての分析データを削除します。
   delete: サイトを削除
   deleting: 削除中...
-  deleteConfirm: この操作は元に戻せません。続行しますか？
+  deleteConfirm: サイトとそのすべての分析データを削除します。この操作は元に戻せません。
   toasts:
     saved: サイト設定を保存しました。
     saveFailed: サイト設定を保存できません。
@@ -1205,7 +1205,7 @@ accountSettings:
   emailManagedByGateway: メールアドレスは Every App のアカウントのものです。
   profileTitle: 個人情報
   nicknameLabel: 表示名
-  nicknamePlaceholder: "例: プロダクトアナリスト"
+  nicknamePlaceholder: あなたの名前
   emailLabel: メール
   profileSaved: 個人情報を保存しました。
   profileSaveFailed: 個人情報を保存できません。
@@ -1221,8 +1221,8 @@ accountSettings:
   aiClientsDescription: このアドレスを Claude、ChatGPT、Claude Code に一度追加してください。Every App でサインインし、OpenAnalytics を含む開けるすべてのアプリで使えます。
   aiClientsDocs: 接続方法
 notificationCenter:
-  title: 受信トレイ
-  empty: 通知はまだありません。
+  title: 通知
+  empty: 通知ルールからのレポートとアラートがここに届きます。
   loading: 通知を読み込み中
   markRead: 既読にする
   markAllRead: すべて既読にする
@@ -1240,9 +1240,9 @@ notificationCenter:
     critical: 重大
   preferencesTitle: 通知設定
   emailNotificationsLabel: メール通知
-  reportsUnreadLabel: 新しいレポートを未読にする
-  milestonesUnreadLabel: 新しいマイルストーンを未読にする
-  alertsUnreadLabel: 新しいアラートを未読にする
+  reportsUnreadLabel: レポートの未読バッジ
+  milestonesUnreadLabel: マイルストーンの未読バッジ
+  alertsUnreadLabel: アラートの未読バッジ
   preferencesSaveFailed: 通知設定を保存できません。
   detailFields: {}
   noUnread: 未読の通知はありません。
@@ -1285,7 +1285,7 @@ notificationEmail:
     subject: OpenAnalytics 通知テスト
     title: OpenAnalytics 通知テスト
     summary: これは OpenAnalytics からのテスト通知です。
-    body: オンにしたレポートとアラートは OpenAnalytics の受信トレイに届きます。このゲートウェイでメールが設定されていればメールでも届きます。
+    body: オンにしたレポートとアラートは OpenAnalytics の「通知」に届きます。このゲートウェイでメールが設定されていればメールでも届きます。
   report:
     subject: "{site} の{periodLabel}トラフィックレポート"
     title: "{site} の{periodLabel}トラフィックレポート"
@@ -1364,22 +1364,19 @@ teamManagement:
   widgets: {}
   notifications:
     empty: 通知ルールはまだありません。
-    rulesTitle: 通知ルール
     enabledCount: "{total} 件中 {count} 件が有効です。"
     loadingRules: 通知ルールを読み込み中
     deliveryTestTitle: 配信テスト
-    deliveryTestDescription: あなた宛てのアプリ内通知を 1 件作成し、利用可能な場合はメール送信も試行します。
     inAppTestHint: アプリ内通知を送信します。
     emailTestConfiguredHint: テストメールを送信します。
     sendTestNotification: テスト通知を送信
     loadRulesFailed: 通知ルールを読み込めません。
     testNotificationSent: テスト通知を送信しました。
-    testNotificationSentNoEmail: "テストを受信トレイに送信しました。メールは送信されませんでした: このゲートウェイではメールが設定されていません。"
+    testNotificationSentNoEmail: "テスト通知を送信しました。メールは送信されませんでした: このゲートウェイではメールが設定されていません。"
     sendTestNotificationFailed: テスト通知を送信できません。
     createRule: ルールを作成
     editRule: ルールを編集
     dialogDescription: この組織の通知ルールを設定します。
-    ruleInfoSection: ルール情報
     scheduleSection: スケジュール
     sendScheduleSection: 送信時刻
     checkSection: チェック頻度
@@ -1418,8 +1415,8 @@ teamManagement:
     operatorLabel: 演算子
     valueLabel: 値
     cooldownLabel: クールダウン
-    cooldownDescription: このクールダウン期間中、通知は再送信されません。
-    noDataHoursLabel: データなし時間
+    cooldownDescription: 再通知までこの時間待ちます。
+    noDataHoursLabel: データなしの時間数
     pleaseChooseSite: サイトを選択してください。
     pleaseChooseRecipients: 受信者を 1 人以上選択してください。
     ruleCreated: ルールを作成しました。
@@ -1445,8 +1442,8 @@ teamManagement:
     runNotTriggered: 確認しました。今は送るものがありません。
     runSkipped: "このルールを確認できません: サイトがないか、条件が無効です。ルールを編集してください。"
     runNoRecipients: "送信先がありません: この組織にこのルールの受信者に該当するメンバーがいません。"
-    runSentOne: 受信トレイに 1 件送信しました。
-    runSentMany: 受信トレイに {count} 件送信しました。
+    runSentOne: 通知を 1 件送信しました。
+    runSentMany: 通知を {count} 件送信しました。
     runEmailFailed: "{failed} 件のメール送信に失敗しました。"
     runEmailNotSetUp: "メールは送信されませんでした: このゲートウェイではメールが設定されていません。"
     runEmailSent: "{sent} 人にメールを送信しました。"
@@ -1492,7 +1489,7 @@ teamManagement:
       coolingDown: クールダウン中
       dueNow: 期限到来
     previewFields:
-      status: ステータス
+      status: 結果
       summary: 概要
       title: タイトル
       htmlPreview: HTML プレビュー
@@ -1515,17 +1512,17 @@ teamManagement:
       change: 前期間比の変動を通知
       health: トラッキングが途絶えたときに通知
     recipientModes:
-      creator: 作成者
+      creator: ルール作成者
       team_admins: 組織の管理者
       all_team_members: 全メンバー
       users: 選択したユーザー
-    recipientKindLabel: 受信者種別
-    recipientPresetLabel: プリセット
+    recipientKindLabel: 送信先
+    recipientPresetLabel: グループ
     customRecipientsEmpty: 受信者が選択されていません
     noTeamMembers: 組織のメンバーはまだいません。
     recipientKinds:
-      preset: プリセット
-      custom: カスタム
+      preset: グループ
+      custom: 特定のメンバー
     scheduleKinds:
       daily: 毎日
       weekly: 毎週
@@ -1597,7 +1594,7 @@ managementPages:
     allStatuses: すべてのステータス
     runs24h: 24時間以内の実行回数
     successRate24h: 24時間以内の成功率
-    problemRuns24h: 異常な実行回数
+    problemRuns24h: 失敗または部分的な実行
     failed: 失敗
     partial: 一部完了
     lastRun: 最終実行
@@ -1621,6 +1618,10 @@ managementPages:
     startedAt: 開始
     finishedAt: 終了
     trigger: トリガー
+    triggerTypes:
+      manual: 手動
+      cron: スケジュール
+      retry: 再試行
     tasks: タスク
     taskCount: タスク
     subtaskCount: サブタスク
@@ -1657,6 +1658,10 @@ managementPages:
       database_maintenance:
         name: データベースメンテナンス
         description: 期限切れのタスク実行記録と通知を削除し、データベースを最適化します。
+        schedule: 毎日
+      analytics_retention:
+        name: 分析データの保持
+        description: 期限切れのページビューとイベントを削除します。時間ごとの集計は保持されます。
         schedule: 毎日
     keptForDays: "{days} 日間保持"
 adminUsers:
@@ -1721,19 +1726,20 @@ requestObservation:
     blocked_regions: ブロック対象地域
   requestKindLabels: {}
   overviewLabels:
+    windowDay: 過去 24 時間
     windowDays: 過去 {days} 日
   normalDetail: {}
 systemSettings:
   notificationEmailTitle: メール通知
   emailGatewayNotReady: "このゲートウェイではメールが設定されていません。管理者が送信ドメインを設定したうえで、{command} で送信者を設定します。"
   emailSenderLabel: "送信者"
-  retentionTitle: 運用データの保持期間
+  retentionTitle: データの保持期間
   retentionDescription: タスク実行、タスクログ、通知メッセージ、詳細な分析データの保持期間を設定します。タスクと通知の変更は新しいレコードにのみ適用されます。新しい期間より古い詳細な分析データは、次回の日次実行で削除されます。
   scheduledTaskLogsDaysLabel: スケジュールタスクの実行とログ（日）
   notificationTestDaysLabel: テスト通知（日）
   notificationAttentionDaysLabel: 警告・重大通知（日）
   notificationDefaultDaysLabel: その他の通知（日）
-  analyticsDetailDaysLabel: 詳細な分析データ：ページビューとイベント（日数。時間ごとの集計は保持）
+  analyticsDetailDaysLabel: ページビューとイベント（日数。時間ごとの集計は保持）
   retentionRangeHint: 1〜3650 の整数日を入力してください。
   retentionSave: 保持期間を保存
   retentionSaving: 保存中...
@@ -1830,18 +1836,19 @@ systemPerformance:
   doDiagnosticHealthy: 異常なバッファ行は検出されませんでした。
 loginForm: {}
 logoutAction: {}
-sidebarFooter:
-  gateway: Every App に戻る
+sidebarHeader:
+  everyApp: Every App
+  backToEveryApp: Every App に戻る
 appNav:
   appearance: 外観
   mainNavigation: メインナビゲーション
   toggleSidebar: サイドバーを切り替え
   sources: 流入元
   audience: オーディエンス
-  goals: 目標
+  goals: コンバージョン
   sites: サイト
   allSites: すべてのサイト
-  inbox: 受信トレイ
+  inbox: 通知
   settings: 設定
   switchSite: サイトを切り替え
   siteSettings: サイト設定
@@ -1856,7 +1863,7 @@ getStarted:
   completed: "{count} 件完了"
   steps:
     site: 最初のサイトを追加
-    tracking: ウェブサイトを計測する
+    tracking: サイトにスクリプトを追加
     team: メンバーを招待
     notifications: レポートをメールで受け取る
     sharing: 公開ダッシュボードを共有
@@ -1871,7 +1878,7 @@ settingsNav:
   label: 設定
   system: システムの状態
   account: アカウント
-  notifications: 通知
+  notifications: 通知ルール
   cancel: キャンセル
 systemHealth:
   tabs:

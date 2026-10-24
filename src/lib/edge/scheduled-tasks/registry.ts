@@ -34,7 +34,7 @@ export const SCHEDULED_TASKS: ScheduledTaskDefinitionInfo[] = [
     key: "analytics_retention",
     name: "Analytics retention",
     description:
-      "Deletes page views and custom events older than the detail retention; hourly totals stay.",
+      "Deletes expired page views and events. Hourly totals are kept.",
     schedule: "Every day",
     trigger: "cron",
     enabled: true,

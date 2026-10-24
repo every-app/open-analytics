@@ -348,7 +348,10 @@ export function siteLabel(
 ) {
   if (!siteId) return "-";
   const site = siteById.get(siteId);
-  return site ? `${site.name} (${site.domain})` : siteId;
+  if (!site) return siteId;
+  return site.name === site.domain
+    ? site.name
+    : `${site.name} (${site.domain})`;
 }
 export function previewSummary(
   result: NotificationRuleEvaluationData | null,

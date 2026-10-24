@@ -23,7 +23,7 @@ import { Slider } from "@insightflare/ui/slider";
 import { Spinner } from "@insightflare/ui/spinner";
 import { Switch } from "@insightflare/ui/switch";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 
 import { CodeBlock } from "@/components/common/code-block";
@@ -570,7 +570,7 @@ export function SettingsClientPage({
             >
               <SelectTrigger
                 id="site-settings-tracking-strength"
-                className="w-full sm:w-40"
+                className="w-full sm:w-52"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -682,7 +682,9 @@ export function SettingsClientPage({
       >
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>{copy.deleteTitle}</AlertDialogTitle>
+            <AlertDialogTitle icon={Trash2Icon}>
+              {copy.deleteTitle}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               {copy.deleteConfirm}
             </AlertDialogDescription>

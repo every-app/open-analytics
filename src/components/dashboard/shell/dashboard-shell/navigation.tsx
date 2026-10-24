@@ -3,9 +3,9 @@ import {
   FileTextIcon,
   GaugeIcon,
   LayoutDashboardIcon,
+  LogInIcon,
   type LucideIcon,
   SettingsIcon,
-  ShareIcon,
   TargetIcon,
   UserRoundIcon,
 } from "lucide-react";
@@ -62,7 +62,7 @@ export type SiteNavItem = (typeof SITE_NAV_ITEMS)[number];
 const SITE_NAV_ITEM_ICONS: Record<SiteNavItem["key"], LucideIcon> = {
   overview: LayoutDashboardIcon,
   pages: FileTextIcon,
-  sources: ShareIcon,
+  sources: LogInIcon,
   audience: UserRoundIcon,
   goals: TargetIcon,
   performance: GaugeIcon,

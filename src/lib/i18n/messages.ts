@@ -1326,11 +1326,9 @@ export interface AppMessages {
     widgets: Record<string, never>;
     notifications: {
       empty: string;
-      rulesTitle: string;
       enabledCount: string;
       loadingRules: string;
       deliveryTestTitle: string;
-      deliveryTestDescription: string;
       inAppTestHint: string;
       emailTestConfiguredHint: string;
       sendTestNotification: string;
@@ -1341,7 +1339,6 @@ export interface AppMessages {
       createRule: string;
       editRule: string;
       dialogDescription: string;
-      ruleInfoSection: string;
       scheduleSection: string;
       sendScheduleSection: string;
       checkSection: string;
@@ -1597,6 +1594,11 @@ export interface AppMessages {
       startedAt: string;
       finishedAt: string;
       trigger: string;
+      triggerTypes: {
+        manual: string;
+        cron: string;
+        retry: string;
+      };
       tasks: string;
       taskCount: string;
       subtaskCount: string;
@@ -1634,6 +1636,11 @@ export interface AppMessages {
           schedule: string;
         };
         database_maintenance: {
+          name: string;
+          description: string;
+          schedule: string;
+        };
+        analytics_retention: {
           name: string;
           description: string;
           schedule: string;
@@ -1709,6 +1716,7 @@ export interface AppMessages {
     };
     requestKindLabels: Record<string, never>;
     overviewLabels: {
+      windowDay: string;
       windowDays: string;
     };
     normalDetail: Record<string, never>;
@@ -1822,8 +1830,9 @@ export interface AppMessages {
   };
   loginForm: Record<string, never>;
   logoutAction: Record<string, never>;
-  sidebarFooter: {
-    gateway: string;
+  sidebarHeader: {
+    everyApp: string;
+    backToEveryApp: string;
   };
   appNav: {
     appearance: string;
@@ -2520,7 +2529,7 @@ const enMessages = {
     },
     waiting: "Waiting for the first page view",
     received: "Got your first page view. Reports fill in within a minute.",
-    firstViewsTitle: "Your first page views are in!",
+    firstViewsTitle: "Your first page views are in.",
     nextReports: "Get reports by email",
     nextInvite: "Invite members",
     dismiss: "Dismiss",
@@ -2533,7 +2542,7 @@ const enMessages = {
     percentagePointSuffix: "pp",
     untitled: "Untitled page",
     empty: "No pages yet",
-    loadMoreError: "Failed to load more pages.",
+    loadMoreError: "Couldn't load more pages.",
     trendTitle: "Page traffic trend",
     otherPages: "Other pages",
     hashTab: "Anchor",
@@ -2582,7 +2591,7 @@ const enMessages = {
     customEvents: "Custom events",
     screenSize: "Screen size",
     exitTime: "Exit time",
-    loadError: "Unable to load sessions.",
+    loadError: "Couldn't load sessions.",
     empty: "No sessions in this time range.",
   },
   sessionDetail: {
@@ -2592,7 +2601,7 @@ const enMessages = {
     back: "Back to sessions",
     missing: "Missing sessionId.",
     notFound: "Session not found.",
-    loadError: "Unable to load session detail.",
+    loadError: "Couldn't load session detail.",
     active: "Active",
     inactive: "Ended",
     status: "Status",
@@ -2660,7 +2669,7 @@ const enMessages = {
     payloadFilterApply: "Apply filters",
     payloadFilterClear: "Clear filters",
     payloadFilterInvalid:
-      "Unable to parse the filter conditions. Check the field path, operator, and value.",
+      "Couldn't parse the filter conditions. Check the field path, operator, and value.",
     expandField: "Expand field",
     collapseField: "Collapse field",
     search: "Search event name, IDs, visitor, session, page...",
@@ -2688,11 +2697,11 @@ const enMessages = {
     integratingEvent: "Integrating event ({seconds}s)",
     copyJson: "Copy JSON",
     copiedJson: "JSON copied.",
-    copyJsonFailed: "Unable to copy JSON.",
+    copyJsonFailed: "Couldn't copy JSON.",
     copyValue: "Copy value",
     copiedValue: "Value copied.",
-    copyValueFailed: "Failed to copy value.",
-    loadError: "Unable to load event data.",
+    copyValueFailed: "Couldn't copy value.",
+    loadError: "Couldn't load event data.",
     detailNotFound: "This event record was not found.",
     empty: "No custom events in this range.",
     noCustomEvents: "No custom events in this period",
@@ -2745,14 +2754,14 @@ const enMessages = {
       "This removes the saved funnel definition. Historical analytics data is not deleted.",
     deleteConfirm: "Delete funnel",
     deleting: "Deleting...",
-    detailLoadError: "Unable to load funnel analysis.",
+    detailLoadError: "Couldn't load funnel analysis.",
     invalidFunnel: "Add a name and at least two complete filters.",
     created: "Funnel created.",
-    createFailed: "Unable to create funnel.",
+    createFailed: "Couldn't create the funnel.",
     updatedSuccess: "Funnel updated.",
-    saveFailed: "Unable to save funnel.",
+    saveFailed: "Couldn't save the funnel.",
     deleted: "Funnel deleted.",
-    deleteFailed: "Unable to delete funnel.",
+    deleteFailed: "Couldn't delete the funnel.",
     overallConversion: "Overall conversion",
     startedSessions: "Started sessions",
     startedVisitors: "Started visitors",
@@ -2789,13 +2798,13 @@ const enMessages = {
     deleteDescription:
       "This removes the saved goal definition. Historical analytics data is not deleted.",
     deleteConfirm: "Delete goal",
-    detailLoadError: "Unable to load goal analysis.",
+    detailLoadError: "Couldn't load goal analysis.",
     invalidGoal: "Add a name and a complete conversion condition.",
     created: "Goal created.",
     updatedSuccess: "Goal updated.",
-    saveFailed: "Unable to save goal.",
+    saveFailed: "Couldn't save the goal.",
     deleted: "Goal deleted.",
-    deleteFailed: "Unable to delete goal.",
+    deleteFailed: "Couldn't delete the goal.",
     sessions: "Sessions",
     visitors: "Visitors",
     total: "Total",
@@ -2829,7 +2838,7 @@ const enMessages = {
     sessions: "Sessions",
     customEvents: "Custom events",
     screenSize: "Screen size",
-    loadError: "Unable to load visitors.",
+    loadError: "Couldn't load visitors.",
     empty: "No visitors in this time range.",
   },
   visitorDetail: {
@@ -2839,7 +2848,7 @@ const enMessages = {
     back: "Back to visitors",
     missing: "Missing visitorId.",
     notFound: "Visitor not found.",
-    loadError: "Unable to load visitor detail.",
+    loadError: "Couldn't load visitor detail.",
     totalDuration: "Total duration",
     events: "Events",
     views: "Page views",
@@ -2909,7 +2918,7 @@ const enMessages = {
     periodZero: "Initial",
     empty: "Not enough return data in this time range.",
     emptyHint: "Pick a longer period, or a coarser interval, in the date menu.",
-    loadError: "Unable to load retention data.",
+    loadError: "Couldn't load retention data.",
     unavailableCell: "This cohort has not reached this period yet.",
     visitorsDetail: "Visitors",
     rateDetail: "Retention",
@@ -3057,7 +3066,7 @@ const enMessages = {
         title: "Blocking rules",
       },
       protection: {
-        title: "Protection",
+        title: "Bot blocking",
       },
       danger: {
         title: "Danger zone",
@@ -3078,10 +3087,10 @@ const enMessages = {
     publicSlugHint: "The part of the link after /share/.",
     publicLinkLabel: "Public link",
     copiedLink: "Link copied",
-    trackingStrengthGroupTitle: "Tracking strength",
-    trackingStrengthStrong: "Strong",
-    trackingStrengthSmart: "Smart",
-    trackingStrengthWeak: "Weak",
+    trackingStrengthGroupTitle: "Visitor tracking",
+    trackingStrengthStrong: "Precise",
+    trackingStrengthSmart: "Anonymous in the EU",
+    trackingStrengthWeak: "Anonymous",
     trackingStrengthStrongDescription:
       "Always use high-precision visitor tracking. This may conflict with privacy regulations such as GDPR in some regions.",
     trackingStrengthSmartDescription:
@@ -3166,15 +3175,16 @@ const enMessages = {
     deleteSubtitle: "Deletes the site and all of its analytics data.",
     delete: "Delete site",
     deleting: "Deleting...",
-    deleteConfirm: "This action cannot be undone. Continue?",
+    deleteConfirm:
+      "Deletes the site and all of its analytics data. This can't be undone.",
     toasts: {
       saved: "Site settings saved.",
-      saveFailed: "Failed to save site settings.",
-      scriptLoadFailed: "Failed to load script snippet.",
-      settingsLoadFailed: "Failed to load script settings.",
+      saveFailed: "Couldn't save site settings.",
+      scriptLoadFailed: "Couldn't load the script snippet.",
+      settingsLoadFailed: "Couldn't load script settings.",
       settingsPropagationHint: "Changes take up to an hour to apply.",
       deleted: "Site deleted.",
-      deleteFailed: "Failed to delete site.",
+      deleteFailed: "Couldn't delete the site.",
       invalidInput: "Enter a site name and a valid domain.",
     },
     publicEnabledHint: "Anyone with the link can view this site's reports.",
@@ -3196,10 +3206,10 @@ const enMessages = {
     emailManagedByGateway: "Your email comes from your Every App account.",
     profileTitle: "Personal details",
     nicknameLabel: "Display name",
-    nicknamePlaceholder: "e.g. Product Analyst",
+    nicknamePlaceholder: "Your name",
     emailLabel: "Email",
     profileSaved: "Personal details saved.",
-    profileSaveFailed: "Failed to save personal details.",
+    profileSaveFailed: "Couldn't save personal details.",
     timeZoneTitle: "Time zone",
     browserUnavailable: "Not detected",
     useBrowser: "Browser time zone ({zone})",
@@ -3214,15 +3224,15 @@ const enMessages = {
     aiClientsDocs: "How to connect",
   },
   notificationCenter: {
-    title: "Inbox",
-    empty: "No notifications yet.",
+    title: "Notifications",
+    empty: "Reports and alerts from notification rules arrive here.",
     loading: "Loading notifications",
-    markRead: "Mark read",
+    markRead: "Mark as read",
     markAllRead: "Mark all as read",
-    loadFailed: "Failed to load notifications.",
-    markReadFailed: "Failed to mark notification as read.",
+    loadFailed: "Couldn't load notifications.",
+    markReadFailed: "Couldn't mark the notification as read.",
     markAllReadSuccess: "Notifications marked as read.",
-    markAllReadFailed: "Failed to mark notifications as read.",
+    markAllReadFailed: "Couldn't mark notifications as read.",
     tabs: {
       all: "All",
       unread: "Unread",
@@ -3235,10 +3245,10 @@ const enMessages = {
     },
     preferencesTitle: "Notification preferences",
     emailNotificationsLabel: "Email notifications",
-    reportsUnreadLabel: "Mark new reports as unread",
-    milestonesUnreadLabel: "Mark new milestones as unread",
-    alertsUnreadLabel: "Mark new alerts as unread",
-    preferencesSaveFailed: "Failed to save notification preferences.",
+    reportsUnreadLabel: "Unread badge for reports",
+    milestonesUnreadLabel: "Unread badge for milestones",
+    alertsUnreadLabel: "Unread badge for alerts",
+    preferencesSaveFailed: "Couldn't save notification preferences.",
     detailFields: {},
     noUnread: "No unread notifications.",
     emailFailed: "Email failed",
@@ -3284,7 +3294,7 @@ const enMessages = {
       subject: "OpenAnalytics notification test",
       title: "OpenAnalytics notification test",
       summary: "This is a test notification from OpenAnalytics.",
-      body: "Reports and alerts you turn on arrive in your OpenAnalytics inbox and, when email is set up on this gateway, by email too.",
+      body: "Reports and alerts you turn on arrive under Notifications in OpenAnalytics and, when email is set up on this gateway, by email too.",
     },
     report: {
       subject: "{site} {periodLabel} traffic report",
@@ -3385,24 +3395,20 @@ const enMessages = {
     widgets: {},
     notifications: {
       empty: "No notification rules yet.",
-      rulesTitle: "Notification rules",
       enabledCount: "{count} of {total} enabled.",
       loadingRules: "Loading notification rules",
       deliveryTestTitle: "Delivery test",
-      deliveryTestDescription:
-        "Creates one in-app notification for you and attempts email when available.",
-      inAppTestHint: "We will send you an in-app notification.",
-      emailTestConfiguredHint: "We will send you a test email.",
+      inAppTestHint: "Sends you an in-app notification.",
+      emailTestConfiguredHint: "Sends you a test email.",
       sendTestNotification: "Send test notification",
-      loadRulesFailed: "Failed to load notification rules.",
+      loadRulesFailed: "Couldn't load notification rules.",
       testNotificationSent: "Test notification sent.",
       testNotificationSentNoEmail:
-        "Test sent to your inbox. No email went out: email isn't set up on this gateway.",
-      sendTestNotificationFailed: "Failed to send test notification.",
+        "Test notification sent. No email went out: email isn't set up on this gateway.",
+      sendTestNotificationFailed: "Couldn't send the test notification.",
       createRule: "Create rule",
       editRule: "Edit rule",
       dialogDescription: "Set up a notification rule for this organization.",
-      ruleInfoSection: "Rule info",
       scheduleSection: "Schedule",
       sendScheduleSection: "Send time",
       checkSection: "Check frequency",
@@ -3441,18 +3447,17 @@ const enMessages = {
       operatorLabel: "Operator",
       valueLabel: "Value",
       cooldownLabel: "Cooldown",
-      cooldownDescription:
-        "Notifications will not be sent again during this cooldown window.",
-      noDataHoursLabel: "No data hours",
+      cooldownDescription: "Wait this long before notifying again.",
+      noDataHoursLabel: "Hours without data",
       pleaseChooseSite: "Choose a site.",
       pleaseChooseRecipients: "Choose at least one recipient.",
       ruleCreated: "Rule created.",
       ruleUpdated: "Rule updated.",
-      createRuleFailed: "Failed to create rule.",
-      updateRuleFailed: "Failed to update rule.",
+      createRuleFailed: "Couldn't create the rule.",
+      updateRuleFailed: "Couldn't update the rule.",
       deleteConfirm: 'Delete "{name}"?',
       ruleDeleted: "Rule deleted.",
-      deleteRuleFailed: "Failed to delete rule.",
+      deleteRuleFailed: "Couldn't delete the rule.",
       lastChecked: "Last checked",
       actions: "Actions",
       edit: "Edit",
@@ -3462,8 +3467,8 @@ const enMessages = {
       saveRule: "Save rule",
       preview: "Preview",
       runNow: "Run now",
-      previewFailed: "Failed to preview rule.",
-      runFailed: "Failed to run rule.",
+      previewFailed: "Couldn't preview the rule.",
+      runFailed: "Couldn't run the rule.",
       runFailedWithReason: "Couldn't run the rule: {reason}",
       previewFailedWithReason: "Couldn't preview the rule: {reason}",
       runNotTriggered: "Checked. Nothing to send right now.",
@@ -3471,8 +3476,8 @@ const enMessages = {
         "Couldn't check this rule: its site is missing or its condition isn't valid. Edit the rule.",
       runNoRecipients:
         "No one to send to: no member of this organization matches this rule's recipients.",
-      runSentOne: "Sent 1 message to the inbox.",
-      runSentMany: "Sent {count} messages to the inbox.",
+      runSentOne: "Sent 1 notification.",
+      runSentMany: "Sent {count} notifications.",
       runEmailFailed: "Email failed for {failed} of them.",
       runEmailNotSetUp:
         "No email went out: email isn't set up on this gateway.",
@@ -3527,7 +3532,7 @@ const enMessages = {
         dueNow: "Due now",
       },
       previewFields: {
-        status: "Status",
+        status: "Result",
         summary: "Summary",
         title: "Title",
         htmlPreview: "HTML preview",
@@ -3553,18 +3558,18 @@ const enMessages = {
         health: "Notify when tracking goes quiet",
       },
       recipientModes: {
-        creator: "Creator",
+        creator: "Rule creator",
         team_admins: "Organization admins",
         all_team_members: "All members",
         users: "Selected users",
       },
-      recipientKindLabel: "Recipient type",
-      recipientPresetLabel: "Preset",
+      recipientKindLabel: "Send to",
+      recipientPresetLabel: "Group",
       customRecipientsEmpty: "No recipients selected",
       noTeamMembers: "No organization members yet.",
       recipientKinds: {
-        preset: "Preset",
-        custom: "Custom",
+        preset: "A group",
+        custom: "Specific people",
       },
       scheduleKinds: {
         daily: "Daily",
@@ -3637,12 +3642,12 @@ const enMessages = {
     scheduledTasks: {
       empty: "No scheduled tasks yet.",
       refresh: "Refresh",
-      loadFailed: "Failed to load scheduled tasks.",
+      loadFailed: "Couldn't load scheduled tasks.",
       loadMore: "Load more",
       allStatuses: "All statuses",
       runs24h: "Runs (last 24 hours)",
       successRate24h: "Success rate (last 24 hours)",
-      problemRuns24h: "Problematic runs",
+      problemRuns24h: "Failed or partial runs",
       failed: "Failed",
       partial: "Partial",
       lastRun: "Last run",
@@ -3654,7 +3659,7 @@ const enMessages = {
       enabledYes: "Enabled",
       enabledNo: "Disabled",
       taskStateSaved: "Task state updated.",
-      taskStateSaveFailed: "Failed to update task state.",
+      taskStateSaveFailed: "Couldn't update task state.",
       lastStatus: "Last status",
       runs30d: "Runs (30 days)",
       successRate30d: "Success rate (30 days)",
@@ -3666,6 +3671,11 @@ const enMessages = {
       startedAt: "Started",
       finishedAt: "Finished",
       trigger: "Trigger",
+      triggerTypes: {
+        manual: "Manual",
+        cron: "Scheduled",
+        retry: "Retry",
+      },
       tasks: "Tasks",
       taskCount: "Tasks",
       subtaskCount: "Subtasks",
@@ -3707,6 +3717,12 @@ const enMessages = {
           name: "Database maintenance",
           description:
             "Removes expired task runs and notifications, and tunes the database.",
+          schedule: "Every day",
+        },
+        analytics_retention: {
+          name: "Analytics retention",
+          description:
+            "Deletes expired page views and events. Hourly totals are kept.",
           schedule: "Every day",
         },
       },
@@ -3781,6 +3797,7 @@ const enMessages = {
     },
     requestKindLabels: {},
     overviewLabels: {
+      windowDay: "Last 24 hours",
       windowDays: "Last {days} days",
     },
     normalDetail: {},
@@ -3790,7 +3807,7 @@ const enMessages = {
     emailGatewayNotReady:
       "Email isn't set up on this gateway. An admin sets the sender with {command} after setting up a sending domain.",
     emailSenderLabel: "Sender",
-    retentionTitle: "Operational data retention",
+    retentionTitle: "Data retention",
     retentionDescription:
       "Configure how long task runs, task logs, notification messages and detailed analytics remain available. Task and notification changes affect new records only; detailed analytics older than the new limit are deleted on the next daily run.",
     scheduledTaskLogsDaysLabel: "Scheduled task logs and runs (days)",
@@ -3798,12 +3815,12 @@ const enMessages = {
     notificationAttentionDaysLabel: "Warning and critical notifications (days)",
     notificationDefaultDaysLabel: "Other notifications (days)",
     analyticsDetailDaysLabel:
-      "Detailed analytics: page views and events (days; hourly totals are kept)",
+      "Page views and events (days; hourly totals are kept)",
     retentionRangeHint: "Enter an integer from 1 to 3650 days.",
     retentionSave: "Save retention settings",
     retentionSaving: "Saving...",
     retentionSaved: "Retention settings saved.",
-    retentionSaveFailed: "Failed to save retention settings.",
+    retentionSaveFailed: "Couldn't save retention settings.",
     enabledOn: "Enabled",
     enabledOff: "Disabled",
     cancel: "Cancel",
@@ -3901,8 +3918,9 @@ const enMessages = {
   },
   loginForm: {},
   logoutAction: {},
-  sidebarFooter: {
-    gateway: "Back to Every App",
+  sidebarHeader: {
+    everyApp: "Every App",
+    backToEveryApp: "Back to Every App",
   },
   appNav: {
     appearance: "Appearance",
@@ -3910,10 +3928,10 @@ const enMessages = {
     toggleSidebar: "Toggle sidebar",
     sources: "Sources",
     audience: "Audience",
-    goals: "Goals",
+    goals: "Conversions",
     sites: "Sites",
     allSites: "All sites",
-    inbox: "Inbox",
+    inbox: "Notifications",
     settings: "Settings",
     switchSite: "Switch site",
     siteSettings: "Site settings",
@@ -3929,7 +3947,7 @@ const enMessages = {
     completed: "{count} completed",
     steps: {
       site: "Add your first site",
-      tracking: "Track your website",
+      tracking: "Add the script to your site",
       team: "Invite members",
       notifications: "Get reports by email",
       sharing: "Share a public dashboard",
@@ -3946,7 +3964,7 @@ const enMessages = {
     label: "Settings",
     system: "System health",
     account: "Account",
-    notifications: "Notifications",
+    notifications: "Notification rules",
     cancel: "Cancel",
   },
   systemHealth: {
@@ -4592,7 +4610,7 @@ const zhMessages = {
     },
     waiting: "正在等待第一次页面浏览",
     received: "已收到第一次页面浏览，报表将在一分钟内更新。",
-    firstViewsTitle: "第一批页面浏览已到达！",
+    firstViewsTitle: "第一批页面浏览已到达。",
     nextReports: "通过邮件接收报告",
     nextInvite: "邀请成员",
     dismiss: "关闭",
@@ -5120,7 +5138,7 @@ const zhMessages = {
         title: "拦截规则",
       },
       protection: {
-        title: "防护",
+        title: "机器人拦截",
       },
       danger: {
         title: "危险操作",
@@ -5141,10 +5159,10 @@ const zhMessages = {
     publicSlugHint: "链接中 /share/ 之后的部分。",
     publicLinkLabel: "公开链接",
     copiedLink: "链接已复制",
-    trackingStrengthGroupTitle: "跟踪强度",
-    trackingStrengthStrong: "强",
-    trackingStrengthSmart: "智能",
-    trackingStrengthWeak: "弱",
+    trackingStrengthGroupTitle: "访客跟踪",
+    trackingStrengthStrong: "精确",
+    trackingStrengthSmart: "在欧盟匿名",
+    trackingStrengthWeak: "匿名",
     trackingStrengthStrongDescription:
       "始终进行针对访客的高精度跟踪。这可能违反某些国家的法规，例如 GDPR。",
     trackingStrengthSmartDescription: "自动根据访客所处国家切换跟踪强度。",
@@ -5227,7 +5245,7 @@ const zhMessages = {
     deleteSubtitle: "删除该站点及其所有分析数据。",
     delete: "删除站点",
     deleting: "删除中...",
-    deleteConfirm: "该操作不可撤销，是否继续？",
+    deleteConfirm: "将删除该站点及其所有分析数据。此操作无法撤销。",
     toasts: {
       saved: "站点设置已保存。",
       saveFailed: "站点设置保存失败。",
@@ -5257,7 +5275,7 @@ const zhMessages = {
     emailManagedByGateway: "邮箱来自你的 Every App 账户。",
     profileTitle: "个人信息",
     nicknameLabel: "昵称",
-    nicknamePlaceholder: "例如：产品分析师",
+    nicknamePlaceholder: "你的名字",
     emailLabel: "邮箱",
     profileSaved: "个人信息已保存。",
     profileSaveFailed: "保存个人信息失败。",
@@ -5275,8 +5293,8 @@ const zhMessages = {
     aiClientsDocs: "如何连接",
   },
   notificationCenter: {
-    title: "收件箱",
-    empty: "暂无通知。",
+    title: "通知",
+    empty: "通知规则发出的报告和提醒会出现在这里。",
     loading: "正在加载通知",
     markRead: "标记已读",
     markAllRead: "全部标记为已读",
@@ -5296,9 +5314,9 @@ const zhMessages = {
     },
     preferencesTitle: "通知偏好",
     emailNotificationsLabel: "邮件通知",
-    reportsUnreadLabel: "新报告标为未读",
-    milestonesUnreadLabel: "新里程碑标为未读",
-    alertsUnreadLabel: "新提醒标为未读",
+    reportsUnreadLabel: "报告的未读标记",
+    milestonesUnreadLabel: "里程碑的未读标记",
+    alertsUnreadLabel: "提醒的未读标记",
     preferencesSaveFailed: "保存通知偏好失败。",
     detailFields: {},
     noUnread: "没有未读通知。",
@@ -5344,7 +5362,7 @@ const zhMessages = {
       subject: "OpenAnalytics 通知测试",
       title: "OpenAnalytics 通知测试",
       summary: "这是一条来自 OpenAnalytics 的测试通知。",
-      body: "你开启的报告和提醒会送达 OpenAnalytics 收件箱；如果此网关已设置邮件，也会通过邮件送达。",
+      body: "你开启的报告和提醒会出现在 OpenAnalytics 的「通知」中；如果此网关已设置邮件，也会通过邮件送达。",
     },
     report: {
       subject: "{site} {periodLabel}访问报告",
@@ -5442,24 +5460,20 @@ const zhMessages = {
     widgets: {},
     notifications: {
       empty: "还没有通知规则。",
-      rulesTitle: "通知规则",
       enabledCount: "已启用 {count} / {total} 条。",
       loadingRules: "正在加载通知规则",
       deliveryTestTitle: "投递测试",
-      deliveryTestDescription:
-        "为你创建一条站内通知；如果可用，也会尝试发送邮件。",
-      inAppTestHint: "我们会向你发送一条站内通知。",
-      emailTestConfiguredHint: "我们会向你发送一条测试邮件。",
+      inAppTestHint: "向你发送一条站内通知。",
+      emailTestConfiguredHint: "向你发送一封测试邮件。",
       sendTestNotification: "发送测试通知",
       loadRulesFailed: "加载通知规则失败。",
       testNotificationSent: "测试通知已发送。",
       testNotificationSentNoEmail:
-        "测试已送达收件箱。未发送邮件：此网关尚未设置邮件。",
+        "测试通知已发送。未发送邮件：此网关尚未设置邮件。",
       sendTestNotificationFailed: "发送测试通知失败。",
       createRule: "创建规则",
       editRule: "编辑规则",
       dialogDescription: "为此组织设置一条通知规则。",
-      ruleInfoSection: "规则信息",
       scheduleSection: "计划",
       sendScheduleSection: "发送时间",
       checkSection: "检查频率",
@@ -5498,8 +5512,8 @@ const zhMessages = {
       operatorLabel: "操作符",
       valueLabel: "阈值",
       cooldownLabel: "冷却时间",
-      cooldownDescription: "在这段时间内，不会重复发送通知。",
-      noDataHoursLabel: "无数据小时数",
+      cooldownDescription: "等待这么久后才再次通知。",
+      noDataHoursLabel: "无数据的小时数",
       pleaseChooseSite: "请选择一个站点。",
       pleaseChooseRecipients: "请至少选择一个接收人。",
       ruleCreated: "规则已创建。",
@@ -5525,8 +5539,8 @@ const zhMessages = {
       runNotTriggered: "已检查，目前没有可发送的内容。",
       runSkipped: "无法检查此规则：站点不存在或条件无效。请编辑规则。",
       runNoRecipients: "没有收件人：此组织中没有成员匹配此规则的收件人。",
-      runSentOne: "已向收件箱发送 1 条消息。",
-      runSentMany: "已向收件箱发送 {count} 条消息。",
+      runSentOne: "已发送 1 条通知。",
+      runSentMany: "已发送 {count} 条通知。",
       runEmailFailed: "{failed} 封邮件发送失败。",
       runEmailNotSetUp: "未发送邮件：此网关尚未设置邮件。",
       runEmailSent: "已向 {sent} 人发送邮件。",
@@ -5576,7 +5590,7 @@ const zhMessages = {
         dueNow: "应立即运行",
       },
       previewFields: {
-        status: "状态",
+        status: "结果",
         summary: "摘要",
         title: "标题",
         htmlPreview: "HTML 预览",
@@ -5602,18 +5616,18 @@ const zhMessages = {
         health: "长时间无数据时通知",
       },
       recipientModes: {
-        creator: "创建者",
+        creator: "规则创建者",
         team_admins: "组织管理员",
         all_team_members: "全部团队成员",
         users: "指定用户",
       },
-      recipientKindLabel: "接收人类型",
-      recipientPresetLabel: "预设",
+      recipientKindLabel: "发送给",
+      recipientPresetLabel: "群组",
       customRecipientsEmpty: "未选择接收人",
       noTeamMembers: "此组织还没有成员。",
       recipientKinds: {
-        preset: "预设",
-        custom: "自定义",
+        preset: "一个群组",
+        custom: "指定的人",
       },
       scheduleKinds: {
         daily: "每天",
@@ -5691,7 +5705,7 @@ const zhMessages = {
       allStatuses: "全部状态",
       runs24h: "24 小时内运行次数",
       successRate24h: "24 小时成功率",
-      problemRuns24h: "异常运行次数",
+      problemRuns24h: "失败或部分完成的运行",
       failed: "失败",
       partial: "部分完成",
       lastRun: "最近运行",
@@ -5715,6 +5729,11 @@ const zhMessages = {
       startedAt: "开始时间",
       finishedAt: "结束时间",
       trigger: "触发",
+      triggerTypes: {
+        manual: "手动",
+        cron: "计划",
+        retry: "重试",
+      },
       tasks: "任务",
       taskCount: "任务数",
       subtaskCount: "子任务数",
@@ -5754,6 +5773,11 @@ const zhMessages = {
         database_maintenance: {
           name: "数据库优化",
           description: "清理过期的任务运行记录和通知，并优化数据库。",
+          schedule: "每天",
+        },
+        analytics_retention: {
+          name: "分析数据保留",
+          description: "删除过期的页面浏览和事件。保留每小时汇总。",
           schedule: "每天",
         },
       },
@@ -5827,6 +5851,7 @@ const zhMessages = {
     },
     requestKindLabels: {},
     overviewLabels: {
+      windowDay: "最近 24 小时",
       windowDays: "最近 {days} 天",
     },
     normalDetail: {},
@@ -5836,15 +5861,14 @@ const zhMessages = {
     emailGatewayNotReady:
       "此网关尚未设置邮件。管理员在设置好发信域名后，用 {command} 设置发件人。",
     emailSenderLabel: "发件人",
-    retentionTitle: "运行数据保留期",
+    retentionTitle: "数据保留期",
     retentionDescription:
       "配置任务运行记录、任务日志、通知消息和详细分析数据的保留时间。任务和通知的修改只影响新建记录；超出新期限的详细分析数据会在下一次每日运行时删除。",
     scheduledTaskLogsDaysLabel: "计划任务运行记录和日志（天）",
     notificationTestDaysLabel: "测试通知（天）",
     notificationAttentionDaysLabel: "警告和严重通知（天）",
     notificationDefaultDaysLabel: "其他通知（天）",
-    analyticsDetailDaysLabel:
-      "详细分析数据：页面浏览和事件（天；保留每小时汇总）",
+    analyticsDetailDaysLabel: "页面浏览和事件（天；保留每小时汇总）",
     retentionRangeHint: "请输入 1 到 3650 之间的整数天数。",
     retentionSave: "保存保留期配置",
     retentionSaving: "保存中...",
@@ -5945,8 +5969,9 @@ const zhMessages = {
   },
   loginForm: {},
   logoutAction: {},
-  sidebarFooter: {
-    gateway: "返回 Every App",
+  sidebarHeader: {
+    everyApp: "Every App",
+    backToEveryApp: "返回 Every App",
   },
   appNav: {
     appearance: "外观",
@@ -5954,10 +5979,10 @@ const zhMessages = {
     toggleSidebar: "切换侧边栏",
     sources: "来源",
     audience: "受众",
-    goals: "目标",
+    goals: "转化",
     sites: "站点",
     allSites: "所有站点",
-    inbox: "收件箱",
+    inbox: "通知",
     settings: "设置",
     switchSite: "切换站点",
     siteSettings: "站点设置",
@@ -5973,7 +5998,7 @@ const zhMessages = {
     completed: "已完成 {count} 项",
     steps: {
       site: "添加第一个站点",
-      tracking: "跟踪你的网站",
+      tracking: "将脚本添加到你的网站",
       team: "邀请成员",
       notifications: "通过邮件接收报告",
       sharing: "分享公开仪表盘",
@@ -5990,7 +6015,7 @@ const zhMessages = {
     label: "设置",
     system: "系统健康",
     account: "账户",
-    notifications: "通知",
+    notifications: "通知规则",
     cancel: "取消",
   },
   systemHealth: {
@@ -6636,7 +6661,7 @@ const zhTwMessages = {
     },
     waiting: "正在等待第一次頁面瀏覽",
     received: "已收到第一次頁面瀏覽，報表將在一分鐘內更新。",
-    firstViewsTitle: "第一批頁面瀏覽已到達！",
+    firstViewsTitle: "第一批頁面瀏覽已到達。",
     nextReports: "透過電子郵件接收報告",
     nextInvite: "邀請成員",
     dismiss: "關閉",
@@ -7164,7 +7189,7 @@ const zhTwMessages = {
         title: "攔截規則",
       },
       protection: {
-        title: "防護",
+        title: "機器人封鎖",
       },
       danger: {
         title: "危險操作",
@@ -7185,10 +7210,10 @@ const zhTwMessages = {
     publicSlugHint: "連結中 /share/ 之後的部分。",
     publicLinkLabel: "公開連結",
     copiedLink: "連結已複製",
-    trackingStrengthGroupTitle: "追蹤強度",
-    trackingStrengthStrong: "強",
-    trackingStrengthSmart: "智慧",
-    trackingStrengthWeak: "弱",
+    trackingStrengthGroupTitle: "訪客追蹤",
+    trackingStrengthStrong: "精確",
+    trackingStrengthSmart: "在歐盟匿名",
+    trackingStrengthWeak: "匿名",
     trackingStrengthStrongDescription:
       "始終進行針對訪客的高精度追蹤。這可能違反某些國家的法規，例如 GDPR。",
     trackingStrengthSmartDescription: "自動根據訪客所處國家切換追蹤強度。",
@@ -7271,7 +7296,7 @@ const zhTwMessages = {
     deleteSubtitle: "刪除該站點及其所有分析資料。",
     delete: "刪除站點",
     deleting: "刪除中...",
-    deleteConfirm: "該操作不可撤銷，是否繼續？",
+    deleteConfirm: "將刪除該網站及其所有分析資料。此操作無法復原。",
     toasts: {
       saved: "站點設定已儲存。",
       saveFailed: "站點設定儲存失敗。",
@@ -7301,7 +7326,7 @@ const zhTwMessages = {
     emailManagedByGateway: "電子郵件來自你的 Every App 帳戶。",
     profileTitle: "個人資訊",
     nicknameLabel: "暱稱",
-    nicknamePlaceholder: "例如：產品分析師",
+    nicknamePlaceholder: "你的名字",
     emailLabel: "電子郵件",
     profileSaved: "個人資訊已儲存。",
     profileSaveFailed: "儲存個人資訊失敗。",
@@ -7319,8 +7344,8 @@ const zhTwMessages = {
     aiClientsDocs: "如何連接",
   },
   notificationCenter: {
-    title: "收件匣",
-    empty: "暫無通知。",
+    title: "通知",
+    empty: "通知規則發出的報告和提醒會出現在這裡。",
     loading: "正在載入通知",
     markRead: "標記已讀",
     markAllRead: "全部標記為已讀",
@@ -7340,9 +7365,9 @@ const zhTwMessages = {
     },
     preferencesTitle: "通知偏好",
     emailNotificationsLabel: "郵件通知",
-    reportsUnreadLabel: "新報告標為未讀",
-    milestonesUnreadLabel: "新里程碑標為未讀",
-    alertsUnreadLabel: "新提醒標為未讀",
+    reportsUnreadLabel: "報告的未讀標記",
+    milestonesUnreadLabel: "里程碑的未讀標記",
+    alertsUnreadLabel: "提醒的未讀標記",
     preferencesSaveFailed: "儲存通知偏好失敗。",
     detailFields: {},
     noUnread: "沒有未讀通知。",
@@ -7388,7 +7413,7 @@ const zhTwMessages = {
       subject: "OpenAnalytics 通知測試",
       title: "OpenAnalytics 通知測試",
       summary: "這是一條來自 OpenAnalytics 的測試通知。",
-      body: "你開啟的報告和提醒會送達 OpenAnalytics 收件匣；如果此閘道已設定郵件，也會透過郵件送達。",
+      body: "你開啟的報告和提醒會出現在 OpenAnalytics 的「通知」中；如果此閘道已設定郵件，也會透過郵件送達。",
     },
     report: {
       subject: "{site} {periodLabel}造訪報告",
@@ -7486,24 +7511,20 @@ const zhTwMessages = {
     widgets: {},
     notifications: {
       empty: "還沒有通知規則。",
-      rulesTitle: "通知規則",
       enabledCount: "已啟用 {count} / {total} 條。",
       loadingRules: "正在載入通知規則",
       deliveryTestTitle: "投遞測試",
-      deliveryTestDescription:
-        "為你建立一條站內通知；如果可用，也會嘗試傳送郵件。",
-      inAppTestHint: "我們會向你傳送一條站內通知。",
-      emailTestConfiguredHint: "我們會向你傳送一條測試郵件。",
+      inAppTestHint: "向你傳送一條站內通知。",
+      emailTestConfiguredHint: "向你傳送一封測試郵件。",
       sendTestNotification: "傳送測試通知",
       loadRulesFailed: "載入通知規則失敗。",
       testNotificationSent: "測試通知已傳送。",
       testNotificationSentNoEmail:
-        "測試已送達收件匣。未傳送郵件：此閘道尚未設定郵件。",
+        "測試通知已傳送。未傳送郵件：此閘道尚未設定郵件。",
       sendTestNotificationFailed: "傳送測試通知失敗。",
       createRule: "建立規則",
       editRule: "編輯規則",
       dialogDescription: "為此組織設定一條通知規則。",
-      ruleInfoSection: "規則資訊",
       scheduleSection: "計劃",
       sendScheduleSection: "傳送時間",
       checkSection: "檢查頻率",
@@ -7542,8 +7563,8 @@ const zhTwMessages = {
       operatorLabel: "運算子",
       valueLabel: "閾值",
       cooldownLabel: "冷卻時間",
-      cooldownDescription: "在這段時間內，不會重複傳送通知。",
-      noDataHoursLabel: "無資料小時數",
+      cooldownDescription: "等待這麼久後才再次通知。",
+      noDataHoursLabel: "無資料的小時數",
       pleaseChooseSite: "請選擇一個站點。",
       pleaseChooseRecipients: "請至少選擇一個接收人。",
       ruleCreated: "規則已建立。",
@@ -7569,8 +7590,8 @@ const zhTwMessages = {
       runNotTriggered: "已檢查，目前沒有可傳送的內容。",
       runSkipped: "無法檢查此規則：網站不存在或條件無效。請編輯規則。",
       runNoRecipients: "沒有收件人：此組織中沒有成員符合此規則的收件人。",
-      runSentOne: "已向收件匣傳送 1 條訊息。",
-      runSentMany: "已向收件匣傳送 {count} 條訊息。",
+      runSentOne: "已傳送 1 則通知。",
+      runSentMany: "已傳送 {count} 則通知。",
       runEmailFailed: "{failed} 封郵件傳送失敗。",
       runEmailNotSetUp: "未傳送郵件：此閘道尚未設定郵件。",
       runEmailSent: "已向 {sent} 人傳送郵件。",
@@ -7620,7 +7641,7 @@ const zhTwMessages = {
         dueNow: "應立即執行",
       },
       previewFields: {
-        status: "狀態",
+        status: "結果",
         summary: "摘要",
         title: "標題",
         htmlPreview: "HTML 預覽",
@@ -7646,18 +7667,18 @@ const zhTwMessages = {
         health: "長時間無資料時通知",
       },
       recipientModes: {
-        creator: "建立者",
+        creator: "規則建立者",
         team_admins: "組織管理員",
         all_team_members: "全部團隊成員",
         users: "指定使用者",
       },
-      recipientKindLabel: "接收人型別",
-      recipientPresetLabel: "預設",
+      recipientKindLabel: "傳送給",
+      recipientPresetLabel: "群組",
       customRecipientsEmpty: "未選擇接收人",
       noTeamMembers: "此組織還沒有成員。",
       recipientKinds: {
-        preset: "預設",
-        custom: "自訂",
+        preset: "一個群組",
+        custom: "指定的人",
       },
       scheduleKinds: {
         daily: "每天",
@@ -7735,7 +7756,7 @@ const zhTwMessages = {
       allStatuses: "全部狀態",
       runs24h: "24 小時內執行次數",
       successRate24h: "24 小時成功率",
-      problemRuns24h: "異常執行次數",
+      problemRuns24h: "失敗或部分完成的執行",
       failed: "失敗",
       partial: "部分完成",
       lastRun: "最近執行",
@@ -7759,6 +7780,11 @@ const zhTwMessages = {
       startedAt: "開始時間",
       finishedAt: "結束時間",
       trigger: "觸發",
+      triggerTypes: {
+        manual: "手動",
+        cron: "排程",
+        retry: "重試",
+      },
       tasks: "任務",
       taskCount: "任務數",
       subtaskCount: "子任務數",
@@ -7798,6 +7824,11 @@ const zhTwMessages = {
         database_maintenance: {
           name: "資料庫最佳化",
           description: "清理過期的任務執行記錄和通知，並最佳化資料庫。",
+          schedule: "每天",
+        },
+        analytics_retention: {
+          name: "分析資料保留",
+          description: "刪除過期的頁面瀏覽和事件。保留每小時彙總。",
           schedule: "每天",
         },
       },
@@ -7871,6 +7902,7 @@ const zhTwMessages = {
     },
     requestKindLabels: {},
     overviewLabels: {
+      windowDay: "最近 24 小時",
       windowDays: "最近 {days} 天",
     },
     normalDetail: {},
@@ -7880,15 +7912,14 @@ const zhTwMessages = {
     emailGatewayNotReady:
       "此閘道尚未設定郵件。管理員在設定好寄信網域後，用 {command} 設定寄件人。",
     emailSenderLabel: "寄件人",
-    retentionTitle: "執行資料保留期",
+    retentionTitle: "資料保留期",
     retentionDescription:
       "設定任務執行記錄、任務日誌、通知訊息和詳細分析資料的保留時間。任務和通知的修改只影響新建記錄；超出新期限的詳細分析資料會在下一次每日執行時刪除。",
     scheduledTaskLogsDaysLabel: "排程任務執行記錄和日誌（天）",
     notificationTestDaysLabel: "測試通知（天）",
     notificationAttentionDaysLabel: "警告和嚴重通知（天）",
     notificationDefaultDaysLabel: "其他通知（天）",
-    analyticsDetailDaysLabel:
-      "詳細分析資料：頁面瀏覽和事件（天；保留每小時彙總）",
+    analyticsDetailDaysLabel: "頁面瀏覽和事件（天；保留每小時彙總）",
     retentionRangeHint: "請輸入 1 到 3650 之間的整數天數。",
     retentionSave: "儲存保留期設定",
     retentionSaving: "儲存中...",
@@ -7989,8 +8020,9 @@ const zhTwMessages = {
   },
   loginForm: {},
   logoutAction: {},
-  sidebarFooter: {
-    gateway: "返回 Every App",
+  sidebarHeader: {
+    everyApp: "Every App",
+    backToEveryApp: "返回 Every App",
   },
   appNav: {
     appearance: "外觀",
@@ -7998,10 +8030,10 @@ const zhTwMessages = {
     toggleSidebar: "切換側邊欄",
     sources: "來源",
     audience: "受眾",
-    goals: "目標",
+    goals: "轉換",
     sites: "站點",
     allSites: "所有站點",
-    inbox: "收件匣",
+    inbox: "通知",
     settings: "設定",
     switchSite: "切換站點",
     siteSettings: "站點設定",
@@ -8017,7 +8049,7 @@ const zhTwMessages = {
     completed: "已完成 {count} 項",
     steps: {
       site: "新增第一個站點",
-      tracking: "追蹤你的網站",
+      tracking: "將指令碼加入你的網站",
       team: "邀請成員",
       notifications: "透過電子郵件接收報告",
       sharing: "分享公開儀表板",
@@ -8034,7 +8066,7 @@ const zhTwMessages = {
     label: "設定",
     system: "系統健康",
     account: "帳戶",
-    notifications: "通知",
+    notifications: "通知規則",
     cancel: "取消",
   },
   systemHealth: {
@@ -8687,7 +8719,7 @@ const jaMessages = {
     waiting: "最初のページビューを待っています",
     received:
       "最初のページビューを受け取りました。レポートは 1 分以内に表示されます。",
-    firstViewsTitle: "最初のページビューが届きました！",
+    firstViewsTitle: "最初のページビューが届きました。",
     nextReports: "メールでレポートを受け取る",
     nextInvite: "メンバーを招待",
     dismiss: "閉じる",
@@ -9225,7 +9257,7 @@ const jaMessages = {
         title: "ブロックルール",
       },
       protection: {
-        title: "保護",
+        title: "ボットのブロック",
       },
       danger: {
         title: "危険な操作",
@@ -9246,10 +9278,10 @@ const jaMessages = {
     publicSlugHint: "リンクの /share/ 以降の部分です。",
     publicLinkLabel: "公開リンク",
     copiedLink: "リンクをコピーしました",
-    trackingStrengthGroupTitle: "トラッキング強度",
-    trackingStrengthStrong: "強",
-    trackingStrengthSmart: "スマート",
-    trackingStrengthWeak: "弱",
+    trackingStrengthGroupTitle: "訪問者トラッキング",
+    trackingStrengthStrong: "高精度",
+    trackingStrengthSmart: "EU では匿名",
+    trackingStrengthWeak: "匿名",
     trackingStrengthStrongDescription:
       "常に高精度の訪問者トラッキングを使用します。GDPR など、一部地域のプライバシー規制に抵触する可能性があります。",
     trackingStrengthSmartDescription:
@@ -9336,7 +9368,8 @@ const jaMessages = {
     deleteSubtitle: "サイトとそのすべての分析データを削除します。",
     delete: "サイトを削除",
     deleting: "削除中...",
-    deleteConfirm: "この操作は元に戻せません。続行しますか？",
+    deleteConfirm:
+      "サイトとそのすべての分析データを削除します。この操作は元に戻せません。",
     toasts: {
       saved: "サイト設定を保存しました。",
       saveFailed: "サイト設定を保存できません。",
@@ -9368,7 +9401,7 @@ const jaMessages = {
       "メールアドレスは Every App のアカウントのものです。",
     profileTitle: "個人情報",
     nicknameLabel: "表示名",
-    nicknamePlaceholder: "例: プロダクトアナリスト",
+    nicknamePlaceholder: "あなたの名前",
     emailLabel: "メール",
     profileSaved: "個人情報を保存しました。",
     profileSaveFailed: "個人情報を保存できません。",
@@ -9386,8 +9419,8 @@ const jaMessages = {
     aiClientsDocs: "接続方法",
   },
   notificationCenter: {
-    title: "受信トレイ",
-    empty: "通知はまだありません。",
+    title: "通知",
+    empty: "通知ルールからのレポートとアラートがここに届きます。",
     loading: "通知を読み込み中",
     markRead: "既読にする",
     markAllRead: "すべて既読にする",
@@ -9407,9 +9440,9 @@ const jaMessages = {
     },
     preferencesTitle: "通知設定",
     emailNotificationsLabel: "メール通知",
-    reportsUnreadLabel: "新しいレポートを未読にする",
-    milestonesUnreadLabel: "新しいマイルストーンを未読にする",
-    alertsUnreadLabel: "新しいアラートを未読にする",
+    reportsUnreadLabel: "レポートの未読バッジ",
+    milestonesUnreadLabel: "マイルストーンの未読バッジ",
+    alertsUnreadLabel: "アラートの未読バッジ",
     preferencesSaveFailed: "通知設定を保存できません。",
     detailFields: {},
     noUnread: "未読の通知はありません。",
@@ -9457,7 +9490,7 @@ const jaMessages = {
       subject: "OpenAnalytics 通知テスト",
       title: "OpenAnalytics 通知テスト",
       summary: "これは OpenAnalytics からのテスト通知です。",
-      body: "オンにしたレポートとアラートは OpenAnalytics の受信トレイに届きます。このゲートウェイでメールが設定されていればメールでも届きます。",
+      body: "オンにしたレポートとアラートは OpenAnalytics の「通知」に届きます。このゲートウェイでメールが設定されていればメールでも届きます。",
     },
     report: {
       subject: "{site} の{periodLabel}トラフィックレポート",
@@ -9559,24 +9592,20 @@ const jaMessages = {
     widgets: {},
     notifications: {
       empty: "通知ルールはまだありません。",
-      rulesTitle: "通知ルール",
       enabledCount: "{total} 件中 {count} 件が有効です。",
       loadingRules: "通知ルールを読み込み中",
       deliveryTestTitle: "配信テスト",
-      deliveryTestDescription:
-        "あなた宛てのアプリ内通知を 1 件作成し、利用可能な場合はメール送信も試行します。",
       inAppTestHint: "アプリ内通知を送信します。",
       emailTestConfiguredHint: "テストメールを送信します。",
       sendTestNotification: "テスト通知を送信",
       loadRulesFailed: "通知ルールを読み込めません。",
       testNotificationSent: "テスト通知を送信しました。",
       testNotificationSentNoEmail:
-        "テストを受信トレイに送信しました。メールは送信されませんでした: このゲートウェイではメールが設定されていません。",
+        "テスト通知を送信しました。メールは送信されませんでした: このゲートウェイではメールが設定されていません。",
       sendTestNotificationFailed: "テスト通知を送信できません。",
       createRule: "ルールを作成",
       editRule: "ルールを編集",
       dialogDescription: "この組織の通知ルールを設定します。",
-      ruleInfoSection: "ルール情報",
       scheduleSection: "スケジュール",
       sendScheduleSection: "送信時刻",
       checkSection: "チェック頻度",
@@ -9615,8 +9644,8 @@ const jaMessages = {
       operatorLabel: "演算子",
       valueLabel: "値",
       cooldownLabel: "クールダウン",
-      cooldownDescription: "このクールダウン期間中、通知は再送信されません。",
-      noDataHoursLabel: "データなし時間",
+      cooldownDescription: "再通知までこの時間待ちます。",
+      noDataHoursLabel: "データなしの時間数",
       pleaseChooseSite: "サイトを選択してください。",
       pleaseChooseRecipients: "受信者を 1 人以上選択してください。",
       ruleCreated: "ルールを作成しました。",
@@ -9644,8 +9673,8 @@ const jaMessages = {
         "このルールを確認できません: サイトがないか、条件が無効です。ルールを編集してください。",
       runNoRecipients:
         "送信先がありません: この組織にこのルールの受信者に該当するメンバーがいません。",
-      runSentOne: "受信トレイに 1 件送信しました。",
-      runSentMany: "受信トレイに {count} 件送信しました。",
+      runSentOne: "通知を 1 件送信しました。",
+      runSentMany: "通知を {count} 件送信しました。",
       runEmailFailed: "{failed} 件のメール送信に失敗しました。",
       runEmailNotSetUp:
         "メールは送信されませんでした: このゲートウェイではメールが設定されていません。",
@@ -9700,7 +9729,7 @@ const jaMessages = {
         dueNow: "期限到来",
       },
       previewFields: {
-        status: "ステータス",
+        status: "結果",
         summary: "概要",
         title: "タイトル",
         htmlPreview: "HTML プレビュー",
@@ -9726,18 +9755,18 @@ const jaMessages = {
         health: "トラッキングが途絶えたときに通知",
       },
       recipientModes: {
-        creator: "作成者",
+        creator: "ルール作成者",
         team_admins: "組織の管理者",
         all_team_members: "全メンバー",
         users: "選択したユーザー",
       },
-      recipientKindLabel: "受信者種別",
-      recipientPresetLabel: "プリセット",
+      recipientKindLabel: "送信先",
+      recipientPresetLabel: "グループ",
       customRecipientsEmpty: "受信者が選択されていません",
       noTeamMembers: "組織のメンバーはまだいません。",
       recipientKinds: {
-        preset: "プリセット",
-        custom: "カスタム",
+        preset: "グループ",
+        custom: "特定のメンバー",
       },
       scheduleKinds: {
         daily: "毎日",
@@ -9815,7 +9844,7 @@ const jaMessages = {
       allStatuses: "すべてのステータス",
       runs24h: "24時間以内の実行回数",
       successRate24h: "24時間以内の成功率",
-      problemRuns24h: "異常な実行回数",
+      problemRuns24h: "失敗または部分的な実行",
       failed: "失敗",
       partial: "一部完了",
       lastRun: "最終実行",
@@ -9839,6 +9868,11 @@ const jaMessages = {
       startedAt: "開始",
       finishedAt: "終了",
       trigger: "トリガー",
+      triggerTypes: {
+        manual: "手動",
+        cron: "スケジュール",
+        retry: "再試行",
+      },
       tasks: "タスク",
       taskCount: "タスク",
       subtaskCount: "サブタスク",
@@ -9880,6 +9914,12 @@ const jaMessages = {
           name: "データベースメンテナンス",
           description:
             "期限切れのタスク実行記録と通知を削除し、データベースを最適化します。",
+          schedule: "毎日",
+        },
+        analytics_retention: {
+          name: "分析データの保持",
+          description:
+            "期限切れのページビューとイベントを削除します。時間ごとの集計は保持されます。",
           schedule: "毎日",
         },
       },
@@ -9954,6 +9994,7 @@ const jaMessages = {
     },
     requestKindLabels: {},
     overviewLabels: {
+      windowDay: "過去 24 時間",
       windowDays: "過去 {days} 日",
     },
     normalDetail: {},
@@ -9963,7 +10004,7 @@ const jaMessages = {
     emailGatewayNotReady:
       "このゲートウェイではメールが設定されていません。管理者が送信ドメインを設定したうえで、{command} で送信者を設定します。",
     emailSenderLabel: "送信者",
-    retentionTitle: "運用データの保持期間",
+    retentionTitle: "データの保持期間",
     retentionDescription:
       "タスク実行、タスクログ、通知メッセージ、詳細な分析データの保持期間を設定します。タスクと通知の変更は新しいレコードにのみ適用されます。新しい期間より古い詳細な分析データは、次回の日次実行で削除されます。",
     scheduledTaskLogsDaysLabel: "スケジュールタスクの実行とログ（日）",
@@ -9971,7 +10012,7 @@ const jaMessages = {
     notificationAttentionDaysLabel: "警告・重大通知（日）",
     notificationDefaultDaysLabel: "その他の通知（日）",
     analyticsDetailDaysLabel:
-      "詳細な分析データ：ページビューとイベント（日数。時間ごとの集計は保持）",
+      "ページビューとイベント（日数。時間ごとの集計は保持）",
     retentionRangeHint: "1〜3650 の整数日を入力してください。",
     retentionSave: "保持期間を保存",
     retentionSaving: "保存中...",
@@ -10073,8 +10114,9 @@ const jaMessages = {
   },
   loginForm: {},
   logoutAction: {},
-  sidebarFooter: {
-    gateway: "Every App に戻る",
+  sidebarHeader: {
+    everyApp: "Every App",
+    backToEveryApp: "Every App に戻る",
   },
   appNav: {
     appearance: "外観",
@@ -10082,10 +10124,10 @@ const jaMessages = {
     toggleSidebar: "サイドバーを切り替え",
     sources: "流入元",
     audience: "オーディエンス",
-    goals: "目標",
+    goals: "コンバージョン",
     sites: "サイト",
     allSites: "すべてのサイト",
-    inbox: "受信トレイ",
+    inbox: "通知",
     settings: "設定",
     switchSite: "サイトを切り替え",
     siteSettings: "サイト設定",
@@ -10101,7 +10143,7 @@ const jaMessages = {
     completed: "{count} 件完了",
     steps: {
       site: "最初のサイトを追加",
-      tracking: "ウェブサイトを計測する",
+      tracking: "サイトにスクリプトを追加",
       team: "メンバーを招待",
       notifications: "レポートをメールで受け取る",
       sharing: "公開ダッシュボードを共有",
@@ -10118,7 +10160,7 @@ const jaMessages = {
     label: "設定",
     system: "システムの状態",
     account: "アカウント",
-    notifications: "通知",
+    notifications: "通知ルール",
     cancel: "キャンセル",
   },
   systemHealth: {

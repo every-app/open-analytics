@@ -76,7 +76,7 @@ export function SiteSwitcher({
             <span className="truncate text-sm font-medium">
               {activeSite?.name ?? messages.appNav.allSites}
             </span>
-            {activeSite?.domain ? (
+            {activeSite?.domain && activeSite.domain !== activeSite.name ? (
               <span className="truncate text-xs text-muted-foreground">
                 {activeSite.domain}
               </span>
@@ -113,9 +113,11 @@ export function SiteSwitcher({
                       />
                       <span className="flex min-w-0 flex-1 flex-col">
                         <span className="truncate">{site.name}</span>
-                        <span className="truncate text-xs text-muted-foreground">
-                          {site.domain}
-                        </span>
+                        {site.domain !== site.name ? (
+                          <span className="truncate text-xs text-muted-foreground">
+                            {site.domain}
+                          </span>
+                        ) : null}
                       </span>
                       {site.id === activeSite?.id ? (
                         <CheckIcon className="ml-auto" />

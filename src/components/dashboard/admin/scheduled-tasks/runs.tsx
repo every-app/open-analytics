@@ -150,7 +150,9 @@ export function localizedTaskInfo(
         ? labels.taskDefinitions.notification_tick
         : task.key === "database_maintenance"
           ? labels.taskDefinitions.database_maintenance
-          : null;
+          : task.key === "analytics_retention"
+            ? labels.taskDefinitions.analytics_retention
+            : null;
   return {
     name: definition?.name ?? task.name,
     description: definition?.description ?? task.description ?? "",
@@ -254,7 +256,9 @@ export function ScheduledTaskRunsTable({
               {formatDateOrDash(locale, run.finishedAt, timeZone)}
             </TableCell>
             <TableCell className="text-xs text-muted-foreground">
-              {run.triggerType}
+              {(labels.triggerTypes as Record<string, string>)[
+                run.triggerType
+              ] ?? run.triggerType}
             </TableCell>
             <TableCell>
               <StatusBadge status={run.status} labels={labels.status} />
@@ -458,7 +462,11 @@ export function ScheduledTaskRunLogDrawer({
                 >
                   {run ? (
                     <span key={run.id}>
-                      {`${shortDateTimeWithSeconds(locale, run.startedAt, timeZone)} · ${numberFormat(locale, run.taskCount)} ${labels.taskCount}`}
+                      {shortDateTimeWithSeconds(
+                        locale,
+                        run.startedAt,
+                        timeZone,
+                      )}
                     </span>
                   ) : loading ? (
                     <span key="loading">{messages.common.loading}</span>

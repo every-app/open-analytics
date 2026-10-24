@@ -16,7 +16,6 @@ import { Button } from "@insightflare/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -440,7 +439,6 @@ export function TeamNotificationsClient({
       }
     >
       <SettingsSection
-        title={copy.rulesTitle}
         description={formatI18nTemplate(copy.enabledCount, {
           count: enabledCount,
           total: rules.length,
@@ -472,6 +470,7 @@ export function TeamNotificationsClient({
               media="rows"
               icon={BellIcon}
               title={copy.empty}
+              description={canCreateRule ? undefined : copy.addSiteFirst}
             />
           ) : (
             <Table>
@@ -591,9 +590,6 @@ export function TeamNotificationsClient({
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle icon={SendIcon}>{copy.deliveryTestTitle}</DialogTitle>
-            <DialogDescription>
-              {copy.deliveryTestDescription}
-            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-2 text-foreground">
@@ -732,7 +728,7 @@ export function TeamNotificationsClient({
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">
-                    {copy.previewFields.status}
+                    {copy.columns.status}
                   </p>
                   <Badge
                     className="mt-1"
@@ -842,7 +838,7 @@ export function TeamNotificationsClient({
               onClick={() => setPreviewDialogOpen(false)}
             >
               <XIcon data-icon="inline-start" />
-              <span>{messages.teamSelect.cancel}</span>
+              <span>{messages.common.close}</span>
             </Button>
           </ResponsiveDialogFooter>
         </ResponsiveDialogContent>
@@ -910,7 +906,7 @@ export function TeamNotificationsClient({
       >
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle icon={Trash2Icon}>
               {formatI18nTemplate(copy.deleteConfirm, {
                 name: deletingRule?.name ?? "",
               })}

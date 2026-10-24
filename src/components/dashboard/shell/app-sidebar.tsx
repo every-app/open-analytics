@@ -11,7 +11,7 @@ import {
   useSidebar,
 } from "@insightflare/ui/sidebar";
 import { VerticalScrollMask } from "@insightflare/ui/vertical-scroll-mask";
-import { InboxIcon } from "lucide-react";
+import { BellIcon, ChevronLeftIcon } from "lucide-react";
 
 import { SiteBrandIcon } from "@/components/dashboard/common/site-brand-icon";
 import { buildSitePath } from "@/lib/dashboard/paths";
@@ -37,9 +37,9 @@ const GROUP_LABEL_CLASS =
   "h-7 uppercase tracking-wider text-sidebar-foreground/40";
 
 /**
- * OpenSEO's sidebar: the wordmark and the site switcher, the site's pages
- * when one is open or the list of sites otherwise (none before the first
- * site), then the way back to the gateway and Settings.
+ * The sidebar: the way back to Every App, the wordmark and the site
+ * switcher, the site's pages when one is open or the list of sites otherwise
+ * (none before the first site), then Settings.
  */
 export function AppSidebar({
   locale,
@@ -80,7 +80,16 @@ export function AppSidebar({
 
   return (
     <Sidebar variant="inset" collapsible="offcanvas" className="md:!p-0">
-      <SidebarHeader className="gap-0 px-3 pt-3 pb-1">
+      <SidebarHeader className="gap-0 px-3 pt-2 pb-1">
+        {/* The way back up, first in the sidebar as in every Every App app. */}
+        <a
+          href={gatewayUrl}
+          aria-label={messages.sidebarHeader.backToEveryApp}
+          className="mb-1 inline-flex h-7 w-fit items-center gap-0.5 rounded-md pl-0.5 pr-2 text-sm text-sidebar-foreground/60 transition-colors hover:text-sidebar-foreground"
+        >
+          <ChevronLeftIcon className="size-4" aria-hidden />
+          <span>{messages.sidebarHeader.everyApp}</span>
+        </a>
         <Link
           href={`/${locale}/app`}
           onClick={closeMobile}
@@ -113,7 +122,7 @@ export function AppSidebar({
                 <SidebarMenu>
                   <SidebarNavLink
                     href={`/${locale}/app/inbox`}
-                    icon={InboxIcon}
+                    icon={BellIcon}
                     label={messages.appNav.inbox}
                     isActive={routeState.orgPage === "inbox"}
                     badge={unreadAttentionCount}
@@ -184,7 +193,6 @@ export function AppSidebar({
       <SidebarFootLinks
         locale={locale}
         messages={messages}
-        gatewayUrl={gatewayUrl}
         settingsActive={routeState.orgPage === "settings"}
         onNavigate={closeMobile}
       />

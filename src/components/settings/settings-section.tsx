@@ -60,7 +60,7 @@ export function SettingsSection({
   action,
   children,
 }: {
-  title: ReactNode;
+  title?: ReactNode;
   description?: ReactNode;
   /** A control beside the title, such as a "New" button for a table. */
   action?: ReactNode;
@@ -77,7 +77,9 @@ export function SettingsSection({
         )}
       >
         <div className="min-w-0 space-y-1">
-          <h2 className="text-base font-semibold tracking-tight">{title}</h2>
+          {title ? (
+            <h2 className="text-base font-semibold tracking-tight">{title}</h2>
+          ) : null}
           {description ? (
             <p className="text-sm text-muted-foreground">{description}</p>
           ) : null}

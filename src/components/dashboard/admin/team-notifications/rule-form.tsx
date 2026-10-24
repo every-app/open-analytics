@@ -54,15 +54,17 @@ function RuleFormSection({
   title,
   children,
 }: {
-  title: string;
+  title?: string;
   children: ReactNode;
 }) {
   return (
     <section className="space-y-4">
       <hr className="border-border" />
-      <div>
-        <h3 className="text-sm font-medium">{title}</h3>
-      </div>
+      {title ? (
+        <div>
+          <h3 className="text-sm font-medium">{title}</h3>
+        </div>
+      ) : null}
       {children}
     </section>
   );
@@ -196,7 +198,7 @@ export function RuleFormFields({
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0 space-y-5">
-          <RuleFormSection title={copy.ruleInfoSection}>
+          <RuleFormSection>
             <div className="grid gap-4 md:grid-cols-2">
               <Field>
                 <FieldLabel>{copy.siteLabel}</FieldLabel>
@@ -998,7 +1000,9 @@ export function RuleFormFields({
                       <p className="text-muted-foreground">{copy.siteLabel}</p>
                       <p className="mt-1 text-foreground">
                         {selectedSite
-                          ? `${selectedSite.name} (${selectedSite.domain})`
+                          ? selectedSite.name === selectedSite.domain
+                            ? selectedSite.name
+                            : `${selectedSite.name} (${selectedSite.domain})`
                           : copy.chooseSite}
                       </p>
                     </div>

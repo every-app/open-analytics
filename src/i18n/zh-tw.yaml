@@ -594,7 +594,7 @@ install:
     gtm: 用它建立一個「自訂 HTML」代碼，觸發條件選「所有網頁」，然後發布。
   waiting: 正在等待第一次頁面瀏覽
   received: 已收到第一次頁面瀏覽，報表將在一分鐘內更新。
-  firstViewsTitle: 第一批頁面瀏覽已到達！
+  firstViewsTitle: 第一批頁面瀏覽已到達。
   nextReports: 透過電子郵件接收報告
   nextInvite: 邀請成員
   dismiss: 關閉
@@ -1087,7 +1087,7 @@ siteSettings:
     blocking:
       title: 攔截規則
     protection:
-      title: 防護
+      title: 機器人封鎖
     danger:
       title: 危險操作
     install:
@@ -1103,10 +1103,10 @@ siteSettings:
   publicSlugHint: 連結中 /share/ 之後的部分。
   publicLinkLabel: 公開連結
   copiedLink: 連結已複製
-  trackingStrengthGroupTitle: 追蹤強度
-  trackingStrengthStrong: 強
-  trackingStrengthSmart: 智慧
-  trackingStrengthWeak: 弱
+  trackingStrengthGroupTitle: 訪客追蹤
+  trackingStrengthStrong: 精確
+  trackingStrengthSmart: 在歐盟匿名
+  trackingStrengthWeak: 匿名
   trackingStrengthStrongDescription: 始終進行針對訪客的高精度追蹤。這可能違反某些國家的法規，例如 GDPR。
   trackingStrengthSmartDescription: 自動根據訪客所處國家切換追蹤強度。
   trackingStrengthWeakDescription: 始終降低對訪客的追蹤精度。這可能導致同一訪客在不同時間造訪時被計數多次、且無法計算留存率。
@@ -1173,7 +1173,7 @@ siteSettings:
   deleteSubtitle: 刪除該站點及其所有分析資料。
   delete: 刪除站點
   deleting: 刪除中...
-  deleteConfirm: 該操作不可撤銷，是否繼續？
+  deleteConfirm: 將刪除該網站及其所有分析資料。此操作無法復原。
   toasts:
     saved: 站點設定已儲存。
     saveFailed: 站點設定儲存失敗。
@@ -1200,7 +1200,7 @@ accountSettings:
   emailManagedByGateway: 電子郵件來自你的 Every App 帳戶。
   profileTitle: 個人資訊
   nicknameLabel: 暱稱
-  nicknamePlaceholder: 例如：產品分析師
+  nicknamePlaceholder: 你的名字
   emailLabel: 電子郵件
   profileSaved: 個人資訊已儲存。
   profileSaveFailed: 儲存個人資訊失敗。
@@ -1216,8 +1216,8 @@ accountSettings:
   aiClientsDescription: 把這個位址加到 Claude、ChatGPT 或 Claude Code 一次即可。它透過 Every App 登入，並涵蓋你能開啟的每個應用程式，包括 OpenAnalytics。
   aiClientsDocs: 如何連接
 notificationCenter:
-  title: 收件匣
-  empty: 暫無通知。
+  title: 通知
+  empty: 通知規則發出的報告和提醒會出現在這裡。
   loading: 正在載入通知
   markRead: 標記已讀
   markAllRead: 全部標記為已讀
@@ -1235,9 +1235,9 @@ notificationCenter:
     critical: 嚴重
   preferencesTitle: 通知偏好
   emailNotificationsLabel: 郵件通知
-  reportsUnreadLabel: 新報告標為未讀
-  milestonesUnreadLabel: 新里程碑標為未讀
-  alertsUnreadLabel: 新提醒標為未讀
+  reportsUnreadLabel: 報告的未讀標記
+  milestonesUnreadLabel: 里程碑的未讀標記
+  alertsUnreadLabel: 提醒的未讀標記
   preferencesSaveFailed: 儲存通知偏好失敗。
   detailFields: {}
   noUnread: 沒有未讀通知。
@@ -1280,7 +1280,7 @@ notificationEmail:
     subject: OpenAnalytics 通知測試
     title: OpenAnalytics 通知測試
     summary: 這是一條來自 OpenAnalytics 的測試通知。
-    body: 你開啟的報告和提醒會送達 OpenAnalytics 收件匣；如果此閘道已設定郵件，也會透過郵件送達。
+    body: 你開啟的報告和提醒會出現在 OpenAnalytics 的「通知」中；如果此閘道已設定郵件，也會透過郵件送達。
   report:
     subject: "{site} {periodLabel}造訪報告"
     title: "{site} {periodLabel}造訪報告"
@@ -1359,22 +1359,19 @@ teamManagement:
   widgets: {}
   notifications:
     empty: 還沒有通知規則。
-    rulesTitle: 通知規則
     enabledCount: "已啟用 {count} / {total} 條。"
     loadingRules: 正在載入通知規則
     deliveryTestTitle: 投遞測試
-    deliveryTestDescription: 為你建立一條站內通知；如果可用，也會嘗試傳送郵件。
-    inAppTestHint: 我們會向你傳送一條站內通知。
-    emailTestConfiguredHint: 我們會向你傳送一條測試郵件。
+    inAppTestHint: 向你傳送一條站內通知。
+    emailTestConfiguredHint: 向你傳送一封測試郵件。
     sendTestNotification: 傳送測試通知
     loadRulesFailed: 載入通知規則失敗。
     testNotificationSent: 測試通知已傳送。
-    testNotificationSentNoEmail: 測試已送達收件匣。未傳送郵件：此閘道尚未設定郵件。
+    testNotificationSentNoEmail: 測試通知已傳送。未傳送郵件：此閘道尚未設定郵件。
     sendTestNotificationFailed: 傳送測試通知失敗。
     createRule: 建立規則
     editRule: 編輯規則
     dialogDescription: 為此組織設定一條通知規則。
-    ruleInfoSection: 規則資訊
     scheduleSection: 計劃
     sendScheduleSection: 傳送時間
     checkSection: 檢查頻率
@@ -1413,8 +1410,8 @@ teamManagement:
     operatorLabel: 運算子
     valueLabel: 閾值
     cooldownLabel: 冷卻時間
-    cooldownDescription: 在這段時間內，不會重複傳送通知。
-    noDataHoursLabel: 無資料小時數
+    cooldownDescription: 等待這麼久後才再次通知。
+    noDataHoursLabel: 無資料的小時數
     pleaseChooseSite: 請選擇一個站點。
     pleaseChooseRecipients: 請至少選擇一個接收人。
     ruleCreated: 規則已建立。
@@ -1440,8 +1437,8 @@ teamManagement:
     runNotTriggered: 已檢查，目前沒有可傳送的內容。
     runSkipped: 無法檢查此規則：網站不存在或條件無效。請編輯規則。
     runNoRecipients: 沒有收件人：此組織中沒有成員符合此規則的收件人。
-    runSentOne: 已向收件匣傳送 1 條訊息。
-    runSentMany: 已向收件匣傳送 {count} 條訊息。
+    runSentOne: 已傳送 1 則通知。
+    runSentMany: 已傳送 {count} 則通知。
     runEmailFailed: "{failed} 封郵件傳送失敗。"
     runEmailNotSetUp: 未傳送郵件：此閘道尚未設定郵件。
     runEmailSent: 已向 {sent} 人傳送郵件。
@@ -1487,7 +1484,7 @@ teamManagement:
       coolingDown: 冷卻中
       dueNow: 應立即執行
     previewFields:
-      status: 狀態
+      status: 結果
       summary: 摘要
       title: 標題
       htmlPreview: HTML 預覽
@@ -1510,17 +1507,17 @@ teamManagement:
       change: 指標相對上個週期變化時通知
       health: 長時間無資料時通知
     recipientModes:
-      creator: 建立者
+      creator: 規則建立者
       team_admins: 組織管理員
       all_team_members: 全部團隊成員
       users: 指定使用者
-    recipientKindLabel: 接收人型別
-    recipientPresetLabel: 預設
+    recipientKindLabel: 傳送給
+    recipientPresetLabel: 群組
     customRecipientsEmpty: 未選擇接收人
     noTeamMembers: 此組織還沒有成員。
     recipientKinds:
-      preset: 預設
-      custom: 自訂
+      preset: 一個群組
+      custom: 指定的人
     scheduleKinds:
       daily: 每天
       weekly: 每週
@@ -1592,7 +1589,7 @@ managementPages:
     allStatuses: 全部狀態
     runs24h: 24 小時內執行次數
     successRate24h: 24 小時成功率
-    problemRuns24h: 異常執行次數
+    problemRuns24h: 失敗或部分完成的執行
     failed: 失敗
     partial: 部分完成
     lastRun: 最近執行
@@ -1616,6 +1613,10 @@ managementPages:
     startedAt: 開始時間
     finishedAt: 結束時間
     trigger: 觸發
+    triggerTypes:
+      manual: 手動
+      cron: 排程
+      retry: 重試
     tasks: 任務
     taskCount: 任務數
     subtaskCount: 子任務數
@@ -1652,6 +1653,10 @@ managementPages:
       database_maintenance:
         name: 資料庫最佳化
         description: 清理過期的任務執行記錄和通知，並最佳化資料庫。
+        schedule: 每天
+      analytics_retention:
+        name: 分析資料保留
+        description: 刪除過期的頁面瀏覽和事件。保留每小時彙總。
         schedule: 每天
     keptForDays: 保留 {days} 天
 adminUsers:
@@ -1716,19 +1721,20 @@ requestObservation:
     blocked_regions: 命中區域遮蔽規則
   requestKindLabels: {}
   overviewLabels:
+    windowDay: 最近 24 小時
     windowDays: "最近 {days} 天"
   normalDetail: {}
 systemSettings:
   notificationEmailTitle: 郵件通知
   emailGatewayNotReady: "此閘道尚未設定郵件。管理員在設定好寄信網域後，用 {command} 設定寄件人。"
   emailSenderLabel: "寄件人"
-  retentionTitle: 執行資料保留期
+  retentionTitle: 資料保留期
   retentionDescription: 設定任務執行記錄、任務日誌、通知訊息和詳細分析資料的保留時間。任務和通知的修改只影響新建記錄；超出新期限的詳細分析資料會在下一次每日執行時刪除。
   scheduledTaskLogsDaysLabel: 排程任務執行記錄和日誌（天）
   notificationTestDaysLabel: 測試通知（天）
   notificationAttentionDaysLabel: 警告和嚴重通知（天）
   notificationDefaultDaysLabel: 其他通知（天）
-  analyticsDetailDaysLabel: 詳細分析資料：頁面瀏覽和事件（天；保留每小時彙總）
+  analyticsDetailDaysLabel: 頁面瀏覽和事件（天；保留每小時彙總）
   retentionRangeHint: 請輸入 1 到 3650 之間的整數天數。
   retentionSave: 儲存保留期設定
   retentionSaving: 儲存中...
@@ -1825,18 +1831,19 @@ systemPerformance:
   doDiagnosticHealthy: 目前未發現異常緩衝行。
 loginForm: {}
 logoutAction: {}
-sidebarFooter:
-  gateway: 返回 Every App
+sidebarHeader:
+  everyApp: Every App
+  backToEveryApp: 返回 Every App
 appNav:
   appearance: 外觀
   mainNavigation: 主導覽
   toggleSidebar: 切換側邊欄
   sources: 來源
   audience: 受眾
-  goals: 目標
+  goals: 轉換
   sites: 站點
   allSites: 所有站點
-  inbox: 收件匣
+  inbox: 通知
   settings: 設定
   switchSite: 切換站點
   siteSettings: 站點設定
@@ -1851,7 +1858,7 @@ getStarted:
   completed: "已完成 {count} 項"
   steps:
     site: 新增第一個站點
-    tracking: 追蹤你的網站
+    tracking: 將指令碼加入你的網站
     team: 邀請成員
     notifications: 透過電子郵件接收報告
     sharing: 分享公開儀表板
@@ -1866,7 +1873,7 @@ settingsNav:
   label: 設定
   system: 系統健康
   account: 帳戶
-  notifications: 通知
+  notifications: 通知規則
   cancel: 取消
 systemHealth:
   tabs:
