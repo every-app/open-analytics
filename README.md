@@ -25,9 +25,8 @@ Only what visitors and share-link viewers need is public:
 | `GET /share/**`, `GET /:locale/share/**`        | Anyone with a share link                     |
 | `GET /api/public/share/**`, `/api/public/resources/**` | Share pages' data and map styles      |
 | `GET /assets/**`, `/images/**` and the icons    | Built assets                                 |
-| `GET /healthz`                                  | Uptime checks                                |
 
-Everything else needs a signed-in member of the organization. The public routes are declared in [`everyapp.config.ts`](everyapp.config.ts).
+Everything else needs a signed-in member of the organization or a personal access token for the app, `GET /healthz` included (it says whether the Worker and its bindings answer). The gateway's own `https://<your gateway domain>/health` is the public liveness check for uptime monitors. The public routes are declared in [`everyapp.config.ts`](everyapp.config.ts).
 
 ## Deploy
 

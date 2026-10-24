@@ -55,7 +55,9 @@ export default {
   // admins manage sites and settings (src/lib/edge/auth/viewer.ts).
   access: "everyone",
   // Nothing reaches the app without a signed-in member but what anonymous
-  // visitors and share-link viewers need:
+  // visitors and share-link viewers need. /healthz is not listed: a signed-in
+  // member or a personal access token reaches it, and the Gateway's own
+  // https://<gateway>/health is the public liveness check.
   public: [
     // The tracker, loaded by <script> on the organization's own websites,
     // and the collector it posts to. The tracker posts text/plain, so the
@@ -77,7 +79,5 @@ export default {
     { path: "/site.webmanifest", methods: ["GET"] },
     { path: "/web-app-manifest-192x192.png", methods: ["GET"] },
     { path: "/web-app-manifest-512x512.png", methods: ["GET"] },
-    // Says only whether the Worker and its bindings answer.
-    { path: "/healthz", methods: ["GET"] },
   ],
 } as const;

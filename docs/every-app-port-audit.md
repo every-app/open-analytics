@@ -16,6 +16,7 @@ The port is done on the `every-app-port` branch. The plan below is kept as the r
 - **External services:** the basemap is OpenFreeMap through a same-origin style relay, link previews are fetched by the Worker, and place-name translations come from a pinned jsDelivr copy of `iso-3166-2-locale`. Browser feature data still comes from `caniuse.ravelloh.com`; only feature names are sent.
 - **Removed:** the demo build, the e2e harness, the version-update page, site transfer between teams, and the upstream changelog, screenshots and translated READMEs.
 - **Gateway change:** the perimeter now passes `request.cf` to apps (private-every-app PR #339). Without it, location, EU mode, ASN blocking and bot signals are empty.
+- **Public surface, 2026-10-24:** `/healthz` left the manifest's `public` list. The section 4 table and the draft manifest below still list it (and `/.well-known/health`) as public for monitors; that was the plan. Every App decided on 2026-10-24 to err on not public and to put per-app health behind gateway identity, so `/healthz` now answers a signed-in member or a personal access token, and the gateway's own `https://<gateway>/health` is the public liveness check.
 
 ## Verdict
 
