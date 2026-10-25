@@ -96,7 +96,7 @@ export async function readSiteHasData(
   return Boolean(row?.hasData);
 }
 
-/** The organization's Get started progress, for owners and admins. */
+/** The organization's Get started progress, for every member. */
 export async function handleGetStartedAdmin(
   req: Request,
   env: Env,
@@ -105,7 +105,7 @@ export async function handleGetStartedAdmin(
   const actor = await requireActor(env, req);
   if (actor instanceof Response) return actor;
   if (!actor.isAdmin) {
-    return forb("Only organization admins can set up", undefined, req);
+    return forb("Only members of the organization can set up", undefined, req);
   }
   return jsonResponseFor(req, {
     ok: true,

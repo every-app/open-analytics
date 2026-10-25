@@ -41,7 +41,7 @@ export type SiteNavKey =
 /**
  * The sidebar's entries for a site, in order. An entry with several pages
  * links to its first and shows the rest as tabs above the page. Site
- * settings comes last, for owners and admins only. Real-time has no entry:
+ * settings comes last. Real-time has no entry:
  * the live count in the header opens it.
  */
 export const SITE_NAV_ITEMS = [

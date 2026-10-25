@@ -280,7 +280,7 @@ export async function listNotificationRules(
     }
     where.push(eq(rules.columns.teamId, param(filters.teamId)));
   } else {
-    // Only owners and admins manage the organization's rules.
+    // Everyone in the organization manages its rules (isAdmin, viewer.ts).
     if (!actor.isAdmin) return [];
     where.push(eq(rules.columns.teamId, param(actor.teamId)));
   }

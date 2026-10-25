@@ -35,8 +35,8 @@ async function siteTeam(env: Env, siteId: string): Promise<string | null> {
   return row?.team_id ?? null;
 }
 
-// Everyone in the organization reads its workspace; owners and admins manage
-// it. There is one workspace per organization (viewer.ts).
+// Everyone in the organization reads and manages its workspace (viewer.ts
+// marks every member as managing). There is one workspace per organization.
 
 export function canReadTeam(a: Actor, teamId: string): boolean {
   return a.teamId === teamId;

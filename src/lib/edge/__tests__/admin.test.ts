@@ -681,7 +681,7 @@ describe("private admin edge handler", () => {
       expect(forbidden.status).toBe(403);
       expect(await forbidden.json()).toMatchObject({
         ok: false,
-        error: { message: "Only organization admins can create sites" },
+        error: { message: "Only members of the organization can create sites" },
       });
     });
 
@@ -934,7 +934,7 @@ describe("private admin edge handler", () => {
       expect(otherOrgUpdate.status).toBe(403);
       expect(await otherOrgUpdate.json()).toMatchObject({
         ok: false,
-        error: { message: "Only organization admins can update sites" },
+        error: { message: "Only members of the organization can update sites" },
       });
       expect(unsupported.status).toBe(405);
     });
@@ -1187,7 +1187,9 @@ describe("private admin edge handler", () => {
       expect(response.status).toBe(403);
       expect(await response.json()).toMatchObject({
         ok: false,
-        error: { message: "Only organization admins can update site config" },
+        error: {
+          message: "Only members of the organization can update site config",
+        },
       });
       expect(upsertSiteScriptSettingsMock).not.toHaveBeenCalled();
     });

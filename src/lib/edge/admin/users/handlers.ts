@@ -60,7 +60,11 @@ export async function handleMembersAdmin(
   const a = await requireActor(env, req);
   if (a instanceof Response) return a;
   if (!a.isAdmin) {
-    return forb("Only organization admins can list members", undefined, req);
+    return forb(
+      "Only members of the organization can list members",
+      undefined,
+      req,
+    );
   }
   const members = await listMembers(env, a.teamId);
   return jsonResponseFor(req, {

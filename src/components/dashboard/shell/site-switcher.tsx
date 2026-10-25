@@ -27,7 +27,7 @@ import type { SidebarSite, SiteNavKey } from "./dashboard-shell/navigation";
 /**
  * The site the sidebar's pages belong to, and the way to another: each site
  * opens on the page you're on, all sites on the organization's dashboard.
- * Owners and admins add a site from here too.
+ * Anyone in the organization adds a site from here too.
  */
 export function SiteSwitcher({
   locale,

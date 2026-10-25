@@ -17,7 +17,7 @@ export async function handleRequestObservationAdmin(
   if (actor instanceof Response) return actor;
   if (!actor.isAdmin) {
     return forb(
-      "Only organization admins can observe requests",
+      "Only members of the organization can observe requests",
       undefined,
       req,
     );

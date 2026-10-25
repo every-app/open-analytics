@@ -15,7 +15,7 @@ OpenAnalytics is a fork of [InsightFlare](https://github.com/RavelloH/InsightFla
 
 ## How it fits the gateway
 
-Each deployment belongs to one Every App organization. Every member can open the dashboards; owners and admins create and configure sites, notification rules and system settings. The gateway signs people in, so the app has no login page or user management of its own.
+Each deployment belongs to one Every App organization. Everyone in the organization opens the dashboards and manages sites, notification rules and system settings; there is no view-only role. The gateway signs people in, so the app has no login page or user management of its own.
 
 Only what visitors and share-link viewers need is public:
 

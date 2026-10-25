@@ -193,7 +193,7 @@ describe("admin handler low branches", () => {
     expect(env.prepare).not.toHaveBeenCalled();
   });
 
-  it("lists mirrored members for organization admins only", async () => {
+  it("lists mirrored members for the organization", async () => {
     const listed = await handleMembersAdmin(
       request("/admin/members"),
       createEnv().env,

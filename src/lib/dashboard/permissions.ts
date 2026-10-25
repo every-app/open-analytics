@@ -9,7 +9,11 @@ export function toTeamRole(value: unknown): TeamRole {
   return "member";
 }
 
-/** Organization owners and admins manage sites, notifications and settings. */
+/**
+ * Who manages sites, notifications and settings. Today everyone in the
+ * organization does (every member is a system admin, viewer.ts); the role
+ * branch is kept for a view-only role later.
+ */
 export function canManageTeam(
   role: TeamRole | string | undefined | null,
   systemRole: SystemRole,

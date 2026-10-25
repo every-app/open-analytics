@@ -10,8 +10,8 @@ import { GetStartedCard } from "./get-started-card";
 import { TeamManagementSitesPanel } from "./sites-panel";
 
 /**
- * All sites. Before the first site it's one empty state: owners and admins
- * add a site from it, members are told to ask for one.
+ * All sites. Before the first site it's one empty state that anyone in the
+ * organization adds a site from.
  */
 export function TeamManagementPageContent() {
   const {

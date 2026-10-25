@@ -561,58 +561,10 @@ describe("admin notification handlers", () => {
     expect(notFound.status).toBe(404);
   });
 
-  it("lists notifications through team or user scoped paths", async () => {
-    canManageTeam.mockReturnValueOnce(true).mockReturnValueOnce(false);
-    const teamUrl = new URL(
-      "https://edge.test/api/private/notifications?teamId=team-1&userId=user-2&siteId=site-1&type=report&severity=warning&unread=1&before=120.7&limit=200",
-    );
-    const userUrl = new URL(
-      "https://edge.test/api/private/notifications?teamId=team-2&userId=user-2&limit=nope",
-    );
-
-    const teamResponse = await handleNotifications(
-      getRequest(teamUrl.pathname + teamUrl.search),
-      {} as never,
-      teamUrl,
-    );
-    const userResponse = await handleNotifications(
-      getRequest(userUrl.pathname + userUrl.search),
-      {} as never,
-      userUrl,
-    );
-
-    expect(teamResponse.status).toBe(200);
-    expect(userResponse.status).toBe(200);
-    expect(listNotificationMessagesForTeam).toHaveBeenCalledWith(
-      expect.anything(),
-      {
-        teamId: "team-1",
-        userId: "user-2",
-        siteId: "site-1",
-        type: "report",
-        severity: "warning",
-        unread: true,
-        limit: 100,
-        before: 120,
-      },
-    );
-    expect(listNotificationMessagesForUser).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        userId: "user-1",
-        teamId: "team-2",
-        limit: 50,
-      }),
-    );
-  });
-
-  it("uses the team notification path directly for admins", async () => {
-    requireActor.mockResolvedValueOnce({
-      user: { id: "admin-1" },
-      isAdmin: true,
-    });
+  it("lists the actor's own notifications with the request's filters", async () => {
+    canReadTeam.mockReturnValue(true);
     const url = new URL(
-      "https://edge.test/api/private/notifications?teamId=team-1&limit=0&before=bad",
+      "https://edge.test/api/private/notifications?teamId=team-1&siteId=site-1&ruleId=rule-1&type=report&severity=warning&unread=1&before=120.7&limit=200",
     );
 
     const response = await handleNotifications(
@@ -622,13 +574,93 @@ describe("admin notification handlers", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(canManageTeam).not.toHaveBeenCalled();
-    expect(listNotificationMessagesForTeam).toHaveBeenCalledWith(
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      data: { messages: [{ id: "msg-user" }], unreadAttentionCount: 2 },
+    });
+    expect(canReadTeam).toHaveBeenCalledWith(expect.anything(), "team-1");
+    expect(listNotificationMessagesForTeam).not.toHaveBeenCalled();
+    expect(listNotificationMessagesForUser).toHaveBeenCalledWith(
+      expect.anything(),
+      {
+        userId: "user-1",
+        teamId: "team-1",
+        siteId: "site-1",
+        ruleId: "rule-1",
+        type: "report",
+        severity: "warning",
+        unread: true,
+        limit: 100,
+        before: 120,
+      },
+    );
+  });
+
+  it("never reads another member's inbox, whoever asks", async () => {
+    canReadTeam.mockReturnValue(true);
+    for (const isAdmin of [false, true]) {
+      requireActor.mockResolvedValueOnce({
+        user: { id: "user-1" },
+        teamId: "team-1",
+        isAdmin,
+      });
+      const url = new URL(
+        "https://edge.test/api/private/notifications?teamId=team-1&userId=user-2",
+      );
+      const response = await handleNotifications(
+        getRequest(url.pathname + url.search),
+        {} as never,
+        url,
+      );
+      expect(response.status).toBe(403);
+    }
+    expect(listNotificationMessagesForUser).not.toHaveBeenCalled();
+    expect(listNotificationMessagesForTeam).not.toHaveBeenCalled();
+  });
+
+  it("keeps the inbox inside the actor's organization", async () => {
+    canReadTeam.mockReturnValue(false);
+    requireActor.mockResolvedValueOnce({
+      user: { id: "user-1" },
+      teamId: "team-1",
+      isAdmin: true,
+    });
+    const url = new URL(
+      "https://edge.test/api/private/notifications?teamId=team-2",
+    );
+
+    const response = await handleNotifications(
+      getRequest(url.pathname + url.search),
+      {} as never,
+      url,
+    );
+
+    expect(response.status).toBe(403);
+    expect(listNotificationMessagesForUser).not.toHaveBeenCalled();
+    expect(listNotificationMessagesForTeam).not.toHaveBeenCalled();
+  });
+
+  it("asking for your own id is the same as not asking", async () => {
+    const url = new URL(
+      "https://edge.test/api/private/notifications?userId=user-1&unread=1&before=0&limit=5",
+    );
+
+    const response = await handleNotifications(
+      getRequest(url.pathname + url.search),
+      {} as never,
+      url,
+    );
+
+    expect(response.status).toBe(200);
+    expect(canReadTeam).not.toHaveBeenCalled();
+    expect(listNotificationMessagesForUser).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        teamId: "team-1",
-        limit: 1,
+        userId: "user-1",
+        teamId: undefined,
+        unread: true,
         before: undefined,
+        limit: 5,
       }),
     );
   });
@@ -650,33 +682,6 @@ describe("admin notification handlers", () => {
 
     expect(unsupported.status).toBe(405);
     expect(failed.status).toBe(400);
-  });
-
-  it("lets admins request another user's notification list", async () => {
-    requireActor.mockResolvedValueOnce({
-      user: { id: "admin-1" },
-      isAdmin: true,
-    });
-    const url = new URL(
-      "https://edge.test/api/private/notifications?userId=user-2&unread=1&before=0&limit=5",
-    );
-
-    const response = await handleNotifications(
-      getRequest(url.pathname + url.search),
-      {} as never,
-      url,
-    );
-
-    expect(response.status).toBe(200);
-    expect(listNotificationMessagesForUser).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        userId: "user-2",
-        unread: true,
-        before: undefined,
-        limit: 5,
-      }),
-    );
   });
 
   it("handles notification preferences and read actions", async () => {
@@ -809,22 +814,24 @@ describe("admin notification handlers", () => {
     expect(unsupportedReadAll.status).toBe(405);
   });
 
-  it("sends manual test notifications with permission checks", async () => {
+  it("sends a test notification to the actor only", async () => {
     canReadTeam.mockReturnValue(true);
-    canManageTeam.mockReturnValue(false);
+    canManageTeam.mockReturnValue(true);
 
     const self = await handleNotificationTestAdmin(
-      request("/api/private/admin/notification-test", { teamId: "team-1" }),
-      {} as never,
-    );
-    const deniedOtherUser = await handleNotificationTestAdmin(
       request("/api/private/admin/notification-test", {
         teamId: "team-1",
-        userId: "user-2",
+        siteId: "site-1",
       }),
       {} as never,
     );
-    canManageTeam.mockReturnValue(true);
+    const ownId = await handleNotificationTestAdmin(
+      request("/api/private/admin/notification-test", {
+        teamId: "team-1",
+        userId: "user-1",
+      }),
+      {} as never,
+    );
     const otherUser = await handleNotificationTestAdmin(
       request("/api/private/admin/notification-test", {
         teamId: "team-1",
@@ -835,14 +842,18 @@ describe("admin notification handlers", () => {
     );
 
     expect(self.status).toBe(200);
-    expect(deniedOtherUser.status).toBe(403);
-    expect(otherUser.status).toBe(200);
+    expect(ownId.status).toBe(200);
+    expect(otherUser.status).toBe(403);
+    expect(createManualTestNotification).toHaveBeenCalledTimes(2);
     expect(createManualTestNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         teamId: "team-1",
         siteId: "site-1",
-        userId: "user-2",
+        userId: "user-1",
       }),
+    );
+    expect(createManualTestNotification).not.toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "user-2" }),
     );
   });
 

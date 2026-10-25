@@ -171,7 +171,7 @@ describe("MCP tools", () => {
       await callTool("update_site", { site_id: "site-1", name: "New" }),
     ).toEqual({
       isError: true,
-      text: "Only organization owners and admins can change sites and settings.",
+      text: "Only members of the organization can change sites and settings.",
     });
   });
 

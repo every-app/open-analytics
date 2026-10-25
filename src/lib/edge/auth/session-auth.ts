@@ -5,8 +5,8 @@ export type EdgeSystemRole = "admin" | "user";
 
 /**
  * Who a dashboard request is from, as the analytics and admin code reads it:
- * the gateway viewer (viewer.ts), with organization owners and admins as
- * `systemRole: "admin"`.
+ * the gateway viewer (viewer.ts). Everyone in the organization manages the
+ * app, so every member is `systemRole: "admin"`.
  */
 export interface EdgeSessionClaims {
   userId: string;

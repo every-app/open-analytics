@@ -171,7 +171,7 @@ describe("get started", () => {
     expect(doneSteps(body)).toEqual(["site", "tracking"]);
   });
 
-  it("is for owners and admins", async () => {
+  it("is for members who manage", async () => {
     vi.mocked(requireActor).mockResolvedValue({ ...admin, isAdmin: false });
 
     const { status } = await getStarted(database);

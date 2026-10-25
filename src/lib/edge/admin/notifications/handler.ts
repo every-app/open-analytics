@@ -16,7 +16,6 @@ import { runScheduledTask } from "@/lib/edge/scheduled-tasks/runner";
 import type { Env } from "@/lib/edge/types";
 import {
   countUnreadAttentionMessages,
-  listNotificationMessagesForTeam,
   listNotificationMessagesForUser,
   markAllNotificationMessagesRead,
   markNotificationMessageRead,
@@ -233,34 +232,18 @@ export async function handleNotifications(
     Number.isFinite(beforeRaw) && beforeRaw > 0 ? beforeRaw : undefined;
   const limit = parseLimit(url);
 
+  // The inbox is personal: each member reads their own, never another's,
+  // and only within their organization (everyone manages the organization,
+  // so a manager check would not separate the two).
+  if (teamId && !canReadTeam(actor, teamId)) {
+    return forb("Forbidden", undefined, req);
+  }
+  if (requestedUserId && requestedUserId !== actor.user.id) {
+    return forb("You can only read your own notifications", undefined, req);
+  }
   try {
-    if (teamId && (actor.isAdmin || canManageTeam(actor, teamId))) {
-      const messages = await listNotificationMessagesForTeam(env, {
-        teamId,
-        userId: requestedUserId || undefined,
-        siteId: siteId || undefined,
-        ruleId: ruleId || undefined,
-        type: type || undefined,
-        severity: severity || undefined,
-        unread,
-        limit,
-        before,
-      });
-      return jsonResponseFor(req, {
-        ok: true,
-        data: {
-          messages,
-          unreadAttentionCount: await countUnreadAttentionMessages(
-            env,
-            actor.user.id,
-          ),
-        },
-      });
-    }
-    const userId =
-      actor.isAdmin && requestedUserId ? requestedUserId : actor.user.id;
     const messages = await listNotificationMessagesForUser(env, {
-      userId,
+      userId: actor.user.id,
       teamId: teamId || undefined,
       siteId: siteId || undefined,
       ruleId: ruleId || undefined,
@@ -349,11 +332,11 @@ export async function handleNotificationTestAdmin(
   if (!canReadTeam(actor, teamId)) {
     return forb("Forbidden", undefined, req);
   }
-  // Team readers may send a harmless test to themselves; sending to another
-  // user requires team management permission.
-  if (requestedUserId !== actor.user.id && !canManageTeam(actor, teamId)) {
+  // A test notification goes to the person who asked for it, never to
+  // another member.
+  if (requestedUserId !== actor.user.id) {
     return forb(
-      "Only team managers can send test notifications to other users",
+      "You can only send a test notification to yourself",
       undefined,
       req,
     );

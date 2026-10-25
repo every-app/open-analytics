@@ -39,7 +39,7 @@ export interface AccountUserData {
   id: string;
   email: string;
   name: string;
-  /** "admin" for organization owners and admins. */
+  /** "admin" for every member: everyone in the organization manages. */
   systemRole: "admin" | "user";
   timeZone?: string;
   preferredLocale: "" | Locale;

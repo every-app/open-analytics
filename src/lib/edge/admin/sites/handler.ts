@@ -186,7 +186,11 @@ export async function handleSitesAdmin(
     if (!teamId) return bad("teamId is required", undefined, req);
     if (!domain) return bad(INVALID_DOMAIN_MESSAGE, undefined, req);
     if (!canManageTeam(a, teamId))
-      return forb("Only organization admins can create sites", undefined, req);
+      return forb(
+        "Only members of the organization can create sites",
+        undefined,
+        req,
+      );
     const siteId = await createSiteWithDefaultSettings(env, {
       teamId,
       name,
@@ -224,7 +228,11 @@ export async function handleSitesAdmin(
       publicSlug: existingRow.publicSlug,
     };
     if (!canManageTeam(a, e.teamId))
-      return forb("Only organization admins can update sites", undefined, req);
+      return forb(
+        "Only members of the organization can update sites",
+        undefined,
+        req,
+      );
     if (intent === "remove") {
       await deleteSiteData(env, siteId);
       return jsonResponseFor(req, {
@@ -316,7 +324,7 @@ export async function handleSiteConfigAdmin(
     if (!siteId) return bad("siteId is required", undefined, req);
     if (!(await canManageSite(env, a, siteId)))
       return forb(
-        "Only organization admins can update site config",
+        "Only members of the organization can update site config",
         undefined,
         req,
       );
