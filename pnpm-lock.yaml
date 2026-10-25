@@ -28,8 +28,8 @@ importers:
         specifier: ^9.3.10
         version: 9.3.10(@deck.gl/core@9.3.10)(@luma.gl/core@9.3.5)(@math.gl/web-mercator@4.1.0)
       '@every-app/sdk':
-        specifier: file:vendor/every-app-sdk-0.3.0.tgz
-        version: file:vendor/every-app-sdk-0.3.0.tgz(jose@6.2.3)
+        specifier: 0.3.0-rc.1
+        version: 0.3.0-rc.1(jose@6.2.3)
       '@iconify-json/flagpack':
         specifier: ^1.2.7
         version: 1.2.8
@@ -188,8 +188,8 @@ importers:
         specifier: ^12.1.1
         version: 12.1.1(eslint@9.39.4(jiti@2.7.0))
       everyapp:
-        specifier: file:vendor/everyapp-0.3.0.tgz
-        version: file:vendor/everyapp-0.3.0.tgz(@types/node@25.9.7)
+        specifier: 0.3.0-rc.1
+        version: 0.3.0-rc.1(@types/node@25.9.7)
       globals:
         specifier: ^16.5.0
         version: 16.5.0
@@ -794,9 +794,8 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@every-app/sdk@file:vendor/every-app-sdk-0.3.0.tgz':
-    resolution: {integrity: sha512-yc+0VPnVIc1C+xF0DfgxzU3zWENN6p42HB15HyawKI7ESRmdlUmVXx6K6ifSFWZYtdYIkqEWmdkXy0Cp760u9A==, tarball: file:vendor/every-app-sdk-0.3.0.tgz}
-    version: 0.3.0
+  '@every-app/sdk@0.3.0-rc.1':
+    resolution: {integrity: sha512-J1F8eTeJ4m2UMjMO858viohtOTfaRx40+xAfPTHO8dwm8+l5NfEPYnyDQNmkCtBJH4yXxRXT1xd0k7euXxRQ7g==}
     peerDependencies:
       jose: ^6.2.5
 
@@ -3410,9 +3409,8 @@ packages:
     resolution: {integrity: sha512-CRT1WTyuQoD771GW56XEZFQ/ZoSfWid1alKGDYMmkt2yl8UXrVR4pspqWNEcqKvVIzg6PAltWjxcSSPrboA4iA==}
     engines: {node: '>=18.0.0'}
 
-  everyapp@file:vendor/everyapp-0.3.0.tgz:
-    resolution: {integrity: sha512-u+X2JF2/D+r3LK+5eWOtGqTHYGumGj9EyLiObRGWqvcQVdPUXZIL7qL8K1YJO75A2Q2sIF556WvT08TjtA2Njw==, tarball: file:vendor/everyapp-0.3.0.tgz}
-    version: 0.3.0
+  everyapp@0.3.0-rc.1:
+    resolution: {integrity: sha512-FlwfzFeWKRFCmbOqcli6X6pkllz6nw3roosYDKnU55n+5Q4BmZ59iuRhiV301PGZLqYNEy/kOgPOmMRvaejnNw==}
     engines: {node: '>=22.18.0'}
     hasBin: true
 
@@ -6131,7 +6129,7 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@every-app/sdk@file:vendor/every-app-sdk-0.3.0.tgz(jose@6.2.3)':
+  '@every-app/sdk@0.3.0-rc.1(jose@6.2.3)':
     dependencies:
       jose: 6.2.3
 
@@ -8909,7 +8907,7 @@ snapshots:
     dependencies:
       eventsource-parser: 3.1.0
 
-  everyapp@file:vendor/everyapp-0.3.0.tgz(@types/node@25.9.7):
+  everyapp@0.3.0-rc.1(@types/node@25.9.7):
     dependencies:
       '@cloudflare/config': 0.24.1
       '@inquirer/prompts': 8.7.4(@types/node@25.9.7)
