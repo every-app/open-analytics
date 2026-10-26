@@ -60,6 +60,7 @@
     "hono": "^4.13.12",
     "i18n-iso-countries": "^7.14.0",
     "isbot": "^5.2.2",
+    "jose": "^6.2.12",
     "lucide-react": "^0.542.0",
     "maplibre-gl": "^6.11.2",
     "motion": "^12.43.0",
