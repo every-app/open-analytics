@@ -14,9 +14,9 @@ const SET_COMMAND = `pnpm everyapp secret set ${SECRET_NAME} --app ${APP_ID}`;
 const GENERATE_COMMAND = "openssl rand -base64 32";
 const DEV_COMMAND = "everyapp dev";
 const DEV_VARS_FILE = ".dev.vars";
-/** The README's Settings table: what the app needs and how to set it. */
+/** docs/self-hosting.md's Settings table: what the app needs and how to set it. */
 const SETTINGS_DOCS_URL =
-  "https://github.com/every-app/private-open-analytics#settings";
+  "https://github.com/every-app/open-analytics/blob/main/docs/self-hosting.md#settings";
 
 export const Route = createFileRoute("/$locale/runtime-config-error")({
   // Under `everyapp dev` the root secret comes from .dev.vars, not the
