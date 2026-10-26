@@ -30,19 +30,18 @@ Everything else needs a signed-in member of the organization or a personal acces
 
 ## Deploy
 
-You need a running Every App gateway, Node.js 24 and pnpm 10.
-
-The Every App SDK and CLI it builds with are the published packages `@every-app/sdk` and `everyapp`, pinned to one exact version in `package.json`, so a clone of this repository installs and builds on its own: no checkout of the Every App repository beside it.
-
-To put it on your Gateway, run `pnpm everyapp install https://github.com/every-app/open-analytics` from your [Every App](https://github.com/every-app/every-app) checkout: it installs the latest release, which the Release workflow publishes on every push to the default branch, and the same command updates it later. To deploy your own changes instead, run that checkout's CLI from this directory: `node ../every-app/packages/cli/bin/everyapp.js deploy` (the CLI installed here runs `dev`, `db migrate` and `release`; a deploy also updates the Gateway, which only a checkout can build).
+You need a running Every App gateway, from a checkout of [every-app/every-app](https://github.com/every-app/every-app) on a Cloudflare account with Workers Paid. Two commands from that checkout put OpenAnalytics on it:
 
 ```bash
-# from your Every App checkout
 pnpm everyapp install https://github.com/every-app/open-analytics
-MAIN_SECRET="$(openssl rand -hex 32)" pnpm everyapp secret set MAIN_SECRET --app analytics --from-env MAIN_SECRET
+pnpm everyapp configure analytics
 ```
 
-`MAIN_SECRET` signs collect tokens and derives visitor hashes. Generate it once with `openssl rand -hex 32`, as above, and keep it stable: changing it splits visitor counts.
+The first installs the latest release, which the Release workflow publishes on every push to the default branch; run it again later to update. The second asks for `MAIN_SECRET`, the one key the app needs, and then the optional ones. No checkout of this repository is needed, and no R2.
+
+To deploy your own changes instead, clone this repository next to the Every App checkout and run that checkout's CLI from this directory: `node ../every-app/packages/cli/bin/everyapp.js deploy` (the CLI installed here runs `dev`, `db migrate` and `release`; a deploy also updates the Gateway, which only a checkout can build).
+
+`MAIN_SECRET` signs collect tokens and derives visitor hashes: 32 or more random characters, for example `openssl rand -base64 32`. Set it once and keep it stable: changing it splits visitor counts. To set it alone: `pnpm everyapp secret set MAIN_SECRET --app analytics`.
 
 Then open `https://analytics.<your gateway domain>`, create a site, and add its tracking snippet to your website.
 
@@ -52,7 +51,7 @@ Then open `https://analytics.<your gateway domain>`, create a site, and add its 
 
 | Setting       | Need     | Where            | Set it with                                                                                                                                                  |
 | ------------- | -------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `MAIN_SECRET` | required | the app's Worker | `pnpm everyapp secret set MAIN_SECRET`: 32 or more random characters, e.g. `openssl rand -hex 32`                                                            |
+| `MAIN_SECRET` | required | the app's Worker | `pnpm everyapp configure analytics` asks for it, or `pnpm everyapp secret set MAIN_SECRET --app analytics`: 32 or more random characters                     |
 | `members`     | required | the gateway      | Nothing: the gateway lists who can open the app                                                                                                              |
 | `email`       | optional | the gateway      | `pnpm everyapp secret set EMAIL_FROM EMAIL_FROM_NAME` after setting up a sending domain. Without it, reports and alerts stay in the inbox and the app says so |
 
@@ -66,7 +65,7 @@ Then open `https://analytics.<your gateway domain>`, create a site, and add its 
 | `SCRIPT_CACHE_TTL_SECONDS` | Cache TTL for `/script.js` (default `600`)             | `bindings.text` in `cloudflare.config.ts`                      |
 | `MAP_STYLE_BASE_URL`       | Optional OpenMapTiles style host (default OpenFreeMap) | Not set by default; add it to `cloudflare.config.ts` to use it |
 
-These are plain Worker variables, not secrets: edit `env` in [`cloudflare.config.ts`](cloudflare.config.ts) and run `pnpm run deploy`. `MAP_STYLE_BASE_URL` is read by the map style relay (`src/lib/edge/resources/map-relay.ts`); to point at another host, add `MAP_STYLE_BASE_URL: bindings.text("https://…")` next to the other two and redeploy.
+These are plain Worker variables, not secrets: edit `env` in [`cloudflare.config.ts`](cloudflare.config.ts) and deploy your change with the Every App checkout's CLI, as under [Deploy](#deploy). `MAP_STYLE_BASE_URL` is read by the map style relay (`src/lib/edge/resources/map-relay.ts`); to point at another host, add `MAP_STYLE_BASE_URL: bindings.text("https://…")` next to the other two and redeploy.
 
 **System Settings** shows whether the gateway can send email and can send a test message.
 
@@ -119,7 +118,7 @@ Call `identify` after sign-in so the visit can be analyzed with that user's othe
 
 ## Development
 
-Clone and install the platform next to this repository first, as under [Deploy](#deploy). Then:
+Contributors work from a clone of this repository. It needs Node.js 22.18 or newer and pnpm 10; the Every App SDK and CLI it builds with are the published packages `@every-app/sdk` and `everyapp`, pinned to one exact version in `package.json`, so it installs and runs on its own:
 
 ```bash
 cp .dev.vars.example .dev.vars
@@ -132,7 +131,7 @@ pnpm run dev
 | Command                 | Purpose                                                     |
 | ----------------------- | ----------------------------------------------------------- |
 | `pnpm run dev`          | Local gateway and app                                       |
-| `pnpm run deploy`       | Build and deploy to your gateway                            |
+| `pnpm run deploy`       | `everyapp deploy`; see [Deploy](#deploy) for deploying your own changes |
 | `pnpm run check`        | Format, lint, translations, typecheck, tests and build      |
 | `pnpm run test`         | Unit tests                                                  |
 | `pnpm run typecheck`    | TypeScript                                                  |
