@@ -9,7 +9,15 @@ import {
   useState,
 } from "react";
 
-export type Theme = "light" | "dark" | "system";
+import {
+  readThemeCookie,
+  resolveThemePreference,
+  THEME_STORAGE_KEY,
+  type ThemePreference,
+  writeThemeCookie,
+} from "@/lib/theme-cookie";
+
+export type Theme = ThemePreference;
 
 interface ThemeContextValue {
   theme: Theme;
@@ -19,23 +27,28 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-const STORAGE_KEY = "insightflare-theme";
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-function storedTheme(): Theme {
-  if (typeof window === "undefined") return "system";
-  const value = window.localStorage.getItem(STORAGE_KEY);
-  return value === "light" || value === "dark" || value === "system"
-    ? value
-    : "system";
+function readStorage(): string | null {
+  try {
+    return window.localStorage.getItem(THEME_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function currentTheme(): Theme {
+  return resolveThemePreference(document.cookie, readStorage());
 }
 
 interface ThemeProviderProps {
   children: ReactNode;
+  /** The Gateway's hostname, from `GATEWAY_URL`; null standalone. */
+  gatewayHost: string | null;
 }
 
-export function ThemeProvider({ children }: ThemeProviderProps) {
+export function ThemeProvider({ children, gatewayHost }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>("system");
   const [system, setSystem] = useState<"light" | "dark">("light");
   const [hydrated, setHydrated] = useState(false);
@@ -44,12 +57,29 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const update = () => setSystem(media.matches ? "dark" : "light");
-    setThemeState(storedTheme());
+    // A pick made in another app's tab fires no event here: read the cookie
+    // again when this tab comes back.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") setThemeState(currentTheme());
+    };
+    setThemeState(currentTheme());
     update();
     media.addEventListener("change", update);
+    document.addEventListener("visibilitychange", onVisible);
     setHydrated(true);
-    return () => media.removeEventListener("change", update);
+    return () => {
+      media.removeEventListener("change", update);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
+
+  // A pick saved here before the cookie existed joins the cookie, once.
+  useEffect(() => {
+    const own = currentTheme();
+    if (own !== "system" && !readThemeCookie(document.cookie)) {
+      writeThemeCookie(own, gatewayHost);
+    }
+  }, [gatewayHost]);
 
   useIsomorphicLayoutEffect(() => {
     if (!hydrated) return;
@@ -57,10 +87,18 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     document.documentElement.style.colorScheme = resolvedTheme;
   }, [hydrated, resolvedTheme]);
 
-  const setTheme = useCallback((nextTheme: Theme) => {
-    window.localStorage.setItem(STORAGE_KEY, nextTheme);
-    setThemeState(nextTheme);
-  }, []);
+  const setTheme = useCallback(
+    (nextTheme: Theme) => {
+      writeThemeCookie(nextTheme, gatewayHost);
+      try {
+        window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+      } catch {
+        // Storage blocked: the cookie, if any, still holds it.
+      }
+      setThemeState(nextTheme);
+    },
+    [gatewayHost],
+  );
 
   const value = useMemo(
     () => ({ theme, resolvedTheme, setTheme }),

@@ -31,10 +31,13 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { TimeZoneProvider } from "@/components/time-zone-provider";
 import { APP_NAME } from "@/lib/constants";
 import { GET_STARTED_COLLAPSED_KEY } from "@/lib/dashboard/get-started";
+import { loadGatewayHostname } from "@/lib/dashboard/route-data";
 import { localeToHtmlLang, resolveLocale } from "@/lib/i18n/config";
 import { getMessages } from "@/lib/i18n/messages";
 import Link from "@/lib/router";
-const THEME_INIT_SCRIPT = `(function(){try{var k='insightflare-theme';var t=localStorage.getItem(k)||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';if(localStorage.getItem('${GET_STARTED_COLLAPSED_KEY}')==='1')document.documentElement.setAttribute('data-get-started-collapsed','')}catch(e){}})()`;
+import { readThemeScript } from "@/lib/theme-cookie";
+// The shared `everyapp-theme` cookie first, then this app's own copy.
+const THEME_INIT_SCRIPT = `(function(){try{${readThemeScript}var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';if(localStorage.getItem('${GET_STARTED_COLLAPSED_KEY}')==='1')document.documentElement.setAttribute('data-get-started-collapsed','')}catch(e){}})()`;
 const ESBUILD_NAME_HELPER_SCRIPT = `(function(){if(typeof globalThis.__name!=="function"){globalThis.__name=function(target){return target}}})()`;
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   {
@@ -53,6 +56,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { rel: "stylesheet", href: globalStylesheetUrl },
       ],
     }),
+    // Read once: GATEWAY_URL doesn't change while the page is open. A failed
+    // read only keeps the theme in localStorage.
+    loader: async () => ({
+      gatewayHost: await loadGatewayHostname().catch(() => null),
+    }),
+    staleTime: Infinity,
     notFoundComponent: NotFoundPage,
     errorComponent: ErrorPage,
     component: RootDocument,
@@ -60,6 +69,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 );
 function RootDocument() {
   const { queryClient } = Route.useRouteContext();
+  const { gatewayHost } = Route.useLoaderData();
   const pathname = useLocation({ select: (location) => location.pathname });
   const locale = resolveLocale(pathname.split("/")[1]);
 
@@ -77,7 +87,7 @@ function RootDocument() {
             <LayerSystemFixture />
             <AppQueryProvider client={queryClient}>
               <TimeZoneProvider>
-                <ThemeProvider>
+                <ThemeProvider gatewayHost={gatewayHost}>
                   <TooltipProvider>
                     <Outlet />
                   </TooltipProvider>

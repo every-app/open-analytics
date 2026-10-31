@@ -41,6 +41,7 @@ import type { Locale } from "@/lib/i18n/config";
 import { DEFAULT_RETENTION_CONFIG } from "@/lib/retention";
 import type { ScheduledTasksData } from "@/lib/scheduled-tasks";
 import { normalizeSiteScriptSettings } from "@/lib/site-settings";
+import { gatewayHostname } from "@/lib/theme-cookie";
 function serializeManagementJsonObject(
   value: Record<string, unknown>,
 ): ManagementJsonObject {
@@ -77,6 +78,13 @@ export const loadDashboardInitialWindow = createServerFn({
   method: "GET",
 }).handler((): TimeWindow =>
   resolveDashboardInitialWindow(getRequest().headers.get("cookie")),
+);
+/** The Gateway's hostname, where the shared theme cookie lives; null standalone. */
+export const loadGatewayHostname = createServerFn({ method: "GET" }).handler(
+  async () => {
+    const runtime = await resolveEdgeRuntime(getRequest());
+    return gatewayHostname(runtime.env.GATEWAY_URL);
+  },
 );
 /** The workspace, its sites and the signed-in person, for the app layout. */
 export const loadDashboardTeam = createServerFn({ method: "GET" }).handler(() =>
