@@ -24,23 +24,23 @@ pnpm everyapp install https://github.com/every-app/open-analytics
 pnpm everyapp configure analytics
 ```
 
-The first installs the latest release, which the Release workflow publishes on every push to the default branch; run it again later to update. The second asks for `MAIN_SECRET`, the one key the app needs, and then the optional ones. No checkout of this repository is needed, and no R2.
+The first installs the latest release, which the Release workflow publishes on every push to the default branch; run it again later to update. The install generates `MAIN_SECRET`, the one key the app needs; the second command walks the optional Email reports feature. No checkout of this repository is needed, and no R2.
 
 To deploy your own changes instead, clone this repository next to the Every App checkout and run that checkout's CLI from this directory: `node ../every-app/packages/cli/bin/everyapp.js deploy` (the CLI installed here runs `dev`, `db migrate` and `release`; a deploy also updates the Gateway, which only a checkout can build).
 
-`MAIN_SECRET` signs collect tokens and derives visitor hashes: 32 or more random characters, for example `openssl rand -base64 32`. Set it once and keep it stable: changing it splits visitor counts. To set it alone: `pnpm everyapp secret set MAIN_SECRET --app analytics`.
+`MAIN_SECRET` signs collect tokens and derives visitor hashes. The deploy generates it when it's unset and keeps it after that: changing it splits visitor counts. To set your own (32 or more random characters): `pnpm everyapp secret set MAIN_SECRET --app analytics`.
 
 Then open `https://analytics.<your gateway domain>`, create a site, and add its tracking snippet to your website.
 
 ### Settings
 
-[`everyapp.config.ts`](../everyapp.config.ts) declares what the app needs. The gateway doesn't open the app until its required settings are set; `pnpm everyapp status` shows what is missing, and `pnpm everyapp secret list` in this directory lists each setting as required or optional.
+[`everyapp.config.ts`](../everyapp.config.ts) declares what the app needs. The gateway doesn't open the app until its required settings are set; `pnpm everyapp status` shows what is missing, and `pnpm everyapp secret list` in this directory lists each setting. Optional ones are grouped into features (`features` in the manifest), each off until it is set up.
 
 | Setting       | Need     | Where            | Set it with                                                                                                                                                  |
 | ------------- | -------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `MAIN_SECRET` | required | the app's Worker | `pnpm everyapp configure analytics` asks for it, or `pnpm everyapp secret set MAIN_SECRET --app analytics`: 32 or more random characters                     |
+| `MAIN_SECRET` | required | the app's Worker | Nothing: the deploy generates it. Or `pnpm everyapp secret set MAIN_SECRET --app analytics`: 32 or more random characters                                    |
 | `members`     | required | the gateway      | Nothing: the gateway lists who can open the app                                                                                                              |
-| `email`       | optional | the gateway      | `pnpm everyapp secret set EMAIL_FROM EMAIL_FROM_NAME` after setting up a sending domain. Without it, reports and alerts stay in the inbox and the app says so |
+| `email`       | optional (Email reports feature) | the gateway      | `pnpm everyapp secret set EMAIL_FROM EMAIL_FROM_NAME` after setting up a sending domain. Without it, reports and alerts stay in the inbox and the app says so |
 
 `MAIN_SECRET` is the name to set; the Worker reads `DAILY_SALT_SECRET` (InsightFlare's name for it) only as a legacy fallback.
 

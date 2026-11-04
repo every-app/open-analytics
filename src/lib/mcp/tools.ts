@@ -618,7 +618,8 @@ export const tools = defineTools(
       title: "Share a site publicly",
       description:
         "Turn a site's public share link on or off. While on, anyone with the link can read the site's dashboards.",
-      risk: "destructive",
+      risk: "write",
+      destructive: true,
       input: z.object({
         site_id: z.string().min(1),
         enabled: z.boolean(),
@@ -646,7 +647,8 @@ export const tools = defineTools(
       title: "Delete site",
       description:
         "Delete a site and all of its analytics data. This can't be undone.",
-      risk: "destructive",
+      risk: "write",
+      destructive: true,
       input: z.object({ site_id: z.string().min(1) }),
       handler: async (args, call) =>
         privateApi(call, "PATCH", "/api/private/admin/sites", {
@@ -657,7 +659,8 @@ export const tools = defineTools(
     delete_funnel: {
       title: "Delete funnel",
       description: "Delete a funnel.",
-      risk: "destructive",
+      risk: "write",
+      destructive: true,
       input: z.object({ site_id: z.string().min(1), id: z.string().min(1) }),
       handler: async (args, call) => {
         await privateApi(call, "DELETE", "/api/private/funnels", {
@@ -670,7 +673,8 @@ export const tools = defineTools(
     delete_goal: {
       title: "Delete goal",
       description: "Delete a goal.",
-      risk: "destructive",
+      risk: "write",
+      destructive: true,
       input: z.object({ site_id: z.string().min(1), id: z.string().min(1) }),
       handler: async (args, call) => {
         await privateApi(call, "DELETE", "/api/private/goals", {
@@ -682,6 +686,6 @@ export const tools = defineTools(
   },
   {
     instructions:
-      "OpenAnalytics: privacy-friendly web analytics for the organization's sites. Call list_sites first; every site tool takes its site_id. Times default to the last 7 days. Filters use the filter expression language described on the filter argument. Deleting sites, funnels and goals and turning public sharing on or off are done in the app's Settings, not through tools.",
+      "OpenAnalytics: privacy-friendly web analytics for the organization's sites. Call list_sites first; every site tool takes its site_id. Times default to the last 7 days. Filters use the filter expression language described on the filter argument. Deleting a site, funnel or goal can't be undone, and public sharing opens a site's dashboards to anyone with the link: confirm with the person before calling those tools.",
   },
 );

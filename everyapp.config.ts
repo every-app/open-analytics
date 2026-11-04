@@ -22,12 +22,14 @@ export default {
     durableObjects: [{ name: "INGEST_DO", className: "IngestDurableObject" }],
   },
   migrations: { engine: "d1-sql", dir: "migrations", binding: "DB" },
-  // Required: the app doesn't open without it (src/lib/secrets.ts). In dev,
-  // .dev.vars sets it.
+  // Required: the app doesn't open without it (src/lib/secrets.ts). The
+  // deploy generates it (32 random bytes) when it's unset; in dev, .dev.vars
+  // sets it.
   secrets: [
     {
       name: "MAIN_SECRET",
-      why: "The root secret for visitor salts and collect tokens; 32 or more random characters, e.g. openssl rand -base64 32.",
+      generate: true,
+      why: "The root secret for visitor salts and collect tokens.",
     },
   ],
   // Builds the UI packages and the tracker bundles before `vite build`, and
@@ -43,12 +45,19 @@ export default {
       access: "read",
       why: "Sends reports and alerts only to people who can still open the app.",
     },
-    // Optional: without it reports and alerts stay in the inbox, and the app
-    // says so where email is turned on.
+    // In the optional "email" feature below.
     email: {
       access: "write",
-      optional: true,
       why: "Emails scheduled reports and alerts to members who turned email notifications on.",
+    },
+  },
+  // Optional: without email, reports and alerts stay in the inbox, and the
+  // app says so where email is turned on.
+  features: {
+    email: {
+      name: "Email reports",
+      why: "Emails scheduled reports and alerts to members who turned email notifications on.",
+      capabilities: ["email"],
     },
   },
   // Every member of the organization can open the dashboards; owners and
