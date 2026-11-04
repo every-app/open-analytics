@@ -43,6 +43,8 @@ export default defineConfig({
         url: "http://localhost:3000/",
       },
     },
+    // Node 25+ shadows happy-dom's localStorage with its own stub.
+    setupFiles: ["./src/test/setup/web-storage.ts"],
     globals: true,
     pool: "threads",
     maxWorkers: VITEST_MAX_WORKERS,
