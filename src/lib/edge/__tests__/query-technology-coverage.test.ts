@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { buildTrafficChannelSqlExpression } from "@/lib/analytics/traffic-channel-rules";
-import { EMPTY_FILTER_DOCUMENT } from "@/lib/edge/analytics/contract";
+import {
+  createQueryTime,
+  EMPTY_FILTER_DOCUMENT,
+  prepareScopedQuery,
+  siteQueryContext,
+} from "@/lib/edge/analytics/contract";
 import type { QueryWindow } from "@/lib/edge/analytics/providers/d1/internal/core";
 import {
   BROWSER_CROSS_OTHER_BROWSER_TOKEN,
@@ -195,6 +200,33 @@ describe("edge technology query coverage", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0].sql).not.toContain("LIMIT ?");
     expect(calls[0].bindings).toEqual(visitBindings());
+  });
+
+  it("reads a filtered browser version breakdown from the scoped visits", async () => {
+    const { env, calls } = createD1Env([[]]);
+    const prepared = prepareScopedQuery("dimension", {
+      context: siteQueryContext(siteId, "private-dashboard"),
+      time: createQueryTime(
+        window.startMs,
+        window.endExclusiveMs,
+        "UTC",
+        window.nowMs,
+      ),
+      filters: filterFixture({ path: "/pricing" }),
+      scopePreference: "auto",
+    } as never);
+
+    await queryBrowserVersionBreakdownFromD1(
+      env,
+      siteId,
+      window,
+      prepared.filters!,
+      5,
+      2,
+    );
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].sql).toContain("FROM scope_final_visits");
   });
 
   it("maps browser version slices with unknown and other buckets", async () => {

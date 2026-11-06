@@ -2,8 +2,13 @@ import { DatabaseSync } from "node:sqlite";
 
 import { describe, expect, it, vi } from "vitest";
 
-import type { FilterDocument } from "@/lib/edge/analytics/contract";
-import { EMPTY_FILTER_DOCUMENT } from "@/lib/edge/analytics/contract";
+import {
+  createQueryTime,
+  EMPTY_FILTER_DOCUMENT,
+  type FilterDocument,
+  prepareScopedQuery,
+  siteQueryContext,
+} from "@/lib/edge/analytics/contract";
 import { handlePerformanceContract as handlePerformance } from "@/lib/edge/analytics/interfaces/dashboard/protocol/analysis";
 import type { QueryWindow } from "@/lib/edge/analytics/providers/d1/internal/core";
 import {
@@ -212,6 +217,31 @@ describe("edge query performance D1 helpers", () => {
       "us",
       "example.com",
     ]);
+  });
+
+  it("reads filtered metric summaries from the scoped visits", async () => {
+    const { env, calls } = createD1Env([[]]);
+    const prepared = prepareScopedQuery("performance", {
+      context: siteQueryContext(siteId, "private-dashboard"),
+      time: createQueryTime(
+        window.startMs,
+        window.endExclusiveMs,
+        "UTC",
+        window.nowMs,
+      ),
+      filters: filterFixture({ path: "/pricing" }),
+      scopePreference: "auto",
+    } as never);
+
+    await queryPerformanceSummariesFromD1(
+      env,
+      siteId,
+      window,
+      prepared.filters!,
+    );
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.sql).toContain("FROM scope_final_visits");
   });
 
   it("normalizes sparse metric summary rows", async () => {
