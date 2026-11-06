@@ -271,7 +271,7 @@ function NotificationCard({
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
               {site ? (
                 <Link
-                  href={buildSitePath(locale, site.slug)}
+                  href={buildSitePath(site.slug)}
                   className="font-medium text-foreground/80 hover:text-foreground hover:underline"
                 >
                   {site.name}

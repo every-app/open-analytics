@@ -111,17 +111,6 @@ export function isSiteNavKey(value: string): value is SiteNavKey {
   return SITE_NAV_KEYS.has(value);
 }
 
-export function normalizeLocalePath(pathname: string): string {
-  const cleaned = pathname || "";
-  if (cleaned.length === 0) return "/app";
-  const withoutLocale =
-    cleaned.replace(/^\/(en|zh-tw|zh|ja)(?=\/|$)/, "") || "/app";
-  if (withoutLocale === "/") return "/app";
-  return withoutLocale.endsWith("/")
-    ? withoutLocale.slice(0, -1)
-    : withoutLocale;
-}
-
 export interface ShellRouteState {
   /** The site in the path, when on one of its pages. */
   siteSlug?: string;
@@ -136,19 +125,19 @@ export interface ShellRouteState {
 /** Where the shell is, from the path. */
 export function parseShellRouteState(pathname: string): ShellRouteState {
   const segments = pathname.split("/").filter((segment) => segment.length > 0);
-  const appIndex = segments.indexOf("app");
-  const local = appIndex >= 0 ? segments.slice(appIndex + 1) : [];
 
-  if (local[0] === "sites" && local[1]) {
-    const section = local[2] || "overview";
+  if (segments[0] === "sites" && segments[1]) {
+    const section = segments[2] || "overview";
     return {
-      siteSlug: local[1],
+      siteSlug: segments[1],
       siteSection: isSiteNavKey(section) ? section : undefined,
       usesDateRange: section !== "settings",
     };
   }
-  if (local.length === 0) return { orgPage: "all-sites", usesDateRange: true };
-  if (local[0] === "inbox") return { orgPage: "inbox", usesDateRange: false };
+  if (segments.length === 0)
+    return { orgPage: "all-sites", usesDateRange: true };
+  if (segments[0] === "inbox")
+    return { orgPage: "inbox", usesDateRange: false };
   // The organization's other pages all live under Settings, which charts
   // no period of the header's.
   return { orgPage: "settings", usesDateRange: false };

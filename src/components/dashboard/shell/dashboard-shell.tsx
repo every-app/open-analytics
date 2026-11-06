@@ -146,7 +146,6 @@ export function DashboardShell({
           label: siteNavLabel(key, messages),
           href: navHref(
             buildSitePath(
-              locale,
               routeState.siteSlug!,
               key === "overview" ? undefined : key,
             ),
@@ -205,7 +204,6 @@ export function DashboardShell({
       <AppShellLayout
         sidebar={
           <AppSidebar
-            locale={locale}
             messages={messages}
             routeState={routeState}
             sites={sites}
@@ -218,10 +216,7 @@ export function DashboardShell({
         mobileTopBar={
           <div className="flex shrink-0 items-center gap-1 border-b border-border bg-card px-2 py-1.5 md:hidden">
             <SidebarTrigger aria-label={messages.appNav.toggleSidebar} />
-            <Link
-              href={`/${locale}/app`}
-              className="ml-1 font-semibold text-foreground"
-            >
+            <Link href="/" className="ml-1 font-semibold text-foreground">
               {messages.appName}
             </Link>
           </div>
@@ -254,11 +249,7 @@ export function DashboardShell({
                       }
                       realtimeHref={
                         routeState.siteSlug
-                          ? buildSitePath(
-                              locale,
-                              routeState.siteSlug,
-                              "realtime",
-                            )
+                          ? buildSitePath(routeState.siteSlug, "realtime")
                           : undefined
                       }
                     />
@@ -288,9 +279,7 @@ export function DashboardShell({
               <FirstViewsBanner
                 messages={messages}
                 reportsHref={
-                  canManage
-                    ? buildSettingsPath(locale, "notifications")
-                    : undefined
+                  canManage ? buildSettingsPath("notifications") : undefined
                 }
                 inviteHref={
                   canManage

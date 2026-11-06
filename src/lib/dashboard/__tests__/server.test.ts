@@ -80,8 +80,8 @@ describe("dashboard server helpers", () => {
     expect(getSiteSlug(site({ id: "abcdef123456", domain: "" }))).toBe(
       "abcdef12",
     );
-    expect(buildSitePath("en", "docs-example-test", "events")).toBe(
-      "/en/app/sites/docs-example-test/events",
+    expect(buildSitePath("docs-example-test", "events")).toBe(
+      "/sites/docs-example-test/events",
     );
   });
 

@@ -36,7 +36,7 @@ const SHARE_TABS = [
 ] as const;
 
 function shareTabHref(locale: Locale, slug: string, key: string): string {
-  return sharePath(locale, slug, key === "overview" ? undefined : key);
+  return sharePath(slug, key === "overview" ? undefined : key);
 }
 
 export function ShareDashboardShell({

@@ -15,7 +15,6 @@ import { BellIcon, ChevronLeftIcon } from "lucide-react";
 
 import { SiteBrandIcon } from "@/components/dashboard/common/site-brand-icon";
 import { buildSitePath } from "@/lib/dashboard/paths";
-import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 import Link from "@/lib/router";
 
@@ -42,7 +41,6 @@ const GROUP_LABEL_CLASS =
  * (none before the first site), then Settings.
  */
 export function AppSidebar({
-  locale,
   messages,
   routeState,
   sites,
@@ -51,7 +49,6 @@ export function AppSidebar({
   unreadAttentionCount,
   gatewayUrl,
 }: {
-  locale: Locale;
   messages: AppMessages;
   routeState: ShellRouteState;
   sites: SidebarSite[];
@@ -68,14 +65,8 @@ export function AppSidebar({
   const siteItemHref = (key: SiteNavKey) =>
     siteSlug
       ? key === "settings"
-        ? buildSitePath(locale, siteSlug, "settings")
-        : navHref(
-            buildSitePath(
-              locale,
-              siteSlug,
-              key === "overview" ? undefined : key,
-            ),
-          )
+        ? buildSitePath(siteSlug, "settings")
+        : navHref(buildSitePath(siteSlug, key === "overview" ? undefined : key))
       : "";
 
   return (
@@ -91,14 +82,13 @@ export function AppSidebar({
           <span>{messages.sidebarHeader.everyApp}</span>
         </a>
         <Link
-          href={`/${locale}/app`}
+          href="/"
           onClick={closeMobile}
           className="px-1 pb-2 text-base font-semibold text-sidebar-foreground"
         >
           {messages.appName}
         </Link>
         <SiteSwitcher
-          locale={locale}
           messages={messages}
           sites={sites}
           activeSite={activeSite}
@@ -121,7 +111,7 @@ export function AppSidebar({
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarNavLink
-                    href={`/${locale}/app/inbox`}
+                    href="/inbox"
                     icon={BellIcon}
                     label={messages.appNav.inbox}
                     isActive={routeState.orgPage === "inbox"}
@@ -168,7 +158,7 @@ export function AppSidebar({
                           className={SIDEBAR_NAV_BUTTON_CLASS}
                         >
                           <Link
-                            href={navHref(buildSitePath(locale, site.slug))}
+                            href={navHref(buildSitePath(site.slug))}
                             onClick={closeMobile}
                           >
                             <SiteBrandIcon
@@ -191,7 +181,6 @@ export function AppSidebar({
       </VerticalScrollMask>
 
       <SidebarFootLinks
-        locale={locale}
         messages={messages}
         settingsActive={routeState.orgPage === "settings"}
         onNavigate={closeMobile}

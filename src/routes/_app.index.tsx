@@ -1,0 +1,45 @@
+import { createFileRoute } from "@tanstack/react-router";
+
+import { TeamManagementClient } from "@/components/dashboard/admin/team-management-client";
+import {
+  loadGetStarted,
+  loadTeamDashboardSnapshot,
+} from "@/lib/dashboard/route-data";
+import { dashboardPageTitle } from "@/lib/page-title";
+
+export const Route = createFileRoute("/_app/")({
+  beforeLoad: async ({ context }) => {
+    const [teamDashboardSnapshot, getStarted] = await Promise.all([
+      loadTeamDashboardSnapshot({
+        data: { teamId: context.teamContext.activeTeam.id },
+      }),
+      loadGetStarted(),
+    ]);
+    return { teamDashboardSnapshot, getStarted };
+  },
+  head: ({ match }) => ({
+    meta: [
+      {
+        title: dashboardPageTitle(
+          match.context.messages.teamManagement.sites.title,
+          match.context,
+        ),
+      },
+    ],
+  }),
+  component: TeamIndexPage,
+});
+
+function TeamIndexPage() {
+  const { locale, messages, teamContext, teamDashboardSnapshot } =
+    Route.useRouteContext();
+  return (
+    <TeamManagementClient
+      locale={locale}
+      messages={messages}
+      activeTeam={teamContext.activeTeam}
+      systemRole={teamContext.user.systemRole}
+      teamDashboardSnapshot={teamDashboardSnapshot}
+    />
+  );
+}

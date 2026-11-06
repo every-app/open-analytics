@@ -20,7 +20,6 @@ export function TeamManagementPageContent() {
     createSiteDialogOpen,
     dashboardSites,
     isPageDataLoading,
-    locale,
     messages,
     openCreateSiteDialog,
     setCreateSiteDialogOpen,
@@ -37,7 +36,6 @@ export function TeamManagementPageContent() {
     <CreateSiteDialog
       open={createSiteDialogOpen}
       onOpenChange={setCreateSiteDialogOpen}
-      locale={locale}
       messages={messages}
       teamId={activeTeam.id}
     />

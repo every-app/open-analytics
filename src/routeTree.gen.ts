@@ -9,833 +9,761 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as LocaleRouteImport } from './routes/$locale'
-import { Route as LocaleAppRouteImport } from './routes/$locale.app'
-import { Route as LocaleRuntimeConfigErrorRouteImport } from './routes/$locale.runtime-config-error'
-import { Route as LocaleAppIndexRouteImport } from './routes/$locale.app.index'
-import { Route as LocaleAppInboxRouteImport } from './routes/$locale.app.inbox'
-import { Route as LocaleAppSettingsRouteImport } from './routes/$locale.app.settings'
-import { Route as LocaleShareSlugRouteImport } from './routes/$locale.share.$slug'
-import { Route as LocaleAppSettingsIndexRouteImport } from './routes/$locale.app.settings.index'
-import { Route as LocaleAppSettingsAccountRouteImport } from './routes/$locale.app.settings.account'
-import { Route as LocaleAppSettingsNotificationsRouteImport } from './routes/$locale.app.settings.notifications'
-import { Route as LocaleAppSettingsSystemRouteImport } from './routes/$locale.app.settings.system'
-import { Route as LocaleAppSitesSiteSlugRouteImport } from './routes/$locale.app.sites.$siteSlug'
-import { Route as LocaleShareSlugIndexRouteImport } from './routes/$locale.share.$slug.index'
-import { Route as LocaleShareSlugCampaignsRouteImport } from './routes/$locale.share.$slug.campaigns'
-import { Route as LocaleShareSlugDevicesRouteImport } from './routes/$locale.share.$slug.devices'
-import { Route as LocaleShareSlugGeoRouteImport } from './routes/$locale.share.$slug.geo'
-import { Route as LocaleShareSlugPagesRouteImport } from './routes/$locale.share.$slug.pages'
-import { Route as LocaleShareSlugPerformanceRouteImport } from './routes/$locale.share.$slug.performance'
-import { Route as LocaleShareSlugReferrersRouteImport } from './routes/$locale.share.$slug.referrers'
-import { Route as LocaleShareSlugRetentionRouteImport } from './routes/$locale.share.$slug.retention'
-import { Route as LocaleAppSitesSiteSlugIndexRouteImport } from './routes/$locale.app.sites.$siteSlug.index'
-import { Route as LocaleAppSitesSiteSlugCampaignsRouteImport } from './routes/$locale.app.sites.$siteSlug.campaigns'
-import { Route as LocaleAppSitesSiteSlugDevicesRouteImport } from './routes/$locale.app.sites.$siteSlug.devices'
-import { Route as LocaleAppSitesSiteSlugEventsRouteImport } from './routes/$locale.app.sites.$siteSlug.events'
-import { Route as LocaleAppSitesSiteSlugFunnelsRouteImport } from './routes/$locale.app.sites.$siteSlug.funnels'
-import { Route as LocaleAppSitesSiteSlugGeoRouteImport } from './routes/$locale.app.sites.$siteSlug.geo'
-import { Route as LocaleAppSitesSiteSlugPagesRouteImport } from './routes/$locale.app.sites.$siteSlug.pages'
-import { Route as LocaleAppSitesSiteSlugPerformanceRouteImport } from './routes/$locale.app.sites.$siteSlug.performance'
-import { Route as LocaleAppSitesSiteSlugRealtimeRouteImport } from './routes/$locale.app.sites.$siteSlug.realtime'
-import { Route as LocaleAppSitesSiteSlugReferrersRouteImport } from './routes/$locale.app.sites.$siteSlug.referrers'
-import { Route as LocaleAppSitesSiteSlugRetentionRouteImport } from './routes/$locale.app.sites.$siteSlug.retention'
-import { Route as LocaleAppSitesSiteSlugSettingsRouteImport } from './routes/$locale.app.sites.$siteSlug.settings'
-import { Route as LocaleAppSitesSiteSlugVisitorsRouteImport } from './routes/$locale.app.sites.$siteSlug.visitors'
-import { Route as LocaleAppSitesSiteSlugEventsDetailRouteImport } from './routes/$locale.app.sites.$siteSlug.events_.detail'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as RuntimeConfigErrorRouteImport } from './routes/runtime-config-error'
+import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as AppInboxRouteImport } from './routes/_app.inbox'
+import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as ShareSlugRouteImport } from './routes/share.$slug'
+import { Route as AppSettingsIndexRouteImport } from './routes/_app.settings.index'
+import { Route as AppSettingsAccountRouteImport } from './routes/_app.settings.account'
+import { Route as AppSettingsNotificationsRouteImport } from './routes/_app.settings.notifications'
+import { Route as AppSettingsSystemRouteImport } from './routes/_app.settings.system'
+import { Route as AppSitesSiteSlugRouteImport } from './routes/_app.sites.$siteSlug'
+import { Route as ShareSlugIndexRouteImport } from './routes/share.$slug.index'
+import { Route as ShareSlugCampaignsRouteImport } from './routes/share.$slug.campaigns'
+import { Route as ShareSlugDevicesRouteImport } from './routes/share.$slug.devices'
+import { Route as ShareSlugGeoRouteImport } from './routes/share.$slug.geo'
+import { Route as ShareSlugPagesRouteImport } from './routes/share.$slug.pages'
+import { Route as ShareSlugPerformanceRouteImport } from './routes/share.$slug.performance'
+import { Route as ShareSlugReferrersRouteImport } from './routes/share.$slug.referrers'
+import { Route as ShareSlugRetentionRouteImport } from './routes/share.$slug.retention'
+import { Route as AppSitesSiteSlugIndexRouteImport } from './routes/_app.sites.$siteSlug.index'
+import { Route as AppSitesSiteSlugCampaignsRouteImport } from './routes/_app.sites.$siteSlug.campaigns'
+import { Route as AppSitesSiteSlugDevicesRouteImport } from './routes/_app.sites.$siteSlug.devices'
+import { Route as AppSitesSiteSlugEventsRouteImport } from './routes/_app.sites.$siteSlug.events'
+import { Route as AppSitesSiteSlugFunnelsRouteImport } from './routes/_app.sites.$siteSlug.funnels'
+import { Route as AppSitesSiteSlugGeoRouteImport } from './routes/_app.sites.$siteSlug.geo'
+import { Route as AppSitesSiteSlugPagesRouteImport } from './routes/_app.sites.$siteSlug.pages'
+import { Route as AppSitesSiteSlugPerformanceRouteImport } from './routes/_app.sites.$siteSlug.performance'
+import { Route as AppSitesSiteSlugRealtimeRouteImport } from './routes/_app.sites.$siteSlug.realtime'
+import { Route as AppSitesSiteSlugReferrersRouteImport } from './routes/_app.sites.$siteSlug.referrers'
+import { Route as AppSitesSiteSlugRetentionRouteImport } from './routes/_app.sites.$siteSlug.retention'
+import { Route as AppSitesSiteSlugSettingsRouteImport } from './routes/_app.sites.$siteSlug.settings'
+import { Route as AppSitesSiteSlugVisitorsRouteImport } from './routes/_app.sites.$siteSlug.visitors'
+import { Route as AppSitesSiteSlugEventsDetailRouteImport } from './routes/_app.sites.$siteSlug.events_.detail'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LocaleRoute = LocaleRouteImport.update({
-  id: '/$locale',
-  path: '/$locale',
+const RuntimeConfigErrorRoute = RuntimeConfigErrorRouteImport.update({
+  id: '/runtime-config-error',
+  path: '/runtime-config-error',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LocaleAppRoute = LocaleAppRouteImport.update({
-  id: '/app',
-  path: '/app',
-  getParentRoute: () => LocaleRoute,
-} as any)
-const LocaleRuntimeConfigErrorRoute =
-  LocaleRuntimeConfigErrorRouteImport.update({
-    id: '/runtime-config-error',
-    path: '/runtime-config-error',
-    getParentRoute: () => LocaleRoute,
-  } as any)
-const LocaleAppIndexRoute = LocaleAppIndexRouteImport.update({
+const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => LocaleAppRoute,
+  getParentRoute: () => AppRoute,
 } as any)
-const LocaleAppInboxRoute = LocaleAppInboxRouteImport.update({
+const AppInboxRoute = AppInboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
-  getParentRoute: () => LocaleAppRoute,
+  getParentRoute: () => AppRoute,
 } as any)
-const LocaleAppSettingsRoute = LocaleAppSettingsRouteImport.update({
+const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => LocaleAppRoute,
+  getParentRoute: () => AppRoute,
 } as any)
-const LocaleShareSlugRoute = LocaleShareSlugRouteImport.update({
+const ShareSlugRoute = ShareSlugRouteImport.update({
   id: '/share/$slug',
   path: '/share/$slug',
-  getParentRoute: () => LocaleRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-const LocaleAppSettingsIndexRoute = LocaleAppSettingsIndexRouteImport.update({
+const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => LocaleAppSettingsRoute,
+  getParentRoute: () => AppSettingsRoute,
 } as any)
-const LocaleAppSettingsAccountRoute =
-  LocaleAppSettingsAccountRouteImport.update({
-    id: '/account',
-    path: '/account',
-    getParentRoute: () => LocaleAppSettingsRoute,
-  } as any)
-const LocaleAppSettingsNotificationsRoute =
-  LocaleAppSettingsNotificationsRouteImport.update({
+const AppSettingsAccountRoute = AppSettingsAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsNotificationsRoute =
+  AppSettingsNotificationsRouteImport.update({
     id: '/notifications',
     path: '/notifications',
-    getParentRoute: () => LocaleAppSettingsRoute,
+    getParentRoute: () => AppSettingsRoute,
   } as any)
-const LocaleAppSettingsSystemRoute = LocaleAppSettingsSystemRouteImport.update({
+const AppSettingsSystemRoute = AppSettingsSystemRouteImport.update({
   id: '/system',
   path: '/system',
-  getParentRoute: () => LocaleAppSettingsRoute,
+  getParentRoute: () => AppSettingsRoute,
 } as any)
-const LocaleAppSitesSiteSlugRoute = LocaleAppSitesSiteSlugRouteImport.update({
+const AppSitesSiteSlugRoute = AppSitesSiteSlugRouteImport.update({
   id: '/sites/$siteSlug',
   path: '/sites/$siteSlug',
-  getParentRoute: () => LocaleAppRoute,
+  getParentRoute: () => AppRoute,
 } as any)
-const LocaleShareSlugIndexRoute = LocaleShareSlugIndexRouteImport.update({
+const ShareSlugIndexRoute = ShareSlugIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => LocaleShareSlugRoute,
+  getParentRoute: () => ShareSlugRoute,
 } as any)
-const LocaleShareSlugCampaignsRoute =
-  LocaleShareSlugCampaignsRouteImport.update({
-    id: '/campaigns',
-    path: '/campaigns',
-    getParentRoute: () => LocaleShareSlugRoute,
-  } as any)
-const LocaleShareSlugDevicesRoute = LocaleShareSlugDevicesRouteImport.update({
+const ShareSlugCampaignsRoute = ShareSlugCampaignsRouteImport.update({
+  id: '/campaigns',
+  path: '/campaigns',
+  getParentRoute: () => ShareSlugRoute,
+} as any)
+const ShareSlugDevicesRoute = ShareSlugDevicesRouteImport.update({
   id: '/devices',
   path: '/devices',
-  getParentRoute: () => LocaleShareSlugRoute,
+  getParentRoute: () => ShareSlugRoute,
 } as any)
-const LocaleShareSlugGeoRoute = LocaleShareSlugGeoRouteImport.update({
+const ShareSlugGeoRoute = ShareSlugGeoRouteImport.update({
   id: '/geo',
   path: '/geo',
-  getParentRoute: () => LocaleShareSlugRoute,
+  getParentRoute: () => ShareSlugRoute,
 } as any)
-const LocaleShareSlugPagesRoute = LocaleShareSlugPagesRouteImport.update({
+const ShareSlugPagesRoute = ShareSlugPagesRouteImport.update({
   id: '/pages',
   path: '/pages',
-  getParentRoute: () => LocaleShareSlugRoute,
+  getParentRoute: () => ShareSlugRoute,
 } as any)
-const LocaleShareSlugPerformanceRoute =
-  LocaleShareSlugPerformanceRouteImport.update({
-    id: '/performance',
-    path: '/performance',
-    getParentRoute: () => LocaleShareSlugRoute,
-  } as any)
-const LocaleShareSlugReferrersRoute =
-  LocaleShareSlugReferrersRouteImport.update({
-    id: '/referrers',
-    path: '/referrers',
-    getParentRoute: () => LocaleShareSlugRoute,
-  } as any)
-const LocaleShareSlugRetentionRoute =
-  LocaleShareSlugRetentionRouteImport.update({
-    id: '/retention',
-    path: '/retention',
-    getParentRoute: () => LocaleShareSlugRoute,
-  } as any)
-const LocaleAppSitesSiteSlugIndexRoute =
-  LocaleAppSitesSiteSlugIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => LocaleAppSitesSiteSlugRoute,
-  } as any)
-const LocaleAppSitesSiteSlugCampaignsRoute =
-  LocaleAppSitesSiteSlugCampaignsRouteImport.update({
+const ShareSlugPerformanceRoute = ShareSlugPerformanceRouteImport.update({
+  id: '/performance',
+  path: '/performance',
+  getParentRoute: () => ShareSlugRoute,
+} as any)
+const ShareSlugReferrersRoute = ShareSlugReferrersRouteImport.update({
+  id: '/referrers',
+  path: '/referrers',
+  getParentRoute: () => ShareSlugRoute,
+} as any)
+const ShareSlugRetentionRoute = ShareSlugRetentionRouteImport.update({
+  id: '/retention',
+  path: '/retention',
+  getParentRoute: () => ShareSlugRoute,
+} as any)
+const AppSitesSiteSlugIndexRoute = AppSitesSiteSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppSitesSiteSlugRoute,
+} as any)
+const AppSitesSiteSlugCampaignsRoute =
+  AppSitesSiteSlugCampaignsRouteImport.update({
     id: '/campaigns',
     path: '/campaigns',
-    getParentRoute: () => LocaleAppSitesSiteSlugRoute,
+    getParentRoute: () => AppSitesSiteSlugRoute,
   } as any)
-const LocaleAppSitesSiteSlugDevicesRoute =
-  LocaleAppSitesSiteSlugDevicesRouteImport.update({
-    id: '/devices',
-    path: '/devices',
-    getParentRoute: () => LocaleAppSitesSiteSlugRoute,
-  } as any)
-const LocaleAppSitesSiteSlugEventsRoute =
-  LocaleAppSitesSiteSlugEventsRouteImport.update({
-    id: '/events',
-    path: '/events',
-    getParentRoute: () => LocaleAppSitesSiteSlugRoute,
-  } as any)
-const LocaleAppSitesSiteSlugFunnelsRoute =
-  LocaleAppSitesSiteSlugFunnelsRouteImport.update({
-    id: '/funnels',
-    path: '/funnels',
-    getParentRoute: () => LocaleAppSitesSiteSlugRoute,
-  } as any)
-const LocaleAppSitesSiteSlugGeoRoute =
-  LocaleAppSitesSiteSlugGeoRouteImport.update({
-    id: '/geo',
-    path: '/geo',
-    getParentRoute: () => LocaleAppSitesSiteSlugRoute,
-  } as any)
-const LocaleAppSitesSiteSlugPagesRoute =
-  LocaleAppSitesSiteSlugPagesRouteImport.update({
-    id: '/pages',
-    path: '/pages',
-    getParentRoute: () => LocaleAppSitesSiteSlugRoute,
-  } as any)
-const LocaleAppSitesSiteSlugPerformanceRoute =
-  LocaleAppSitesSiteSlugPerformanceRouteImport.update({
+const AppSitesSiteSlugDevicesRoute = AppSitesSiteSlugDevicesRouteImport.update({
+  id: '/devices',
+  path: '/devices',
+  getParentRoute: () => AppSitesSiteSlugRoute,
+} as any)
+const AppSitesSiteSlugEventsRoute = AppSitesSiteSlugEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => AppSitesSiteSlugRoute,
+} as any)
+const AppSitesSiteSlugFunnelsRoute = AppSitesSiteSlugFunnelsRouteImport.update({
+  id: '/funnels',
+  path: '/funnels',
+  getParentRoute: () => AppSitesSiteSlugRoute,
+} as any)
+const AppSitesSiteSlugGeoRoute = AppSitesSiteSlugGeoRouteImport.update({
+  id: '/geo',
+  path: '/geo',
+  getParentRoute: () => AppSitesSiteSlugRoute,
+} as any)
+const AppSitesSiteSlugPagesRoute = AppSitesSiteSlugPagesRouteImport.update({
+  id: '/pages',
+  path: '/pages',
+  getParentRoute: () => AppSitesSiteSlugRoute,
+} as any)
+const AppSitesSiteSlugPerformanceRoute =
+  AppSitesSiteSlugPerformanceRouteImport.update({
     id: '/performance',
     path: '/performance',
-    getParentRoute: () => LocaleAppSitesSiteSlugRoute,
+    getParentRoute: () => AppSitesSiteSlugRoute,
   } as any)
-const LocaleAppSitesSiteSlugRealtimeRoute =
-  LocaleAppSitesSiteSlugRealtimeRouteImport.update({
+const AppSitesSiteSlugRealtimeRoute =
+  AppSitesSiteSlugRealtimeRouteImport.update({
     id: '/realtime',
     path: '/realtime',
-    getParentRoute: () => LocaleAppSitesSiteSlugRoute,
+    getParentRoute: () => AppSitesSiteSlugRoute,
   } as any)
-const LocaleAppSitesSiteSlugReferrersRoute =
-  LocaleAppSitesSiteSlugReferrersRouteImport.update({
+const AppSitesSiteSlugReferrersRoute =
+  AppSitesSiteSlugReferrersRouteImport.update({
     id: '/referrers',
     path: '/referrers',
-    getParentRoute: () => LocaleAppSitesSiteSlugRoute,
+    getParentRoute: () => AppSitesSiteSlugRoute,
   } as any)
-const LocaleAppSitesSiteSlugRetentionRoute =
-  LocaleAppSitesSiteSlugRetentionRouteImport.update({
+const AppSitesSiteSlugRetentionRoute =
+  AppSitesSiteSlugRetentionRouteImport.update({
     id: '/retention',
     path: '/retention',
-    getParentRoute: () => LocaleAppSitesSiteSlugRoute,
+    getParentRoute: () => AppSitesSiteSlugRoute,
   } as any)
-const LocaleAppSitesSiteSlugSettingsRoute =
-  LocaleAppSitesSiteSlugSettingsRouteImport.update({
+const AppSitesSiteSlugSettingsRoute =
+  AppSitesSiteSlugSettingsRouteImport.update({
     id: '/settings',
     path: '/settings',
-    getParentRoute: () => LocaleAppSitesSiteSlugRoute,
+    getParentRoute: () => AppSitesSiteSlugRoute,
   } as any)
-const LocaleAppSitesSiteSlugVisitorsRoute =
-  LocaleAppSitesSiteSlugVisitorsRouteImport.update({
+const AppSitesSiteSlugVisitorsRoute =
+  AppSitesSiteSlugVisitorsRouteImport.update({
     id: '/visitors',
     path: '/visitors',
-    getParentRoute: () => LocaleAppSitesSiteSlugRoute,
+    getParentRoute: () => AppSitesSiteSlugRoute,
   } as any)
-const LocaleAppSitesSiteSlugEventsDetailRoute =
-  LocaleAppSitesSiteSlugEventsDetailRouteImport.update({
+const AppSitesSiteSlugEventsDetailRoute =
+  AppSitesSiteSlugEventsDetailRouteImport.update({
     id: '/events_/detail',
     path: '/events/detail',
-    getParentRoute: () => LocaleAppSitesSiteSlugRoute,
+    getParentRoute: () => AppSitesSiteSlugRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/$locale': typeof LocaleRouteWithChildren
-  '/$locale/app': typeof LocaleAppRouteWithChildren
-  '/$locale/runtime-config-error': typeof LocaleRuntimeConfigErrorRoute
-  '/$locale/app/inbox': typeof LocaleAppInboxRoute
-  '/$locale/app/settings': typeof LocaleAppSettingsRouteWithChildren
-  '/$locale/share/$slug': typeof LocaleShareSlugRouteWithChildren
-  '/$locale/app/': typeof LocaleAppIndexRoute
-  '/$locale/app/settings/account': typeof LocaleAppSettingsAccountRoute
-  '/$locale/app/settings/notifications': typeof LocaleAppSettingsNotificationsRoute
-  '/$locale/app/settings/system': typeof LocaleAppSettingsSystemRoute
-  '/$locale/app/sites/$siteSlug': typeof LocaleAppSitesSiteSlugRouteWithChildren
-  '/$locale/share/$slug/campaigns': typeof LocaleShareSlugCampaignsRoute
-  '/$locale/share/$slug/devices': typeof LocaleShareSlugDevicesRoute
-  '/$locale/share/$slug/geo': typeof LocaleShareSlugGeoRoute
-  '/$locale/share/$slug/pages': typeof LocaleShareSlugPagesRoute
-  '/$locale/share/$slug/performance': typeof LocaleShareSlugPerformanceRoute
-  '/$locale/share/$slug/referrers': typeof LocaleShareSlugReferrersRoute
-  '/$locale/share/$slug/retention': typeof LocaleShareSlugRetentionRoute
-  '/$locale/app/settings/': typeof LocaleAppSettingsIndexRoute
-  '/$locale/share/$slug/': typeof LocaleShareSlugIndexRoute
-  '/$locale/app/sites/$siteSlug/campaigns': typeof LocaleAppSitesSiteSlugCampaignsRoute
-  '/$locale/app/sites/$siteSlug/devices': typeof LocaleAppSitesSiteSlugDevicesRoute
-  '/$locale/app/sites/$siteSlug/events': typeof LocaleAppSitesSiteSlugEventsRoute
-  '/$locale/app/sites/$siteSlug/funnels': typeof LocaleAppSitesSiteSlugFunnelsRoute
-  '/$locale/app/sites/$siteSlug/geo': typeof LocaleAppSitesSiteSlugGeoRoute
-  '/$locale/app/sites/$siteSlug/pages': typeof LocaleAppSitesSiteSlugPagesRoute
-  '/$locale/app/sites/$siteSlug/performance': typeof LocaleAppSitesSiteSlugPerformanceRoute
-  '/$locale/app/sites/$siteSlug/realtime': typeof LocaleAppSitesSiteSlugRealtimeRoute
-  '/$locale/app/sites/$siteSlug/referrers': typeof LocaleAppSitesSiteSlugReferrersRoute
-  '/$locale/app/sites/$siteSlug/retention': typeof LocaleAppSitesSiteSlugRetentionRoute
-  '/$locale/app/sites/$siteSlug/settings': typeof LocaleAppSitesSiteSlugSettingsRoute
-  '/$locale/app/sites/$siteSlug/visitors': typeof LocaleAppSitesSiteSlugVisitorsRoute
-  '/$locale/app/sites/$siteSlug/': typeof LocaleAppSitesSiteSlugIndexRoute
-  '/$locale/app/sites/$siteSlug/events/detail': typeof LocaleAppSitesSiteSlugEventsDetailRoute
+  '/': typeof AppIndexRoute
+  '/runtime-config-error': typeof RuntimeConfigErrorRoute
+  '/inbox': typeof AppInboxRoute
+  '/settings': typeof AppSettingsRouteWithChildren
+  '/share/$slug': typeof ShareSlugRouteWithChildren
+  '/settings/account': typeof AppSettingsAccountRoute
+  '/settings/notifications': typeof AppSettingsNotificationsRoute
+  '/settings/system': typeof AppSettingsSystemRoute
+  '/sites/$siteSlug': typeof AppSitesSiteSlugRouteWithChildren
+  '/share/$slug/campaigns': typeof ShareSlugCampaignsRoute
+  '/share/$slug/devices': typeof ShareSlugDevicesRoute
+  '/share/$slug/geo': typeof ShareSlugGeoRoute
+  '/share/$slug/pages': typeof ShareSlugPagesRoute
+  '/share/$slug/performance': typeof ShareSlugPerformanceRoute
+  '/share/$slug/referrers': typeof ShareSlugReferrersRoute
+  '/share/$slug/retention': typeof ShareSlugRetentionRoute
+  '/settings/': typeof AppSettingsIndexRoute
+  '/share/$slug/': typeof ShareSlugIndexRoute
+  '/sites/$siteSlug/campaigns': typeof AppSitesSiteSlugCampaignsRoute
+  '/sites/$siteSlug/devices': typeof AppSitesSiteSlugDevicesRoute
+  '/sites/$siteSlug/events': typeof AppSitesSiteSlugEventsRoute
+  '/sites/$siteSlug/funnels': typeof AppSitesSiteSlugFunnelsRoute
+  '/sites/$siteSlug/geo': typeof AppSitesSiteSlugGeoRoute
+  '/sites/$siteSlug/pages': typeof AppSitesSiteSlugPagesRoute
+  '/sites/$siteSlug/performance': typeof AppSitesSiteSlugPerformanceRoute
+  '/sites/$siteSlug/realtime': typeof AppSitesSiteSlugRealtimeRoute
+  '/sites/$siteSlug/referrers': typeof AppSitesSiteSlugReferrersRoute
+  '/sites/$siteSlug/retention': typeof AppSitesSiteSlugRetentionRoute
+  '/sites/$siteSlug/settings': typeof AppSitesSiteSlugSettingsRoute
+  '/sites/$siteSlug/visitors': typeof AppSitesSiteSlugVisitorsRoute
+  '/sites/$siteSlug/': typeof AppSitesSiteSlugIndexRoute
+  '/sites/$siteSlug/events/detail': typeof AppSitesSiteSlugEventsDetailRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/$locale': typeof LocaleRouteWithChildren
-  '/$locale/runtime-config-error': typeof LocaleRuntimeConfigErrorRoute
-  '/$locale/app/inbox': typeof LocaleAppInboxRoute
-  '/$locale/app': typeof LocaleAppIndexRoute
-  '/$locale/app/settings/account': typeof LocaleAppSettingsAccountRoute
-  '/$locale/app/settings/notifications': typeof LocaleAppSettingsNotificationsRoute
-  '/$locale/app/settings/system': typeof LocaleAppSettingsSystemRoute
-  '/$locale/share/$slug/campaigns': typeof LocaleShareSlugCampaignsRoute
-  '/$locale/share/$slug/devices': typeof LocaleShareSlugDevicesRoute
-  '/$locale/share/$slug/geo': typeof LocaleShareSlugGeoRoute
-  '/$locale/share/$slug/pages': typeof LocaleShareSlugPagesRoute
-  '/$locale/share/$slug/performance': typeof LocaleShareSlugPerformanceRoute
-  '/$locale/share/$slug/referrers': typeof LocaleShareSlugReferrersRoute
-  '/$locale/share/$slug/retention': typeof LocaleShareSlugRetentionRoute
-  '/$locale/app/settings': typeof LocaleAppSettingsIndexRoute
-  '/$locale/share/$slug': typeof LocaleShareSlugIndexRoute
-  '/$locale/app/sites/$siteSlug/campaigns': typeof LocaleAppSitesSiteSlugCampaignsRoute
-  '/$locale/app/sites/$siteSlug/devices': typeof LocaleAppSitesSiteSlugDevicesRoute
-  '/$locale/app/sites/$siteSlug/events': typeof LocaleAppSitesSiteSlugEventsRoute
-  '/$locale/app/sites/$siteSlug/funnels': typeof LocaleAppSitesSiteSlugFunnelsRoute
-  '/$locale/app/sites/$siteSlug/geo': typeof LocaleAppSitesSiteSlugGeoRoute
-  '/$locale/app/sites/$siteSlug/pages': typeof LocaleAppSitesSiteSlugPagesRoute
-  '/$locale/app/sites/$siteSlug/performance': typeof LocaleAppSitesSiteSlugPerformanceRoute
-  '/$locale/app/sites/$siteSlug/realtime': typeof LocaleAppSitesSiteSlugRealtimeRoute
-  '/$locale/app/sites/$siteSlug/referrers': typeof LocaleAppSitesSiteSlugReferrersRoute
-  '/$locale/app/sites/$siteSlug/retention': typeof LocaleAppSitesSiteSlugRetentionRoute
-  '/$locale/app/sites/$siteSlug/settings': typeof LocaleAppSitesSiteSlugSettingsRoute
-  '/$locale/app/sites/$siteSlug/visitors': typeof LocaleAppSitesSiteSlugVisitorsRoute
-  '/$locale/app/sites/$siteSlug': typeof LocaleAppSitesSiteSlugIndexRoute
-  '/$locale/app/sites/$siteSlug/events/detail': typeof LocaleAppSitesSiteSlugEventsDetailRoute
+  '/runtime-config-error': typeof RuntimeConfigErrorRoute
+  '/inbox': typeof AppInboxRoute
+  '/': typeof AppIndexRoute
+  '/settings/account': typeof AppSettingsAccountRoute
+  '/settings/notifications': typeof AppSettingsNotificationsRoute
+  '/settings/system': typeof AppSettingsSystemRoute
+  '/share/$slug/campaigns': typeof ShareSlugCampaignsRoute
+  '/share/$slug/devices': typeof ShareSlugDevicesRoute
+  '/share/$slug/geo': typeof ShareSlugGeoRoute
+  '/share/$slug/pages': typeof ShareSlugPagesRoute
+  '/share/$slug/performance': typeof ShareSlugPerformanceRoute
+  '/share/$slug/referrers': typeof ShareSlugReferrersRoute
+  '/share/$slug/retention': typeof ShareSlugRetentionRoute
+  '/settings': typeof AppSettingsIndexRoute
+  '/share/$slug': typeof ShareSlugIndexRoute
+  '/sites/$siteSlug/campaigns': typeof AppSitesSiteSlugCampaignsRoute
+  '/sites/$siteSlug/devices': typeof AppSitesSiteSlugDevicesRoute
+  '/sites/$siteSlug/events': typeof AppSitesSiteSlugEventsRoute
+  '/sites/$siteSlug/funnels': typeof AppSitesSiteSlugFunnelsRoute
+  '/sites/$siteSlug/geo': typeof AppSitesSiteSlugGeoRoute
+  '/sites/$siteSlug/pages': typeof AppSitesSiteSlugPagesRoute
+  '/sites/$siteSlug/performance': typeof AppSitesSiteSlugPerformanceRoute
+  '/sites/$siteSlug/realtime': typeof AppSitesSiteSlugRealtimeRoute
+  '/sites/$siteSlug/referrers': typeof AppSitesSiteSlugReferrersRoute
+  '/sites/$siteSlug/retention': typeof AppSitesSiteSlugRetentionRoute
+  '/sites/$siteSlug/settings': typeof AppSitesSiteSlugSettingsRoute
+  '/sites/$siteSlug/visitors': typeof AppSitesSiteSlugVisitorsRoute
+  '/sites/$siteSlug': typeof AppSitesSiteSlugIndexRoute
+  '/sites/$siteSlug/events/detail': typeof AppSitesSiteSlugEventsDetailRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/$locale': typeof LocaleRouteWithChildren
-  '/$locale/app': typeof LocaleAppRouteWithChildren
-  '/$locale/runtime-config-error': typeof LocaleRuntimeConfigErrorRoute
-  '/$locale/app/inbox': typeof LocaleAppInboxRoute
-  '/$locale/app/settings': typeof LocaleAppSettingsRouteWithChildren
-  '/$locale/share/$slug': typeof LocaleShareSlugRouteWithChildren
-  '/$locale/app/': typeof LocaleAppIndexRoute
-  '/$locale/app/settings/account': typeof LocaleAppSettingsAccountRoute
-  '/$locale/app/settings/notifications': typeof LocaleAppSettingsNotificationsRoute
-  '/$locale/app/settings/system': typeof LocaleAppSettingsSystemRoute
-  '/$locale/app/sites/$siteSlug': typeof LocaleAppSitesSiteSlugRouteWithChildren
-  '/$locale/share/$slug/campaigns': typeof LocaleShareSlugCampaignsRoute
-  '/$locale/share/$slug/devices': typeof LocaleShareSlugDevicesRoute
-  '/$locale/share/$slug/geo': typeof LocaleShareSlugGeoRoute
-  '/$locale/share/$slug/pages': typeof LocaleShareSlugPagesRoute
-  '/$locale/share/$slug/performance': typeof LocaleShareSlugPerformanceRoute
-  '/$locale/share/$slug/referrers': typeof LocaleShareSlugReferrersRoute
-  '/$locale/share/$slug/retention': typeof LocaleShareSlugRetentionRoute
-  '/$locale/app/settings/': typeof LocaleAppSettingsIndexRoute
-  '/$locale/share/$slug/': typeof LocaleShareSlugIndexRoute
-  '/$locale/app/sites/$siteSlug/campaigns': typeof LocaleAppSitesSiteSlugCampaignsRoute
-  '/$locale/app/sites/$siteSlug/devices': typeof LocaleAppSitesSiteSlugDevicesRoute
-  '/$locale/app/sites/$siteSlug/events': typeof LocaleAppSitesSiteSlugEventsRoute
-  '/$locale/app/sites/$siteSlug/funnels': typeof LocaleAppSitesSiteSlugFunnelsRoute
-  '/$locale/app/sites/$siteSlug/geo': typeof LocaleAppSitesSiteSlugGeoRoute
-  '/$locale/app/sites/$siteSlug/pages': typeof LocaleAppSitesSiteSlugPagesRoute
-  '/$locale/app/sites/$siteSlug/performance': typeof LocaleAppSitesSiteSlugPerformanceRoute
-  '/$locale/app/sites/$siteSlug/realtime': typeof LocaleAppSitesSiteSlugRealtimeRoute
-  '/$locale/app/sites/$siteSlug/referrers': typeof LocaleAppSitesSiteSlugReferrersRoute
-  '/$locale/app/sites/$siteSlug/retention': typeof LocaleAppSitesSiteSlugRetentionRoute
-  '/$locale/app/sites/$siteSlug/settings': typeof LocaleAppSitesSiteSlugSettingsRoute
-  '/$locale/app/sites/$siteSlug/visitors': typeof LocaleAppSitesSiteSlugVisitorsRoute
-  '/$locale/app/sites/$siteSlug/': typeof LocaleAppSitesSiteSlugIndexRoute
-  '/$locale/app/sites/$siteSlug/events_/detail': typeof LocaleAppSitesSiteSlugEventsDetailRoute
+  '/_app': typeof AppRouteWithChildren
+  '/runtime-config-error': typeof RuntimeConfigErrorRoute
+  '/_app/inbox': typeof AppInboxRoute
+  '/_app/settings': typeof AppSettingsRouteWithChildren
+  '/share/$slug': typeof ShareSlugRouteWithChildren
+  '/_app/': typeof AppIndexRoute
+  '/_app/settings/account': typeof AppSettingsAccountRoute
+  '/_app/settings/notifications': typeof AppSettingsNotificationsRoute
+  '/_app/settings/system': typeof AppSettingsSystemRoute
+  '/_app/sites/$siteSlug': typeof AppSitesSiteSlugRouteWithChildren
+  '/share/$slug/campaigns': typeof ShareSlugCampaignsRoute
+  '/share/$slug/devices': typeof ShareSlugDevicesRoute
+  '/share/$slug/geo': typeof ShareSlugGeoRoute
+  '/share/$slug/pages': typeof ShareSlugPagesRoute
+  '/share/$slug/performance': typeof ShareSlugPerformanceRoute
+  '/share/$slug/referrers': typeof ShareSlugReferrersRoute
+  '/share/$slug/retention': typeof ShareSlugRetentionRoute
+  '/_app/settings/': typeof AppSettingsIndexRoute
+  '/share/$slug/': typeof ShareSlugIndexRoute
+  '/_app/sites/$siteSlug/campaigns': typeof AppSitesSiteSlugCampaignsRoute
+  '/_app/sites/$siteSlug/devices': typeof AppSitesSiteSlugDevicesRoute
+  '/_app/sites/$siteSlug/events': typeof AppSitesSiteSlugEventsRoute
+  '/_app/sites/$siteSlug/funnels': typeof AppSitesSiteSlugFunnelsRoute
+  '/_app/sites/$siteSlug/geo': typeof AppSitesSiteSlugGeoRoute
+  '/_app/sites/$siteSlug/pages': typeof AppSitesSiteSlugPagesRoute
+  '/_app/sites/$siteSlug/performance': typeof AppSitesSiteSlugPerformanceRoute
+  '/_app/sites/$siteSlug/realtime': typeof AppSitesSiteSlugRealtimeRoute
+  '/_app/sites/$siteSlug/referrers': typeof AppSitesSiteSlugReferrersRoute
+  '/_app/sites/$siteSlug/retention': typeof AppSitesSiteSlugRetentionRoute
+  '/_app/sites/$siteSlug/settings': typeof AppSitesSiteSlugSettingsRoute
+  '/_app/sites/$siteSlug/visitors': typeof AppSitesSiteSlugVisitorsRoute
+  '/_app/sites/$siteSlug/': typeof AppSitesSiteSlugIndexRoute
+  '/_app/sites/$siteSlug/events_/detail': typeof AppSitesSiteSlugEventsDetailRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/$locale'
-    | '/$locale/app'
-    | '/$locale/runtime-config-error'
-    | '/$locale/app/inbox'
-    | '/$locale/app/settings'
-    | '/$locale/share/$slug'
-    | '/$locale/app/'
-    | '/$locale/app/settings/account'
-    | '/$locale/app/settings/notifications'
-    | '/$locale/app/settings/system'
-    | '/$locale/app/sites/$siteSlug'
-    | '/$locale/share/$slug/campaigns'
-    | '/$locale/share/$slug/devices'
-    | '/$locale/share/$slug/geo'
-    | '/$locale/share/$slug/pages'
-    | '/$locale/share/$slug/performance'
-    | '/$locale/share/$slug/referrers'
-    | '/$locale/share/$slug/retention'
-    | '/$locale/app/settings/'
-    | '/$locale/share/$slug/'
-    | '/$locale/app/sites/$siteSlug/campaigns'
-    | '/$locale/app/sites/$siteSlug/devices'
-    | '/$locale/app/sites/$siteSlug/events'
-    | '/$locale/app/sites/$siteSlug/funnels'
-    | '/$locale/app/sites/$siteSlug/geo'
-    | '/$locale/app/sites/$siteSlug/pages'
-    | '/$locale/app/sites/$siteSlug/performance'
-    | '/$locale/app/sites/$siteSlug/realtime'
-    | '/$locale/app/sites/$siteSlug/referrers'
-    | '/$locale/app/sites/$siteSlug/retention'
-    | '/$locale/app/sites/$siteSlug/settings'
-    | '/$locale/app/sites/$siteSlug/visitors'
-    | '/$locale/app/sites/$siteSlug/'
-    | '/$locale/app/sites/$siteSlug/events/detail'
+    | '/runtime-config-error'
+    | '/inbox'
+    | '/settings'
+    | '/share/$slug'
+    | '/settings/account'
+    | '/settings/notifications'
+    | '/settings/system'
+    | '/sites/$siteSlug'
+    | '/share/$slug/campaigns'
+    | '/share/$slug/devices'
+    | '/share/$slug/geo'
+    | '/share/$slug/pages'
+    | '/share/$slug/performance'
+    | '/share/$slug/referrers'
+    | '/share/$slug/retention'
+    | '/settings/'
+    | '/share/$slug/'
+    | '/sites/$siteSlug/campaigns'
+    | '/sites/$siteSlug/devices'
+    | '/sites/$siteSlug/events'
+    | '/sites/$siteSlug/funnels'
+    | '/sites/$siteSlug/geo'
+    | '/sites/$siteSlug/pages'
+    | '/sites/$siteSlug/performance'
+    | '/sites/$siteSlug/realtime'
+    | '/sites/$siteSlug/referrers'
+    | '/sites/$siteSlug/retention'
+    | '/sites/$siteSlug/settings'
+    | '/sites/$siteSlug/visitors'
+    | '/sites/$siteSlug/'
+    | '/sites/$siteSlug/events/detail'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/runtime-config-error'
+    | '/inbox'
     | '/'
-    | '/$locale'
-    | '/$locale/runtime-config-error'
-    | '/$locale/app/inbox'
-    | '/$locale/app'
-    | '/$locale/app/settings/account'
-    | '/$locale/app/settings/notifications'
-    | '/$locale/app/settings/system'
-    | '/$locale/share/$slug/campaigns'
-    | '/$locale/share/$slug/devices'
-    | '/$locale/share/$slug/geo'
-    | '/$locale/share/$slug/pages'
-    | '/$locale/share/$slug/performance'
-    | '/$locale/share/$slug/referrers'
-    | '/$locale/share/$slug/retention'
-    | '/$locale/app/settings'
-    | '/$locale/share/$slug'
-    | '/$locale/app/sites/$siteSlug/campaigns'
-    | '/$locale/app/sites/$siteSlug/devices'
-    | '/$locale/app/sites/$siteSlug/events'
-    | '/$locale/app/sites/$siteSlug/funnels'
-    | '/$locale/app/sites/$siteSlug/geo'
-    | '/$locale/app/sites/$siteSlug/pages'
-    | '/$locale/app/sites/$siteSlug/performance'
-    | '/$locale/app/sites/$siteSlug/realtime'
-    | '/$locale/app/sites/$siteSlug/referrers'
-    | '/$locale/app/sites/$siteSlug/retention'
-    | '/$locale/app/sites/$siteSlug/settings'
-    | '/$locale/app/sites/$siteSlug/visitors'
-    | '/$locale/app/sites/$siteSlug'
-    | '/$locale/app/sites/$siteSlug/events/detail'
+    | '/settings/account'
+    | '/settings/notifications'
+    | '/settings/system'
+    | '/share/$slug/campaigns'
+    | '/share/$slug/devices'
+    | '/share/$slug/geo'
+    | '/share/$slug/pages'
+    | '/share/$slug/performance'
+    | '/share/$slug/referrers'
+    | '/share/$slug/retention'
+    | '/settings'
+    | '/share/$slug'
+    | '/sites/$siteSlug/campaigns'
+    | '/sites/$siteSlug/devices'
+    | '/sites/$siteSlug/events'
+    | '/sites/$siteSlug/funnels'
+    | '/sites/$siteSlug/geo'
+    | '/sites/$siteSlug/pages'
+    | '/sites/$siteSlug/performance'
+    | '/sites/$siteSlug/realtime'
+    | '/sites/$siteSlug/referrers'
+    | '/sites/$siteSlug/retention'
+    | '/sites/$siteSlug/settings'
+    | '/sites/$siteSlug/visitors'
+    | '/sites/$siteSlug'
+    | '/sites/$siteSlug/events/detail'
   id:
     | '__root__'
-    | '/'
-    | '/$locale'
-    | '/$locale/app'
-    | '/$locale/runtime-config-error'
-    | '/$locale/app/inbox'
-    | '/$locale/app/settings'
-    | '/$locale/share/$slug'
-    | '/$locale/app/'
-    | '/$locale/app/settings/account'
-    | '/$locale/app/settings/notifications'
-    | '/$locale/app/settings/system'
-    | '/$locale/app/sites/$siteSlug'
-    | '/$locale/share/$slug/campaigns'
-    | '/$locale/share/$slug/devices'
-    | '/$locale/share/$slug/geo'
-    | '/$locale/share/$slug/pages'
-    | '/$locale/share/$slug/performance'
-    | '/$locale/share/$slug/referrers'
-    | '/$locale/share/$slug/retention'
-    | '/$locale/app/settings/'
-    | '/$locale/share/$slug/'
-    | '/$locale/app/sites/$siteSlug/campaigns'
-    | '/$locale/app/sites/$siteSlug/devices'
-    | '/$locale/app/sites/$siteSlug/events'
-    | '/$locale/app/sites/$siteSlug/funnels'
-    | '/$locale/app/sites/$siteSlug/geo'
-    | '/$locale/app/sites/$siteSlug/pages'
-    | '/$locale/app/sites/$siteSlug/performance'
-    | '/$locale/app/sites/$siteSlug/realtime'
-    | '/$locale/app/sites/$siteSlug/referrers'
-    | '/$locale/app/sites/$siteSlug/retention'
-    | '/$locale/app/sites/$siteSlug/settings'
-    | '/$locale/app/sites/$siteSlug/visitors'
-    | '/$locale/app/sites/$siteSlug/'
-    | '/$locale/app/sites/$siteSlug/events_/detail'
+    | '/_app'
+    | '/runtime-config-error'
+    | '/_app/inbox'
+    | '/_app/settings'
+    | '/share/$slug'
+    | '/_app/'
+    | '/_app/settings/account'
+    | '/_app/settings/notifications'
+    | '/_app/settings/system'
+    | '/_app/sites/$siteSlug'
+    | '/share/$slug/campaigns'
+    | '/share/$slug/devices'
+    | '/share/$slug/geo'
+    | '/share/$slug/pages'
+    | '/share/$slug/performance'
+    | '/share/$slug/referrers'
+    | '/share/$slug/retention'
+    | '/_app/settings/'
+    | '/share/$slug/'
+    | '/_app/sites/$siteSlug/campaigns'
+    | '/_app/sites/$siteSlug/devices'
+    | '/_app/sites/$siteSlug/events'
+    | '/_app/sites/$siteSlug/funnels'
+    | '/_app/sites/$siteSlug/geo'
+    | '/_app/sites/$siteSlug/pages'
+    | '/_app/sites/$siteSlug/performance'
+    | '/_app/sites/$siteSlug/realtime'
+    | '/_app/sites/$siteSlug/referrers'
+    | '/_app/sites/$siteSlug/retention'
+    | '/_app/sites/$siteSlug/settings'
+    | '/_app/sites/$siteSlug/visitors'
+    | '/_app/sites/$siteSlug/'
+    | '/_app/sites/$siteSlug/events_/detail'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  LocaleRoute: typeof LocaleRouteWithChildren
+  AppRoute: typeof AppRouteWithChildren
+  RuntimeConfigErrorRoute: typeof RuntimeConfigErrorRoute
+  ShareSlugRoute: typeof ShareSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/runtime-config-error': {
+      id: '/runtime-config-error'
+      path: '/runtime-config-error'
+      fullPath: '/runtime-config-error'
+      preLoaderRoute: typeof RuntimeConfigErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/': {
+      id: '/_app/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/$locale': {
-      id: '/$locale'
-      path: '/$locale'
-      fullPath: '/$locale'
-      preLoaderRoute: typeof LocaleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$locale/app': {
-      id: '/$locale/app'
-      path: '/app'
-      fullPath: '/$locale/app'
-      preLoaderRoute: typeof LocaleAppRouteImport
-      parentRoute: typeof LocaleRoute
-    }
-    '/$locale/runtime-config-error': {
-      id: '/$locale/runtime-config-error'
-      path: '/runtime-config-error'
-      fullPath: '/$locale/runtime-config-error'
-      preLoaderRoute: typeof LocaleRuntimeConfigErrorRouteImport
-      parentRoute: typeof LocaleRoute
-    }
-    '/$locale/app/': {
-      id: '/$locale/app/'
-      path: '/'
-      fullPath: '/$locale/app/'
-      preLoaderRoute: typeof LocaleAppIndexRouteImport
-      parentRoute: typeof LocaleAppRoute
-    }
-    '/$locale/app/inbox': {
-      id: '/$locale/app/inbox'
+    '/_app/inbox': {
+      id: '/_app/inbox'
       path: '/inbox'
-      fullPath: '/$locale/app/inbox'
-      preLoaderRoute: typeof LocaleAppInboxRouteImport
-      parentRoute: typeof LocaleAppRoute
+      fullPath: '/inbox'
+      preLoaderRoute: typeof AppInboxRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/$locale/app/settings': {
-      id: '/$locale/app/settings'
+    '/_app/settings': {
+      id: '/_app/settings'
       path: '/settings'
-      fullPath: '/$locale/app/settings'
-      preLoaderRoute: typeof LocaleAppSettingsRouteImport
-      parentRoute: typeof LocaleAppRoute
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/$locale/share/$slug': {
-      id: '/$locale/share/$slug'
+    '/share/$slug': {
+      id: '/share/$slug'
       path: '/share/$slug'
-      fullPath: '/$locale/share/$slug'
-      preLoaderRoute: typeof LocaleShareSlugRouteImport
-      parentRoute: typeof LocaleRoute
+      fullPath: '/share/$slug'
+      preLoaderRoute: typeof ShareSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/$locale/app/settings/': {
-      id: '/$locale/app/settings/'
+    '/_app/settings/': {
+      id: '/_app/settings/'
       path: '/'
-      fullPath: '/$locale/app/settings/'
-      preLoaderRoute: typeof LocaleAppSettingsIndexRouteImport
-      parentRoute: typeof LocaleAppSettingsRoute
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AppSettingsIndexRouteImport
+      parentRoute: typeof AppSettingsRoute
     }
-    '/$locale/app/settings/account': {
-      id: '/$locale/app/settings/account'
+    '/_app/settings/account': {
+      id: '/_app/settings/account'
       path: '/account'
-      fullPath: '/$locale/app/settings/account'
-      preLoaderRoute: typeof LocaleAppSettingsAccountRouteImport
-      parentRoute: typeof LocaleAppSettingsRoute
+      fullPath: '/settings/account'
+      preLoaderRoute: typeof AppSettingsAccountRouteImport
+      parentRoute: typeof AppSettingsRoute
     }
-    '/$locale/app/settings/notifications': {
-      id: '/$locale/app/settings/notifications'
+    '/_app/settings/notifications': {
+      id: '/_app/settings/notifications'
       path: '/notifications'
-      fullPath: '/$locale/app/settings/notifications'
-      preLoaderRoute: typeof LocaleAppSettingsNotificationsRouteImport
-      parentRoute: typeof LocaleAppSettingsRoute
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof AppSettingsNotificationsRouteImport
+      parentRoute: typeof AppSettingsRoute
     }
-    '/$locale/app/settings/system': {
-      id: '/$locale/app/settings/system'
+    '/_app/settings/system': {
+      id: '/_app/settings/system'
       path: '/system'
-      fullPath: '/$locale/app/settings/system'
-      preLoaderRoute: typeof LocaleAppSettingsSystemRouteImport
-      parentRoute: typeof LocaleAppSettingsRoute
+      fullPath: '/settings/system'
+      preLoaderRoute: typeof AppSettingsSystemRouteImport
+      parentRoute: typeof AppSettingsRoute
     }
-    '/$locale/app/sites/$siteSlug': {
-      id: '/$locale/app/sites/$siteSlug'
+    '/_app/sites/$siteSlug': {
+      id: '/_app/sites/$siteSlug'
       path: '/sites/$siteSlug'
-      fullPath: '/$locale/app/sites/$siteSlug'
-      preLoaderRoute: typeof LocaleAppSitesSiteSlugRouteImport
-      parentRoute: typeof LocaleAppRoute
+      fullPath: '/sites/$siteSlug'
+      preLoaderRoute: typeof AppSitesSiteSlugRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/$locale/share/$slug/': {
-      id: '/$locale/share/$slug/'
+    '/share/$slug/': {
+      id: '/share/$slug/'
       path: '/'
-      fullPath: '/$locale/share/$slug/'
-      preLoaderRoute: typeof LocaleShareSlugIndexRouteImport
-      parentRoute: typeof LocaleShareSlugRoute
+      fullPath: '/share/$slug/'
+      preLoaderRoute: typeof ShareSlugIndexRouteImport
+      parentRoute: typeof ShareSlugRoute
     }
-    '/$locale/share/$slug/campaigns': {
-      id: '/$locale/share/$slug/campaigns'
+    '/share/$slug/campaigns': {
+      id: '/share/$slug/campaigns'
       path: '/campaigns'
-      fullPath: '/$locale/share/$slug/campaigns'
-      preLoaderRoute: typeof LocaleShareSlugCampaignsRouteImport
-      parentRoute: typeof LocaleShareSlugRoute
+      fullPath: '/share/$slug/campaigns'
+      preLoaderRoute: typeof ShareSlugCampaignsRouteImport
+      parentRoute: typeof ShareSlugRoute
     }
-    '/$locale/share/$slug/devices': {
-      id: '/$locale/share/$slug/devices'
+    '/share/$slug/devices': {
+      id: '/share/$slug/devices'
       path: '/devices'
-      fullPath: '/$locale/share/$slug/devices'
-      preLoaderRoute: typeof LocaleShareSlugDevicesRouteImport
-      parentRoute: typeof LocaleShareSlugRoute
+      fullPath: '/share/$slug/devices'
+      preLoaderRoute: typeof ShareSlugDevicesRouteImport
+      parentRoute: typeof ShareSlugRoute
     }
-    '/$locale/share/$slug/geo': {
-      id: '/$locale/share/$slug/geo'
+    '/share/$slug/geo': {
+      id: '/share/$slug/geo'
       path: '/geo'
-      fullPath: '/$locale/share/$slug/geo'
-      preLoaderRoute: typeof LocaleShareSlugGeoRouteImport
-      parentRoute: typeof LocaleShareSlugRoute
+      fullPath: '/share/$slug/geo'
+      preLoaderRoute: typeof ShareSlugGeoRouteImport
+      parentRoute: typeof ShareSlugRoute
     }
-    '/$locale/share/$slug/pages': {
-      id: '/$locale/share/$slug/pages'
+    '/share/$slug/pages': {
+      id: '/share/$slug/pages'
       path: '/pages'
-      fullPath: '/$locale/share/$slug/pages'
-      preLoaderRoute: typeof LocaleShareSlugPagesRouteImport
-      parentRoute: typeof LocaleShareSlugRoute
+      fullPath: '/share/$slug/pages'
+      preLoaderRoute: typeof ShareSlugPagesRouteImport
+      parentRoute: typeof ShareSlugRoute
     }
-    '/$locale/share/$slug/performance': {
-      id: '/$locale/share/$slug/performance'
+    '/share/$slug/performance': {
+      id: '/share/$slug/performance'
       path: '/performance'
-      fullPath: '/$locale/share/$slug/performance'
-      preLoaderRoute: typeof LocaleShareSlugPerformanceRouteImport
-      parentRoute: typeof LocaleShareSlugRoute
+      fullPath: '/share/$slug/performance'
+      preLoaderRoute: typeof ShareSlugPerformanceRouteImport
+      parentRoute: typeof ShareSlugRoute
     }
-    '/$locale/share/$slug/referrers': {
-      id: '/$locale/share/$slug/referrers'
+    '/share/$slug/referrers': {
+      id: '/share/$slug/referrers'
       path: '/referrers'
-      fullPath: '/$locale/share/$slug/referrers'
-      preLoaderRoute: typeof LocaleShareSlugReferrersRouteImport
-      parentRoute: typeof LocaleShareSlugRoute
+      fullPath: '/share/$slug/referrers'
+      preLoaderRoute: typeof ShareSlugReferrersRouteImport
+      parentRoute: typeof ShareSlugRoute
     }
-    '/$locale/share/$slug/retention': {
-      id: '/$locale/share/$slug/retention'
+    '/share/$slug/retention': {
+      id: '/share/$slug/retention'
       path: '/retention'
-      fullPath: '/$locale/share/$slug/retention'
-      preLoaderRoute: typeof LocaleShareSlugRetentionRouteImport
-      parentRoute: typeof LocaleShareSlugRoute
+      fullPath: '/share/$slug/retention'
+      preLoaderRoute: typeof ShareSlugRetentionRouteImport
+      parentRoute: typeof ShareSlugRoute
     }
-    '/$locale/app/sites/$siteSlug/': {
-      id: '/$locale/app/sites/$siteSlug/'
+    '/_app/sites/$siteSlug/': {
+      id: '/_app/sites/$siteSlug/'
       path: '/'
-      fullPath: '/$locale/app/sites/$siteSlug/'
-      preLoaderRoute: typeof LocaleAppSitesSiteSlugIndexRouteImport
-      parentRoute: typeof LocaleAppSitesSiteSlugRoute
+      fullPath: '/sites/$siteSlug/'
+      preLoaderRoute: typeof AppSitesSiteSlugIndexRouteImport
+      parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/$locale/app/sites/$siteSlug/campaigns': {
-      id: '/$locale/app/sites/$siteSlug/campaigns'
+    '/_app/sites/$siteSlug/campaigns': {
+      id: '/_app/sites/$siteSlug/campaigns'
       path: '/campaigns'
-      fullPath: '/$locale/app/sites/$siteSlug/campaigns'
-      preLoaderRoute: typeof LocaleAppSitesSiteSlugCampaignsRouteImport
-      parentRoute: typeof LocaleAppSitesSiteSlugRoute
+      fullPath: '/sites/$siteSlug/campaigns'
+      preLoaderRoute: typeof AppSitesSiteSlugCampaignsRouteImport
+      parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/$locale/app/sites/$siteSlug/devices': {
-      id: '/$locale/app/sites/$siteSlug/devices'
+    '/_app/sites/$siteSlug/devices': {
+      id: '/_app/sites/$siteSlug/devices'
       path: '/devices'
-      fullPath: '/$locale/app/sites/$siteSlug/devices'
-      preLoaderRoute: typeof LocaleAppSitesSiteSlugDevicesRouteImport
-      parentRoute: typeof LocaleAppSitesSiteSlugRoute
+      fullPath: '/sites/$siteSlug/devices'
+      preLoaderRoute: typeof AppSitesSiteSlugDevicesRouteImport
+      parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/$locale/app/sites/$siteSlug/events': {
-      id: '/$locale/app/sites/$siteSlug/events'
+    '/_app/sites/$siteSlug/events': {
+      id: '/_app/sites/$siteSlug/events'
       path: '/events'
-      fullPath: '/$locale/app/sites/$siteSlug/events'
-      preLoaderRoute: typeof LocaleAppSitesSiteSlugEventsRouteImport
-      parentRoute: typeof LocaleAppSitesSiteSlugRoute
+      fullPath: '/sites/$siteSlug/events'
+      preLoaderRoute: typeof AppSitesSiteSlugEventsRouteImport
+      parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/$locale/app/sites/$siteSlug/funnels': {
-      id: '/$locale/app/sites/$siteSlug/funnels'
+    '/_app/sites/$siteSlug/funnels': {
+      id: '/_app/sites/$siteSlug/funnels'
       path: '/funnels'
-      fullPath: '/$locale/app/sites/$siteSlug/funnels'
-      preLoaderRoute: typeof LocaleAppSitesSiteSlugFunnelsRouteImport
-      parentRoute: typeof LocaleAppSitesSiteSlugRoute
+      fullPath: '/sites/$siteSlug/funnels'
+      preLoaderRoute: typeof AppSitesSiteSlugFunnelsRouteImport
+      parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/$locale/app/sites/$siteSlug/geo': {
-      id: '/$locale/app/sites/$siteSlug/geo'
+    '/_app/sites/$siteSlug/geo': {
+      id: '/_app/sites/$siteSlug/geo'
       path: '/geo'
-      fullPath: '/$locale/app/sites/$siteSlug/geo'
-      preLoaderRoute: typeof LocaleAppSitesSiteSlugGeoRouteImport
-      parentRoute: typeof LocaleAppSitesSiteSlugRoute
+      fullPath: '/sites/$siteSlug/geo'
+      preLoaderRoute: typeof AppSitesSiteSlugGeoRouteImport
+      parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/$locale/app/sites/$siteSlug/pages': {
-      id: '/$locale/app/sites/$siteSlug/pages'
+    '/_app/sites/$siteSlug/pages': {
+      id: '/_app/sites/$siteSlug/pages'
       path: '/pages'
-      fullPath: '/$locale/app/sites/$siteSlug/pages'
-      preLoaderRoute: typeof LocaleAppSitesSiteSlugPagesRouteImport
-      parentRoute: typeof LocaleAppSitesSiteSlugRoute
+      fullPath: '/sites/$siteSlug/pages'
+      preLoaderRoute: typeof AppSitesSiteSlugPagesRouteImport
+      parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/$locale/app/sites/$siteSlug/performance': {
-      id: '/$locale/app/sites/$siteSlug/performance'
+    '/_app/sites/$siteSlug/performance': {
+      id: '/_app/sites/$siteSlug/performance'
       path: '/performance'
-      fullPath: '/$locale/app/sites/$siteSlug/performance'
-      preLoaderRoute: typeof LocaleAppSitesSiteSlugPerformanceRouteImport
-      parentRoute: typeof LocaleAppSitesSiteSlugRoute
+      fullPath: '/sites/$siteSlug/performance'
+      preLoaderRoute: typeof AppSitesSiteSlugPerformanceRouteImport
+      parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/$locale/app/sites/$siteSlug/realtime': {
-      id: '/$locale/app/sites/$siteSlug/realtime'
+    '/_app/sites/$siteSlug/realtime': {
+      id: '/_app/sites/$siteSlug/realtime'
       path: '/realtime'
-      fullPath: '/$locale/app/sites/$siteSlug/realtime'
-      preLoaderRoute: typeof LocaleAppSitesSiteSlugRealtimeRouteImport
-      parentRoute: typeof LocaleAppSitesSiteSlugRoute
+      fullPath: '/sites/$siteSlug/realtime'
+      preLoaderRoute: typeof AppSitesSiteSlugRealtimeRouteImport
+      parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/$locale/app/sites/$siteSlug/referrers': {
-      id: '/$locale/app/sites/$siteSlug/referrers'
+    '/_app/sites/$siteSlug/referrers': {
+      id: '/_app/sites/$siteSlug/referrers'
       path: '/referrers'
-      fullPath: '/$locale/app/sites/$siteSlug/referrers'
-      preLoaderRoute: typeof LocaleAppSitesSiteSlugReferrersRouteImport
-      parentRoute: typeof LocaleAppSitesSiteSlugRoute
+      fullPath: '/sites/$siteSlug/referrers'
+      preLoaderRoute: typeof AppSitesSiteSlugReferrersRouteImport
+      parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/$locale/app/sites/$siteSlug/retention': {
-      id: '/$locale/app/sites/$siteSlug/retention'
+    '/_app/sites/$siteSlug/retention': {
+      id: '/_app/sites/$siteSlug/retention'
       path: '/retention'
-      fullPath: '/$locale/app/sites/$siteSlug/retention'
-      preLoaderRoute: typeof LocaleAppSitesSiteSlugRetentionRouteImport
-      parentRoute: typeof LocaleAppSitesSiteSlugRoute
+      fullPath: '/sites/$siteSlug/retention'
+      preLoaderRoute: typeof AppSitesSiteSlugRetentionRouteImport
+      parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/$locale/app/sites/$siteSlug/settings': {
-      id: '/$locale/app/sites/$siteSlug/settings'
+    '/_app/sites/$siteSlug/settings': {
+      id: '/_app/sites/$siteSlug/settings'
       path: '/settings'
-      fullPath: '/$locale/app/sites/$siteSlug/settings'
-      preLoaderRoute: typeof LocaleAppSitesSiteSlugSettingsRouteImport
-      parentRoute: typeof LocaleAppSitesSiteSlugRoute
+      fullPath: '/sites/$siteSlug/settings'
+      preLoaderRoute: typeof AppSitesSiteSlugSettingsRouteImport
+      parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/$locale/app/sites/$siteSlug/visitors': {
-      id: '/$locale/app/sites/$siteSlug/visitors'
+    '/_app/sites/$siteSlug/visitors': {
+      id: '/_app/sites/$siteSlug/visitors'
       path: '/visitors'
-      fullPath: '/$locale/app/sites/$siteSlug/visitors'
-      preLoaderRoute: typeof LocaleAppSitesSiteSlugVisitorsRouteImport
-      parentRoute: typeof LocaleAppSitesSiteSlugRoute
+      fullPath: '/sites/$siteSlug/visitors'
+      preLoaderRoute: typeof AppSitesSiteSlugVisitorsRouteImport
+      parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/$locale/app/sites/$siteSlug/events_/detail': {
-      id: '/$locale/app/sites/$siteSlug/events_/detail'
+    '/_app/sites/$siteSlug/events_/detail': {
+      id: '/_app/sites/$siteSlug/events_/detail'
       path: '/events/detail'
-      fullPath: '/$locale/app/sites/$siteSlug/events/detail'
-      preLoaderRoute: typeof LocaleAppSitesSiteSlugEventsDetailRouteImport
-      parentRoute: typeof LocaleAppSitesSiteSlugRoute
+      fullPath: '/sites/$siteSlug/events/detail'
+      preLoaderRoute: typeof AppSitesSiteSlugEventsDetailRouteImport
+      parentRoute: typeof AppSitesSiteSlugRoute
     }
   }
 }
 
-interface LocaleAppSettingsRouteChildren {
-  LocaleAppSettingsAccountRoute: typeof LocaleAppSettingsAccountRoute
-  LocaleAppSettingsNotificationsRoute: typeof LocaleAppSettingsNotificationsRoute
-  LocaleAppSettingsSystemRoute: typeof LocaleAppSettingsSystemRoute
-  LocaleAppSettingsIndexRoute: typeof LocaleAppSettingsIndexRoute
+interface AppSettingsRouteChildren {
+  AppSettingsAccountRoute: typeof AppSettingsAccountRoute
+  AppSettingsNotificationsRoute: typeof AppSettingsNotificationsRoute
+  AppSettingsSystemRoute: typeof AppSettingsSystemRoute
+  AppSettingsIndexRoute: typeof AppSettingsIndexRoute
 }
 
-const LocaleAppSettingsRouteChildren: LocaleAppSettingsRouteChildren = {
-  LocaleAppSettingsAccountRoute: LocaleAppSettingsAccountRoute,
-  LocaleAppSettingsNotificationsRoute: LocaleAppSettingsNotificationsRoute,
-  LocaleAppSettingsSystemRoute: LocaleAppSettingsSystemRoute,
-  LocaleAppSettingsIndexRoute: LocaleAppSettingsIndexRoute,
+const AppSettingsRouteChildren: AppSettingsRouteChildren = {
+  AppSettingsAccountRoute: AppSettingsAccountRoute,
+  AppSettingsNotificationsRoute: AppSettingsNotificationsRoute,
+  AppSettingsSystemRoute: AppSettingsSystemRoute,
+  AppSettingsIndexRoute: AppSettingsIndexRoute,
 }
 
-const LocaleAppSettingsRouteWithChildren =
-  LocaleAppSettingsRoute._addFileChildren(LocaleAppSettingsRouteChildren)
-
-interface LocaleAppSitesSiteSlugRouteChildren {
-  LocaleAppSitesSiteSlugCampaignsRoute: typeof LocaleAppSitesSiteSlugCampaignsRoute
-  LocaleAppSitesSiteSlugDevicesRoute: typeof LocaleAppSitesSiteSlugDevicesRoute
-  LocaleAppSitesSiteSlugEventsRoute: typeof LocaleAppSitesSiteSlugEventsRoute
-  LocaleAppSitesSiteSlugFunnelsRoute: typeof LocaleAppSitesSiteSlugFunnelsRoute
-  LocaleAppSitesSiteSlugGeoRoute: typeof LocaleAppSitesSiteSlugGeoRoute
-  LocaleAppSitesSiteSlugPagesRoute: typeof LocaleAppSitesSiteSlugPagesRoute
-  LocaleAppSitesSiteSlugPerformanceRoute: typeof LocaleAppSitesSiteSlugPerformanceRoute
-  LocaleAppSitesSiteSlugRealtimeRoute: typeof LocaleAppSitesSiteSlugRealtimeRoute
-  LocaleAppSitesSiteSlugReferrersRoute: typeof LocaleAppSitesSiteSlugReferrersRoute
-  LocaleAppSitesSiteSlugRetentionRoute: typeof LocaleAppSitesSiteSlugRetentionRoute
-  LocaleAppSitesSiteSlugSettingsRoute: typeof LocaleAppSitesSiteSlugSettingsRoute
-  LocaleAppSitesSiteSlugVisitorsRoute: typeof LocaleAppSitesSiteSlugVisitorsRoute
-  LocaleAppSitesSiteSlugIndexRoute: typeof LocaleAppSitesSiteSlugIndexRoute
-  LocaleAppSitesSiteSlugEventsDetailRoute: typeof LocaleAppSitesSiteSlugEventsDetailRoute
-}
-
-const LocaleAppSitesSiteSlugRouteChildren: LocaleAppSitesSiteSlugRouteChildren =
-  {
-    LocaleAppSitesSiteSlugCampaignsRoute: LocaleAppSitesSiteSlugCampaignsRoute,
-    LocaleAppSitesSiteSlugDevicesRoute: LocaleAppSitesSiteSlugDevicesRoute,
-    LocaleAppSitesSiteSlugEventsRoute: LocaleAppSitesSiteSlugEventsRoute,
-    LocaleAppSitesSiteSlugFunnelsRoute: LocaleAppSitesSiteSlugFunnelsRoute,
-    LocaleAppSitesSiteSlugGeoRoute: LocaleAppSitesSiteSlugGeoRoute,
-    LocaleAppSitesSiteSlugPagesRoute: LocaleAppSitesSiteSlugPagesRoute,
-    LocaleAppSitesSiteSlugPerformanceRoute:
-      LocaleAppSitesSiteSlugPerformanceRoute,
-    LocaleAppSitesSiteSlugRealtimeRoute: LocaleAppSitesSiteSlugRealtimeRoute,
-    LocaleAppSitesSiteSlugReferrersRoute: LocaleAppSitesSiteSlugReferrersRoute,
-    LocaleAppSitesSiteSlugRetentionRoute: LocaleAppSitesSiteSlugRetentionRoute,
-    LocaleAppSitesSiteSlugSettingsRoute: LocaleAppSitesSiteSlugSettingsRoute,
-    LocaleAppSitesSiteSlugVisitorsRoute: LocaleAppSitesSiteSlugVisitorsRoute,
-    LocaleAppSitesSiteSlugIndexRoute: LocaleAppSitesSiteSlugIndexRoute,
-    LocaleAppSitesSiteSlugEventsDetailRoute:
-      LocaleAppSitesSiteSlugEventsDetailRoute,
-  }
-
-const LocaleAppSitesSiteSlugRouteWithChildren =
-  LocaleAppSitesSiteSlugRoute._addFileChildren(
-    LocaleAppSitesSiteSlugRouteChildren,
-  )
-
-interface LocaleAppRouteChildren {
-  LocaleAppInboxRoute: typeof LocaleAppInboxRoute
-  LocaleAppSettingsRoute: typeof LocaleAppSettingsRouteWithChildren
-  LocaleAppIndexRoute: typeof LocaleAppIndexRoute
-  LocaleAppSitesSiteSlugRoute: typeof LocaleAppSitesSiteSlugRouteWithChildren
-}
-
-const LocaleAppRouteChildren: LocaleAppRouteChildren = {
-  LocaleAppInboxRoute: LocaleAppInboxRoute,
-  LocaleAppSettingsRoute: LocaleAppSettingsRouteWithChildren,
-  LocaleAppIndexRoute: LocaleAppIndexRoute,
-  LocaleAppSitesSiteSlugRoute: LocaleAppSitesSiteSlugRouteWithChildren,
-}
-
-const LocaleAppRouteWithChildren = LocaleAppRoute._addFileChildren(
-  LocaleAppRouteChildren,
+const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
+  AppSettingsRouteChildren,
 )
 
-interface LocaleShareSlugRouteChildren {
-  LocaleShareSlugCampaignsRoute: typeof LocaleShareSlugCampaignsRoute
-  LocaleShareSlugDevicesRoute: typeof LocaleShareSlugDevicesRoute
-  LocaleShareSlugGeoRoute: typeof LocaleShareSlugGeoRoute
-  LocaleShareSlugPagesRoute: typeof LocaleShareSlugPagesRoute
-  LocaleShareSlugPerformanceRoute: typeof LocaleShareSlugPerformanceRoute
-  LocaleShareSlugReferrersRoute: typeof LocaleShareSlugReferrersRoute
-  LocaleShareSlugRetentionRoute: typeof LocaleShareSlugRetentionRoute
-  LocaleShareSlugIndexRoute: typeof LocaleShareSlugIndexRoute
+interface AppSitesSiteSlugRouteChildren {
+  AppSitesSiteSlugCampaignsRoute: typeof AppSitesSiteSlugCampaignsRoute
+  AppSitesSiteSlugDevicesRoute: typeof AppSitesSiteSlugDevicesRoute
+  AppSitesSiteSlugEventsRoute: typeof AppSitesSiteSlugEventsRoute
+  AppSitesSiteSlugFunnelsRoute: typeof AppSitesSiteSlugFunnelsRoute
+  AppSitesSiteSlugGeoRoute: typeof AppSitesSiteSlugGeoRoute
+  AppSitesSiteSlugPagesRoute: typeof AppSitesSiteSlugPagesRoute
+  AppSitesSiteSlugPerformanceRoute: typeof AppSitesSiteSlugPerformanceRoute
+  AppSitesSiteSlugRealtimeRoute: typeof AppSitesSiteSlugRealtimeRoute
+  AppSitesSiteSlugReferrersRoute: typeof AppSitesSiteSlugReferrersRoute
+  AppSitesSiteSlugRetentionRoute: typeof AppSitesSiteSlugRetentionRoute
+  AppSitesSiteSlugSettingsRoute: typeof AppSitesSiteSlugSettingsRoute
+  AppSitesSiteSlugVisitorsRoute: typeof AppSitesSiteSlugVisitorsRoute
+  AppSitesSiteSlugIndexRoute: typeof AppSitesSiteSlugIndexRoute
+  AppSitesSiteSlugEventsDetailRoute: typeof AppSitesSiteSlugEventsDetailRoute
 }
 
-const LocaleShareSlugRouteChildren: LocaleShareSlugRouteChildren = {
-  LocaleShareSlugCampaignsRoute: LocaleShareSlugCampaignsRoute,
-  LocaleShareSlugDevicesRoute: LocaleShareSlugDevicesRoute,
-  LocaleShareSlugGeoRoute: LocaleShareSlugGeoRoute,
-  LocaleShareSlugPagesRoute: LocaleShareSlugPagesRoute,
-  LocaleShareSlugPerformanceRoute: LocaleShareSlugPerformanceRoute,
-  LocaleShareSlugReferrersRoute: LocaleShareSlugReferrersRoute,
-  LocaleShareSlugRetentionRoute: LocaleShareSlugRetentionRoute,
-  LocaleShareSlugIndexRoute: LocaleShareSlugIndexRoute,
+const AppSitesSiteSlugRouteChildren: AppSitesSiteSlugRouteChildren = {
+  AppSitesSiteSlugCampaignsRoute: AppSitesSiteSlugCampaignsRoute,
+  AppSitesSiteSlugDevicesRoute: AppSitesSiteSlugDevicesRoute,
+  AppSitesSiteSlugEventsRoute: AppSitesSiteSlugEventsRoute,
+  AppSitesSiteSlugFunnelsRoute: AppSitesSiteSlugFunnelsRoute,
+  AppSitesSiteSlugGeoRoute: AppSitesSiteSlugGeoRoute,
+  AppSitesSiteSlugPagesRoute: AppSitesSiteSlugPagesRoute,
+  AppSitesSiteSlugPerformanceRoute: AppSitesSiteSlugPerformanceRoute,
+  AppSitesSiteSlugRealtimeRoute: AppSitesSiteSlugRealtimeRoute,
+  AppSitesSiteSlugReferrersRoute: AppSitesSiteSlugReferrersRoute,
+  AppSitesSiteSlugRetentionRoute: AppSitesSiteSlugRetentionRoute,
+  AppSitesSiteSlugSettingsRoute: AppSitesSiteSlugSettingsRoute,
+  AppSitesSiteSlugVisitorsRoute: AppSitesSiteSlugVisitorsRoute,
+  AppSitesSiteSlugIndexRoute: AppSitesSiteSlugIndexRoute,
+  AppSitesSiteSlugEventsDetailRoute: AppSitesSiteSlugEventsDetailRoute,
 }
 
-const LocaleShareSlugRouteWithChildren = LocaleShareSlugRoute._addFileChildren(
-  LocaleShareSlugRouteChildren,
+const AppSitesSiteSlugRouteWithChildren =
+  AppSitesSiteSlugRoute._addFileChildren(AppSitesSiteSlugRouteChildren)
+
+interface AppRouteChildren {
+  AppInboxRoute: typeof AppInboxRoute
+  AppSettingsRoute: typeof AppSettingsRouteWithChildren
+  AppIndexRoute: typeof AppIndexRoute
+  AppSitesSiteSlugRoute: typeof AppSitesSiteSlugRouteWithChildren
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppInboxRoute: AppInboxRoute,
+  AppSettingsRoute: AppSettingsRouteWithChildren,
+  AppIndexRoute: AppIndexRoute,
+  AppSitesSiteSlugRoute: AppSitesSiteSlugRouteWithChildren,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
+interface ShareSlugRouteChildren {
+  ShareSlugCampaignsRoute: typeof ShareSlugCampaignsRoute
+  ShareSlugDevicesRoute: typeof ShareSlugDevicesRoute
+  ShareSlugGeoRoute: typeof ShareSlugGeoRoute
+  ShareSlugPagesRoute: typeof ShareSlugPagesRoute
+  ShareSlugPerformanceRoute: typeof ShareSlugPerformanceRoute
+  ShareSlugReferrersRoute: typeof ShareSlugReferrersRoute
+  ShareSlugRetentionRoute: typeof ShareSlugRetentionRoute
+  ShareSlugIndexRoute: typeof ShareSlugIndexRoute
+}
+
+const ShareSlugRouteChildren: ShareSlugRouteChildren = {
+  ShareSlugCampaignsRoute: ShareSlugCampaignsRoute,
+  ShareSlugDevicesRoute: ShareSlugDevicesRoute,
+  ShareSlugGeoRoute: ShareSlugGeoRoute,
+  ShareSlugPagesRoute: ShareSlugPagesRoute,
+  ShareSlugPerformanceRoute: ShareSlugPerformanceRoute,
+  ShareSlugReferrersRoute: ShareSlugReferrersRoute,
+  ShareSlugRetentionRoute: ShareSlugRetentionRoute,
+  ShareSlugIndexRoute: ShareSlugIndexRoute,
+}
+
+const ShareSlugRouteWithChildren = ShareSlugRoute._addFileChildren(
+  ShareSlugRouteChildren,
 )
-
-interface LocaleRouteChildren {
-  LocaleAppRoute: typeof LocaleAppRouteWithChildren
-  LocaleRuntimeConfigErrorRoute: typeof LocaleRuntimeConfigErrorRoute
-  LocaleShareSlugRoute: typeof LocaleShareSlugRouteWithChildren
-}
-
-const LocaleRouteChildren: LocaleRouteChildren = {
-  LocaleAppRoute: LocaleAppRouteWithChildren,
-  LocaleRuntimeConfigErrorRoute: LocaleRuntimeConfigErrorRoute,
-  LocaleShareSlugRoute: LocaleShareSlugRouteWithChildren,
-}
-
-const LocaleRouteWithChildren =
-  LocaleRoute._addFileChildren(LocaleRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  LocaleRoute: LocaleRouteWithChildren,
+  AppRoute: AppRouteWithChildren,
+  RuntimeConfigErrorRoute: RuntimeConfigErrorRoute,
+  ShareSlugRoute: ShareSlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,5 +1,3 @@
-import type { Locale } from "@/lib/i18n/config";
-
 export type SiteSection =
   | "realtime"
   | "pages"
@@ -14,12 +12,8 @@ export type SiteSection =
   | "performance"
   | "settings";
 
-export function buildSitePath(
-  locale: Locale,
-  siteSlug: string,
-  section?: SiteSection,
-): string {
-  const base = `/${locale}/app/sites/${siteSlug}`;
+export function buildSitePath(siteSlug: string, section?: SiteSection): string {
+  const base = `/sites/${siteSlug}`;
   return section ? `${base}/${section}` : base;
 }
 
@@ -37,11 +31,8 @@ export const SETTINGS_SECTIONS = [
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number]["key"];
 
 /** Settings, or one of its pages. */
-export function buildSettingsPath(
-  locale: Locale,
-  section?: SettingsSection,
-): string {
-  const base = `/${locale}/app/settings`;
+export function buildSettingsPath(section?: SettingsSection): string {
+  const base = "/settings";
   return section ? `${base}/${section}` : base;
 }
 
@@ -60,9 +51,6 @@ export function isSystemHealthTab(value: unknown): value is SystemHealthTab {
 }
 
 /** One tab of System health. */
-export function buildSystemHealthPath(
-  locale: Locale,
-  tab: SystemHealthTab,
-): string {
-  return `${buildSettingsPath(locale, "system")}?tab=${tab}`;
+export function buildSystemHealthPath(tab: SystemHealthTab): string {
+  return `${buildSettingsPath("system")}?tab=${tab}`;
 }

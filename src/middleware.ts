@@ -1,16 +1,7 @@
 import type { Env } from "@/lib/edge/types";
-import {
-  DEFAULT_LOCALE,
-  isValidLocale,
-  resolveLocale,
-  SUPPORTED_LOCALES,
-} from "@/lib/i18n/config";
+import { isValidLocale } from "@/lib/i18n/config";
 
-export interface PageRequestDecision {
-  locale: string | null;
-  pathname: string;
-  response: Response | null;
-}
+export const RUNTIME_CONFIG_ERROR_PATH = "/runtime-config-error";
 
 function hasRootSecret(env: Env): boolean {
   return Boolean(
@@ -20,60 +11,24 @@ function hasRootSecret(env: Env): boolean {
 }
 
 /**
- * The browser's language. The gateway strips every cookie before a request
- * reaches the app, so the path's locale prefix is the only remembered choice.
+ * Where a link from before pages dropped their `/<locale>/app` prefix points
+ * now: `/en/app/sites/a` → `/sites/a`, `/en/share/a` → `/share/a`. Null for a
+ * current path.
  */
-function requestLocale(request: Request): string {
-  const acceptLanguage = request.headers.get("accept-language");
-  if (acceptLanguage) {
-    const preferred = acceptLanguage
-      .split(",")
-      .map((part) => part.trim().split(";")[0].trim().toLowerCase())
-      .map((tag) => {
-        if (
-          tag === "zh-tw" ||
-          tag === "zh-hk" ||
-          tag === "zh-mo" ||
-          tag.startsWith("zh-hant")
-        ) {
-          return "zh-tw";
-        }
-        return isValidLocale(tag) ? tag : tag.slice(0, 2);
-      })
-      .find(isValidLocale);
-    if (preferred) return preferred;
-  }
-  return DEFAULT_LOCALE;
-}
-
-function pathnameHasLocale(pathname: string): boolean {
-  return SUPPORTED_LOCALES.some(
-    (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
-  );
-}
-
-function normalizePathname(pathname: string): string {
-  if (pathname === "/") return pathname;
-  return pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
-}
-
-function localizedPath(pathname: string, locale: string): string {
-  const normalized = normalizePathname(pathname);
-  return normalized === "/" ? `/${locale}/app` : `/${locale}${normalized}`;
-}
-
-function localeFromPathname(pathname: string): string | null {
-  const segment = pathname.split("/")[1];
-  return isValidLocale(segment) ? segment : null;
+export function unprefixedPath(pathname: string): string | null {
+  const [first, ...rest] = pathname.split("/").filter(Boolean);
+  if (!isValidLocale(first)) return null;
+  const path = rest[0] === "app" ? rest.slice(1) : rest;
+  return `/${path.join("/")}`;
 }
 
 function redirectResponse(
   request: Request,
   pathname: string,
-  preserveSearch = false,
+  preserveSearch: boolean,
 ): Response {
   const url = new URL(request.url);
-  url.pathname = normalizePathname(pathname);
+  url.pathname = pathname;
   if (!preserveSearch) url.search = "";
   return new Response(null, {
     status: 307,
@@ -82,52 +37,19 @@ function redirectResponse(
 }
 
 /**
- * Puts every page under a locale prefix, and sends every page to the setup
- * error while MAIN_SECRET is unset. The gateway signs people in before any
- * private page reaches the app.
+ * Redirects old locale-prefixed links to their page, and sends every page to
+ * the setup error while MAIN_SECRET is unset. The gateway signs people in
+ * before any private page reaches the app.
  */
 export function resolvePageRequest(
   request: Request,
   env: Env,
-): PageRequestDecision {
-  const url = new URL(request.url);
-  const { pathname } = url;
-  const normalizedPathname = normalizePathname(pathname);
-  const localeFromPath = localeFromPathname(pathname);
-  const localeForRequest = localeFromPath || requestLocale(request);
-
-  if (
-    normalizedPathname !== `/${localeForRequest}/runtime-config-error` &&
-    !hasRootSecret(env)
-  ) {
-    return {
-      locale: localeForRequest,
-      pathname,
-      response: redirectResponse(
-        request,
-        `/${resolveLocale(localeForRequest)}/runtime-config-error`,
-      ),
-    };
+): Response | null {
+  const { pathname } = new URL(request.url);
+  const current = unprefixedPath(pathname);
+  if (current !== null) return redirectResponse(request, current, true);
+  if (pathname !== RUNTIME_CONFIG_ERROR_PATH && !hasRootSecret(env)) {
+    return redirectResponse(request, RUNTIME_CONFIG_ERROR_PATH, false);
   }
-
-  if (!pathnameHasLocale(pathname)) {
-    return {
-      locale: localeForRequest,
-      pathname,
-      response: redirectResponse(
-        request,
-        localizedPath(pathname, localeForRequest),
-        true,
-      ),
-    };
-  }
-  if (normalizedPathname === `/${localeFromPath}`) {
-    return {
-      locale: localeFromPath,
-      pathname,
-      response: redirectResponse(request, `/${localeFromPath}/app`, true),
-    };
-  }
-
-  return { locale: localeFromPath, pathname, response: null };
+  return null;
 }

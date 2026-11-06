@@ -19,7 +19,6 @@ import { buildSitePath } from "@/lib/dashboard/paths";
 import { dashboardShellQueryOptions } from "@/lib/dashboard/route-query";
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
 import type { SiteData } from "@/lib/dashboard-api/client/edge";
-import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { useRouter } from "@/lib/router";
 import { normalizeSiteDomain } from "@/lib/site-settings";
@@ -30,13 +29,11 @@ import { normalizeSiteDomain } from "@/lib/site-settings";
 export function CreateSiteDialog({
   open,
   onOpenChange,
-  locale,
   messages,
   teamId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  locale: Locale;
   messages: AppMessages;
   teamId: string;
 }) {
@@ -76,7 +73,7 @@ export function CreateSiteDialog({
         queryKey: ["dashboard", "get-started"],
       });
       // A new site's overview shows the tracking snippet until data arrives.
-      await router.push(buildSitePath(locale, getSiteSlug(data)));
+      await router.push(buildSitePath(getSiteSlug(data)));
     } catch (cause) {
       setError(
         (cause instanceof Error ? cause.message : t.createFailed) ||

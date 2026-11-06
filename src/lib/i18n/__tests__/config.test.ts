@@ -4,6 +4,7 @@ import {
   DEFAULT_LOCALE,
   isValidLocale,
   LOCALE_COOKIE,
+  localeFromAcceptLanguage,
   localeToHtmlLang,
   resolveLocale,
   SUPPORTED_LOCALES,
@@ -30,6 +31,14 @@ describe("i18n locale config", () => {
     expect(resolveLocale("ja")).toBe("ja");
     expect(resolveLocale("fr")).toBe("en");
     expect(resolveLocale(undefined)).toBe("en");
+  });
+
+  it("picks the first supported browser language, else the default", () => {
+    expect(localeFromAcceptLanguage("zh-CN,zh;q=0.9")).toBe("zh");
+    expect(localeFromAcceptLanguage("zh-HK,en;q=0.8")).toBe("zh-tw");
+    expect(localeFromAcceptLanguage("fr-CA,ja;q=0.5")).toBe("ja");
+    expect(localeFromAcceptLanguage("fr-CA")).toBe("en");
+    expect(localeFromAcceptLanguage(null)).toBe("en");
   });
 
   it("maps app locales to HTML language tags", () => {

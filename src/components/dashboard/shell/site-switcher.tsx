@@ -18,7 +18,6 @@ import {
 import { CreateSiteDialog } from "@/components/dashboard/admin/create-site-dialog";
 import { SiteBrandIcon } from "@/components/dashboard/common/site-brand-icon";
 import { buildSitePath } from "@/lib/dashboard/paths";
-import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 import Link from "@/lib/router";
 
@@ -30,7 +29,6 @@ import type { SidebarSite, SiteNavKey } from "./dashboard-shell/navigation";
  * Anyone in the organization adds a site from here too.
  */
 export function SiteSwitcher({
-  locale,
   messages,
   sites,
   activeSite,
@@ -39,7 +37,6 @@ export function SiteSwitcher({
   navHref,
   onNavigate,
 }: {
-  locale: Locale;
   messages: AppMessages;
   sites: SidebarSite[];
   activeSite?: SidebarSite;
@@ -51,8 +48,8 @@ export function SiteSwitcher({
   // Detail pages belong to the old site; the section's own page stays.
   const section =
     activeSection && activeSection !== "overview" ? activeSection : undefined;
-  const allSitesHref = navHref(`/${locale}/app`);
-  const { teamContext } = useRouteContext({ from: "/$locale/app" });
+  const allSitesHref = navHref("/");
+  const { teamContext } = useRouteContext({ from: "/_app" });
   const [createSiteOpen, setCreateSiteOpen] = useState(false);
 
   return (
@@ -102,7 +99,7 @@ export function SiteSwitcher({
                 {sites.map((site) => (
                   <DropdownMenuItem key={site.id} asChild>
                     <Link
-                      href={navHref(buildSitePath(locale, site.slug, section))}
+                      href={navHref(buildSitePath(site.slug, section))}
                       onClick={onNavigate}
                     >
                       <SiteBrandIcon
@@ -143,7 +140,6 @@ export function SiteSwitcher({
         <CreateSiteDialog
           open={createSiteOpen}
           onOpenChange={setCreateSiteOpen}
-          locale={locale}
           messages={messages}
           teamId={teamContext.activeTeam.id}
         />

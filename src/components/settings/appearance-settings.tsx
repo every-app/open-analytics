@@ -5,16 +5,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@insightflare/ui/select";
+import { useQueryClient } from "@tanstack/react-query";
 import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { normalizeLocalePath } from "@/components/dashboard/shell/dashboard-shell/navigation";
 import {
   SettingsCard,
   SettingsRow,
   SettingsSection,
 } from "@/components/settings/settings-section";
 import { useTheme } from "@/components/theme-provider";
+import { localeQueryOptions } from "@/lib/dashboard/route-query";
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
 import {
   isValidLocale,
@@ -22,7 +23,7 @@ import {
   SUPPORTED_LOCALES,
 } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
-import { usePathname, useRouter } from "@/lib/router";
+import { useRouter } from "@/lib/router";
 import { cn } from "@/lib/utils";
 
 const THEMES = [
@@ -46,7 +47,8 @@ function localeLabel(messages: AppMessages, locale: Locale): string {
 
 /**
  * This browser's theme and the viewer's language, as OpenSEO's Appearance.
- * The language is saved to the profile too, so notification email follows it.
+ * The language is saved to the profile, where pages and notification email
+ * read it.
  */
 export function AppearanceSettings({
   locale,
@@ -57,7 +59,7 @@ export function AppearanceSettings({
 }) {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
-  const pathname = usePathname() || "";
+  const queryClient = useQueryClient();
 
   async function changeLanguage(value: Locale) {
     try {
@@ -71,8 +73,10 @@ export function AppearanceSettings({
           ? error.message
           : messages.accountSettings.languageSaveFailed,
       );
+      return;
     }
-    await router.push(`/${value}${normalizeLocalePath(pathname)}`);
+    queryClient.setQueryData(localeQueryOptions.queryKey, value);
+    await router.refresh();
   }
 
   return (

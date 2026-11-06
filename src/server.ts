@@ -14,7 +14,11 @@ import type { Env } from "@/lib/edge/types";
 import apiApp from "@/lib/hono/app";
 import { shouldUseHono } from "@/lib/hono/path-match";
 import { tools } from "@/lib/mcp/tools";
-import { resolvePageRequest } from "@/middleware";
+import {
+  resolvePageRequest,
+  RUNTIME_CONFIG_ERROR_PATH,
+  unprefixedPath,
+} from "@/middleware";
 export interface AppServerContext {
   env: Env;
   executionCtx: ExecutionContext;
@@ -79,15 +83,13 @@ function pageRouteForLog(pathname: string): string {
   return isServerFunctionRequest(pathname) ? "server_function" : "page";
 }
 /**
- * Pages a visitor without a gateway identity may load: share links, the
- * locale redirects in front of them, and the setup error. Everything else
- * the gateway only forwards with a signed-in member (everyapp.config.ts).
+ * Pages a visitor without a gateway identity may load: share links, the setup
+ * error, and the redirects from their old locale-prefixed links. Everything
+ * else the gateway only forwards with a signed-in member (everyapp.config.ts).
  */
 function isPublicPage(pathname: string): boolean {
-  const segments = pathname.split("/").filter(Boolean);
-  if (segments.length <= 1) return true;
-  if (segments[0] === "share") return true;
-  return segments[1] === "share" || segments[1] === "runtime-config-error";
+  const path = unprefixedPath(pathname) ?? pathname;
+  return path.startsWith("/share/") || path === RUNTIME_CONFIG_ERROR_PATH;
 }
 async function serveRequest(
   request: Request,
@@ -114,9 +116,8 @@ async function serveRequest(
 
   try {
     return await runWithInvocationLogger(logger, async () => {
-      // Server functions are protocol requests, not localized page navigations.
-      // Let Start see the original /_serverFn path before page middleware can
-      // redirect it beneath a locale segment.
+      // Server functions are protocol requests, not page navigations: Start
+      // sees the /_serverFn path before the page redirects.
       if (isServerFunctionRequest(pathname)) {
         const response = await logger.measure(
           "server_function.handler",
@@ -135,12 +136,11 @@ async function serveRequest(
         return result;
       }
 
-      const decision = resolvePageRequest(request, env);
-      const result = decision.response
+      const redirect = resolvePageRequest(request, env);
+      const result = redirect
         ? withPageHeaders(
-            decision.response,
-            new URL(decision.response.headers.get("location") || request.url)
-              .pathname,
+            redirect,
+            new URL(redirect.headers.get("location") || request.url).pathname,
           )
         : withPageHeaders(
             await logger.measure("page.handler", async () =>

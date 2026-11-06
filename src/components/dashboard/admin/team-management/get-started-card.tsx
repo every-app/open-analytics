@@ -35,11 +35,11 @@ type StepTarget =
  * worth offering (get-started.ts); the card is gone once they're all done.
  */
 export function GetStartedCard() {
-  const { canManage, locale, messages, dashboardSites, openCreateSiteDialog } =
+  const { canManage, messages, dashboardSites, openCreateSiteDialog } =
     useTeamManagementContext();
-  const { teamContext } = useRouteContext({ from: "/$locale/app" });
+  const { teamContext } = useRouteContext({ from: "/_app" });
   // Loaded with the page, so the card renders with it; refreshed after.
-  const { getStarted } = useRouteContext({ from: "/$locale/app/" });
+  const { getStarted } = useRouteContext({ from: "/_app/" });
   const copy = messages.getStarted;
   const query = useQuery({
     queryKey: ["dashboard", "get-started"],
@@ -68,18 +68,18 @@ export function GetStartedCard() {
   if (!firstSite) return null;
   const targets: Record<GetStartedStepId, StepTarget> = {
     site: { kind: "action", onClick: openCreateSiteDialog },
-    tracking: { kind: "href", href: buildSitePath(locale, firstSite.slug) },
+    tracking: { kind: "href", href: buildSitePath(firstSite.slug) },
     team: {
       kind: "external",
       href: `${teamContext.gatewayUrl.replace(/\/$/, "")}/admin/users`,
     },
     notifications: {
       kind: "href",
-      href: buildSettingsPath(locale, "notifications"),
+      href: buildSettingsPath("notifications"),
     },
     sharing: {
       kind: "href",
-      href: buildSitePath(locale, firstSite.slug, "settings"),
+      href: buildSitePath(firstSite.slug, "settings"),
     },
   };
 

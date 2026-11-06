@@ -32,6 +32,7 @@ import { TimeZoneProvider } from "@/components/time-zone-provider";
 import { APP_NAME } from "@/lib/constants";
 import { GET_STARTED_COLLAPSED_KEY } from "@/lib/dashboard/get-started";
 import { loadGatewayHostname } from "@/lib/dashboard/route-data";
+import { localeQueryOptions } from "@/lib/dashboard/route-query";
 import { localeToHtmlLang, resolveLocale } from "@/lib/i18n/config";
 import { getMessages } from "@/lib/i18n/messages";
 import Link from "@/lib/router";
@@ -41,6 +42,11 @@ const THEME_INIT_SCRIPT = `(function(){try{${readThemeScript}var d=t==='dark'||(
 const ESBUILD_NAME_HELPER_SCRIPT = `(function(){if(typeof globalThis.__name!=="function"){globalThis.__name=function(target){return target}}})()`;
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   {
+    beforeLoad: async ({ context }) => {
+      const locale =
+        await context.queryClient.ensureQueryData(localeQueryOptions);
+      return { locale, messages: getMessages(locale) };
+    },
     head: () => ({
       meta: [
         { charSet: "utf-8" },
@@ -68,10 +74,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   },
 );
 function RootDocument() {
-  const { queryClient } = Route.useRouteContext();
+  const { queryClient, locale } = Route.useRouteContext();
   const { gatewayHost } = Route.useLoaderData();
-  const pathname = useLocation({ select: (location) => location.pathname });
-  const locale = resolveLocale(pathname.split("/")[1]);
 
   return (
     <html lang={localeToHtmlLang(locale)} suppressHydrationWarning>
@@ -108,29 +112,36 @@ function RootDocument() {
  * visitor has no home here.
  */
 function errorPageAudience(pathname: string) {
-  const section = pathname.split("/")[2];
-  return { signedIn: section === "app", hasHome: section !== "share" };
+  const section = pathname.split("/")[1];
+  const isShare = section === "share";
+  return {
+    signedIn: !isShare && section !== "runtime-config-error",
+    hasHome: !isShare,
+  };
+}
+/**
+ * The page language, or the default when the root failed before setting it:
+ * the error page still has to say something.
+ */
+function useErrorPageLocale() {
+  return resolveLocale(Route.useRouteContext().locale);
 }
 export function NotFoundPage() {
   const pathname = useLocation({ select: (location) => location.pathname });
-  const locale = resolveLocale(pathname.split("/")[1]);
-  const copy = getMessages(locale).errorPage;
+  const copy = getMessages(useErrorPageLocale()).errorPage;
 
   return (
     <ErrorPageLayout
       title={copy.notFoundTitle}
       description={copy.notFoundDescription}
-      homeHref={
-        errorPageAudience(pathname).hasHome ? `/${locale}/app` : undefined
-      }
+      homeHref={errorPageAudience(pathname).hasHome ? "/" : undefined}
       homeLabel={copy.homeAction}
     />
   );
 }
 export function ErrorPage({ error }: { error: Error }) {
   const pathname = useLocation({ select: (location) => location.pathname });
-  const locale = resolveLocale(pathname.split("/")[1]);
-  const copy = getMessages(locale).errorPage;
+  const copy = getMessages(useErrorPageLocale()).errorPage;
   const errorName = error instanceof Error ? error.name : "Error";
   const errorMessage =
     error instanceof Error ? error.message : "Unexpected application error";
@@ -141,7 +152,7 @@ export function ErrorPage({ error }: { error: Error }) {
       destructive
       title={copy.errorTitle}
       description={copy.errorDescription}
-      homeHref={hasHome ? `/${locale}/app` : undefined}
+      homeHref={hasHome ? "/" : undefined}
       homeLabel={copy.homeAction}
       errorMessage={errorMessage}
       report={

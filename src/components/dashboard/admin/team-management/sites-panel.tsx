@@ -182,7 +182,7 @@ export function TeamManagementSitesPanel() {
                           size="md"
                         />
                         <Link
-                          href={buildSitePath(locale, site.slug)}
+                          href={buildSitePath(site.slug)}
                           aria-label={`${copy.openAnalytics}: ${site.name}`}
                           className="truncate outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:ring-3 focus-visible:after:ring-ring/50 focus-visible:after:ring-inset"
                         >
@@ -191,7 +191,7 @@ export function TeamManagementSitesPanel() {
                         {site.publicEnabled && site.publicSlug ? (
                           <Badge asChild variant="soft" className="relative">
                             <a
-                              href={sharePath(locale, site.publicSlug)}
+                              href={sharePath(site.publicSlug)}
                               target="_blank"
                               rel="noreferrer"
                               title={copy.openPublic}
@@ -217,7 +217,7 @@ export function TeamManagementSitesPanel() {
                           className="relative"
                         >
                           <Link
-                            href={buildSitePath(locale, site.slug, "settings")}
+                            href={buildSitePath(site.slug, "settings")}
                             aria-label={`${messages.appNav.siteSettings}: ${site.name}`}
                             title={messages.appNav.siteSettings}
                           >

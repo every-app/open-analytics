@@ -2,7 +2,6 @@ import { SidebarFooter, SidebarMenu } from "@insightflare/ui/sidebar";
 import { SettingsIcon } from "lucide-react";
 
 import { buildSettingsPath } from "@/lib/dashboard/paths";
-import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 
 import { SidebarNavLink } from "./sidebar-nav";
@@ -12,12 +11,10 @@ import { SidebarNavLink } from "./sidebar-nav";
  * people switch apps and sign out, is the sidebar's first row.
  */
 export function SidebarFootLinks({
-  locale,
   messages,
   settingsActive,
   onNavigate,
 }: {
-  locale: Locale;
   messages: AppMessages;
   settingsActive: boolean;
   onNavigate: () => void;
@@ -26,7 +23,7 @@ export function SidebarFootLinks({
     <SidebarFooter className="gap-0 border-t border-sidebar-border pb-safe">
       <SidebarMenu>
         <SidebarNavLink
-          href={buildSettingsPath(locale)}
+          href={buildSettingsPath()}
           icon={SettingsIcon}
           label={messages.appNav.settings}
           isActive={settingsActive}

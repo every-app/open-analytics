@@ -76,6 +76,8 @@ export default {
     // Public share links: the pages, their data and the map resources they
     // draw, plus the built assets and icons those pages load.
     { path: "/share/**", methods: ["GET"] },
+    // Share links from before pages dropped their locale prefix, which
+    // redirect to /share/** (src/middleware.ts).
     { path: "/:locale/share/**", methods: ["GET"] },
     { path: "/api/public/share/**", methods: ["GET"] },
     { path: "/api/public/resources/**", methods: ["GET"] },

@@ -120,7 +120,7 @@ function StressControls({
         messages={STRESS_MESSAGES}
         labels={STRESS_MESSAGES.events}
         siteId="e2e-layer-fixture"
-        pathname="/zh/app/e2e-layer-fixture/goals"
+        pathname="/sites/e2e-layer-fixture/goals"
         open={eventDrawerOpen}
         onOpenChange={onEventDrawerOpenChange}
         detail={null}

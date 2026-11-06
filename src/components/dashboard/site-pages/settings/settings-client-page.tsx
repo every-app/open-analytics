@@ -199,7 +199,7 @@ export function SettingsClientPage({
     });
     if (nextSlug !== currentSiteSlug) {
       setCurrentSiteSlug(nextSlug);
-      await router.replace(buildSitePath(locale, nextSlug, "settings"));
+      await router.replace(buildSitePath(nextSlug, "settings"));
     } else {
       await router.refresh();
     }
@@ -316,7 +316,7 @@ export function SettingsClientPage({
       queryClient.removeQueries({
         queryKey: dashboardShellQueryOptions.queryKey,
       });
-      await router.push(`/${locale}/app`);
+      await router.push("/");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : copy.toasts.deleteFailed;
@@ -622,7 +622,7 @@ export function SettingsClientPage({
         action={
           canViewSystemHealth ? (
             <Button asChild variant="link" size="sm">
-              <Link href={buildSystemHealthPath(locale, "blocked")}>
+              <Link href={buildSystemHealthPath("blocked")}>
                 {copy.viewBlockedRequests}
               </Link>
             </Button>

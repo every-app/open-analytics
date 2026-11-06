@@ -20,22 +20,20 @@ describe("the Visitors page's views", () => {
   });
 
   it("opens journeys on the Visitors page", () => {
-    const site = buildSitePath("en", "docs");
+    const site = buildSitePath("docs");
     expect(visitorDetailHref(site, "v 1")).toBe(
-      "/en/app/sites/docs/visitors?detail=v%201",
+      "/sites/docs/visitors?detail=v%201",
     );
     expect(sessionDetailHref(site, "s/1")).toBe(
-      "/en/app/sites/docs/visitors?view=sessions&detail=s%2F1",
+      "/sites/docs/visitors?view=sessions&detail=s%2F1",
     );
   });
 });
 
 describe("paths", () => {
   it("builds site and settings paths", () => {
-    expect(buildSitePath("ja", "docs", "devices")).toBe(
-      "/ja/app/sites/docs/devices",
-    );
-    expect(buildSettingsPath("en")).toBe("/en/app/settings");
-    expect(buildSettingsPath("en", "system")).toBe("/en/app/settings/system");
+    expect(buildSitePath("docs", "devices")).toBe("/sites/docs/devices");
+    expect(buildSettingsPath()).toBe("/settings");
+    expect(buildSettingsPath("system")).toBe("/settings/system");
   });
 });
