@@ -541,7 +541,7 @@ function preparedJourneyFilters(
 }
 
 describe("event detail D1 SQL", () => {
-  it("runs event-record pages through the canonical scoped dataset", async () => {
+  it("runs filtered event-record pages through the canonical scoped dataset", async () => {
     const { env, d1 } = createSqliteEventEnv();
     const prepared = prepareScopedQuery("event-records", {
       context: siteQueryContext(siteId, "private-dashboard"),
@@ -553,7 +553,7 @@ describe("event detail D1 SQL", () => {
         reportingTimeZone: "UTC",
         capturedAtMs: window.nowMs,
       },
-      filters: EMPTY_FILTER_DOCUMENT,
+      filters: truthFilters(truthCondition("geo.country", "CN")),
       scopePreference: "auto",
     } as QueryInput & { time: QueryTime });
 

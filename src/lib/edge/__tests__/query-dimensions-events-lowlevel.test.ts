@@ -1188,12 +1188,13 @@ describe("edge query event handlers low-level coverage", () => {
       "ORDER BY occurredAt ASC, eventId ASC, eventPk ASC",
     );
     expect(calls[0].sql).not.toContain("OFFSET");
-    expect(calls[0].sql).toContain("FROM scope_final_events es");
+    expect(calls[0].sql).toContain("FROM event_source es");
     expect(calls[0].bindings).toEqual([
       ...visitBindings(),
+      siteId,
+      "Signup",
       ...eventBindings(),
       ...Array<string>(8).fill("%signup%"),
-      "Signup",
       2,
     ]);
   });

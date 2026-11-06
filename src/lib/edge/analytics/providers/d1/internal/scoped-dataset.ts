@@ -110,6 +110,10 @@ export function scopedDatasetFor(
   window: QueryWindow,
   filters: FilterDocument,
 ): ScopedDatasetSql | null {
+  // An unfiltered query has no scope to apply. Preparation still attaches a
+  // plan to the empty document, but compiling it would wrap every read in
+  // scope CTEs and keep overview and trend off the hourly rollups.
+  if (filters.root === null) return null;
   const metadata = scopedFilterMetadata(filters);
   return metadata
     ? compileScopedDatasetSql({
