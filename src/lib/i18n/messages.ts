@@ -1165,6 +1165,7 @@ export interface AppMessages {
     notificationAttentionDaysLabel: string;
     notificationDefaultDaysLabel: string;
     analyticsDetailDaysLabel: string;
+    analyticsKeepForever: string;
     retentionRangeHint: string;
     retentionSave: string;
     retentionSaving: string;
@@ -2531,12 +2532,13 @@ const enMessages = {
     emailSenderLabel: "Sender",
     retentionTitle: "Data retention",
     retentionDescription:
-      "Configure how long notification messages and detailed analytics remain available. Notification changes affect new messages only; detailed analytics older than the new limit are deleted on the next daily run.",
+      "Configure how long notification messages and detailed analytics remain available. Notification changes affect new messages only; detailed analytics older than the new limit start being deleted within the hour.",
     notificationAttentionDaysLabel: "Warning and critical notifications (days)",
     notificationDefaultDaysLabel: "Other notifications (days)",
     analyticsDetailDaysLabel:
-      "Page views and events (days; hourly totals are kept)",
-    retentionRangeHint: "Enter an integer from 1 to 3650 days.",
+      "Page views and events (days; the Overview's daily totals and breakdowns are kept)",
+    analyticsKeepForever: "Keep forever",
+    retentionRangeHint: "Enter a whole number of days, 1 or more.",
     retentionSave: "Save retention settings",
     retentionSaving: "Saving...",
     retentionSaved: "Retention settings saved.",
@@ -2546,7 +2548,7 @@ const enMessages = {
     cancel: "Cancel",
     retentionLowerTitle: "Delete older analytics?",
     retentionLowerDescription:
-      "Page views and events older than {days} days are deleted on the next daily run. Hourly totals are kept. This can't be undone.",
+      "Page views and events older than {days} days start being deleted within the hour. The Overview's daily totals and breakdowns are kept; filtered views, goals and funnels lose those days. This can't be undone.",
     retentionLowerConfirm: "Save and delete",
   },
   loginForm: {},

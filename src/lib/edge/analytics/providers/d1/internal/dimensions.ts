@@ -33,6 +33,15 @@ import {
   pageResult,
   paginationBindingForWindow,
 } from "./pagination";
+import {
+  type BoundSql,
+  dailyDimensionRows,
+  rollupEdgeSource,
+} from "./rollup-breakdowns";
+import {
+  rollupDimensionForExpression,
+  sessionRollupDimension,
+} from "./rollup-dimensions";
 import type { ScopedDatasetSql } from "./scoped-dataset";
 import {
   scopedDatasetFor,
@@ -149,6 +158,74 @@ function scopedVisitDataset(
   return scopedDatasetFor(siteId, window, filters);
 }
 
+function searchBinding(search: string): string {
+  return `%${search
+    .trim()
+    .toLowerCase()
+    .replaceAll("\\", "\\\\")
+    .replaceAll("%", "\\%")
+    .replaceAll("_", "\\_")}%`;
+}
+
+/**
+ * The `dimension_rollup` CTE (value, views, sessions, visitors) for a
+ * grouping expression. Unfiltered reads of a rolled-up card dimension add
+ * the rolled-up days to a raw grouping of the window's edges.
+ */
+async function dimensionAggregate(
+  env: Env,
+  siteId: string,
+  window: QueryWindow,
+  filters: FilterDocument,
+  selectExpr: string,
+  diagnostics?: D1ReadDiagnostics,
+): Promise<BoundSql> {
+  const grouping = (relation: string) => `
+  SELECT
+    COALESCE(${selectExpr}, '') AS value,
+    count(*) AS views,
+    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
+    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+  FROM ${relation}
+  GROUP BY value`;
+  const dimension = rollupDimensionForExpression(selectExpr);
+  const rollup = dimension
+    ? await rollupEdgeSource(env, siteId, window, filters, diagnostics)
+    : null;
+  if (dimension && rollup) {
+    const daily = dailyDimensionRows(siteId, dimension, rollup.split);
+    return {
+      sql: `${rollup.visitSource.sql},
+dimension_rollup AS (
+  SELECT value, SUM(views) AS views, SUM(sessions) AS sessions, SUM(visitors) AS visitors
+  FROM (${grouping("visit_source")}
+    UNION ALL
+    ${daily.sql}
+  )
+  GROUP BY value
+)`,
+      bindings: [...rollup.visitSource.bindings, ...daily.bindings],
+    };
+  }
+  const scopedDataset = scopedVisitDataset(siteId, window, filters);
+  const filter = scopedDataset
+    ? null
+    : buildVisitFilterSql(filters, "visit_source", { window });
+  return {
+    sql: `${scopedDataset?.ctes ?? buildVisitSourceCte()},
+filtered_visits AS (
+  SELECT *
+  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
+  ${filter?.clause ?? ""}
+),
+dimension_rollup AS (${grouping("filtered_visits")}
+)`,
+    bindings: scopedDataset
+      ? scopedDataset.bindings.map((binding) => binding.value)
+      : [...visitSourceBindings(siteId, window), ...(filter?.bindings ?? [])],
+  };
+}
+
 export async function queryDimensionFromD1(
   env: Env,
   siteId: string,
@@ -164,31 +241,21 @@ export async function queryDimensionFromD1(
   },
   diagnostics?: D1ReadDiagnostics,
 ): Promise<DimensionRow[]> {
-  const scopedDataset = scopedVisitDataset(siteId, window, filters);
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
   const sortBy = dimensionSortKey(options?.sortBy);
   const sortDirection = dimensionSortDirection(options?.sortDirection);
   const { primary, secondary } = dimensionSortColumns(sortBy);
   const limitClause = limit > 0 ? "\nLIMIT ?" : "";
+  const aggregate = await dimensionAggregate(
+    env,
+    siteId,
+    window,
+    filters,
+    selectExpr,
+    diagnostics,
+  );
   const sql = `
 WITH
-${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS (
-  SELECT *
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-),
-dimension_rollup AS (
-  SELECT
-    COALESCE(${selectExpr}, '') AS value,
-    count(*) AS views,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
-  FROM filtered_visits
-  GROUP BY value
-)
+${aggregate.sql}
 SELECT value, views, sessions, visitors
 FROM dimension_rollup
 ${options?.excludeEmpty ? "WHERE TRIM(value) != ''" : ""}
@@ -201,22 +268,8 @@ ${limitClause}
       env,
       sql,
       [
-        ...(scopedDataset
-          ? scopedDataset.bindings.map((binding) => binding.value)
-          : [
-              ...visitSourceBindings(siteId, window),
-              ...(filter?.bindings ?? []),
-            ]),
-        ...(options?.search
-          ? [
-              `%${options.search
-                .trim()
-                .toLowerCase()
-                .replaceAll("\\", "\\\\")
-                .replaceAll("%", "\\%")
-                .replaceAll("_", "\\_")}%`,
-            ]
-          : []),
+        ...aggregate.bindings,
+        ...(options?.search ? [searchBinding(options.search)] : []),
         ...(limit > 0 ? [limit] : []),
       ],
       diagnostics,
@@ -247,11 +300,7 @@ export async function queryDimensionPageFromD1(
   diagnostics?: D1ReadDiagnostics,
   audience: QueryAudience = "private-dashboard",
 ): Promise<PageResult<DimensionRow>> {
-  const scopedDataset = scopedVisitDataset(siteId, window, filters);
   const sortBy = dimensionSortKey(options?.sortBy);
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
   const sortDirection = dimensionSortDirection(options?.sortDirection);
   const { primary, secondary } = dimensionSortColumns(sortBy);
   const operator = sortDirection === "asc" ? ">" : "<";
@@ -263,23 +312,17 @@ AND (
   OR (${primary} = ? AND ${secondary} = ? AND value > ?)
 )`
     : "";
+  const aggregate = await dimensionAggregate(
+    env,
+    siteId,
+    window,
+    filters,
+    selectExpr,
+    diagnostics,
+  );
   const sql = `
 WITH
-${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS (
-  SELECT *
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-),
-dimension_rollup AS (
-  SELECT
-    COALESCE(${selectExpr}, '') AS value,
-    count(*) AS views,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
-  FROM filtered_visits
-  GROUP BY value
-)
+${aggregate.sql}
 SELECT value, views, sessions, visitors
 FROM dimension_rollup
 WHERE 1 = 1
@@ -307,22 +350,8 @@ LIMIT ?
     env,
     orderedSql,
     [
-      ...(scopedDataset
-        ? scopedDataset.bindings.map((binding) => binding.value)
-        : [
-            ...visitSourceBindings(siteId, window),
-            ...(filter?.bindings ?? []),
-          ]),
-      ...(options?.search
-        ? [
-            `%${options.search
-              .trim()
-              .toLowerCase()
-              .replaceAll("\\", "\\\\")
-              .replaceAll("%", "\\%")
-              .replaceAll("_", "\\_")}%`,
-          ]
-        : []),
+      ...aggregate.bindings,
+      ...(options?.search ? [searchBinding(options.search)] : []),
       ...cursorBindings,
       limit + 1,
     ],
@@ -396,53 +425,21 @@ export async function decodeDimensionCursor(
   );
 }
 
-export async function querySessionPathDimensionFromD1(
+/**
+ * The `session_path_rollup` CTE (value, views, sessions, visitors): visits
+ * by entry or exit page. Unfiltered reads of a site with rolled-up days add
+ * those days to the raw grouping of the window's edges.
+ */
+async function sessionPathAggregate(
   env: Env,
   siteId: string,
   window: QueryWindow,
   filters: FilterDocument,
-  limit: number,
-  kind: "entry" | "exit",
+  kind: SessionPathKind,
   diagnostics?: D1ReadDiagnostics,
-  search?: string,
-  sortBy: DimensionPageSortKey = "views",
-  sortDirection: "asc" | "desc" = "desc",
-): Promise<DimensionRow[]> {
-  const scopedDataset =
-    scopedVisitDataset(siteId, window, filters) ??
-    scopedDatasetForUnpreparedReader(
-      "dimension",
-      siteId,
-      window,
-      filters,
-      "session",
-    );
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
-  const effectiveSortBy = dimensionSortKey(sortBy);
-  const effectiveSortDirection = sortDirection === "asc" ? "asc" : "desc";
-  const primary = effectiveSortBy;
-  const secondary = effectiveSortBy === "visitors" ? "views" : null;
-  const limitClause = limit > 0 ? "\nLIMIT ?" : "";
+): Promise<BoundSql> {
   const boundaryRank = kind === "entry" ? "first_rank" : "latest_rank";
-  const visitSource = buildVisitSourceCte().replace(
-    "visit_source AS (",
-    "visit_source AS MATERIALIZED (",
-  );
-  const sql = `
-WITH
-${scopedDataset?.ctes ?? visitSource},
-filtered_visits AS MATERIALIZED (
-  SELECT
-    visitor_id,
-    session_id,
-    started_at,
-    visit_id,
-    TRIM(COALESCE(pathname, '')) AS pathname
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-),
+  const grouping = (relation: string) => `
 ranked_session_visits AS (
   SELECT
     vs.session_id,
@@ -456,7 +453,7 @@ ranked_session_visits AS (
       PARTITION BY vs.session_id
       ORDER BY vs.started_at DESC, vs.visit_id DESC
     ) AS latest_rank
-  FROM filtered_visits vs
+  FROM ${relation} vs
   WHERE vs.session_id != '' AND TRIM(COALESCE(vs.pathname, '')) != ''
 ),
 session_edges AS (
@@ -466,16 +463,110 @@ session_edges AS (
     MAX(CASE WHEN ${boundaryRank} = 1 THEN pathname END) AS value
   FROM ranked_session_visits
   GROUP BY session_id
-)
-SELECT
-  value,
-  count(*) AS views,
-  count(*) AS sessions,
-  count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
-FROM session_edges
-WHERE TRIM(value) != ''
-${search ? "AND LOWER(value) LIKE ? ESCAPE '\\'" : ""}
-GROUP BY value
+),
+raw_session_paths AS (
+  SELECT
+    value,
+    count(*) AS views,
+    count(*) AS sessions,
+    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+  FROM session_edges
+  WHERE TRIM(value) != ''
+  GROUP BY value
+)`;
+  const rollup = await rollupEdgeSource(
+    env,
+    siteId,
+    window,
+    filters,
+    diagnostics,
+  );
+  if (rollup) {
+    const daily = dailyDimensionRows(
+      siteId,
+      sessionRollupDimension(kind),
+      rollup.split,
+    );
+    return {
+      sql: `${rollup.visitSource.sql},
+${grouping("visit_source")},
+session_path_rollup AS (
+  SELECT value, SUM(views) AS views, SUM(sessions) AS sessions, SUM(visitors) AS visitors
+  FROM (
+    SELECT value, views, sessions, visitors FROM raw_session_paths
+    UNION ALL
+    ${daily.sql}
+  )
+  GROUP BY value
+)`,
+      bindings: [...rollup.visitSource.bindings, ...daily.bindings],
+    };
+  }
+  const scopedDataset =
+    scopedVisitDataset(siteId, window, filters) ??
+    scopedDatasetForUnpreparedReader(
+      "dimension",
+      siteId,
+      window,
+      filters,
+      "session",
+    );
+  const filter = scopedDataset
+    ? null
+    : buildVisitFilterSql(filters, "visit_source", { window });
+  const visitSource = buildVisitSourceCte().replace(
+    "visit_source AS (",
+    "visit_source AS MATERIALIZED (",
+  );
+  return {
+    sql: `${scopedDataset?.ctes ?? visitSource},
+filtered_visits AS MATERIALIZED (
+  SELECT visitor_id, session_id, started_at, visit_id,
+    TRIM(COALESCE(pathname, '')) AS pathname
+  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
+  ${filter?.clause ?? ""}
+),
+${grouping("filtered_visits")},
+session_path_rollup AS (
+  SELECT value, views, sessions, visitors FROM raw_session_paths
+)`,
+    bindings: scopedDataset
+      ? scopedDataset.bindings.map((binding) => binding.value)
+      : [...visitSourceBindings(siteId, window), ...(filter?.bindings ?? [])],
+  };
+}
+
+export async function querySessionPathDimensionFromD1(
+  env: Env,
+  siteId: string,
+  window: QueryWindow,
+  filters: FilterDocument,
+  limit: number,
+  kind: "entry" | "exit",
+  diagnostics?: D1ReadDiagnostics,
+  search?: string,
+  sortBy: DimensionPageSortKey = "views",
+  sortDirection: "asc" | "desc" = "desc",
+): Promise<DimensionRow[]> {
+  const effectiveSortBy = dimensionSortKey(sortBy);
+  const effectiveSortDirection = sortDirection === "asc" ? "asc" : "desc";
+  const primary = effectiveSortBy;
+  const secondary = effectiveSortBy === "visitors" ? "views" : null;
+  const limitClause = limit > 0 ? "\nLIMIT ?" : "";
+  const aggregate = await sessionPathAggregate(
+    env,
+    siteId,
+    window,
+    filters,
+    kind,
+    diagnostics,
+  );
+  const sql = `
+WITH
+${aggregate.sql}
+SELECT value, views, sessions, visitors
+FROM session_path_rollup
+${search ? "WHERE LOWER(value) LIKE ? ESCAPE '\\'" : ""}
 ORDER BY ${primary} ${effectiveSortDirection}, ${secondary ? `${secondary} ${effectiveSortDirection}, ` : ""}value ASC
 ${limitClause}
 `;
@@ -484,22 +575,8 @@ ${limitClause}
       env,
       sql,
       [
-        ...(scopedDataset
-          ? scopedDataset.bindings.map((binding) => binding.value)
-          : [
-              ...visitSourceBindings(siteId, window),
-              ...(filter?.bindings ?? []),
-            ]),
-        ...(search
-          ? [
-              `%${search
-                .trim()
-                .toLowerCase()
-                .replaceAll("\\", "\\\\")
-                .replaceAll("%", "\\%")
-                .replaceAll("_", "\\_")}%`,
-            ]
-          : []),
+        ...aggregate.bindings,
+        ...(search ? [searchBinding(search)] : []),
         ...(limit > 0 ? [limit] : []),
       ],
       diagnostics,
@@ -526,25 +603,8 @@ export async function querySessionPathDimensionPageFromD1(
   sortBy: DimensionPageSortKey = "views",
   sortDirection: "asc" | "desc" = "desc",
 ): Promise<PageResult<DimensionRow>> {
-  const scopedDataset =
-    scopedVisitDataset(siteId, window, filters) ??
-    scopedDatasetForUnpreparedReader(
-      "dimension",
-      siteId,
-      window,
-      filters,
-      "session",
-    );
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
   const effectiveSortBy = dimensionSortKey(sortBy);
   const effectiveSortDirection = sortDirection === "asc" ? "asc" : "desc";
-  const boundaryRank = kind === "entry" ? "first_rank" : "latest_rank";
-  const visitSource = buildVisitSourceCte().replace(
-    "visit_source AS (",
-    "visit_source AS MATERIALIZED (",
-  );
   const searchClause = search ? "AND LOWER(value) LIKE ? ESCAPE '\\'" : "";
   const operator = effectiveSortDirection === "asc" ? ">" : "<";
   const cursorClause = cursor
@@ -561,49 +621,17 @@ AND (
     effectiveSortBy === "visitors"
       ? `ORDER BY visitors ${effectiveSortDirection}, views ${effectiveSortDirection}, value ASC`
       : `ORDER BY ${effectiveSortBy} ${effectiveSortDirection}, value ASC`;
+  const aggregate = await sessionPathAggregate(
+    env,
+    siteId,
+    window,
+    filters,
+    kind,
+    diagnostics,
+  );
   const sql = `
 WITH
-${scopedDataset?.ctes ?? visitSource},
-filtered_visits AS MATERIALIZED (
-  SELECT visitor_id, session_id, started_at, visit_id,
-    TRIM(COALESCE(pathname, '')) AS pathname
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-),
-ranked_session_visits AS (
-  SELECT
-    vs.session_id,
-    vs.visitor_id,
-    TRIM(COALESCE(vs.pathname, '')) AS pathname,
-    ROW_NUMBER() OVER (
-      PARTITION BY vs.session_id
-      ORDER BY vs.started_at ASC, vs.visit_id ASC
-    ) AS first_rank,
-    ROW_NUMBER() OVER (
-      PARTITION BY vs.session_id
-      ORDER BY vs.started_at DESC, vs.visit_id DESC
-    ) AS latest_rank
-  FROM filtered_visits vs
-  WHERE vs.session_id != '' AND TRIM(COALESCE(vs.pathname, '')) != ''
-),
-session_edges AS (
-  SELECT
-    session_id,
-    MAX(CASE WHEN first_rank = 1 THEN visitor_id END) AS visitor_id,
-    MAX(CASE WHEN ${boundaryRank} = 1 THEN pathname END) AS value
-  FROM ranked_session_visits
-  GROUP BY session_id
-),
-session_path_rollup AS (
-  SELECT
-    value,
-    count(*) AS views,
-    count(*) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
-  FROM session_edges
-  WHERE TRIM(value) != ''
-  GROUP BY value
-)
+${aggregate.sql}
 SELECT
   value,
   views,
@@ -616,16 +644,6 @@ ${cursorClause}
 ${orderBy}
 LIMIT ?
 `;
-  const searchBindings = search
-    ? [
-        `%${search
-          .trim()
-          .toLowerCase()
-          .replaceAll("\\", "\\\\")
-          .replaceAll("%", "\\%")
-          .replaceAll("_", "\\_")}%`,
-      ]
-    : [];
   const cursorBindings = cursor
     ? effectiveSortBy === "visitors"
       ? [
@@ -642,13 +660,8 @@ LIMIT ?
     env,
     sql,
     [
-      ...(scopedDataset
-        ? scopedDataset.bindings.map((binding) => binding.value)
-        : [
-            ...visitSourceBindings(siteId, window),
-            ...(filter?.bindings ?? []),
-          ]),
-      ...searchBindings,
+      ...aggregate.bindings,
+      ...(search ? [searchBinding(search)] : []),
       ...cursorBindings,
       limit + 1,
     ],

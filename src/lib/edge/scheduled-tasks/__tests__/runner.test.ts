@@ -35,7 +35,9 @@ describe("runScheduledTask", () => {
     const env = createEnv();
     const handler = vi.fn().mockResolvedValue({ status: "success" });
 
-    await runScheduledTask(env, "test_task", handler);
+    await expect(runScheduledTask(env, "test_task", handler)).resolves.toEqual({
+      status: "success",
+    });
 
     expect(handler).toHaveBeenCalledTimes(1);
     expect(handler.mock.calls[0]?.[0]).toMatchObject({

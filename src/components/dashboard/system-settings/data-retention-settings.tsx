@@ -10,6 +10,7 @@ import {
   AlertDialogTitle,
 } from "@insightflare/ui/alert-dialog";
 import { Input } from "@insightflare/ui/input";
+import { Switch } from "@insightflare/ui/switch";
 import { toast } from "sonner";
 
 import { LabelWithInfo } from "@/components/settings/info-tooltip";
@@ -26,9 +27,10 @@ import type { AppMessages } from "@/lib/i18n/messages";
 import { formatI18nTemplate } from "@/lib/i18n/template";
 import {
   DEFAULT_RETENTION_CONFIG,
-  MAX_RETENTION_DAYS,
   MIN_RETENTION_DAYS,
   type RetentionConfig,
+  shortensAnalyticsRetention,
+  validRetentionDays,
 } from "@/lib/retention";
 
 const FIELDS: ReadonlyArray<keyof RetentionConfig> = [
@@ -41,17 +43,15 @@ function sameConfig(left: RetentionConfig, right: RetentionConfig): boolean {
   return FIELDS.every((key) => left[key] === right[key]);
 }
 
-function validDays(value: number): boolean {
-  return (
-    Number.isInteger(value) &&
-    value >= MIN_RETENTION_DAYS &&
-    value <= MAX_RETENTION_DAYS
-  );
+/** A number of days, or forever (`null`, page views and events only). */
+function validDays(value: number | null): boolean {
+  return value === null || validRetentionDays(value);
 }
 
 /**
- * How long the instance keeps notifications and detailed analytics. Lowering analytics retention deletes data on the next daily
- * run, so it asks first.
+ * How long the instance keeps notifications and detailed analytics, which
+ * can be kept forever. Shortening analytics retention deletes data within
+ * the hour, so it asks first.
  */
 export function DataRetentionSettings({
   messages,
@@ -100,7 +100,7 @@ export function DataRetentionSettings({
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (hasInvalidValue || saving) return;
-    if (config.analyticsDetailDays < saved.analyticsDetailDays) {
+    if (shortensAnalyticsRetention(saved, config)) {
       setConfirmOpen(true);
       return;
     }
@@ -124,22 +124,41 @@ export function DataRetentionSettings({
               label={labels[key]}
               htmlFor={`retention-${key}`}
             >
-              <Input
-                id={`retention-${key}`}
-                className="sm:w-28"
-                type="number"
-                min={MIN_RETENTION_DAYS}
-                max={MAX_RETENTION_DAYS}
-                step={1}
-                value={config[key]}
-                aria-invalid={!validDays(config[key])}
-                onChange={(event) =>
-                  setConfig((current) => ({
-                    ...current,
-                    [key]: Number(event.target.value),
-                  }))
-                }
-              />
+              <div className="flex items-center gap-4">
+                {key === "analyticsDetailDays" ? (
+                  <label className="flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap">
+                    <Switch
+                      checked={config.analyticsDetailDays === null}
+                      onCheckedChange={(forever) =>
+                        setConfig((current) => ({
+                          ...current,
+                          analyticsDetailDays: forever
+                            ? null
+                            : (saved.analyticsDetailDays ??
+                              DEFAULT_RETENTION_CONFIG.analyticsDetailDays),
+                        }))
+                      }
+                    />
+                    {copy.analyticsKeepForever}
+                  </label>
+                ) : null}
+                <Input
+                  id={`retention-${key}`}
+                  className="sm:w-28"
+                  type="number"
+                  min={MIN_RETENTION_DAYS}
+                  step={1}
+                  value={config[key] ?? ""}
+                  disabled={config[key] === null}
+                  aria-invalid={!validDays(config[key])}
+                  onChange={(event) =>
+                    setConfig((current) => ({
+                      ...current,
+                      [key]: Number(event.target.value),
+                    }))
+                  }
+                />
+              </div>
             </SettingsRow>
           ))}
           <SettingsCardFooter note={copy.retentionRangeHint}>
@@ -164,7 +183,7 @@ export function DataRetentionSettings({
             <AlertDialogTitle>{copy.retentionLowerTitle}</AlertDialogTitle>
             <AlertDialogDescription>
               {formatI18nTemplate(copy.retentionLowerDescription, {
-                days: config.analyticsDetailDays,
+                days: String(config.analyticsDetailDays),
               })}
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -65,6 +65,8 @@ function createD1Env(resultSets: D1Row[][], firstRows: D1Row[] = []) {
   const prepare = vi.fn((sql: string) => ({
     bind: vi.fn((...bindings: QueryBinding[]) => ({
       all: vi.fn(async () => {
+        // No site has rolled-up days here, so reads take the raw path.
+        if (sql.includes("FROM visit_rollup_state")) return { results: [] };
         calls.push({ kind: "all", sql, bindings });
         return { results: pendingAll.shift() ?? [] };
       }),
@@ -387,8 +389,6 @@ describe("edge team query coverage", () => {
           updatedAt: 18,
         },
       ],
-      [],
-      [],
       [
         {
           siteId: "site-a",
@@ -486,19 +486,14 @@ describe("edge team query coverage", () => {
       kind: "all",
       bindings: ["team-1"],
     });
+    // Neither site has rolled-up days, so each read is raw: the current
+    // and previous overview, then the trend.
+    expect(calls).toHaveLength(4);
     expect(calls[1]).toMatchObject({
-      kind: "all",
-      bindings: ["site-a", "site-b"],
-    });
-    expect(calls[2]).toMatchObject({
-      kind: "all",
-      bindings: ["site-a", "site-b"],
-    });
-    expect(calls[3]).toMatchObject({
       kind: "all",
       bindings: ["site-a", "site-b", window.startMs, window.endExclusiveMs],
     });
-    expect(calls[4]).toMatchObject({
+    expect(calls[2]).toMatchObject({
       kind: "all",
       bindings: [
         "site-a",
@@ -507,10 +502,10 @@ describe("edge team query coverage", () => {
         window.startMs,
       ],
     });
-    expect(calls[5]).toMatchObject({
+    expect(calls[3]).toMatchObject({
       kind: "all",
     });
-    expect(calls[5].bindings.slice(0, 4)).toEqual([
+    expect(calls[3].bindings.slice(0, 4)).toEqual([
       "site-a",
       "site-b",
       window.startMs,

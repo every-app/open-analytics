@@ -3,6 +3,7 @@ import type { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createMigratedDatabase } from "@/../scripts/schema/database";
+import { createDatabaseRuntime, type DatabaseRuntime } from "@/lib/db";
 import {
   createSqliteD1Database,
   type SqliteD1Trace,
@@ -12,10 +13,12 @@ import {
   readConfig,
   upsertConfig,
 } from "@/lib/edge/system-config";
-import type { Env } from "@/lib/edge/types";
 
-function sqliteEnv(database: DatabaseSync, trace: SqliteD1Trace): Env {
-  return { DB: createSqliteD1Database(database, trace) } as Env;
+function sqliteDb(
+  database: DatabaseSync,
+  trace: SqliteD1Trace,
+): DatabaseRuntime {
+  return createDatabaseRuntime(createSqliteD1Database(database, trace));
 }
 
 describe("system config typed DAL", () => {
@@ -29,7 +32,7 @@ describe("system config typed DAL", () => {
   it("reads missing, malformed, and valid JSON values", async () => {
     database = createMigratedDatabase();
     const trace = { preparedSql: [], bindings: [] } satisfies SqliteD1Trace;
-    const env = sqliteEnv(database, trace);
+    const db = sqliteDb(database, trace);
     database
       .prepare("INSERT INTO configs (config_key, value_json) VALUES (?, ?)")
       .run("malformed", "{");
@@ -37,21 +40,21 @@ describe("system config typed DAL", () => {
       .prepare("INSERT INTO configs (config_key, value_json) VALUES (?, ?)")
       .run("valid", '{"enabled":true}');
 
-    await expect(readConfig(env, "missing")).resolves.toBeNull();
-    await expect(readConfig(env, "malformed")).resolves.toBeNull();
-    await expect(readConfig(env, "valid")).resolves.toEqual({ enabled: true });
+    await expect(readConfig(db, "missing")).resolves.toBeNull();
+    await expect(readConfig(db, "malformed")).resolves.toBeNull();
+    await expect(readConfig(db, "valid")).resolves.toEqual({ enabled: true });
     expect(trace.preparedSql).toHaveLength(3);
   });
 
   it("inserts, updates, and deletes a config without changing its API", async () => {
     database = createMigratedDatabase();
     const trace = { preparedSql: [], bindings: [] } satisfies SqliteD1Trace;
-    const env = sqliteEnv(database, trace);
+    const db = sqliteDb(database, trace);
 
-    await upsertConfig(env, "feature", { enabled: false });
-    await upsertConfig(env, "feature", { enabled: true });
+    await upsertConfig(db, "feature", { enabled: false });
+    await upsertConfig(db, "feature", { enabled: true });
 
-    await expect(readConfig(env, "feature")).resolves.toEqual({
+    await expect(readConfig(db, "feature")).resolves.toEqual({
       enabled: true,
     });
     const timestamps = database
@@ -61,8 +64,8 @@ describe("system config typed DAL", () => {
       .get("feature");
     expect(timestamps).toMatchObject({ created_at: expect.any(Number) });
 
-    await deleteConfig(env, "feature");
-    await expect(readConfig(env, "feature")).resolves.toBeNull();
+    await deleteConfig(db, "feature");
+    await expect(readConfig(db, "feature")).resolves.toBeNull();
     expect(trace.preparedSql).toHaveLength(5);
   });
 });

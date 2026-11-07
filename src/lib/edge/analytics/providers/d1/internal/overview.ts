@@ -1,9 +1,4 @@
 import { scopedFilterMetadata } from "@/lib/edge/analytics/contract";
-import {
-  hasFilterDocument,
-  queryOverviewForSitesFromHourlyRollups,
-  queryTrendForSitesFromHourlyRollups,
-} from "@/lib/edge/analytics/providers/d1/internal/hourly-rollup-queries";
 import type { Env } from "@/lib/edge/types";
 
 import type {
@@ -32,6 +27,10 @@ import {
   queryOverviewClientDimensionsFromD1,
   queryOverviewGeoDimensionsFromD1,
 } from "./dimensions";
+import {
+  queryOverviewForSitesFromRollups,
+  queryTrendForSitesFromRollups,
+} from "./rollup-queries";
 import {
   scopedDatasetFor,
   scopedDatasetForUnpreparedReader,
@@ -123,6 +122,27 @@ export async function queryTrendFromD1(
   filters: FilterDocument,
   diagnostics?: D1ReadDiagnostics,
 ): Promise<TrendAggregateRow[]> {
+  return queryTrendBucketsFromD1(
+    env,
+    siteId,
+    window,
+    buildTimeBuckets(window, interval),
+    filters,
+    diagnostics,
+  );
+}
+/**
+ * Trend rows for the page views in `window`, counted into `buckets`, which
+ * may belong to a larger window the caller reads in parts.
+ */
+async function queryTrendBucketsFromD1(
+  env: Env,
+  siteId: string,
+  window: QueryWindow,
+  buckets: ReturnType<typeof buildTimeBuckets>,
+  filters: FilterDocument,
+  diagnostics?: D1ReadDiagnostics,
+): Promise<TrendAggregateRow[]> {
   const scopedDataset =
     scopedDatasetFor(siteId, window, filters) ??
     scopedDatasetForUnpreparedReader(
@@ -140,7 +160,6 @@ export async function queryTrendFromD1(
     "visit_source AS (",
     "visit_source AS MATERIALIZED (",
   );
-  const buckets = buildTimeBuckets(window, interval);
   const visitBucket = timeBucketCase(buckets, "started_at");
   const scopedVisitorBucket = scopedDataset
     ? timeBucketCase(buckets, "observed_at")
@@ -352,6 +371,16 @@ FROM ${metricSource}
   const value = Number(raw);
   return Number.isSafeInteger(value) ? value : null;
 }
+/** Unfiltered reads have nothing to scope, so they may use the rollups. */
+function readsRollups(
+  siteId: string,
+  window: QueryWindow,
+  filters: FilterDocument,
+) {
+  return (
+    filters.root === null && scopedDatasetFor(siteId, window, filters) === null
+  );
+}
 export async function queryOverviewAggregate(
   env: Env,
   siteId: string,
@@ -359,15 +388,27 @@ export async function queryOverviewAggregate(
   filters: FilterDocument,
   diagnostics?: D1ReadDiagnostics,
 ): Promise<PreferredSourceResult<OverviewAggregateRow>> {
-  const scopedDataset = scopedDatasetFor(siteId, window, filters);
-  if (!hasFilterDocument(filters) && !scopedDataset) {
-    const rollup = await queryOverviewForSitesFromHourlyRollups(
+  if (readsRollups(siteId, window, filters)) {
+    const rollup = await queryOverviewForSitesFromRollups(
       env,
       [siteId],
       window,
+      async (_siteIds, rawWindow) =>
+        new Map([
+          [
+            siteId,
+            await queryOverviewFromD1(
+              env,
+              siteId,
+              rawWindow,
+              filters,
+              diagnostics,
+            ),
+          ],
+        ]),
       diagnostics,
     );
-    const value = rollup?.get(siteId);
+    const value = rollup.value.get(siteId);
     if (value) {
       return {
         value,
@@ -392,31 +433,40 @@ export async function queryTrendAggregate(
   filters: FilterDocument,
   diagnostics?: D1ReadDiagnostics,
 ): Promise<PreferredSourceResult<TrendAggregateRow[]>> {
-  const scopedDataset = scopedDatasetFor(siteId, window, filters);
-  if (!hasFilterDocument(filters) && !scopedDataset) {
-    const rollup = await queryTrendForSitesFromHourlyRollups(
+  const buckets = buildTimeBuckets(window, interval);
+  if (readsRollups(siteId, window, filters)) {
+    const rollup = await queryTrendForSitesFromRollups(
       env,
       [siteId],
       window,
-      interval,
+      buckets,
+      async (_siteIds, rawWindow) =>
+        (
+          await queryTrendBucketsFromD1(
+            env,
+            siteId,
+            rawWindow,
+            buckets,
+            filters,
+            diagnostics,
+          )
+        ).map((row) => ({ ...row, siteId })),
       diagnostics,
     );
-    if (rollup) {
+    if (rollup.rawSiteIds.length === 0) {
       return {
-        value: rollup
-          .filter((row) => row.siteId === siteId)
-          .map(({ siteId: _siteId, ...row }) => row),
+        value: rollup.rows.map(({ siteId: _siteId, ...row }) => row),
         source: "d1",
         diagnosticSource: "rollup",
       };
     }
   }
   return {
-    value: await queryTrendFromD1(
+    value: await queryTrendBucketsFromD1(
       env,
       siteId,
       window,
-      interval,
+      buckets,
       filters,
       diagnostics,
     ),

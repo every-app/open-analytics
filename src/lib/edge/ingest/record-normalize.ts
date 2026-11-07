@@ -103,7 +103,10 @@ export async function normalizeIngestRecord(
   const ua = await new UAParser(uaHeaders).getResult().withClientHints();
   const isEU = Boolean(cf.isEUCountry);
 
-  // A daily-rotating hash: the browser stores nothing, as in Plausible.
+  // A daily-rotating hash: the browser stores nothing, as in Plausible. It
+  // rotates with the UTC day of startedAt, the time the row is filed under,
+  // so no visitor (and no visit, which ends when the id changes) spans two
+  // UTC days and the daily rollups can add days together.
   const visitorId = await deriveVisitorId({
     ip: clampString(
       coerceString(
@@ -114,7 +117,7 @@ export async function normalizeIngestRecord(
       80,
     ),
     ua: uaRaw,
-    eventAtMs: eventAt,
+    eventAtMs: startedAt,
     secret: visitorSecret,
   });
 

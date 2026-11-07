@@ -1,3 +1,4 @@
+import { AnalyticsProviderDomainError } from "@/lib/edge/analytics/application/errors";
 import {
   buildCalendarBucketPlan,
   createTimeRange,
@@ -66,6 +67,15 @@ export function buildTimeBuckets(
     granularity: interval,
     reportingTimeZone: normalizeReportingTimeZone(window.timeZone),
   });
+  // A trend's buckets go into one SQL statement, which D1 caps at 100 KB.
+  // A range with more buckets than the plan holds is refused, never cut
+  // short.
+  if (plan.truncated) {
+    throw new AnalyticsProviderDomainError({
+      kind: "range-not-supported",
+      reason: "too-many-buckets",
+    });
+  }
   return plan.buckets.map((bucket) => ({
     index: bucket.index,
     timestampMs: bucket.startMs,

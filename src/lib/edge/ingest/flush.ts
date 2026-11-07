@@ -1,5 +1,5 @@
 import { createDatabaseRuntime, type DatabaseStatement } from "@/lib/db";
-import { clampString } from "@/lib/edge/utils";
+import { clampString, ONE_DAY_MS } from "@/lib/edge/utils";
 
 import {
   D1_FLUSH_BATCH_SIZE,
@@ -22,7 +22,7 @@ import {
   deleteAnalyticsSession,
   readDueAnalyticsSessions,
 } from "./session-state";
-import { visitBindings, visitUpsertSql } from "./sql";
+import { MARK_ROLLED_UP_DAY_SQL, visitBindings, visitUpsertSql } from "./sql";
 import { toUnixSeconds } from "./time";
 import type { BufferedCustomEventRow, BufferedVisitRow } from "./types";
 interface FlushBufferFields {
@@ -279,14 +279,15 @@ export async function flushPendingToD1(
         for (const siteId of new Set(visitRows.map((row) => row.siteId))) {
           sitePkById.set(siteId, await resolveSitePk(context, siteId));
         }
-        const preparedVisitGroups = visitRows.map((row) => {
-          const sitePk = sitePkById.get(row.siteId);
-          if (sitePk === undefined) {
-            throw new Error(`Missing site identity for ${row.siteId}`);
-          }
-          return prepareVisitStatements(row, sitePk);
-        });
-        const preparedVisits = preparedVisitGroups.flat();
+        const preparedVisits = prepareVisitStatements(
+          visitRows.map((row) => {
+            const sitePk = sitePkById.get(row.siteId);
+            if (sitePk === undefined) {
+              throw new Error(`Missing site identity for ${row.siteId}`);
+            }
+            return { row, sitePk };
+          }),
+        );
         await createDatabaseRuntime(context.env.DB).batch(preparedVisits);
         recordFlushCounter(context, "flushedVisits", visitRows.length);
         markVisitRowsFlushed(context, visitRows);
@@ -845,16 +846,29 @@ function nextDueAtAfterRetry(
   }
   return Math.min(row.nextDueAt, retryAt);
 }
+/**
+ * The page views' writes, then a statement per site and UTC day they start
+ * on that marks the day for the rollup task if it is already rolled up.
+ */
 function prepareVisitStatements(
-  row: BufferedVisitRow,
-  sitePk: number,
+  visits: readonly { row: BufferedVisitRow; sitePk: number }[],
 ): DatabaseStatement[] {
+  const days = new Map<string, { sitePk: number; day: number }>();
+  for (const { row, sitePk } of visits) {
+    const day = Math.floor(row.startedAt / ONE_DAY_MS);
+    days.set(`${sitePk}:${day}`, { sitePk, day });
+  }
   return [
-    {
+    ...visits.map(({ row, sitePk }) => ({
       sql: visitUpsertSql(row.status),
       bindings: visitBindings(row, sitePk),
       tag: "ingest.visits.upsert",
-    },
+    })),
+    ...[...days.values()].map(({ sitePk, day }) => ({
+      sql: MARK_ROLLED_UP_DAY_SQL,
+      bindings: [sitePk, day],
+      tag: "ingest.visit_rollup_dirty_days.mark",
+    })),
   ];
 }
 async function flushRowsIndividually(
@@ -876,7 +890,7 @@ async function flushVisitRowIndividually(
   try {
     const sitePk = await resolveSitePk(context, row.siteId);
     await createDatabaseRuntime(context.env.DB).batch(
-      prepareVisitStatements(row, sitePk),
+      prepareVisitStatements([{ row, sitePk }]),
     );
     recordFlushCounter(context, "flushedVisits");
     markVisitRowsFlushed(context, [row]);

@@ -81,6 +81,8 @@ function createD1Env(
   const prepare = vi.fn((sql: string) => ({
     bind: vi.fn((...bindings: QueryBinding[]) => ({
       all: vi.fn(async () => {
+        // No site has rolled-up days here, so reads take the raw path.
+        if (sql.includes("FROM visit_rollup_state")) return { results: [] };
         calls.push({ sql, bindings });
         return {
           results: pendingResults.shift() ?? [],
@@ -3426,9 +3428,10 @@ describe("edge overview D1 queries and handlers", () => {
         },
       ],
     });
-    // A limit in the address is ignored: the map reads every point.
-    expect(calls[0].bindings).not.toContain(9);
+    // Every point: a limit in the request doesn't cut the map short.
     expect(calls[0].sql).not.toContain("LIMIT");
+    expect(calls[0].bindings).not.toContain(9);
+    expect(calls[2].sql).not.toContain("LIMIT");
     expect(calls[2].bindings).not.toContain(10);
     expect(calls[2].bindings).toEqual(
       expect.arrayContaining(["us", "california"]),

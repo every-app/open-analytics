@@ -39,7 +39,7 @@ function offeredSteps(
 // after retention deleted the visits themselves.
 const SITE_HAS_DATA = `
   EXISTS (SELECT 1 FROM visits v WHERE v.site_pk = si.site_pk)
-  OR EXISTS (SELECT 1 FROM visit_hourly_rollups r WHERE r.site_id = s.id)
+  OR EXISTS (SELECT 1 FROM visit_hourly_rollups r WHERE r.site_pk = si.site_pk)
 `;
 
 /** Which of Get started's steps the organization has done. */

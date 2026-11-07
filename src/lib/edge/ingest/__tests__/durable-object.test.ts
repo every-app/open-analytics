@@ -2,7 +2,11 @@ import { DatabaseSync } from "node:sqlite";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMigratedDatabase } from "@/../scripts/schema/database";
+import { createSqliteD1Database } from "@/lib/db/__tests__/sqlite-d1";
+import { seedSites } from "@/lib/edge/__tests__/rollup-fixtures";
 import { IngestDurableObject } from "@/lib/edge/ingest/durable-object";
+import { runVisitRollups } from "@/lib/edge/scheduled-tasks/visit-rollups";
 import type {
   Env,
   IngestEnvelopePayload,
@@ -320,6 +324,16 @@ class FakeD1Database {
         number_value REAL,
         boolean_value INTEGER,
         UNIQUE(event_pk, node_id, path_id)
+      );
+      CREATE TABLE visit_rollup_state (
+        site_pk INTEGER PRIMARY KEY,
+        first_day INTEGER NOT NULL,
+        last_day INTEGER NOT NULL
+      );
+      CREATE TABLE visit_rollup_dirty_days (
+        site_pk INTEGER NOT NULL,
+        day INTEGER NOT NULL,
+        PRIMARY KEY (site_pk, day)
       );
 
       INSERT INTO site_identities (site_pk, site_id) VALUES (1, 'site-1');
@@ -2995,5 +3009,124 @@ describe("IngestDurableObject", () => {
         expect.objectContaining({ eventType: "__presence_leave" }),
       ]),
     });
+  });
+});
+
+describe("rollups of days the ingest buffer writes to afterwards", () => {
+  const DAY_MS = 86_400_000;
+  const HOUR_MS = 3_600_000;
+  const DAY = Math.floor(NOW / DAY_MS);
+  const NEXT_DAY_MS = (DAY + 1) * DAY_MS;
+  // The day is rolled up at noon the next day.
+  const ROLLUP_AT = NEXT_DAY_MS + 12 * HOUR_MS;
+
+  function createRollupDo() {
+    const database = createMigratedDatabase();
+    seedSites(database, [{ siteId: "site-1", sitePk: 1 }]);
+    const DB = createSqliteD1Database(database);
+    return { database, ctx: createTestDo({ DB }), env: { DB } as Env };
+  }
+
+  function dayRollup(database: DatabaseSync) {
+    return database
+      .prepare(
+        "SELECT views, duration_ms_sum, duration_ms_count FROM visit_daily_rollups WHERE day = ?",
+      )
+      .get(DAY);
+  }
+
+  function dirtyDays(database: DatabaseSync) {
+    return database
+      .prepare("SELECT site_pk, day FROM visit_rollup_dirty_days")
+      .all();
+  }
+
+  async function pageView(
+    ctx: TestDoContext,
+    visitId: string,
+    at: number,
+  ): Promise<void> {
+    vi.setSystemTime(at);
+    await postIngest(
+      ctx.object,
+      envelope({ visitId, startedAt: at, timestamp: at }, { receivedAt: at }),
+    );
+  }
+
+  it("rebuilds a rolled-up day when the buffer finishes one of its page views afterwards", async () => {
+    const { database, ctx, env } = createRollupDo();
+    // Opened at 23:59 and hidden at 11:50 the next morning.
+    const startedAt = NEXT_DAY_MS - 60_000;
+    const hiddenAt = NEXT_DAY_MS + 11 * HOUR_MS + 50 * 60_000;
+    await pageView(ctx, "late-tab", startedAt);
+    vi.setSystemTime(hiddenAt);
+    await postIngest(
+      ctx.object,
+      envelope(
+        {
+          kind: "visibility",
+          visitId: "late-tab",
+          visibilityState: "hidden",
+          timestamp: hiddenAt,
+        },
+        { receivedAt: hiddenAt },
+      ),
+    );
+    vi.setSystemTime(hiddenAt + 60_000);
+    await ctx.object.alarm();
+    // Its day isn't rolled up yet, so the flush marks nothing.
+    expect(dirtyDays(database)).toEqual([]);
+
+    // At noon the day is rolled up with the page view still hidden, and the
+    // rollup task leaves the page view as the buffer wrote it.
+    await runVisitRollups(env, ROLLUP_AT);
+    expect(
+      database.prepare("SELECT status, duration_ms FROM visits").get(),
+    ).toEqual({ status: "hidden_pending", duration_ms: null });
+    expect(dayRollup(database)).toEqual({
+      views: 1,
+      duration_ms_sum: 0,
+      duration_ms_count: 0,
+    });
+
+    // After its grace period the buffer finishes it with its duration, and
+    // marks its day in the same batch.
+    vi.setSystemTime(hiddenAt + RECENT_EVENT_RETENTION_MS + 60_000);
+    await ctx.object.alarm();
+    expect(
+      database.prepare("SELECT status, duration_ms FROM visits").get(),
+    ).toEqual({ status: "complete", duration_ms: hiddenAt - startedAt });
+    expect(dirtyDays(database)).toEqual([{ site_pk: 1, day: DAY }]);
+
+    const next = await runVisitRollups(env, ROLLUP_AT + HOUR_MS);
+
+    expect(next.summary).toMatchObject({ daysRebuilt: 1, daysRolledUp: 0 });
+    expect(dayRollup(database)).toEqual({
+      views: 1,
+      duration_ms_sum: hiddenAt - startedAt,
+      duration_ms_count: 1,
+    });
+    expect(dirtyDays(database)).toEqual([]);
+  });
+
+  it("adds a page view flushed after its day was rolled up", async () => {
+    const { database, ctx, env } = createRollupDo();
+    await pageView(ctx, "on-time", DAY * DAY_MS + 10 * HOUR_MS);
+    vi.setSystemTime(DAY * DAY_MS + 10 * HOUR_MS + 60_000);
+    await ctx.object.alarm();
+    // Viewed at 23:59; its flush is held up until after the rollup.
+    await pageView(ctx, "held-up", NEXT_DAY_MS - 60_000);
+
+    await runVisitRollups(env, ROLLUP_AT);
+    expect(dayRollup(database)).toMatchObject({ views: 1 });
+
+    vi.setSystemTime(ROLLUP_AT + 60_000);
+    await ctx.object.alarm();
+    expect(dirtyDays(database)).toEqual([{ site_pk: 1, day: DAY }]);
+    const next = await runVisitRollups(env, ROLLUP_AT + HOUR_MS);
+
+    expect(next.summary).toMatchObject({ daysRebuilt: 1 });
+    expect(dayRollup(database)).toMatchObject({ views: 2 });
+    expect(dirtyDays(database)).toEqual([]);
   });
 });

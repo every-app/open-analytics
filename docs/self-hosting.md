@@ -59,4 +59,4 @@ These are plain Worker variables, not secrets: edit `env` in [`cloudflare.config
 
 **System Settings** shows whether the gateway can send email and can send a test message.
 
-Page views and events are kept for 396 days by default, and hourly totals are kept indefinitely. Change this in **System Settings**.
+Page views and events are kept for 396 days by default, or forever if you turn on **Keep forever**. The Overview's daily totals and breakdowns, rolled up from them, are kept indefinitely, so its unfiltered numbers cover older days too; filtered views, goals and funnels cover the retained days. Change this in **System Settings**.

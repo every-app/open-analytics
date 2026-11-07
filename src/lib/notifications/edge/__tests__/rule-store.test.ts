@@ -122,11 +122,12 @@ describe("notification rule store", () => {
       config: dropAlert,
     });
 
+    // NOW is on a notification tick's slot: the next is 30 minutes on.
     expect(rule).toMatchObject({
       name: "Notification rule",
       enabled: false,
       ...dropAlert,
-      nextRunAt: NOW,
+      nextRunAt: NOW + 1800,
     });
     expect(
       database
@@ -416,7 +417,8 @@ describe("notification rule store", () => {
       lastCheckedAt: NOW + 50_000,
       lastTriggeredAt: NOW,
       cooldownUntil: null,
-      nextRunAt: NOW + 50_000,
+      // The next notification tick's slot.
+      nextRunAt: NOW + 50_400,
     });
   });
 

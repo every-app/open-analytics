@@ -18,6 +18,12 @@ import {
   type PageResult,
   pageResult,
 } from "./pagination";
+import {
+  type BoundSql,
+  dailyDimensionRows,
+  rollupEdgeSource,
+} from "./rollup-breakdowns";
+import { RollupDimension } from "./rollup-dimensions";
 import { scopedDatasetFor } from "./scoped-dataset";
 export interface ReferrerAggregateCursor {
   /** The first two values are the concrete ORDER BY metrics. */
@@ -83,6 +89,92 @@ export async function queryTopReferrersFromD1(
     search,
   );
 }
+/**
+ * The `rollup` CTE (referrer, views, sessions, visitors). Unfiltered reads
+ * of referrer hosts add the rolled-up days to a raw grouping of the
+ * window's edges.
+ */
+async function referrerAggregate(
+  env: Env,
+  siteId: string,
+  window: QueryWindow,
+  filters: FilterDocument,
+  keyExpr: "referrer_url" | "referrer_host",
+  search: string | undefined,
+  diagnostics?: D1ReadDiagnostics,
+): Promise<BoundSql> {
+  const grouping = (relation: string) => `
+  SELECT
+    COALESCE(${keyExpr}, '') AS referrer,
+    count(*) AS views,
+    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
+    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+  FROM ${relation}
+  GROUP BY referrer`;
+  const having = search ? "HAVING LOWER(referrer) LIKE ? ESCAPE '\\'" : "";
+  const searchBindings = search
+    ? [
+        `%${search
+          .trim()
+          .toLowerCase()
+          .replaceAll("\\", "\\\\")
+          .replaceAll("%", "\\%")
+          .replaceAll("_", "\\_")}%`,
+      ]
+    : [];
+  const rollup =
+    keyExpr === "referrer_host"
+      ? await rollupEdgeSource(env, siteId, window, filters, diagnostics)
+      : null;
+  if (rollup) {
+    const daily = dailyDimensionRows(
+      siteId,
+      RollupDimension.Referrer,
+      rollup.split,
+    );
+    return {
+      sql: `${rollup.visitSource.sql},
+rollup AS (
+  SELECT referrer, SUM(views) AS views, SUM(sessions) AS sessions, SUM(visitors) AS visitors
+  FROM (${grouping("visit_source")}
+    UNION ALL
+    ${daily.sql}
+  )
+  GROUP BY referrer
+  ${having}
+)`,
+      bindings: [
+        ...rollup.visitSource.bindings,
+        ...daily.bindings,
+        ...searchBindings,
+      ],
+    };
+  }
+  const scopedDataset = scopedDatasetFor(siteId, window, filters);
+  const filter = scopedDataset
+    ? null
+    : buildVisitFilterSql(filters, "visit_source", { window });
+  return {
+    sql: `${scopedDataset?.ctes ?? buildVisitSourceCte()},
+filtered_visits AS (
+  SELECT *
+  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
+  ${filter?.clause ?? ""}
+),
+rollup AS (${grouping("filtered_visits")}
+  ${having}
+)`,
+    bindings: [
+      ...(scopedDataset
+        ? scopedDataset.bindings.map((binding) => binding.value)
+        : [
+            ...visitSourceBindings(siteId, window),
+            ...(filter?.bindings ?? []),
+          ]),
+      ...searchBindings,
+    ],
+  };
+}
 /** Keyset-paginated referrer aggregate. */
 export async function queryReferrersPageFromD1(
   env: Env,
@@ -98,10 +190,6 @@ export async function queryReferrersPageFromD1(
   sortBy: ReferrerPageSortKey = "views",
   sortDirection: "asc" | "desc" = "desc",
 ): Promise<PageResult<ReferrerRow>> {
-  const scopedDataset = scopedDatasetFor(siteId, window, filters);
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
   const keyExpr = includeFullUrl ? "referrer_url" : "referrer_host";
   const primary = sortBy === "visitors" ? "visitors" : "views";
   const secondary = sortBy === "visitors" ? "views" : "sessions";
@@ -112,24 +200,18 @@ WHERE ${primary} ${operator} ?
    OR (${primary} = ? AND ${secondary} ${operator} ?)
    OR (${primary} = ? AND ${secondary} = ? AND referrer > ?)`
     : "";
+  const aggregate = await referrerAggregate(
+    env,
+    siteId,
+    window,
+    filters,
+    keyExpr,
+    search,
+    diagnostics,
+  );
   const sql = `
 WITH
-${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS (
-  SELECT *
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-),
-rollup AS (
-  SELECT
-    COALESCE(${keyExpr}, '') AS referrer,
-    count(*) AS views,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
-  FROM filtered_visits
-  GROUP BY referrer
-  ${search ? "HAVING LOWER(referrer) LIKE ? ESCAPE '\\'" : ""}
-)
+${aggregate.sql}
 SELECT referrer, views, sessions, visitors
 FROM rollup
 ${cursorClause}
@@ -153,26 +235,7 @@ LIMIT ?
   const rows = await queryD1All<Record<string, unknown>>(
     env,
     orderedSql,
-    [
-      ...(scopedDataset
-        ? scopedDataset.bindings.map((binding) => binding.value)
-        : [
-            ...visitSourceBindings(siteId, window),
-            ...(filter?.bindings ?? []),
-          ]),
-      ...(search
-        ? [
-            `%${search
-              .trim()
-              .toLowerCase()
-              .replaceAll("\\", "\\\\")
-              .replaceAll("%", "\\%")
-              .replaceAll("_", "\\_")}%`,
-          ]
-        : []),
-      ...cursorBindings,
-      limit + 1,
-    ],
+    [...aggregate.bindings, ...cursorBindings, limit + 1],
     diagnostics,
   );
   const mapped = rows.map((row) => ({

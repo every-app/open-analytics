@@ -167,6 +167,18 @@ describe("MCP tools", () => {
     });
   });
 
+  it("passes the filter field the filter-values report documents", async () => {
+    await callTool("get_site_report", {
+      site_id: "site-1",
+      report: "filter-values",
+      params: { filterKey: "page.path" },
+    });
+
+    const url = new URL(forwarded().url);
+    expect(url.pathname).toBe("/api/private/filter-values");
+    expect(url.searchParams.get("filterKey")).toBe("page.path");
+  });
+
   it("answers bad arguments with a tool error", async () => {
     const badFilter = await callTool("get_site_report", {
       site_id: "site-1",
@@ -399,7 +411,6 @@ describe("MCP tools", () => {
       site_id: "site-1",
       track_hash: true,
       ignore_do_not_track: false,
-      domain_whitelist: ["docs.example.com"],
     });
 
     expect(forwardedCalls()[0]).toMatchObject({
@@ -408,15 +419,26 @@ describe("MCP tools", () => {
     });
     expect(await forwardedBody()).toEqual({
       siteId: "site-1",
-      config: {
-        trackHash: true,
-        ignoreDoNotTrack: false,
-        domainWhitelist: ["docs.example.com"],
-      },
+      config: { trackHash: true, ignoreDoNotTrack: false },
     });
     expect(
       await callTool("update_tracking_settings", { site_id: "site-1" }),
     ).toEqual({ isError: true, text: "Pass at least one setting to change." });
+  });
+
+  it("replaces blocking rules as the settings page saves them", async () => {
+    await callTool("update_tracking_settings", {
+      site_id: "site-1",
+      blocking_rules: { domains: ["-docs.example.com"], paths: [] },
+    });
+
+    // The versioned rules, which apply once the site has any; the old
+    // whitelist and blacklist fields were dropped then.
+    expect(await forwardedBody()).toEqual({
+      siteId: "site-1",
+      config: {},
+      blockingPatch: { domains: ["-docs.example.com"], paths: [] },
+    });
   });
 
   it("creates a site and returns its snippet", async () => {

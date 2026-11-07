@@ -82,6 +82,8 @@ function createD1Env(resultSets: D1Row[][]): {
   const prepare = vi.fn((sql: string) => ({
     bind: vi.fn((...bindings: QueryBinding[]) => ({
       all: vi.fn(async () => {
+        // No site has rolled-up days here, so reads take the raw path.
+        if (sql.includes("FROM visit_rollup_state")) return { results: [] };
         calls.push({ sql, bindings });
         return { results: pendingResults.shift() ?? [] };
       }),
@@ -266,6 +268,10 @@ describe("edge query dimensions low-level coverage", () => {
       );
       CREATE INDEX idx_visits_site_started_at
         ON visits(site_id, started_at);
+      CREATE TABLE visit_rollup_state (
+        site_pk INTEGER PRIMARY KEY, first_day INTEGER NOT NULL,
+        last_day INTEGER NOT NULL
+      );
     `);
     installVisitSiteIdentityFixture(database);
     const insert = database.prepare(`
@@ -330,9 +336,10 @@ describe("edge query dimensions low-level coverage", () => {
         { value: "/pricing", views: 1, sessions: 1, visitors: 1 },
       ]);
 
+      const pathCall = calls.find((call) => call.sql.includes("session_edges"));
       const plan = database
-        .prepare(`EXPLAIN QUERY PLAN ${calls[0]?.sql ?? "SELECT 1"}`)
-        .all(...(calls[0]?.bindings ?? [])) as Array<{ detail: string }>;
+        .prepare(`EXPLAIN QUERY PLAN ${pathCall?.sql ?? "SELECT 1"}`)
+        .all(...(pathCall?.bindings ?? [])) as Array<{ detail: string }>;
       const planDetails = plan.map((row) => row.detail).join("\n");
       expect(planDetails).toContain("MATERIALIZE filtered_visits");
       expect(planDetails).toContain("idx_visits_site_pk_started_at");

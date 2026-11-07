@@ -2,22 +2,32 @@ type InternalSchedule =
   | { kind: "interval"; everyMinutes: 30 | 60 }
   | { kind: "daily"; timezone: "UTC" };
 
+/** How often the notification tick checks the due rules. */
+export const NOTIFICATION_TICK_MINUTES = 30;
+
 interface ScheduledTaskDefinitionInfo {
   key: string;
   internalSchedule: InternalSchedule;
 }
 
-/** The tasks the 30-minute cron dispatches, each on its own schedule. */
+/**
+ * The tasks the every-minute cron dispatches, each on its own schedule. A
+ * run that leaves work (a backfill, rebuilds, expired data, a deleted site's
+ * data) runs again on the next minute until it is done.
+ */
 export const SCHEDULED_TASKS: ScheduledTaskDefinitionInfo[] = [
   {
-    // Aggregates closed visit rows into hourly rollups.
-    key: "visit_hourly_rollup",
-    internalSchedule: { kind: "interval", everyMinutes: 60 },
+    // Rolls up each complete UTC day, then backfills older days.
+    key: "visit_rollups",
+    internalSchedule: { kind: "interval", everyMinutes: 30 },
   },
   {
     // Evaluates notification rules and delivers their messages.
     key: "notification_tick",
-    internalSchedule: { kind: "interval", everyMinutes: 30 },
+    internalSchedule: {
+      kind: "interval",
+      everyMinutes: NOTIFICATION_TICK_MINUTES,
+    },
   },
   {
     // Deletes expired notifications and refreshes D1 query statistics.
@@ -25,8 +35,9 @@ export const SCHEDULED_TASKS: ScheduledTaskDefinitionInfo[] = [
     internalSchedule: { kind: "daily", timezone: "UTC" },
   },
   {
-    // Deletes expired page views and events; hourly totals are kept.
+    // Deletes deleted sites' data, then expired page views and events;
+    // rollups are kept.
     key: "analytics_retention",
-    internalSchedule: { kind: "daily", timezone: "UTC" },
+    internalSchedule: { kind: "interval", everyMinutes: 60 },
   },
 ];

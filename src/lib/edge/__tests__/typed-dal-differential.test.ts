@@ -3,6 +3,7 @@ import type { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createMigratedDatabase } from "@/../scripts/schema/database";
+import { createDatabaseRuntime } from "@/lib/db";
 import { createSqliteD1Database } from "@/lib/db/__tests__/sqlite-d1";
 import { readConfig, upsertConfig } from "@/lib/edge/system-config";
 import type { Env } from "@/lib/edge/types";
@@ -43,9 +44,9 @@ describe("typed DAL query differential checks", () => {
     const legacy = database
       .prepare("SELECT value_json FROM configs WHERE config_key = ? LIMIT 1")
       .get("feature-flags") as { value_json: string };
-    await expect(readConfig(env, "feature-flags")).resolves.toEqual(
-      JSON.parse(legacy.value_json),
-    );
+    await expect(
+      readConfig(createDatabaseRuntime(env.DB), "feature-flags"),
+    ).resolves.toEqual(JSON.parse(legacy.value_json));
   });
 });
 
@@ -70,7 +71,11 @@ describe("typed DAL mutation differential checks", () => {
           updated_at = unixepoch()`,
       )
       .run("feature-flags", '{"enabled":true}');
-    await upsertConfig(compiled.env, "feature-flags", { enabled: true });
+    await upsertConfig(
+      createDatabaseRuntime(compiled.env.DB),
+      "feature-flags",
+      { enabled: true },
+    );
 
     const legacyRow = legacy.database
       .prepare(

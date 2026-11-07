@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { sweepIngestAlarms } from "@/lib/edge/ingest/alarm-sweep";
+import {
+  isIngestSweepTick,
+  sweepIngestAlarms,
+} from "@/lib/edge/ingest/alarm-sweep";
 import type { InvocationLogger } from "@/lib/edge/observability/logger";
 import type { Env } from "@/lib/edge/types";
 
@@ -77,5 +80,17 @@ describe("sweepIngestAlarms", () => {
       "scheduled.ingest_alarm_sweep_site_failed",
       expect.objectContaining({ siteId: "site-a" }),
     );
+  });
+});
+
+describe("isIngestSweepTick", () => {
+  it("sweeps on the every-minute cron's ticks at :00 and :30 only, as the 30-minute cron did", () => {
+    const at = (hour: number, minute: number) =>
+      Date.UTC(2026, 10, 6, hour, minute);
+    expect(isIngestSweepTick(at(10, 0))).toBe(true);
+    expect(isIngestSweepTick(at(10, 30))).toBe(true);
+    expect(isIngestSweepTick(at(10, 1))).toBe(false);
+    expect(isIngestSweepTick(at(10, 29))).toBe(false);
+    expect(isIngestSweepTick(at(23, 59))).toBe(false);
   });
 });

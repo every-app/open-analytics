@@ -7,14 +7,10 @@ import {
   teamQueryContext,
 } from "@/lib/edge/analytics/contract";
 import type { Env } from "@/lib/edge/types";
-vi.mock(
-  "@/lib/edge/analytics/providers/d1/internal/hourly-rollup-queries",
-  () => ({
-    queryOverviewAndTrendForSitesFromHourlyRollupsPartial: vi.fn(),
-    queryOverviewForSitesFromHourlyRollupsPartial: vi.fn(),
-    queryTrendForSitesFromHourlyRollupsPartial: vi.fn(),
-  }),
-);
+vi.mock("@/lib/edge/analytics/providers/d1/internal/rollup-queries", () => ({
+  queryOverviewForSitesFromRollups: vi.fn(),
+  queryTrendForSitesFromRollups: vi.fn(),
+}));
 vi.mock("@/lib/edge/analytics/providers/d1/internal/core", () => ({
   buildTimeBuckets: vi.fn(() => ({ buckets: [1, 2, 3], interval: "day" })),
   buildVisitSourceCteForSites: vi.fn(() => "visit_source AS (...)"),
@@ -76,10 +72,9 @@ import { parseWindow } from "@/lib/edge/analytics/interfaces/dashboard/protocol/
 import { badRequest } from "@/lib/edge/analytics/interfaces/dashboard/protocol/responses";
 import { queryD1All } from "@/lib/edge/analytics/providers/d1/internal/core";
 import {
-  queryOverviewAndTrendForSitesFromHourlyRollupsPartial,
-  queryOverviewForSitesFromHourlyRollupsPartial,
-  queryTrendForSitesFromHourlyRollupsPartial,
-} from "@/lib/edge/analytics/providers/d1/internal/hourly-rollup-queries";
+  queryOverviewForSitesFromRollups,
+  queryTrendForSitesFromRollups,
+} from "@/lib/edge/analytics/providers/d1/internal/rollup-queries";
 import {
   listTeamSites,
   queryTeamDashboardForTeam,
@@ -90,13 +85,8 @@ import {
   resolvePrivateTeam,
   resolvePrivateTeamForSession,
 } from "@/lib/edge/auth/site-access";
-const queryOverviewMock = vi.mocked(
-  queryOverviewForSitesFromHourlyRollupsPartial,
-);
-const queryTrendMock = vi.mocked(queryTrendForSitesFromHourlyRollupsPartial);
-const queryOverviewAndTrendMock = vi.mocked(
-  queryOverviewAndTrendForSitesFromHourlyRollupsPartial,
-);
+const queryOverviewMock = vi.mocked(queryOverviewForSitesFromRollups);
+const queryTrendMock = vi.mocked(queryTrendForSitesFromRollups);
 const parseWindowMock = vi.mocked(parseWindow);
 const resolvePrivateTeamMock = vi.mocked(resolvePrivateTeam);
 const resolvePrivateTeamForSessionMock = vi.mocked(
@@ -244,7 +234,6 @@ describe("filtered team dashboard aggregates", () => {
   beforeEach(() => {
     queryOverviewMock.mockReset();
     queryTrendMock.mockReset();
-    queryOverviewAndTrendMock.mockReset();
     queryD1AllMock.mockReset();
     queryD1AllMock.mockResolvedValue([]);
   });
@@ -277,7 +266,6 @@ describe("filtered team dashboard aggregates", () => {
     );
 
     expect(result.source).toBe("raw");
-    expect(queryOverviewAndTrendMock).not.toHaveBeenCalled();
     expect(queryOverviewMock).not.toHaveBeenCalled();
     expect(queryTrendMock).not.toHaveBeenCalled();
     expect(queryD1AllMock).toHaveBeenCalledTimes(3);
@@ -353,13 +341,17 @@ describe("handleTeamDashboard", () => {
     parseWindowMock.mockReset();
     resolvePrivateTeamMock.mockReset();
     resolvePrivateTeamForSessionMock.mockReset();
+    // No site has rolled-up days: every read falls back to raw rows.
     queryOverviewMock.mockReset();
+    queryOverviewMock.mockImplementation(async (_env, siteIds) => ({
+      value: new Map(),
+      rawSiteIds: siteIds,
+    }));
     queryTrendMock.mockReset();
-    queryOverviewAndTrendMock.mockReset();
-    queryOverviewAndTrendMock.mockResolvedValue({
-      overview: new Map(),
-      trend: new Map(),
-    });
+    queryTrendMock.mockImplementation(async (_env, siteIds) => ({
+      rows: [],
+      rawSiteIds: siteIds,
+    }));
     queryD1AllMock.mockReset();
     queryD1AllMock.mockResolvedValue([]);
   });
@@ -421,13 +413,17 @@ describe("handleTeamDashboard", () => {
 });
 describe("handleTeamDashboardForTeam", () => {
   beforeEach(() => {
+    // No site has rolled-up days: every read falls back to raw rows.
     queryOverviewMock.mockReset();
+    queryOverviewMock.mockImplementation(async (_env, siteIds) => ({
+      value: new Map(),
+      rawSiteIds: siteIds,
+    }));
     queryTrendMock.mockReset();
-    queryOverviewAndTrendMock.mockReset();
-    queryOverviewAndTrendMock.mockResolvedValue({
-      overview: new Map(),
-      trend: new Map(),
-    });
+    queryTrendMock.mockImplementation(async (_env, siteIds) => ({
+      rows: [],
+      rawSiteIds: siteIds,
+    }));
     queryD1AllMock.mockReset();
     queryD1AllMock.mockResolvedValue([]);
   });
@@ -476,8 +472,6 @@ describe("handleTeamDashboardForTeam", () => {
       ],
     });
     const env = { DB: db } as unknown as Env;
-    queryOverviewMock.mockResolvedValue(new Map());
-    queryTrendMock.mockResolvedValue(new Map());
     const url = makeUrl("/api/private/team-dashboard");
     const window = makeWindow();
 
@@ -493,7 +487,7 @@ describe("handleTeamDashboardForTeam", () => {
     expect(body.data.sites[0].id).toBe("s1");
   });
 
-  it("falls back to D1 when rollup returns null", async () => {
+  it("reads raw rows for sites without rolled-up days", async () => {
     const db = makeDbMock();
     db.all.mockResolvedValue({
       results: [
@@ -510,8 +504,6 @@ describe("handleTeamDashboardForTeam", () => {
       ],
     });
     const env = { DB: db } as unknown as Env;
-    queryOverviewMock.mockResolvedValue(new Map());
-    queryTrendMock.mockResolvedValue(null);
     queryD1AllMock.mockResolvedValue([]);
     const url = makeUrl("/api/private/team-dashboard");
     const window = makeWindow();

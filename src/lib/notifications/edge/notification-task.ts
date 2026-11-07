@@ -1,3 +1,8 @@
+import {
+  D1_QUERIES_PER_INVOCATION,
+  D1QueryBudget,
+  withD1QueryBudget,
+} from "@/lib/edge/scheduled-tasks/d1-query-budget";
 import type {
   ScheduledTaskContext,
   ScheduledTaskOutcome,
@@ -8,6 +13,7 @@ import type {
   NotificationMessage,
   NotificationMessageDraft,
 } from "@/lib/notifications/message";
+import type { NotificationRuleType } from "@/lib/notifications/rules";
 import { DEFAULT_RETENTION_CONFIG } from "@/lib/retention";
 
 import { deliverNotificationMessage } from "./delivery";
@@ -19,12 +25,27 @@ import {
   shouldCreateUnreadAttention,
 } from "./preferences";
 import {
+  DUE_NOTIFICATION_RULES_PER_READ,
   listDueNotificationRules,
   type NotificationRule,
   recordNotificationRuleCheck,
   resolveNotificationRecipient,
   scheduleUnscheduledReports,
 } from "./rule-store";
+
+/**
+ * The most D1 queries one rule takes, from its evaluation to its recorded
+ * check; a rule starts only with this many left. A report reads its site,
+ * the overview (rolled-up days, their totals and the raw days at both
+ * edges), top pages and top referrers: 7. An alert reads its site and two
+ * overviews: 5. Sending reads the recipient, creates the message and reads
+ * it back, records its delivery and reads it back: 5. The check: 1. The
+ * notification tick tests measure each type's longest path.
+ */
+export const NOTIFICATION_RULE_D1_QUERIES: Record<
+  NotificationRuleType,
+  number
+> = { report: 13, change: 11 };
 
 export interface NotificationTaskSummary {
   rulesScanned: number;
@@ -115,11 +136,19 @@ async function sendToCreator(input: {
 }
 /**
  * Checks every due rule: a report whose time has come, and every alert out
- * of its cooldown. A rule that fails is logged and the rest still run.
+ * of its cooldown. A rule that fails is logged and the rest still run. A
+ * rule starts only with the queries to finish it, its check recorded, out
+ * of the run's `maxQueries`; with rules left it reports `workRemains`.
  */
 export async function runNotificationTick(
-  context: ScheduledTaskContext,
+  taskContext: ScheduledTaskContext,
+  maxQueries = D1_QUERIES_PER_INVOCATION,
 ): Promise<ScheduledTaskOutcome> {
+  const queries = new D1QueryBudget(maxQueries);
+  const context = {
+    ...taskContext,
+    env: withD1QueryBudget(taskContext.env, queries),
+  };
   const { env, logger } = context;
   const summary = emptySummary();
   const cache = createNotificationInvocationCache();
@@ -127,8 +156,14 @@ export async function runNotificationTick(
   await scheduleUnscheduledReports(env, now);
   const rules = await listDueNotificationRules(env, now);
   summary.rulesScanned = rules.length;
+  // A full read may have left due rules unread.
+  let workRemains = rules.length === DUE_NOTIFICATION_RULES_PER_READ;
 
   for (const rule of rules) {
+    if (queries.left < NOTIFICATION_RULE_D1_QUERIES[rule.type]) {
+      workRemains = true;
+      break;
+    }
     const checkedAt = Math.floor(Date.now() / 1000);
     try {
       const evaluation = await evaluateNotificationRule(
@@ -184,5 +219,6 @@ export async function runNotificationTick(
   return {
     status: summary.emailFailed > 0 ? "partial" : "success",
     summary: { ...summary },
+    workRemains,
   };
 }

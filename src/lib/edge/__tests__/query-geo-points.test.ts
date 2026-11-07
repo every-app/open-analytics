@@ -31,6 +31,8 @@ function createD1Env(resultSets: D1Row[][]): {
   const prepare = vi.fn((sql: string) => ({
     bind: vi.fn((...bindings: QueryBinding[]) => ({
       all: vi.fn(async () => {
+        // No site has rolled-up days here, so reads take the raw path.
+        if (sql.includes("FROM visit_rollup_state")) return { results: [] };
         calls.push({ sql, bindings });
         return { results: pendingResults.shift() ?? [] };
       }),

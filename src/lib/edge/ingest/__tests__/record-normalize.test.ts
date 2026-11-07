@@ -297,6 +297,39 @@ describe("normalizeIngestRecord pageview records", () => {
     expect(result.record.previousVisitStartedAt).toBeNull();
   });
 
+  it("rotates the visitor id with the UTC day the page view is filed under", async () => {
+    const { context } = makeContext();
+    const midnight = Date.UTC(2026, 10, 6);
+    // Started a second before midnight, sent a second after.
+    const envelope = makeEnvelope(
+      {
+        kind: "pageview",
+        visitId: "visit-1",
+        hostname: "example.com",
+        timestamp: midnight + 1_000,
+        startedAt: midnight - 1_000,
+      },
+      { receivedAt: midnight + 2_000 },
+    );
+    const visitorOn = async (eventAtMs: number) =>
+      deriveVisitorId({
+        ip: "203.0.113.10",
+        ua: envelope.request.headers["user-agent"]!,
+        eventAtMs,
+        secret: await expectedVisitorSecret(),
+      });
+
+    const result = await normalizeIngestRecord(envelope, context);
+
+    expect(result.record).toMatchObject({
+      startedAt: midnight - 1_000,
+      visitorId: await visitorOn(midnight - 1_000),
+    });
+    expect(await visitorOn(midnight - 1_000)).not.toBe(
+      await visitorOn(midnight + 1_000),
+    );
+  });
+
   it("ignores client visitor ids, parses cross-site referrers, and prefers client timezone", async () => {
     const { context } = makeContext();
     const expectedVisitorId = await deriveVisitorId({

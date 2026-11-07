@@ -17,6 +17,7 @@ import {
 } from "@every-app/sdk/server";
 import { z } from "zod";
 
+import { BLOCKING_FIELD_IDS, type BlockingFieldId } from "@/lib/blocking";
 import { resolveViewer } from "@/lib/edge/auth/viewer";
 import type { Env } from "@/lib/edge/types";
 import {
@@ -238,7 +239,7 @@ const SITE_REPORTS = {
   "goal-summary": "A goal's conversions (params: id)",
   "goal-timeseries": "A goal's conversions per interval (params: id)",
   "filter-values":
-    "Known values of a filter field, for building filters (params: field)",
+    "Known values of a filter field, for building filters (params: filterKey, a filter field such as page.path, referrer.domain or geo.country)",
 } as const;
 
 type SiteReport = keyof typeof SITE_REPORTS;
@@ -262,6 +263,13 @@ const funnelStepsSchema = z
   )
   .min(2)
   .max(10);
+
+const blockingRuleLines = z.array(z.string().max(1024)).max(200);
+const blockingRulesSchema = z.object(
+  Object.fromEntries(
+    BLOCKING_FIELD_IDS.map((field) => [field, blockingRuleLines.optional()]),
+  ) as Record<BlockingFieldId, z.ZodOptional<typeof blockingRuleLines>>,
+);
 
 export const tools = defineTools(
   {
@@ -379,7 +387,7 @@ export const tools = defineTools(
     get_site_settings: {
       title: "Site settings",
       description:
-        "A site's tracking settings (query and hash tracking, outbound links, Do Not Track, bot protection, allowed domains, excluded paths) and its tracking snippet.",
+        "A site's tracking settings (query and hash tracking, outbound links, Do Not Track, bot protection, blocking rules) and its tracking snippet.",
       risk: "read",
       input: z.object({ site_id: z.string().min(1) }),
       handler: async (args, call) => {
@@ -472,7 +480,7 @@ export const tools = defineTools(
     update_tracking_settings: {
       title: "Update tracking settings",
       description:
-        "Change how a site's tracker collects data. Only the settings you pass change. Owners and admins only.",
+        "Change how a site's tracker collects data. Only the settings you pass change; a blocking_rules field you pass replaces that field's rules, as the site's settings page saves them. Owners and admins only.",
       risk: "write",
       input: z.object({
         site_id: z.string().min(1),
@@ -482,8 +490,11 @@ export const tools = defineTools(
         ignore_do_not_track: z.boolean().optional(),
         bot_protection_enabled: z.boolean().optional(),
         hosting_proxy_blocking_enabled: z.boolean().optional(),
-        domain_whitelist: z.array(z.string().max(255)).max(200).optional(),
-        path_blacklist: z.array(z.string().max(255)).max(200).optional(),
+        blocking_rules: blockingRulesSchema
+          .optional()
+          .describe(
+            'Rules per type (domains, paths, queryParameters, referrers, userAgents, ips, asns, countries, regions), one per line. A request matching a rule isn\'t counted; a line starting with "-" allows instead, and the last matching line wins. * is a wildcard. The site\'s own domain and its subdomains are allowed by default, so ["-other.example"] in domains also counts other.example and ["/admin/*"] in paths stops counting admin pages. [] clears a type.',
+          ),
       }),
       handler: async (args, call) => {
         const config = Object.fromEntries(
@@ -494,11 +505,17 @@ export const tools = defineTools(
             ignoreDoNotTrack: args.ignore_do_not_track,
             botProtectionEnabled: args.bot_protection_enabled,
             hostingProxyBlockingEnabled: args.hosting_proxy_blocking_enabled,
-            domainWhitelist: args.domain_whitelist,
-            pathBlacklist: args.path_blacklist,
           }).filter(([, value]) => value !== undefined),
         );
-        if (Object.keys(config).length === 0) {
+        const blockingPatch = Object.fromEntries(
+          Object.entries(args.blocking_rules ?? {}).filter(
+            ([, lines]) => lines !== undefined,
+          ),
+        );
+        if (
+          Object.keys(config).length === 0 &&
+          Object.keys(blockingPatch).length === 0
+        ) {
           throw new ToolError("Pass at least one setting to change.");
         }
         return {
@@ -507,7 +524,13 @@ export const tools = defineTools(
             "POST",
             "/api/private/admin/site-config",
             {
-              body: { siteId: args.site_id, config },
+              body: {
+                siteId: args.site_id,
+                config,
+                ...(Object.keys(blockingPatch).length > 0
+                  ? { blockingPatch }
+                  : {}),
+              },
             },
           ),
         };

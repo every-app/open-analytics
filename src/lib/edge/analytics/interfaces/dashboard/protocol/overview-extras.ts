@@ -3,10 +3,7 @@ import {
   parseFilterUrlForAudience,
   withoutGeoFilter,
 } from "@/lib/edge/analytics/contract";
-import {
-  type BaseQuery,
-  siteQueryContext,
-} from "@/lib/edge/analytics/contract";
+import { siteQueryContext } from "@/lib/edge/analytics/contract";
 import { queryWindowToTime } from "@/lib/edge/analytics/contract";
 import {
   parseBooleanSearchParam,
@@ -39,7 +36,7 @@ export async function handleOverviewGeoPointsContract(
       context: queryContext,
       time: queryWindowToTime(window),
       filters,
-    } as BaseQuery,
+    },
   );
   if (!result.ok) return queryErrorResponse(result.error);
   const { points, ...summary } = result.data;

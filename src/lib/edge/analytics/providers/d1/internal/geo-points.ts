@@ -19,7 +19,128 @@ import {
   visitSourceBindings,
 } from "./core";
 import type { D1ReadDiagnostics } from "./diagnostics";
+import {
+  dailyDimensionRows,
+  dailyGeoPoints,
+  type RollupEdgeSource,
+  rollupEdgeSource,
+} from "./rollup-breakdowns";
+import { RollupDimension } from "./rollup-dimensions";
 import { scopedDatasetFor } from "./scoped-dataset";
+const RAW_POINT_COLUMNS = `
+    ROUND(latitude, 3) AS lat_bucket,
+    ROUND(longitude, 3) AS lon_bucket,
+    country,
+    region,
+    region_code AS regionCode,
+    city,
+    MAX(started_at) AS latest_at,
+    COUNT(*) AS point_count`;
+const VALID_COORDINATES = `latitude IS NOT NULL
+    AND longitude IS NOT NULL
+    AND ABS(latitude) <= 90
+    AND ABS(longitude) <= 180`;
+const POINT_GROUP =
+  "lat_bucket, lon_bucket, country, region, region_code, city";
+/**
+ * The unfiltered map: rolled-up days' points and countries plus the raw
+ * edges', merged the way the raw query groups them.
+ */
+async function queryRolledUpGeoPoints(
+  env: Env,
+  siteId: string,
+  rollup: RollupEdgeSource,
+  diagnostics?: D1ReadDiagnostics,
+): Promise<GeoPointAggregate> {
+  const points = dailyGeoPoints(siteId, rollup.split);
+  const countries = dailyDimensionRows(
+    siteId,
+    RollupDimension.Country,
+    rollup.split,
+  );
+  const pointRows = await queryD1All<Record<string, unknown>>(
+    env,
+    `
+WITH
+${rollup.visitSource.sql},
+raw_points AS (
+  SELECT ${RAW_POINT_COLUMNS}
+  FROM visit_source
+  WHERE ${VALID_COORDINATES}
+  GROUP BY ${POINT_GROUP}
+),
+merged_points AS (
+  SELECT
+    lat_bucket, lon_bucket, country, region, regionCode, city,
+    MAX(latest_at) AS latest_at,
+    SUM(point_count) AS point_count
+  FROM (
+    SELECT * FROM raw_points
+    UNION ALL
+    ${points.sql}
+  )
+  GROUP BY lat_bucket, lon_bucket, country, region, regionCode, city
+)
+SELECT
+  lat_bucket AS latitude,
+  lon_bucket AS longitude,
+  latest_at AS timestampMs,
+  country,
+  region,
+  regionCode,
+  city,
+  point_count AS pointCount
+FROM merged_points
+ORDER BY timestampMs DESC
+`,
+    [...rollup.visitSource.bindings, ...points.bindings],
+    diagnostics,
+  );
+  const countryRows = await queryD1All<Record<string, unknown>>(
+    env,
+    `
+WITH
+${rollup.visitSource.sql},
+raw_countries AS (
+  SELECT
+    country AS value,
+    count(*) AS views,
+    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
+    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+  FROM visit_source
+  GROUP BY country
+)
+SELECT
+  value AS country,
+  SUM(views) AS views,
+  SUM(sessions) AS sessions,
+  SUM(visitors) AS visitors
+FROM (
+  SELECT * FROM raw_countries
+  UNION ALL
+  ${countries.sql}
+)
+GROUP BY value
+ORDER BY views DESC, sessions DESC, country ASC
+`,
+    [...rollup.visitSource.bindings, ...countries.bindings],
+    diagnostics,
+  );
+  return {
+    points: pointRows.map(mapGeoPointRow),
+    countryCounts: countryRows.map(mapCountryCountRow),
+    regionCounts: [],
+    cityCounts: [],
+  };
+}
+function mapCountryCountRow(row: Record<string, unknown>): GeoCountryCountRow {
+  return {
+    country: String(row.country ?? ""),
+    views: Number(row.views ?? 0),
+    sessions: Number(row.sessions ?? 0),
+    visitors: Number(row.visitors ?? 0),
+  };
+}
 export async function queryGeoPointsFromD1(
   env: Env,
   siteId: string,
@@ -27,6 +148,16 @@ export async function queryGeoPointsFromD1(
   filters: FilterDocument,
   diagnostics?: D1ReadDiagnostics,
 ): Promise<GeoPointAggregate> {
+  const rollup = await rollupEdgeSource(
+    env,
+    siteId,
+    window,
+    filters,
+    diagnostics,
+  );
+  if (rollup) {
+    return queryRolledUpGeoPoints(env, siteId, rollup, diagnostics);
+  }
   const scopedDataset = scopedDatasetFor(siteId, window, filters);
   const filter = scopedDataset
     ? null
@@ -59,23 +190,12 @@ export async function queryGeoPointsFromD1(
 WITH
 ${scopedDataset?.ctes ?? buildVisitSourceCte()},
 filtered_visits AS (
-  SELECT
-    ROUND(latitude, 3) AS lat_bucket,
-    ROUND(longitude, 3) AS lon_bucket,
-    country,
-    region,
-    region_code AS regionCode,
-    city,
-    MAX(started_at) AS latest_at,
-    COUNT(*) AS point_count
+  SELECT ${RAW_POINT_COLUMNS}
   FROM ${scopedDataset?.visitRelation ?? "visit_source"}
   ${filter?.clause ?? ""}
   ${coordinateClause}
-    latitude IS NOT NULL
-    AND longitude IS NOT NULL
-    AND ABS(latitude) <= 90
-    AND ABS(longitude) <= 180
-  GROUP BY lat_bucket, lon_bucket, country, region, region_code, city
+    ${VALID_COORDINATES}
+  GROUP BY ${POINT_GROUP}
 )
 SELECT
   lat_bucket AS latitude,
@@ -143,12 +263,7 @@ ORDER BY views DESC, sessions DESC, country ASC
               ],
           diagnostics,
         )
-      ).map((row) => ({
-        country: String(row.country ?? ""),
-        views: Number(row.views ?? 0),
-        sessions: Number(row.sessions ?? 0),
-        visitors: Number(row.visitors ?? 0),
-      })),
+      ).map(mapCountryCountRow),
     );
   } else if (!parsedGeo.regionCode) {
     const regionSql = `

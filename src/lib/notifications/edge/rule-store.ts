@@ -23,6 +23,7 @@ import {
 } from "@/lib/db";
 import { canReadSite, canReadTeam } from "@/lib/edge/admin/access";
 import type { Actor } from "@/lib/edge/admin/auth";
+import { NOTIFICATION_TICK_MINUTES } from "@/lib/edge/scheduled-tasks/registry";
 import type { Env } from "@/lib/edge/types";
 import { clampString } from "@/lib/edge/utils";
 import {
@@ -66,9 +67,18 @@ function nullableNumber(value: number | null | undefined): number | null {
   return value === null || value === undefined ? null : Number(value);
 }
 
-/** A report's next send; an alert is checked on every notification tick. */
+/** The most due rules one read returns. */
+export const DUE_NOTIFICATION_RULES_PER_READ = 100;
+
+/**
+ * A report's next send. An alert is checked on every notification tick: its
+ * next check is the next tick's slot, so a run that goes on a minute later
+ * with the rules it didn't reach doesn't check it again.
+ */
 function nextRunAtFor(config: NotificationRuleConfig, now: number): number {
-  return config.type === "report" ? nextReportRunAt(config.schedule, now) : now;
+  if (config.type === "report") return nextReportRunAt(config.schedule, now);
+  const slot = NOTIFICATION_TICK_MINUTES * 60;
+  return (Math.floor(now / slot) + 1) * slot;
 }
 
 function configColumns(config: NotificationRuleConfig) {
@@ -294,7 +304,7 @@ export async function listDueNotificationRules(
     { expression: matching.columns.nextRunAt, direction: "ASC" },
   ]);
   const rows = await notificationRuleDatabase(env).all(
-    compileD1Query(limit(ordered, 100), {
+    compileD1Query(limit(ordered, DUE_NOTIFICATION_RULES_PER_READ), {
       tag: "notifications.notification_rules.all",
     }),
   );

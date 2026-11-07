@@ -32,6 +32,15 @@ export function createSqliteD1Database(
           } as D1Result<Row>;
         },
         async run() {
+          // D1 returns a statement's RETURNING rows from run() and batch().
+          if (/\bRETURNING\b/i.test(sql)) {
+            const results = statement.all(...bindings);
+            return {
+              success: true,
+              results,
+              meta: { changes: results.length },
+            } as D1Result;
+          }
           const result = statement.run(...bindings);
           return {
             success: true,

@@ -1,5 +1,5 @@
+import type { DatabaseRuntime } from "@/lib/db";
 import { readConfig, upsertConfig } from "@/lib/edge/system-config";
-import type { Env } from "@/lib/edge/types";
 import {
   DEFAULT_RETENTION_CONFIG,
   normalizeRetentionConfig,
@@ -7,21 +7,19 @@ import {
   type RetentionConfig,
 } from "@/lib/retention";
 export async function readRetentionConfig(
-  env: Pick<Env, "DB">,
+  db: DatabaseRuntime,
 ): Promise<RetentionConfig> {
   try {
-    return normalizeRetentionConfig(
-      await readConfig(env, RETENTION_CONFIG_KEY),
-    );
+    return normalizeRetentionConfig(await readConfig(db, RETENTION_CONFIG_KEY));
   } catch {
     return DEFAULT_RETENTION_CONFIG;
   }
 }
 export async function writeRetentionConfig(
-  env: Pick<Env, "DB">,
+  db: DatabaseRuntime,
   value: RetentionConfig,
 ): Promise<RetentionConfig> {
   const normalized = normalizeRetentionConfig(value);
-  await upsertConfig(env, RETENTION_CONFIG_KEY, { ...normalized });
+  await upsertConfig(db, RETENTION_CONFIG_KEY, { ...normalized });
   return normalized;
 }

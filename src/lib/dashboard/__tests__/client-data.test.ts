@@ -525,6 +525,7 @@ describe("Dashboard Client Data Processing Utilities", () => {
         applyGeoFilter: true,
       });
       params = paramsFromCall(fetchMock, 1);
+      // The map asks for every point.
       expect(params.has("limit")).toBe(false);
       expect(params.get("applyGeoFilter")).toBe("1");
 

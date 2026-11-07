@@ -1,3 +1,4 @@
+import { createDatabaseRuntime } from "@/lib/db";
 import {
   currentInvocationLogger,
   type InvocationLogger,
@@ -31,6 +32,8 @@ export interface ScheduledTaskContext {
 export interface ScheduledTaskOutcome {
   status?: "success" | "partial" | "skipped";
   summary?: Record<string, unknown>;
+  /** The run used its D1 queries with work left: run again on the next tick. */
+  workRemains?: boolean;
 }
 function createLogger(observability?: InvocationLogger): ScheduledTaskLogger {
   const write = async (
@@ -56,20 +59,21 @@ export async function runScheduledTask(
     context: ScheduledTaskContext,
   ) => Promise<ScheduledTaskOutcome | undefined>,
   observability?: InvocationLogger,
-): Promise<void> {
+): Promise<ScheduledTaskOutcome | undefined> {
   // Cron supplies its logger explicitly; anything else runs beneath the Hono
   // request scope. Either way task work lands in the outer invocation record.
   const logger = createLogger(observability ?? currentInvocationLogger());
-  const retention = await readRetentionConfig(env);
+  const retention = await readRetentionConfig(createDatabaseRuntime(env.DB));
   await logger.info("start", `Task ${taskKey} started`);
   try {
-    await handler({
+    const outcome = await handler({
       env,
       startedAt: Date.now(),
       logger,
       retention,
     });
     await logger.info("finish", `Task ${taskKey} finished`);
+    return outcome;
   } catch (error) {
     await logger.error("error", `Task ${taskKey} failed`);
     throw error;

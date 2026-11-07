@@ -168,7 +168,10 @@ describe("get started", () => {
     const pk = seedSite(database, "org-1", "site-a");
     database
       .prepare(
-        "INSERT INTO visit_hourly_rollups (site_pk, site_id, hour_bucket, views, input_cutoff_ms) VALUES (?, 'site-a', 1, 5, 0)",
+        `INSERT INTO visit_hourly_rollups (site_pk, hour_bucket, views, visitors,
+           first_visitors, last_visitors, sessions, bounces, duration_ms_sum,
+           duration_ms_count)
+         VALUES (?, 1, 5, 1, 1, 1, 1, 0, 0, 0)`,
       )
       .run(pk);
 
@@ -193,8 +196,10 @@ describe("get started", () => {
     const rolledUp = seedSite(database, "org-1", "rolled-up");
     database
       .prepare(
-        `INSERT INTO visit_hourly_rollups (site_id, site_pk, hour_bucket, input_cutoff_ms)
-         VALUES ('rolled-up', ?, 5, 0)`,
+        `INSERT INTO visit_hourly_rollups (site_pk, hour_bucket, views, visitors,
+           first_visitors, last_visitors, sessions, bounces, duration_ms_sum,
+           duration_ms_count)
+         VALUES (?, 5, 5, 1, 1, 1, 1, 0, 0, 0)`,
       )
       .run(rolledUp);
     seedSite(database, "org-1", "waiting");
@@ -231,8 +236,10 @@ describe("get started", () => {
     const rolledUp = seedSite(database, "org-1", "rolled-up");
     database
       .prepare(
-        `INSERT INTO visit_hourly_rollups (site_id, site_pk, hour_bucket, input_cutoff_ms)
-         VALUES ('rolled-up', ?, 2, 0)`,
+        `INSERT INTO visit_hourly_rollups (site_pk, hour_bucket, views, visitors,
+           first_visitors, last_visitors, sessions, bounces, duration_ms_sum,
+           duration_ms_count)
+         VALUES (?, 2, 5, 1, 1, 1, 1, 0, 0, 0)`,
       )
       .run(rolledUp);
     seedSite(database, "org-1", "waiting");

@@ -1,7 +1,10 @@
 import { everyApp, type EveryAppUser } from "@every-app/sdk/server";
 import handler from "@tanstack/react-start/server-entry";
 
-import { sweepIngestAlarms } from "@/lib/edge/ingest/alarm-sweep";
+import {
+  isIngestSweepTick,
+  sweepIngestAlarms,
+} from "@/lib/edge/ingest/alarm-sweep";
 import { IngestDurableObject as BaseIngestDurableObject } from "@/lib/edge/ingest/durable-object";
 import { instrumentEnv } from "@/lib/edge/observability/bindings";
 import {
@@ -209,7 +212,9 @@ export default {
             controller.scheduledTime,
             logger,
           ),
-          sweepIngestAlarms(instrumentedEnv, logger),
+          isIngestSweepTick(controller.scheduledTime)
+            ? sweepIngestAlarms(instrumentedEnv, logger)
+            : undefined,
         ])
           .then(() => logger.info("scheduled.completed"))
           .catch((error) => {

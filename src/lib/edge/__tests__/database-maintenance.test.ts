@@ -61,7 +61,8 @@ describe("database maintenance", () => {
 
     expect(result).toEqual({
       status: "success",
-      summary: { notificationsDeleted: 105 },
+      summary: { notificationsDeleted: 105, workRemains: false },
+      workRemains: false,
     });
     expect(
       d1.db
@@ -69,6 +70,44 @@ describe("database maintenance", () => {
         .all()
         .map((row) => row.id),
     ).toEqual(["future", "no-expiry"]);
+    d1.close();
+  });
+
+  it("deletes batch after batch within its queries and says when expired notifications are left", async () => {
+    const d1 = new FakeD1Database();
+    d1.db.exec(
+      "CREATE TABLE notification_messages (id TEXT PRIMARY KEY, expires_at INTEGER);",
+    );
+    const now = Math.floor(Date.now() / 1000);
+    const insert = d1.db.prepare(
+      "INSERT INTO notification_messages (id, expires_at) VALUES (?, ?)",
+    );
+    for (let index = 0; index < 450; index += 1) {
+      insert.run(`expired-${index}`, now - 1);
+    }
+    const left = () =>
+      Number(
+        (
+          d1.db
+            .prepare("SELECT COUNT(*) AS n FROM notification_messages")
+            .get() as { n: number }
+        ).n,
+      );
+
+    // Three deletes of 100, then the statistics refresh.
+    const first = await runDatabaseMaintenance(context(d1), 4);
+    expect(first).toMatchObject({
+      summary: { notificationsDeleted: 300 },
+      workRemains: true,
+    });
+    expect(left()).toBe(150);
+
+    const second = await runDatabaseMaintenance(context(d1), 4);
+    expect(second).toMatchObject({
+      summary: { notificationsDeleted: 150 },
+      workRemains: false,
+    });
+    expect(left()).toBe(0);
     d1.close();
   });
 });

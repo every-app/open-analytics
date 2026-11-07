@@ -1,3 +1,4 @@
+import { createDatabaseRuntime } from "@/lib/db";
 import { ManagerOnly, managerOnly } from "@/lib/edge/admin/access";
 import { requireActor } from "@/lib/edge/admin/auth";
 import { bad, jsonResponseFor, na, parseJson } from "@/lib/edge/admin/response";
@@ -18,10 +19,11 @@ export async function handleRetentionAdmin(
   if (!actor.isAdmin) {
     return managerOnly(ManagerOnly.Retention, req);
   }
+  const db = createDatabaseRuntime(env.DB);
   if (req.method === "GET") {
     return jsonResponseFor(req, {
       ok: true,
-      data: await readRetentionConfig(env),
+      data: await readRetentionConfig(db),
     });
   }
   if (req.method !== "PATCH") return na(req);
@@ -29,9 +31,9 @@ export async function handleRetentionAdmin(
   if (!body.retention || typeof body.retention !== "object") {
     return bad("retention is required", undefined, req);
   }
-  const current = await readRetentionConfig(env);
+  const current = await readRetentionConfig(db);
   const saved = await writeRetentionConfig(
-    env,
+    db,
     mergeRetentionConfig(current, body.retention as Record<string, unknown>),
   );
   return jsonResponseFor(req, { ok: true, data: saved });

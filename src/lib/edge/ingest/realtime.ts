@@ -1,6 +1,5 @@
 import {
   ACTIVE_NOW_WINDOW_MS,
-  RECENT_EVENT_QUERY_SCAN_LIMIT,
   RECENT_EVENT_RETENTION_MS,
   WS_PRESENCE_LEAVE_EVENT,
 } from "./constants";
@@ -12,14 +11,19 @@ import {
 import type { SqlBinding } from "./sql";
 import type { SqlReader, VisitRow } from "./types";
 type RealtimeContext = Pick<SqlReader, "sqlAll">;
+/**
+ * The snapshot's time window and, when the caller asks for a page of the
+ * newest events, its size. Without a valid `limit` the snapshot has every
+ * event in the window.
+ */
 export function snapshotQueryParams(url: URL): {
   fromMs: number;
   toMs: number;
-  limit: number;
+  limit: number | undefined;
 } {
   const fromMsRaw = Number(url.searchParams.get("from") || "0");
   const toMsRaw = Number(url.searchParams.get("to") || String(Date.now()));
-  const limitRaw = Number(url.searchParams.get("limit") || "5000");
+  const limitRaw = Number(url.searchParams.get("limit") || Number.NaN);
 
   const fromMs = Number.isFinite(fromMsRaw)
     ? Math.max(0, Math.floor(fromMsRaw))
@@ -28,8 +32,8 @@ export function snapshotQueryParams(url: URL): {
     ? Math.max(fromMs, Math.floor(toMsRaw))
     : Date.now();
   const limit = Number.isFinite(limitRaw)
-    ? Math.min(RECENT_EVENT_QUERY_SCAN_LIMIT, Math.max(1, Math.floor(limitRaw)))
-    : 5000;
+    ? Math.max(1, Math.floor(limitRaw))
+    : undefined;
 
   return { fromMs, toMs, limit };
 }

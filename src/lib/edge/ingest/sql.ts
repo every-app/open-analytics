@@ -170,6 +170,17 @@ export function visitUpsertSql(status: string): string {
     : UPSERT_FINALIZED_VISIT_SQL;
 }
 
+/**
+ * Records a UTC day (?2) of a site (?1) for the rollup task to rebuild when
+ * that day is already rolled up. It runs in the same D1 batch as the write
+ * of a page view started that day, so the record can't be lost.
+ */
+export const MARK_ROLLED_UP_DAY_SQL = `
+  INSERT OR IGNORE INTO visit_rollup_dirty_days (site_pk, day)
+  SELECT site_pk, ?2 FROM visit_rollup_state
+  WHERE site_pk = ?1 AND ?2 BETWEEN first_day AND last_day
+`;
+
 export const CREATE_BUFFERED_CUSTOM_EVENTS_SQL = `
   CREATE TABLE IF NOT EXISTS buffered_custom_events (
     event_id TEXT PRIMARY KEY,

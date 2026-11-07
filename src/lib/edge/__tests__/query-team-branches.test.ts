@@ -41,6 +41,8 @@ function createD1Env(resultSets: D1Row[][], firstRows: Array<D1Row | null>) {
   const prepare = vi.fn((sql: string) => ({
     bind: vi.fn((...bindings: Binding[]) => ({
       all: vi.fn(async () => {
+        // No site has rolled-up days here, so reads take the raw path.
+        if (sql.includes("FROM visit_rollup_state")) return { results: [] };
         calls.push({ kind: "all", sql, bindings });
         return { results: pendingAll.shift() ?? [] };
       }),
@@ -170,8 +172,6 @@ describe("edge team query low branch coverage", () => {
         ],
         [],
         [],
-        [],
-        [],
         [{ siteId: "site-1", bucket: 0, views: 3, visitors: 2 }],
       ],
       [],
@@ -208,8 +208,8 @@ describe("edge team query low branch coverage", () => {
         ],
       },
     });
-    expect(calls).toHaveLength(6);
-    expect(calls[5].sql).toContain(
+    expect(calls).toHaveLength(4);
+    expect(calls[3].sql).toContain(
       `started_at >= ${FROM} AND started_at < ${FROM + 24 * 60 * 60 * 1000}`,
     );
   });

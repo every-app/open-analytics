@@ -4,6 +4,7 @@ import {
   compileD1Mutation,
   compileD1Query,
   createD1DatabaseClient,
+  createDatabaseRuntime,
   deleteFrom,
   eq,
   filter,
@@ -38,13 +39,17 @@ import {
   nf,
   parseJson,
 } from "@/lib/edge/admin/response";
+import { runOnNextTick } from "@/lib/edge/scheduled-tasks/schedule-state";
 import {
   deleteSiteScriptSettings,
   readSiteTrackingConfig,
   upsertSiteScriptSettings,
   upsertSiteTrackingConfig,
 } from "@/lib/edge/sites/settings-store";
-import { siteDeletionMutations } from "@/lib/edge/sites/site-deletion";
+import {
+  purgeSiteData,
+  siteDeletionMutations,
+} from "@/lib/edge/sites/site-deletion";
 import type { Env } from "@/lib/edge/types";
 import { clampString } from "@/lib/edge/utils";
 import {
@@ -128,14 +133,40 @@ export async function createSiteWithDefaultSettings(
   }
   return siteId;
 }
+/**
+ * Delete statements a site removal runs before it answers, so the request
+ * stays quick. It is not a limit on what is deleted: the retention task
+ * purges the rest from the next cron tick on, every minute until it's done.
+ */
+const SITE_REMOVAL_PURGE_BATCHES = 100;
 export async function deleteSiteData(env: Env, siteId: string): Promise<void> {
   const client = database(env);
+  const identity = await createDatabaseRuntime(env.DB).first<{
+    sitePk: number;
+  }>({
+    sql: "SELECT site_pk AS sitePk FROM site_identities WHERE site_id = ?",
+    bindings: [siteId],
+    tag: "admin.sites.identity",
+  });
   for (const mutation of siteDeletionMutations(siteId))
     await client.run(mutation);
   try {
     await deleteSiteScriptSettings(env, siteId);
   } catch {
     // Best effort cleanup for KV-backed settings.
+  }
+  if (!identity) return;
+  const purge = await purgeSiteData(
+    createDatabaseRuntime(env.DB),
+    Number(identity.sitePk),
+    SITE_REMOVAL_PURGE_BATCHES,
+  );
+  if (!purge.done) {
+    await runOnNextTick(
+      env,
+      "analytics_retention",
+      Math.floor(Date.now() / 1000),
+    );
   }
 }
 export async function handleSitesAdmin(

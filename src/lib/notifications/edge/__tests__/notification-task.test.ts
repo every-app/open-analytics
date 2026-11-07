@@ -13,6 +13,7 @@ const createNotificationMessage = vi.hoisted(() => vi.fn());
 const deliverNotificationMessage = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/notifications/edge/rule-store", () => ({
+  DUE_NOTIFICATION_RULES_PER_READ: 100,
   listDueNotificationRules,
   resolveNotificationRecipient,
   recordNotificationRuleCheck,
@@ -73,7 +74,7 @@ function context(): ScheduledTaskContext & { events: string[] } {
     return Promise.resolve();
   };
   return {
-    env: {} as never,
+    env: { DB: {} } as never,
     startedAt: Date.now(),
     logger: { debug: log, info: log, warn: log, error: log },
     events,
@@ -112,11 +113,11 @@ describe("notification tick", () => {
       listDueNotificationRules,
     );
     expect(resolveNotificationRecipient).toHaveBeenCalledWith(
-      {},
+      { DB: {} },
       expect.objectContaining({ id: "rule-1" }),
     );
     expect(createNotificationMessage).toHaveBeenCalledWith(
-      {},
+      { DB: {} },
       expect.objectContaining({
         userId: "creator",
         ruleId: "rule-1",
@@ -129,13 +130,13 @@ describe("notification tick", () => {
       }),
     );
     expect(deliverNotificationMessage).toHaveBeenCalledWith(
-      {},
+      { DB: {} },
       expect.objectContaining({ id: "message-rule-1" }),
       expect.objectContaining({ id: "creator" }),
       expect.anything(),
     );
     expect(recordNotificationRuleCheck).toHaveBeenCalledWith(
-      {},
+      { DB: {} },
       {
         rule: expect.objectContaining({ id: "rule-1" }),
         checkedAt: expect.any(Number),
@@ -155,6 +156,7 @@ describe("notification tick", () => {
         emailFailed: 0,
         emailSkipped: 0,
       },
+      workRemains: false,
     });
   });
 
@@ -200,11 +202,12 @@ describe("notification tick", () => {
         emailFailed: 1,
         emailSkipped: 1,
       },
+      workRemains: false,
     });
     expect(recordNotificationRuleCheck).toHaveBeenCalledTimes(6);
     for (const id of ["quiet", "gone-site", "broken"]) {
       expect(recordNotificationRuleCheck).toHaveBeenCalledWith(
-        {},
+        { DB: {} },
         {
           rule: expect.objectContaining({ id }),
           checkedAt: expect.any(Number),
@@ -218,5 +221,20 @@ describe("notification tick", () => {
         "notification_tick_finish",
       ]),
     );
+  });
+
+  it("goes on with the next minute's tick when a read returns a full page of due rules", async () => {
+    listDueNotificationRules.mockResolvedValue(
+      Array.from({ length: 100 }, (_, index) => rule(`rule-${index}`)),
+    );
+    evaluateNotificationRule.mockResolvedValue({
+      status: "checked",
+      triggered: false,
+    });
+
+    const outcome = await runNotificationTick(context());
+
+    expect(recordNotificationRuleCheck).toHaveBeenCalledTimes(100);
+    expect(outcome.workRemains).toBe(true);
   });
 });

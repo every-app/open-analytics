@@ -5,21 +5,25 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { loadMigrations } from "@/../scripts/schema/database";
 
 const runScheduledTask = vi.hoisted(() => vi.fn());
-const runHourlyAggregation = vi.hoisted(() => vi.fn());
+const runVisitRollups = vi.hoisted(() => vi.fn());
 const runNotificationTick = vi.hoisted(() => vi.fn());
 const runDatabaseMaintenance = vi.hoisted(() => vi.fn());
+const runAnalyticsRetention = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/edge/scheduled-tasks/runner", () => ({
   runScheduledTask,
 }));
-vi.mock("@/lib/edge/scheduled-tasks/hourly-rollup", () => ({
-  runHourlyAggregation,
+vi.mock("@/lib/edge/scheduled-tasks/visit-rollups", () => ({
+  runVisitRollups,
 }));
 vi.mock("@/lib/notifications/edge/notification-task", () => ({
   runNotificationTick,
 }));
 vi.mock("@/lib/edge/scheduled-tasks/database-maintenance", () => ({
   runDatabaseMaintenance,
+}));
+vi.mock("@/lib/edge/scheduled-tasks/analytics-retention", () => ({
+  runAnalyticsRetention,
 }));
 
 const { dispatchInternalScheduledTasks } =
@@ -104,12 +108,12 @@ describe("internal scheduled task dispatcher", () => {
     runScheduledTask.mockResolvedValue(undefined);
   });
 
-  it("runs only notification dispatch on a 30-minute tick", async () => {
+  it("runs only the tasks that are due on a tick", async () => {
     const d1 = new FakeD1Database();
     const now = Date.UTC(2026, 7, 31, 10, 30);
     const nowSeconds = now / 1000;
     seed(d1, "notification_tick", nowSeconds - 1);
-    seed(d1, "visit_hourly_rollup", nowSeconds + 1);
+    seed(d1, "visit_rollups", nowSeconds + 1);
     seed(d1, "database_maintenance", nowSeconds + 1);
 
     await dispatchInternalScheduledTasks(createEnv(d1), now, observability());
@@ -119,26 +123,33 @@ describe("internal scheduled task dispatcher", () => {
     d1.close();
   });
 
-  it("runs hourly and daily tasks when their schedules are due", async () => {
+  it("runs interval and daily tasks when their schedules are due", async () => {
     const d1 = new FakeD1Database();
     const now = Date.UTC(2026, 7, 31, 10, 0);
     const nowSeconds = now / 1000;
     seed(d1, "notification_tick", 0);
-    seed(d1, "visit_hourly_rollup", 0);
+    seed(d1, "visit_rollups", 0);
     seed(d1, "database_maintenance", 0);
+    seed(d1, "analytics_retention", 0);
     const env = createEnv(d1);
 
     await dispatchInternalScheduledTasks(env, now, observability());
 
     expect(runScheduledTask.mock.calls.map((call) => call[1])).toEqual([
       "notification_tick",
-      "visit_hourly_rollup",
       "database_maintenance",
+      "visit_rollups",
+      "analytics_retention",
     ]);
-    // The rollup runs for the tick's own time, not the clock's.
+    // The rollup runs for the tick's own time, not the clock's, with its
+    // part of the invocation's queries.
     const logger = { info: vi.fn() };
-    await runScheduledTask.mock.calls[1]?.[2]({ logger });
-    expect(runHourlyAggregation).toHaveBeenCalledWith(env, now, { logger });
+    const rollupEnv = runScheduledTask.mock.calls[2]?.[0];
+    await runScheduledTask.mock.calls[2]?.[2]({ logger });
+    expect(runVisitRollups).toHaveBeenCalledWith(rollupEnv, now, {
+      logger,
+      maxQueries: expect.any(Number),
+    });
     expect(
       d1.db
         .prepare(
@@ -146,17 +157,151 @@ describe("internal scheduled task dispatcher", () => {
         )
         .all(),
     ).toEqual([
+      { task_key: "analytics_retention", nextRunAt: nowSeconds + 3600 },
       {
         task_key: "database_maintenance",
         nextRunAt: Date.UTC(2026, 8, 1) / 1000,
       },
       { task_key: "notification_tick", nextRunAt: nowSeconds + 1800 },
-      { task_key: "visit_hourly_rollup", nextRunAt: nowSeconds + 3600 },
+      { task_key: "visit_rollups", nextRunAt: nowSeconds + 1800 },
     ]);
-    expect(d1.calls.filter(({ method }) => method === "run")).toHaveLength(6);
+    expect(d1.calls.filter(({ method }) => method === "run")).toHaveLength(8);
     expect(
       d1.calls.filter(({ method }) => method === "all")[0]?.sql,
     ).not.toMatch(/ORDER BY/i);
+    d1.close();
+  });
+
+  it("runs a task with work left again on the next minute's tick, and the rest on their schedules", async () => {
+    const d1 = new FakeD1Database();
+    const now = Date.UTC(2026, 7, 31, 10, 0);
+    const nowSeconds = now / 1000;
+    for (const key of [
+      "notification_tick",
+      "visit_rollups",
+      "database_maintenance",
+      "analytics_retention",
+    ]) {
+      seed(d1, key, 0);
+    }
+    runScheduledTask.mockImplementation(async (_env, key: string) =>
+      key === "visit_rollups" || key === "database_maintenance"
+        ? { workRemains: true }
+        : { workRemains: false },
+    );
+
+    await dispatchInternalScheduledTasks(createEnv(d1), now, observability());
+
+    expect(
+      d1.db
+        .prepare(
+          "SELECT task_key, next_run_at AS nextRunAt FROM scheduled_task_schedule_state ORDER BY task_key",
+        )
+        .all(),
+    ).toEqual([
+      { task_key: "analytics_retention", nextRunAt: nowSeconds + 3600 },
+      { task_key: "database_maintenance", nextRunAt: nowSeconds + 60 },
+      { task_key: "notification_tick", nextRunAt: nowSeconds + 1800 },
+      { task_key: "visit_rollups", nextRunAt: nowSeconds + 60 },
+    ]);
+    d1.close();
+  });
+
+  it("splits what the invocation has left between the backlog tasks due on a tick", async () => {
+    const d1 = new FakeD1Database();
+    const now = Date.UTC(2026, 7, 31, 10, 0);
+    seed(d1, "notification_tick", 0);
+    seed(d1, "visit_rollups", 0);
+    seed(d1, "analytics_retention", 0);
+    const logger = { info: vi.fn() };
+    runScheduledTask.mockImplementation(async (env, _key, handler) =>
+      handler({ env, logger }),
+    );
+    runNotificationTick.mockImplementation(async ({ env }: { env: never }) => {
+      const db = (env as { DB: D1Database }).DB;
+      for (let index = 0; index < 100; index += 1) {
+        await db.prepare("SELECT 1").bind().all();
+      }
+      return {};
+    });
+    runVisitRollups.mockResolvedValue({});
+    runAnalyticsRetention.mockResolvedValue({});
+
+    await dispatchInternalScheduledTasks(createEnv(d1), now, observability());
+
+    // The notification tick gets what the invocation has left: all but the
+    // due-task read and its claim and release.
+    expect(runNotificationTick.mock.calls[0]?.[1]).toBe(999 - 1 - 2);
+    // 999 for the dispatcher (the ingest sweep may make one): the due-task
+    // read, the notification tick's claim, 100 queries and release, then
+    // each backlog task's claim and release around its part.
+    const left = 999 - 1 - 102;
+    const rollups = Math.floor((left - 2) / 2);
+    expect(runVisitRollups.mock.calls[0]?.[2]).toMatchObject({
+      maxQueries: rollups,
+    });
+    expect(runAnalyticsRetention.mock.calls[0]?.[1]).toBe(left - 2 - 2);
+    d1.close();
+  });
+
+  it("stops a task at its part of the queries and leaves later tasks due for the next tick", async () => {
+    const d1 = new FakeD1Database();
+    const now = Date.UTC(2026, 7, 31, 10, 0);
+    for (const key of [
+      "notification_tick",
+      "visit_rollups",
+      "database_maintenance",
+      "analytics_retention",
+    ]) {
+      seed(d1, key, 0);
+    }
+    runScheduledTask.mockImplementation(async (env, key: string) => {
+      if (key !== "notification_tick") return {};
+      // A task that would make queries forever is refused at its part.
+      const db = (env as { DB: D1Database }).DB;
+      for (;;) await db.prepare("SELECT 1").bind().all();
+    });
+    const logs = observability() as unknown as {
+      warn: ReturnType<typeof vi.fn>;
+    };
+
+    await dispatchInternalScheduledTasks(createEnv(d1), now, logs as never);
+
+    expect(runScheduledTask).toHaveBeenCalledTimes(1);
+    expect(d1.calls.length).toBeLessThanOrEqual(999);
+    expect(
+      d1.db
+        .prepare(
+          "SELECT task_key, claim_token, next_run_at, last_error FROM scheduled_task_schedule_state ORDER BY task_key",
+        )
+        .all(),
+    ).toEqual([
+      expect.objectContaining({
+        task_key: "analytics_retention",
+        claim_token: null,
+        next_run_at: 0,
+      }),
+      expect.objectContaining({
+        task_key: "database_maintenance",
+        claim_token: null,
+        next_run_at: 0,
+      }),
+      {
+        task_key: "notification_tick",
+        claim_token: null,
+        next_run_at: now / 1000 + 1800,
+        last_error:
+          "D1QueryBudgetExceededError: A task tried to make more than its 996 D1 queries.",
+      },
+      expect.objectContaining({
+        task_key: "visit_rollups",
+        claim_token: null,
+        next_run_at: 0,
+      }),
+    ]);
+    expect(logs.warn).toHaveBeenCalledWith("scheduled_task.deferred", {
+      taskKey: "visit_rollups",
+    });
     d1.close();
   });
 
@@ -182,7 +327,7 @@ describe("internal scheduled task dispatcher", () => {
     ).toEqual({
       claim_token: null,
       last_error: "Error: D1 timed out",
-      next_run_at: Date.UTC(2026, 8, 1) / 1000,
+      next_run_at: now / 1000 + 3600,
     });
     d1.close();
   });

@@ -141,6 +141,7 @@ CREATE INDEX idx_custom_events_site_pk_time
   ON custom_events(site_pk, occurred_at, event_pk);
 CREATE INDEX idx_custom_events_site_pk_visit_time
   ON custom_events(site_pk, visit_id, occurred_at, event_pk);
+CREATE INDEX idx_custom_events_visit_id ON custom_events(visit_id);
 
 CREATE TABLE members (
   team_id TEXT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
@@ -306,42 +307,73 @@ CREATE TABLE users (
   updated_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
-CREATE TABLE visit_hourly_aggregation_state (
-  site_id TEXT NOT NULL,
-  aggregated_until_hour INTEGER NOT NULL DEFAULT 0,
-  lag_hours INTEGER NOT NULL DEFAULT 12,
-  last_run_at INTEGER,
-  last_success_at INTEGER,
-  last_error TEXT,
-  site_pk INTEGER PRIMARY KEY NOT NULL REFERENCES site_identities(site_pk)
+CREATE TABLE visit_daily_dimension_rollups (
+  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
+  dimension TEXT NOT NULL,
+  day INTEGER NOT NULL,
+  value TEXT NOT NULL,
+  views INTEGER NOT NULL,
+  sessions INTEGER NOT NULL,
+  visitors INTEGER NOT NULL,
+  PRIMARY KEY (site_pk, dimension, day, value)
 );
 
-CREATE TABLE visit_hourly_rollups (
-  site_id TEXT NOT NULL,
-  hour_bucket INTEGER NOT NULL,
-  views INTEGER NOT NULL DEFAULT 0,
-  sessions INTEGER NOT NULL DEFAULT 0,
-  visitors INTEGER NOT NULL DEFAULT 0,
-  bounces INTEGER NOT NULL DEFAULT 0,
-  duration_ms_sum INTEGER NOT NULL DEFAULT 0,
-  duration_ms_count INTEGER NOT NULL DEFAULT 0,
-  visitor_set_json TEXT NOT NULL DEFAULT '[]',
-  session_counts_json TEXT NOT NULL DEFAULT '[]',
-  perf_ttfb_sum REAL NOT NULL DEFAULT 0,
-  perf_ttfb_count INTEGER NOT NULL DEFAULT 0,
-  perf_fcp_sum REAL NOT NULL DEFAULT 0,
-  perf_fcp_count INTEGER NOT NULL DEFAULT 0,
-  perf_lcp_sum REAL NOT NULL DEFAULT 0,
-  perf_lcp_count INTEGER NOT NULL DEFAULT 0,
-  perf_cls_sum REAL NOT NULL DEFAULT 0,
-  perf_cls_count INTEGER NOT NULL DEFAULT 0,
-  perf_inp_sum REAL NOT NULL DEFAULT 0,
-  perf_inp_count INTEGER NOT NULL DEFAULT 0,
-  input_cutoff_ms INTEGER NOT NULL,
-  aggregated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  schema_version INTEGER NOT NULL DEFAULT 1,
+CREATE TABLE visit_daily_geo_points (
   site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
+  day INTEGER NOT NULL,
+  latitude REAL NOT NULL,
+  longitude REAL NOT NULL,
+  country TEXT NOT NULL,
+  region TEXT NOT NULL,
+  region_code TEXT NOT NULL,
+  city TEXT NOT NULL,
+  views INTEGER NOT NULL,
+  latest_at INTEGER NOT NULL,
+  PRIMARY KEY (
+    site_pk, day, latitude, longitude, country, region, region_code, city
+  )
+);
+
+CREATE TABLE visit_daily_rollups (
+  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
+  day INTEGER NOT NULL,
+  views INTEGER NOT NULL,
+  visitors INTEGER NOT NULL,
+  sessions INTEGER NOT NULL,
+  bounces INTEGER NOT NULL,
+  duration_ms_sum INTEGER NOT NULL,
+  duration_ms_count INTEGER NOT NULL,
+  PRIMARY KEY (site_pk, day)
+);
+
+CREATE TABLE "visit_hourly_rollups" (
+  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
+  hour_bucket INTEGER NOT NULL,
+  views INTEGER NOT NULL,
+  visitors INTEGER NOT NULL,
+  first_visitors INTEGER NOT NULL,
+  last_visitors INTEGER NOT NULL,
+  sessions INTEGER NOT NULL,
+  bounces INTEGER NOT NULL,
+  duration_ms_sum INTEGER NOT NULL,
+  duration_ms_count INTEGER NOT NULL,
   PRIMARY KEY (site_pk, hour_bucket)
+);
+
+CREATE TABLE visit_rollup_dirty_days (
+  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
+  day INTEGER NOT NULL,
+  PRIMARY KEY (site_pk, day)
+);
+
+CREATE TABLE visit_rollup_state (
+  site_pk INTEGER PRIMARY KEY REFERENCES site_identities(site_pk),
+  first_day INTEGER NOT NULL,
+  last_day INTEGER NOT NULL,
+  backfilled INTEGER NOT NULL DEFAULT 0,
+  legacy_hourly_until_day INTEGER,
+  retention_reached_day INTEGER,
+  updated_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
 CREATE TABLE visits (
@@ -405,12 +437,6 @@ CREATE TABLE visits (
 
 CREATE INDEX idx_visits_created_at_site_pk_performance
   ON visits(created_at, site_pk, started_at, visit_id);
-CREATE INDEX idx_visits_open_last_activity
-  ON visits(last_activity_at)
-  WHERE status = 'open';
-CREATE INDEX idx_visits_open_site_pk_started_at
-  ON visits(site_pk, started_at)
-  WHERE status = 'open';
 CREATE INDEX idx_visits_site_pk_last_activity
   ON visits(site_pk, last_activity_at);
 CREATE INDEX idx_visits_site_pk_session_started_at

@@ -21,9 +21,11 @@ export default defineConfig((ctx) => {
     manifest,
     entrypoint,
     ctx,
-    // Rollups, notifications, retention and the ingest alarm sweep
-    // (src/lib/edge/scheduled-tasks/dispatcher.ts).
-    crons: ["*/30 * * * *"],
+    // Every minute: the dispatcher runs each task on its own schedule, and
+    // again on the next minute while it has work left; the ingest alarm
+    // sweep runs every 30 minutes (src/lib/edge/scheduled-tasks/dispatcher.ts,
+    // src/lib/edge/ingest/alarm-sweep.ts).
+    crons: ["* * * * *"],
   });
   return {
     worker: {

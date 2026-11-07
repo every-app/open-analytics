@@ -5,9 +5,18 @@ import {
 } from "@/lib/edge/observability/logger";
 import type { Env } from "@/lib/edge/types";
 const SWEEP_PARALLELISM = 8;
+/** The cron runs every minute; the sweep, every 30 minutes of the hour. */
+const SWEEP_EVERY_MINUTES = 30;
+/** The sweep's D1 queries: it reads the sites once. */
+export const INGEST_SWEEP_D1_QUERIES = 1;
 interface SiteRow {
   id: string;
 }
+/** Whether the cron tick scheduled for `scheduledTime` sweeps. */
+export function isIngestSweepTick(scheduledTime: number): boolean {
+  return new Date(scheduledTime).getUTCMinutes() % SWEEP_EVERY_MINUTES === 0;
+}
+
 /**
  * Wake every site DO so previously stranded due work can re-enter the normal
  * per-DO Alarm pipeline. This only reconciles the Alarm; it does not force a

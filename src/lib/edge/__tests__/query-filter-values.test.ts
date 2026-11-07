@@ -271,7 +271,7 @@ describe("canonical filter value reader", () => {
     );
 
     expect(result.items).toEqual([{ value: "user_%", occurrences: 1 }]);
-    expect(calls[0]?.bindings).toContain("%user\\_\\%%");
+    expect(calls.at(-1)?.bindings).toContain("%user\\_\\%%");
   });
 
   it("routes paginated candidates through every registered source", async () => {

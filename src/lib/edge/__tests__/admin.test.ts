@@ -852,7 +852,12 @@ describe("private admin edge handler", () => {
     it("removes sites and ignores best-effort settings cleanup failures", async () => {
       setSession(adminSession);
       deleteSiteScriptSettingsMock.mockRejectedValue(new Error("kv down"));
-      const deleteStatements = Array.from({ length: 12 }, () => statement());
+      const identity = statement({ first: { sitePk: 7 } });
+      const recordDeletes = Array.from({ length: 3 }, () => statement());
+      // Each purge step deletes nothing, so it runs once.
+      const purgeDeletes = Array.from({ length: 13 }, () =>
+        statement({ run: { success: true, meta: { changes: 0 } } }),
+      );
       const { env } = createEnv([
         statement({ first: userRow() }),
         statement({
@@ -865,7 +870,9 @@ describe("private admin edge handler", () => {
             publicSlug: null,
           },
         }),
-        ...deleteStatements,
+        identity,
+        ...recordDeletes,
+        ...purgeDeletes,
       ]);
 
       const response = await dispatch(
@@ -879,10 +886,56 @@ describe("private admin edge handler", () => {
         ok: true,
         data: { siteId: "site-1", teamId: "team-1", removed: true },
       });
-      expect(deleteStatements[8].bind).toHaveBeenCalledWith("site-1");
-      expect(deleteStatements[9].bind).toHaveBeenCalledWith("site-1");
-      expect(deleteStatements[10].bind).toHaveBeenCalledWith("site-1");
+      expect(identity.bind).toHaveBeenCalledWith("site-1");
+      expect(recordDeletes[0].bind).toHaveBeenCalledWith("site:site-1");
+      expect(recordDeletes[1].sql).toContain("analysis_definitions");
+      expect(recordDeletes[1].bind).toHaveBeenCalledWith("site-1");
+      expect(recordDeletes[2].bind).toHaveBeenCalledWith("site-1");
+      for (const purge of purgeDeletes) {
+        expect(purge.bind).toHaveBeenCalledWith(7, 1000);
+      }
       expect(deleteSiteScriptSettingsMock).toHaveBeenCalledWith(env, "site-1");
+    });
+
+    it("puts retention on the next cron tick when a large site's purge goes on after the answer", async () => {
+      setSession(adminSession);
+      deleteSiteScriptSettingsMock.mockResolvedValue(undefined);
+      // Every delete removes a full batch: more is left after the request's.
+      const purgeDeletes = Array.from({ length: 100 }, () =>
+        statement({ run: { success: true, meta: { changes: 1000 } } }),
+      );
+      const runOnNextTick = statement();
+      const { env } = createEnv([
+        statement({ first: userRow() }),
+        statement({
+          first: {
+            id: "site-1",
+            teamId: "team-1",
+            name: "Site",
+            domain: "site.example.test",
+            publicEnabled: 0,
+            publicSlug: null,
+          },
+        }),
+        statement({ first: { sitePk: 7 } }),
+        ...Array.from({ length: 3 }, () => statement()),
+        ...purgeDeletes,
+        runOnNextTick,
+      ]);
+
+      const response = await dispatch(
+        "/api/private/admin/sites",
+        env,
+        jsonInit({ intent: "remove", siteId: "site-1" }, "PATCH"),
+      );
+
+      expect(response.status).toBe(200);
+      expect(runOnNextTick.sql).toContain("scheduled_task_schedule_state");
+      expect(runOnNextTick.bind).toHaveBeenCalledWith(
+        expect.any(Number),
+        "analytics_retention",
+        expect.any(Number),
+      );
     });
   });
 

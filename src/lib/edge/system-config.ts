@@ -1,7 +1,8 @@
 import {
   compileD1Mutation,
   compileD1Query,
-  createD1DatabaseClient,
+  createDatabaseClient,
+  type DatabaseRuntime,
   deleteFrom,
   eq,
   excluded,
@@ -16,14 +17,8 @@ import {
 } from "@/lib/db";
 import { schema } from "@/lib/db/schema";
 
-import type { Env } from "./types";
-
-function database(env: Pick<Env, "DB">) {
-  return createD1DatabaseClient(env.DB);
-}
-
 export async function readConfig(
-  env: Pick<Env, "DB">,
+  db: DatabaseRuntime,
   key: string,
 ): Promise<Record<string, unknown> | null> {
   const configs = scan(schema.configs);
@@ -31,7 +26,7 @@ export async function readConfig(
     configs,
     eq(configs.columns.config_key, param(key)),
   );
-  const row = await database(env).first(
+  const row = await createDatabaseClient(db).first(
     compileD1Query(
       limit(
         project(matchingConfig, {
@@ -54,11 +49,11 @@ export async function readConfig(
 }
 
 export async function upsertConfig(
-  env: Pick<Env, "DB">,
+  db: DatabaseRuntime,
   key: string,
   value: Record<string, unknown>,
 ): Promise<void> {
-  await database(env).run(
+  await createDatabaseClient(db).run(
     compileD1Mutation(
       onConflictDoUpdate(
         insert(schema.configs, {
@@ -79,11 +74,11 @@ export async function upsertConfig(
 }
 
 export async function deleteConfig(
-  env: Pick<Env, "DB">,
+  db: DatabaseRuntime,
   key: string,
 ): Promise<void> {
   const configs = schema.configs;
-  await database(env).run(
+  await createDatabaseClient(db).run(
     compileD1Mutation(
       deleteFrom(configs, (columns) => eq(columns.config_key, param(key))),
       { tag: "system.configs.delete" },
