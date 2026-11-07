@@ -6,9 +6,9 @@ import {
   coerceString,
   DEFAULT_SESSION_WINDOW_MINUTES,
   deriveDailySalt,
-  deriveEuVisitorId,
   deriveServerSessionId,
   deriveSessionId,
+  deriveVisitorId,
   isSameHostname,
   jsonCloneRecord,
   MAX_SESSION_WINDOW_MINUTES,
@@ -77,7 +77,7 @@ describe("edge utility helpers", () => {
       deriveDailySalt("secret", eventAtMs + ONE_HOUR_MS),
     ).resolves.toBe(salt);
 
-    const visitorId = await deriveEuVisitorId({
+    const visitorId = await deriveVisitorId({
       ip: "203.0.113.10",
       ua: "Mozilla/5.0",
       eventAtMs,
@@ -85,7 +85,7 @@ describe("edge utility helpers", () => {
     });
     expect(visitorId).toMatch(/^[0-9a-f]{64}$/);
     await expect(
-      deriveEuVisitorId({
+      deriveVisitorId({
         ip: "203.0.113.10",
         ua: "Mozilla/5.0",
         eventAtMs,

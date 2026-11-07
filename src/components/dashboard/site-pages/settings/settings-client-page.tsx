@@ -11,13 +11,6 @@ import {
 } from "@insightflare/ui/alert-dialog";
 import { Button } from "@insightflare/ui/button";
 import { Input } from "@insightflare/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@insightflare/ui/select";
 import { Skeleton } from "@insightflare/ui/skeleton";
 import { Slider } from "@insightflare/ui/slider";
 import { Spinner } from "@insightflare/ui/spinner";
@@ -47,7 +40,6 @@ import {
   normalizeSiteScriptSettings,
   type SiteScriptSettings,
   type SiteSettingsConfig,
-  type TrackingStrength,
 } from "@/lib/site-settings";
 
 import { BlockingRulesList } from "./blocking-rules-list";
@@ -58,12 +50,6 @@ import {
   resolveSiteSlug,
   type SiteSettingsClientPageProps,
 } from "./settings-model";
-
-const TRACKING_STRENGTHS: readonly TrackingStrength[] = [
-  "strong",
-  "smart",
-  "weak",
-];
 
 // The tracker settings each switch on the page controls.
 type SwitchSetting =
@@ -331,17 +317,6 @@ export function SettingsClientPage({
       ? `${origin}/share/${encodeURIComponent(persistedPublicSlug)}`
       : "";
 
-  const strengthLabels: Record<TrackingStrength, string> = {
-    strong: copy.trackingStrengthStrong,
-    smart: copy.trackingStrengthSmart,
-    weak: copy.trackingStrengthWeak,
-  };
-  const strengthDescriptions: Record<TrackingStrength, string> = {
-    strong: copy.trackingStrengthStrongDescription,
-    smart: copy.trackingStrengthSmartDescription,
-    weak: copy.trackingStrengthWeakDescription,
-  };
-
   const trackingSwitches: Array<{
     key: SwitchSetting;
     label: string;
@@ -541,48 +516,6 @@ export function SettingsClientPage({
 
       <SettingsSection title={copy.sections.tracking.title}>
         <SettingsCard>
-          <SettingsRow
-            label={
-              <LabelWithInfo
-                label={copy.trackingStrengthGroupTitle}
-                info={
-                  <span className="block space-y-1">
-                    {TRACKING_STRENGTHS.map((strength) => (
-                      <span key={strength} className="block">
-                        <strong>{strengthLabels[strength]}:</strong>{" "}
-                        {strengthDescriptions[strength]}
-                      </span>
-                    ))}
-                  </span>
-                }
-              />
-            }
-            htmlFor="site-settings-tracking-strength"
-          >
-            <Select
-              value={settings.trackingStrength}
-              disabled={trackerDisabled}
-              onValueChange={(value) =>
-                void saveTracker({
-                  trackingStrength: value as TrackingStrength,
-                })
-              }
-            >
-              <SelectTrigger
-                id="site-settings-tracking-strength"
-                className="w-full sm:w-52"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TRACKING_STRENGTHS.map((strength) => (
-                  <SelectItem key={strength} value={strength}>
-                    {strengthLabels[strength]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </SettingsRow>
           {trackingSwitches.map(switchRow)}
           <SettingsRow
             label={

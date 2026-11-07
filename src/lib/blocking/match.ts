@@ -193,6 +193,50 @@ function matchQuery(
     blockedBy,
   };
 }
+function siteDomainRule(
+  pattern: string,
+  action: BlockingCompiledRule["action"],
+): BlockingCompiledRule {
+  return {
+    line: 0,
+    raw: action === "allow" ? "-" + pattern : pattern,
+    pattern,
+    action,
+    normalizedPattern: pattern,
+    matcher: { kind: "glob", pattern, caseSensitive: false },
+    sourceVersion: 2,
+    source: "default",
+  };
+}
+/**
+ * A site takes events from its own domain and its subdomains only, so
+ * localhost, preview deploys and copies of the snippet on other sites stay
+ * out of its numbers. These rules come before the site's own domain rules,
+ * which still win: a site can block one of its subdomains or allow another
+ * domain.
+ */
+export function withSiteDomainRules(
+  parsed: ParsedBlockingRules,
+  siteDomain: string,
+): ParsedBlockingRules {
+  const domain = siteDomain.toLowerCase().replace(/^www\./u, "");
+  const domains = parsed.fields.domains;
+  return {
+    ...parsed,
+    fields: {
+      ...parsed.fields,
+      domains: {
+        ...domains,
+        rules: [
+          siteDomainRule("*", "block"),
+          siteDomainRule(domain, "allow"),
+          siteDomainRule("*." + domain, "allow"),
+          ...domains.rules,
+        ],
+      },
+    },
+  };
+}
 export function matchBlockingRules(
   parsed: ParsedBlockingRules,
   context: BlockingRequestContext,

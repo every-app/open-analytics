@@ -4,6 +4,7 @@ import {
   type BlockingRequestContext,
   matchBlockingRules,
   parseBlockingRules,
+  withSiteDomainRules,
 } from "@/lib/blocking";
 import { requestIp, verifyCollectToken } from "@/lib/edge/auth/collect-token";
 import { classifyCollectBotTraffic } from "@/lib/edge/collector/bot-protection";
@@ -52,7 +53,6 @@ const SUPPORTED_KINDS = new Set<TrackerPayloadKind>([
   "leave",
   "visibility",
   "custom_event",
-  "identify",
 ]);
 function pickSiteIdFromPayload(
   payload: TrackerClientPayload,
@@ -341,7 +341,7 @@ async function decideCollectionPolicy(
     };
   }
   const blocking = matchBlockingRules(
-    parsedBlockingRules,
+    withSiteDomainRules(parsedBlockingRules, settings.siteDomain),
     blockingContext(
       request,
       payload,

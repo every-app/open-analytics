@@ -8,18 +8,13 @@ import {
   readSiteTrackingConfig,
 } from "@/lib/edge/sites/settings-store";
 import type { Env } from "@/lib/edge/types";
-import { resolveSessionWindowMinutes } from "@/lib/edge/utils";
 import { SDK_MIN as SDK_FULL } from "@/tracker/sdk.min";
 import { SDK_MIN as SDK_NO_PERF } from "@/tracker/sdk.no-perf.min";
 const SCRIPT_RESPONSE_CACHE_NAME = "insightflare-script-cache";
 const SCRIPT_RESPONSE_CACHE_TTL_SECONDS = 10 * 60;
-const SCRIPT_CACHE_VERSION = "sdk-prebuilt-v1";
+const SCRIPT_CACHE_VERSION = "sdk-prebuilt-v2";
 const MAX_SCRIPT_RESPONSE_CACHE_TTL_SECONDS = 24 * 60 * 60;
 const TRACKER_RUNTIME_CONFIG_KEY = "__openanalytics_tracker_runtime_config__";
-function isEUCountry(request: Request): boolean {
-  const cf = (request as Request & { cf?: { isEUCountry?: boolean } }).cf;
-  return Boolean(cf?.isEUCountry);
-}
 function responseBadRequest(message: string): Response {
   return new Response(message, { status: 400 });
 }
@@ -51,25 +46,15 @@ async function openEdgeCache(name: string): Promise<Cache | null> {
     return null;
   }
 }
-function determineEuMode(
-  trackingStrength: "strong" | "smart" | "weak",
-  requestEuMode: boolean,
-): boolean {
-  if (trackingStrength === "strong") return false;
-  if (trackingStrength === "weak") return true;
-  return requestEuMode;
-}
 function applyConfigToSdk(
   template: string,
   config: {
     siteId: string;
-    isEUMode: boolean;
     trackQueryParams: boolean;
     trackHash: boolean;
     ignoreDoNotTrack: boolean;
     autoTrackOutboundLinks: boolean;
     performanceSampleRate: number;
-    sessionWindowMs: number;
     collectToken: string;
   },
 ): string {
@@ -80,37 +65,29 @@ function applyConfigToSdk(
     : `${assignment}${template}`;
 }
 function settingsFingerprint(input: {
-  trackingStrength: "strong" | "smart" | "weak";
   trackQueryParams: boolean;
   trackHash: boolean;
   ignoreDoNotTrack: boolean;
   autoTrackOutboundLinks: boolean;
   performanceSampleRate: number;
   siteDomain: string;
-  sessionWindowMinutes: number;
   requestIp: string;
 }): string {
   return [
-    input.trackingStrength,
     input.trackQueryParams ? "1" : "0",
     input.trackHash ? "1" : "0",
     input.ignoreDoNotTrack ? "1" : "0",
     input.autoTrackOutboundLinks ? "1" : "0",
     String(input.performanceSampleRate),
     input.siteDomain,
-    String(input.sessionWindowMinutes),
     input.requestIp,
   ].join("|");
 }
-function scriptCacheKeyRequest(
-  siteId: string,
-  euMode: boolean,
-  fingerprint: string,
-): Request {
+function scriptCacheKeyRequest(siteId: string, fingerprint: string): Request {
   const encodedSiteId = encodeURIComponent(siteId);
   const encodedFingerprint = encodeURIComponent(fingerprint);
   return new Request(
-    `https://insightflare.internal/__script/${encodedSiteId}?eu=${euMode ? "1" : "0"}&fp=${encodedFingerprint}`,
+    `https://insightflare.internal/__script/${encodedSiteId}?fp=${encodedFingerprint}`,
   );
 }
 function resolveScriptCacheTtlSeconds(env: Env): number {
@@ -167,9 +144,6 @@ export async function handleTrackerScriptRequest(
     return responseNotFound();
   }
 
-  const requestEuMode = isEUCountry(request);
-  const euMode = determineEuMode(settings.trackingStrength, requestEuMode);
-  const sessionWindowMinutes = resolveSessionWindowMinutes(env);
   const ttlSeconds = resolveScriptCacheTtlSeconds(env);
   const clientIp = requestIp(request);
   const performanceSampleRate = Math.max(
@@ -182,11 +156,10 @@ export async function handleTrackerScriptRequest(
       ...settings,
       autoTrackOutboundLinks: settings.autoTrackOutboundLinks,
       performanceSampleRate,
-      sessionWindowMinutes,
       requestIp: clientIp,
     }),
   ].join("|");
-  const cacheKey = scriptCacheKeyRequest(siteId, euMode, fingerprint);
+  const cacheKey = scriptCacheKeyRequest(siteId, fingerprint);
   const scriptCache = await openEdgeCache(SCRIPT_RESPONSE_CACHE_NAME);
   if (scriptCache) {
     const cached = await scriptCache.match(cacheKey);
@@ -195,8 +168,6 @@ export async function handleTrackerScriptRequest(
     }
   }
 
-  const sessionWindowMs =
-    Math.max(1, Math.floor(sessionWindowMinutes)) * 60 * 1000;
   let collectToken = "";
   try {
     collectToken = await issueCollectToken({
@@ -213,13 +184,11 @@ export async function handleTrackerScriptRequest(
   const sdkTemplate = performanceSampleRate > 0 ? SDK_FULL : SDK_NO_PERF;
   const script = applyConfigToSdk(sdkTemplate, {
     siteId,
-    isEUMode: euMode,
     trackQueryParams: settings.trackQueryParams,
     trackHash: settings.trackHash,
     ignoreDoNotTrack: settings.ignoreDoNotTrack,
     autoTrackOutboundLinks: settings.autoTrackOutboundLinks,
     performanceSampleRate,
-    sessionWindowMs,
     collectToken,
   });
 

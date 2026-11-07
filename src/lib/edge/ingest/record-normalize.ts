@@ -5,7 +5,6 @@ import type {
   Env,
   IngestEnvelopePayload,
   NormalizedCustomEvent,
-  NormalizedIdentify,
   NormalizedLeave,
   NormalizedPageview,
   NormalizedVisibility,
@@ -16,8 +15,8 @@ import {
   clampString,
   coerceNumber,
   coerceString,
-  deriveEuVisitorId,
   deriveServerSessionId,
+  deriveVisitorId,
   isSameHostname,
   resolveSessionWindowMinutes,
   safeHostname,
@@ -34,6 +33,7 @@ import type {
   BufferedCustomEventInput,
   NormalizeResult,
   RecentVisitorSession,
+  SessionAttribution,
   StoredOpenVisit,
 } from "./types";
 interface NormalizeRecordContext {
@@ -58,29 +58,20 @@ interface NormalizeRecordContext {
   }): Promise<RecentVisitorSession | null>;
   insertBufferedCustomEvent(record: BufferedCustomEventInput): boolean;
 }
-function parseUtmFromQuery(queryString: string): {
-  utmSource: string;
-  utmMedium: string;
-  utmCampaign: string;
-  utmTerm: string;
-  utmContent: string;
-} {
-  if (!queryString) {
-    return {
-      utmSource: "",
-      utmMedium: "",
-      utmCampaign: "",
-      utmTerm: "",
-      utmContent: "",
-    };
-  }
-  const params = new URLSearchParams(queryString);
+function utmField(value: unknown): string {
+  return clampString(coerceString(value || ""), 255);
+}
+function sessionAttributionOf(
+  session: RecentVisitorSession,
+): SessionAttribution {
   return {
-    utmSource: clampString(params.get("utm_source") || "", 255),
-    utmMedium: clampString(params.get("utm_medium") || "", 255),
-    utmCampaign: clampString(params.get("utm_campaign") || "", 255),
-    utmTerm: clampString(params.get("utm_term") || "", 255),
-    utmContent: clampString(params.get("utm_content") || "", 255),
+    referrerUrl: session.referrerUrl,
+    referrerHost: session.referrerHost,
+    utmSource: session.utmSource,
+    utmMedium: session.utmMedium,
+    utmCampaign: session.utmCampaign,
+    utmTerm: session.utmTerm,
+    utmContent: session.utmContent,
   };
 }
 export async function normalizeIngestRecord(
@@ -121,23 +112,20 @@ export async function normalizeIngestRecord(
   const ua = await new UAParser(uaHeaders).getResult().withClientHints();
   const isEU = Boolean(cf.isEUCountry);
 
-  let visitorId = clampString(coerceString(client.visitorId), 128);
-  if (isEU || !visitorId) {
-    const ip = clampString(
+  // A daily-rotating hash: the browser stores nothing, as in Plausible.
+  const visitorId = await deriveVisitorId({
+    ip: clampString(
       coerceString(
         requestHeaders["cf-connecting-ip"] ??
           requestHeaders["x-forwarded-for"] ??
           "",
       ),
       80,
-    );
-    visitorId = await deriveEuVisitorId({
-      ip,
-      ua: uaRaw,
-      eventAtMs: eventAt,
-      secret: visitorSecret,
-    });
-  }
+    ),
+    ua: uaRaw,
+    eventAtMs: eventAt,
+    secret: visitorSecret,
+  });
 
   const contextGeoBase = {
     isEU,
@@ -240,7 +228,20 @@ export async function normalizeIngestRecord(
       (recentStatus === "open" || recentStatus === "hidden_pending")
         ? recentSession
         : null;
-    const queryString = clampString(coerceString(client.query || ""), 2048);
+    // Every pageview of a session carries the session's source: the entry's
+    // referrer and UTM tags. A later pageview's own referrer is the site
+    // itself, which would count it as Direct.
+    const attribution: SessionAttribution = recentSession
+      ? sessionAttributionOf(recentSession)
+      : {
+          referrerUrl,
+          referrerHost,
+          utmSource: utmField(client.utmSource),
+          utmMedium: utmField(client.utmMedium),
+          utmCampaign: utmField(client.utmCampaign),
+          utmTerm: utmField(client.utmTerm),
+          utmContent: utmField(client.utmContent),
+        };
     return {
       record: {
         kind: "pageview",
@@ -254,17 +255,11 @@ export async function normalizeIngestRecord(
         previousVisitStartedAt: recentOpenVisit?.startedAt ?? null,
         startedAt,
         pathname,
-        queryString,
+        queryString: clampString(coerceString(client.query || ""), 2048),
         hashFragment: clampString(coerceString(client.hash || ""), 1024),
         hostname,
         title: clampString(coerceString(client.title || ""), 1024),
-        referrerUrl,
-        referrerHost,
-        ...parseUtmFromQuery(queryString),
-        userId:
-          clampString(coerceString(client.userId || ""), 255) || undefined,
-        userName:
-          clampString(coerceString(client.userName || ""), 255) || undefined,
+        ...attribution,
         screenWidth: coerceNumber(client.screenWidth, null),
         screenHeight: coerceNumber(client.screenHeight, null),
         language: clampString(coerceString(client.language || ""), 120),
@@ -320,27 +315,6 @@ export async function normalizeIngestRecord(
     };
   }
 
-  if (kind === "identify") {
-    if (!visitId) return { record: null, reason: "missing_visit_id" };
-    const identifyUserId = clampString(coerceString(client.userId || ""), 255);
-    if (!identifyUserId) return { record: null, reason: "missing_user_id" };
-    const identifyUserName = clampString(
-      coerceString(client.userName || ""),
-      255,
-    );
-    return {
-      record: {
-        kind: "identify",
-        traceId,
-        siteId,
-        visitId,
-        userId: identifyUserId,
-        userName: identifyUserName,
-        receivedAt,
-      } satisfies NormalizedIdentify,
-    };
-  }
-
   if (kind === "custom_event") {
     if (!visitId) return { record: null, reason: "missing_visit_id" };
     const eventName = clampString(coerceString(client.eventName), 120);
@@ -369,7 +343,6 @@ export async function normalizeIngestRecord(
         sequence,
         eventName,
         eventDataJson: eventDataResult.data.json,
-        userId: clampString(coerceString(client.userId || ""), 255),
       });
       return {
         record: null,
@@ -425,14 +398,6 @@ export async function normalizeIngestRecord(
         screenWidth: visit.screenWidth,
         screenHeight: visit.screenHeight,
         language: visit.language,
-        userId:
-          clampString(coerceString(client.userId || ""), 255) ||
-          visit.userId ||
-          undefined,
-        userName:
-          clampString(coerceString(client.userName || ""), 255) ||
-          visit.userName ||
-          undefined,
       } satisfies NormalizedCustomEvent,
     };
   }

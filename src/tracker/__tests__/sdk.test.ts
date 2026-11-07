@@ -14,26 +14,22 @@ let configuredSdkImportCounter = 0;
 
 interface ConfiguredSdkOptions {
   siteId?: string;
-  isEuMode?: boolean;
   trackQueryParams?: boolean;
   trackHash?: boolean;
   ignoreDoNotTrack?: boolean;
   autoTrackOutboundLinks?: boolean;
   performanceSampleRate?: number;
-  sessionWindowMs?: number;
   buildPerformance?: boolean;
 }
 
 function setRuntimeConfig(options: ConfiguredSdkOptions = {}) {
   (globalThis as Record<string, unknown>)[runtimeConfigKey] = {
     siteId: options.siteId ?? "configured-site",
-    isEUMode: options.isEuMode === true,
     trackQueryParams: options.trackQueryParams !== false,
     trackHash: options.trackHash !== false,
     ignoreDoNotTrack: options.ignoreDoNotTrack !== false,
     autoTrackOutboundLinks: options.autoTrackOutboundLinks !== false,
     performanceSampleRate: options.performanceSampleRate ?? 0,
-    sessionWindowMs: options.sessionWindowMs ?? 30 * 60 * 1000,
     collectToken: "test-collect-token",
   };
 }
@@ -77,6 +73,20 @@ function decodeFetchBody(fetchSpy: ReturnType<typeof vi.fn>, index = 0) {
   return JSON.parse(options.body as string);
 }
 
+function sentKinds(fetchSpy: ReturnType<typeof vi.fn>) {
+  return fetchSpy.mock.calls.map(
+    ([, options]) => JSON.parse((options as RequestInit).body as string).kind,
+  );
+}
+
+function setPageUrl(url: string) {
+  (
+    window as typeof window & {
+      happyDOM: { setURL: (url: string) => void };
+    }
+  ).happyDOM.setURL(url);
+}
+
 async function executeGeneratedSdk(
   sdk: string,
   options: ConfiguredSdkOptions = {},
@@ -96,7 +106,6 @@ describe("Tracker Browser SDK Integration Suite", () => {
   let mockScriptEl: HTMLScriptElement;
   let originalFetch: any;
   let originalPushState: any;
-  let originalReplaceState: any;
   let originalDocAddEventListener: any;
   let originalWinAddEventListener: any;
   let originalPerformanceObserver: any;
@@ -125,12 +134,8 @@ describe("Tracker Browser SDK Integration Suite", () => {
     });
     // Reset happy-dom's full URL as well as the current path. Some anchor tests
     // exercise cross-origin navigation, which otherwise leaks into later cases.
-    const happyDom = (
-      window as typeof window & {
-        happyDOM?: { setURL?: (url: string) => void };
-      }
-    ).happyDOM;
-    happyDom?.setURL?.("http://localhost:3000/");
+    // The page is a public site: the tracker sends nothing from localhost.
+    setPageUrl("https://example.com/");
     history.replaceState({}, "", "/");
     window.localStorage.clear();
     window.sessionStorage.clear();
@@ -165,9 +170,8 @@ describe("Tracker Browser SDK Integration Suite", () => {
       return originalWinAddEventListener.call(window, type, listener, options);
     };
 
-    // Snapshot history methods so SDK wrap can be unwound after each test
+    // Snapshot pushState so the SDK's wrapper can be unwound after each test
     originalPushState = history.pushState;
-    originalReplaceState = history.replaceState;
 
     // Mock global fetch to return resolved promise instantly and prevent pending queries during teardown
     originalFetch = globalThis.fetch;
@@ -222,9 +226,8 @@ describe("Tracker Browser SDK Integration Suite", () => {
     (document as any).addEventListener = originalDocAddEventListener;
     (window as any).addEventListener = originalWinAddEventListener;
 
-    // Restore history methods (SDK reassigns push/replaceState)
+    // Restore pushState (the SDK wraps it)
     history.pushState = originalPushState;
-    history.replaceState = originalReplaceState;
     (globalThis as any).PerformanceObserver = originalPerformanceObserver;
 
     document.body.innerHTML = "";
@@ -246,7 +249,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     );
   });
 
-  it("preserves visitor identity and EU anonymity in generated SDK variants", async () => {
+  it("stores nothing in the browser in generated SDK variants", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockImplementation(() =>
@@ -256,30 +259,15 @@ describe("Tracker Browser SDK Integration Suite", () => {
     for (const sdk of [fullSdk, noPerfSdk]) {
       delete (window as any).__openanalytics_tracker_v6__;
       delete (window as any).openAnalytics;
-      window.localStorage.clear();
       fetchSpy.mockClear();
 
       await executeGeneratedSdk(sdk, { siteId: "generated-site" });
       const body = decodeFetchBody(fetchSpy);
-      expect(body.visitorId).toBe(
-        window.localStorage.getItem("__openanalytics_visitor_generated-site__"),
-      );
-      expect(body.visitorId).not.toBe("");
-
-      delete (window as any).__openanalytics_tracker_v6__;
-      delete (window as any).openAnalytics;
-      window.localStorage.clear();
-      fetchSpy.mockClear();
-
-      await executeGeneratedSdk(sdk, {
-        isEuMode: true,
-        siteId: "generated-site",
-      });
-      expect(decodeFetchBody(fetchSpy).visitorId).toBe("");
+      expect(body.kind).toBe("pageview");
+      expect(body).not.toHaveProperty("visitorId");
       expect(window.localStorage.length).toBe(0);
     }
   });
-
   it("honors Do Not Track in generated SDK variants", () => {
     Object.defineProperty(navigator, "doNotTrack", {
       value: "1",
@@ -449,248 +437,10 @@ describe("Tracker Browser SDK Integration Suite", () => {
     const api = (window as any).__openanalytics_tracker_v6__;
     expect(api.version).toBe("6");
     expect(api.track).toBeTypeOf("function");
-    expect(api.identify).toBeTypeOf("function");
-    expect(api.reset).toBeTypeOf("function");
     expect(api.setGlobalProperties).toBeTypeOf("function");
     expect(api.clearGlobalProperties).toBeTypeOf("function");
     expect(api.trackOnce).toBeTypeOf("function");
     expect(api.debug).toBeTypeOf("function");
-  });
-
-  it("should store identify state before the first visit without sending an identify request", async () => {
-    Object.defineProperty(document, "readyState", {
-      value: "loading",
-      writable: true,
-      configurable: true,
-    });
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(() =>
-        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
-      );
-
-    await import("../sdk");
-    const api = (window as any).__openanalytics_tracker_v6__;
-
-    api.identify("  alice  ", { name: "  Alice  " });
-    expect(fetchSpy).not.toHaveBeenCalled();
-
-    Object.defineProperty(document, "readyState", {
-      value: "interactive",
-      writable: true,
-      configurable: true,
-    });
-    document.dispatchEvent(new Event("DOMContentLoaded"));
-
-    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
-    const body = decodeFetchBody(fetchSpy);
-    expect(body.kind).toBe("pageview");
-    expect(body.userId).toBe("alice");
-    expect(body.userName).toBe("Alice");
-  });
-
-  it("should rotate and clear state on reset before the first visit without sending a pageview", async () => {
-    Object.defineProperty(document, "readyState", {
-      value: "loading",
-      writable: true,
-      configurable: true,
-    });
-    vi.spyOn(globalThis.crypto, "randomUUID")
-      .mockReturnValueOnce("visitor-before-reset")
-      .mockReturnValueOnce("visitor-after-reset")
-      .mockReturnValueOnce("visit-after-reset");
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(() =>
-        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
-      );
-
-    await import("../sdk");
-    const api = (window as any).__openanalytics_tracker_v6__;
-    api.identify("alice", { name: "Alice" });
-    api.reset();
-
-    expect(fetchSpy).not.toHaveBeenCalled();
-    expect(
-      window.localStorage.getItem("__openanalytics_visitor_configured-site__"),
-    ).toBe("visitor-after-reset");
-
-    Object.defineProperty(document, "readyState", {
-      value: "interactive",
-      writable: true,
-      configurable: true,
-    });
-    document.dispatchEvent(new Event("DOMContentLoaded"));
-    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
-    const body = decodeFetchBody(fetchSpy);
-    expect(body).toMatchObject({
-      kind: "pageview",
-      visitId: "visit-after-reset",
-      visitorId: "visitor-after-reset",
-    });
-    expect(body.userId).toBeUndefined();
-    expect(body.userName).toBeUndefined();
-  });
-
-  it("should reset the current identity and rotate the visitor boundary", async () => {
-    const randomUuidSpy = vi
-      .spyOn(globalThis.crypto, "randomUUID")
-      .mockReturnValueOnce("visitor-1")
-      .mockReturnValueOnce("visit-1")
-      .mockReturnValueOnce("visitor-2")
-      .mockReturnValueOnce("visit-2");
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(() =>
-        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
-      );
-
-    await import("../sdk");
-    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
-    const api = (window as any).__openanalytics_tracker_v6__;
-    const oldVisitorId = window.localStorage.getItem(
-      "__openanalytics_visitor_configured-site__",
-    );
-
-    fetchSpy.mockClear();
-    api.identify("alice", { name: "Alice" });
-    api.reset();
-
-    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(3));
-    const bodies = fetchSpy.mock.calls.map(([, options]) =>
-      JSON.parse((options as RequestInit).body as string),
-    );
-    expect(bodies.map((body) => body.kind)).toEqual([
-      "identify",
-      "leave",
-      "pageview",
-    ]);
-    expect(bodies[0].visitorId).toBe(oldVisitorId);
-    expect(bodies[1]).toMatchObject({
-      exitReason: "identity_reset",
-      visitorId: oldVisitorId,
-      visitId: "visit-1",
-    });
-    expect(bodies[2]).toMatchObject({
-      kind: "pageview",
-      visitorId: "visitor-2",
-      visitId: "visit-2",
-    });
-    expect(bodies[2].userId).toBeUndefined();
-    expect(bodies[2].userName).toBeUndefined();
-    expect(
-      window.localStorage.getItem("__openanalytics_visitor_configured-site__"),
-    ).toBe("visitor-2");
-    expect(randomUuidSpy).toHaveBeenCalledTimes(4);
-  });
-
-  it("should keep account identities on separate visitors after reset", async () => {
-    vi.spyOn(globalThis.crypto, "randomUUID")
-      .mockReturnValueOnce("visitor-alice")
-      .mockReturnValueOnce("visit-alice")
-      .mockReturnValueOnce("visitor-bob")
-      .mockReturnValueOnce("visit-bob");
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(() =>
-        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
-      );
-
-    await import("../sdk");
-    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
-    const api = (window as any).__openanalytics_tracker_v6__;
-    fetchSpy.mockClear();
-
-    api.identify("alice", { name: "Alice" });
-    api.reset();
-    api.identify("bob", { name: "Bob" });
-    api.track("after_switch");
-
-    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(5));
-    const bodies = fetchSpy.mock.calls.map(([, options]) =>
-      JSON.parse((options as RequestInit).body as string),
-    );
-    const bobBodies = bodies.filter((body) => body.userId === "bob");
-    expect(bobBodies.length).toBe(2);
-    expect(bobBodies.every((body) => body.visitorId === "visitor-bob")).toBe(
-      true,
-    );
-    const aliceBodies = bodies.filter((body) => body.userId === "alice");
-    expect(aliceBodies).toHaveLength(2);
-    expect(
-      aliceBodies.every((body) => body.visitorId === "visitor-alice"),
-    ).toBe(true);
-    expect(
-      window.localStorage.getItem("__openanalytics_visitor_configured-site__"),
-    ).toBe("visitor-bob");
-  });
-
-  it("should switch direct identify state without rotating the visitor", async () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(() =>
-        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
-      );
-
-    await import("../sdk");
-    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
-    const api = (window as any).__openanalytics_tracker_v6__;
-    const visitorId = window.localStorage.getItem(
-      "__openanalytics_visitor_configured-site__",
-    );
-    fetchSpy.mockClear();
-
-    api.identify("alice", { name: "Alice" });
-    api.identify("bob", { name: "Bob" });
-
-    expect(fetchSpy).toHaveBeenCalledTimes(2);
-    const bodies = fetchSpy.mock.calls.map(([, options]) =>
-      JSON.parse((options as RequestInit).body as string),
-    );
-    expect(bodies[0]).toMatchObject({
-      kind: "identify",
-      userId: "alice",
-      visitorId,
-    });
-    expect(bodies[1]).toMatchObject({
-      kind: "identify",
-      userId: "bob",
-      userName: "Bob",
-      visitorId,
-    });
-    expect(
-      window.localStorage.getItem("__openanalytics_visitor_configured-site__"),
-    ).toBe(visitorId);
-  });
-
-  it("should keep EU visitor ids empty through reset without persistent writes", async () => {
-    const setItemSpy = vi.spyOn(window.localStorage, "setItem");
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(() =>
-        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
-      );
-
-    setRuntimeConfig({ isEuMode: true });
-    await import("../sdk");
-    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
-    const api = (window as any).__openanalytics_tracker_v6__;
-    fetchSpy.mockClear();
-
-    api.reset();
-
-    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2));
-    const bodies = fetchSpy.mock.calls.map(([, options]) =>
-      JSON.parse((options as RequestInit).body as string),
-    );
-    expect(bodies[0]).toMatchObject({
-      kind: "leave",
-      exitReason: "identity_reset",
-      visitorId: "",
-    });
-    expect(bodies[1]).toMatchObject({ kind: "pageview", visitorId: "" });
-    expect(setItemSpy).not.toHaveBeenCalled();
-    expect(window.localStorage.length).toBe(0);
   });
 
   it("should send a custom_event when track() is called", async () => {
@@ -809,98 +559,6 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect(() => api.setGlobalProperties(undefined)).not.toThrow();
     expect(() => api.setGlobalProperties("string")).not.toThrow();
     expect(() => api.setGlobalProperties([1, 2])).not.toThrow();
-  });
-
-  it("should attach userId/userName when identify() is called", async () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(() =>
-        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
-      );
-
-    await import("../sdk");
-    fetchSpy.mockClear();
-
-    const api = (window as any).__openanalytics_tracker_v6__;
-    api.identify("user-123", { name: "Alice" });
-
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-    const body = JSON.parse(fetchSpy.mock.calls[0][1].body as string);
-    expect(body.kind).toBe("identify");
-    expect(body.userId).toBe("user-123");
-    expect(body.userName).toBe("Alice");
-  });
-
-  it("should accept identify() without a name option and default to empty string", async () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(() =>
-        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
-      );
-
-    await import("../sdk");
-    fetchSpy.mockClear();
-
-    const api = (window as any).__openanalytics_tracker_v6__;
-    api.identify("user-only");
-
-    const body = JSON.parse(fetchSpy.mock.calls[0][1].body as string);
-    expect(body.userId).toBe("user-only");
-    expect(body.userName).toBe("");
-  });
-
-  it("should ignore identify() invocations with empty userId", async () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(() =>
-        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
-      );
-
-    await import("../sdk");
-    fetchSpy.mockClear();
-
-    const api = (window as any).__openanalytics_tracker_v6__;
-    api.identify("");
-    api.identify("   ");
-
-    expect(fetchSpy).not.toHaveBeenCalled();
-  });
-
-  it("should preserve identified user on subsequent track() calls until cleared", async () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(() =>
-        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
-      );
-
-    await import("../sdk");
-    const api = (window as any).__openanalytics_tracker_v6__;
-    api.identify("user-789", { name: "Bob" });
-    fetchSpy.mockClear();
-    api.track("page_action");
-
-    const body = JSON.parse(fetchSpy.mock.calls[0][1].body as string);
-    expect(body.userId).toBe("user-789");
-    expect(body.userName).toBe("Bob");
-  });
-
-  it("should clip oversized user identifiers to 255 chars", async () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(() =>
-        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
-      );
-
-    await import("../sdk");
-    fetchSpy.mockClear();
-
-    const api = (window as any).__openanalytics_tracker_v6__;
-    const long = "a".repeat(500);
-    api.identify(long, { name: long });
-
-    const body = JSON.parse(fetchSpy.mock.calls[0][1].body as string);
-    expect(body.userId.length).toBe(255);
-    expect(body.userName.length).toBe(255);
   });
 
   it("should fire auto-track on a clicked element with data-open-analytics-event", async () => {
@@ -1188,26 +846,6 @@ describe("Tracker Browser SDK Integration Suite", () => {
     logSpy.mockRestore();
   });
 
-  it("should expose debug mode and surface identify logs after debug() is called", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    vi.spyOn(globalThis, "fetch").mockImplementation(() =>
-      Promise.resolve(new Response(JSON.stringify({ ok: true }))),
-    );
-
-    await import("../sdk");
-    const api = (window as any).__openanalytics_tracker_v6__;
-    api.debug();
-    api.identify("dbg-user", { name: "Dbg" });
-
-    expect(logSpy).toHaveBeenCalledWith(
-      "[OpenAnalytics]",
-      "identify:",
-      JSON.stringify("dbg-user"),
-      JSON.stringify("Dbg"),
-    );
-    logSpy.mockRestore();
-  });
-
   it("should set up history.pushState wrapper that schedules a route change", async () => {
     const beforeImport = history.pushState;
     await import("../sdk");
@@ -1216,13 +854,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect(typeof history.pushState).toBe("function");
   });
 
-  it("should also wrap history.replaceState", async () => {
-    const beforeImport = history.replaceState;
-    await import("../sdk");
-    expect(history.replaceState).not.toBe(beforeImport);
-  });
-
-  it("should commit a pending route change when pushState lands on a new route", async () => {
+  it("should not send a pageview when history.replaceState changes the URL", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockImplementation(() =>
@@ -1232,18 +864,49 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await import("../sdk");
     fetchSpy.mockClear();
 
-    // happy-dom may not synchronously reflect path changes via pushState —
-    // explicitly synchronize window.location via replaceState to ensure routeKey diverges.
-    history.replaceState({}, "", "/new-route?x=1");
-    history.pushState({}, "", "/new-route?x=2");
-    // route settle delay is 300ms — wait > 300 before checking
+    history.replaceState({}, "", "/replaced-route");
+    await new Promise((r) => queueMicrotask(r));
+    (window as any).__openanalytics_tracker_v6__.track("after_replace");
+
+    expect(sentKinds(fetchSpy)).toEqual(["custom_event"]);
+  });
+  it("should send a pageview when pushState lands on a new path", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
+      );
+
+    await import("../sdk");
+    fetchSpy.mockClear();
+
+    history.pushState({}, "", "/new-route");
+    // The route settle delay is 300ms.
     await new Promise((r) => setTimeout(r, 500));
 
-    // Either a new pageview should have been sent OR the wrapper still queued correctly
-    // (event listener path); either way exercises wrapHistoryMethod + scheduleRouteChange.
-    expect(fetchSpy.mock.calls.length).toBeGreaterThanOrEqual(0);
+    expect(sentKinds(fetchSpy)).toEqual(["pageview"]);
+    expect(decodeFetchBody(fetchSpy)).toMatchObject({
+      pathname: "/new-route",
+      navigation: "route",
+    });
   });
 
+  it("should not send a pageview when pushState only changes the query string", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
+      );
+
+    await import("../sdk");
+    fetchSpy.mockClear();
+
+    history.pushState({}, "", "/?filter=active");
+    await new Promise((r) => queueMicrotask(r));
+    (window as any).__openanalytics_tracker_v6__.track("after_query_change");
+
+    expect(sentKinds(fetchSpy)).toEqual(["custom_event"]);
+  });
   it("should NOT re-send pageview when pushState lands on the same routeKey", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
@@ -1278,6 +941,25 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await new Promise((r) => setTimeout(r, 50));
   });
 
+  it("should ignore hashchange when hashes are not tracked", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
+      );
+
+    await importConfiguredSdk({ trackHash: false });
+    fetchSpy.mockClear();
+    history.replaceState({}, "", "/#section");
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    await new Promise((r) => setTimeout(r, 500));
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(registeredWinListeners.map(([type]) => type)).not.toContain(
+      "hashchange",
+    );
+  });
+
   it("should fire pageview on hashchange", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
@@ -1296,7 +978,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect(fetchSpy.mock.calls.length).toBeGreaterThanOrEqual(0);
   });
 
-  it("should flush pending route change immediately on identify()/track() calls", async () => {
+  it("should flush pending route change immediately on track() calls", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockImplementation(() =>
@@ -1441,52 +1123,11 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect((window as any).openAnalytics.siteId).toBe("configured-site");
   });
 
-  it("should reuse existing visitor ids without sending SDK session ids", async () => {
-    const randomUuidSpy = vi
-      .spyOn(globalThis.crypto, "randomUUID")
-      .mockReturnValue("new-visit");
-    window.localStorage.setItem(
-      "__openanalytics_visitor_configured-site__",
-      "existing-visitor",
-    );
-    window.sessionStorage.setItem(
-      "__openanalytics_session_configured-site__",
-      "legacy-session",
-    );
-    window.sessionStorage.setItem(
-      "__openanalytics_session_activity_configured-site__",
-      String(Date.now() - 1_000),
-    );
-
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(() =>
-        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
-      );
-
-    await importConfiguredSdk({ sessionWindowMs: 30 * 60 * 1000 });
-
-    const body = decodeFetchBody(fetchSpy);
-    expect(body.visitorId).toBe("existing-visitor");
-    expect(body.sessionId).toBeUndefined();
-    expect(body.visitId).toBe("new-visit");
-    expect(
-      window.sessionStorage.getItem(
-        "__openanalytics_session_configured-site__",
-      ),
-    ).toBe("legacy-session");
-    expect(randomUuidSpy).toHaveBeenCalledTimes(1);
-  });
-
   it("should not create or refresh SDK session ids", async () => {
     const randomUuidSpy = vi
       .spyOn(globalThis.crypto, "randomUUID")
       .mockReturnValueOnce("new-visit");
     const legacyActivityAt = String(Date.now() - 60_000);
-    window.localStorage.setItem(
-      "__openanalytics_visitor_configured-site__",
-      "existing-visitor",
-    );
     window.sessionStorage.setItem(
       "__openanalytics_session_configured-site__",
       "expired-session",
@@ -1501,10 +1142,9 @@ describe("Tracker Browser SDK Integration Suite", () => {
         Promise.resolve(new Response(JSON.stringify({ ok: true }))),
       );
 
-    await importConfiguredSdk({ sessionWindowMs: 1 });
+    await importConfiguredSdk();
 
     const body = decodeFetchBody(fetchSpy);
-    expect(body.visitorId).toBe("existing-visitor");
     expect(body.sessionId).toBeUndefined();
     expect(body.visitId).toBe("new-visit");
     expect(
@@ -1518,26 +1158,6 @@ describe("Tracker Browser SDK Integration Suite", () => {
       ),
     ).toBe(legacyActivityAt);
     expect(randomUuidSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it("should suppress visitor ids when configured for EU mode", async () => {
-    const randomUuidSpy = vi
-      .spyOn(globalThis.crypto, "randomUUID")
-      .mockReturnValueOnce("visit-only");
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(() =>
-        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
-      );
-
-    await importConfiguredSdk({ isEuMode: true });
-
-    const body = decodeFetchBody(fetchSpy);
-    expect(body.visitorId).toBe("");
-    expect(body.sessionId).toBeUndefined();
-    expect(body.visitId).toBe("visit-only");
-    expect(randomUuidSpy).toHaveBeenCalledTimes(1);
-    expect(window.localStorage.length).toBe(0);
   });
 
   it("should omit query and hash when configured flags are disabled", async () => {
@@ -1554,6 +1174,41 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect(body.pathname).toBe("/docs");
     expect(body.query).toBe("");
     expect(body.hash).toBe("");
+  });
+
+  it("should send UTM tags from the URL even when query strings are not tracked", async () => {
+    history.replaceState({}, "", "/?utm_source=x");
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
+      );
+
+    await importConfiguredSdk({ trackQueryParams: false });
+
+    const body = decodeFetchBody(fetchSpy);
+    expect(body.query).toBe("");
+    expect(body.utmSource).toBe("x");
+  });
+
+  it.each([
+    "http://localhost:3000/",
+    "http://127.0.0.1:8080/",
+    "http://[::1]:3000/",
+    "http://shop.localhost/",
+  ])("should send nothing from a local page at %s", async (url) => {
+    setPageUrl(url);
+    const sendBeaconSpy = vi.fn().mockReturnValue(true);
+    (navigator as any).sendBeacon = sendBeaconSpy;
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    await import("../sdk");
+    await new Promise((r) => setTimeout(r, 0));
+    (window as any).__openanalytics_tracker_v6__.track("local_event");
+    window.dispatchEvent(new Event("pagehide"));
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(sendBeaconSpy).not.toHaveBeenCalled();
   });
 
   it("should block installation when configured to honor Do Not Track", async () => {
@@ -1601,6 +1256,21 @@ describe("Tracker Browser SDK Integration Suite", () => {
     const [, options] = fetchSpy.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(options.body as string);
     expect(body.kind).toBe("leave");
+    expect(options.keepalive).toBe(true);
+  });
+
+  it("should send custom events with keepalive so a click that navigates away still lands", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
+      );
+
+    await import("../sdk");
+    fetchSpy.mockClear();
+    (window as any).__openanalytics_tracker_v6__.track("signup_click");
+
+    const [, options] = fetchSpy.mock.calls[0] as [string, RequestInit];
     expect(options.keepalive).toBe(true);
   });
 
@@ -2039,7 +1709,7 @@ describe("Tracker Browser SDK Integration Suite", () => {
     }
   });
 
-  it("should surface debug logs for identify without a name and track without event data", async () => {
+  it("should surface debug logs for track without event data", async () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(globalThis, "fetch").mockImplementation(() =>
       Promise.resolve(new Response(JSON.stringify({ ok: true }))),
@@ -2048,15 +1718,8 @@ describe("Tracker Browser SDK Integration Suite", () => {
     await import("../sdk");
     const api = (window as any).__openanalytics_tracker_v6__;
     api.debug();
-    api.identify("debug-no-name");
     api.track("debug-no-data");
 
-    expect(logSpy).toHaveBeenCalledWith(
-      "[OpenAnalytics]",
-      "identify:",
-      JSON.stringify("debug-no-name"),
-      "",
-    );
     expect(logSpy).toHaveBeenCalledWith(
       "[OpenAnalytics]",
       "track:",
@@ -2064,7 +1727,6 @@ describe("Tracker Browser SDK Integration Suite", () => {
       JSON.stringify({}),
     );
   });
-
   it("should tolerate missing history methods during installation", async () => {
     Object.defineProperty(history, "pushState", {
       configurable: true,
@@ -2319,99 +1981,45 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect(body.performanceVisitId).toBeUndefined();
   });
 
-  it("should start a new visit when the hidden duration exceeds the session window", async () => {
+  it("should send only a visible event, not a new pageview, after a long hidden period", async () => {
     vi.useFakeTimers();
+    const sendBeaconSpy = vi.fn().mockReturnValue(true);
+    (navigator as any).sendBeacon = sendBeaconSpy;
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockImplementation(() =>
         Promise.resolve(new Response(JSON.stringify({ ok: true }))),
       );
 
-    await importConfiguredSdk({ sessionWindowMs: 5000 });
+    await importConfiguredSdk();
+    await vi.runAllTimersAsync();
     fetchSpy.mockClear();
-
-    // Record the initial visit id
-    const initialVisitCalls = fetchSpy.mock.calls.length;
-
-    // Hide the document
-    Object.defineProperty(document, "visibilityState", {
-      value: "hidden",
-      writable: true,
-      configurable: true,
-    });
-    document.dispatchEvent(new Event("visibilitychange"));
-
-    // Advance time past the session window
-    await vi.advanceTimersByTimeAsync(6000);
-
-    // Show the document again — this should trigger a new visit
-    Object.defineProperty(document, "visibilityState", {
-      value: "visible",
-      writable: true,
-      configurable: true,
-    });
-    document.dispatchEvent(new Event("visibilitychange"));
-
-    // A new pageview should have been sent (not just a visibility event)
-    const pageviewCalls = fetchSpy.mock.calls.filter(([, opts]) => {
-      try {
-        return (
-          JSON.parse((opts as RequestInit).body as string).kind === "pageview"
-        );
-      } catch {
-        return false;
-      }
-    });
-    expect(pageviewCalls.length).toBeGreaterThanOrEqual(1);
-
-    // The new pageview should have a different visitId than the first one
-    const firstVisitId = initialVisitCalls > 0 ? undefined : undefined;
-    const newPageviewBody = JSON.parse(
-      pageviewCalls[pageviewCalls.length - 1][1].body as string,
-    );
-    expect(newPageviewBody.kind).toBe("pageview");
-  });
-
-  it("should send a visibility visible event when hidden duration is within the session window", async () => {
-    vi.useFakeTimers();
-    const sendBeaconSpy = vi.fn().mockReturnValue(true);
-    (navigator as any).sendBeacon = sendBeaconSpy;
-
-    await importConfiguredSdk({ sessionWindowMs: 30000 });
     sendBeaconSpy.mockClear();
 
-    // Hide the document
     Object.defineProperty(document, "visibilityState", {
       value: "hidden",
       writable: true,
       configurable: true,
     });
     document.dispatchEvent(new Event("visibilitychange"));
-
-    // Advance time but stay within the session window
-    await vi.advanceTimersByTimeAsync(1000);
-
-    // Show the document — should send visibility visible, not a new visit
+    await vi.advanceTimersByTimeAsync(2 * 60 * 60 * 1000);
     Object.defineProperty(document, "visibilityState", {
       value: "visible",
       writable: true,
       configurable: true,
     });
     document.dispatchEvent(new Event("visibilitychange"));
+    await vi.runAllTimersAsync();
 
-    expect(sendBeaconSpy).toHaveBeenCalled();
     const bodies = await Promise.all(
       sendBeaconSpy.mock.calls.map(([, blob]) => decodeBeaconBody(blob)),
     );
-    expect(
-      bodies.some(
-        (b) => b.kind === "visibility" && b.visibilityState === "visible",
-      ),
-    ).toBe(true);
-    // Should NOT have started a new visit (no pageview)
-    expect(bodies.some((b) => b.kind === "pageview")).toBe(false);
+    expect(bodies.map((body) => [body.kind, body.visibilityState])).toEqual([
+      ["visibility", "hidden"],
+      ["visibility", "visible"],
+    ]);
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
-
   it("should ignore visibilitychange visible when not previously hidden", async () => {
     const sendBeaconSpy = vi.fn().mockReturnValue(true);
     (navigator as any).sendBeacon = sendBeaconSpy;

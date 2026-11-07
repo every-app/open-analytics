@@ -79,6 +79,14 @@ describe("site settings helpers", () => {
     expect(formatListInput(["/admin", "/checkout"])).toBe("/admin\n/checkout");
   });
 
+  it("defaults to path-only page keys and hosting proxy blocking", () => {
+    expect(normalizeSiteScriptSettings(null)).toMatchObject({
+      trackQueryParams: false,
+      trackHash: false,
+      hostingProxyBlockingEnabled: true,
+    });
+  });
+
   it("normalizes script settings from top-level and nested tracking objects", () => {
     expect(normalizeSiteScriptSettings(null)).toEqual(
       DEFAULT_SITE_SCRIPT_SETTINGS,
@@ -86,14 +94,12 @@ describe("site settings helpers", () => {
 
     expect(
       normalizeSiteScriptSettings({
-        trackingMode: "weak",
         trackQueryParams: "off",
         trackHash: 0,
         autoTrackOutboundLinks: "yes",
         ignoreDnt: "false",
         performanceSamplingRate: "12.345",
         tracking: {
-          trackingStrength: "strong",
           trackHash: "on",
           performanceTrackingEnabled: false,
           domainWhitelist: "Example.com,docs.example.com",
@@ -101,7 +107,6 @@ describe("site settings helpers", () => {
         },
       }),
     ).toEqual({
-      trackingStrength: "strong",
       trackQueryParams: false,
       trackHash: true,
       autoTrackOutboundLinks: true,
@@ -110,23 +115,20 @@ describe("site settings helpers", () => {
       ignoreDoNotTrack: false,
       performanceSampleRate: 0,
       botProtectionEnabled: true,
-      hostingProxyBlockingEnabled: false,
+      hostingProxyBlockingEnabled: true,
     });
 
     expect(
       normalizeSiteScriptSettings({
-        trackingStrength: "unknown",
         trackPerformance: false,
       }).performanceSampleRate,
     ).toBe(0);
     expect(
       normalizeSiteScriptSettings({
-        trackingStrength: "strong",
         trackQueryParams: 1,
         autoTrackOutboundLinks: 0,
       }),
     ).toMatchObject({
-      trackingStrength: "strong",
       trackQueryParams: true,
       autoTrackOutboundLinks: false,
     });
@@ -169,13 +171,11 @@ describe("site settings helpers", () => {
         siteId: ` ${"s".repeat(140)} `,
         primaryDomain: "https://Primary.example/path",
         domainWhitelist: "docs.example.com\nbad*",
-        trackingStrength: "weak",
       }),
     ).toMatchObject({
       siteId: "s".repeat(120),
       siteDomain: "primary.example",
       allowedHostnames: ["docs.example.com"],
-      trackingStrength: "weak",
     });
 
     expect(parsePathBlacklist(["?debug=1", `/${"a".repeat(260)}`])).toEqual([]);

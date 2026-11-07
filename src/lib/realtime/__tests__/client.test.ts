@@ -431,73 +431,49 @@ describe("realtime client", () => {
     ]);
   });
 
-  it("patches existing visits from identify events without creating traffic observations", async () => {
+  it("counts a visit whose latest visibility event is hidden as inactive, without counting a view", async () => {
     const client = await importClient();
     vi.stubGlobal("WebSocket", FakeSocket);
-    releases.push(client.acquireRealtimeChannel("site-identify"));
+    releases.push(client.acquireRealtimeChannel("site-visibility"));
     const socket = sockets[0]!;
     socket.open();
     const now = Date.now();
+    const event = (
+      id: string,
+      visitId: string,
+      eventAt: number,
+      visibilityState?: "hidden" | "visible",
+    ) =>
+      realtimeMessage("event", {
+        id,
+        eventType: visibilityState ? "visibility" : "pageview",
+        eventKind: visibilityState ? "visibility" : "pageview",
+        eventAt,
+        visitId,
+        visitorId: `visitor-of-${visitId}`,
+        visibilityState,
+      });
 
+    socket.message(event("hidden-pageview", "hidden-visit", now));
+    socket.message(event("hidden-tab", "hidden-visit", now + 100, "hidden"));
+    socket.message(event("shown-pageview", "shown-visit", now));
     socket.message(
-      realtimeMessage("event", {
-        id: "identify-before-pageview",
-        eventType: "identify",
-        eventAt: now + 100,
-        eventKind: "identify",
-        visitId: "visit-identify",
-        sessionId: "session-identify",
-        visitorId: "visitor-identify",
-        userId: "user-ada",
-        userName: "Ada",
-      }),
+      event("shown-tab-hidden", "shown-visit", now + 100, "hidden"),
     );
     socket.message(
-      realtimeMessage("event", {
-        id: "pageview-after-identify",
-        eventType: "pageview",
-        eventAt: now,
-        eventKind: "pageview",
-        visitId: "visit-identify",
-        sessionId: "session-identify",
-        visitorId: "visitor-identify",
-        pathname: "/account",
-      }),
-    );
-    socket.message(
-      realtimeMessage("event", {
-        id: "identify-unknown-visit",
-        eventType: "identify",
-        eventAt: now + 200,
-        eventKind: "identify",
-        visitId: "unknown-visit",
-        sessionId: "unknown-session",
-        visitorId: "unknown-visitor",
-        userId: "user-unknown",
-        userName: "Unknown",
-      }),
+      event("shown-tab-back", "shown-visit", now + 200, "visible"),
     );
     vi.advanceTimersByTime(80);
 
-    const state = client.getRealtimeChannelState("site-identify");
-    expect(state.events.map((event) => event.id)).toEqual([
-      "identify-unknown-visit",
-      "identify-before-pageview",
-      "pageview-after-identify",
-    ]);
+    const state = client.getRealtimeChannelState("site-visibility");
+    expect(state.events).toHaveLength(5);
+    expect(state.viewsLast30m).toBe(2);
+    expect(state.visitorsLast30m).toBe(2);
     expect(state.activeNow).toBe(1);
-    expect(state.visitorsLast30m).toBe(1);
-    expect(state.viewsLast30m).toBe(1);
-    expect(state.points).toEqual([]);
-    expect(state.visits).toMatchObject([
-      {
-        visitId: "visit-identify",
-        visitorId: "visitor-identify",
-        userId: "user-ada",
-        userName: "Ada",
-      },
+    expect(state.visits.map((visit) => visit.visitId).sort()).toEqual([
+      "hidden-visit",
+      "shown-visit",
     ]);
-    expect(state.visits).toHaveLength(1);
   });
 
   it("normalizes default event fields from non-string envelopes and prunes zero-time activity on recompute", async () => {

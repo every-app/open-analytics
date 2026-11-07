@@ -9,7 +9,7 @@ import type {
   IngestEnvelopePayload,
   TrackerClientPayload,
 } from "@/lib/edge/types";
-import { deriveEuVisitorId } from "@/lib/edge/utils";
+import { deriveVisitorId } from "@/lib/edge/utils";
 import { visitorDailySaltSecret } from "@/lib/secrets";
 const receivedAt = 1_700_000_000_000;
 function makeEnvelope(
@@ -101,6 +101,26 @@ function makeVisit(overrides: Partial<StoredOpenVisit> = {}): StoredOpenVisit {
     ...overrides,
   };
 }
+function makeRecentSession(
+  overrides: Partial<RecentVisitorSession> = {},
+): RecentVisitorSession {
+  return {
+    sessionId: "server-session-1",
+    visitId: "visit-1",
+    status: "open",
+    routeMatch: 1,
+    startedAt: receivedAt - 10_000,
+    lastActivityAt: receivedAt - 5_000,
+    referrerUrl: "",
+    referrerHost: "",
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    utmTerm: "",
+    utmContent: "",
+    ...overrides,
+  };
+}
 function makeContext(
   options: {
     visit?: StoredOpenVisit | null;
@@ -134,21 +154,17 @@ async function expectedVisitorSecret(): Promise<string> {
   return (await visitorDailySaltSecret({ DAILY_SALT_SECRET: "test-secret" }))!;
 }
 describe("normalizeIngestRecord rejection reasons", () => {
-  it("throws when visitor identity needs a secret but no root secret is configured", async () => {
+  it("throws when no root secret is configured for visitor identity", async () => {
     const { context } = makeContext();
     context.env = {} as typeof context.env;
 
     await expect(
       normalizeIngestRecord(
-        makeEnvelope(
-          {
-            kind: "pageview",
-            visitId: "visit-1",
-            visitorId: "",
-            hostname: "example.com",
-          },
-          { cf: { isEUCountry: true } },
-        ),
+        makeEnvelope({
+          kind: "pageview",
+          visitId: "visit-1",
+          hostname: "example.com",
+        }),
         context,
       ),
     ).rejects.toThrow(
@@ -156,7 +172,7 @@ describe("normalizeIngestRecord rejection reasons", () => {
     );
   });
 
-  it("rejects records missing required site, visit, hostname, user, or event fields", async () => {
+  it("rejects records missing required site, visit, hostname, or event fields", async () => {
     const { context } = makeContext();
 
     await expect(
@@ -177,12 +193,6 @@ describe("normalizeIngestRecord rejection reasons", () => {
         context,
       ),
     ).resolves.toMatchObject({ record: null, reason: "missing_hostname" });
-    await expect(
-      normalizeIngestRecord(
-        makeEnvelope({ kind: "identify", visitId: "visit-1" }),
-        context,
-      ),
-    ).resolves.toMatchObject({ record: null, reason: "missing_user_id" });
     await expect(
       normalizeIngestRecord(
         makeEnvelope({
@@ -214,23 +224,25 @@ describe("normalizeIngestRecord rejection reasons", () => {
   });
 });
 describe("normalizeIngestRecord pageview records", () => {
-  it("normalizes pageview URL, user, geo, viewport, and EU visitor fields", async () => {
+  it("normalizes pageview URL, UTM, geo, viewport, and EU visitor fields", async () => {
     const { context } = makeContext();
     const envelope = makeEnvelope(
       {
         kind: "pageview",
         visitId: "visit-1",
         sessionId: "",
-        visitorId: "client-visitor",
         hostname: "EXAMPLE.COM",
         pathname: "",
         query:
           "utm_source=newsletter&utm_medium=email&utm_campaign=launch&utm_term=term&utm_content=hero",
+        utmSource: "newsletter",
+        utmMedium: "email",
+        utmCampaign: "launch",
+        utmTerm: "term",
+        utmContent: "hero",
         hash: "#section",
         title: "Hello",
         referrerUrl: "https://example.com/previous",
-        userId: "user-1",
-        userName: "Ada",
         screenWidth: "wide",
         screenHeight: Number.NaN,
         language: "en-US",
@@ -244,7 +256,7 @@ describe("normalizeIngestRecord pageview records", () => {
         },
       },
     );
-    const expectedVisitorId = await deriveEuVisitorId({
+    const expectedVisitorId = await deriveVisitorId({
       ip: "203.0.113.10",
       ua: envelope.request.headers["user-agent"]!,
       eventAtMs: receivedAt - 1_000,
@@ -273,8 +285,6 @@ describe("normalizeIngestRecord pageview records", () => {
       utmCampaign: "launch",
       utmTerm: "term",
       utmContent: "hero",
-      userId: "user-1",
-      userName: "Ada",
       screenWidth: null,
       screenHeight: null,
       language: "en-US",
@@ -291,8 +301,14 @@ describe("normalizeIngestRecord pageview records", () => {
     expect(result.record.previousVisitStartedAt).toBeNull();
   });
 
-  it("preserves non-EU visitor fields, parses cross-site referrers, and prefers client timezone", async () => {
+  it("ignores client visitor ids, parses cross-site referrers, and prefers client timezone", async () => {
     const { context } = makeContext();
+    const expectedVisitorId = await deriveVisitorId({
+      ip: "203.0.113.10",
+      ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+      eventAtMs: receivedAt - 1_000,
+      secret: await expectedVisitorSecret(),
+    });
 
     const result = await normalizeIngestRecord(
       makeEnvelope(
@@ -339,7 +355,7 @@ describe("normalizeIngestRecord pageview records", () => {
 
     expect(result.record).toMatchObject({
       kind: "pageview",
-      visitorId: "visitor-1",
+      visitorId: expectedVisitorId,
       previousVisitId: "",
       previousVisitStartedAt: null,
       pathname: "/docs",
@@ -375,23 +391,13 @@ describe("normalizeIngestRecord pageview records", () => {
   });
 
   it("reuses a recent server-side visitor session", async () => {
-    const { context } = makeContext({
-      recentSession: {
-        sessionId: "server-session-1",
-        visitId: "visit-1",
-        status: "open",
-        routeMatch: 1,
-        startedAt: receivedAt - 10_000,
-        lastActivityAt: receivedAt - 5_000,
-      },
-    });
+    const { context } = makeContext({ recentSession: makeRecentSession() });
 
     await expect(
       normalizeIngestRecord(
         makeEnvelope({
           kind: "pageview",
           visitId: "visit-2",
-          visitorId: "visitor-1",
           previousVisitId: "visit-1",
           navigation: "route",
           referrerUrl: "https://example.com/previous",
@@ -409,7 +415,71 @@ describe("normalizeIngestRecord pageview records", () => {
     });
   });
 
-  it("derives missing non-EU visitor ids from forwarded IP and clamps long payload fields", async () => {
+  it("gives a pageview that continues a session the session's referrer and UTM tags", async () => {
+    const { context } = makeContext({
+      recentSession: makeRecentSession({
+        referrerUrl: "https://news.example/story",
+        referrerHost: "news.example",
+        utmSource: "newsletter",
+        utmMedium: "email",
+        utmCampaign: "launch",
+      }),
+    });
+
+    const result = await normalizeIngestRecord(
+      makeEnvelope({
+        kind: "pageview",
+        visitId: "visit-2",
+        navigation: "route",
+        referrerUrl: "https://example.com/previous",
+        hostname: "example.com",
+        utmSource: "twitter",
+      }),
+      context,
+    );
+
+    expect(result.record).toMatchObject({
+      kind: "pageview",
+      sessionId: "server-session-1",
+      referrerUrl: "https://news.example/story",
+      referrerHost: "news.example",
+      utmSource: "newsletter",
+      utmMedium: "email",
+      utmCampaign: "launch",
+      utmTerm: "",
+      utmContent: "",
+    });
+  });
+
+  it("gives a pageview that starts a session its own referrer and the payload's UTM tags", async () => {
+    const { context } = makeContext();
+
+    const result = await normalizeIngestRecord(
+      makeEnvelope({
+        kind: "pageview",
+        visitId: "visit-1",
+        hostname: "example.com",
+        query: "utm_source=query&utm_medium=query",
+        referrerUrl: "https://search.example/results",
+        utmSource: "payload",
+        utmCampaign: "launch",
+      }),
+      context,
+    );
+
+    expect(result.record).toMatchObject({
+      kind: "pageview",
+      referrerUrl: "https://search.example/results",
+      referrerHost: "search.example",
+      utmSource: "payload",
+      utmMedium: "",
+      utmCampaign: "launch",
+      utmTerm: "",
+      utmContent: "",
+    });
+  });
+
+  it("derives visitor ids from the forwarded IP and clamps long payload fields", async () => {
     const { context } = makeContext();
     const long = "x".repeat(3000);
     const longUtm = "u".repeat(300);
@@ -419,15 +489,14 @@ describe("normalizeIngestRecord pageview records", () => {
         siteId: "s".repeat(140),
         visitId: "v".repeat(160),
         previousVisitId: "previous-visit-1",
-        visitorId: "",
         hostname: `${"h".repeat(260)}.EXAMPLE.COM`,
         pathname: long,
-        query: `utm_source=${longUtm}&utm_medium=${longUtm}&pad=${long}`,
+        query: `pad=${long}`,
+        utmSource: longUtm,
+        utmMedium: longUtm,
         hash: long,
         title: long,
         referrerUrl: "not a url",
-        userId: "",
-        userName: "",
         language: long,
       },
       {
@@ -439,7 +508,7 @@ describe("normalizeIngestRecord pageview records", () => {
         receivedAt: receivedAt + 0.8,
       },
     );
-    const expectedVisitorId = await deriveEuVisitorId({
+    const expectedVisitorId = await deriveVisitorId({
       ip: "198.51.100.42",
       ua: "TestAgent/1.0",
       eventAtMs: receivedAt - 1_000,
@@ -460,8 +529,6 @@ describe("normalizeIngestRecord pageview records", () => {
       referrerHost: "",
       utmSource: longUtm.slice(0, 255),
       utmMedium: longUtm.slice(0, 255),
-      userId: undefined,
-      userName: undefined,
       country: "",
       region: "",
       timezone: "",
@@ -486,7 +553,6 @@ describe("normalizeIngestRecord pageview records", () => {
       makeEnvelope({
         kind: "pageview",
         visitId: "visit-1",
-        visitorId: "visitor-1",
         hostname: "example.com",
         timestamp: receivedAt - 31_000,
         startedAt: receivedAt + 10_000,
@@ -497,7 +563,6 @@ describe("normalizeIngestRecord pageview records", () => {
       makeEnvelope({
         kind: "pageview",
         visitId: "visit-1",
-        visitorId: "visitor-1",
         hostname: "example.com",
         timestamp: receivedAt + 10_000,
         startedAt: receivedAt - 5_000,
@@ -508,7 +573,6 @@ describe("normalizeIngestRecord pageview records", () => {
       makeEnvelope({
         kind: "pageview",
         visitId: "visit-1",
-        visitorId: "visitor-1",
         hostname: "example.com",
         timestamp: receivedAt - 2_000,
         startedAt: receivedAt - 1_000,
@@ -530,15 +594,18 @@ describe("normalizeIngestRecord pageview records", () => {
     });
   });
 });
-describe("normalizeIngestRecord leave and identify records", () => {
-  it("rejects leave and identify records missing visit ids", async () => {
+describe("normalizeIngestRecord leave and visibility records", () => {
+  it("rejects leave and visibility records missing visit ids", async () => {
     const { context } = makeContext();
 
     await expect(
       normalizeIngestRecord(makeEnvelope({ kind: "leave" }), context),
     ).resolves.toMatchObject({ record: null, reason: "missing_visit_id" });
     await expect(
-      normalizeIngestRecord(makeEnvelope({ kind: "identify" }), context),
+      normalizeIngestRecord(
+        makeEnvelope({ kind: "visibility", visibilityState: "hidden" }),
+        context,
+      ),
     ).resolves.toMatchObject({ record: null, reason: "missing_visit_id" });
   });
 
@@ -605,52 +672,6 @@ describe("normalizeIngestRecord leave and identify records", () => {
         exitReason: "pagehide",
         performance: null,
       },
-    });
-  });
-
-  it("normalizes identify user fields", async () => {
-    const { context } = makeContext();
-
-    await expect(
-      normalizeIngestRecord(
-        makeEnvelope({
-          kind: "identify",
-          visitId: "visit-1",
-          userId: "user-1",
-          userName: "Ada",
-        }),
-        context,
-      ),
-    ).resolves.toMatchObject({
-      record: {
-        kind: "identify",
-        siteId: "site-1",
-        visitId: "visit-1",
-        userId: "user-1",
-        userName: "Ada",
-        receivedAt,
-      },
-    });
-  });
-
-  it("clamps identify fields and defaults missing optional user names", async () => {
-    const { context } = makeContext();
-
-    const result = await normalizeIngestRecord(
-      makeEnvelope({
-        kind: "identify",
-        visitId: "v".repeat(160),
-        userId: "u".repeat(300),
-        userName: "",
-      }),
-      context,
-    );
-
-    expect(result.record).toMatchObject({
-      kind: "identify",
-      visitId: "v".repeat(128),
-      userId: "u".repeat(255),
-      userName: "",
     });
   });
 
@@ -783,7 +804,6 @@ describe("normalizeIngestRecord custom event records", () => {
         sequence: 0,
         eventName: "signup",
         eventDataJson: '{"plan":"pro"}',
-        userId: "",
       },
     ]);
   });
@@ -799,7 +819,6 @@ describe("normalizeIngestRecord custom event records", () => {
         sequence: -5,
         eventName: "signup",
         eventData: { plan: "pro", nested: { ok: true } },
-        userId: "user-1",
       }),
       state.context,
     );
@@ -824,12 +843,11 @@ describe("normalizeIngestRecord custom event records", () => {
         sequence: 0,
         eventName: "signup",
         eventDataJson: '{"plan":"pro","nested":{"ok":true}}',
-        userId: "user-1",
       },
     ]);
   });
 
-  it("maps custom events from stored visit context and overrides user fields", async () => {
+  it("maps custom events from stored visit context", async () => {
     const { context } = makeContext({ visit: makeVisit() });
 
     const result = await normalizeIngestRecord(
@@ -840,8 +858,6 @@ describe("normalizeIngestRecord custom event records", () => {
         sequence: 2.9,
         eventName: "signup",
         eventData: { amount: 12, tags: ["new"] },
-        userId: "client-user",
-        userName: "Client User",
       }),
       context,
     );
@@ -859,16 +875,12 @@ describe("normalizeIngestRecord custom event records", () => {
       sessionId: "session-from-visit",
       pathname: "/from-visit",
       hostname: "example.com",
-      userId: "client-user",
-      userName: "Client User",
     });
   });
 
-  it("uses stored visit user fields when custom event client user fields are blank", async () => {
+  it("carries the stored visit's UTM tags and generates missing event ids", async () => {
     const { context } = makeContext({
       visit: makeVisit({
-        userId: "visit-user",
-        userName: "Visit User",
         utmMedium: "email",
         utmCampaign: "launch",
       }),
@@ -882,8 +894,6 @@ describe("normalizeIngestRecord custom event records", () => {
         sequence: Number.NaN,
         eventName: "purchase",
         eventData: { amount: 20 },
-        userId: "",
-        userName: "",
       }),
       context,
     );
@@ -893,8 +903,6 @@ describe("normalizeIngestRecord custom event records", () => {
       sequence: 0,
       eventName: "purchase",
       eventDataJson: '{"amount":20}',
-      userId: "visit-user",
-      userName: "Visit User",
       utmSource: "visit",
       utmMedium: "email",
       utmCampaign: "launch",

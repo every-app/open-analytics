@@ -99,9 +99,18 @@ export interface BufferedCustomEventInput {
   sequence: number;
   eventName: string;
   eventDataJson: string;
-  userId: string;
 }
-export interface RecentVisitorSession {
+/** The attribution every pageview of a session carries: its entry's source. */
+export interface SessionAttribution {
+  referrerUrl: string;
+  referrerHost: string;
+  utmSource: string;
+  utmMedium: string;
+  utmCampaign: string;
+  utmTerm: string;
+  utmContent: string;
+}
+export interface RecentVisitorSession extends SessionAttribution {
   sessionId: string;
   visitId?: string;
   status?: string;

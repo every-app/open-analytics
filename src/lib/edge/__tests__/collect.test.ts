@@ -27,7 +27,6 @@ const baseSettings: SiteTrackingConfig = {
   siteId: "site-1",
   siteDomain: "example.com",
   allowedHostnames: [],
-  trackingStrength: "smart",
   trackQueryParams: true,
   trackHash: true,
   autoTrackOutboundLinks: false,
@@ -128,6 +127,14 @@ type BlockingCollectorCase = {
   headers?: Record<string, string>;
   cf?: Record<string, unknown>;
 };
+function makeLogger() {
+  return {
+    measure: (_name: string, run: () => unknown) => run(),
+    track: (promise: Promise<unknown>) => promise,
+    info: vi.fn(),
+    warn: vi.fn(),
+  };
+}
 async function readForwardedEnvelope() {
   const waitUntilPromise = ctx.waitUntil.mock.calls.at(-1)?.[0];
   await waitUntilPromise;
@@ -402,6 +409,10 @@ describe("collect route", () => {
   });
 
   it("forwards suspected hosting traffic when hosting proxy blocking is disabled", async () => {
+    readSiteTrackingConfigMock.mockResolvedValue({
+      ...baseSettings,
+      hostingProxyBlockingEnabled: false,
+    });
     const request = makeRuntimeRequest({
       origin: "https://example.com",
       body: await makePayload(),
@@ -617,8 +628,8 @@ describe("collect route", () => {
   it.each([
     {
       name: "domains",
-      rules: { domains: ["blocked.example"] },
-      payload: { hostname: "blocked.example" },
+      rules: { domains: ["staging.example.com"] },
+      payload: { hostname: "staging.example.com" },
     },
     {
       name: "paths",
@@ -699,6 +710,80 @@ describe("collect route", () => {
       expect(env.INGEST_DO.idFromName).not.toHaveBeenCalled();
     },
   );
+
+  it.each(["localhost", "other.com"])(
+    "blocks pageviews from %s when the site has no domain rules",
+    async (hostname) => {
+      const logger = makeLogger();
+      const request = makeRuntimeRequest({
+        origin: `https://${hostname}`,
+        body: await makePayload({ hostname }),
+      });
+
+      const response = await handleCollectRequest(
+        request,
+        env as never,
+        ctx as never,
+        new URL(request.url),
+        logger as never,
+      );
+
+      expect(response.status).toBe(204);
+      expect(logger.warn).toHaveBeenCalledWith(
+        "collect.rejected.blocked_domains",
+      );
+      expect(env.INGEST_DO.get).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    { siteDomain: "example.com", hostname: "www.example.com" },
+    { siteDomain: "example.com", hostname: "docs.example.com" },
+    { siteDomain: "www.example.com", hostname: "example.com" },
+  ])(
+    "accepts pageviews from $hostname for the site $siteDomain",
+    async ({ siteDomain, hostname }) => {
+      readSiteTrackingConfigMock.mockResolvedValue({
+        ...baseSettings,
+        siteDomain,
+      });
+      const request = makeRuntimeRequest({
+        origin: `https://${hostname}`,
+        body: await makePayload({ hostname }),
+      });
+
+      const response = await handleCollectRequest(
+        request,
+        env as never,
+        ctx as never,
+        new URL(request.url),
+      );
+
+      expect(response.status).toBe(204);
+      expect(env.INGEST_DO.idFromName).toHaveBeenCalledWith("site-1");
+    },
+  );
+
+  it("lets a site's negative domain rule accept another domain", async () => {
+    readSiteTrackingConfigMock.mockResolvedValue({
+      ...baseSettings,
+      blockingRules: [{ version: 2, data: { domains: ["-other.com"] } }],
+    });
+    const request = makeRuntimeRequest({
+      origin: "https://other.com",
+      body: await makePayload({ hostname: "other.com" }),
+    });
+
+    const response = await handleCollectRequest(
+      request,
+      env as never,
+      ctx as never,
+      new URL(request.url),
+    );
+
+    expect(response.status).toBe(204);
+    expect(env.INGEST_DO.idFromName).toHaveBeenCalledWith("site-1");
+  });
 
   it("allows a later negative v2 rule to override a blocking IP range", async () => {
     readSiteTrackingConfigMock.mockResolvedValue({
@@ -857,10 +942,8 @@ describe("collect route", () => {
       body: await makePayload({
         collectTokenSiteId: "query-site",
         siteId: "",
-        kind: "identify",
-        pathname: "not-needed",
-        hostname: "not-needed",
-        userId: "user-1",
+        kind: "visibility",
+        visibilityState: "hidden",
         uaClientHints: {
           brands: [{ brand: "", version: "ignored" }],
           mobile: "no",
@@ -881,7 +964,7 @@ describe("collect route", () => {
     const envelope = await readForwardedEnvelope();
     expect(envelope.client).toMatchObject({
       siteId: "query-site",
-      kind: "identify",
+      kind: "visibility",
       visitId: "visit-1",
     });
     expect(envelope.client).not.toHaveProperty("uaClientHints");

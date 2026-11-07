@@ -1,7 +1,4 @@
-export type TrackingStrength = "strong" | "smart" | "weak";
-
 export interface SiteScriptSettings {
-  trackingStrength: TrackingStrength;
   trackQueryParams: boolean;
   trackHash: boolean;
   autoTrackOutboundLinks: boolean;
@@ -40,16 +37,15 @@ export interface SiteTrackingConfig extends SiteSettingsConfig {
 }
 
 export const DEFAULT_SITE_SCRIPT_SETTINGS: SiteScriptSettings = {
-  trackingStrength: "smart",
-  trackQueryParams: true,
-  trackHash: true,
+  trackQueryParams: false,
+  trackHash: false,
   autoTrackOutboundLinks: false,
   domainWhitelist: [],
   pathBlacklist: [],
   ignoreDoNotTrack: true,
   performanceSampleRate: 100,
   botProtectionEnabled: true,
-  hostingProxyBlockingEnabled: false,
+  hostingProxyBlockingEnabled: true,
 };
 
 const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
@@ -66,15 +62,6 @@ function normalizeBoolean(input: unknown, fallback: boolean): boolean {
     if (FALSE_VALUES.has(normalized)) return false;
   }
   return fallback;
-}
-
-function normalizeTrackingStrength(input: unknown): TrackingStrength {
-  const normalized = String(input ?? "")
-    .trim()
-    .toLowerCase();
-  if (normalized === "strong") return "strong";
-  if (normalized === "weak") return "weak";
-  return "smart";
 }
 
 function normalizeSampleRate(input: unknown, fallback: number): number {
@@ -205,9 +192,6 @@ export function normalizeSiteScriptSettings(
     ) === false;
 
   return {
-    trackingStrength: normalizeTrackingStrength(
-      record.trackingStrength ?? record.trackingMode,
-    ),
     trackQueryParams: normalizeBoolean(
       record.trackQueryParams,
       DEFAULT_SITE_SCRIPT_SETTINGS.trackQueryParams,

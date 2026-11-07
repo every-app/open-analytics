@@ -45,7 +45,6 @@ describe("edge site settings store", () => {
         JSON.stringify({
           siteId: "cached-site",
           siteDomain: "https://Example.com/path",
-          trackingStrength: "strong",
           trackQueryParams: "0",
           trackHash: "1",
           domainWhitelist: ["https://Docs.example.com", "bad*"],
@@ -66,7 +65,6 @@ describe("edge site settings store", () => {
     expect(config).toMatchObject({
       siteId: "cached-site",
       siteDomain: "example.com",
-      trackingStrength: "strong",
       trackQueryParams: false,
       trackHash: true,
       domainWhitelist: ["docs.example.com"],
@@ -90,7 +88,8 @@ describe("edge site settings store", () => {
     expect(config).toMatchObject({
       siteId: "site-1",
       siteDomain: "",
-      trackingStrength: "smart",
+      trackQueryParams: false,
+      trackHash: false,
       ignoreDoNotTrack: true,
     });
     expect(cache.put).toHaveBeenCalledTimes(1);

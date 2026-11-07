@@ -268,7 +268,7 @@ describe("edge client request wrappers", () => {
     await fetchAdminSiteConfig("site-1");
     await upsertAdminSiteConfig({
       siteId: "site-1",
-      config: { trackingStrength: "smart" },
+      config: { trackHash: true },
     });
     await fetchAdminScriptSnippet("site-1");
     await expect(fetchAdminMe()).resolves.toMatchObject({

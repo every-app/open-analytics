@@ -9,7 +9,6 @@ export const RealtimeEventKindSchema = z.enum([
   "custom_event",
   "leave",
   "visibility",
-  "identify",
 ]);
 
 export const RealtimeEventSchema = z

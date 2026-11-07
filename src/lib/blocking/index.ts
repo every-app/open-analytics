@@ -17,6 +17,10 @@ export type {
   ResolvedBlockingField,
 } from "./contract";
 export { BLOCKING_FIELD_IDS, BlockingRulesValidationError } from "./contract";
-export { matchBlockingRules, validateBlockingRules } from "./match";
+export {
+  matchBlockingRules,
+  validateBlockingRules,
+  withSiteDomainRules,
+} from "./match";
 export { fieldIdForLegacyKey, parseBlockingRules } from "./parser";
 export { applyBlockingRulesPatch, serializeBlockingRulesV2 } from "./patch";

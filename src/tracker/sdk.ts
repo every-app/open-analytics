@@ -13,13 +13,11 @@ const TRACKER_RUNTIME_CONFIG_KEY = "__openanalytics_tracker_runtime_config__";
 
 interface TrackerRuntimeConfig {
   siteId: string;
-  isEUMode: boolean;
   trackQueryParams: boolean;
   trackHash: boolean;
   ignoreDoNotTrack: boolean;
   autoTrackOutboundLinks: boolean;
   performanceSampleRate: number;
-  sessionWindowMs: number;
   collectToken: string;
 }
 
@@ -35,13 +33,11 @@ function takeRuntimeConfig(): TrackerRuntimeConfig {
   const config = rawConfig as Partial<TrackerRuntimeConfig>;
   if (
     typeof config.siteId !== "string" ||
-    typeof config.isEUMode !== "boolean" ||
     typeof config.trackQueryParams !== "boolean" ||
     typeof config.trackHash !== "boolean" ||
     typeof config.ignoreDoNotTrack !== "boolean" ||
     typeof config.autoTrackOutboundLinks !== "boolean" ||
     typeof config.performanceSampleRate !== "number" ||
-    typeof config.sessionWindowMs !== "number" ||
     typeof config.collectToken !== "string"
   ) {
     throw new Error("OpenAnalytics: runtime configuration is invalid");
@@ -54,6 +50,13 @@ function takeRuntimeConfig(): TrackerRuntimeConfig {
 const INSTALL_KEY = "__openanalytics_tracker_v6__";
 const ROUTE_SETTLE_DELAY_MS = 300;
 const UA_CLIENT_HINT_TIMEOUT_MS = 200;
+const UTM_FIELDS = [
+  ["utm_source", "utmSource"],
+  ["utm_medium", "utmMedium"],
+  ["utm_campaign", "utmCampaign"],
+  ["utm_term", "utmTerm"],
+  ["utm_content", "utmContent"],
+] as const;
 
 // ── Build-time flags (replaced by esbuild define) ──
 declare var BUILD_PERFORMANCE: boolean;
@@ -75,8 +78,6 @@ let pendingRouteChange: {
 let routeChangeTimer = 0;
 let leaveSent = false;
 let pendingHiddenAt = 0;
-let userIdentifiedId = "";
-let userIdentifiedName = "";
 let globalProperties: Record<string, unknown> = {};
 let trackedOnce: Set<string> = new Set();
 let debugEnabled = false;
@@ -95,15 +96,16 @@ if ((window as any)[INSTALL_KEY]) {
 
 const runtimeConfig = takeRuntimeConfig();
 const SITE_ID = runtimeConfig.siteId;
-const IS_EU_MODE = runtimeConfig.isEUMode;
 const TRACK_QUERY_PARAMS = runtimeConfig.trackQueryParams;
 const TRACK_HASH = runtimeConfig.trackHash;
 const IGNORE_DO_NOT_TRACK = runtimeConfig.ignoreDoNotTrack;
 const AUTO_TRACK_OUTBOUND_LINKS = runtimeConfig.autoTrackOutboundLinks;
 const PERFORMANCE_SAMPLE_RATE = runtimeConfig.performanceSampleRate;
-const SESSION_WINDOW_MS = runtimeConfig.sessionWindowMs;
 const COLLECT_TOKEN = runtimeConfig.collectToken;
-const VISITOR_KEY = "__openanalytics_visitor_" + SITE_ID + "__";
+// Visits from a local copy of the site are never sent.
+const IS_LOCAL =
+  location.protocol === "file:" ||
+  /^(localhost|127(\.\d+){3}|\[::1\])$|\.localhost$/.test(location.hostname);
 
 if (!IGNORE_DO_NOT_TRACK) {
   const dnt = String(navigator.doNotTrack || "")
@@ -116,7 +118,6 @@ if (!IGNORE_DO_NOT_TRACK) {
 
 const scriptUrl = new URL(scriptEl.src);
 const collectUrl = new URL("/collect", scriptUrl.origin).toString();
-let visitorId = IS_EU_MODE ? "" : loadOrCreateVisitorId(VISITOR_KEY);
 const performanceTracker = createPerformanceTracker({
   enabled: BUILD_PERFORMANCE,
   sampleRate: PERFORMANCE_SAMPLE_RATE,
@@ -137,31 +138,20 @@ const uaClientHintsReady: Promise<UaClientHintsResult | null> =
 
 // ── Core utilities ──
 
+// A new page is a new path, or a new hash when hashes are tracked. A change
+// to the query string alone (filters, removed UTM tags) is the same page.
 function routeKey(href: string): string {
   const url = new URL(href, window.location.href);
-  return [
-    url.pathname || "/",
-    TRACK_QUERY_PARAMS ? url.search || "" : "",
-    TRACK_HASH ? url.hash || "" : "",
-  ].join("|");
+  return (url.pathname || "/") + (TRACK_HASH ? url.hash || "" : "");
 }
 
-function loadOrCreateVisitorId(visitorKey: string): string {
-  const existing = window.localStorage.getItem(visitorKey);
-  if (existing) return existing;
-  const next = crypto.randomUUID();
-  window.localStorage.setItem(visitorKey, next);
-  return next;
-}
-
-function rotateVisitorId(): void {
-  window.localStorage.removeItem(VISITOR_KEY);
-  if (IS_EU_MODE) {
-    visitorId = "";
-    return;
+function utmFields(url: URL): Record<string, string> {
+  const fields: Record<string, string> = {};
+  for (const [param, field] of UTM_FIELDS) {
+    const value = url.searchParams.get(param);
+    if (value) fields[field] = value;
   }
-  visitorId = crypto.randomUUID();
-  window.localStorage.setItem(VISITOR_KEY, visitorId);
+  return fields;
 }
 
 function pagePayloadBase(
@@ -186,14 +176,12 @@ function pagePayloadBase(
     screenWidth: (window.screen as any)?.width ?? null,
     screenHeight: (window.screen as any)?.height ?? null,
     referrerUrl: String(referrerUrl || ""),
-    visitorId,
-    ...(userIdentifiedId
-      ? { userId: userIdentifiedId, userName: userIdentifiedName }
-      : {}),
+    ...utmFields(url),
   };
 }
 
 function send(payload: any, useBeacon: boolean): void {
+  if (IS_LOCAL) return;
   let body = "";
   try {
     body = JSON.stringify(
@@ -224,7 +212,8 @@ function send(payload: any, useBeacon: boolean): void {
     body,
     mode: "cors",
     credentials: "omit",
-    keepalive: useBeacon,
+    // Keeps a click's event alive when the click navigates away.
+    keepalive: true,
   }).catch(() => {});
 }
 
@@ -302,15 +291,11 @@ function endCurrentVisit(exitReason: string, useBeacon: boolean): void {
       kind: "leave",
       siteId: SITE_ID,
       visitId: currentVisit.id,
-      visitorId,
       timestamp: eventAt,
       durationMs: Math.max(0, eventAt - currentVisit.startedAt),
       pathname: url.pathname || "/",
       hostname: url.hostname || "",
       exitReason,
-      ...(userIdentifiedId
-        ? { userId: userIdentifiedId, userName: userIdentifiedName }
-        : {}),
       ...(performancePayload || {}),
     },
     useBeacon,
@@ -333,14 +318,10 @@ function sendVisibility(
       kind: "visibility",
       siteId: SITE_ID,
       visitId: currentVisit.id,
-      visitorId,
       visibilityState,
       timestamp: eventAt,
       pathname: url.pathname || "/",
       hostname: url.hostname || "",
-      ...(userIdentifiedId
-        ? { userId: userIdentifiedId, userName: userIdentifiedName }
-        : {}),
     },
     true,
   );
@@ -353,16 +334,10 @@ function handleDocumentHidden(): void {
   sendVisibility("hidden", pendingHiddenAt);
 }
 
+// Coming back to the tab is not a new pageview, however long it was hidden.
 function handleDocumentVisible(): void {
   if (!currentVisit || leaveSent || pendingHiddenAt <= 0) return;
-  const eventAt = Date.now();
-  if (eventAt - pendingHiddenAt > SESSION_WINDOW_MS) {
-    const referrerUrl = currentVisit.href;
-    if (BUILD_PERFORMANCE) performanceTracker.stop();
-    startVisit(window.location.href, referrerUrl, eventAt);
-    return;
-  }
-  sendVisibility("visible", eventAt);
+  sendVisibility("visible", Date.now());
   pendingHiddenAt = 0;
 }
 
@@ -412,11 +387,12 @@ function scheduleRouteChange(nextHref: string, nextReferrerUrl: string): void {
   }, ROUTE_SETTLE_DELAY_MS);
 }
 
-function wrapHistoryMethod(methodName: "pushState" | "replaceState"): void {
-  const original = history[methodName] as
-    ((...args: any[]) => void) | undefined;
+// replaceState is not a navigation: routers use it to tidy the URL (removing
+// UTM tags or an OAuth code), so only pushState counts.
+function wrapPushState(): void {
+  const original = history.pushState as ((...args: any[]) => void) | undefined;
   if (!original) return;
-  history[methodName] = function (this: any, ...args: any[]) {
+  history.pushState = function (this: any, ...args: any[]) {
     const result = original.apply(this, args);
     queueMicrotask(() => {
       scheduleRouteChange(
@@ -429,58 +405,6 @@ function wrapHistoryMethod(methodName: "pushState" | "replaceState"): void {
 }
 
 // ── Public API ──
-
-function identify(userId: string, opts?: { name?: string }): void {
-  const id = String(userId || "")
-    .trim()
-    .slice(0, 255);
-  if (!id) return;
-  const name = String(
-    (opts && typeof opts === "object" && typeof opts.name === "string"
-      ? opts.name
-      : "") || "",
-  )
-    .trim()
-    .slice(0, 255);
-  userIdentifiedId = id;
-  userIdentifiedName = name;
-  if (!currentVisit) return;
-  if (debugEnabled) {
-    console.log(
-      "[OpenAnalytics]",
-      "identify:",
-      JSON.stringify(id),
-      name ? JSON.stringify(name) : "",
-    );
-  }
-  flushPendingRouteChange();
-  send(
-    {
-      ...pagePayloadBase(
-        currentVisit.href,
-        currentVisit.referrerUrl,
-        currentVisit.startedAt,
-        Date.now(),
-      ),
-      kind: "identify",
-      userId: id,
-      userName: name || "",
-    },
-    false,
-  );
-}
-
-function reset(): void {
-  flushPendingRouteChange();
-  if (currentVisit) {
-    endCurrentVisit("identity_reset", false);
-  }
-  userIdentifiedId = "";
-  userIdentifiedName = "";
-  rotateVisitorId();
-  if (!currentVisit) return;
-  startVisit(window.location.href, "", Date.now());
-}
 
 function setGlobalProperties(props: Record<string, unknown>): void {
   if (!props || typeof props !== "object" || Array.isArray(props)) return;
@@ -564,20 +488,21 @@ function startInitialVisitWhenReady(): void {
 
 startInitialVisitWhenReady();
 
-wrapHistoryMethod("pushState");
-wrapHistoryMethod("replaceState");
+wrapPushState();
 window.addEventListener("popstate", () => {
   scheduleRouteChange(
     window.location.href,
     currentVisit?.href || document.referrer || "",
   );
 });
-window.addEventListener("hashchange", () => {
-  scheduleRouteChange(
-    window.location.href,
-    currentVisit?.href || document.referrer || "",
-  );
-});
+if (TRACK_HASH) {
+  window.addEventListener("hashchange", () => {
+    scheduleRouteChange(
+      window.location.href,
+      currentVisit?.href || document.referrer || "",
+    );
+  });
+}
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") {
     handleDocumentHidden();
@@ -599,8 +524,6 @@ const api = {
   version: "6",
   siteId: SITE_ID,
   track,
-  identify,
-  reset,
   setGlobalProperties,
   clearGlobalProperties,
   trackOnce,

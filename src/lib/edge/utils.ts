@@ -91,7 +91,7 @@ export async function deriveDailySalt(
   return sha256Hex(`${secret}:${dayStamp}`);
 }
 
-export async function deriveEuVisitorId(input: {
+export async function deriveVisitorId(input: {
   ip: string;
   ua: string;
   eventAtMs: number;

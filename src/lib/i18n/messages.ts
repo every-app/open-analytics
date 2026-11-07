@@ -1034,13 +1034,6 @@ export interface AppMessages {
     publicSlugHint: string;
     publicLinkLabel: string;
     copiedLink: string;
-    trackingStrengthGroupTitle: string;
-    trackingStrengthStrong: string;
-    trackingStrengthSmart: string;
-    trackingStrengthWeak: string;
-    trackingStrengthStrongDescription: string;
-    trackingStrengthSmartDescription: string;
-    trackingStrengthWeakDescription: string;
     botProtectionEnabledLabel: string;
     botProtectionEnabledHint: string;
     hostingProxyBlockingEnabledLabel: string;
@@ -3087,16 +3080,6 @@ const enMessages = {
     publicSlugHint: "The part of the link after /share/.",
     publicLinkLabel: "Public link",
     copiedLink: "Link copied",
-    trackingStrengthGroupTitle: "Visitor tracking",
-    trackingStrengthStrong: "Precise",
-    trackingStrengthSmart: "Anonymous in the EU",
-    trackingStrengthWeak: "Anonymous",
-    trackingStrengthStrongDescription:
-      "Always use high-precision visitor tracking. This may conflict with privacy regulations such as GDPR in some regions.",
-    trackingStrengthSmartDescription:
-      "Automatically switch tracking strength based on the visitor's country.",
-    trackingStrengthWeakDescription:
-      "Always reduce tracking precision. This can count the same visitor multiple times across visits and make retention impossible.",
     botProtectionEnabledLabel: "Block detected bots",
     botProtectionEnabledHint:
       "High-confidence bot requests are blocked when this is enabled; otherwise they remain included in statistics.",
@@ -5159,15 +5142,6 @@ const zhMessages = {
     publicSlugHint: "链接中 /share/ 之后的部分。",
     publicLinkLabel: "公开链接",
     copiedLink: "链接已复制",
-    trackingStrengthGroupTitle: "访客跟踪",
-    trackingStrengthStrong: "精确",
-    trackingStrengthSmart: "在欧盟匿名",
-    trackingStrengthWeak: "匿名",
-    trackingStrengthStrongDescription:
-      "始终进行针对访客的高精度跟踪。这可能违反某些国家的法规，例如 GDPR。",
-    trackingStrengthSmartDescription: "自动根据访客所处国家切换跟踪强度。",
-    trackingStrengthWeakDescription:
-      "始终降低对访客的跟踪精度。这可能导致同一访客在不同时间访问时被计数多次、且无法计算留存率。",
     botProtectionEnabledLabel: "机器人拦截",
     botProtectionEnabledHint:
       "开启后拦截高置信度机器人请求；关闭后这类请求仍会计入统计。",
@@ -7210,15 +7184,6 @@ const zhTwMessages = {
     publicSlugHint: "連結中 /share/ 之後的部分。",
     publicLinkLabel: "公開連結",
     copiedLink: "連結已複製",
-    trackingStrengthGroupTitle: "訪客追蹤",
-    trackingStrengthStrong: "精確",
-    trackingStrengthSmart: "在歐盟匿名",
-    trackingStrengthWeak: "匿名",
-    trackingStrengthStrongDescription:
-      "始終進行針對訪客的高精度追蹤。這可能違反某些國家的法規，例如 GDPR。",
-    trackingStrengthSmartDescription: "自動根據訪客所處國家切換追蹤強度。",
-    trackingStrengthWeakDescription:
-      "始終降低對訪客的追蹤精度。這可能導致同一訪客在不同時間造訪時被計數多次、且無法計算留存率。",
     botProtectionEnabledLabel: "機器人攔截",
     botProtectionEnabledHint:
       "開啟後攔截高置信度機器人請求；關閉後這類請求仍會計入統計。",
@@ -9278,16 +9243,6 @@ const jaMessages = {
     publicSlugHint: "リンクの /share/ 以降の部分です。",
     publicLinkLabel: "公開リンク",
     copiedLink: "リンクをコピーしました",
-    trackingStrengthGroupTitle: "訪問者トラッキング",
-    trackingStrengthStrong: "高精度",
-    trackingStrengthSmart: "EU では匿名",
-    trackingStrengthWeak: "匿名",
-    trackingStrengthStrongDescription:
-      "常に高精度の訪問者トラッキングを使用します。GDPR など、一部地域のプライバシー規制に抵触する可能性があります。",
-    trackingStrengthSmartDescription:
-      "訪問者の国に基づいてトラッキング強度を自動で切り替えます。",
-    trackingStrengthWeakDescription:
-      "常にトラッキング精度を下げます。同じ訪問者が複数回カウントされ、リテンション分析ができなくなる場合があります。",
     botProtectionEnabledLabel: "検出したボットをブロック",
     botProtectionEnabledHint:
       "有効にすると高信頼度のボットリクエストをブロックし、無効にすると統計に含めます。",

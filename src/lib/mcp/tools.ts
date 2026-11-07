@@ -388,7 +388,7 @@ export const tools = defineTools(
     get_site_settings: {
       title: "Site settings",
       description:
-        "A site's tracking settings (tracking strength, query and hash tracking, outbound links, Do Not Track, Web Vitals sampling, bot protection, allowed domains, excluded paths) and its tracking snippet.",
+        "A site's tracking settings (query and hash tracking, outbound links, Do Not Track, Web Vitals sampling, bot protection, allowed domains, excluded paths) and its tracking snippet.",
       risk: "read",
       input: z.object({ site_id: z.string().min(1) }),
       handler: async (args, call) => {
@@ -485,12 +485,6 @@ export const tools = defineTools(
       risk: "write",
       input: z.object({
         site_id: z.string().min(1),
-        tracking_strength: z
-          .enum(["strong", "smart", "weak"])
-          .optional()
-          .describe(
-            "strong: a persistent visitor id; weak: daily-rotating anonymous ids; smart: weak for EU visitors only",
-          ),
         track_query_params: z.boolean().optional(),
         track_hash: z.boolean().optional(),
         auto_track_outbound_links: z.boolean().optional(),
@@ -510,7 +504,6 @@ export const tools = defineTools(
       handler: async (args, call) => {
         const config = Object.fromEntries(
           Object.entries({
-            trackingStrength: args.tracking_strength,
             trackQueryParams: args.track_query_params,
             trackHash: args.track_hash,
             autoTrackOutboundLinks: args.auto_track_outbound_links,

@@ -338,7 +338,6 @@ describe("Dashboard route data loaders", () => {
       } as never);
       mockAdminReads({
         "site-config": {
-          trackingStrength: "strong",
           trackQueryParams: "true",
           trackHash: false,
           autoTrackOutboundLinks: false,
@@ -356,7 +355,6 @@ describe("Dashboard route data loaders", () => {
 
       expect(result).toMatchObject({
         config: {
-          trackingStrength: "strong",
           trackQueryParams: true,
           performanceSampleRate: 80,
         },

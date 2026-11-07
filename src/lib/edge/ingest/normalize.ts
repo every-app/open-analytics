@@ -5,7 +5,7 @@ import { j as jsonResponse } from "@/lib/response";
 export const MAX_CLIENT_EVENT_LAG_MS = 30 * 1000;
 
 export type RealtimeSnapshotRecordKind =
-  "pageview" | "custom_event" | "leave" | "visibility" | "identify";
+  "pageview" | "custom_event" | "leave" | "visibility";
 
 export interface RealtimeSnapshotRecord {
   id: string;

@@ -89,7 +89,6 @@ function serializeSiteTrackingConfig(
   const payload: Record<string, unknown> = {
     siteId: settings.siteId,
     siteDomain: settings.siteDomain,
-    trackingStrength: settings.trackingStrength,
     trackQueryParams: settings.trackQueryParams,
     trackHash: settings.trackHash,
     autoTrackOutboundLinks: settings.autoTrackOutboundLinks,

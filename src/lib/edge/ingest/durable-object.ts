@@ -1,6 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
 
-import { createDatabaseRuntime } from "@/lib/db";
 import { instrumentEnv } from "@/lib/edge/observability/bindings";
 import {
   createInvocationLogger,
@@ -9,12 +8,10 @@ import {
   type InvocationLogger,
   runWithInvocationLogger,
 } from "@/lib/edge/observability/logger";
-import { SITE_PK_FROM_SITE_ID_SQL } from "@/lib/edge/sites/identity-sql";
 import type {
   Env,
   IngestEnvelopePayload,
   NormalizedCustomEvent,
-  NormalizedIdentify,
   NormalizedLeave,
   NormalizedPageview,
   NormalizedVisibility,
@@ -280,10 +277,6 @@ export class IngestDurableObject extends DurableObject {
     } else if (record.kind === "visibility") {
       await logger.measure("do.ingest.visibility", () =>
         this.handleVisibility(record, logger),
-      );
-    } else if (record.kind === "identify") {
-      await logger.measure("do.ingest.identify", () =>
-        this.handleIdentify(record, logger),
       );
     } else {
       await logger.measure("do.ingest.custom_event", () =>
@@ -1356,163 +1349,6 @@ export class IngestDurableObject extends DurableObject {
       visibilityState: "visible",
       latitude: record.latitude,
       longitude: record.longitude,
-    });
-  }
-
-  private async handleIdentify(
-    record: NormalizedIdentify,
-    logger: InvocationLogger,
-  ): Promise<void> {
-    const now = Date.now();
-    const updatedAt = toUnixSeconds(now);
-    const flushDueAt = now + D1_FLUSH_INTERVAL_MS;
-    const localVisit = this.sql.sqlOne<{
-      sessionId: string | null;
-      visitorId: string | null;
-    }>(
-      `
-        SELECT
-          session_id AS sessionId,
-          visitor_id AS visitorId
-        FROM buffered_visits
-        WHERE visit_id = ? AND site_id = ?
-        LIMIT 1
-      `,
-      record.visitId,
-      record.siteId,
-    );
-    let serverSessionId = localVisit?.sessionId || "";
-    let serverVisitorId = localVisit?.visitorId || "";
-
-    const rowsUpdated = this.sqlRun(
-      `
-        UPDATE buffered_visits
-        SET user_id = ?, user_name = ?, dirty = 1,
-            buffer_revision = buffer_revision + 1,
-            flush_due_at = CASE
-              WHEN dirty = 0 OR flush_due_at IS NULL OR flush_due_at > ? THEN ?
-              ELSE flush_due_at
-            END,
-            next_due_at = CASE
-              WHEN status = 'open' THEN MIN(
-                CASE
-                  WHEN dirty = 0 OR flush_due_at IS NULL OR flush_due_at > ? THEN ?
-                  ELSE flush_due_at
-                END,
-                last_activity_at + ?
-              )
-              WHEN status = 'hidden_pending' THEN MIN(
-                CASE
-                  WHEN dirty = 0 OR flush_due_at IS NULL OR flush_due_at > ? THEN ?
-                  ELSE flush_due_at
-                END,
-                COALESCE(hidden_at, last_activity_at) + ?
-              )
-              ELSE CASE
-                WHEN dirty = 0 OR flush_due_at IS NULL OR flush_due_at > ? THEN ?
-                ELSE flush_due_at
-              END
-            END,
-            updated_at = ?
-        WHERE visit_id = ?
-          AND site_id = ?
-          AND (user_id IS NOT ? OR user_name IS NOT ?)
-      `,
-      record.userId,
-      record.userName || null,
-      flushDueAt,
-      flushDueAt,
-      flushDueAt,
-      flushDueAt,
-      VISIT_TIMEOUT_MS,
-      flushDueAt,
-      flushDueAt,
-      HIDDEN_LEAVE_GRACE_MS,
-      flushDueAt,
-      flushDueAt,
-      updatedAt,
-      record.visitId,
-      record.siteId,
-      record.userId,
-      record.userName || null,
-    );
-
-    if (rowsUpdated === 0 && !localVisit) {
-      const instrumentedEnv = instrumentEnv(this.doEnv, logger);
-      const persistedVisit = await createDatabaseRuntime(instrumentedEnv.DB)
-        .first<{
-          sessionId: string;
-          visitorId: string;
-        }>({
-          sql: `
-          SELECT
-            session_id AS sessionId,
-            visitor_id AS visitorId
-          FROM visits
-          WHERE visit_id = ? AND site_pk = ${SITE_PK_FROM_SITE_ID_SQL}
-          LIMIT 1
-        `,
-          bindings: [record.visitId, record.siteId],
-          tag: "ingest.visits.find_persisted_identify",
-        })
-        .catch(() => null);
-      serverSessionId = persistedVisit?.sessionId || "";
-      serverVisitorId = persistedVisit?.visitorId || "";
-      await createDatabaseRuntime(instrumentedEnv.DB)
-        .run({
-          sql: `
-          UPDATE visits
-          SET user_id = ?, user_name = ?
-          WHERE visit_id = ? AND site_pk = ${SITE_PK_FROM_SITE_ID_SQL}
-        `,
-          bindings: [
-            record.userId,
-            record.userName || null,
-            record.visitId,
-            record.siteId,
-          ],
-          tag: "ingest.visits.update_identify",
-        })
-        .catch(() => {});
-    }
-    logger.info(
-      localVisit
-        ? "do.ingest.identify_buffered"
-        : "do.ingest.identify_persisted",
-    );
-    await this.pushRealtimeRecord({
-      id: `identify:${record.visitId}:${record.receivedAt}`,
-      eventType: "identify",
-      eventKind: "identify",
-      eventAt: record.receivedAt,
-      siteId: record.siteId,
-      traceId: record.traceId,
-      receivedAt: record.receivedAt,
-      visitId: record.visitId,
-      sessionId: serverSessionId,
-      pathname: "",
-      hash: "",
-      title: "",
-      hostname: "",
-      referrerUrl: "",
-      referrerHost: "",
-      visitorId: serverVisitorId,
-      userId: record.userId,
-      userName: record.userName,
-      country: "",
-      region: "",
-      regionCode: "",
-      city: "",
-      continent: "",
-      timezone: "",
-      organization: "",
-      browser: "",
-      os: "",
-      osVersion: "",
-      deviceType: "",
-      language: "",
-      latitude: null,
-      longitude: null,
     });
   }
 

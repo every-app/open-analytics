@@ -1128,16 +1128,6 @@ siteSettings:
   publicSlugHint: The part of the link after /share/.
   publicLinkLabel: Public link
   copiedLink: Link copied
-  trackingStrengthGroupTitle: Visitor tracking
-  trackingStrengthStrong: Precise
-  trackingStrengthSmart: Anonymous in the EU
-  trackingStrengthWeak: Anonymous
-  trackingStrengthStrongDescription: Always use high-precision visitor tracking.
-    This may conflict with privacy regulations such as GDPR in some regions.
-  trackingStrengthSmartDescription: Automatically switch tracking strength based on the visitor's country.
-  trackingStrengthWeakDescription: Always reduce tracking precision. This can
-    count the same visitor multiple times across visits and make retention
-    impossible.
   botProtectionEnabledLabel: Block detected bots
   botProtectionEnabledHint: High-confidence bot requests are blocked when this is
     enabled; otherwise they remain included in statistics.

@@ -6,8 +6,8 @@
 
 ## Features
 
-- No cookies and no stored IP addresses.
-- A 3 KB tracker with custom events, user identification and Web Vitals.
+- No cookies, nothing stored in the browser and no stored IP addresses.
+- A 3 KB tracker with custom events and Web Vitals.
 - Dashboards for pages, referrers, campaigns, sessions, funnels, goals, retention and devices, with a live view.
 - Read-only public share links for any site.
 - Scheduled and threshold email reports.

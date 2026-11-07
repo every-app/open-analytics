@@ -1103,13 +1103,6 @@ siteSettings:
   publicSlugHint: 連結中 /share/ 之後的部分。
   publicLinkLabel: 公開連結
   copiedLink: 連結已複製
-  trackingStrengthGroupTitle: 訪客追蹤
-  trackingStrengthStrong: 精確
-  trackingStrengthSmart: 在歐盟匿名
-  trackingStrengthWeak: 匿名
-  trackingStrengthStrongDescription: 始終進行針對訪客的高精度追蹤。這可能違反某些國家的法規，例如 GDPR。
-  trackingStrengthSmartDescription: 自動根據訪客所處國家切換追蹤強度。
-  trackingStrengthWeakDescription: 始終降低對訪客的追蹤精度。這可能導致同一訪客在不同時間造訪時被計數多次、且無法計算留存率。
   botProtectionEnabledLabel: 機器人攔截
   botProtectionEnabledHint: 開啟後攔截高置信度機器人請求；關閉後這類請求仍會計入統計。
   hostingProxyBlockingEnabledLabel: 攔截託管/代理網路請求

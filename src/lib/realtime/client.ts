@@ -495,10 +495,6 @@ function buildDerivedState(
   const latestVisitorEvents = new Map<string, RealtimeEvent>();
   const latestVisitVisibility = new Map<string, "hidden" | "visible">();
   const visitsById = new Map<string, RealtimeVisit>();
-  const identityPatches = new Map<
-    string,
-    Pick<RealtimeEvent, "userId" | "userName">
-  >();
   const visitorsLast30m = new Set<string>();
   let viewsLast30m = 0;
 
@@ -511,15 +507,6 @@ function buildDerivedState(
           event.visitId,
           event.visibilityState === "visible" ? "visible" : "hidden",
         );
-      }
-      continue;
-    }
-    if (eventKind === "identify") {
-      if (event.visitId && !identityPatches.has(event.visitId)) {
-        identityPatches.set(event.visitId, {
-          userId: event.userId,
-          userName: event.userName,
-        });
       }
       continue;
     }
@@ -543,13 +530,6 @@ function buildDerivedState(
     if (!existing || compareRealtimeEventsDesc(event, existing) < 0) {
       latestVisitorEvents.set(event.visitorId, event);
     }
-  }
-
-  for (const [visitId, identity] of identityPatches) {
-    const visit = visitsById.get(visitId);
-    if (!visit) continue;
-    visit.userId = identity.userId;
-    visit.userName = identity.userName;
   }
 
   const points: RealtimeVisitorPoint[] = [];
@@ -867,15 +847,13 @@ function normalizeRealtimeEventKind(
     value === "pageview" ||
     value === "custom_event" ||
     value === "leave" ||
-    value === "visibility" ||
-    value === "identify"
+    value === "visibility"
   ) {
     return value;
   }
   if (eventType === "visit" || eventType === "pageview") return "pageview";
   if (eventType === PRESENCE_LEAVE_EVENT) return "leave";
   if (eventType === "visibility") return "visibility";
-  if (eventType === "identify") return "identify";
   return "custom_event";
 }
 function normalizeNullableNumber(value: unknown): number | null {

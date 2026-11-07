@@ -37,7 +37,6 @@ function makeSettings(
     siteId: "site-1",
     siteDomain: "example.com",
     allowedHostnames: ["example.com"],
-    trackingStrength: "smart",
     trackQueryParams: true,
     trackHash: true,
     autoTrackOutboundLinks: false,
@@ -52,22 +51,14 @@ function makeSettings(
 function makeRequest(input: {
   url?: string;
   method?: string;
-  isEUCountry?: boolean;
   ip?: string;
 }): Request {
   const headers = new Headers();
   if (input.ip) headers.set("cf-connecting-ip", input.ip);
-  const request = new Request(
+  return new Request(
     input.url ?? "https://example.com/script.js?siteId=site-1",
     { method: input.method ?? "GET", headers },
   );
-  if (input.isEUCountry !== undefined) {
-    Object.defineProperty(request, "cf", {
-      value: { isEUCountry: input.isEUCountry },
-      configurable: true,
-    });
-  }
-  return request;
 }
 
 function cacheStorageWith(cache: Partial<Cache>) {
@@ -140,7 +131,6 @@ describe("edge script endpoint", () => {
     vi.stubGlobal("caches", storage);
     readSiteTrackingConfigMock.mockResolvedValueOnce(
       makeSettings({
-        trackingStrength: "smart",
         trackQueryParams: false,
         trackHash: true,
         ignoreDoNotTrack: false,
@@ -152,13 +142,11 @@ describe("edge script endpoint", () => {
     const response = await handleTrackerScriptRequest(
       makeRequest({
         url: "https://example.com/script.js?siteId=%20site-1%20",
-        isEUCountry: true,
         ip: "203.0.113.9",
       }),
       makeEnv({
         MAIN_SECRET: "main-secret",
         SCRIPT_CACHE_TTL_SECONDS: "12.9",
-        SESSION_WINDOW_MINUTES: "0",
       }),
     );
 
@@ -170,7 +158,7 @@ describe("edge script endpoint", () => {
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(script).toMatch(
-      /^"use strict";globalThis\["__openanalytics_tracker_runtime_config__"\] = \{"siteId":"site-1","isEUMode":true,"trackQueryParams":false,"trackHash":true,"ignoreDoNotTrack":false,"autoTrackOutboundLinks":true,"performanceSampleRate":100,"sessionWindowMs":1800000,"collectToken":"eyJ/,
+      /^"use strict";globalThis\["__openanalytics_tracker_runtime_config__"\] = \{"siteId":"site-1","trackQueryParams":false,"trackHash":true,"ignoreDoNotTrack":false,"autoTrackOutboundLinks":true,"performanceSampleRate":100,"collectToken":"eyJ/,
     );
     expect(script).toMatch(/\nfull-sdk$/);
     expect(storage.open).toHaveBeenCalledWith("insightflare-script-cache");
@@ -181,7 +169,7 @@ describe("edge script endpoint", () => {
       "public, max-age=12, s-maxage=12",
     );
     expect((cache.put.mock.calls[0]![0] as Request).url).toContain(
-      "https://insightflare.internal/__script/site-1?eu=1&fp=",
+      "https://insightflare.internal/__script/site-1?fp=",
     );
   });
 
@@ -209,10 +197,9 @@ describe("edge script endpoint", () => {
     expect(cache.put).not.toHaveBeenCalled();
   });
 
-  it("serves no-perf scripts and clamps weak-mode cache/session settings", async () => {
+  it("serves no-perf scripts when performance sampling is off", async () => {
     readSiteTrackingConfigMock.mockResolvedValueOnce(
       makeSettings({
-        trackingStrength: "weak",
         trackQueryParams: true,
         trackHash: false,
         performanceSampleRate: -10,
@@ -220,41 +207,38 @@ describe("edge script endpoint", () => {
     );
 
     const response = await handleTrackerScriptRequest(
-      makeRequest({ isEUCountry: false }),
+      makeRequest({}),
       makeEnv({
         MAIN_SECRET: "main-secret",
         SCRIPT_CACHE_TTL_SECONDS: "999999",
-        SESSION_WINDOW_MINUTES: "99999",
       }),
     );
 
     await expect(response.text()).resolves.toMatch(
-      /^globalThis\["__openanalytics_tracker_runtime_config__"\] = \{"siteId":"site-1","isEUMode":true,"trackQueryParams":true,"trackHash":false,"ignoreDoNotTrack":true,"autoTrackOutboundLinks":false,"performanceSampleRate":0,"sessionWindowMs":86400000,"collectToken":"eyJ/,
+      /^globalThis\["__openanalytics_tracker_runtime_config__"\] = \{"siteId":"site-1","trackQueryParams":true,"trackHash":false,"ignoreDoNotTrack":true,"autoTrackOutboundLinks":false,"performanceSampleRate":0,"collectToken":"eyJ/,
     );
     expect(response.headers.get("cache-control")).toBe("private, no-store");
   });
 
-  it("forces strong-mode non-EU scripts and ignores unavailable caches", async () => {
+  it("renders scripts when the edge cache is unavailable", async () => {
     vi.stubGlobal("caches", {
       open: vi.fn().mockRejectedValue(new Error("cache unavailable")),
     });
     readSiteTrackingConfigMock.mockResolvedValueOnce(
-      makeSettings({
-        trackingStrength: "strong",
-        performanceSampleRate: 1,
-      }),
+      makeSettings({ performanceSampleRate: 1 }),
     );
 
     const response = await handleTrackerScriptRequest(
-      makeRequest({ isEUCountry: true }),
+      makeRequest({}),
       makeEnv({
         MAIN_SECRET: "main-secret",
         SCRIPT_CACHE_TTL_SECONDS: "-1",
-        SESSION_WINDOW_MINUTES: "abc",
       }),
     );
 
-    await expect(response.text()).resolves.toContain('"isEUMode":false');
+    await expect(response.text()).resolves.toContain(
+      '"performanceSampleRate":1,',
+    );
     expect(response.headers.get("cache-control")).toBe("private, no-store");
   });
 

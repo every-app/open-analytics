@@ -277,7 +277,14 @@ export async function findRecentVisitorSession(
           ELSE 0
         END AS routeMatch,
         started_at AS startedAt,
-        last_activity_at AS lastActivityAt
+        last_activity_at AS lastActivityAt,
+        referrer_url AS referrerUrl,
+        referrer_host AS referrerHost,
+        utm_source AS utmSource,
+        utm_medium AS utmMedium,
+        utm_campaign AS utmCampaign,
+        utm_term AS utmTerm,
+        utm_content AS utmContent
       FROM buffered_visits
       WHERE site_id = ?
         AND visitor_id = ?
@@ -335,7 +342,14 @@ export async function findRecentVisitorSession(
           ELSE 0
         END AS routeMatch,
         started_at AS startedAt,
-        last_activity_at AS lastActivityAt
+        last_activity_at AS lastActivityAt,
+        referrer_url AS referrerUrl,
+        referrer_host AS referrerHost,
+        utm_source AS utmSource,
+        utm_medium AS utmMedium,
+        utm_campaign AS utmCampaign,
+        utm_term AS utmTerm,
+        utm_content AS utmContent
       FROM visits
       WHERE site_pk = ${SITE_PK_FROM_SITE_ID_SQL}
         AND visitor_id = ?
@@ -722,7 +736,6 @@ export async function insertCustomEvent(
     sequence: record.sequence,
     eventName: record.eventName,
     eventDataJson: record.eventDataJson,
-    userId: record.userId || "",
   });
 }
 export function insertBufferedCustomEvent(
@@ -739,10 +752,10 @@ export function insertBufferedCustomEvent(
     `
       INSERT INTO buffered_custom_events (
         event_id, site_id, visit_id, occurred_at, received_at, sequence,
-        event_name, event_data_json, user_id,
+        event_name, event_data_json,
         dirty, flush_attempts, last_flush_error, next_due_at, flush_due_at,
         buffer_revision, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0,
         CASE WHEN EXISTS (
           SELECT 1
           FROM buffered_visits
@@ -759,7 +772,6 @@ export function insertBufferedCustomEvent(
     record.sequence,
     record.eventName,
     record.eventDataJson,
-    record.userId || "",
     record.siteId,
     record.visitId,
     nextDueAt,
