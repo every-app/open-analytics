@@ -121,7 +121,7 @@ function createD1Env(resultSets: D1Row[][]): {
   return {
     env: {
       DB: { prepare },
-      DAILY_SALT_SECRET: "test-secret",
+      MAIN_SECRET: "test-secret",
       INGEST_DO: {},
     } as unknown as Env,
     calls,
@@ -171,7 +171,7 @@ function createCombinedShareTrendEnv(rows: D1Row[]): {
   return {
     env: {
       DB: { prepare },
-      DAILY_SALT_SECRET: "test-secret",
+      MAIN_SECRET: "test-secret",
       INGEST_DO: {},
     } as unknown as Env,
     calls,

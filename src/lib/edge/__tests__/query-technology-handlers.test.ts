@@ -67,7 +67,7 @@ vi.mock(
 );
 const env = {
   DB: {},
-  DAILY_SALT_SECRET: "test-secret",
+  MAIN_SECRET: "test-secret",
   INGEST_DO: {},
 } as unknown as Env;
 const siteId = "site-1";

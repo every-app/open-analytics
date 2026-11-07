@@ -41,7 +41,7 @@ function createD1Env(resultSets: Record<string, unknown>[][]): {
           };
         },
       } as unknown as D1Database,
-      DAILY_SALT_SECRET: "test-secret",
+      MAIN_SECRET: "test-secret",
       INGEST_DO: {} as DurableObjectNamespace,
     } as Env,
     calls,

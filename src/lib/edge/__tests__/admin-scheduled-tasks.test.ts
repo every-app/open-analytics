@@ -88,7 +88,7 @@ function createEnv(overrides: Record<string, unknown> = {}): Env {
       prepare: vi.fn(() => statement()),
       ...overrides,
     },
-    DAILY_SALT_SECRET: "test-pagination-secret",
+    MAIN_SECRET: "test-pagination-secret",
   } as unknown as Env;
 }
 function makeUrl(path: string, params?: Record<string, string>): URL {
@@ -292,7 +292,7 @@ describe("handleScheduledTasksAdmin", () => {
           return stmts[prepareCallCount++] ?? statement();
         }),
       },
-      DAILY_SALT_SECRET: "test-pagination-secret",
+      MAIN_SECRET: "test-pagination-secret",
     } as unknown as Env;
 
     const req = new Request(
@@ -350,7 +350,7 @@ describe("handleScheduledTasksAdmin", () => {
           return stmts[prepareCallCount++] ?? statement();
         }),
       },
-      DAILY_SALT_SECRET: "test-pagination-secret",
+      MAIN_SECRET: "test-pagination-secret",
     } as unknown as Env;
 
     const req = new Request(
@@ -457,7 +457,7 @@ describe("handleScheduledTasksAdmin", () => {
         DB: {
           prepare: vi.fn(() => statements[index++] ?? statement()),
         },
-        DAILY_SALT_SECRET: "test-pagination-secret",
+        MAIN_SECRET: "test-pagination-secret",
       } as unknown as Env;
     }
 

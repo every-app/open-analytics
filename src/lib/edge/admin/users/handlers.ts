@@ -24,7 +24,6 @@ import {
 } from "@/lib/edge/admin/response";
 import type { Env } from "@/lib/edge/types";
 import { clampString } from "@/lib/edge/utils";
-import { isValidLocale } from "@/lib/i18n/config";
 
 function database(env: Env) {
   return createD1DatabaseClient(env.DB);
@@ -93,27 +92,13 @@ export async function handleProfileAdmin(
     body.timeZone ?? body.timezone ?? a.user.timezone ?? "",
   ).trim();
   const timeZone = rawTimeZone ? normalizeTimeZone(rawTimeZone) : "";
-  const rawPreferredLocale = Object.prototype.hasOwnProperty.call(
-    body,
-    "preferredLocale",
-  )
-    ? String(body.preferredLocale ?? "").trim()
-    : a.user.preferred_locale || "";
-  const preferredLocale =
-    rawPreferredLocale === "" || isValidLocale(rawPreferredLocale)
-      ? rawPreferredLocale
-      : null;
   if (rawTimeZone && !timeZone) return bad("Invalid timezone", undefined, req);
-  if (preferredLocale === null) {
-    return bad("Invalid preferred locale", undefined, req);
-  }
   await database(env).run(
     compileD1Mutation(
       update(schema.users, (columns) => ({
         set: {
           name,
           timezone: timeZone,
-          preferred_locale: preferredLocale,
           updated_at: unixepoch(),
         },
         where: eq(columns.id, param(a.user.id)),

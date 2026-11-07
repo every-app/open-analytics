@@ -625,7 +625,6 @@ export async function sendNotificationTest(input: {
 export async function updateMyProfile(input: {
   name?: string;
   timeZone?: string;
-  preferredLocale?: AccountUserData["preferredLocale"];
 }): Promise<AccountUserData> {
   const res = await fetchEdgeJson<{ ok: boolean; data: AccountUserData }>({
     method: "POST",

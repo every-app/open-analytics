@@ -1,8 +1,8 @@
 /**
- * Standalone watcher for src/i18n/*.yaml -> src/lib/i18n/messages.ts.
+ * Standalone watcher for src/i18n/en.yaml -> src/lib/i18n/messages.ts.
  *
  * Runtime reads translations from messages.ts (the generated artifact), not
- * from the yaml sources directly. This script keeps the artifact in sync while
+ * from the yaml source directly. This script keeps the artifact in sync while
  * editing yaml, so changes take effect without manually re-running
  * `pnpm run check:i18n -- --prune`.
  *

@@ -1,13 +1,11 @@
 import type { Env } from "@/lib/edge/types";
-import { isValidLocale } from "@/lib/i18n/config";
 
 export const RUNTIME_CONFIG_ERROR_PATH = "/runtime-config-error";
+/** The language prefixes page links had before they dropped them. */
+const OLD_LOCALE_PREFIXES = new Set(["en", "zh", "zh-tw", "ja"]);
 
 function hasRootSecret(env: Env): boolean {
-  return Boolean(
-    String(env.MAIN_SECRET || "").trim() ||
-    String(env.DAILY_SALT_SECRET || "").trim(),
-  );
+  return Boolean(String(env.MAIN_SECRET || "").trim());
 }
 
 /**
@@ -17,7 +15,7 @@ function hasRootSecret(env: Env): boolean {
  */
 export function unprefixedPath(pathname: string): string | null {
   const [first, ...rest] = pathname.split("/").filter(Boolean);
-  if (!isValidLocale(first)) return null;
+  if (!OLD_LOCALE_PREFIXES.has(first)) return null;
   const path = rest[0] === "app" ? rest.slice(1) : rest;
   return `/${path.join("/")}`;
 }

@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Spinner } from "@insightflare/ui/spinner";
 import { useRouterState } from "@tanstack/react-router";
 
-import { resolveLocale } from "@/lib/i18n/config";
+import { DEFAULT_LOCALE } from "@/lib/i18n/config";
 import { getMessages } from "@/lib/i18n/messages";
 
 interface PageTransitionProps {
@@ -33,7 +33,7 @@ export function PageTransition({ children }: PageTransitionProps) {
       Boolean(state.resolvedLocation) &&
       state.location.pathname !== state.resolvedLocation?.pathname,
   });
-  const messages = getMessages(resolveLocale(pathname.split("/")[1]));
+  const messages = getMessages(DEFAULT_LOCALE);
 
   useEffect(() => {
     scrollPageToTop();

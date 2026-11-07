@@ -23,15 +23,12 @@ function mapStub(
 }
 
 describe("vector basemap helpers", () => {
-  it("returns the theme style path and appends non-English locales", () => {
+  it("returns the theme's style path", () => {
     expect(getVectorBasemapStyleUrl("light")).toBe(
       "/api/public/resources/map/v1/styles/light/style.json?v=2",
     );
-    expect(getVectorBasemapStyleUrl("dark", "zh")).toBe(
-      "/api/public/resources/map/v1/styles/dark/style.json?v=2&locale=zh",
-    );
-    expect(getVectorBasemapStyleUrl("light", "ja")).toBe(
-      "/api/public/resources/map/v1/styles/light/style.json?v=2&locale=ja",
+    expect(getVectorBasemapStyleUrl("dark")).toBe(
+      "/api/public/resources/map/v1/styles/dark/style.json?v=2",
     );
   });
 

@@ -155,7 +155,7 @@ export function AccountSettingsClient({
         </SettingsCard>
       </SettingsSection>
 
-      <AppearanceSettings locale={locale} messages={messages} />
+      <AppearanceSettings messages={messages} />
 
       <SettingsSection title={copy.timeZoneTitle}>
         <SettingsCard>

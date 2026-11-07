@@ -4,15 +4,7 @@ import process from "node:process";
 export const ROOT_DIR = process.cwd();
 export const SRC_DIR = path.join(ROOT_DIR, "src");
 export const SCRIPTS_DIR = path.join(ROOT_DIR, "scripts");
-export const LOCALES = ["en", "zh", "zh-tw", "ja"] as const;
-export type LocaleCode = (typeof LOCALES)[number];
-export const LOCALE_PATHS = Object.fromEntries(
-  LOCALES.map((locale) => [
-    locale,
-    path.join(SRC_DIR, "i18n", `${locale}.yaml`),
-  ]),
-) as Record<LocaleCode, string>;
-export const EN_PATH = LOCALE_PATHS.en;
+export const EN_PATH = path.join(SRC_DIR, "i18n", "en.yaml");
 export const TSCONFIG_PATH = path.join(ROOT_DIR, "tsconfig.json");
 export const APP_MESSAGES_PATH = path.join(
   SRC_DIR,

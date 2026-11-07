@@ -133,7 +133,7 @@ function makeContext(
 
   return {
     context: {
-      env: { DAILY_SALT_SECRET: "test-secret" },
+      env: { MAIN_SECRET: "test-secret" },
       getVisitContext: async () => options.visit ?? null,
       findRecentVisitorSession: async () => options.recentSession ?? null,
       insertBufferedCustomEvent: (record: never) => {
@@ -151,7 +151,7 @@ function makeContext(
   };
 }
 async function expectedVisitorSecret(): Promise<string> {
-  return (await visitorDailySaltSecret({ DAILY_SALT_SECRET: "test-secret" }))!;
+  return (await visitorDailySaltSecret({ MAIN_SECRET: "test-secret" }))!;
 }
 describe("normalizeIngestRecord rejection reasons", () => {
   it("throws when no root secret is configured for visitor identity", async () => {
@@ -167,9 +167,7 @@ describe("normalizeIngestRecord rejection reasons", () => {
         }),
         context,
       ),
-    ).rejects.toThrow(
-      "MAIN_SECRET or DAILY_SALT_SECRET is required for visitor identity",
-    );
+    ).rejects.toThrow("MAIN_SECRET is required for visitor identity");
   });
 
   it("rejects records missing required site, visit, hostname, or event fields", async () => {

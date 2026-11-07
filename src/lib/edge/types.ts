@@ -3,7 +3,6 @@ export interface Env {
   INGEST_DO: DurableObjectNamespace;
   SITE_SETTINGS_KV?: KVNamespace;
   MAIN_SECRET?: string;
-  DAILY_SALT_SECRET?: string;
   DISABLE_CRON_TASKS?: string;
   /** Another OpenMapTiles style host for the dashboard maps (map-relay.ts). */
   MAP_STYLE_BASE_URL?: string;

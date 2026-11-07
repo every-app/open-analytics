@@ -711,7 +711,7 @@ export function resolveRealtimeEventDisplayData(
     osLabel: event.os?.trim() || messages.common.unknown,
     osIconKey: resolveOsIconKey(event.os ?? ""),
     countryLabel,
-    countryFlagCode: resolveCountryFlagCode(countryCode, locale),
+    countryFlagCode: resolveCountryFlagCode(countryCode),
     sourceLabel: event.referrerHost.trim() || messages.overview.direct,
   };
 }

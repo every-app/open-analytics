@@ -39,12 +39,12 @@ beforeEach(() => {
   });
   const insertUser = database.prepare(
     `INSERT INTO users (id, email, notification_preferences_json,
-       preferred_locale, timezone, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 1, 1)`,
+       timezone, created_at, updated_at)
+     VALUES (?, ?, ?, ?, 1, 1)`,
   );
-  insertUser.run("ana", "ana@old.test", '{"email":true}', "ja", "Asia/Tokyo");
-  insertUser.run("bo", "bo@example.test", "{}", "", "");
-  insertUser.run("dee", "dee@example.test", "{}", "", "");
+  insertUser.run("ana", "ana@old.test", '{"email":true}', "Asia/Tokyo");
+  insertUser.run("bo", "bo@example.test", "{}", "");
+  insertUser.run("dee", "dee@example.test", "{}", "");
 });
 
 afterEach(() => {
@@ -89,7 +89,6 @@ describe("resolveNotificationRecipients", () => {
       id: "ana",
       email: "ana@new.test",
       preferencesJson: '{"email":true}',
-      preferredLocale: "ja",
       timeZone: "Asia/Tokyo",
     });
     // Never opened the app: the defaults.
@@ -97,7 +96,6 @@ describe("resolveNotificationRecipients", () => {
       id: "cy",
       email: "cy@example.test",
       preferencesJson: "{}",
-      preferredLocale: null,
       timeZone: null,
     });
   });

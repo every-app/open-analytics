@@ -46,10 +46,6 @@ function formatLastSeen(
   );
 }
 
-function usesFullwidthPunctuation(locale: Locale): boolean {
-  return locale === "zh" || locale === "zh-tw" || locale === "ja";
-}
-
 function renderReportText(input: RenderNotificationEmailTextInput): string {
   const messages = NOTIFICATION_EMAIL_MESSAGES[input.locale];
   const data = input.message.data;
@@ -77,22 +73,21 @@ function renderReportText(input: RenderNotificationEmailTextInput): string {
           return `${index + 1}. ${name} - ${visits} ${messages.common.visits}`;
         })
       : [messages.common.noReferrerData];
-  const colon = usesFullwidthPunctuation(input.locale) ? "：" : ":";
 
   return [
     input.content.title,
     "",
-    `${messages.common.date}${colon} ${date}`,
+    `${messages.common.date}: ${date}`,
     "",
-    `${messages.common.coreMetrics}${colon}`,
-    `- ${messages.common.views}${colon} ${formatNotificationNumber(metrics.views, input.locale)}`,
-    `- ${messages.common.visitors}${colon} ${formatNotificationNumber(metrics.visitors, input.locale)}`,
-    `- ${messages.common.sessions}${colon} ${formatNotificationNumber(metrics.sessions, input.locale)}`,
+    `${messages.common.coreMetrics}:`,
+    `- ${messages.common.views}: ${formatNotificationNumber(metrics.views, input.locale)}`,
+    `- ${messages.common.visitors}: ${formatNotificationNumber(metrics.visitors, input.locale)}`,
+    `- ${messages.common.sessions}: ${formatNotificationNumber(metrics.sessions, input.locale)}`,
     "",
-    `${messages.common.topPages}${colon}`,
+    `${messages.common.topPages}:`,
     ...pageLines,
     "",
-    `${messages.common.topReferrers}${colon}`,
+    `${messages.common.topReferrers}:`,
     ...referrerLines,
   ].join("\n");
 }
@@ -100,40 +95,34 @@ function renderReportText(input: RenderNotificationEmailTextInput): string {
 function renderThresholdText(input: RenderNotificationEmailTextInput): string {
   const messages = NOTIFICATION_EMAIL_MESSAGES[input.locale];
   const data = input.message.data;
-  const colon = usesFullwidthPunctuation(input.locale) ? "：" : ":";
-  const separator = usesFullwidthPunctuation(input.locale) ? "" : " ";
   const operator = textValue(data.operator, ">=");
   return [
     input.content.title,
     "",
-    `${messages.common.metric}${colon}${separator}${notificationMetricLabel(input.locale, data.metric)}`,
-    `${messages.common.window}${colon}${separator}${notificationWindowLabel(input.locale, data.window)}`,
-    `${messages.common.currentValue}${colon}${separator}${formatNotificationNumber(data.value, input.locale)}`,
-    `${messages.common.threshold}${colon}${separator}${operator} ${formatNotificationNumber(data.target, input.locale)}`,
+    `${messages.common.metric}: ${notificationMetricLabel(input.locale, data.metric)}`,
+    `${messages.common.window}: ${notificationWindowLabel(input.locale, data.window)}`,
+    `${messages.common.currentValue}: ${formatNotificationNumber(data.value, input.locale)}`,
+    `${messages.common.threshold}: ${operator} ${formatNotificationNumber(data.target, input.locale)}`,
   ].join("\n");
 }
 
 function renderMilestoneText(input: RenderNotificationEmailTextInput): string {
   const messages = NOTIFICATION_EMAIL_MESSAGES[input.locale];
   const data = input.message.data;
-  const colon = usesFullwidthPunctuation(input.locale) ? "：" : ":";
-  const separator = usesFullwidthPunctuation(input.locale) ? "" : " ";
   return [
     input.content.title,
     "",
     input.content.summary,
     "",
-    `${messages.common.metric}${colon}${separator}${notificationMetricLabel(input.locale, data.metric)}`,
-    `${messages.common.milestone}${colon}${separator}${formatNotificationNumber(data.bucket, input.locale)}`,
-    `${messages.common.currentValue}${colon}${separator}${formatNotificationNumber(data.value, input.locale)}`,
+    `${messages.common.metric}: ${notificationMetricLabel(input.locale, data.metric)}`,
+    `${messages.common.milestone}: ${formatNotificationNumber(data.bucket, input.locale)}`,
+    `${messages.common.currentValue}: ${formatNotificationNumber(data.value, input.locale)}`,
   ].join("\n");
 }
 
 function renderChangeText(input: RenderNotificationEmailTextInput): string {
   const messages = NOTIFICATION_EMAIL_MESSAGES[input.locale];
   const data = input.message.data;
-  const colon = usesFullwidthPunctuation(input.locale) ? "：" : ":";
-  const separator = usesFullwidthPunctuation(input.locale) ? "" : " ";
   const suffix = data.mode === "percent" ? "%" : "";
   const mode =
     data.mode === "percent"
@@ -146,25 +135,23 @@ function renderChangeText(input: RenderNotificationEmailTextInput): string {
     "",
     input.content.summary,
     "",
-    `${messages.common.metric}${colon}${separator}${notificationMetricLabel(input.locale, data.metric)}`,
-    `${messages.common.window}${colon}${separator}${notificationWindowLabel(input.locale, data.window)}`,
-    `${messages.common.previousValue}${colon}${separator}${formatNotificationNumber(data.previous, input.locale)}`,
-    `${messages.common.currentValue}${colon}${separator}${formatNotificationNumber(data.current, input.locale)}`,
-    `${messages.common.change}${colon}${separator}${formatNotificationNumber(data.change, input.locale)}${suffix}`,
-    `${messages.common.mode}${colon}${separator}${mode}`,
+    `${messages.common.metric}: ${notificationMetricLabel(input.locale, data.metric)}`,
+    `${messages.common.window}: ${notificationWindowLabel(input.locale, data.window)}`,
+    `${messages.common.previousValue}: ${formatNotificationNumber(data.previous, input.locale)}`,
+    `${messages.common.currentValue}: ${formatNotificationNumber(data.current, input.locale)}`,
+    `${messages.common.change}: ${formatNotificationNumber(data.change, input.locale)}${suffix}`,
+    `${messages.common.mode}: ${mode}`,
   ].join("\n");
 }
 
 function renderHealthText(input: RenderNotificationEmailTextInput): string {
   const messages = NOTIFICATION_EMAIL_MESSAGES[input.locale];
-  const colon = usesFullwidthPunctuation(input.locale) ? "：" : ":";
-  const separator = usesFullwidthPunctuation(input.locale) ? "" : " ";
   return [
     input.content.title,
     "",
     input.content.summary,
     "",
-    `${messages.common.lastSeen}${colon}${separator}${formatLastSeen(
+    `${messages.common.lastSeen}: ${formatLastSeen(
       input.message.data.lastSeenAt,
       input.locale,
       input.timeZone,

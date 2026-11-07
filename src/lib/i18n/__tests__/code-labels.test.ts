@@ -13,30 +13,12 @@ describe("Regional Code and Language Translation Resolvers", () => {
       const usResult = resolveCountryLabel("US", "en", "Unknown Region");
       expect(usResult.code).toBe("US");
       expect(usResult.label).toMatch(/United States|US/);
-
-      const cnResult = resolveCountryLabel("CN", "zh", "未知区域");
-      expect(cnResult.code).toBe("CN");
-      expect(cnResult.label).toMatch(/中国/);
     });
 
     it("should respect regional alias mapping rules (e.g. UK -> GB)", () => {
       const ukResult = resolveCountryLabel("UK", "en", "Unknown");
       expect(ukResult.code).toBe("GB");
       expect(ukResult.label).toMatch(/United Kingdom|GB/);
-    });
-
-    it("should apply political override rules for Chinese locale (e.g., TW -> 中国台湾)", () => {
-      const zhTw = resolveCountryLabel("TW", "zh", "未知");
-      expect(zhTw.code).toBe("TW");
-      expect(zhTw.label).toBe("中国台湾");
-
-      const zhTwTw = resolveCountryLabel("TW", "zh-tw", "未知");
-      expect(zhTwTw.code).toBe("TW");
-      expect(zhTwTw.label).toBe("台灣");
-
-      const enTw = resolveCountryLabel("TW", "en", "Unknown");
-      expect(enTw.code).toBe("TW");
-      expect(enTw.label).not.toBe("中国台湾"); // Should format normally in English
     });
 
     it("should fall back to raw input as label for non-empty invalid region codes, and use unknownLabel for empty/whitespace", () => {
@@ -46,9 +28,9 @@ describe("Regional Code and Language Translation Resolvers", () => {
       expect(invalidCode.label).toBe("ZZ");
 
       // Empty/whitespace code uses unknownLabel
-      const emptyCode = resolveCountryLabel("   ", "zh", "未知");
+      const emptyCode = resolveCountryLabel("   ", "en", "Unknown");
       expect(emptyCode.code).toBeNull();
-      expect(emptyCode.label).toBe("未知");
+      expect(emptyCode.label).toBe("Unknown");
     });
   });
 
@@ -58,39 +40,24 @@ describe("Regional Code and Language Translation Resolvers", () => {
         label: "English",
         code: "en",
       });
-
-      expect(resolveLanguageLabel("zh", "zh", "未知")).toEqual({
-        label: "中文",
-        code: "zh",
-      });
     });
 
     it("should normalize locale codes with underscores (e.g., zh_CN -> zh)", () => {
-      const result = resolveLanguageLabel("zh_CN", "zh", "未知");
+      const result = resolveLanguageLabel("zh_CN", "en", "Unknown");
       expect(result.code).toBe("zh");
-      expect(result.label).toBe("中文");
+      expect(result.label).toBe("Chinese");
     });
 
     it("should normalize Traditional Chinese language codes (e.g., zh-TW, zh-HK, zh-Hant)", () => {
-      const tw = resolveLanguageLabel("zh-TW", "zh-tw", "未知");
-      expect(tw.code).toBe("zh-tw");
-      expect(tw.label).toBe("繁體中文");
-
-      const hk = resolveLanguageLabel("zh_HK", "zh-tw", "未知");
-      expect(hk.code).toBe("zh-tw");
-      expect(hk.label).toBe("繁體中文");
-
-      const hant = resolveLanguageLabel("zh-Hant-TW", "zh", "未知");
-      expect(hant.code).toBe("zh-tw");
-      expect(hant.label).toBe("繁体中文");
+      for (const raw of ["zh-TW", "zh_HK", "zh-Hant-TW"]) {
+        expect(resolveLanguageLabel(raw, "en", "Unknown")).toEqual({
+          code: "zh-tw",
+          label: "Traditional Chinese",
+        });
+      }
     });
 
     it("should resolve other codes via Intl.DisplayNames if not in static table", () => {
-      // "de" is not explicitly checked as override, but resolves to German/德语
-      const resultZh = resolveLanguageLabel("de", "zh", "未知");
-      expect(resultZh.code).toBe("de");
-      expect(resultZh.label).toMatch(/德语|德文/);
-
       const resultEn = resolveLanguageLabel("de", "en", "Unknown");
       expect(resultEn.code).toBe("de");
       expect(resultEn.label).toMatch(/German/);
@@ -136,25 +103,18 @@ describe("Regional Code and Language Translation Resolvers", () => {
   });
 
   describe("resolveCountryFlagCode", () => {
-    it("should redirect Taiwan region flags to China (CN) flag code in Chinese locales", () => {
-      expect(resolveCountryFlagCode("TW", "zh")).toBe("CN");
-      expect(resolveCountryFlagCode("TW", "zh-tw")).toBe("TW"); // Preserved in Traditional Chinese
-      expect(resolveCountryFlagCode("TW", "en")).toBe("TW"); // Remains untouched in English
-    });
-
     it("should format United Kingdom (GB) flags to GB-UKM code", () => {
-      expect(resolveCountryFlagCode("GB", "en")).toBe("GB-UKM");
-      expect(resolveCountryFlagCode("GB", "zh")).toBe("GB-UKM");
+      expect(resolveCountryFlagCode("GB")).toBe("GB-UKM");
     });
 
     it("should preserve other region flag codes as is", () => {
-      expect(resolveCountryFlagCode("US", "en")).toBe("US");
-      expect(resolveCountryFlagCode("FR", "zh")).toBe("FR");
+      expect(resolveCountryFlagCode("US")).toBe("US");
+      expect(resolveCountryFlagCode("TW")).toBe("TW");
     });
 
     it("should return null if country code is missing", () => {
-      expect(resolveCountryFlagCode(null, "en")).toBeNull();
-      expect(resolveCountryFlagCode(undefined as any, "zh")).toBeNull();
+      expect(resolveCountryFlagCode(null)).toBeNull();
+      expect(resolveCountryFlagCode(undefined as any)).toBeNull();
     });
   });
 
@@ -179,7 +139,7 @@ describe("Regional Code and Language Translation Resolvers", () => {
       expect(result.label).toBe("xyz");
     });
 
-    it("should gracefully handle Intl constructor errors and return null formatter for both country and language resolvers (Line 94, 105)", () => {
+    it("should gracefully handle Intl constructor errors and return null formatter for both country and language resolvers (Line 94, 105)", async () => {
       const originalDisplayNames = globalThis.Intl.DisplayNames;
       try {
         Object.defineProperty(globalThis.Intl, "DisplayNames", {
@@ -189,20 +149,17 @@ describe("Regional Code and Language Translation Resolvers", () => {
           writable: true,
           configurable: true,
         });
+        // A fresh module has no cached formatters, so both get created and throw.
+        vi.resetModules();
+        const fresh = await import("@/lib/i18n/code-labels");
 
-        // 1. Test language formatter exception fallback
-        // "sv" is not in LANGUAGE_LABELS['zh'] table, it goes to getLanguageFormatter, throws, and falls back to raw code
-        const langResult = resolveLanguageLabel("sv", "zh", "Fallback");
-        expect(langResult.label).toBe("sv");
-
-        // 2. Test country formatter exception fallback
-        // Use a new locale "de" to bypass cached "en"/"zh" country formatters, triggering creation, throwing, and falling back to raw code
-        const countryResult = resolveCountryLabel(
-          "FR",
-          "de" as any,
-          "Fallback",
+        // "sv" is not in the label table: the raw code is the label
+        expect(fresh.resolveLanguageLabel("sv", "en", "Fallback").label).toBe(
+          "sv",
         );
-        expect(countryResult.label).toBe("FR");
+        expect(fresh.resolveCountryLabel("FR", "en", "Fallback").label).toBe(
+          "FR",
+        );
       } finally {
         Object.defineProperty(globalThis.Intl, "DisplayNames", {
           value: originalDisplayNames,

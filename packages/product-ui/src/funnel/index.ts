@@ -11,9 +11,3 @@ export {
   type FunnelVisualizationStepDefinition,
   type FunnelVisualizationSummary,
 } from "./funnel-visualization";
-export {
-  type FunnelVisualizationContract,
-  funnelVisualizationContract,
-  type FunnelVisualizationFixture,
-  funnelVisualizationFixtures,
-} from "./funnel-visualization.contract";

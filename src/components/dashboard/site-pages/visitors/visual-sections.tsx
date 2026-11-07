@@ -67,7 +67,7 @@ export function VisitorGeoBreadcrumb({
     locale,
     messages.common.unknown,
   );
-  const flagCode = resolveCountryFlagCode(country.code, locale);
+  const flagCode = resolveCountryFlagCode(country.code);
   const regionLabel =
     (visitor.region ?? "").trim() ||
     (visitor.regionCode ?? "").trim() ||
@@ -129,11 +129,7 @@ export const VisitorMapHero = memo(function VisitorMapHero({
   return (
     <div className="relative h-[17rem] overflow-hidden sm:h-[19rem]">
       {modalReady && !loading ? (
-        <VisitorDetailMapStage
-          locale={locale}
-          theme={effectiveTheme}
-          points={points}
-        />
+        <VisitorDetailMapStage theme={effectiveTheme} points={points} />
       ) : (
         <DetailMapPlaceholder />
       )}

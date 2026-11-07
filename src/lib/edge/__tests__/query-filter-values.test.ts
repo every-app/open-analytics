@@ -34,7 +34,7 @@ function envWithRows(): Env {
   };
   return {
     DB: { prepare: () => statement },
-    DAILY_SALT_SECRET: "filter-values-test-secret",
+    MAIN_SECRET: "filter-values-test-secret",
   } as unknown as Env;
 }
 
@@ -105,7 +105,7 @@ function envWithUserRows(
         return statement;
       },
     },
-    DAILY_SALT_SECRET: "filter-values-test-secret",
+    MAIN_SECRET: "filter-values-test-secret",
   } as unknown as Env;
 }
 

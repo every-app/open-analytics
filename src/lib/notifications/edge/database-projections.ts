@@ -64,7 +64,6 @@ export function notificationRecipientRows() {
     id: users.columns.id,
     email: users.columns.email,
     preferencesJson: users.columns.notification_preferences_json,
-    preferredLocale: users.columns.preferred_locale,
     timeZone: users.columns.timezone,
   });
 }

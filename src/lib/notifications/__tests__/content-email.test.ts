@@ -8,7 +8,6 @@ import {
   notificationWindowLabel,
 } from "@/lib/notifications/content";
 import { renderNotificationEmailText } from "@/lib/notifications/email-text";
-import { resolveNotificationLocale } from "@/lib/notifications/locale";
 import type { NotificationMessage } from "@/lib/notifications/message";
 
 function message(input: Partial<NotificationMessage>): NotificationMessage {
@@ -46,7 +45,7 @@ function message(input: Partial<NotificationMessage>): NotificationMessage {
 }
 
 describe("notification email content", () => {
-  it("formats common labels and locale fallbacks", () => {
+  it("formats common labels", () => {
     expect(formatNotificationNumber(1234.9)).toBe("1,234");
     expect(formatNotificationNumber("bad")).toBe("0");
     expect(notificationSiteName({ domain: " example.test " })).toBe(
@@ -54,9 +53,7 @@ describe("notification email content", () => {
     );
     expect(notificationSiteName({})).toBe("Site");
     expect(notificationMetricLabel("en", "bad")).toBe("views");
-    expect(notificationWindowLabel("zh", "last_24h")).toBe("过去 24 小时");
-    expect(resolveNotificationLocale("zh")).toBe("zh");
-    expect(resolveNotificationLocale("")).toBe("en");
+    expect(notificationWindowLabel("en", "last_24h")).toBe("Last 24 hours");
   });
 
   it("builds localized content for report, threshold, health, test, and fallback messages", () => {
@@ -89,7 +86,7 @@ describe("notification email content", () => {
       buildNotificationContent({
         type: "threshold",
         severity: "warning",
-        locale: "zh",
+        locale: "en",
         data: {
           hostname: "demo.test",
           metric: "sessions",
@@ -99,7 +96,7 @@ describe("notification email content", () => {
           target: 10,
         },
       }).summary,
-    ).toContain("会话数");
+    ).toContain("sessions for Yesterday is 20");
 
     expect(
       buildNotificationContent({
@@ -168,14 +165,14 @@ describe("notification email content", () => {
 
     const emptyReportText = renderNotificationEmailText({
       content: reportContent,
-      locale: "zh",
+      locale: "en",
       message: message({
         type: "report",
         data: { range: {}, metrics: {}, topPages: [], topReferrers: [] },
       }),
     });
-    expect(emptyReportText).toContain("暂无页面数据");
-    expect(emptyReportText).toContain("暂无来源数据");
+    expect(emptyReportText).toContain("No page data yet.");
+    expect(emptyReportText).toContain("No referrer data yet.");
 
     const thresholdContent = buildNotificationContent({
       type: "threshold",
@@ -197,7 +194,7 @@ describe("notification email content", () => {
     const milestoneContent = buildNotificationContent({
       type: "milestone",
       severity: "success",
-      locale: "zh",
+      locale: "en",
       data: {
         siteDomain: "demo.test",
         metric: "visitors",
@@ -207,15 +204,15 @@ describe("notification email content", () => {
     });
     const milestoneText = renderNotificationEmailText({
       content: milestoneContent,
-      locale: "zh",
+      locale: "en",
       message: message({
         type: "milestone",
         data: { metric: "visitors", bucket: 50000, value: 50240 },
       }),
     });
-    expect(milestoneText).toContain("指标：访客数");
-    expect(milestoneText).toContain("里程碑：50,000");
-    expect(milestoneText).toContain("当前值：50,240");
+    expect(milestoneText).toContain("Metric: visitors");
+    expect(milestoneText).toContain("Milestone: 50,000");
+    expect(milestoneText).toContain("Current value: 50,240");
 
     const changeContent = buildNotificationContent({
       type: "change",
@@ -253,19 +250,19 @@ describe("notification email content", () => {
     const healthContent = buildNotificationContent({
       type: "health",
       severity: "critical",
-      locale: "zh",
+      locale: "en",
       data: { hours: 6, lastSeenAt: 1_800_000_000 },
     });
     expect(
       renderNotificationEmailText({
         content: healthContent,
-        locale: "zh",
+        locale: "en",
         message: message({
           type: "health",
           data: { lastSeenAt: 1_800_000_000 },
         }),
       }),
-    ).toContain("最后收到数据：2027");
+    ).toContain("Last seen: Jan 15, 2027");
 
     expect(
       renderNotificationEmailText({

@@ -641,8 +641,8 @@ export function GeoPointsMap3D({
   const effectiveMapTheme: EffectiveMapTheme =
     mounted && resolvedTheme === "dark" ? "dark" : "light";
   const mapStyle = useMemo(
-    () => getVectorBasemapStyleUrl(effectiveMapTheme, locale),
-    [effectiveMapTheme, locale],
+    () => getVectorBasemapStyleUrl(effectiveMapTheme),
+    [effectiveMapTheme],
   );
   const mapSky = useMemo(
     () => getVectorBasemapSky(effectiveMapTheme),

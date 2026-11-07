@@ -2,10 +2,7 @@ import { createRouter } from "@tanstack/react-router";
 
 import { getQueryClient } from "@/components/query-client-provider";
 import { notifyUrlStateChange } from "@/lib/dashboard/client/history";
-import {
-  dashboardShellQueryOptions,
-  localeQueryOptions,
-} from "@/lib/dashboard/route-query";
+import { dashboardShellQueryOptions } from "@/lib/dashboard/route-query";
 import { ErrorPage, NotFoundPage } from "@/routes/__root";
 import { routeTree } from "@/routeTree.gen";
 
@@ -21,15 +18,8 @@ export function getRouter() {
       dashboardShellUpdatedAt: queryClient.getQueryState(
         dashboardShellQueryOptions.queryKey,
       )?.dataUpdatedAt,
-      locale: queryClient.getQueryData(localeQueryOptions.queryKey),
     }),
     hydrate: (dehydrated) => {
-      if (dehydrated.locale) {
-        queryClient.setQueryData(
-          localeQueryOptions.queryKey,
-          dehydrated.locale,
-        );
-      }
       if (dehydrated.dashboardShell) {
         queryClient.setQueryData(
           dashboardShellQueryOptions.queryKey,

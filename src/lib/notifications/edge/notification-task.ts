@@ -11,7 +11,7 @@ import type {
   ScheduledTaskOutcome,
 } from "@/lib/edge/scheduled-tasks/runner";
 import type { Env } from "@/lib/edge/types";
-import { resolveNotificationLocale } from "@/lib/notifications/locale";
+import { DEFAULT_LOCALE } from "@/lib/i18n/config";
 import { buildLocalizedNotificationMessageFields } from "@/lib/notifications/localized-message";
 import type {
   NotificationMessage,
@@ -149,10 +149,9 @@ async function createAndDeliverMessages(input: {
   );
 
   for (const user of recipients) {
-    const locale = resolveNotificationLocale(user.preferredLocale);
     const localized = buildLocalizedNotificationMessageFields({
       draft,
-      locale,
+      locale: DEFAULT_LOCALE,
       timeZone: user.timeZone,
     });
     const preferences = normalizeNotificationPreferences(user.preferencesJson);
@@ -455,7 +454,6 @@ export async function createManualTestNotification(input: {
     );
     return { message: null, summary };
   }
-  const locale = resolveNotificationLocale(user.preferredLocale);
   const localized = buildLocalizedNotificationMessageFields({
     draft: {
       type: "test",
@@ -467,7 +465,7 @@ export async function createManualTestNotification(input: {
         "Reports and alerts you turn on arrive in your OpenAnalytics inbox and, when email is set up on this gateway, by email too.",
       data: { source: "manual_test" },
     },
-    locale,
+    locale: DEFAULT_LOCALE,
     timeZone: user.timeZone,
   });
   const message = await createNotificationMessage(env, {

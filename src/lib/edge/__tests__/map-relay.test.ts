@@ -29,11 +29,9 @@ describe("map style handler", () => {
     vi.unstubAllGlobals();
   });
 
-  it("serves the open style with place names in the dashboard's language", async () => {
+  it("serves the open style with English place names", async () => {
     const response = await handleMapRelayRequest(
-      request(
-        "/api/public/resources/map/v1/styles/dark/style.json?locale=zh-tw",
-      ),
+      request("/api/public/resources/map/v1/styles/dark/style.json"),
       env,
     );
 
@@ -45,12 +43,7 @@ describe("map style handler", () => {
       {
         id: "place",
         layout: {
-          "text-field": [
-            "coalesce",
-            ["get", "name:zh-Hant"],
-            ["get", "name:zh"],
-            ["get", "name:latin"],
-          ],
+          "text-field": ["coalesce", ["get", "name:en"], ["get", "name:latin"]],
         },
       },
     ]);

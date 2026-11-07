@@ -1,7 +1,5 @@
 import type { Map as MaplibreMap, SkySpecification } from "maplibre-gl";
 
-import type { Locale } from "@/lib/i18n/config";
-
 export type DashboardMapTheme = "light" | "dark";
 
 const VECTOR_BASEMAP_STYLE_PATHS: Record<DashboardMapTheme, string> = {
@@ -9,15 +7,9 @@ const VECTOR_BASEMAP_STYLE_PATHS: Record<DashboardMapTheme, string> = {
   dark: "/api/public/resources/map/v1/styles/dark/style.json",
 };
 
-export function getVectorBasemapStyleUrl(
-  theme: DashboardMapTheme,
-  locale: Locale = "en",
-): string {
-  const path = VECTOR_BASEMAP_STYLE_PATHS[theme];
+export function getVectorBasemapStyleUrl(theme: DashboardMapTheme): string {
   // Bypass styles cached before the OpenFreeMap sprite reference correction.
-  const params = new URLSearchParams({ v: "2" });
-  if (locale !== "en") params.set("locale", locale);
-  return `${path}?${params}`;
+  return `${VECTOR_BASEMAP_STYLE_PATHS[theme]}?v=2`;
 }
 
 export function getVectorBasemapSky(

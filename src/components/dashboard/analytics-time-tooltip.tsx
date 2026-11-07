@@ -62,24 +62,6 @@ const RELATIVE_TIME_UNITS: Record<
     minute: ["minute", "minutes"],
     second: ["second", "seconds"],
   },
-  zh: {
-    day: ["天", "天"],
-    hour: ["小时", "小时"],
-    minute: ["分钟", "分钟"],
-    second: ["秒", "秒"],
-  },
-  "zh-tw": {
-    day: ["天", "天"],
-    hour: ["小時", "小時"],
-    minute: ["分鐘", "分鐘"],
-    second: ["秒", "秒"],
-  },
-  ja: {
-    day: ["日", "日"],
-    hour: ["時間", "時間"],
-    minute: ["分", "分"],
-    second: ["秒", "秒"],
-  },
 };
 
 interface AnalyticsTooltipAppContextValue {
@@ -116,24 +98,15 @@ function formatPreciseRelativeTime(
     .map((unit) => {
       const value = values[unit];
       const [singular, plural] = units[unit];
-      if (locale === "en") {
-        return `${value} ${value === 1 ? singular : plural}`;
-      }
-      return `${value}${singular}`;
+      return `${value} ${value === 1 ? singular : plural}`;
     });
 
   if (parts.length === 0) {
-    const [singular] = units.second;
-    parts.push(locale === "en" ? `0 ${singular}s` : `0${singular}`);
+    parts.push(`0 ${units.second[1]}`);
   }
 
-  const value = locale === "en" ? parts.join(", ") : parts.join("");
-  if (diffSeconds <= 0) {
-    return locale === "en" ? `${value} ago` : `${value}前`;
-  }
-  return locale === "en"
-    ? `in ${value}`
-    : `${value}${locale === "zh" ? "后" : "後"}`;
+  const value = parts.join(", ");
+  return diffSeconds <= 0 ? `${value} ago` : `in ${value}`;
 }
 
 function formatTimeZoneShortName(

@@ -526,8 +526,8 @@ export function FlatGeoPointsMap({
   const effectiveMapTheme: EffectiveMapTheme =
     mounted && resolvedTheme === "dark" ? "dark" : "light";
   const mapStyle = useMemo(
-    () => getVectorBasemapStyleUrl(effectiveMapTheme, locale),
-    [effectiveMapTheme, locale],
+    () => getVectorBasemapStyleUrl(effectiveMapTheme),
+    [effectiveMapTheme],
   );
   const normalizedSelectedCountryCode = useMemo(
     () => normalizeCountryCode(selectedCountryCode),

@@ -9,11 +9,9 @@ import {
   applyVectorBasemapColorOverrides,
   getVectorBasemapStyleUrl,
 } from "@/lib/dashboard/map-basemap";
-import type { Locale } from "@/lib/i18n/config";
 import type { RealtimeVisitorPoint } from "@/lib/realtime/types";
 type EffectiveMapTheme = "light" | "dark";
 export interface RealtimeMapStageProps {
-  locale: Locale;
   siteId: string;
   theme: EffectiveMapTheme;
   points: RealtimeVisitorPoint[];
@@ -358,15 +356,11 @@ const RealtimeMapAnimationOverlay = memo(function RealtimeMapAnimationOverlay({
   return <DeckOverlay interleaved={false} layers={layers} />;
 });
 export const RealtimeMapStage = memo(function RealtimeMapStage({
-  locale,
   siteId,
   theme,
   points,
 }: RealtimeMapStageProps) {
-  const mapStyle = useMemo(
-    () => getVectorBasemapStyleUrl(theme, locale),
-    [locale, theme],
-  );
+  const mapStyle = useMemo(() => getVectorBasemapStyleUrl(theme), [theme]);
 
   return (
     <Map

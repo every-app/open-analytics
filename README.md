@@ -13,7 +13,6 @@
 - Scheduled and threshold email reports.
 - Bot filtering, with a page that shows what was blocked.
 - MCP tools so your agents can query reports and manage sites.
-- English, Chinese and Japanese.
 
 ## Install on EveryApp
 

@@ -9,14 +9,10 @@ import {
 } from "@/lib/secrets";
 
 describe("secret derivation", () => {
-  it("uses MAIN_SECRET before DAILY_SALT_SECRET as the root secret", () => {
-    expect(
-      rootSecret({
-        MAIN_SECRET: "main",
-        DAILY_SALT_SECRET: "daily",
-      }),
-    ).toBe("main");
-    expect(rootSecret({ DAILY_SALT_SECRET: "daily" })).toBe("daily");
+  it("uses a trimmed MAIN_SECRET as the root secret", () => {
+    expect(rootSecret({ MAIN_SECRET: " main " })).toBe("main");
+    expect(rootSecret({ MAIN_SECRET: "  " })).toBeNull();
+    expect(rootSecret({})).toBeNull();
   });
 
   it("derives different purpose-specific secrets from the same root", async () => {

@@ -1,6 +1,6 @@
 /**
  * The app's dev server, as `everyapp dev` starts it (everyapp.config.ts `dev`):
- * builds the tracker SDK, then starts `vite dev` while watching src/i18n/*.yaml.
+ * builds the tracker SDK, then starts `vite dev` while watching src/i18n/en.yaml.
  * Vite rather than `cf dev`: the Cloudflare Vite plugin reads
  * cloudflare.config.ts itself, and cf's framework detection trips over the
  * Hono and UI packages in this repository.

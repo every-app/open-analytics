@@ -114,7 +114,7 @@ function createEnv(statements: MockStatement[] = []): {
   return {
     env: {
       DB: { prepare, batch } as unknown as D1Database,
-      DAILY_SALT_SECRET: "daily-salt",
+      MAIN_SECRET: "daily-salt",
     } as Env,
     prepare,
     batch,
@@ -222,7 +222,7 @@ describe("admin handler low branches", () => {
     expect(profileResponse.status).toBe(405);
   });
 
-  it("updates the profile's name, time zone, and locale only", async () => {
+  it("updates the profile's name and time zone only", async () => {
     const updateStatement = statement();
 
     const response = await handleProfileAdmin(
@@ -241,7 +241,6 @@ describe("admin handler low branches", () => {
     expect(updateStatement.bind).toHaveBeenCalledWith(
       "Updated Actor",
       "UTC",
-      "",
       "actor-1",
     );
   });

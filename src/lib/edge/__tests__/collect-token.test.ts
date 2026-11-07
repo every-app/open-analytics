@@ -30,7 +30,7 @@ function b64uBytes(input: Uint8Array): string {
     .replace(/=+$/g, "");
 }
 async function signToken(input: {
-  env: { MAIN_SECRET?: string; DAILY_SALT_SECRET?: string };
+  env: { MAIN_SECRET?: string };
   header?: unknown;
   payload: unknown;
 }): Promise<string> {
@@ -231,7 +231,7 @@ describe("collect token", () => {
         siteId: "site-1",
         ip: "203.0.113.7",
       }),
-    ).rejects.toThrow("MAIN_SECRET or DAILY_SALT_SECRET is required");
+    ).rejects.toThrow("MAIN_SECRET is required");
   });
 
   it("rejects well-signed tokens with malformed decoded content", async () => {
@@ -372,25 +372,5 @@ describe("collect token", () => {
       ok: false,
       reason: "invalid_collect_token_payload",
     });
-  });
-
-  it("supports DAILY_SALT_SECRET as a legacy signing root", async () => {
-    const legacyEnv = { DAILY_SALT_SECRET: "daily-secret" };
-    const token = await issueCollectToken({
-      env: legacyEnv,
-      siteId: "site-1",
-      ip: "203.0.113.7",
-      nowSeconds: 1000,
-    });
-
-    await expect(
-      verifyCollectToken({
-        env: legacyEnv,
-        token,
-        siteId: "site-1",
-        ip: "203.0.113.7",
-        nowSeconds: 1001,
-      }),
-    ).resolves.toMatchObject({ ok: true });
   });
 });

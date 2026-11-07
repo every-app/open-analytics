@@ -24,7 +24,7 @@ import { getMessages } from "@/lib/i18n/messages";
 const FIXTURE_QUERY = "__layerFixture";
 const DETAIL_COUNT = 5;
 const SYNTHETIC_COUNT = 20;
-const STRESS_MESSAGES = getMessages("zh");
+const STRESS_MESSAGES = getMessages("en");
 type FixtureMode = "stress" | "synthetic" | null;
 function fixtureMode(search: string): FixtureMode {
   if (!import.meta.env.DEV) return null;
@@ -116,7 +116,7 @@ function StressControls({
         </DialogContent>
       </Dialog>
       <EventDetailDrawer
-        locale="zh"
+        locale="en"
         messages={STRESS_MESSAGES}
         labels={STRESS_MESSAGES.events}
         siteId="e2e-layer-fixture"

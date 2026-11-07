@@ -371,7 +371,7 @@ export const LocationMeta = memo(function LocationMeta({
     locale,
     messages.common.unknown,
   );
-  const flagCode = resolveCountryFlagCode(resolved.code, locale);
+  const flagCode = resolveCountryFlagCode(resolved.code);
   const locality = String(city || region || "").trim();
   const label = locality
     ? `${locality}${resolved.label !== messages.common.unknown ? `, ${resolved.label}` : ""}`
@@ -418,7 +418,7 @@ function resolveCountryRegionBreadcrumbData({
     locale,
     countryValue ? unknownLabel : missingLabel,
   );
-  const flagCode = resolveCountryFlagCode(resolved.code, locale);
+  const flagCode = resolveCountryFlagCode(resolved.code);
   const countryIconName = flagCode
     ? `flagpack:${flagCode.toLowerCase()}`
     : null;

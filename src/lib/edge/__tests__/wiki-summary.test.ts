@@ -55,22 +55,14 @@ describe("wiki summary route", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
-  it("uses locale language fallback and returns Wikidata-only entities without labels or sitelinks", async () => {
+  it("returns Wikidata-only entities without labels or sitelinks", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          entities: {
-            Q99: {
-              id: "Q99",
-            },
-          },
-        }),
-      ),
+      new Response(JSON.stringify({ entities: { Q99: { id: "Q99" } } })),
     );
 
     const response = await handleWikiSummaryRequest(
       new Request(
-        "https://app.test/api/public/resources/wiki-summary?wikidataId=Q99&locale=zh",
+        "https://app.test/api/public/resources/wiki-summary?wikidataId=Q99",
         {
           headers: { origin: "https://app.test" },
         },
@@ -82,9 +74,6 @@ describe("wiki summary route", () => {
     expect(await response.json()).toEqual({
       ok: true,
       wikidataId: "Q99",
-      requestedLanguage: "zh",
-      resolvedLanguage: null,
-      fallback: false,
       wikidata: {
         id: "Q99",
         label: "Q99",
@@ -94,7 +83,7 @@ describe("wiki summary route", () => {
     });
   });
 
-  it("normalizes invalid explicit languages and preserves non-Chinese page URLs", async () => {
+  it("resolves English Wikidata labels and the English Wikipedia summary", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(
         new Response(
@@ -103,11 +92,16 @@ describe("wiki summary route", () => {
               Q5: {
                 labels: {
                   en: { value: "Human" },
+                  zh: { value: "人类" },
                 },
                 descriptions: {
                   en: { value: "Wikidata concept" },
                 },
                 sitelinks: {
+                  zhwiki: {
+                    title: "人",
+                    url: "https://zh.wikipedia.org/wiki/人",
+                  },
                   enwiki: {
                     title: "Human",
                     url: "https://en.wikipedia.org/wiki/Human",
@@ -121,10 +115,11 @@ describe("wiki summary route", () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            title: "",
-            description: "",
-            extract: "",
-            extract_html: "",
+            title: "Human being",
+            description: "Summary description",
+            extract: "Summary text",
+            extract_html: "<p>Summary text</p>",
+            thumbnail: { source: "https://upload.test/human.png" },
             content_urls: {
               desktop: {
                 page: "https://en.wikipedia.org/wiki/Homo_sapiens",
@@ -136,62 +131,7 @@ describe("wiki summary route", () => {
 
     const response = await handleWikiSummaryRequest(
       new Request(
-        "https://app.test/api/public/resources/wiki-summary?wikidataId=Q5&lang=1",
-        {
-          headers: { origin: "https://app.test" },
-        },
-      ),
-    );
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
-      ok: true,
-      wikidataId: "Q5",
-      requestedLanguage: "en",
-      resolvedLanguage: "en",
-      fallback: false,
-      wikidata: {
-        label: "Human",
-        description: "Wikidata concept",
-      },
-      wikipedia: {
-        language: "en",
-        title: "Human",
-        description: "Wikidata concept",
-        extract: null,
-        extractHtml: null,
-        thumbnailUrl: null,
-        pageUrl: "https://en.wikipedia.org/wiki/Homo_sapiens",
-      },
-    });
-  });
-
-  it("uses simplified Chinese variants and falls back to sitelink URLs", async () => {
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            entities: {
-              Q42: {
-                labels: {
-                  en: { value: "Douglas Adams" },
-                },
-                sitelinks: {
-                  zhwiki: {
-                    title: "Douglas Adams",
-                    url: "https://zh.wikipedia.org/wiki/Douglas_Adams",
-                  },
-                },
-              },
-            },
-          }),
-        ),
-      )
-      .mockResolvedValueOnce(new Response(JSON.stringify({})));
-
-    const response = await handleWikiSummaryRequest(
-      new Request(
-        "https://app.test/api/public/resources/wiki-summary?wikidataId=Q42&lang=zh-CN",
+        "https://app.test/api/public/resources/wiki-summary?wikidataId=q5",
         {
           headers: { origin: "https://app.test" },
         },
@@ -201,269 +141,45 @@ describe("wiki summary route", () => {
     expect(response.status).toBe(200);
     expect(fetch).toHaveBeenNthCalledWith(
       2,
-      "https://zh.wikipedia.org/api/rest_v1/page/summary/Douglas%20Adams",
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          "accept-language": "zh-CN,zh;q=0.9,en;q=0.8",
-        }),
-      }),
-    );
-    expect(await response.json()).toMatchObject({
-      requestedLanguage: "zh",
-      resolvedLanguage: "zh",
-      fallback: false,
-      wikipedia: {
-        title: "Douglas Adams",
-        pageUrl: "https://zh.wikipedia.org/wiki/Douglas_Adams?variant=zh-cn",
-      },
-    });
-  });
-
-  it("falls back to English sitelinks when the requested language is unavailable", async () => {
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            entities: {
-              Q123: {
-                id: "Q123",
-                labels: {
-                  en: { value: "Fallback Entity" },
-                },
-                descriptions: {
-                  en: { value: "English description" },
-                },
-                sitelinks: {
-                  enwiki: {
-                    title: "Fallback Entity",
-                    url: "https://en.wikipedia.org/wiki/Fallback_Entity",
-                  },
-                },
-              },
-            },
-          }),
-        ),
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            title: "Fallback Entity",
-            description: "Summary description",
-            extract: "Summary text",
-            content_urls: {
-              desktop: {
-                page: "https://en.wikipedia.org/wiki/Fallback_Entity",
-              },
-            },
-          }),
-        ),
-      );
-
-    const response = await handleWikiSummaryRequest(
-      new Request(
-        "https://app.test/api/public/resources/wiki-summary?wikidataId=Q123&lang=fr",
-        {
-          headers: { origin: "https://app.test" },
-        },
-      ),
-    );
-
-    expect(response.status).toBe(200);
-    expect(fetch).toHaveBeenNthCalledWith(
-      2,
-      "https://en.wikipedia.org/api/rest_v1/page/summary/Fallback%20Entity",
+      "https://en.wikipedia.org/api/rest_v1/page/summary/Human",
       expect.objectContaining({
         headers: expect.not.objectContaining({
           "accept-language": expect.any(String),
         }),
       }),
     );
-    expect(await response.json()).toMatchObject({
-      requestedLanguage: "fr",
-      resolvedLanguage: "en",
-      fallback: true,
+    expect(await response.json()).toEqual({
+      ok: true,
+      wikidataId: "Q5",
       wikidata: {
-        label: "Fallback Entity",
-        description: "English description",
+        id: "Q5",
+        label: "Human",
+        description: "Wikidata concept",
       },
       wikipedia: {
-        language: "en",
+        title: "Human being",
         description: "Summary description",
         extract: "Summary text",
-        pageUrl: "https://en.wikipedia.org/wiki/Fallback_Entity",
+        extractHtml: "<p>Summary text</p>",
+        thumbnailUrl: "https://upload.test/human.png",
+        pageUrl: "https://en.wikipedia.org/wiki/Homo_sapiens",
       },
     });
   });
 
-  it("uses locale-derived Chinese accept-language when lang is omitted", async () => {
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            entities: {
-              Q88: {
-                labels: {
-                  zh: { value: "Locale Entity zh" },
-                  en: { value: "Locale Entity" },
-                },
-                sitelinks: {
-                  zhwiki: {
-                    title: "Locale Entity",
-                    url: "https://zh.wikipedia.org/wiki/Locale_Entity",
-                  },
-                },
-              },
-            },
-          }),
-        ),
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            content_urls: {
-              desktop: {
-                page: "https://zh.wikipedia.org/wiki/Locale_Entity?old=1",
-              },
-            },
-          }),
-        ),
-      );
-
-    const response = await handleWikiSummaryRequest(
-      new Request(
-        "https://app.test/api/public/resources/wiki-summary?wikidataId=Q88&locale=zh",
-        {
-          headers: { origin: "https://app.test" },
-        },
-      ),
-    );
-
-    expect(response.status).toBe(200);
-    expect(fetch).toHaveBeenNthCalledWith(
-      2,
-      "https://zh.wikipedia.org/api/rest_v1/page/summary/Locale%20Entity",
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          "accept-language": "zh-CN,zh;q=0.9,en;q=0.8",
-        }),
-      }),
-    );
-    expect(await response.json()).toMatchObject({
-      requestedLanguage: "zh",
-      resolvedLanguage: "zh",
-      fallback: false,
-      wikidata: {
-        label: "Locale Entity zh",
-      },
-      wikipedia: {
-        pageUrl:
-          "https://zh.wikipedia.org/wiki/Locale_Entity?old=1&variant=zh-cn",
-      },
-    });
-  });
-
-  it("uses Traditional Chinese Wikidata labels and Wikipedia variants for zh-tw locale", async () => {
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            entities: {
-              Q88: {
-                labels: {
-                  "zh-hant": { value: "繁體標籤" },
-                  zh: { value: "中文標籤" },
-                  en: { value: "English Label" },
-                },
-                descriptions: {
-                  "zh-hant": { value: "繁體描述" },
-                  zh: { value: "中文描述" },
-                },
-                sitelinks: {
-                  zhwiki: {
-                    title: "條目",
-                    url: "https://zh.wikipedia.org/wiki/%E6%A2%9D%E7%9B%AE",
-                  },
-                  enwiki: {
-                    title: "Article",
-                    url: "https://en.wikipedia.org/wiki/Article",
-                  },
-                },
-              },
-            },
-          }),
-        ),
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            title: "條目",
-            extract: "繁體摘要",
-            content_urls: {
-              desktop: {
-                page: "https://zh.wikipedia.org/wiki/%E6%A2%9D%E7%9B%AE",
-              },
-            },
-          }),
-        ),
-      );
-
-    const response = await handleWikiSummaryRequest(
-      new Request(
-        "https://app.test/api/public/resources/wiki-summary?wikidataId=Q88&locale=zh-tw",
-        {
-          headers: { origin: "https://app.test" },
-        },
-      ),
-    );
-
-    expect(response.status).toBe(200);
-    expect(fetch).toHaveBeenNthCalledWith(
-      2,
-      "https://zh.wikipedia.org/api/rest_v1/page/summary/%E6%A2%9D%E7%9B%AE",
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          "accept-language": "zh-TW,zh;q=0.9,en;q=0.8",
-        }),
-      }),
-    );
-    expect(await response.json()).toMatchObject({
-      requestedLanguage: "zh",
-      resolvedLanguage: "zh",
-      fallback: false,
-      wikidata: {
-        label: "繁體標籤",
-        description: "繁體描述",
-      },
-      wikipedia: {
-        language: "zh",
-        title: "條目",
-        extract: "繁體摘要",
-        pageUrl:
-          "https://zh.wikipedia.org/wiki/%E6%A2%9D%E7%9B%AE?variant=zh-tw",
-      },
-    });
-  });
-
-  it("resolves Wikidata labels, Wikipedia summary, and Chinese URL variants", async () => {
+  it("falls back to the sitelink and Wikidata description when the summary is empty", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
             entities: {
               Q42: {
-                id: "Q42",
-                labels: {
-                  zh: { value: "Douglas Adams zh" },
-                  en: { value: "Douglas Adams" },
-                },
-                descriptions: {
-                  zh: { value: "Writer zh" },
-                  en: { value: "English writer" },
-                },
+                labels: { en: { value: "Douglas Adams" } },
+                descriptions: { en: { value: "English writer" } },
                 sitelinks: {
-                  zhwiki: {
+                  enwiki: {
                     title: "Douglas Adams",
-                    url: "https://zh.wikipedia.org/wiki/Douglas_Adams",
+                    url: "https://en.wikipedia.org/wiki/Douglas_Adams",
                   },
                 },
               },
@@ -471,75 +187,55 @@ describe("wiki summary route", () => {
           }),
         ),
       )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            title: "Douglas Adams",
-            description: "Author summary",
-            extract: "Summary extract",
-            extract_html: "<p>Summary extract</p>",
-            thumbnail: {
-              source: "https://upload.example.test/thumb.jpg",
-            },
-            content_urls: {
-              desktop: {
-                page: "https://zh.wikipedia.org/wiki/Douglas_Adams",
-              },
-            },
-          }),
-        ),
-      );
+      .mockResolvedValueOnce(new Response(JSON.stringify({ title: "" })));
 
     const response = await handleWikiSummaryRequest(
       new Request(
-        "https://app.test/api/public/resources/wiki-summary?wikidataId=q42&lang=zh-Hant-TW",
+        "https://app.test/api/public/resources/wiki-summary?wikidataId=Q42",
         {
           headers: { origin: "https://app.test" },
         },
       ),
     );
 
-    expect(response.status).toBe(200);
-    expect(fetch).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        href: expect.stringContaining("ids=Q42"),
-      }),
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          accept: "application/json",
+    expect(await response.json()).toMatchObject({
+      wikipedia: {
+        title: "Douglas Adams",
+        description: "English writer",
+        pageUrl: "https://en.wikipedia.org/wiki/Douglas_Adams",
+      },
+    });
+  });
+
+  it("skips Wikipedia when the entity has no English article", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          entities: {
+            Q88: {
+              labels: { zh: { value: "條目" } },
+              sitelinks: { zhwiki: { title: "條目" } },
+            },
+          },
         }),
-      }),
+      ),
     );
-    expect(fetch).toHaveBeenNthCalledWith(
-      2,
-      "https://zh.wikipedia.org/api/rest_v1/page/summary/Douglas%20Adams",
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          "accept-language": "zh-TW,zh;q=0.9,en;q=0.8",
-        }),
-      }),
+
+    const response = await handleWikiSummaryRequest(
+      new Request(
+        "https://app.test/api/public/resources/wiki-summary?wikidataId=Q88",
+        {
+          headers: { origin: "https://app.test" },
+        },
+      ),
     );
+
+    expect(fetch).toHaveBeenCalledTimes(1);
     expect(await response.json()).toEqual({
       ok: true,
-      wikidataId: "Q42",
-      requestedLanguage: "zh",
-      resolvedLanguage: "zh",
-      fallback: false,
-      wikidata: {
-        id: "Q42",
-        label: "Douglas Adams zh",
-        description: "Writer zh",
-      },
-      wikipedia: {
-        language: "zh",
-        title: "Douglas Adams",
-        description: "Author summary",
-        extract: "Summary extract",
-        extractHtml: "<p>Summary extract</p>",
-        thumbnailUrl: "https://upload.example.test/thumb.jpg",
-        pageUrl: "https://zh.wikipedia.org/wiki/Douglas_Adams?variant=zh-tw",
-      },
+      wikidataId: "Q88",
+      wikidata: { id: "Q88", label: "Q88", description: null },
+      wikipedia: null,
     });
   });
 
@@ -579,15 +275,12 @@ describe("wiki summary route", () => {
     expect(await response.json()).toMatchObject({
       ok: true,
       wikidataId: "Q7",
-      requestedLanguage: "en",
-      resolvedLanguage: "en",
       wikidata: {
         id: "Q7",
         label: "Entity Seven",
         description: null,
       },
       wikipedia: {
-        language: "en",
         title: "Entity Seven",
         description: null,
         extract: null,

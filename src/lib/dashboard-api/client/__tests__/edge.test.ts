@@ -254,13 +254,11 @@ describe("edge client request wrappers", () => {
       JSON.stringify({ siteId: "site-1", intent: "remove" }),
     );
 
-    await updateMyProfile({ timeZone: "Asia/Shanghai", preferredLocale: "zh" });
+    await updateMyProfile({ timeZone: "Asia/Shanghai" });
     [url, init] = lastFetchCall();
     expect(url).toBe("http://127.0.0.1:8787/api/private/admin/profile");
     expect(init.method).toBe("POST");
-    expect(init.body).toBe(
-      JSON.stringify({ timeZone: "Asia/Shanghai", preferredLocale: "zh" }),
-    );
+    expect(init.body).toBe(JSON.stringify({ timeZone: "Asia/Shanghai" }));
   });
 
   it("unwraps data for the remaining admin wrappers", async () => {
@@ -384,7 +382,7 @@ describe("edge client request wrappers", () => {
         type: "report",
         severity: "warning",
         unread: true,
-        locale: "zh",
+        locale: "en",
         limit: 25,
       }),
     ).resolves.toEqual({
@@ -392,7 +390,7 @@ describe("edge client request wrappers", () => {
       unreadAttentionCount: 5,
     });
     expect(lastFetchCall()[0]).toBe(
-      "http://127.0.0.1:8787/api/private/notifications?teamId=team-1&siteId=site-1&type=report&severity=warning&unread=1&locale=zh&limit=25",
+      "http://127.0.0.1:8787/api/private/notifications?teamId=team-1&siteId=site-1&type=report&severity=warning&unread=1&locale=en&limit=25",
     );
 
     const controller = new AbortController();
@@ -406,12 +404,12 @@ describe("edge client request wrappers", () => {
       unreadAttentionCount: 0,
     });
 
-    await markNotificationMessageRead({ messageId: "msg/1", locale: "zh" });
+    await markNotificationMessageRead({ messageId: "msg/1", locale: "en" });
     expect(lastFetchCall()[0]).toBe(
       "http://127.0.0.1:8787/api/private/notifications/msg%2F1",
     );
     expect(lastFetchCall()[1].body).toBe(
-      JSON.stringify({ read: true, locale: "zh" }),
+      JSON.stringify({ read: true, locale: "en" }),
     );
 
     await markAllNotificationMessagesRead({ teamId: "team-1" });

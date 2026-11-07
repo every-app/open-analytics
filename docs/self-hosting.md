@@ -42,8 +42,6 @@ Then open `https://analytics.<your gateway domain>`, create a site, and add its 
 | `members`     | required | the gateway      | Nothing: the gateway lists who can open the app                                                                                                              |
 | `email`       | optional (Email reports feature) | the gateway      | `pnpm everyapp secret set EMAIL_FROM EMAIL_FROM_NAME` after setting up a sending domain. Without it, reports and alerts stay in the inbox and the app says so |
 
-`MAIN_SECRET` is the name to set; the Worker reads `DAILY_SALT_SECRET` (InsightFlare's name for it) only as a legacy fallback.
-
 ### Configuration
 
 | Name                       | Meaning                                                | Where                                                          |

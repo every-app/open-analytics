@@ -73,7 +73,7 @@ function createD1Env(resultSets: D1Row[][]): {
   return {
     env: {
       DB: { prepare } as unknown as D1Database,
-      DAILY_SALT_SECRET: "test-secret",
+      MAIN_SECRET: "test-secret",
       INGEST_DO: {} as DurableObjectNamespace,
     },
     calls,

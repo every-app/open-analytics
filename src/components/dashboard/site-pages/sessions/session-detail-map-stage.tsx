@@ -9,7 +9,6 @@ import {
   applyVectorBasemapColorOverrides,
   getVectorBasemapStyleUrl,
 } from "@/lib/dashboard/map-basemap";
-import type { Locale } from "@/lib/i18n/config";
 export type SessionDetailMapTheme = "light" | "dark";
 export interface SessionLocationPoint {
   latitude: number;
@@ -54,18 +53,13 @@ function DeckOverlay(props: MapboxOverlayProps) {
   return null;
 }
 export const SessionDetailMapStage = memo(function SessionDetailMapStage({
-  locale,
   theme,
   points,
 }: {
-  locale: Locale;
   theme: SessionDetailMapTheme;
   points: SessionLocationPoint[];
 }) {
-  const mapStyle = useMemo(
-    () => getVectorBasemapStyleUrl(theme, locale),
-    [locale, theme],
-  );
+  const mapStyle = useMemo(() => getVectorBasemapStyleUrl(theme), [theme]);
   const renderedPoints = useMemo<RenderedSessionLocationPoint[]>(
     () =>
       points.slice(0, SESSION_MAP_MAX_RENDERED_POINTS).map((point, index) => ({

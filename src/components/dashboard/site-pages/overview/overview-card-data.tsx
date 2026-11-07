@@ -391,7 +391,7 @@ export function buildGeoDimensionRows(
         messages.common.unknown,
       );
       label = country.label;
-      const flagCode = resolveCountryFlagCode(country.code, locale);
+      const flagCode = resolveCountryFlagCode(country.code);
       iconName = flagCode ? `flagpack:${flagCode.toLowerCase()}` : null;
     } else if (tab === "continent") {
       label = resolveContinentLabel(

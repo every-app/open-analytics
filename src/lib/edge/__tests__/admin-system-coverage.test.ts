@@ -99,7 +99,7 @@ function createEnv(
     env: {
       DB: { prepare } as unknown as D1Database,
       INGEST_DO: ingestDo as unknown as DurableObjectNamespace,
-      DAILY_SALT_SECRET: "test-secret",
+      MAIN_SECRET: "test-secret",
     } as Env,
     prepare,
   };

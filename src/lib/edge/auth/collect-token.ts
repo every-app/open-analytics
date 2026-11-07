@@ -65,7 +65,7 @@ function bytesEqual(left: Uint8Array, right: Uint8Array): boolean {
 }
 
 async function signingSecret(
-  env: Pick<Env, "MAIN_SECRET" | "DAILY_SALT_SECRET">,
+  env: Pick<Env, "MAIN_SECRET">,
 ): Promise<string | null> {
   return collectTokenSigningSecret(env);
 }
@@ -167,16 +167,14 @@ function decodePayload(value: string): CollectTokenPayload | null {
 }
 
 export async function issueCollectToken(input: {
-  env: Pick<Env, "MAIN_SECRET" | "DAILY_SALT_SECRET">;
+  env: Pick<Env, "MAIN_SECRET">;
   siteId: string;
   ip: string;
   nowSeconds?: number;
 }): Promise<string> {
   const secret = await signingSecret(input.env);
   if (!secret) {
-    throw new Error(
-      "MAIN_SECRET or DAILY_SALT_SECRET is required to sign collect tokens",
-    );
+    throw new Error("MAIN_SECRET is required to sign collect tokens");
   }
   const now = Math.floor(input.nowSeconds ?? Date.now() / 1000);
   const payload = encodePayload({
@@ -192,7 +190,7 @@ export async function issueCollectToken(input: {
 }
 
 export async function verifyCollectToken(input: {
-  env: Pick<Env, "MAIN_SECRET" | "DAILY_SALT_SECRET">;
+  env: Pick<Env, "MAIN_SECRET">;
   token: string;
   siteId: string;
   ip: string;

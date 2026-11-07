@@ -13,7 +13,7 @@ import {
 import type { Env } from "@/lib/edge/types";
 
 const secret = "pagination-test-secret";
-const env = { DAILY_SALT_SECRET: secret } as Env;
+const env = { MAIN_SECRET: secret } as Env;
 const decodeKey = (value: unknown) => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const candidate = value as Record<string, unknown>;

@@ -174,7 +174,7 @@ describe("team sites runtime", () => {
   it("decodes the signed cursor for the next team-sites page", async () => {
     const paginatedInput = {
       ...input,
-      env: { DAILY_SALT_SECRET: "test-pagination-secret" } as never,
+      env: { MAIN_SECRET: "test-pagination-secret" } as never,
       page: { limit: 1, cursor: null },
     };
     vi.mocked(queryTeamSitesPageFromD1).mockResolvedValueOnce({

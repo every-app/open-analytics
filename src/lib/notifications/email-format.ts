@@ -2,14 +2,7 @@ import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/config";
 
 const NUMBER_LOCALES = {
   en: "en-US",
-  zh: "zh-CN",
-  "zh-tw": "zh-TW",
-  ja: "ja-JP",
 } satisfies Record<Locale, string>;
-
-function normalizedLocale(locale: Locale | undefined): Locale {
-  return locale ?? DEFAULT_LOCALE;
-}
 
 function normalizedTimeZone(timeZone: string | null | undefined): string {
   if (!timeZone) return "UTC";
@@ -38,25 +31,14 @@ export function formatNotificationDateTime(
   const timestamp = Number(seconds);
   if (!Number.isFinite(timestamp) || timestamp <= 0) return "";
   const date = new Date(Math.trunc(timestamp) * 1000);
-  const formatter = new Intl.DateTimeFormat(
-    NUMBER_LOCALES[normalizedLocale(locale)],
-    {
-      timeZone: normalizedTimeZone(timeZone),
-      year: "numeric",
-      month:
-        locale === "zh" || locale === "zh-tw" || locale === "ja"
-          ? "numeric"
-          : "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    },
-  );
-  return formatter
-    .format(date)
-    .replace(
-      ",",
-      locale === "zh" || locale === "zh-tw" || locale === "ja" ? "" : ",",
-    );
+  const formatter = new Intl.DateTimeFormat(NUMBER_LOCALES[locale], {
+    timeZone: normalizedTimeZone(timeZone),
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  return formatter.format(date);
 }

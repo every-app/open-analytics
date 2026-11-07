@@ -60,7 +60,7 @@ function createTestDo(options: {
   const env = {
     DB: {} as D1Database,
     INGEST_DO: {} as DurableObjectNamespace,
-    DAILY_SALT_SECRET: "test-secret-with-enough-entropy",
+    MAIN_SECRET: "test-secret-with-enough-entropy",
   } as Env;
 
   return {

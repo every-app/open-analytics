@@ -41,7 +41,6 @@ const user = {
   id: "user-1",
   email: "user@example.test",
   preferencesJson: "{}",
-  preferredLocale: "en",
 };
 
 function deliveredEmail() {
@@ -92,19 +91,6 @@ describe("notification delivery", () => {
       status: "sent",
       deliveryResults: { email: { status: "sent", messageId: "gw-1" } },
     });
-  });
-
-  it("renders in the message's locale before the person's", async () => {
-    await deliverNotificationMessage(
-      {} as never,
-      message({ data: { locale: "zh" } }),
-      user,
-      {},
-    );
-
-    expect(renderNotificationEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ locale: "zh" }),
-    );
   });
 
   it("falls back to the saved text when rendering fails", async () => {

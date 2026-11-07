@@ -54,7 +54,7 @@ function createD1Env(resultSets: D1Row[][], firstRows: Array<D1Row | null>) {
   return {
     env: {
       DB: { prepare } as unknown as D1Database,
-      DAILY_SALT_SECRET: "secret",
+      MAIN_SECRET: "secret",
       INGEST_DO: {} as DurableObjectNamespace,
     } as Env,
     calls,

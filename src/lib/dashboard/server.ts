@@ -92,9 +92,6 @@ export async function readDashboardAdmin<K extends keyof AdminServiceReadMap>(
 ): Promise<AdminServiceReadMap[K] | null> {
   return readAdmin(route, params);
 }
-export const getDashboardProfile = cache(async () => {
-  return getMe();
-});
 export const getDashboardTeamSites = cache(
   async (teamId: string): Promise<SiteWithSlug[]> => {
     try {

@@ -167,7 +167,7 @@ function createEnv(
     env: {
       DB: { prepare, batch } as unknown as D1Database,
       INGEST_DO: ingestDo as unknown as DurableObjectNamespace,
-      DAILY_SALT_SECRET: "daily-salt",
+      MAIN_SECRET: "daily-salt",
       ...input.env,
     } as Env,
     prepare,
@@ -384,7 +384,6 @@ describe("private admin edge handler", () => {
             name: "Admin User",
             systemRole: "admin",
             timeZone: "UTC",
-            preferredLocale: "",
             createdAt: 100,
             updatedAt: 200,
           },
@@ -497,53 +496,8 @@ describe("private admin edge handler", () => {
       expect(update.bind).toHaveBeenCalledWith(
         "New Name",
         "Asia/Shanghai",
-        "",
         "user-1",
       );
-    });
-
-    it("updates and validates profile preferred locale", async () => {
-      setSession(userSession);
-
-      for (const locale of ["en", "zh", "zh-tw", "ja", ""] as const) {
-        const actor = { ...memberRow(), preferred_locale: "zh" };
-        const update = statement();
-        const { env } = createEnv([
-          statement({ first: actor }),
-          update,
-          statement({ first: { ...actor, preferred_locale: locale } }),
-        ]);
-
-        const response = await dispatch(
-          "/api/private/admin/profile",
-          env,
-          jsonInit({ preferredLocale: locale }),
-        );
-
-        expect(response.status).toBe(200);
-        expect(await response.json()).toMatchObject({
-          ok: true,
-          data: { preferredLocale: locale },
-        });
-        expect(update.bind).toHaveBeenCalledWith(
-          "Admin User",
-          "UTC",
-          locale,
-          "user-1",
-        );
-      }
-
-      const invalidLocale = await dispatch(
-        "/api/private/admin/profile",
-        createEnv([statement({ first: memberRow() })]).env,
-        jsonInit({ preferredLocale: "fr" }),
-      );
-
-      expect(invalidLocale.status).toBe(400);
-      expect(await invalidLocale.json()).toMatchObject({
-        ok: false,
-        error: { message: "Invalid preferred locale" },
-      });
     });
   });
 

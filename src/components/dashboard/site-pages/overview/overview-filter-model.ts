@@ -198,7 +198,7 @@ export function resolveGeoRegionBreadcrumbData(
     locale,
     unknownLabel,
   );
-  const flagCode = resolveCountryFlagCode(code, locale);
+  const flagCode = resolveCountryFlagCode(code);
   const countryIconName = flagCode
     ? `flagpack:${flagCode.toLowerCase()}`
     : null;
@@ -274,7 +274,7 @@ export function resolveGeoCityBreadcrumbData(
       locale,
       unknownLabel,
     );
-    const flagCode = resolveCountryFlagCode(code, locale);
+    const flagCode = resolveCountryFlagCode(code);
     const countryIconName = flagCode
       ? `flagpack:${flagCode.toLowerCase()}`
       : null;
@@ -325,7 +325,7 @@ export function resolveGeoCityBreadcrumbData(
     locale,
     unknownLabel,
   );
-  const flagCode = resolveCountryFlagCode(code, locale);
+  const flagCode = resolveCountryFlagCode(code);
   const countryIconName = flagCode
     ? `flagpack:${flagCode.toLowerCase()}`
     : null;

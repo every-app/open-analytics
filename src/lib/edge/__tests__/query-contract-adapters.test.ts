@@ -50,7 +50,7 @@ function emptyEnv(): Env {
   };
   return {
     DB: { prepare: () => statement },
-    DAILY_SALT_SECRET: "contract-test-secret",
+    MAIN_SECRET: "contract-test-secret",
   } as unknown as Env;
 }
 const env = emptyEnv();

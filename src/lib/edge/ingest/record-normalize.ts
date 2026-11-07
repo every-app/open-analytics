@@ -37,10 +37,7 @@ import type {
   StoredOpenVisit,
 } from "./types";
 interface NormalizeRecordContext {
-  env: Pick<
-    Env,
-    "MAIN_SECRET" | "DAILY_SALT_SECRET" | "SESSION_WINDOW_MINUTES"
-  >;
+  env: Pick<Env, "MAIN_SECRET" | "SESSION_WINDOW_MINUTES">;
   getVisitContext(
     siteId: string,
     visitId: string,
@@ -89,9 +86,7 @@ export async function normalizeIngestRecord(
   const eventAt = resolveTrustedClientTimestamp(client.timestamp, receivedAt);
   const visitorSecret = await visitorDailySaltSecret(context.env);
   if (!visitorSecret) {
-    throw new Error(
-      "MAIN_SECRET or DAILY_SALT_SECRET is required for visitor identity",
-    );
+    throw new Error("MAIN_SECRET is required for visitor identity");
   }
   const startedAt = Math.min(
     resolveTrustedClientTimestamp(client.startedAt, receivedAt, eventAt),

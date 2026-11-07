@@ -1,6 +1,4 @@
 appName: OpenAnalytics
-uiGallery:
-  categories: {}
 navigation:
   overview: Overview
   realtime: Real-time
@@ -1233,7 +1231,6 @@ accountSettings:
   saved: Time zone saved.
   saveFailed: Couldn't save the time zone.
   timeZoneLabel: Reporting time zone
-  languageSaveFailed: Couldn't save your language.
   aiClientsTitle: AI clients
   aiClientsLabel: Connect an AI client
   aiClientsDescription: Add this address to Claude, ChatGPT or Claude Code once. It signs you in through Every App and covers every app you can open, OpenAnalytics included.
@@ -1362,10 +1359,6 @@ errorPage:
   homeAction: Return home
   reportAction: Report on GitHub
 actions:
-  switchToEnglish: English
-  switchToChinese: Simplified Chinese
-  switchToTraditionalChinese: Traditional Chinese
-  switchToJapanese: 日本語
   switchToLight: Light
   switchToDark: Dark
 teamSelect:
@@ -1381,7 +1374,6 @@ teamManagement:
     pagesPerSession: Pages / session
     public: Public
     openPublic: Open the public dashboard
-  widgets: {}
   notifications:
     empty: No notification rules yet.
     enabledCount: "{count} of {total} enabled."

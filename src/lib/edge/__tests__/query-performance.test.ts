@@ -132,7 +132,7 @@ function createSqlitePerformanceEnv(): { env: Env; d1: SqliteD1Database } {
   return {
     env: {
       DB: d1 as unknown as D1Database,
-      DAILY_SALT_SECRET: "test-secret",
+      MAIN_SECRET: "test-secret",
       INGEST_DO: {},
     } as unknown as Env,
     d1,

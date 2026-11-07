@@ -364,7 +364,6 @@ export function DetailMapPlaceholder() {
   );
 }
 export const SessionMapHero = memo(function SessionMapHero({
-  locale,
   labels,
   session,
   locationPoints,
@@ -374,7 +373,6 @@ export const SessionMapHero = memo(function SessionMapHero({
   onOpenVisitor,
   loading = false,
 }: {
-  locale: Locale;
   labels: Labels;
   session: JourneySession;
   locationPoints: SessionDetail["locationPoints"] | undefined;
@@ -412,7 +410,6 @@ export const SessionMapHero = memo(function SessionMapHero({
         {modalReady && !loading ? (
           <SessionDetailMapStage
             key="map"
-            locale={locale}
             theme={effectiveTheme}
             points={points}
           />

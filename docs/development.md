@@ -17,7 +17,7 @@ pnpm run dev
 | `pnpm run check`        | Format, lint, translations, typecheck, tests and build      |
 | `pnpm run test`         | Unit tests                                                  |
 | `pnpm run typecheck`    | TypeScript                                                  |
-| `pnpm run check:i18n`   | Translation key completeness                                |
+| `pnpm run check:i18n`   | Message keys used in code exist in `src/i18n/en.yaml`       |
 | `pnpm run generate:schema` | Regenerate `docs/schema.sql` and the typed schema from `migrations/` |
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) before opening a pull request.

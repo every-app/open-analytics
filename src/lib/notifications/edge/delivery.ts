@@ -2,9 +2,9 @@ import { GatewayRefusalError, sendEmail } from "@every-app/sdk/server";
 
 import type { ScheduledTaskLogger } from "@/lib/edge/scheduled-tasks/runner";
 import type { Env } from "@/lib/edge/types";
+import { DEFAULT_LOCALE } from "@/lib/i18n/config";
 import { renderNotificationEmail } from "@/lib/notifications/edge/email-renderer";
 import { isValidEmail } from "@/lib/notifications/email-config";
-import { resolveNotificationMessageLocale } from "@/lib/notifications/locale";
 import type { NotificationMessage } from "@/lib/notifications/message";
 
 import { updateNotificationDeliveryResult } from "./message-store";
@@ -17,7 +17,6 @@ export interface NotificationDeliveryUser {
   id: string;
   email: string;
   preferencesJson?: string | null;
-  preferredLocale?: string | null;
   timeZone?: string | null;
 }
 const PROVIDER = "every-app";
@@ -98,10 +97,7 @@ export async function deliverNotificationMessage(
   try {
     rendered = await renderNotificationEmail({
       message,
-      locale: resolveNotificationMessageLocale({
-        messageLocale: message.data.locale,
-        userLocale: user.preferredLocale,
-      }),
+      locale: DEFAULT_LOCALE,
       timeZone: user.timeZone,
     });
   } catch (error) {

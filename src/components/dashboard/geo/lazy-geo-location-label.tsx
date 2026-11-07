@@ -173,14 +173,12 @@ interface LazyGeoBreadcrumbBaseProps {
 }
 export function GeoCountryFlag({
   countryCode,
-  locale,
   className,
 }: {
   countryCode: string;
-  locale: Locale;
   className?: string;
 }) {
-  const flagCode = resolveCountryFlagCode(countryCode, locale);
+  const flagCode = resolveCountryFlagCode(countryCode);
   if (!flagCode) return null;
 
   return (
@@ -199,12 +197,10 @@ export function GeoCountryBreadcrumbItem({
   countryLabel,
   countryIconName,
   countryCode,
-  locale,
 }: {
   countryLabel: string;
   countryIconName?: string | null;
   countryCode?: string;
-  locale?: Locale;
 }) {
   return (
     <BreadcrumbItem className="min-w-0">
@@ -219,8 +215,8 @@ export function GeoCountryBreadcrumbItem({
             className="block shrink-0"
           />
         ) : null}
-        {!countryIconName && countryCode && locale ? (
-          <GeoCountryFlag countryCode={countryCode} locale={locale} />
+        {!countryIconName && countryCode ? (
+          <GeoCountryFlag countryCode={countryCode} />
         ) : null}
         <span className="truncate leading-5">{countryLabel}</span>
       </BreadcrumbPage>

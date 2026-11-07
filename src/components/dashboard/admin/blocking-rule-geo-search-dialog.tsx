@@ -110,11 +110,9 @@ function stateCodeFromRecord(
 }
 function CountrySearchRow({
   entry,
-  locale,
   onSelect,
 }: {
   entry: CountrySearchEntry;
-  locale: Locale;
   onSelect: (code: string) => void;
 }) {
   return (
@@ -123,7 +121,7 @@ function CountrySearchRow({
       className="flex w-full items-center gap-3 border-b border-border px-3 py-2.5 text-left text-xs transition-colors last:border-b-0 hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
       onClick={() => onSelect(entry.code)}
     >
-      <GeoCountryFlag countryCode={entry.code} locale={locale} />
+      <GeoCountryFlag countryCode={entry.code} />
       <span className="min-w-0 flex-1 truncate">{entry.label}</span>
       <code className="shrink-0 bg-muted px-1.5 py-0.5 font-mono text-[11px]">
         {entry.code}
@@ -133,11 +131,9 @@ function CountrySearchRow({
 }
 function RegionSearchRow({
   entry,
-  locale,
   onSelect,
 }: {
   entry: StateSearchEntry;
-  locale: Locale;
   onSelect: (value: string) => void;
 }) {
   return (
@@ -149,7 +145,7 @@ function RegionSearchRow({
       <span className="min-w-0 flex-1">
         <span className="block min-w-0">
           <span className="inline-flex max-w-full items-center gap-1 text-xs">
-            <GeoCountryFlag countryCode={entry.countryCode} locale={locale} />
+            <GeoCountryFlag countryCode={entry.countryCode} />
             <span className="truncate">{entry.countryLabel}</span>
             <GeoBreadcrumbSeparator />
             <span className="truncate">{entry.label}</span>
@@ -382,7 +378,6 @@ export function BlockingRuleGeoSearchDialog({
                     <GeoCountryBreadcrumbItem
                       countryLabel={selectedCountry.label}
                       countryCode={selectedCountry.code}
-                      locale={locale}
                     />
                     <BreadcrumbItem className="min-w-0">
                       <GeoBreadcrumbSeparator />
@@ -453,7 +448,6 @@ export function BlockingRuleGeoSearchDialog({
                         <CountrySearchRow
                           key={entry.code}
                           entry={entry}
-                          locale={locale}
                           onSelect={(code) => {
                             setSelectedCountryCode(code);
                             setQuery("");
@@ -465,7 +459,6 @@ export function BlockingRuleGeoSearchDialog({
                         <CountrySearchRow
                           key={entry.code}
                           entry={entry}
-                          locale={locale}
                           onSelect={handleSelect}
                         />
                       ))
@@ -474,7 +467,6 @@ export function BlockingRuleGeoSearchDialog({
                         <RegionSearchRow
                           key={entry.value}
                           entry={entry}
-                          locale={locale}
                           onSelect={handleSelect}
                         />
                       ))

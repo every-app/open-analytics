@@ -182,7 +182,7 @@ export function SessionGeoBreadcrumb({
     locale,
     messages.common.unknown,
   );
-  const flagCode = resolveCountryFlagCode(country.code, locale);
+  const flagCode = resolveCountryFlagCode(country.code);
   const regionLabel =
     session.region.trim() ||
     session.regionCode.trim() ||

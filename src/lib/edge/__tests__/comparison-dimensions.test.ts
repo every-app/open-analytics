@@ -31,7 +31,7 @@ function createEnv(resultSets: Record<string, unknown>[][]): {
   return {
     env: {
       DB: { prepare } as unknown as D1Database,
-      DAILY_SALT_SECRET: "comparison-test-secret",
+      MAIN_SECRET: "comparison-test-secret",
       INGEST_DO: {} as DurableObjectNamespace,
     },
     calls,

@@ -244,25 +244,6 @@ describe("site journey detail runtime", () => {
     expect(queryVisitorListPageFromD1).not.toHaveBeenCalled();
   });
 
-  it("accepts DAILY_SALT_SECRET as the existing deployment root", async () => {
-    vi.mocked(queryVisitorListPageFromD1).mockResolvedValue({
-      rows: [],
-      nextCursor: null,
-    });
-
-    await expect(
-      readSiteVisitors({
-        ...base,
-        env: { DAILY_SALT_SECRET: "legacy-root" } as never,
-        filters: { version: 1, root: null },
-        sort: { field: "lastSeenAt", direction: "desc" },
-        page: { limit: 20 },
-      }),
-    ).resolves.toMatchObject({
-      pagination: { hasMore: false, nextCursor: null },
-    });
-  });
-
   it("resolves goal and funnel analysis contexts before reading lists", async () => {
     vi.mocked(queryGoalDefinition).mockResolvedValue({
       filterDslVersion: 1,

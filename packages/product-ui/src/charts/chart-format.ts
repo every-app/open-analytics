@@ -1,8 +1,5 @@
 const LOCALE_ALIASES: Readonly<Record<string, string>> = {
   en: "en-US",
-  ja: "ja-JP",
-  zh: "zh-CN",
-  "zh-tw": "zh-TW",
 };
 
 const numberFormatters = new Map<string, Intl.NumberFormat>();
@@ -54,35 +51,6 @@ export function percentFormatWithOneDecimal(
     percentOneDecimalFormatters,
     "percent-one-decimal",
   ).format(value);
-}
-
-export function durationFormat(locale: string, ms: number): string {
-  const seconds = Math.max(0, Math.round(ms / 1000));
-  const units =
-    locale.startsWith("zh") || locale.startsWith("ja")
-      ? {
-          second: "秒",
-          minute: "分",
-          hour: locale.startsWith("ja")
-            ? "時間"
-            : locale === "zh-tw"
-              ? "小時"
-              : "小时",
-          join: "",
-        }
-      : { second: "s", minute: "m", hour: "h", join: " " };
-
-  if (seconds < 60) return `${seconds}${units.second}`;
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  if (minutes < 60) {
-    if (remainingSeconds === 0) return `${minutes}${units.minute}`;
-    return `${minutes}${units.minute}${units.join}${remainingSeconds}${units.second}`;
-  }
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  if (remainingMinutes === 0) return `${hours}${units.hour}`;
-  return `${hours}${units.hour}${units.join}${remainingMinutes}${units.minute}`;
 }
 
 export function formatI18nTemplate(

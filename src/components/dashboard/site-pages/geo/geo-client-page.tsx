@@ -176,8 +176,8 @@ export function GeoClientPage({
   const geoDirectoryEntries = geoData?.geoDirectoryEntries ?? null;
   const wikidataId = geoInvestigation?.wikidataId ?? "";
   const { data: geoWikiSummary } = useQuery({
-    queryKey: ["dashboard", "geo-wiki-summary", locale, wikidataId],
-    queryFn: () => fetchGeoWikiSummary(wikidataId, locale),
+    queryKey: ["dashboard", "geo-wiki-summary", wikidataId],
+    queryFn: () => fetchGeoWikiSummary(wikidataId),
     enabled:
       typeof window !== "undefined" &&
       Boolean(wikidataId) &&

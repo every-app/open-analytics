@@ -57,11 +57,6 @@
       "types": "./dist/tables/index.d.ts",
       "development": "./src/tables/index.ts",
       "import": "./dist/tables/index.js"
-    },
-    "./site-scope-selector": {
-      "types": "./dist/site-scope-selector/index.d.ts",
-      "development": "./src/site-scope-selector/index.ts",
-      "import": "./dist/site-scope-selector/index.js"
     }
   },
   "scripts": {

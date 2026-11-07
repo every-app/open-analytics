@@ -4,12 +4,11 @@ import {
 } from "@/lib/edge/observability/bindings";
 import type { Env } from "@/lib/edge/types";
 import { requireSameOrigin } from "@/lib/edge/utils";
-import { isValidLocale, type Locale } from "@/lib/i18n/config";
 
 /**
  * The dashboard maps' basemap: OpenFreeMap's open vector styles (OpenMapTiles
- * schema, no key). The Worker serves the style with its labels in the
- * dashboard's language; tiles, fonts and sprites load from OpenFreeMap.
+ * schema, no key). The Worker serves the style with English labels; tiles,
+ * fonts and sprites load from OpenFreeMap.
  * MAP_STYLE_BASE_URL points at another OpenMapTiles style host (its `light`
  * and `dark` styles are `<base>/positron` and `<base>/dark`).
  */
@@ -20,14 +19,6 @@ const STYLE_PATH =
   /^\/api\/public\/resources\/map\/v1\/styles\/(light|dark)\/style\.json$/;
 const STYLE_NAMES = { light: "positron", dark: "dark" } as const;
 const CACHE_CONTROL = "public, max-age=3600, s-maxage=86400";
-
-/** OpenMapTiles name fields per dashboard language, best first. */
-const NAME_FIELDS: Record<Locale, readonly string[]> = {
-  en: ["name:en"],
-  zh: ["name:zh"],
-  "zh-tw": ["name:zh-Hant", "name:zh"],
-  ja: ["name:ja"],
-};
 
 function styleBaseUrl(env?: Env): string {
   const configured = env?.MAP_STYLE_BASE_URL?.trim();
@@ -49,16 +40,12 @@ function correctCircleIconReference(value: unknown): unknown {
   return value === "circle-11" ? "circle_11" : value;
 }
 
-/** Prefers the locale's own name on every place, road and water label. */
-function localizeStyleLabels(
-  style: { layers?: StyleLayer[] },
-  locale: Locale,
-): void {
-  const preferred = NAME_FIELDS[locale].map((field) => ["get", field]);
+/** Prefers the English name on every place, road and water label. */
+function preferEnglishLabels(style: { layers?: StyleLayer[] }): void {
   for (const layer of style.layers ?? []) {
     const textField = layer.layout?.["text-field"];
     if (!textField || !JSON.stringify(textField).includes('"name')) continue;
-    layer.layout!["text-field"] = ["coalesce", ...preferred, textField];
+    layer.layout!["text-field"] = ["coalesce", ["get", "name:en"], textField];
   }
 }
 
@@ -79,10 +66,6 @@ export async function handleMapRelayRequest(
   const theme = STYLE_PATH.exec(url.pathname)?.[1] as
     keyof typeof STYLE_NAMES | undefined;
   if (!theme) return new Response("Not Found", { status: 404 });
-  const requestedLocale = url.searchParams.get("locale");
-  const locale: Locale = isValidLocale(requestedLocale)
-    ? requestedLocale
-    : "en";
 
   const logger = env ? getInvocationLogger(env) : undefined;
   try {
@@ -108,7 +91,7 @@ export async function handleMapRelayRequest(
         );
       }
     }
-    localizeStyleLabels(style, locale);
+    preferEnglishLabels(style);
     return Response.json(style, {
       headers: { "cache-control": CACHE_CONTROL },
     });

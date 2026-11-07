@@ -59,7 +59,7 @@ function message(input: Partial<NotificationMessage>): NotificationMessage {
 }
 
 describe("localized notification messages", () => {
-  it("builds report fields in each recipient locale", () => {
+  it("builds report fields", () => {
     const input = draft({
       type: "report",
       data: {
@@ -75,17 +75,10 @@ describe("localized notification messages", () => {
       draft: input,
       locale: "en",
     });
-    const zh = buildLocalizedNotificationMessageFields({
-      draft: input,
-      locale: "zh",
-    });
 
     expect(en.title).toBe("example.com daily traffic report");
     expect(en.bodyText).toContain("Core metrics");
     expect(en.bodyText).toContain("1. /pricing - 123 views");
-    expect(zh.title).toBe("example.com 每日访问报告");
-    expect(zh.bodyText).toContain("核心指标");
-    expect(zh.bodyText).toContain("1. /pricing - 123 次浏览");
   });
 
   it("builds threshold and health fields without English draft body leakage", () => {
@@ -113,26 +106,20 @@ describe("localized notification messages", () => {
       },
     });
 
-    const zhThreshold = buildLocalizedNotificationMessageFields({
+    const enThreshold = buildLocalizedNotificationMessageFields({
       draft: threshold,
-      locale: "zh",
+      locale: "en",
     });
     const enHealth = buildLocalizedNotificationMessageFields({
       draft: health,
       locale: "en",
       timeZone: "Asia/Shanghai",
     });
-    const zhHealth = buildLocalizedNotificationMessageFields({
-      draft: health,
-      locale: "zh",
-      timeZone: "Asia/Shanghai",
-    });
 
-    expect(zhThreshold.bodyText).toContain("指标：访客数");
-    expect(zhThreshold.bodyText).not.toContain("Metric:");
-    expect(enHealth.bodyText).toContain("Last seen:");
-    expect(zhHealth.bodyText).toContain("最后收到数据：");
-    expect(zhHealth.bodyText).not.toContain("Last seen:");
+    expect(enThreshold.bodyText).toContain("Window: Last hour");
+    expect(enThreshold.bodyText).toContain("Current value: 1,240");
+    expect(enHealth.bodyText).toContain("Last seen: Jun 30, 2026");
+    expect(enHealth.bodyText).not.toContain("Last seen: never");
   });
 
   it("keeps fallback messages on unsupported types", () => {
@@ -143,11 +130,11 @@ describe("localized notification messages", () => {
         summary: "System summary",
         bodyText: "System body",
       }),
-      locale: "zh",
+      locale: "en",
     });
 
     expect(localized).toMatchObject({
-      locale: "zh",
+      locale: "en",
       title: "System title",
       summary: "System summary",
       bodyText: "System title\n\nSystem body",
@@ -179,9 +166,6 @@ describe("notification plain text and email rendering", () => {
     expect(
       formatNotificationDateTime(1_782_793_800, "en", "Asia/Shanghai"),
     ).toContain("Jun");
-    expect(
-      formatNotificationDateTime(1_782_793_800, "zh", "Asia/Shanghai"),
-    ).toContain("2026");
     expect(formatNotificationDateTime("bad", "en")).toBe("");
     expect(formatNotificationDateTime(0, "en")).toBe("");
     expect(
@@ -191,20 +175,18 @@ describe("notification plain text and email rendering", () => {
 
   it("formats notification numbers defensively", () => {
     expect(formatNotificationNumber(1234.9, "en")).toBe("1,234");
-    expect(formatNotificationNumber(1234.9, "zh")).toBe("1,234");
-    expect(formatNotificationNumber(1234.9, "zh-tw")).toBe("1,234");
-    expect(formatNotificationNumber(1234.9, "ja")).toBe("1,234");
     expect(formatNotificationNumber("bad", "en")).toBe("0");
   });
 
   it("renders plain text without html or object string output", () => {
     const text = renderNotificationPlainText({
-      locale: "zh",
+      locale: "en",
       timeZone: "Asia/Shanghai",
       content: {
-        subject: "example.com 访问量达到阈值",
-        title: "example.com 访问量达到阈值",
-        summary: "过去 1 小时的访客数为 1,240，已匹配阈值 >= 1,000。",
+        subject: "example.com traffic threshold reached",
+        title: "example.com traffic threshold reached",
+        summary:
+          "visitors for Last hour is 1,240, matching threshold >= 1,000.",
         bodyText: "",
       },
       message: message({
@@ -220,14 +202,14 @@ describe("notification plain text and email rendering", () => {
       }),
     });
 
-    expect(text).toContain("指标：访客数");
+    expect(text).toContain("Metric: visitors");
     expect(text).not.toContain("<html");
     expect(text).not.toContain("[object Object]");
   });
 
   it("renders localized health plain text with timezone", () => {
     const localized = buildLocalizedNotificationMessageFields({
-      locale: "zh",
+      locale: "en",
       timeZone: "Asia/Shanghai",
       draft: draft({
         type: "health",
@@ -240,8 +222,8 @@ describe("notification plain text and email rendering", () => {
       }),
     });
 
-    expect(localized.title).toContain("没有收到访问数据");
-    expect(localized.bodyText).toContain("最后收到数据：");
+    expect(localized.title).toContain("has not received traffic data");
+    expect(localized.bodyText).toContain("Last seen: Jun 30, 2026");
     expect(localized.bodyText).not.toContain("<html");
     expect(localized.bodyText).not.toContain("[object Object]");
   });

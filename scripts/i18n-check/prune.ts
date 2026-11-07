@@ -4,7 +4,7 @@ import * as prettier from "prettier";
 import YAML from "yaml";
 
 import { rlog } from "./logger";
-import { APP_MESSAGES_PATH, LOCALE_PATHS, LOCALES } from "./paths";
+import { APP_MESSAGES_PATH, EN_PATH } from "./paths";
 import type { JsonLike } from "./types";
 
 function tsKey(key: string): string {
@@ -50,36 +50,26 @@ function toTsInterface(
   return "string";
 }
 
-function localeVar(locale: string): string {
-  return locale.replace(/-([a-z])/g, (_, c) => c.toUpperCase()) + "Messages";
-}
-
-function formatMessagesConst(locale: string, value: unknown): string {
-  return `const ${localeVar(locale)} = ${JSON.stringify(value, null, 2)} as AppMessages;`;
-}
-
-function buildMessagesOutput(
-  parsedYamlByLocale: Record<(typeof LOCALES)[number], unknown>,
-): string {
+function buildMessagesOutput(parsedYaml: unknown): string {
   const interfaceBody = [];
   for (const [key, value] of Object.entries(
-    parsedYamlByLocale.en as Record<string, unknown>,
+    parsedYaml as Record<string, unknown>,
   )) {
     const propType = toTsInterface(value as JsonLike, 2, [key]);
     interfaceBody.push(`  ${tsKey(key)}: ${propType};`);
   }
 
-  return `// @generated from src/i18n/*.yaml by scripts/i18n-check.
+  return `// @generated from src/i18n/en.yaml by scripts/i18n-check.
 import type { Locale } from "./config";
 
 export interface AppMessages {
 ${interfaceBody.join("\n")}
 }
 
-${LOCALES.map((locale) => formatMessagesConst(locale, parsedYamlByLocale[locale])).join("\n\n")}
+const enMessages = ${JSON.stringify(parsedYaml, null, 2)} as AppMessages;
 
 const DICTIONARIES: Record<Locale, AppMessages> = {
-${LOCALES.map((locale) => `  ${tsKey(locale)}: ${localeVar(locale)},`).join("\n")}
+  en: enMessages,
 };
 
 export function getMessages(locale: Locale): AppMessages {
@@ -88,87 +78,31 @@ export function getMessages(locale: Locale): AppMessages {
 `;
 }
 
-async function formatMessagesFile(): Promise<void> {
-  const source = await fs.readFile(APP_MESSAGES_PATH, "utf8");
+async function writeMessagesFile(parsedYaml: unknown): Promise<void> {
   const prettierOptions = await prettier.resolveConfig(APP_MESSAGES_PATH);
-  const formatted = await prettier.format(source, {
+  const formatted = await prettier.format(buildMessagesOutput(parsedYaml), {
     ...(prettierOptions ?? {}),
     filepath: APP_MESSAGES_PATH,
   });
   await fs.writeFile(APP_MESSAGES_PATH, formatted, "utf8");
+  rlog.success("Successfully regenerated messages.ts schema!");
 }
 
 export async function regenerateAppMessages(): Promise<void> {
-  const parsedYamlByLocale = Object.fromEntries(
-    await Promise.all(
-      LOCALES.map(async (locale) => [
-        locale,
-        YAML.parse(await fs.readFile(LOCALE_PATHS[locale], "utf8")),
-      ]),
-    ),
-  ) as Record<(typeof LOCALES)[number], unknown>;
-
-  await fs.writeFile(
-    APP_MESSAGES_PATH,
-    buildMessagesOutput(parsedYamlByLocale),
-    "utf8",
-  );
-  await formatMessagesFile();
-  rlog.success("Successfully regenerated messages.ts schema!");
+  await writeMessagesFile(YAML.parse(await fs.readFile(EN_PATH, "utf8")));
 }
 
-export async function pruneUnusedKeys(
-  unusedKeysByLocale: Record<string, string[]>,
-): Promise<void> {
-  rlog.info("\nPruning unused keys from translation files...");
+export async function pruneUnusedKeys(unusedKeys: string[]): Promise<void> {
+  rlog.info("\nPruning unused keys from en.yaml...");
 
-  const textByLocale = Object.fromEntries(
-    await Promise.all(
-      LOCALES.map(async (locale) => [
-        locale,
-        await fs.readFile(LOCALE_PATHS[locale], "utf8"),
-      ]),
-    ),
-  ) as Record<(typeof LOCALES)[number], string>;
-
-  const docByLocale = Object.fromEntries(
-    LOCALES.map((locale) => [locale, YAML.parseDocument(textByLocale[locale])]),
-  );
-
-  const prunedCounts: Record<string, number> = {};
-  for (const locale of LOCALES) {
-    let pruned = 0;
-    for (const key of unusedKeysByLocale[locale] ?? []) {
-      docByLocale[locale].deleteIn(key.split("."));
-      pruned += 1;
-    }
-    prunedCounts[locale] = pruned;
+  const doc = YAML.parseDocument(await fs.readFile(EN_PATH, "utf8"));
+  for (const key of unusedKeys) {
+    doc.deleteIn(key.split("."));
   }
-
-  const prunedTextByLocale = Object.fromEntries(
-    LOCALES.map((locale) => [locale, docByLocale[locale].toString()]),
-  ) as Record<(typeof LOCALES)[number], string>;
-
-  await Promise.all(
-    LOCALES.map((locale) =>
-      fs.writeFile(LOCALE_PATHS[locale], prunedTextByLocale[locale], "utf8"),
-    ),
-  );
-
-  rlog.success(
-    `Successfully pruned ${LOCALES.map((locale) => `${prunedCounts[locale]} keys from ${locale}.yaml`).join(", ")}!`,
-  );
+  const prunedText = doc.toString();
+  await fs.writeFile(EN_PATH, prunedText, "utf8");
+  rlog.success(`Successfully pruned ${unusedKeys.length} keys from en.yaml!`);
 
   rlog.info("Regenerating messages.ts schema to match pruned translations...");
-  const parsedYamlByLocale = Object.fromEntries(
-    LOCALES.map((locale) => [locale, YAML.parse(prunedTextByLocale[locale])]),
-  ) as Record<(typeof LOCALES)[number], unknown>;
-
-  await fs.writeFile(
-    APP_MESSAGES_PATH,
-    buildMessagesOutput(parsedYamlByLocale),
-    "utf8",
-  );
-  formatMessagesFile();
-  rlog.success("Successfully regenerated messages.ts schema!");
+  await writeMessagesFile(YAML.parse(prunedText));
 }

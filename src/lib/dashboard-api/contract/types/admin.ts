@@ -1,5 +1,4 @@
 import type { TeamRole } from "@/lib/dashboard/permissions";
-import type { Locale } from "@/lib/i18n/config";
 
 /** The organization's workspace: every site belongs to it (viewer.ts). */
 export interface TeamData {
@@ -42,7 +41,6 @@ export interface AccountUserData {
   /** "admin" for every member: everyone in the organization manages. */
   systemRole: "admin" | "user";
   timeZone?: string;
-  preferredLocale: "" | Locale;
   createdAt: number;
   updatedAt: number;
 }

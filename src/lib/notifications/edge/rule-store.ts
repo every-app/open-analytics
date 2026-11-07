@@ -93,7 +93,6 @@ interface NotificationRecipient {
   id: string;
   email: string;
   preferencesJson: string;
-  preferredLocale?: string | null;
   timeZone?: string | null;
 }
 interface NotificationRecipientStorageRow extends Omit<
@@ -595,7 +594,6 @@ export async function resolveNotificationRecipients(
       id: member.id,
       email: member.email,
       preferencesJson: row?.preferencesJson ?? "{}",
-      preferredLocale: row?.preferredLocale ?? null,
       timeZone: row?.timeZone ?? null,
     };
   });

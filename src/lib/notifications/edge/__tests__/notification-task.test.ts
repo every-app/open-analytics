@@ -433,7 +433,7 @@ describe("notification task", () => {
     });
   });
 
-  it("localizes triggered rule messages per recipient while sharing a batch", async () => {
+  it("renders triggered rule messages in English for every recipient in one batch", async () => {
     evaluateNotificationRule.mockResolvedValue({
       status: "triggered",
       message: {
@@ -453,18 +453,8 @@ describe("notification task", () => {
       },
     });
     resolveNotificationRecipients.mockResolvedValue([
-      {
-        id: "user-en",
-        email: "en@example.test",
-        preferencesJson: "{}",
-        preferredLocale: "en",
-      },
-      {
-        id: "user-zh",
-        email: "zh@example.test",
-        preferencesJson: "{}",
-        preferredLocale: "zh",
-      },
+      { id: "user-1", email: "one@example.test", preferencesJson: "{}" },
+      { id: "user-2", email: "two@example.test", preferencesJson: "{}" },
     ]);
     createNotificationMessage.mockImplementation((_env, input) =>
       Promise.resolve(
@@ -489,15 +479,14 @@ describe("notification task", () => {
     });
 
     expect(createNotificationMessage).toHaveBeenCalledTimes(2);
-    const [, enInput] = createNotificationMessage.mock.calls[0];
-    const [, zhInput] = createNotificationMessage.mock.calls[1];
-    expect(enInput.batchId).toBe(zhInput.batchId);
-    expect(enInput.title).toContain("daily traffic report");
-    expect(zhInput.title).toContain("每日访问报告");
-    expect(enInput.bodyText).toContain("Core metrics");
-    expect(zhInput.bodyText).toContain("核心指标");
-    expect(enInput.data.locale).toBe("en");
-    expect(zhInput.data.locale).toBe("zh");
+    const [, firstInput] = createNotificationMessage.mock.calls[0];
+    const [, secondInput] = createNotificationMessage.mock.calls[1];
+    expect(firstInput.batchId).toBe(secondInput.batchId);
+    for (const input of [firstInput, secondInput]) {
+      expect(input.title).toContain("daily traffic report");
+      expect(input.bodyText).toContain("Core metrics");
+      expect(input.data.locale).toBe("en");
+    }
   });
 
   it("creates manual test notifications and handles missing test recipients", async () => {
@@ -505,7 +494,6 @@ describe("notification task", () => {
       id: string;
       email: string;
       preferencesJson: string;
-      preferredLocale?: string | null;
       timeZone?: string | null;
     };
     const first = vi.fn<() => Promise<TestRecipientRow | null>>(() =>
@@ -568,86 +556,5 @@ describe("notification task", () => {
       message: null,
       summary: { messagesCreated: 0 },
     });
-  });
-
-  it("localizes manual test notifications from recipient preference", async () => {
-    type TestRecipientRow = {
-      id: string;
-      email: string;
-      preferencesJson: string;
-      preferredLocale?: string | null;
-      timeZone?: string | null;
-    };
-    const first = vi
-      .fn<() => Promise<TestRecipientRow | null>>()
-      .mockResolvedValueOnce({
-        id: "user-zh",
-        email: "zh@example.test",
-        preferencesJson: "{}",
-        preferredLocale: "zh",
-      })
-      .mockResolvedValueOnce({
-        id: "user-en",
-        email: "en@example.test",
-        preferencesJson: "{}",
-        preferredLocale: "en",
-      })
-      .mockResolvedValueOnce({
-        id: "user-default",
-        email: "default@example.test",
-        preferencesJson: "{}",
-        preferredLocale: "",
-      });
-    const env = {
-      DB: {
-        prepare: vi.fn(() => ({
-          bind: vi.fn(() => ({ first })),
-        })),
-      },
-    };
-    createNotificationMessage.mockImplementation((_env, input) =>
-      Promise.resolve(
-        message({
-          id: `msg-${input.userId}`,
-          userId: input.userId,
-          type: "test",
-          title: input.title,
-          bodyText: input.bodyText,
-          data: input.data,
-        }),
-      ),
-    );
-    deliverNotificationMessage.mockImplementation((_env, msg) =>
-      Promise.resolve(msg),
-    );
-
-    await createManualTestNotification({
-      env: env as never,
-      context: context(),
-      teamId: "team-1",
-      userId: "user-zh",
-    });
-    await createManualTestNotification({
-      env: env as never,
-      context: context(),
-      teamId: "team-1",
-      userId: "user-en",
-    });
-    await createManualTestNotification({
-      env: env as never,
-      context: context(),
-      teamId: "team-1",
-      userId: "user-default",
-    });
-
-    const zhInput = createNotificationMessage.mock.calls[0][1];
-    const enInput = createNotificationMessage.mock.calls[1][1];
-    const defaultInput = createNotificationMessage.mock.calls[2][1];
-    expect(zhInput.title).toContain("通知测试");
-    expect(zhInput.data.locale).toBe("zh");
-    expect(enInput.title).toContain("notification test");
-    expect(enInput.data.locale).toBe("en");
-    expect(defaultInput.title).toContain("notification test");
-    expect(defaultInput.data.locale).toBe("en");
   });
 });

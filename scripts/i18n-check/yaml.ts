@@ -38,10 +38,3 @@ export function collectNodes(
   nodes.set(currentPath, { kind: "scalar", value: scalar });
   leaves.set(currentPath, scalar);
 }
-
-export function extractPlaceholders(value: string): string[] {
-  return [...value.matchAll(/\{([a-zA-Z0-9_]+)\}/g)]
-    .map((match) => match[1] ?? "")
-    .filter((part) => part.length > 0)
-    .sort();
-}

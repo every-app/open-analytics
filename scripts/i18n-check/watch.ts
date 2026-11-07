@@ -1,10 +1,10 @@
 /**
- * Watches src/i18n/*.yaml and regenerates src/lib/i18n/messages.ts after a
+ * Watches src/i18n/en.yaml and regenerates src/lib/i18n/messages.ts after a
  * debounce. Used both by the standalone `watch:i18n` script and by the dev
  * runner, so a single implementation stays in sync.
  *
  * Runtime reads translations from messages.ts (the generated artifact), not
- * from the yaml sources directly, so this keeps the artifact updated while
+ * from the yaml source directly, so this keeps the artifact updated while
  * editing yaml.
  */
 import fs from "node:fs";
@@ -12,7 +12,7 @@ import path from "node:path";
 
 import type Rlog from "rlog-js";
 
-import { APP_MESSAGES_PATH, LOCALE_PATHS, LOCALES } from "./paths";
+import { APP_MESSAGES_PATH, EN_PATH } from "./paths";
 import { regenerateAppMessages } from "./prune";
 
 const DEBOUNCE_MS = 120;
@@ -23,8 +23,8 @@ export interface YamlWatcher {
 }
 
 export function createYamlWatcher(rlog: Rlog): YamlWatcher {
-  const watchDir = path.dirname(LOCALE_PATHS.en);
-  const watchedNames = new Set(LOCALES.map((locale) => `${locale}.yaml`));
+  const watchDir = path.dirname(EN_PATH);
+  const watchedName = path.basename(EN_PATH);
 
   let timer: NodeJS.Timeout | null = null;
   let pending = false;
@@ -34,9 +34,7 @@ export function createYamlWatcher(rlog: Rlog): YamlWatcher {
   async function regenerate(): Promise<void> {
     try {
       await regenerateAppMessages();
-      rlog.success(
-        "  regenerated messages.ts from " + LOCALES.join(", ") + ".yaml",
-      );
+      rlog.success("  regenerated messages.ts from en.yaml");
     } catch (error) {
       rlog.error(
         "  regeneration failed:",
@@ -48,9 +46,7 @@ export function createYamlWatcher(rlog: Rlog): YamlWatcher {
   function messagesAreFresh(): boolean {
     try {
       const generatedAt = fs.statSync(APP_MESSAGES_PATH).mtimeMs;
-      return LOCALES.every(
-        (locale) => generatedAt >= fs.statSync(LOCALE_PATHS[locale]).mtimeMs,
-      );
+      return generatedAt >= fs.statSync(EN_PATH).mtimeMs;
     } catch {
       return false;
     }
@@ -68,7 +64,7 @@ export function createYamlWatcher(rlog: Rlog): YamlWatcher {
 
   return {
     start(): void {
-      rlog.info(`Watching ${watchDir} for changes: ${LOCALES.join(", ")}.yaml`);
+      rlog.info(`Watching ${watchDir} for changes: ${watchedName}`);
       if (messagesAreFresh()) {
         rlog.info("messages.ts is up to date; skipping regeneration.");
       } else {
@@ -79,7 +75,7 @@ export function createYamlWatcher(rlog: Rlog): YamlWatcher {
       watcher = fs.watch(watchDir, (_eventType, filename) => {
         if (!filename) return;
         const name = path.basename(filename.toString());
-        if (!watchedNames.has(name)) return;
+        if (name !== watchedName) return;
         scheduleRegenerate();
       });
     },

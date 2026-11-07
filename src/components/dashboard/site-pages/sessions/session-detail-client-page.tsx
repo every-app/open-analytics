@@ -122,7 +122,6 @@ function DetailContent({
   return (
     <div className="pb-6">
       <SessionMapHero
-        locale={locale}
         labels={labels}
         session={session}
         locationPoints={detail.locationPoints}

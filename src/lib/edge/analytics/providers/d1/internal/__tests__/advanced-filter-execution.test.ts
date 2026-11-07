@@ -347,7 +347,7 @@ function sqliteEnv(activities: readonly SharedActivity[] = SHARED_ACTIVITIES): {
         }),
       }),
     },
-    DAILY_SALT_SECRET: "test-secret",
+    MAIN_SECRET: "test-secret",
     INGEST_DO: {},
   } as unknown as Env;
   return { env, database, queries };

@@ -508,19 +508,17 @@ async function fetchLocaleStatePayload(
 }
 async function fetchGeoWikiSummary(
   wikidataId: string,
-  locale: Locale,
 ): Promise<GeoWikiSummary | null> {
   const normalizedId = String(wikidataId ?? "")
     .trim()
     .toUpperCase();
   if (!/^Q\d+$/.test(normalizedId)) return null;
 
-  const cacheKey = `${locale}:${normalizedId}`;
-  const cached = geoWikiSummaryCache.get(cacheKey);
+  const cached = geoWikiSummaryCache.get(normalizedId);
   if (cached) return cached;
 
   const request = fetch(
-    `/api/public/resources/wiki-summary?wikidataId=${encodeURIComponent(normalizedId)}&locale=${encodeURIComponent(locale)}`,
+    `/api/public/resources/wiki-summary?wikidataId=${encodeURIComponent(normalizedId)}`,
     {
       method: "GET",
       cache: "force-cache",
@@ -553,7 +551,7 @@ async function fetchGeoWikiSummary(
     })
     .catch(() => null);
 
-  geoWikiSummaryCache.set(cacheKey, request);
+  geoWikiSummaryCache.set(normalizedId, request);
   return request;
 }
 async function fetchJourneyGeoInvestigation(
@@ -800,7 +798,7 @@ export const JourneyGeoLocationCard = memo(function JourneyGeoLocationCard({
         messages,
       );
       const wikiSummary = investigation?.wikidataId
-        ? await fetchGeoWikiSummary(investigation.wikidataId, locale)
+        ? await fetchGeoWikiSummary(investigation.wikidataId)
         : null;
       return { investigation, wikiSummary };
     },

@@ -259,11 +259,6 @@
       "types": "./dist/components/ui/layer/layer-portal.d.ts",
       "development": "./src/components/ui/layer/layer-portal.tsx",
       "import": "./dist/components/ui/layer/layer-portal.js"
-    },
-    "./contracts": {
-      "types": "./dist/contracts/index.d.ts",
-      "development": "./src/contracts/index.ts",
-      "import": "./dist/contracts/index.js"
     }
   },
   "scripts": {

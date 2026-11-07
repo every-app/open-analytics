@@ -501,15 +501,3 @@ CREATE INDEX idx_visits_site_pk_visitor_last_activity
   ON visits(site_pk, visitor_id, last_activity_at);
 CREATE INDEX idx_visits_site_pk_visitor_started_at
   ON visits(site_pk, visitor_id, started_at);
-
-CREATE TABLE widgets (
-  id TEXT PRIMARY KEY,
-  site_id TEXT NOT NULL,
-  type TEXT NOT NULL,
-  name TEXT NOT NULL,
-  config_json TEXT NOT NULL DEFAULT '{}',
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  updated_at INTEGER NOT NULL DEFAULT (unixepoch())
-);
-
-CREATE INDEX idx_widgets_site_type ON widgets(site_id, type);

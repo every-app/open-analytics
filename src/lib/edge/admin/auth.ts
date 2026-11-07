@@ -16,7 +16,6 @@ import {
 } from "@/lib/db";
 import { type OrgRole, resolveViewer, toOrgRole } from "@/lib/edge/auth/viewer";
 import type { Env } from "@/lib/edge/types";
-import { isValidLocale } from "@/lib/i18n/config";
 import { una } from "@/lib/response";
 
 export type UserRow = {
@@ -24,7 +23,6 @@ export type UserRow = {
   email: string;
   name: string | null;
   timezone: string;
-  preferred_locale?: string | null;
   created_at: number;
   updated_at: number;
 };
@@ -51,7 +49,6 @@ function userQuery() {
     email: users.columns.email,
     name: users.columns.name,
     timezone: users.columns.timezone,
-    preferred_locale: users.columns.preferred_locale,
     created_at: users.columns.created_at,
     updated_at: users.columns.updated_at,
   });
@@ -68,7 +65,6 @@ export const toPublicUser = (u: UserRow, isAdmin: boolean) => ({
   name: u.name || "",
   systemRole: isAdmin ? ("admin" as const) : ("user" as const),
   timeZone: u.timezone || "",
-  preferredLocale: isValidLocale(u.preferred_locale) ? u.preferred_locale : "",
   createdAt: u.created_at,
   updatedAt: u.updated_at,
 });

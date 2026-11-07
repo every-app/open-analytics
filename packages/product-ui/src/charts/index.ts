@@ -1,6 +1,4 @@
 export type { ChartAxisDateFormat } from "./chart-time";
-export type { DonutChartDataPoint, DonutChartProps } from "./donut-chart";
-export { DonutChart } from "./donut-chart";
 export type {
   EventTrendBarChartProps,
   EventTrendChartDataPoint,
@@ -27,30 +25,12 @@ export type {
 } from "./metric-area-chart";
 export { MetricAreaChart } from "./metric-area-chart";
 export type {
-  PerformanceRadarChartProps,
-  PerformanceRadarMetricKey,
-  PerformanceRadarMetricLabels,
-  PerformanceRadarMetrics,
-} from "./performance-radar-chart";
-export {
-  buildPerformanceRadarMaxByMetric,
-  PERFORMANCE_RADAR_METRIC_KEYS,
-  PerformanceRadarChart,
-} from "./performance-radar-chart";
-export type {
   PerformanceTrendChartLabels,
   PerformanceTrendChartPoint,
   PerformanceTrendChartProps,
   PerformanceTrendMetricThresholds,
 } from "./performance-trend-chart";
 export { PerformanceTrendChart } from "./performance-trend-chart";
-export type {
-  RequestObservationTrendChartProps,
-  RequestObservationTrendLabels,
-  RequestObservationTrendPoint,
-  RequestObservationTrendVariant,
-} from "./request-observation-trend-chart";
-export { RequestObservationTrendChart } from "./request-observation-trend-chart";
 export type {
   ShareTrendAreaChartProps,
   ShareTrendAreaPoint,

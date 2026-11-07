@@ -502,8 +502,8 @@ export const GeoClientMapStage = memo(function GeoClientMapStage({
   const effectiveMapTheme: EffectiveMapTheme =
     resolvedTheme === "dark" ? "dark" : "light";
   const mapStyle = useMemo(
-    () => getVectorBasemapStyleUrl(effectiveMapTheme, locale),
-    [effectiveMapTheme, locale],
+    () => getVectorBasemapStyleUrl(effectiveMapTheme),
+    [effectiveMapTheme],
   );
   const clusteredPoints = useMemo(
     () => clusterGeoPoints(points, currentZoom),

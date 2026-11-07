@@ -15,8 +15,6 @@ describe("Dashboard Format Utilities", () => {
   describe("intlLocale", () => {
     it("should return the correct BCP 47 locale mapping", () => {
       expect(intlLocale("en")).toBe("en-US");
-      expect(intlLocale("zh")).toBe("zh-CN");
-      expect(intlLocale("zh-tw")).toBe("zh-TW");
     });
   });
 
@@ -28,19 +26,13 @@ describe("Dashboard Format Utilities", () => {
       expect(formattedEn).toContain("234");
       expect(formattedEn).toContain("567");
       expect(formattedEn).toContain("89");
-
-      const formattedZh = numberFormat("zh", 9876543.21);
-      expect(formattedZh).toContain("9");
-      expect(formattedZh).toContain("876");
-      expect(formattedZh).toContain("543");
-      expect(formattedZh).toContain("21");
     });
   });
 
   describe("percentFormat", () => {
     it("should format percentages correctly and round to max 1 fraction digit", () => {
       expect(percentFormat("en", 0.1234)).toMatch(/12\.3\s*%/);
-      expect(percentFormat("zh", 0.88)).toMatch(/88\s*%/);
+      expect(percentFormat("en", 0.88)).toMatch(/88\s*%/);
       expect(percentFormat("en", 0.0005)).toMatch(/0\.1\s*%/);
       expect(percentFormat("en", 0)).toMatch(/0\s*%/);
     });
@@ -111,8 +103,8 @@ describe("Dashboard Format Utilities", () => {
     });
 
     it("should format without a timezone override when one is not provided", () => {
-      expect(shortDate("zh", "2026-05-25T03:43:43Z")).not.toBe("--");
-      expect(shortDateTime("zh", "2026-05-25T03:43:43Z")).not.toBe("--");
+      expect(shortDate("en", "2026-05-25T03:43:43Z")).not.toBe("--");
+      expect(shortDateTime("en", "2026-05-25T03:43:43Z")).not.toBe("--");
     });
   });
 
@@ -123,21 +115,17 @@ describe("Dashboard Format Utilities", () => {
       expect(durationFormat("en", 499)).toBe("0s"); // Rounding down
       expect(durationFormat("en", 500)).toBe("1s"); // Rounding up
       expect(durationFormat("en", 59499)).toBe("59s");
-      expect(durationFormat("zh", 30000)).toBe("30秒");
     });
 
     it("should format durations under 60 minutes correctly", () => {
       expect(durationFormat("en", 60000)).toBe("1m"); // Exact minutes
       expect(durationFormat("en", 65000)).toBe("1m 5s"); // Join with space
-      expect(durationFormat("zh", 125000)).toBe("2分5秒"); // No space for Chinese
       expect(durationFormat("en", 3599000)).toBe("59m 59s");
     });
 
     it("should format durations of 60 minutes and above correctly", () => {
       expect(durationFormat("en", 3600000)).toBe("1h"); // Exact hours
       expect(durationFormat("en", 3720000)).toBe("1h 2m"); // Hours and minutes
-      expect(durationFormat("zh", 3720000)).toBe("1小时2分"); // Chinese hour/minute suffix
-      expect(durationFormat("zh-tw", 3720000)).toBe("1小時2分"); // Traditional Chinese hour/minute suffix
       expect(durationFormat("en", 3600000 * 24 + 60000 * 30)).toBe("24h 30m");
     });
   });

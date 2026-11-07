@@ -32,8 +32,7 @@ import { TimeZoneProvider } from "@/components/time-zone-provider";
 import { APP_NAME } from "@/lib/constants";
 import { GET_STARTED_COLLAPSED_KEY } from "@/lib/dashboard/get-started";
 import { loadGatewayHostname } from "@/lib/dashboard/route-data";
-import { localeQueryOptions } from "@/lib/dashboard/route-query";
-import { localeToHtmlLang, resolveLocale } from "@/lib/i18n/config";
+import { DEFAULT_LOCALE } from "@/lib/i18n/config";
 import { getMessages } from "@/lib/i18n/messages";
 import Link from "@/lib/router";
 import { readThemeScript } from "@/lib/theme-cookie";
@@ -42,11 +41,10 @@ const THEME_INIT_SCRIPT = `(function(){try{${readThemeScript}var d=t==='dark'||(
 const ESBUILD_NAME_HELPER_SCRIPT = `(function(){if(typeof globalThis.__name!=="function"){globalThis.__name=function(target){return target}}})()`;
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   {
-    beforeLoad: async ({ context }) => {
-      const locale =
-        await context.queryClient.ensureQueryData(localeQueryOptions);
-      return { locale, messages: getMessages(locale) };
-    },
+    beforeLoad: () => ({
+      locale: DEFAULT_LOCALE,
+      messages: getMessages(DEFAULT_LOCALE),
+    }),
     head: () => ({
       meta: [
         { charSet: "utf-8" },
@@ -74,11 +72,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   },
 );
 function RootDocument() {
-  const { queryClient, locale } = Route.useRouteContext();
+  const { queryClient } = Route.useRouteContext();
   const { gatewayHost } = Route.useLoaderData();
 
   return (
-    <html lang={localeToHtmlLang(locale)} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <ScriptOnce>{SCROLLBAR_POLICY_INIT_SCRIPT}</ScriptOnce>
         <HeadContent />
@@ -119,16 +117,9 @@ function errorPageAudience(pathname: string) {
     hasHome: !isShare,
   };
 }
-/**
- * The page language, or the default when the root failed before setting it:
- * the error page still has to say something.
- */
-function useErrorPageLocale() {
-  return resolveLocale(Route.useRouteContext().locale);
-}
 export function NotFoundPage() {
   const pathname = useLocation({ select: (location) => location.pathname });
-  const copy = getMessages(useErrorPageLocale()).errorPage;
+  const copy = getMessages(DEFAULT_LOCALE).errorPage;
 
   return (
     <ErrorPageLayout
@@ -141,7 +132,7 @@ export function NotFoundPage() {
 }
 export function ErrorPage({ error }: { error: Error }) {
   const pathname = useLocation({ select: (location) => location.pathname });
-  const copy = getMessages(useErrorPageLocale()).errorPage;
+  const copy = getMessages(DEFAULT_LOCALE).errorPage;
   const errorName = error instanceof Error ? error.name : "Error";
   const errorMessage =
     error instanceof Error ? error.message : "Unexpected application error";

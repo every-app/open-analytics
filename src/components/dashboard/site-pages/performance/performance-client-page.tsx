@@ -325,7 +325,7 @@ export function PerformanceClientPage({
             locale,
             messages.common.unknown,
           );
-          const flagCode = resolveCountryFlagCode(code, locale);
+          const flagCode = resolveCountryFlagCode(code);
           return {
             key: normalizedCountry,
             country: normalizedCountry,

@@ -8,33 +8,33 @@ import { notificationEmailPreviewMessage } from "@/lib/notifications/preview-dat
 
 function fallbackMessage(): NotificationMessage {
   return {
-    ...notificationEmailPreviewMessage("test", "zh"),
+    ...notificationEmailPreviewMessage("test", "en"),
     id: "preview-fallback",
     type: "system",
     title: "Fallback title",
     summary: "Fallback summary",
     bodyText: "Fallback body",
-    data: { locale: "zh" },
+    data: { locale: "en" },
   };
 }
 
 describe("renderNotificationEmail", () => {
-  it("renders report html and text in Chinese", async () => {
+  it("renders report html and text", async () => {
     const rendered = await renderNotificationEmail({
-      message: notificationEmailPreviewMessage("report", "zh"),
-      locale: "zh",
+      message: notificationEmailPreviewMessage("report", "en"),
+      locale: "en",
       timeZone: "Asia/Shanghai",
     });
 
-    expect(rendered.subject).toContain("每日访问报告");
-    expect(rendered.html).toContain("每日访问报告");
-    expect(rendered.html).toContain("浏览量");
-    expect(rendered.html).toContain("访客数");
-    expect(rendered.html).toContain("会话数");
-    expect(rendered.html).toContain("热门页面");
-    expect(rendered.html).toContain("主要来源");
+    expect(rendered.subject).toContain("daily traffic report");
+    expect(rendered.html).toContain("daily traffic report");
+    expect(rendered.html).toContain("views");
+    expect(rendered.html).toContain("visitors");
+    expect(rendered.html).toContain("sessions");
+    expect(rendered.html).toContain("Top pages");
+    expect(rendered.html).toContain("Top referrers");
     expect(rendered.html).toContain("<!doctype html>");
-    expect(rendered.html).toContain('<html lang="zh">');
+    expect(rendered.html).toContain('<html lang="en">');
     expect(rendered.html).toContain('<meta charSet="utf-8"/>');
     expect(rendered.html).toContain('name="viewport"');
     expect(rendered.html).toContain('name="color-scheme" content="light"');
@@ -51,13 +51,13 @@ describe("renderNotificationEmail", () => {
     expect(rendered.html).not.toContain("max-width:680px");
     expect(rendered.html).not.toContain("light dark");
     expect(rendered.html).not.toContain("stylesheet");
-    expect(rendered.text).toContain("核心指标");
+    expect(rendered.text).toContain("Core metrics");
     expect(rendered.text).not.toContain("<html");
     expect(rendered.text).not.toContain("[object Object]");
   });
 
   it("renders long report rows with wrapping-safe table styles", async () => {
-    const previewMessage = notificationEmailPreviewMessage("report", "zh");
+    const previewMessage = notificationEmailPreviewMessage("report", "en");
     const message: NotificationMessage = {
       ...previewMessage,
       data: {
@@ -80,7 +80,7 @@ describe("renderNotificationEmail", () => {
 
     const rendered = await renderNotificationEmail({
       message,
-      locale: "zh",
+      locale: "en",
       timeZone: "Asia/Shanghai",
     });
 
@@ -90,50 +90,50 @@ describe("renderNotificationEmail", () => {
     expect(rendered.html).toContain("width:116px");
   });
 
-  it("renders threshold html and text in Chinese", async () => {
+  it("renders threshold html and text", async () => {
     const rendered = await renderNotificationEmail({
-      message: notificationEmailPreviewMessage("threshold", "zh"),
-      locale: "zh",
+      message: notificationEmailPreviewMessage("threshold", "en"),
+      locale: "en",
       timeZone: "Asia/Shanghai",
     });
 
-    expect(rendered.html).toContain("访问量达到阈值");
-    expect(rendered.html).toContain("警告");
-    expect(rendered.html).toContain("访客数");
+    expect(rendered.html).toContain("traffic threshold reached");
+    expect(rendered.html).toContain("Warning");
+    expect(rendered.html).toContain("visitors");
     expect(rendered.html).toContain("&gt;=");
-    expect(rendered.text).toContain("指标：访客数");
+    expect(rendered.text).toContain("Metric: visitors");
   });
 
   it("renders milestone html with the shared email design", async () => {
     const rendered = await renderNotificationEmail({
-      message: notificationEmailPreviewMessage("milestone", "zh"),
-      locale: "zh",
+      message: notificationEmailPreviewMessage("milestone", "en"),
+      locale: "en",
       timeZone: "Asia/Shanghai",
     });
 
-    expect(rendered.html).toContain("达到");
-    expect(rendered.html).toContain("成功");
-    expect(rendered.html).toContain("里程碑");
-    expect(rendered.html).toContain("当前值");
-    expect(rendered.text).toContain("已达到流量里程碑");
-    expect(rendered.text).toContain("里程碑：50,000");
+    expect(rendered.html).toContain("reached");
+    expect(rendered.html).toContain("Success");
+    expect(rendered.html).toContain("Milestone");
+    expect(rendered.html).toContain("Current value");
+    expect(rendered.text).toContain("Traffic milestone reached");
+    expect(rendered.text).toContain("Milestone: 50,000");
   });
 
   it("renders change html with the shared email design", async () => {
     const rendered = await renderNotificationEmail({
-      message: notificationEmailPreviewMessage("change", "zh"),
-      locale: "zh",
+      message: notificationEmailPreviewMessage("change", "en"),
+      locale: "en",
       timeZone: "Asia/Shanghai",
     });
 
-    expect(rendered.html).toContain("流量变化提醒");
-    expect(rendered.html).toContain("警告");
-    expect(rendered.html).toContain("上期值");
-    expect(rendered.html).toContain("变化");
-    expect(rendered.text).toContain("变化了");
-    expect(rendered.text).toContain("上期值：920");
-    expect(rendered.text).toContain("当前值：1,860");
-    expect(rendered.text).toContain("变化：102%");
+    expect(rendered.html).toContain("traffic change alert");
+    expect(rendered.html).toContain("Warning");
+    expect(rendered.html).toContain("Previous value");
+    expect(rendered.html).toContain("Change");
+    expect(rendered.text).toContain("changed by");
+    expect(rendered.text).toContain("Previous value: 920");
+    expect(rendered.text).toContain("Current value: 1,860");
+    expect(rendered.text).toContain("Change: 102%");
   });
 
   it("returns the same text as the direct plain text renderer", async () => {
@@ -160,21 +160,21 @@ describe("renderNotificationEmail", () => {
 
   it("renders health html and text with timezone", async () => {
     const rendered = await renderNotificationEmail({
-      message: notificationEmailPreviewMessage("health", "zh"),
-      locale: "zh",
+      message: notificationEmailPreviewMessage("health", "en"),
+      locale: "en",
       timeZone: "Asia/Shanghai",
     });
 
-    expect(rendered.html).toContain("最后收到数据");
-    expect(rendered.html).toContain("严重");
-    expect(rendered.text).toContain("最后收到数据：");
+    expect(rendered.html).toContain("Last seen");
+    expect(rendered.html).toContain("Critical");
+    expect(rendered.text).toContain("Last seen:");
     expect(rendered.text).toContain("2026");
   });
 
   it("renders fallback messages without object or html leakage", async () => {
     const rendered = await renderNotificationEmail({
       message: fallbackMessage(),
-      locale: "zh",
+      locale: "en",
     });
 
     expect(rendered.subject).toBe("Fallback title");

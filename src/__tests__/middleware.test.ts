@@ -43,12 +43,4 @@ describe("resolvePageRequest", () => {
       resolvePageRequest(request("/runtime-config-error"), {} as Env),
     ).toBeNull();
   });
-
-  it("accepts DAILY_SALT_SECRET as the configured root secret", () => {
-    expect(
-      resolvePageRequest(request("/"), {
-        DAILY_SALT_SECRET: "fallback-secret",
-      } as Env),
-    ).toBeNull();
-  });
 });

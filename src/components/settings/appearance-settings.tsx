@@ -1,13 +1,4 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@insightflare/ui/select";
-import { useQueryClient } from "@tanstack/react-query";
 import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
-import { toast } from "sonner";
 
 import {
   SettingsCard,
@@ -15,15 +6,7 @@ import {
   SettingsSection,
 } from "@/components/settings/settings-section";
 import { useTheme } from "@/components/theme-provider";
-import { localeQueryOptions } from "@/lib/dashboard/route-query";
-import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
-import {
-  isValidLocale,
-  type Locale,
-  SUPPORTED_LOCALES,
-} from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
-import { useRouter } from "@/lib/router";
 import { cn } from "@/lib/utils";
 
 const THEMES = [
@@ -38,46 +21,9 @@ function themeLabel(messages: AppMessages, theme: string): string {
   return messages.common.system;
 }
 
-function localeLabel(messages: AppMessages, locale: Locale): string {
-  if (locale === "zh-tw") return messages.actions.switchToTraditionalChinese;
-  if (locale === "zh") return messages.actions.switchToChinese;
-  if (locale === "ja") return messages.actions.switchToJapanese;
-  return messages.actions.switchToEnglish;
-}
-
-/**
- * This browser's theme and the viewer's language, as OpenSEO's Appearance.
- * The language is saved to the profile, where pages and notification email
- * read it.
- */
-export function AppearanceSettings({
-  locale,
-  messages,
-}: {
-  locale: Locale;
-  messages: AppMessages;
-}) {
+/** This browser's theme, as OpenSEO's Appearance. */
+export function AppearanceSettings({ messages }: { messages: AppMessages }) {
   const { theme, setTheme } = useTheme();
-  const router = useRouter();
-  const queryClient = useQueryClient();
-
-  async function changeLanguage(value: Locale) {
-    try {
-      await requestAdminService("profile", {
-        method: "POST",
-        body: { preferredLocale: value },
-      });
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : messages.accountSettings.languageSaveFailed,
-      );
-      return;
-    }
-    queryClient.setQueryData(localeQueryOptions.queryKey, value);
-    await router.refresh();
-  }
 
   return (
     <SettingsSection title={messages.appNav.appearance}>
@@ -109,29 +55,6 @@ export function AppearanceSettings({
               );
             })}
           </div>
-        </SettingsRow>
-        <SettingsRow
-          label={messages.common.language}
-          htmlFor="appearance-language"
-        >
-          <Select
-            value={locale}
-            onValueChange={(value) => {
-              if (!isValidLocale(value) || value === locale) return;
-              void changeLanguage(value);
-            }}
-          >
-            <SelectTrigger id="appearance-language" className="w-full sm:w-56">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SUPPORTED_LOCALES.map((item) => (
-                <SelectItem key={item} value={item}>
-                  {localeLabel(messages, item)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </SettingsRow>
       </SettingsCard>
     </SettingsSection>

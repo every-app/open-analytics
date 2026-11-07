@@ -420,7 +420,7 @@ describe("Dashboard route data loaders", () => {
       });
 
       const result = await loadNotificationCenterInitialData({
-        data: { locale: "zh" },
+        data: { locale: "en" },
       } as never);
 
       expect(result).toMatchObject({
@@ -436,7 +436,7 @@ describe("Dashboard route data loaders", () => {
         fetchedAt: expect.any(Number),
       });
       expect(readDashboardAdmin).toHaveBeenCalledWith("notifications", {
-        locale: "zh",
+        locale: "en",
         limit: 80,
       });
     });

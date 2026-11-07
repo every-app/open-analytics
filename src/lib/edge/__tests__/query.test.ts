@@ -146,7 +146,7 @@ function createEnv(options: MockEnvOptions = {}) {
   );
   const env = {
     DB: { prepare } as unknown as D1Database,
-    DAILY_SALT_SECRET: "test-pagination-secret",
+    MAIN_SECRET: "test-pagination-secret",
   } as Env;
   return { env, prepare, statements };
 }

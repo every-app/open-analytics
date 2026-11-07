@@ -7,7 +7,6 @@ export const SECRET_PURPOSES = {
 
 export interface SecretSource {
   MAIN_SECRET?: string;
-  DAILY_SALT_SECRET?: string;
 }
 
 // Roots and purposes come from deployment configuration, not request input.
@@ -38,11 +37,7 @@ function normalizedSecret(value: unknown): string {
 }
 
 export function rootSecret(source: SecretSource): string | null {
-  return (
-    normalizedSecret(source.MAIN_SECRET) ||
-    normalizedSecret(source.DAILY_SALT_SECRET) ||
-    null
-  );
+  return normalizedSecret(source.MAIN_SECRET) || null;
 }
 
 export async function deriveSecret(
