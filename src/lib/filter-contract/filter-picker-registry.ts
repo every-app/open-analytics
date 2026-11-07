@@ -79,6 +79,7 @@ export const FILTER_ENTITY_ROOT_REGISTRY = {
       "page.title",
       "page.hostname",
       "page.durationMs",
+      "page.scrollDepth",
       "page.query",
       "page.hash",
     ],

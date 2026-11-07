@@ -3,7 +3,7 @@
  * compiler. Display units are only an editor concern; values are converted
  * back to canonical units before a filter is persisted.
  */
-export type FilterNumberCanonicalUnit = "ms" | "ratio" | "px";
+export type FilterNumberCanonicalUnit = "ms" | "ratio" | "px" | "%";
 
 export type FilterNumberDisplayUnit =
   | "hours"
@@ -12,7 +12,8 @@ export type FilterNumberDisplayUnit =
   | "milliseconds"
   | "percent"
   | "per-mille"
-  | "px";
+  | "px"
+  | "%";
 
 export type FilterNumberUnitKey =
   FilterNumberCanonicalUnit | FilterNumberDisplayUnit;
@@ -44,6 +45,7 @@ const CANONICAL_UNIT_DEFINITIONS: Readonly<
   ms: { key: "ms", canonicalUnit: "ms", multiplier: 1 },
   ratio: { key: "ratio", canonicalUnit: "ratio", multiplier: 1 },
   px: { key: "px", canonicalUnit: "px", multiplier: 1 },
+  "%": { key: "%", canonicalUnit: "%", multiplier: 1 },
 };
 
 /** Display unit definitions. The multiplier is canonical units per display unit. */
@@ -65,6 +67,7 @@ export const FILTER_NUMBER_UNIT_DEFINITIONS: Readonly<
     multiplier: 0.001,
   },
   px: { key: "px", canonicalUnit: "px", multiplier: 1 },
+  "%": { key: "%", canonicalUnit: "%", multiplier: 1 },
 };
 
 /** Stable display choices for each canonical unit. */
@@ -74,12 +77,13 @@ export const FILTER_NUMBER_DISPLAY_UNITS: Readonly<
   ms: ["hours", "minutes", "seconds", "milliseconds"],
   ratio: ["percent", "per-mille"],
   px: ["px"],
+  "%": ["%"],
 };
 
 function isCanonicalUnit(
   unit: FilterNumberUnitKey,
 ): unit is FilterNumberCanonicalUnit {
-  return unit === "ms" || unit === "ratio" || unit === "px";
+  return unit === "ms" || unit === "ratio" || unit === "px" || unit === "%";
 }
 
 /** Returns the definition for either a canonical or display unit key. */

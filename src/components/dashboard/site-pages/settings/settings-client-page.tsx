@@ -54,6 +54,8 @@ type SwitchSetting =
   | "trackHash"
   | "ignoreDoNotTrack"
   | "autoTrackOutboundLinks"
+  | "autoTrackFileDownloads"
+  | "track404Pages"
   | "botProtectionEnabled"
   | "hostingProxyBlockingEnabled";
 
@@ -321,6 +323,16 @@ export function SettingsClientPage({
       key: "autoTrackOutboundLinks",
       label: copy.autoTrackOutboundLinksLabel,
       description: copy.autoTrackOutboundLinksHint,
+    },
+    {
+      key: "autoTrackFileDownloads",
+      label: copy.autoTrackFileDownloadsLabel,
+      description: copy.autoTrackFileDownloadsHint,
+    },
+    {
+      key: "track404Pages",
+      label: copy.track404PagesLabel,
+      description: copy.track404PagesHint,
     },
   ];
   const protectionSwitches: Array<{

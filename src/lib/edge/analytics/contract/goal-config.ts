@@ -1,3 +1,4 @@
+import { currencyCode } from "@/lib/currency";
 import {
   FILTER_DSL_MAX_LENGTH,
   type FilterDocument,
@@ -10,7 +11,10 @@ import {
 } from "@/lib/filter-contract/filters";
 import { sha256Hex } from "@/lib/sha256";
 
-import { assertObservationFilterCompatible } from "./observation-planner";
+import {
+  assertObservationFilterCompatible,
+  planObservationFilter,
+} from "./observation-planner";
 
 export const GOAL_CONFIG_VERSION = 1 as const;
 export const GOAL_FILTER_DSL_VERSION = 1 as const;
@@ -19,6 +23,13 @@ export interface GoalConfigV1 {
   readonly filterDslVersion: typeof GOAL_FILTER_DSL_VERSION;
   /** Exact user-authored DSL. Validation must never rewrite this value. */
   readonly filterDsl: string;
+  /**
+   * An upper-case ISO 4217 code. The goal then sums the revenue of the
+   * custom events it matched in this currency; other currencies aren't
+   * converted or counted. Only a goal that matches custom events alone has
+   * one.
+   */
+  readonly currency?: string;
 }
 
 export interface EncodedGoalConfig {
@@ -46,14 +57,17 @@ function record(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
-function exactKeys(
-  value: Record<string, unknown>,
-  required: readonly string[],
-): boolean {
-  const keys = Object.keys(value);
+const REQUIRED_CONFIG_KEYS = ["filterDslVersion", "filterDsl"] as const;
+const CONFIG_KEYS = [...REQUIRED_CONFIG_KEYS, "currency"] as const;
+
+function configKeys(value: Record<string, unknown>): boolean {
   return (
-    required.every((key) => Object.prototype.hasOwnProperty.call(value, key)) &&
-    keys.every((key) => required.includes(key))
+    REQUIRED_CONFIG_KEYS.every((key) =>
+      Object.prototype.hasOwnProperty.call(value, key),
+    ) &&
+    Object.keys(value).every((key) =>
+      (CONFIG_KEYS as readonly string[]).includes(key),
+    )
   );
 }
 
@@ -63,6 +77,9 @@ function configFields(value: unknown): GoalConfigV1 {
     filterDslVersion:
       root?.filterDslVersion as GoalConfigV1["filterDslVersion"],
     filterDsl: root?.filterDsl as string,
+    ...(root?.currency === undefined
+      ? {}
+      : { currency: root.currency as string }),
   };
 }
 
@@ -77,19 +94,15 @@ function decodeV1(value: unknown): GoalConfigV1 {
   const root = record(value);
   if (
     !root ||
-    !exactKeys(root, ["filterDslVersion", "filterDsl"]) ||
+    !configKeys(root) ||
     root.filterDslVersion !== GOAL_FILTER_DSL_VERSION ||
     typeof root.filterDsl !== "string"
   ) {
     throw new GoalConfigDecodeError("goal_v1_config_invalid");
   }
 
-  const config: GoalConfigV1 = {
-    filterDslVersion: GOAL_FILTER_DSL_VERSION,
-    filterDsl: root.filterDsl,
-  };
   try {
-    return validateGoalConfigForWrite(config);
+    return validateGoalConfigForWrite(configFields(root));
   } catch (error) {
     throw new GoalConfigDecodeError(
       error instanceof GoalConfigValidationError
@@ -119,7 +132,7 @@ export function decodeGoalConfig(version: number, json: string): GoalConfigV1 {
 /** Validate a Goal config for a new or updated definition write. */
 export function validateGoalConfigForWrite(config: GoalConfigV1): GoalConfigV1 {
   const root = record(config);
-  if (!root || !exactKeys(root, ["filterDslVersion", "filterDsl"])) {
+  if (!root || !configKeys(root)) {
     throw new GoalConfigValidationError("goal_config_invalid");
   }
   if (root.filterDslVersion !== GOAL_FILTER_DSL_VERSION) {
@@ -133,16 +146,41 @@ export function validateGoalConfigForWrite(config: GoalConfigV1): GoalConfigV1 {
     throw new GoalConfigValidationError("goal_filter_dsl_invalid");
   }
 
+  let document: FilterDocument;
   try {
-    parseAndAssertGoalFilter(root.filterDsl);
+    document = parseAndAssertGoalFilter(root.filterDsl);
   } catch {
     throw new GoalConfigValidationError("goal_filter_dsl_invalid");
   }
 
+  if (root.currency === undefined) {
+    return {
+      filterDslVersion: GOAL_FILTER_DSL_VERSION,
+      filterDsl: root.filterDsl,
+    };
+  }
+  const currency = currencyCode(root.currency);
+  if (currency === null) {
+    throw new GoalConfigValidationError("goal_currency_invalid");
+  }
+  if (!matchesOnlyCustomEvents(document)) {
+    throw new GoalConfigValidationError("goal_currency_requires_event_goal");
+  }
   return {
     filterDslVersion: GOAL_FILTER_DSL_VERSION,
     filterDsl: root.filterDsl,
+    currency,
   };
+}
+
+/**
+ * Whether every conversion of the goal is a custom event: its filter can't
+ * match a page view, e.g. `event.name eq "Purchase"`, alone or AND-ed with
+ * page conditions. Only these goals have revenue.
+ */
+export function matchesOnlyCustomEvents(document: FilterDocument): boolean {
+  const plan = planObservationFilter(document.root);
+  return plan.visit.kind === "none" && plan.event.kind !== "none";
 }
 
 export function encodeGoalConfig(config: GoalConfigV1): EncodedGoalConfig {
@@ -163,6 +201,7 @@ function semanticPayload(config: GoalConfigV1): string {
     configVersion: GOAL_CONFIG_VERSION,
     filterDslVersion: config.filterDslVersion,
     filter: filterFingerprint(parseGoalFilter(config), analyticsFilterRegistry),
+    ...(config.currency === undefined ? {} : { currency: config.currency }),
   });
 }
 

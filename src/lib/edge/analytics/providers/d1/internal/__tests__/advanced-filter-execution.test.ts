@@ -31,6 +31,8 @@ interface SharedActivityBase {
   readonly pathname: string;
   readonly title?: string;
   readonly hostname?: string;
+  /** The page view's custom properties. */
+  readonly properties?: Readonly<Record<string, string>>;
 }
 type SharedActivity = SharedActivityBase &
   (
@@ -109,6 +111,7 @@ const RAW_COLUMNS = [
   "ended_at",
   "finalized_at",
   "duration_ms",
+  "scroll_depth",
   "duration_source",
   "exit_reason",
   "pathname",
@@ -169,7 +172,7 @@ function sqliteEnv(activities: readonly SharedActivity[] = SHARED_ACTIVITIES): {
       site_pk INTEGER NOT NULL,
       visitor_id TEXT,
       session_id TEXT,
-      ${RAW_COLUMNS.map((column) => `${column} ${column === "started_at" || column.endsWith("_ms") || column === "is_eu" ? "INTEGER" : "TEXT"}`).join(",\n      ")}
+      ${RAW_COLUMNS.map((column) => `${column} ${column === "started_at" || column.endsWith("_ms") || column === "is_eu" || column === "scroll_depth" ? "INTEGER" : "TEXT"}`).join(",\n      ")}
     );
     CREATE TABLE custom_event_names (
       id INTEGER PRIMARY KEY,
@@ -213,6 +216,14 @@ function sqliteEnv(activities: readonly SharedActivity[] = SHARED_ACTIVITIES): {
       number_value REAL,
       boolean_value INTEGER
     );
+    CREATE TABLE visit_properties (
+      visit_id TEXT NOT NULL,
+      key TEXT NOT NULL,
+      value TEXT NOT NULL,
+      site_pk INTEGER NOT NULL,
+      started_at INTEGER NOT NULL,
+      PRIMARY KEY (visit_id, key)
+    );
   `);
   database
     .prepare("INSERT INTO sites (id, created_at) VALUES (?, ?)")
@@ -235,6 +246,13 @@ function sqliteEnv(activities: readonly SharedActivity[] = SHARED_ACTIVITIES): {
       activity.title ?? activity.pathname,
       activity.hostname ?? "example.test",
     );
+    for (const [key, value] of Object.entries(activity.properties ?? {})) {
+      database
+        .prepare(
+          "INSERT INTO visit_properties (visit_id, key, value, site_pk, started_at) VALUES (?, ?, ?, 1, ?)",
+        )
+        .run(activity.visitId, key, value, activity.pageTimeMs);
+    }
   }
   database
     .prepare(
@@ -959,6 +977,61 @@ describe("D1 advanced filter execution", () => {
       capturedAtMs: 2_000,
     });
     expect(factParity.d1).toEqual(["fact-visitor"]);
+  });
+
+  it("matches a page view's properties in event.payload alongside advanced expressions", async () => {
+    const activities: SharedActivity[] = [
+      {
+        visitId: "jane-page",
+        sessionId: "session-jane",
+        visitorId: "visitor-jane",
+        pageTimeMs: 1_000,
+        pathname: "/post",
+        properties: { author: "Jane" },
+      },
+      {
+        visitId: "john-page",
+        sessionId: "session-john",
+        visitorId: "visitor-john",
+        pageTimeMs: 2_000,
+        pathname: "/post",
+        properties: { author: "John" },
+      },
+      {
+        visitId: "plain-page",
+        sessionId: "session-plain",
+        visitorId: "visitor-plain",
+        pageTimeMs: 3_000,
+        pathname: "/post",
+      },
+      {
+        visitId: "proto-page",
+        sessionId: "session-proto",
+        visitorId: "visitor-proto",
+        pageTimeMs: 4_000,
+        pathname: "/post",
+        properties: { ["__proto__"]: "kept" },
+      },
+    ];
+    const matches = (filterDsl: string) =>
+      evaluateSharedFixture({
+        activities,
+        filterDsl,
+        scope: "session",
+        candidateRange: { startMs: 0, endExclusiveMs: 10_000 },
+        reportingTimeZone: "UTC",
+        capturedAtMs: 20_000,
+      });
+
+    await expect(
+      matches('event.payload("/author") eq "Jane" AND count(PAGE) gte 1'),
+    ).resolves.toEqual({ d1: ["session-jane"] });
+    await expect(
+      matches('event.payload("/author") exists AND count(PAGE) gte 1'),
+    ).resolves.toEqual({ d1: ["session-jane", "session-john"] });
+    await expect(
+      matches('event.payload("/__proto__") eq "kept" AND count(PAGE) gte 1'),
+    ).resolves.toEqual({ d1: ["session-proto"] });
   });
 
   it("evaluates numeric arithmetic, typed payloads, Duration ranges, auto history, and root Relations", async () => {

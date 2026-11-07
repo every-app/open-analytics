@@ -3,7 +3,7 @@ import type { FilterDocument } from "@/lib/filter-contract/filters";
 import type {
   Interval,
   PagesDashboardComparisonQuery,
-  PagesDashboardMetric,
+  PagesDashboardSortKey,
   QueryAudience,
   QueryWindow,
   SortDirection,
@@ -20,6 +20,11 @@ export interface PageDashboardMetrics {
 export interface PageDashboardItem {
   readonly pathname: string;
   readonly titles: readonly string[];
+  /**
+   * Each visitor's deepest scroll on the page, averaged over the visitors,
+   * in %; null when no page view reported one.
+   */
+  readonly scrollDepth: number | null;
   readonly trend: readonly {
     readonly timestampMs: number;
     readonly views: number;
@@ -72,7 +77,7 @@ export interface PagesDashboardReaderInput {
   readonly page: { readonly limit: number; readonly cursor?: string | null };
   readonly search?: string;
   readonly sort?: {
-    readonly key: PagesDashboardMetric;
+    readonly key: PagesDashboardSortKey;
     readonly direction: SortDirection;
   };
   readonly comparison?: PagesDashboardComparisonQuery;

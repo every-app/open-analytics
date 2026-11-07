@@ -23,7 +23,12 @@ import {
   deleteAnalyticsSession,
   readDueAnalyticsSessions,
 } from "./session-state";
-import { MARK_ROLLED_UP_DAY_SQL, visitBindings, visitUpsertSql } from "./sql";
+import {
+  INSERT_VISIT_PROPERTIES_SQL,
+  MARK_ROLLED_UP_DAY_SQL,
+  visitBindings,
+  visitUpsertSql,
+} from "./sql";
 import { toUnixSeconds } from "./time";
 import type { BufferedCustomEventRow, BufferedVisitRow } from "./types";
 interface FlushBufferFields {
@@ -31,11 +36,17 @@ interface FlushBufferFields {
   flushDueAt: number | null;
   nextDueAt: number | null;
 }
-type BufferedVisitFlushRow = BufferedVisitRow & Partial<FlushBufferFields>;
+type BufferedVisitFlushRow = BufferedVisitRow &
+  Partial<FlushBufferFields> & {
+    /** The page view's custom properties as a JSON object, NULL if none. */
+    propertiesJson: string | null;
+  };
 type BufferedCustomEventFlushRow = BufferedCustomEventRow &
   Partial<FlushBufferFields>;
-// A visit flush is a two-statement D1 group. Keep the existing D1 batch and
-// alarm budgets expressed in physical statements rather than buffered rows.
+// A visit flush is a two-statement D1 group: its upsert and at most one
+// mark of its day. Keep the existing D1 batch and alarm budgets expressed in
+// physical statements rather than buffered rows. The batch's one statement
+// for properties is outside the groups.
 const VISIT_FLUSH_STATEMENT_GROUP_SIZE = 2;
 const VISIT_FLUSH_ROW_BATCH_SIZE = Math.max(
   1,
@@ -189,6 +200,7 @@ export async function flushPendingToD1(
           ended_at AS endedAt,
           finalized_at AS finalizedAt,
           duration_ms AS durationMs,
+          scroll_depth AS scrollDepth,
           COALESCE(duration_source, '') AS durationSource,
           COALESCE(exit_reason, '') AS exitReason,
           pathname,
@@ -224,6 +236,7 @@ export async function flushPendingToD1(
           screen_width AS screenWidth,
           screen_height AS screenHeight,
           language,
+          properties_json AS propertiesJson,
           dirty,
           flush_attempts AS flushAttempts,
           buffer_revision AS bufferRevision,
@@ -252,6 +265,8 @@ export async function flushPendingToD1(
           sequence,
           event_name AS eventName,
           event_data_json AS eventDataJson,
+          revenue_amount AS revenueAmount,
+          revenue_currency AS revenueCurrency,
           dirty,
           flush_attempts AS flushAttempts,
           last_flush_error AS lastFlushError,
@@ -857,15 +872,22 @@ function nextDueAtAfterRetry(
 }
 /**
  * The page views' writes, then a statement per site and UTC day they start
- * on that marks the day for the rollup task if it is already rolled up.
+ * on that marks the day for the rollup task if it is already rolled up,
+ * then one statement for their custom properties if they have any.
  */
 function prepareVisitStatements(
-  visits: readonly { row: BufferedVisitRow; sitePk: number }[],
+  visits: readonly { row: BufferedVisitFlushRow; sitePk: number }[],
 ): DatabaseStatement[] {
   const days = new Map<string, { sitePk: number; day: number }>();
+  const properties: (string | number)[][] = [];
   for (const { row, sitePk } of visits) {
     const day = Math.floor(row.startedAt / ONE_DAY_MS);
     days.set(`${sitePk}:${day}`, { sitePk, day });
+    if (row.propertiesJson === null) continue;
+    const pairs = JSON.parse(row.propertiesJson) as Record<string, string>;
+    for (const [key, value] of Object.entries(pairs)) {
+      properties.push([row.visitId, key, value, sitePk, row.startedAt]);
+    }
   }
   return [
     ...visits.map(({ row, sitePk }) => ({
@@ -878,11 +900,20 @@ function prepareVisitStatements(
       bindings: [sitePk, day],
       tag: "ingest.visit_rollup_dirty_days.mark",
     })),
+    ...(properties.length > 0
+      ? [
+          {
+            sql: INSERT_VISIT_PROPERTIES_SQL,
+            bindings: [JSON.stringify(properties)],
+            tag: "ingest.visit_properties.insert",
+          },
+        ]
+      : []),
   ];
 }
 async function flushRowsIndividually(
   context: IngestFlushContext,
-  visitRows: BufferedVisitRow[],
+  visitRows: BufferedVisitFlushRow[],
   eventRows: BufferedCustomEventRow[],
 ): Promise<void> {
   for (const row of visitRows) {
@@ -894,7 +925,7 @@ async function flushRowsIndividually(
 }
 async function flushVisitRowIndividually(
   context: IngestFlushContext,
-  row: BufferedVisitRow,
+  row: BufferedVisitFlushRow,
 ): Promise<void> {
   try {
     const sitePk = await resolveSitePk(context, row.siteId);

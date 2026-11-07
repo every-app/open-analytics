@@ -75,10 +75,11 @@ describe("query contract boundary coverage", () => {
   });
 
   it("exposes the v4 field inventory and typed metadata", () => {
-    expect(analyticsFilterRegistry.size).toBe(42);
-    expect(ANALYTICS_FILTER_REGISTRY_REVISION).toBe("analytics-filter-v5");
+    expect(analyticsFilterRegistry.size).toBe(43);
+    expect(ANALYTICS_FILTER_REGISTRY_REVISION).toBe("analytics-filter-v6");
     expect([...ANALYTICS_FILTER_FIELD_IDS].slice(31)).toEqual([
       "page.durationMs",
+      "page.scrollDepth",
       "session.durationMs",
       "session.views",
       "session.events",
@@ -98,6 +99,14 @@ describe("query contract boundary coverage", () => {
       nullable: true,
       unit: "ms",
       compilerStrategy: "column.duration_ms",
+    });
+    expect(analyticsFilterRegistry.get("page.scrollDepth")).toMatchObject({
+      valueKind: "number",
+      conditionEntity: "page",
+      nullable: true,
+      unit: "%",
+      number: { min: 0, max: 100, step: 1 },
+      compilerStrategy: "column.scroll_depth",
     });
     expect(analyticsFilterRegistry.get("session.views")).toMatchObject({
       valueKind: "number",
@@ -127,6 +136,7 @@ describe("query contract boundary coverage", () => {
   it("keeps new visit fields available through every event visit context", () => {
     const visitColumns = [
       "duration_ms",
+      "scroll_depth",
       "is_eu",
       "screen_width",
       "screen_height",

@@ -12,6 +12,12 @@ import type {
   CanonicalGoalTimeseriesResult,
 } from "./operation-results";
 import type { PagesDashboardResult } from "./pages-dashboard";
+import type {
+  PropertyKeysQuery,
+  PropertyKeysResult,
+  PropertyValuesQuery,
+  PropertyValuesResult,
+} from "./properties";
 import type { TeamSitesQueryResult } from "./team-results";
 import type { TeamDashboardData } from "./team-results";
 import type {
@@ -320,6 +326,14 @@ export interface CanonicalOperationMap {
   readonly "goal-timeseries": {
     readonly query: LegacyAnalysisQuery;
     readonly result: CanonicalGoalTimeseriesResult | null;
+  };
+  readonly "property-keys": {
+    readonly query: PropertyKeysQuery;
+    readonly result: PropertyKeysResult;
+  };
+  readonly "property-values": {
+    readonly query: PropertyValuesQuery;
+    readonly result: PropertyValuesResult;
   };
   readonly "team-dashboard": {
     readonly query: LegacyTeamDashboardQuery;

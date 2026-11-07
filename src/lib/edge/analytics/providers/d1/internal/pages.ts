@@ -2,7 +2,7 @@ import {
   analyticsFilterRegistry,
   effectiveScopeForPagination,
   filterFingerprint,
-  type PagesDashboardMetric,
+  type PagesDashboardSortKey,
   type QueryAudience,
   type SortDirection,
 } from "@/lib/edge/analytics/contract";
@@ -43,6 +43,11 @@ import {
   scopedDatasetFor,
   scopedDatasetForUnpreparedReader,
 } from "./scoped-dataset";
+import {
+  NO_SCROLL_DEPTH_RANK,
+  scrollDepthOf,
+  scrollDepthSql,
+} from "./scroll-depth";
 export interface PageAggregateCursor {
   readonly views: number;
   readonly sessions: number;
@@ -638,7 +643,7 @@ export async function queryPageCardMetricsFromD1(
     limit?: number;
     cursor?: PageDashboardCursor | null;
     search?: string;
-    sort?: PagesDashboardMetric;
+    sort?: PagesDashboardSortKey;
     direction?: SortDirection;
   },
 ): Promise<PageCardAggregateRow[]> {
@@ -666,7 +671,7 @@ export async function queryPageCardMetricsFromD1(
   const sort = options?.sort ?? "views";
   const direction = options?.direction ?? "desc";
   const sortColumns: Record<
-    PagesDashboardMetric,
+    PagesDashboardSortKey,
     { primary: string; secondary: string }
   > = {
     views: { primary: "views", secondary: "sessions" },
@@ -675,6 +680,7 @@ export async function queryPageCardMetricsFromD1(
     bounceRate: { primary: "bounceRate", secondary: "sessions" },
     pagesPerSession: { primary: "pagesPerSession", secondary: "views" },
     avgDurationMs: { primary: "avgDurationMs", secondary: "views" },
+    scrollDepth: { primary: "scrollDepthRank", secondary: "views" },
   };
   const { primary, secondary } = sortColumns[sort];
   const operator = direction === "asc" ? ">" : "<";
@@ -696,7 +702,8 @@ filtered_visits AS MATERIALIZED (
     pathname,
     session_id AS sessionId,
     visitor_id AS visitorId,
-    duration_ms AS durationMs
+    duration_ms AS durationMs,
+    scroll_depth AS scrollDepth
   FROM ${scopedDataset?.visitRelation ?? "visit_source"}
   ${filteredClause}
 ),
@@ -709,6 +716,14 @@ path_rollup AS (
     COALESCE(sum(CASE WHEN durationMs IS NOT NULL AND durationMs >= 0 THEN durationMs ELSE 0 END), 0) AS totalDuration
   FROM filtered_visits
   GROUP BY pathname
+),
+path_scroll_depth AS (
+  ${scrollDepthSql({
+    from: "filtered_visits",
+    visitor: "visitorId",
+    depth: "scrollDepth",
+    groupBy: { sql: "pathname", as: "pathname" },
+  })}
 ),
 path_session_rollup AS (
   SELECT
@@ -736,6 +751,8 @@ path_metrics AS (
     COALESCE(pb.bounces, 0) AS bounces,
     pr.totalDuration AS totalDuration,
     0 AS durationViews,
+    psd.scrollDepth AS scrollDepth,
+    COALESCE(psd.scrollDepth, ${NO_SCROLL_DEPTH_RANK}) AS scrollDepthRank,
     CASE WHEN pr.sessions <= 0 THEN 0.0
       ELSE COALESCE(pb.bounces, 0) * 1.0 / pr.sessions END AS bounceRate,
     CASE WHEN pr.sessions <= 0 THEN 0.0
@@ -744,6 +761,7 @@ path_metrics AS (
       ELSE pr.totalDuration * 1.0 / pr.sessions END AS avgDurationMs
   FROM path_rollup pr
   LEFT JOIN path_bounce_rollup pb ON pb.pathname = pr.pathname
+  LEFT JOIN path_scroll_depth psd ON psd.pathname = pr.pathname
 )
 SELECT
   pr.pathname AS pathname,
@@ -752,7 +770,8 @@ SELECT
   pr.visitors AS visitors,
   pr.bounces AS bounces,
   pr.totalDuration AS totalDuration,
-  pr.durationViews AS durationViews
+  pr.durationViews AS durationViews,
+  pr.scrollDepth AS scrollDepth
 FROM path_metrics pr
 WHERE 1 = 1
 ${searchClause}
@@ -800,6 +819,7 @@ ${hasLimit ? "LIMIT ?" : ""}
     bounces: Number(row.bounces ?? 0),
     totalDuration: Number(row.totalDuration ?? 0),
     durationViews: Number(row.durationViews ?? 0),
+    scrollDepth: scrollDepthOf(row.scrollDepth),
   }));
 }
 export async function queryPageCardTitlesFromD1(

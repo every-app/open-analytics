@@ -2,6 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 
 import { describe, expect, it } from "vitest";
 
+import { createMigratedDatabase } from "@/../scripts/schema/database";
 import { compileFilterDocument } from "@/lib/edge/analytics/providers/d1/internal/filter-compiler";
 import {
   analyticsFilterRegistry,
@@ -536,8 +537,9 @@ describe("filter SQL compiler", () => {
       }),
       { alias: "es", eventAlias: "es" },
     );
+    expect(result.clause).toContain("value_type = ? AND");
     expect(result.clause).toContain("NOT IN (?, ?)");
-    expect(result.bindings).toEqual(["/plan", "free", "trial", 1]);
+    expect(result.bindings).toEqual(["/plan", 1, "free", "trial"]);
 
     expect(() =>
       compileFilterDocument(
@@ -725,5 +727,104 @@ describe("filter SQL compiler", () => {
 
     expect(result.clause).toContain("IN (?, ?)");
     expect(result.bindings).toEqual(["", "google.com"]);
+  });
+});
+
+describe("payload conditions on page views", () => {
+  function pageViews() {
+    const database = createMigratedDatabase();
+    database.exec(`
+      INSERT INTO site_identities (site_pk, site_id) VALUES (1, 'site-1');
+      INSERT INTO visits (visit_id, site_id, site_pk, visitor_id, session_id,
+        status, started_at, last_activity_at, pathname, hostname)
+      VALUES
+        ('jane', 'site-1', 1, 'v1', 's1', 'complete', 1, 1, '/a', 'example.com'),
+        ('john', 'site-1', 1, 'v2', 's2', 'complete', 2, 2, '/b', 'example.com'),
+        ('none', 'site-1', 1, 'v3', 's3', 'complete', 3, 3, '/c', 'example.com');
+      INSERT INTO visit_properties (visit_id, key, value, site_pk, started_at)
+      VALUES
+        ('jane', 'author', 'Jane Doe', 1, 1),
+        ('jane', 'a/b', 'slash', 1, 1),
+        ('john', 'author', 'John', 1, 2),
+        ('john', 'seats', '5', 1, 2);
+    `);
+    return database;
+  }
+
+  function matching(
+    database: DatabaseSync,
+    path: string,
+    operator: string,
+    value?: unknown,
+  ): string[] {
+    const compiled = compileFilterDocument(
+      document({
+        kind: "condition",
+        target: { kind: "event-payload", path },
+        operator,
+        ...(value === undefined ? {} : { value }),
+      }),
+      { alias: "v", observation: "visit" },
+    );
+    return database
+      .prepare(`SELECT visit_id FROM visits v ${compiled.clause} ORDER BY 1`)
+      .all(...compiled.bindings)
+      .map((row) => String(row.visit_id));
+  }
+
+  it("matches a page view's properties by key, as strings", () => {
+    const database = pageViews();
+
+    expect(matching(database, "/author", "eq", "Jane Doe")).toEqual(["jane"]);
+    expect(matching(database, "/author", "neq", "Jane Doe")).toEqual(["john"]);
+    expect(matching(database, "/author", "contains", "Jo")).toEqual(["john"]);
+    expect(matching(database, "/author", "in", ["Jane Doe", "John"])).toEqual([
+      "jane",
+      "john",
+    ]);
+    const many = ["John", ...Array.from({ length: 8 }, (_, i) => `x${i}`)];
+    expect(matching(database, "/author", "in", many)).toEqual(["john"]);
+    expect(matching(database, "/author", "exists")).toEqual(["jane", "john"]);
+    expect(matching(database, "/author", "notExists")).toEqual(["none"]);
+    expect(matching(database, "/a~1b", "eq", "slash")).toEqual(["jane"]);
+    database.close();
+  });
+
+  it("matches no page view by a nested path or a value that isn't a string", () => {
+    const database = pageViews();
+
+    expect(matching(database, "/author/name", "exists")).toEqual([]);
+    expect(matching(database, "/author/name", "notExists")).toEqual([
+      "jane",
+      "john",
+      "none",
+    ]);
+    expect(matching(database, "/seats", "eq", 5)).toEqual([]);
+    expect(matching(database, "/seats", "eq", "5")).toEqual(["john"]);
+    expect(matching(database, "/author", "isNull")).toEqual([]);
+    expect(matching(database, "/author", "isEmpty")).toEqual([]);
+    database.close();
+  });
+
+  it("looks a property up by the page view's primary key", () => {
+    const database = pageViews();
+    const compiled = compileFilterDocument(
+      document({
+        kind: "condition",
+        target: { kind: "event-payload", path: "/author" },
+        operator: "eq",
+        value: "John",
+      }),
+      { alias: "v", observation: "visit" },
+    );
+
+    const plan = database
+      .prepare(`EXPLAIN QUERY PLAN SELECT 1 FROM visits v ${compiled.clause}`)
+      .all(...compiled.bindings)
+      .map((row) => String(row.detail));
+    expect(plan.join("\n")).toMatch(
+      /SEARCH visit_properties USING PRIMARY KEY \(visit_id=\? AND key=\?\)/,
+    );
+    database.close();
   });
 });

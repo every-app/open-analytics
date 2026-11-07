@@ -534,8 +534,9 @@ describe("MCP tools", () => {
     await callTool("save_goal", {
       site_id: "site-1",
       id: "goal-1",
-      name: "Signup",
-      filter: 'event.name eq "signup"',
+      name: "Purchase",
+      filter: 'event.name eq "Purchase"',
+      currency: "USD",
     });
 
     expect(
@@ -544,11 +545,67 @@ describe("MCP tools", () => {
       ["POST", { siteId: "site-1" }],
       ["PATCH", { siteId: "site-1", id: "goal-1" }],
     ]);
+    // Without a currency, a goal has no revenue: a replaced one loses it.
     expect(await forwardedBody(0)).toEqual({
       name: "Signup",
       filterDslVersion: 1,
       filterDsl: 'event.name eq "signup"',
+      currency: null,
     });
+    expect(await forwardedBody(1)).toEqual({
+      name: "Purchase",
+      filterDslVersion: 1,
+      filterDsl: 'event.name eq "Purchase"',
+      currency: "USD",
+    });
+  });
+
+  it("saves a scroll depth goal from scroll_depth and page_path", async () => {
+    await callTool("save_goal", {
+      site_id: "site-1",
+      name: "Scroll 75% on /blog*",
+      scroll_depth: 75,
+      page_path: "/blog*",
+    });
+    await callTool("save_goal", {
+      site_id: "site-1",
+      name: "Scroll 50%",
+      scroll_depth: 50,
+    });
+
+    expect(await forwardedBody(0)).toEqual({
+      name: "Scroll 75% on /blog*",
+      filterDslVersion: 1,
+      filterDsl: 'page.path startsWith "/blog" AND page.scrollDepth gte 75',
+      currency: null,
+    });
+    expect(await forwardedBody(1)).toMatchObject({
+      filterDsl: "page.scrollDepth gte 50",
+    });
+  });
+
+  it("takes either a filter or a scroll depth for a goal", async () => {
+    const save = (args: Record<string, unknown>) =>
+      callTool("save_goal", { site_id: "site-1", name: "Goal", ...args });
+
+    expect(await save({})).toEqual({
+      isError: true,
+      text: "Pass filter or scroll_depth.",
+    });
+    expect(
+      await save({ filter: 'event.name eq "signup"', scroll_depth: 50 }),
+    ).toEqual({
+      isError: true,
+      text: "Pass filter or scroll_depth, not both.",
+    });
+    expect(
+      await save({ filter: 'event.name eq "signup"', page_path: "/blog*" }),
+    ).toEqual({ isError: true, text: "page_path needs scroll_depth." });
+    expect(await save({ scroll_depth: 50, page_path: "/a/*/b/*" })).toEqual({
+      isError: true,
+      text: "page_path can have one *, or one at each end, e.g. /blog* or *docs*.",
+    });
+    expect(apiApp.fetch).not.toHaveBeenCalled();
   });
 
   it("turns public sharing on with a slug and off without one", async () => {

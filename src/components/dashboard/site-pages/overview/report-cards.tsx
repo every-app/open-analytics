@@ -270,6 +270,7 @@ function pageDetailRows(
     visitors: item.metrics.visitors,
     bounceRate: item.metrics.bounceRate,
     avgDurationMs: item.metrics.avgDurationMs,
+    scrollDepth: item.scrollDepth,
     mono: true,
   }));
 }
@@ -486,7 +487,8 @@ export function OverviewReportCards({
                   sort:
                     key === "views" ||
                     key === "bounceRate" ||
-                    key === "avgDurationMs"
+                    key === "avgDurationMs" ||
+                    key === "scrollDepth"
                       ? key
                       : "visitors",
                   direction: request.sort.direction,

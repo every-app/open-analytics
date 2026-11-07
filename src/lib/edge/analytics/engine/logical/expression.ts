@@ -8,6 +8,7 @@ import type {
   ElapsedDurationUnit,
   LogicalValueType,
   SemanticScalarType,
+  SemanticUnit,
 } from "@/lib/edge/analytics/engine/semantic/value-types";
 
 export type LogicalLiteralValue = string | number | boolean | null;
@@ -136,7 +137,7 @@ export type LogicalExpr =
 export function scalarLiteral(
   value: LogicalLiteralValue,
   scalar: SemanticScalarType,
-  unit?: "ms" | "px" | "ratio",
+  unit?: SemanticUnit,
 ): LogicalLiteralExpression {
   return {
     kind: "literal",

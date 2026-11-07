@@ -25,8 +25,10 @@ export type ReportSortKey =
   | "visitors"
   | "sessions"
   | "views"
+  | "events"
   | "bounceRate"
   | "avgDurationMs"
+  | "scrollDepth"
   | "current"
   | "reference"
   | "change";
@@ -46,6 +48,10 @@ export interface ReportRow {
   /** The Pages card's extra metrics. */
   bounceRate?: number;
   avgDurationMs?: number;
+  /** Null for a page none of whose page views reported a scroll depth. */
+  scrollDepth?: number | null;
+  /** The Properties card's events with the value. */
+  events?: number;
   reference?: {
     views: number;
     sessions: number;

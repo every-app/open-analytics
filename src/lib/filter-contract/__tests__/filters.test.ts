@@ -123,9 +123,10 @@ describe("typed filter contract", () => {
     expect([
       ...(analyticsFilterDefinition("event.name")?.observationKinds ?? []),
     ]).toEqual(["event"]);
+    // A top-level payload path also names a page view's custom property.
     expect([
       ...(analyticsFilterDefinition("event.payload")?.observationKinds ?? []),
-    ]).toEqual(["event"]);
+    ]).toEqual(["visit", "event"]);
     expect(analyticsFilterRegistry.get("event.payload")?.valueKind).toBe(
       "json-scalar",
     );

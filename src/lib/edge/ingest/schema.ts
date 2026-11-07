@@ -382,6 +382,7 @@ export function initializeIngestSqlSchema(
         ended_at INTEGER,
         finalized_at INTEGER,
         duration_ms INTEGER,
+        scroll_depth INTEGER,
         duration_source TEXT,
         exit_reason TEXT,
         pathname TEXT NOT NULL,
@@ -424,6 +425,7 @@ export function initializeIngestSqlSchema(
         perf_lcp_ms REAL,
         perf_cls REAL,
         perf_inp_ms REAL,
+        properties_json TEXT,
         dirty INTEGER NOT NULL DEFAULT 1,
         flush_attempts INTEGER NOT NULL DEFAULT 0,
         last_flush_error TEXT,
@@ -442,12 +444,14 @@ export function initializeIngestSqlSchema(
   ensureColumn(sql, "buffered_visits", "user_id", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(sql, "buffered_visits", "user_name", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(sql, "buffered_visits", "hidden_at", "INTEGER");
+  ensureColumn(sql, "buffered_visits", "properties_json", "TEXT");
   ensureColumn(
     sql,
     "buffered_visits",
     "hidden_ms",
     "INTEGER NOT NULL DEFAULT 0",
   );
+  ensureColumn(sql, "buffered_visits", "scroll_depth", "INTEGER");
   ensureColumn(sql, "buffered_visits", "next_due_at", "INTEGER");
   ensureColumn(sql, "buffered_visits", "flush_due_at", "INTEGER");
   ensureColumn(
@@ -535,6 +539,8 @@ export function initializeIngestSqlSchema(
     "user_id",
     "TEXT NOT NULL DEFAULT ''",
   );
+  ensureColumn(sql, "buffered_custom_events", "revenue_amount", "REAL");
+  ensureColumn(sql, "buffered_custom_events", "revenue_currency", "TEXT");
   ensureColumn(sql, "buffered_custom_events", "next_due_at", "INTEGER");
   ensureColumn(sql, "buffered_custom_events", "flush_due_at", "INTEGER");
   ensureColumn(

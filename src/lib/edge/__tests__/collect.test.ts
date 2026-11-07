@@ -29,6 +29,8 @@ const baseSettings: SiteTrackingConfig = {
   trackQueryParams: true,
   trackHash: true,
   autoTrackOutboundLinks: false,
+  autoTrackFileDownloads: false,
+  track404Pages: false,
   domainWhitelist: [],
   pathBlacklist: [],
   ignoreDoNotTrack: true,

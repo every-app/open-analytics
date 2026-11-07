@@ -269,6 +269,7 @@ function filterNumberUnitLabel(
     case "milliseconds":
       return messages.filterBuilder.units.milliseconds;
     case "percent":
+    case "%":
       return messages.filterBuilder.units.percent;
     case "per-mille":
       return messages.filterBuilder.units.perMille;
@@ -286,6 +287,8 @@ function defaultFilterNumberDisplayUnit(
       return "percent";
     case "px":
       return "px";
+    case "%":
+      return "%";
   }
 }
 function FilterNumberUnitSelect({

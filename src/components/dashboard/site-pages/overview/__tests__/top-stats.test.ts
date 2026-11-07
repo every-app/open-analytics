@@ -5,14 +5,19 @@ import {
   GRAPH_METRIC_PARAM,
   graphMetricFromSearchParams,
   graphPoints,
-  TOP_STATS,
   TopStat,
   topStatChange,
+  topStats,
   topStatValue,
   withGraphMetric,
 } from "@/components/dashboard/site-pages/overview/top-stats";
 import { addZonedInterval } from "@/lib/analytics/time-zone";
 import type { TrendPoint } from "@/lib/dashboard-api/client/edge";
+import { analyticsFilterRegistry, parseFilterDsl } from "@/lib/filter-contract";
+
+const filters = (source: string) =>
+  parseFilterDsl(source, analyticsFilterRegistry);
+const SITE_STATS = topStats(filters(""));
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const day = (index: number) => Date.UTC(2026, 10, 1) + index * DAY_MS;
@@ -34,7 +39,7 @@ function point(timestampMs: number, totals: Partial<TrendPoint>): TrendPoint {
 
 describe("top stats", () => {
   it("lists Plausible's six stats in its order", () => {
-    expect(TOP_STATS).toEqual([
+    expect(SITE_STATS).toEqual([
       "visitors",
       "visits",
       "pageviews",
@@ -42,19 +47,59 @@ describe("top stats", () => {
       "bounceRate",
       "visitDuration",
     ]);
+    expect(topStats(filters('geo.country eq "US"'))).toEqual(SITE_STATS);
+  });
+
+  it("swaps views per visit for scroll depth with a page path filter", () => {
+    for (const source of [
+      'page.path eq "/pricing"',
+      'page.path contains "/blog"',
+      'geo.country eq "US" OR page.path startsWith "/docs"',
+      'NOT page.path eq "/"',
+    ]) {
+      expect(topStats(filters(source))).toEqual([
+        TopStat.Visitors,
+        TopStat.Visits,
+        TopStat.Pageviews,
+        TopStat.BounceRate,
+        TopStat.ScrollDepth,
+        TopStat.VisitDuration,
+      ]);
+    }
+    // A path inside an advanced selector isn't a page filter.
+    expect(
+      topStats(filters('count(PAGE { $.path eq "/docs" }) gte 2')),
+    ).toEqual(SITE_STATS);
   });
 
   it("keeps the graphed stat in the address, leaving out the default", () => {
-    expect(graphMetricFromSearchParams(new URLSearchParams())).toBe(
+    expect(graphMetricFromSearchParams(new URLSearchParams(), SITE_STATS)).toBe(
       TopStat.Visitors,
     );
     expect(
-      graphMetricFromSearchParams(new URLSearchParams("metric=bounceRate")),
+      graphMetricFromSearchParams(
+        new URLSearchParams("metric=bounceRate"),
+        SITE_STATS,
+      ),
     ).toBe(TopStat.BounceRate);
     // An unknown stat, like one from an old link, graphs visitors.
     expect(
-      graphMetricFromSearchParams(new URLSearchParams("metric=revenue")),
+      graphMetricFromSearchParams(
+        new URLSearchParams("metric=revenue"),
+        SITE_STATS,
+      ),
     ).toBe(TopStat.Visitors);
+    // So does the scroll depth once the page filter is gone.
+    const scrollDepth = new URLSearchParams("metric=scrollDepth");
+    expect(graphMetricFromSearchParams(scrollDepth, SITE_STATS)).toBe(
+      TopStat.Visitors,
+    );
+    expect(
+      graphMetricFromSearchParams(scrollDepth, [
+        ...SITE_STATS,
+        TopStat.ScrollDepth,
+      ]),
+    ).toBe(TopStat.ScrollDepth);
 
     const params = new URLSearchParams("range=7d&filter[page.path]=eq:/");
     const picked = withGraphMetric(params, TopStat.Pageviews);
@@ -76,7 +121,7 @@ describe("top stats", () => {
     };
     expect(
       Object.fromEntries(
-        TOP_STATS.map((stat) => [stat, topStatValue(stat, totals)]),
+        SITE_STATS.map((stat) => [stat, topStatValue(stat, totals)]),
       ),
     ).toEqual({
       visitors: 8,
@@ -92,6 +137,13 @@ describe("top stats", () => {
     expect(topStatValue(TopStat.ViewsPerVisit, empty)).toBeNull();
     expect(topStatValue(TopStat.VisitDuration, empty)).toBeNull();
     expect(topStatValue(TopStat.Visits, empty)).toBe(0);
+    // The scroll depth is the server's average; none without one.
+    expect(
+      topStatValue(TopStat.ScrollDepth, { ...totals, scrollDepth: 65 }),
+    ).toBe(65);
+    expect(
+      topStatValue(TopStat.ScrollDepth, { ...totals, scrollDepth: null }),
+    ).toBeNull();
   });
 
   it("measures the change against the reference, when there is one", () => {
@@ -132,6 +184,25 @@ describe("top stats", () => {
         (graphPoint) => graphPoint.value,
       ),
     ).toEqual([null, 1 / 3, null, 0.5]);
+  });
+
+  it("draws each interval's scroll depth, with gaps where there is none", () => {
+    const window = {
+      from: day(0),
+      to: day(3),
+      interval: "day" as const,
+      timeZone: "UTC",
+    };
+    const points = [
+      point(day(0), { views: 3, scrollDepth: 65 }),
+      point(day(1), { views: 1, scrollDepth: null }),
+    ];
+
+    expect(graphPoints(window, points, TopStat.ScrollDepth)).toEqual([
+      { timestampMs: day(0), value: 65 },
+      { timestampMs: day(1), value: null },
+      { timestampMs: day(2), value: null },
+    ]);
   });
 
   it("buckets by the reporting zone", () => {

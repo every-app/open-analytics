@@ -537,6 +537,7 @@ describe("edge pages D1 queries", () => {
           visitors: "3",
           bounces: "1",
           totalDuration: "120000",
+          scrollDepth: 62,
         },
       ],
     ]);
@@ -562,6 +563,7 @@ describe("edge pages D1 queries", () => {
         bounces: 1,
         totalDuration: 120000,
         durationViews: 0,
+        scrollDepth: 62,
       },
     ]);
 
@@ -613,6 +615,7 @@ describe("edge pages D1 queries", () => {
         bounces: 0,
         totalDuration: 0,
         durationViews: 0,
+        scrollDepth: null,
       },
     ]);
     expect(calls[0].sql).not.toContain("LIMIT ? OFFSET ?");
@@ -713,6 +716,7 @@ describe("edge pages D1 queries", () => {
           bounces: 2,
           totalDuration: 50,
           durationViews: 0,
+          scrollDepth: null,
         },
         {
           pathname: "/",
@@ -722,6 +726,7 @@ describe("edge pages D1 queries", () => {
           bounces: 0,
           totalDuration: 300,
           durationViews: 0,
+          scrollDepth: null,
         },
       ]);
 
@@ -2275,6 +2280,8 @@ describe("edge overview D1 queries and handlers", () => {
         bounces: 0,
         totalDuration: 100,
         durationViews: 1,
+        // A page filter reads the scroll depth; no page view reported one.
+        scrollDepth: null,
       });
 
       expect(calls).toHaveLength(1);
@@ -2641,6 +2648,7 @@ describe("edge overview D1 queries and handlers", () => {
           bounces: 0,
           totalDuration: 500,
           durationViews: 2,
+          scrollDepth: null,
         },
       ]);
 
@@ -2672,6 +2680,7 @@ describe("edge overview D1 queries and handlers", () => {
           bounces: 1,
           totalDuration: 50000,
           durationViews: 10,
+          scrollDepth: 65,
         },
       ],
       [
@@ -2682,6 +2691,7 @@ describe("edge overview D1 queries and handlers", () => {
           bounces: 2,
           totalDuration: 25000,
           durationViews: 5,
+          scrollDepth: null,
         },
       ],
       [
@@ -2693,6 +2703,7 @@ describe("edge overview D1 queries and handlers", () => {
           bounces: 1,
           totalDuration: 30000,
           durationViews: 6,
+          scrollDepth: 70,
         },
       ],
     ]);
@@ -2721,6 +2732,7 @@ describe("edge overview D1 queries and handlers", () => {
         avgDurationMs: 10000,
         bounceRate: 0.2,
         approximateVisitors: false,
+        scrollDepth: 65,
       },
       previousData: {
         views: 5,
@@ -2731,6 +2743,7 @@ describe("edge overview D1 queries and handlers", () => {
         avgDurationMs: 5000,
         bounceRate: 0.4,
         approximateVisitors: false,
+        scrollDepth: null,
       },
       changeRates: {
         views: 100,
@@ -2752,6 +2765,7 @@ describe("edge overview D1 queries and handlers", () => {
             bounces: 1,
             totalDurationMs: 30000,
             avgDurationMs: 10000,
+            scrollDepth: 70,
             source: "detail",
           },
         ],

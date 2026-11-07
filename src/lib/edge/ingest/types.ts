@@ -74,6 +74,8 @@ export interface BufferedCustomEventRow {
   sequence: number;
   eventName: string;
   eventDataJson: string;
+  revenueAmount: number | null;
+  revenueCurrency: string | null;
   dirty: number;
   flushAttempts: number;
   lastFlushError?: string | null;
@@ -91,6 +93,8 @@ export interface BufferedCustomEventInput {
   sequence: number;
   eventName: string;
   eventDataJson: string;
+  revenueAmount: number | null;
+  revenueCurrency: string | null;
 }
 /** The attribution every pageview of a session carries: its entry's source. */
 export interface SessionAttribution {

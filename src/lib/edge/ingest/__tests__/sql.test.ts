@@ -24,6 +24,7 @@ function visitRow(overrides: Partial<VisitBindingRow> = {}): VisitBindingRow {
     endedAt: 3,
     finalizedAt: 4,
     durationMs: 5,
+    scrollDepth: 60,
     durationSource: "client",
     exitReason: "leave",
     pathname: "/docs",
@@ -79,6 +80,7 @@ describe("ingest visit SQL bindings", () => {
       site_id: "site-1",
       status: "closed",
       started_at: 1,
+      scroll_depth: 60,
       duration_source: "client",
       exit_reason: "leave",
       pathname: "/docs",
@@ -119,6 +121,13 @@ describe("ingest visit SQL bindings", () => {
     );
     expect(UPSERT_ACTIVE_VISIT_SQL).not.toContain(
       "ended_at = excluded.ended_at",
+    );
+    // A hidden page view's depth reaches D1 before the page view ends.
+    expect(UPSERT_ACTIVE_VISIT_SQL).toContain(
+      "scroll_depth = excluded.scroll_depth",
+    );
+    expect(UPSERT_FINALIZED_VISIT_SQL).toContain(
+      "scroll_depth = excluded.scroll_depth",
     );
     expect(UPSERT_FINALIZED_VISIT_SQL).toContain(
       "ended_at = excluded.ended_at",

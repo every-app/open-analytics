@@ -129,6 +129,8 @@ CREATE TABLE custom_events (
   created_at INTEGER NOT NULL DEFAULT (unixepoch()),
   user_id TEXT,
   site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
+  revenue_amount REAL,
+  revenue_currency TEXT,
   FOREIGN KEY(visit_id) REFERENCES visits(visit_id) ON DELETE CASCADE,
   FOREIGN KEY(event_name_id) REFERENCES custom_event_names(id)
 );
@@ -360,6 +362,18 @@ CREATE TABLE "visit_hourly_rollups" (
   PRIMARY KEY (site_pk, hour_bucket)
 );
 
+CREATE TABLE visit_properties (
+  visit_id TEXT NOT NULL REFERENCES visits(visit_id) ON DELETE CASCADE,
+  key TEXT NOT NULL,
+  value TEXT NOT NULL,
+  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
+  started_at INTEGER NOT NULL,
+  PRIMARY KEY (visit_id, key)
+);
+
+CREATE INDEX idx_visit_properties_site_pk_key_started
+  ON visit_properties(site_pk, key, started_at, value);
+
 CREATE TABLE visit_rollup_dirty_days (
   site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
   day INTEGER NOT NULL,
@@ -432,7 +446,8 @@ CREATE TABLE visits (
   perf_inp_ms REAL,
   user_id TEXT,
   user_name TEXT,
-  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk)
+  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
+  scroll_depth INTEGER
 );
 
 CREATE INDEX idx_visits_created_at_site_pk_performance

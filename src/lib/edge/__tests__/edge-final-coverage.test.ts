@@ -34,6 +34,7 @@ function pageview(overrides: Partial<NormalizedPageview> = {}) {
     sessionId: "session-1",
     previousVisitId: "",
     previousVisitStartedAt: null,
+    previousScrollDepth: null,
     startedAt: NOW - 1_000,
     pathname: "/docs",
     queryString: "",
@@ -69,6 +70,7 @@ function pageview(overrides: Partial<NormalizedPageview> = {}) {
     screenHeight: 900,
     language: "en-US",
     receivedAt: NOW,
+    properties: {},
     ...overrides,
   } satisfies NormalizedPageview;
 }
@@ -86,6 +88,7 @@ function bufferedVisit(
     endedAt: null,
     finalizedAt: null,
     durationMs: null,
+    scrollDepth: null,
     durationSource: "",
     exitReason: "",
     pathname: "/docs",
@@ -143,6 +146,8 @@ function bufferedCustomEvent(
     sequence: 0,
     eventName: "Signup",
     eventDataJson: '{"plan":"pro"}',
+    revenueAmount: null,
+    revenueCurrency: null,
     dirty: 1,
     flushAttempts: 0,
     flushDueAt: NOW,
@@ -170,7 +175,10 @@ function flushContext(
     sitePks: new Map([["site-1", 1]]),
     sqlAll: vi
       .fn()
-      .mockReturnValueOnce(visitRows)
+      // The flush reads each buffered visit with its properties.
+      .mockReturnValueOnce(
+        visitRows.map((row) => ({ ...row, propertiesJson: null })),
+      )
       .mockReturnValueOnce(eventRows)
       .mockReturnValue([]),
     sqlOne: vi.fn(() => null),

@@ -158,6 +158,7 @@ describe("goal data client helpers", () => {
     await createGoal("site-1", {
       name: "Purchase",
       filterDsl: "event.name eq Purchase",
+      currency: "USD",
     });
     expect(mocks.fetchPrivateJsonMutate).toHaveBeenLastCalledWith(
       "/api/private/goals",
@@ -167,6 +168,7 @@ describe("goal data client helpers", () => {
         name: "Purchase",
         filterDslVersion: 1,
         filterDsl: "event.name eq Purchase",
+        currency: "USD",
       },
     );
     await updateGoal("site-1", "goal-1", { name: "Renamed" });

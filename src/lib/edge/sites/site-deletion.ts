@@ -72,10 +72,10 @@ function payloadNodesWith(column: string, id: string): string {
   )`;
 }
 
-// Events before their page views, and an event's payload rows before the
-// event. Each delete skips rows that something still refers to: rows the
-// ingest buffer flushed after an earlier step. So no statement cascades or
-// breaks a foreign key, and a later run deletes what is left.
+// Events and properties before their page views, and an event's payload
+// rows before the event. Each delete skips rows that something still refers
+// to: rows the ingest buffer flushed after an earlier step. So no statement
+// cascades or breaks a foreign key, and a later run deletes what is left.
 const PURGE_STEPS: readonly PurgeStep[] = [
   {
     tag: "admin.sites.purge_custom_event_json_values",
@@ -108,11 +108,18 @@ const PURGE_STEPS: readonly PurgeStep[] = [
     ),
   },
   {
+    tag: "admin.sites.purge_visit_properties",
+    sql: batchDelete("visit_properties", ["visit_id", "key"]),
+  },
+  {
     tag: "admin.sites.purge_visits",
     sql: batchDelete(
       "visits",
       ["visit_id"],
-      "EXISTS (SELECT 1 FROM custom_events e WHERE e.visit_id = visits.visit_id)",
+      `EXISTS (SELECT 1 FROM custom_events e WHERE e.visit_id = visits.visit_id)
+        OR EXISTS (
+          SELECT 1 FROM visit_properties p WHERE p.visit_id = visits.visit_id
+        )`,
     ),
   },
   {

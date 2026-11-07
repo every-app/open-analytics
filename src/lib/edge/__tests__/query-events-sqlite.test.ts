@@ -111,7 +111,7 @@ function createSqliteEventEnv(): { env: Env; d1: SqliteD1Database } {
       visitor_id TEXT NOT NULL DEFAULT '', session_id TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'closed', started_at INTEGER NOT NULL,
       last_activity_at INTEGER NOT NULL DEFAULT 0, ended_at INTEGER, finalized_at INTEGER,
-      duration_ms INTEGER, duration_source TEXT, exit_reason TEXT,
+      duration_ms INTEGER, scroll_depth INTEGER, duration_source TEXT, exit_reason TEXT,
       pathname TEXT NOT NULL DEFAULT '', query_string TEXT NOT NULL DEFAULT '',
       hash_fragment TEXT NOT NULL DEFAULT '', hostname TEXT NOT NULL DEFAULT '',
       title TEXT NOT NULL DEFAULT '', referrer_url TEXT NOT NULL DEFAULT '',

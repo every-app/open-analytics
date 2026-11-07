@@ -17,6 +17,8 @@ interface ConfiguredSdkOptions {
   trackHash?: boolean;
   ignoreDoNotTrack?: boolean;
   autoTrackOutboundLinks?: boolean;
+  autoTrackFileDownloads?: boolean;
+  track404Pages?: boolean;
 }
 
 function setRuntimeConfig(options: ConfiguredSdkOptions = {}) {
@@ -26,6 +28,8 @@ function setRuntimeConfig(options: ConfiguredSdkOptions = {}) {
     trackHash: options.trackHash !== false,
     ignoreDoNotTrack: options.ignoreDoNotTrack !== false,
     autoTrackOutboundLinks: options.autoTrackOutboundLinks !== false,
+    autoTrackFileDownloads: options.autoTrackFileDownloads !== false,
+    track404Pages: options.track404Pages !== false,
   };
 }
 
@@ -438,6 +442,36 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect(body.eventName).toBe("button_click");
     expect(body.eventData).toEqual({ color: "blue" });
     expect(body.sequence).toBeUndefined();
+    expect(body).not.toHaveProperty("revenue");
+  });
+
+  it("sends a track() revenue as its own field, outside eventData", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
+      );
+
+    await import("../sdk");
+    fetchSpy.mockClear();
+
+    const api = (window as any).__openanalytics_tracker_v6__;
+    api.track(
+      "Purchase",
+      { plan: "pro" },
+      { revenue: { amount: 15.99, currency: "USD" } },
+    );
+    api.trackOnce("First purchase", undefined, {
+      revenue: { amount: "9.50", currency: "eur" },
+    });
+
+    const bodies = fetchSpy.mock.calls.map(([, options]) =>
+      JSON.parse((options as RequestInit).body as string),
+    );
+    expect(bodies[0].eventData).toEqual({ plan: "pro" });
+    expect(bodies[0].revenue).toEqual({ amount: 15.99, currency: "USD" });
+    expect(bodies[1].eventData).toEqual({});
+    expect(bodies[1].revenue).toEqual({ amount: "9.50", currency: "eur" });
   });
 
   it("should ignore track() invocations with empty or whitespace event names", async () => {
@@ -525,6 +559,67 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     const body = JSON.parse(fetchSpy.mock.calls[0][1].body as string);
     expect(body.eventData).toEqual({});
+  });
+
+  it("sends the script tag's data-prop attributes with every page view", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
+      );
+    mockScriptEl.setAttribute("data-prop-author", "Jane");
+    mockScriptEl.setAttribute("data-prop-page-type", "post");
+    mockScriptEl.setAttribute("data-other", "ignored");
+
+    await import("../sdk");
+    expect(decodeFetchBody(fetchSpy).props).toEqual({
+      author: "Jane",
+      "page-type": "post",
+    });
+
+    fetchSpy.mockClear();
+    history.pushState({}, "", "/next");
+    await new Promise((r) => setTimeout(r, 500));
+    expect(decodeFetchBody(fetchSpy)).toMatchObject({
+      kind: "pageview",
+      props: { author: "Jane", "page-type": "post" },
+    });
+  });
+
+  it("sends global properties with later page views as strings", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ ok: true }))),
+      );
+    mockScriptEl.setAttribute("data-prop-plan", "free");
+
+    await import("../sdk");
+    expect(decodeFetchBody(fetchSpy).props).toEqual({ plan: "free" });
+
+    const api = (window as any).__openanalytics_tracker_v6__;
+    api.setGlobalProperties({
+      plan: "pro",
+      seats: 5,
+      trial: false,
+      nested: { ignored: true },
+      list: ["ignored"],
+      empty: null,
+    });
+    fetchSpy.mockClear();
+    history.pushState({}, "", "/pricing");
+    await new Promise((r) => setTimeout(r, 500));
+    expect(decodeFetchBody(fetchSpy).props).toEqual({
+      plan: "pro",
+      seats: "5",
+      trial: "false",
+    });
+
+    api.clearGlobalProperties();
+    fetchSpy.mockClear();
+    history.pushState({}, "", "/docs");
+    await new Promise((r) => setTimeout(r, 500));
+    expect(decodeFetchBody(fetchSpy).props).toEqual({ plan: "free" });
   });
 
   it("should ignore non-object/array inputs in setGlobalProperties()", async () => {
@@ -1216,6 +1311,130 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  describe("file downloads", () => {
+    function clickLink(href: string, download = false) {
+      const a = document.createElement("a");
+      a.setAttribute("href", href);
+      if (download) a.setAttribute("download", "");
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    async function sentEvents(
+      options: ConfiguredSdkOptions,
+      href: string,
+      download = false,
+    ) {
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(() =>
+          Promise.resolve(new Response(JSON.stringify({ ok: true }))),
+        );
+      await importConfiguredSdk(options);
+      fetchSpy.mockClear();
+      clickLink(href, download);
+      return fetchSpy.mock.calls.map(([, init]) => {
+        const body = JSON.parse((init as RequestInit).body as string);
+        return { name: body.eventName, data: body.eventData };
+      });
+    }
+
+    it("reports a file link without its query string", async () => {
+      await expect(
+        sentEvents({}, "/files/Report.final.PDF?token=secret#page=2"),
+      ).resolves.toEqual([
+        {
+          name: "file_download",
+          data: { url: `${window.location.origin}/files/Report.final.PDF` },
+        },
+      ]);
+    });
+
+    it("reports a link with a download attribute", async () => {
+      await expect(sentEvents({}, "/export", true)).resolves.toEqual([
+        {
+          name: "file_download",
+          data: { url: `${window.location.origin}/export` },
+        },
+      ]);
+    });
+
+    it("counts a file on another domain as a download, not an outbound click", async () => {
+      await expect(
+        sentEvents({}, "https://cdn.example/app.zip"),
+      ).resolves.toEqual([
+        { name: "file_download", data: { url: "https://cdn.example/app.zip" } },
+      ]);
+    });
+
+    it.each(["/docs/getting.started/", "/pricing"])(
+      "ignores the page link %s",
+      async (href) => {
+        await expect(sentEvents({}, href)).resolves.toEqual([]);
+      },
+    );
+
+    it("leaves a file link alone when download tracking is off", async () => {
+      await expect(
+        sentEvents({ autoTrackFileDownloads: false }, "/files/report.pdf"),
+      ).resolves.toEqual([]);
+    });
+
+    it("leaves a file on another domain to outbound tracking when download tracking is off", async () => {
+      await expect(
+        sentEvents(
+          { autoTrackFileDownloads: false },
+          "https://cdn.example/app.zip",
+        ),
+      ).resolves.toEqual([
+        {
+          name: "outbound_click",
+          data: { url: "https://cdn.example/app.zip", domain: "cdn.example" },
+        },
+      ]);
+    });
+  });
+
+  describe("404 pages", () => {
+    async function eventsForStatus(
+      responseStatus: number | undefined,
+      options: ConfiguredSdkOptions = {},
+    ) {
+      vi.spyOn(performance, "getEntriesByType").mockReturnValue(
+        responseStatus === undefined
+          ? []
+          : ([{ responseStatus }] as unknown as PerformanceEntryList),
+      );
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(() =>
+          Promise.resolve(new Response(JSON.stringify({ ok: true }))),
+        );
+      setPageUrl("http://site.test/missing/page");
+      await importConfiguredSdk(options);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      return fetchSpy.mock.calls
+        .map(([, init]) => JSON.parse((init as RequestInit).body as string))
+        .filter((body) => body.kind === "custom_event")
+        .map((body) => ({ name: body.eventName, data: body.eventData }));
+    }
+
+    it("reports a page served with a 404 status", async () => {
+      await expect(eventsForStatus(404)).resolves.toEqual([
+        { name: "page_not_found", data: { path: "/missing/page" } },
+      ]);
+    });
+
+    it.each([
+      ["another status", 200, {}],
+      ["an unreported status", undefined, {}],
+      ["404 tracking off", 404, { track404Pages: false }],
+    ] as const)("reports nothing for %s", async (_, status, options) => {
+      await expect(eventsForStatus(status, options)).resolves.toEqual([]);
+    });
+  });
+
   it("should fall back to fetch keepalive for leave events when sendBeacon is unavailable", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
@@ -1905,5 +2124,177 @@ describe("Tracker Browser SDK Integration Suite", () => {
     expect(sendBeaconSpy).toHaveBeenCalledTimes(1);
     const body = await decodeBeaconBody(sendBeaconSpy.mock.calls[0][1]);
     expect(body.visibilityState).toBe("hidden");
+  });
+
+  describe("scroll depth", () => {
+    const geometry = [
+      [window, "scrollY"],
+      [window, "innerHeight"],
+      [document.documentElement, "scrollHeight"],
+    ] as const;
+    let saved: Array<PropertyDescriptor | undefined> = [];
+
+    beforeEach(() => {
+      saved = geometry.map(([target, key]) =>
+        Object.getOwnPropertyDescriptor(target, key),
+      );
+    });
+
+    afterEach(() => {
+      geometry.forEach(([target, key], index) => {
+        const descriptor = saved[index];
+        if (descriptor) Object.defineProperty(target, key, descriptor);
+        else delete (target as unknown as Record<string, unknown>)[key];
+      });
+    });
+
+    function setGeometry(page: {
+      scrollY: number;
+      innerHeight: number;
+      scrollHeight: number;
+    }) {
+      for (const [target, key] of geometry) {
+        Object.defineProperty(target, key, {
+          value: page[key],
+          configurable: true,
+        });
+      }
+    }
+
+    async function scrollPageTo(scrollY: number) {
+      Object.defineProperty(window, "scrollY", {
+        value: scrollY,
+        configurable: true,
+      });
+      document.dispatchEvent(new Event("scroll"));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
+
+    function setVisibility(state: "hidden" | "visible") {
+      Object.defineProperty(document, "visibilityState", {
+        value: state,
+        writable: true,
+        configurable: true,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    }
+
+    it("reports the deepest scroll with the hidden and leave payloads", async () => {
+      const sendBeaconSpy = vi.fn().mockReturnValue(true);
+      (navigator as any).sendBeacon = sendBeaconSpy;
+      setGeometry({ scrollY: 0, innerHeight: 800, scrollHeight: 4000 });
+      await import("../sdk");
+
+      await scrollPageTo(2400);
+      // Scrolling back up keeps the deepest point.
+      await scrollPageTo(400);
+      setVisibility("hidden");
+      setVisibility("visible");
+      await scrollPageTo(3000);
+      window.dispatchEvent(new Event("pagehide"));
+
+      const bodies = await Promise.all(
+        sendBeaconSpy.mock.calls.map(([, blob]) => decodeBeaconBody(blob)),
+      );
+      expect(
+        bodies.map((body) => [
+          body.kind,
+          body.visibilityState,
+          body.scrollDepth,
+        ]),
+      ).toEqual([
+        ["visibility", "hidden", 80],
+        ["visibility", "visible", undefined],
+        ["leave", undefined, 95],
+      ]);
+    });
+
+    it("counts a page that doesn't scroll as seen in full", async () => {
+      const sendBeaconSpy = vi.fn().mockReturnValue(true);
+      (navigator as any).sendBeacon = sendBeaconSpy;
+      setGeometry({ scrollY: 0, innerHeight: 800, scrollHeight: 800 });
+      await import("../sdk");
+
+      window.dispatchEvent(new Event("pagehide"));
+
+      await expect(
+        decodeBeaconBody(sendBeaconSpy.mock.calls[0][1]),
+      ).resolves.toMatchObject({ kind: "leave", scrollDepth: 100 });
+    });
+
+    it("measures the page again once it has loaded", async () => {
+      const sendBeaconSpy = vi.fn().mockReturnValue(true);
+      (navigator as any).sendBeacon = sendBeaconSpy;
+      setGeometry({ scrollY: 0, innerHeight: 800, scrollHeight: 800 });
+      await import("../sdk");
+
+      // Images loaded and the page grew without the visitor scrolling.
+      setGeometry({ scrollY: 0, innerHeight: 800, scrollHeight: 3200 });
+      window.dispatchEvent(new Event("load"));
+      window.dispatchEvent(new Event("pagehide"));
+
+      await expect(
+        decodeBeaconBody(sendBeaconSpy.mock.calls[0][1]),
+      ).resolves.toMatchObject({ kind: "leave", scrollDepth: 25 });
+    });
+
+    it("keeps measuring the page's height for 3 seconds after load", async () => {
+      vi.useFakeTimers();
+      try {
+        const sendBeaconSpy = vi.fn().mockReturnValue(true);
+        (navigator as any).sendBeacon = sendBeaconSpy;
+        setGeometry({ scrollY: 0, innerHeight: 800, scrollHeight: 800 });
+        await import("../sdk");
+        window.dispatchEvent(new Event("load"));
+
+        // Content loaded after the load event grows the page.
+        setGeometry({ scrollY: 0, innerHeight: 800, scrollHeight: 3200 });
+        vi.advanceTimersByTime(3_000);
+        // Growth after the 3 seconds isn't measured until the visitor scrolls.
+        setGeometry({ scrollY: 0, innerHeight: 800, scrollHeight: 8000 });
+        vi.advanceTimersByTime(1_000);
+        window.dispatchEvent(new Event("pagehide"));
+
+        await expect(
+          decodeBeaconBody(sendBeaconSpy.mock.calls[0][1]),
+        ).resolves.toMatchObject({ kind: "leave", scrollDepth: 25 });
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("sends the depth of the page a route change ends with the next pageview", async () => {
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(() =>
+          Promise.resolve(new Response(JSON.stringify({ ok: true }))),
+        );
+      const sendBeaconSpy = vi.fn().mockReturnValue(true);
+      (navigator as any).sendBeacon = sendBeaconSpy;
+      setGeometry({ scrollY: 0, innerHeight: 800, scrollHeight: 1600 });
+      await import("../sdk");
+      await scrollPageTo(400);
+      fetchSpy.mockClear();
+
+      history.pushState({}, "", "/next");
+      // The router renders a longer page and scrolls it to the top before
+      // the route settles; the old page's depth was taken at the push.
+      setGeometry({ scrollY: 200, innerHeight: 800, scrollHeight: 8000 });
+      await scrollPageTo(0);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      expect(sentKinds(fetchSpy)).toEqual(["pageview"]);
+      expect(decodeFetchBody(fetchSpy)).toMatchObject({
+        pathname: "/next",
+        navigation: "route",
+        previousScrollDepth: 75,
+      });
+
+      // The new page view starts its own depth.
+      window.dispatchEvent(new Event("pagehide"));
+      await expect(
+        decodeBeaconBody(sendBeaconSpy.mock.calls[0][1]),
+      ).resolves.toMatchObject({ kind: "leave", scrollDepth: 10 });
+    });
   });
 });

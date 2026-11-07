@@ -60,6 +60,9 @@ export interface PagesDashboardChangeRates {
 
 export type PagesDashboardMetric = keyof PagesDashboardMetrics;
 
+/** The scroll depth sorts the pages but has no comparison. */
+export type PagesDashboardSortKey = PagesDashboardMetric | "scrollDepth";
+
 export interface PagesDashboardChange {
   views: { absolute: number; relative: number | null };
   visitors: { absolute: number; relative: number | null };
@@ -72,6 +75,11 @@ export interface PagesDashboardChange {
 export interface PagesDashboardItem {
   pathname: string;
   titles: string[];
+  /**
+   * Each visitor's deepest scroll on the page, averaged over the visitors,
+   * in %; null when no page view reported one.
+   */
+  scrollDepth: number | null;
   trend: Array<{
     timestampMs: number;
     views: number;

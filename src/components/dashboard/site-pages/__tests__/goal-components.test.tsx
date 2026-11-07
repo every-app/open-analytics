@@ -95,6 +95,7 @@ const summary: GoalSummaryData = {
     summary: {
       sessions: { total: 10, converted: 2, conversionRate: 0.2 },
       visitors: { total: 8, converted: 1, conversionRate: 0.125 },
+      revenue: null,
     },
   },
 };
@@ -141,6 +142,36 @@ function renderWithQueryClient(
     );
   });
   return { client, container, root };
+}
+function buttonWithText(text: string): HTMLButtonElement | undefined {
+  return Array.from(document.body.querySelectorAll("button")).find((button) =>
+    button.textContent?.includes(text),
+  );
+}
+/** Selects a Radix tab the way a pointer does: on mouse down. */
+function selectTab(label: string) {
+  const tab = Array.from(document.body.querySelectorAll('[role="tab"]')).find(
+    (element) => element.textContent === label,
+  );
+  act(() => {
+    tab?.dispatchEvent(
+      new MouseEvent("mousedown", { bubbles: true, button: 0 }),
+    );
+  });
+}
+function typeInto(selector: string, value: string) {
+  const input = document.body.querySelector<HTMLInputElement>(selector);
+  const setValue = Object.getOwnPropertyDescriptor(
+    HTMLInputElement.prototype,
+    "value",
+  )?.set;
+  act(() => {
+    setValue?.call(input, value);
+    input?.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+}
+function inputValue(selector: string): string | undefined {
+  return document.body.querySelector<HTMLInputElement>(selector)?.value;
 }
 describe("Goal dashboard components", () => {
   let intersectionCallback:
@@ -511,8 +542,283 @@ describe("Goal dashboard components", () => {
       expect(submit).toHaveBeenCalledWith({
         name: "Original goal",
         filterDsl: rawDsl,
+        currency: null,
       }),
     );
+    act(() => root.unmount());
+    container.remove();
+  });
+
+  it("saves a goal's revenue currency, and refuses one on a goal that matches page views", async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    const renderEditor = (filterDsl: string) =>
+      renderWithQueryClient(
+        createElement(GoalEditor, {
+          open: true,
+          goal: { ...goal, filterDsl, currency: "EUR" },
+          labels,
+          messages,
+          siteId: "site-1",
+          window,
+          submitting: false,
+          onOpenChange: vi.fn(),
+          onSubmit: submit,
+        }),
+      );
+    const saveButton = () =>
+      Array.from(document.body.querySelectorAll("button")).find((button) =>
+        button.textContent?.includes(labels.saveEdit),
+      );
+
+    const eventGoal = renderEditor('event.name eq "purchase"');
+    expect(document.body.textContent).toContain(labels.revenueCurrency);
+    expect(document.body.textContent).toContain(labels.revenueCurrencyHint);
+    act(() => saveButton()?.click());
+    await vi.waitFor(() =>
+      expect(submit).toHaveBeenCalledWith({
+        name: goal.name,
+        filterDsl: 'event.name eq "purchase"',
+        currency: "EUR",
+      }),
+    );
+    act(() => eventGoal.root.unmount());
+    eventGoal.container.remove();
+
+    const pageGoal = renderEditor('page.path eq "/thank-you"');
+    expect(document.body.textContent).toContain(
+      labels.revenueCurrencyEventsOnly,
+    );
+    expect(saveButton()?.disabled).toBe(true);
+    act(() => pageGoal.root.unmount());
+    pageGoal.container.remove();
+  });
+
+  it("creates a scroll depth goal from a threshold and a wildcard path, named like Plausible", async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    const { container, root } = renderWithQueryClient(
+      createElement(GoalEditor, {
+        open: true,
+        goal: null,
+        labels,
+        messages,
+        siteId: "site-1",
+        window,
+        submitting: false,
+        onOpenChange: vi.fn(),
+        onSubmit: submit,
+      }),
+    );
+    expect(document.body.querySelector("#goal-scroll-threshold")).toBeNull();
+
+    selectTab(labels.triggerScrollDepth);
+    expect(inputValue("#goal-scroll-threshold")).toBe("75");
+    // A scroll depth goal matches page views, so it has no revenue.
+    expect(document.body.textContent).not.toContain(labels.revenueCurrency);
+    expect(document.body.textContent).toContain(labels.pagePathHint);
+    expect(
+      document.body.querySelector("#goal-name")?.getAttribute("placeholder"),
+    ).toBe("Scroll 75%");
+
+    typeInto("#goal-scroll-threshold", "0");
+    expect(document.body.textContent).toContain(labels.scrollThresholdInvalid);
+    expect(buttonWithText(labels.save)?.disabled).toBe(true);
+    typeInto("#goal-scroll-threshold", "60");
+    typeInto("#goal-page-path", "/a/*/b/*");
+    expect(document.body.textContent).toContain(
+      labels.pagePathWildcardUnsupported,
+    );
+    expect(buttonWithText(labels.save)?.disabled).toBe(true);
+    typeInto("#goal-page-path", "/blog*");
+    expect(
+      document.body.querySelector("#goal-name")?.getAttribute("placeholder"),
+    ).toBe("Scroll 60% on /blog*");
+
+    act(() => buttonWithText(labels.save)?.click());
+    await vi.waitFor(() =>
+      expect(submit).toHaveBeenCalledWith({
+        name: "Scroll 60% on /blog*",
+        filterDsl: 'page.path startsWith "/blog" AND page.scrollDepth gte 60',
+        currency: null,
+      }),
+    );
+    act(() => root.unmount());
+    container.remove();
+  });
+
+  it("reopens a scroll depth goal with its threshold and path, and any other filter in the generic editor", async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    const filterDsl =
+      'page.path startsWith "/products/" AND page.path endsWith "/reviews" AND page.path notIn ["/products/reviews"] AND page.scrollDepth gte 90';
+    const { container, root } = renderWithQueryClient(
+      createElement(GoalEditor, {
+        open: true,
+        goal: { ...goal, name: "Read reviews", filterDsl },
+        labels,
+        messages,
+        siteId: "site-1",
+        window,
+        submitting: false,
+        onOpenChange: vi.fn(),
+        onSubmit: submit,
+      }),
+    );
+
+    const selectedTab = document.body.querySelector(
+      '[role="tab"][aria-selected="true"]',
+    );
+    expect(selectedTab?.textContent).toBe(labels.triggerScrollDepth);
+    expect(inputValue("#goal-scroll-threshold")).toBe("90");
+    expect(inputValue("#goal-page-path")).toBe("/products/*/reviews");
+    act(() => buttonWithText(labels.saveEdit)?.click());
+    await vi.waitFor(() =>
+      expect(submit).toHaveBeenCalledWith({
+        name: "Read reviews",
+        filterDsl,
+        currency: null,
+      }),
+    );
+
+    // The same filter, opened as a generic one, keeps its conditions.
+    selectTab(labels.triggerFilter);
+    expect(buttonWithText(`${labels.filter} (4)`)).toBeDefined();
+    act(() => root.unmount());
+    container.remove();
+
+    const generic = renderWithQueryClient(
+      createElement(GoalEditor, {
+        open: true,
+        goal: {
+          ...goal,
+          filterDsl: 'page.path eq "/pricing" AND page.scrollDepth gt 75',
+        },
+        labels,
+        messages,
+        siteId: "site-1",
+        window,
+        submitting: false,
+        onOpenChange: vi.fn(),
+        onSubmit: submit,
+      }),
+    );
+    expect(
+      document.body.querySelector('[role="tab"][aria-selected="true"]')
+        ?.textContent,
+    ).toBe(labels.triggerFilter);
+    expect(buttonWithText(`${labels.filter} (2)`)).toBeDefined();
+    act(() => generic.root.unmount());
+    generic.container.remove();
+  });
+
+  it("carries a scroll goal's edits to the filter trigger and back", async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    const { container, root } = renderWithQueryClient(
+      createElement(GoalEditor, {
+        open: true,
+        goal: {
+          ...goal,
+          name: "Read pricing",
+          filterDsl: 'page.path eq "/pricing" AND page.scrollDepth gte 75',
+        },
+        labels,
+        messages,
+        siteId: "site-1",
+        window,
+        submitting: false,
+        onOpenChange: vi.fn(),
+        onSubmit: submit,
+      }),
+    );
+
+    typeInto("#goal-scroll-threshold", "40");
+    // To add a condition, the visitor switches to the filter: it is the
+    // scroll goal they edited, not the one they opened.
+    selectTab(labels.triggerFilter);
+    expect(buttonWithText(`${labels.filter} (2)`)).toBeDefined();
+    selectTab(labels.triggerScrollDepth);
+    expect(inputValue("#goal-scroll-threshold")).toBe("40");
+    expect(inputValue("#goal-page-path")).toBe("/pricing");
+    selectTab(labels.triggerFilter);
+    act(() => buttonWithText(labels.saveEdit)?.click());
+    await vi.waitFor(() =>
+      expect(submit).toHaveBeenCalledWith({
+        name: "Read pricing",
+        filterDsl: 'page.path eq "/pricing" AND page.scrollDepth gte 40',
+        currency: null,
+      }),
+    );
+    act(() => root.unmount());
+    container.remove();
+  });
+
+  it("shows — for a scroll depth goal's converting sessions", async () => {
+    const scrollGoal = {
+      ...goal,
+      name: "Scroll 75% on /pricing",
+      filterDsl: 'page.path eq "/pricing" AND page.scrollDepth gte 75',
+    };
+    vi.mocked(fetchGoalSummary).mockResolvedValue({
+      ok: true,
+      data: { ...summary.data, goal: scrollGoal },
+    });
+    const { container, root } = renderWithQueryClient(
+      createElement(GoalDetail, {
+        goal: scrollGoal,
+        comparisonLabel: "Previous period",
+        siteId: "site-1",
+        locale: "en",
+        labels,
+        window,
+        filters,
+        filterKey: "empty",
+        canManage: false,
+        actionPending: false,
+        onEdit: vi.fn(),
+        onDelete: vi.fn(),
+      }),
+    );
+    // Uniques and their conversion rate stay.
+    await vi.waitFor(() => expect(container.textContent).toContain("1 / 8"));
+    expect(container.textContent).toContain("12.5%");
+    expect(container.textContent).not.toContain("2 / 10");
+    expect(container.textContent?.match(/—/g)).toHaveLength(2);
+    act(() => root.unmount());
+    container.remove();
+  });
+
+  it("shows a revenue goal's revenue and average revenue in its currency", async () => {
+    const revenueGoal = { ...goal, currency: "USD" };
+    vi.mocked(fetchGoalSummary).mockResolvedValue({
+      ok: true,
+      data: {
+        goal: revenueGoal,
+        summary: {
+          ...summary.data.summary,
+          revenue: { currency: "USD", total: 1234.5, average: 61.725 },
+        },
+      },
+    });
+    const { container, root } = renderWithQueryClient(
+      createElement(GoalDetail, {
+        goal: revenueGoal,
+        comparisonLabel: "Previous period",
+        siteId: "site-1",
+        locale: "en",
+        labels,
+        window,
+        filters,
+        filterKey: "empty",
+        canManage: false,
+        actionPending: false,
+        onEdit: vi.fn(),
+        onDelete: vi.fn(),
+      }),
+    );
+    await vi.waitFor(() =>
+      expect(container.textContent).toContain("$1,234.50"),
+    );
+    expect(container.textContent).toContain(labels.revenue);
+    expect(container.textContent).toContain(labels.averageRevenue);
+    expect(container.textContent).toContain("$61.73");
     act(() => root.unmount());
     container.remove();
   });

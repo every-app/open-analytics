@@ -129,7 +129,10 @@ export function countDetailColumns(
   ];
 }
 
-/** The Pages Details columns: visitors, pageviews, bounce rate, time. */
+/**
+ * The Pages Details columns: visitors, pageviews, bounce rate, time and
+ * scroll depth, each sorted on the server.
+ */
 export function pageDetailColumns(
   locale: Locale,
   messages: AppMessages,
@@ -153,6 +156,18 @@ export function pageDetailColumns(
       label: messages.dashboard.columns.timeOnPage,
       getValue: (row) => row.avgDurationMs ?? 0,
       format: (value) => durationFormat(locale, value),
+    },
+    {
+      key: "scrollDepth",
+      label: messages.dashboard.columns.scrollDepth,
+      getValue: (row) => row.scrollDepth ?? 0,
+      format: (value, row) =>
+        row.scrollDepth === null || row.scrollDepth === undefined ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          percentFormat(locale, value / 100)
+        ),
+      exportValue: (row) => row.scrollDepth ?? "",
     },
   ];
 }

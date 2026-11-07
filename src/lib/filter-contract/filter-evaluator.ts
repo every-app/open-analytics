@@ -59,7 +59,10 @@ export interface FilterEvaluationEntity {
   readonly fields: Readonly<Record<string, unknown>>;
   /** Legacy conditions without Filter time keep candidate-range values. */
   readonly candidateFields?: Readonly<Record<string, unknown>>;
-  /** Present only on Event records; JSON null is distinct from an absent path. */
+  /**
+   * An Event's payload, where JSON null is distinct from an absent path; on a
+   * Page, its custom properties, which only `event.payload(...)` reads.
+   */
   readonly payload?: unknown;
 }
 
@@ -780,9 +783,10 @@ function targetValue(
         frame.legacyFieldEvaluation,
       );
     case "event-payload": {
+      // A page view's properties match like an event's top-level payload.
       const entity = currentEntity(frame);
       const value =
-        entity?.kind === "event"
+        entity?.kind === "event" || entity?.kind === "page"
           ? payloadPath(entity.payload, target.path)
           : MISSING;
       return narrowPayloadValue(

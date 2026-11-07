@@ -1,3 +1,4 @@
+import { propertyKeyOf } from "@/lib/analytics/property-path";
 import { buildTrafficChannelSqlExpression } from "@/lib/analytics/traffic-channel-rules";
 import { browserEngineCaseSql } from "@/lib/browser-engine";
 import {
@@ -5,6 +6,7 @@ import {
   analyticsFilterRegistry,
   type FilterColumnStrategy,
   type FilterCompilerStrategy,
+  type FilterObservationKind,
   type RegisteredFilterField,
 } from "@/lib/filter-contract/filter-registry";
 import {
@@ -32,12 +34,19 @@ export interface FilterCompilerOptions {
   readonly alias?: string;
   readonly sessionSource?: string;
   readonly eventAlias?: string;
+  /**
+   * What the alias's rows are, page views or events (the default). A
+   * payload condition reads a page view's custom properties and an event's
+   * payload.
+   */
+  readonly observation?: FilterObservationKind;
 }
 
 type Compiler = {
   readonly alias: string;
   readonly sessionSource: string;
   readonly eventAlias: string;
+  readonly observation: FilterObservationKind;
   readonly bindings: FilterSqlBinding[];
   payloadIndex: number;
   orLikeIndex: number;
@@ -71,6 +80,7 @@ const COLUMN_STRATEGY_COLUMNS: Readonly<Record<FilterColumnStrategy, string>> =
     "column.timezone": "timezone",
     "column.as_organization": "as_organization",
     "column.duration_ms": "duration_ms",
+    "column.scroll_depth": "scroll_depth",
     "column.screen_width": "screen_width",
     "column.screen_height": "screen_height",
     "column.is_eu": "is_eu",
@@ -476,6 +486,43 @@ function payloadValueColumn(alias: string, value: FilterValue): string {
   return `${alias}.value_type`;
 }
 
+/** The payload value rows at `path`: their FROM and WHERE clauses. */
+interface PayloadValues {
+  readonly from: string;
+  readonly where: string;
+}
+
+function eventPayloadValues(
+  compiler: Compiler,
+  valueAlias: string,
+  path: string,
+): PayloadValues {
+  const pathAlias = `filter_payload_path_${compiler.payloadIndex}`;
+  return {
+    from: `custom_event_json_values ${valueAlias} INNER JOIN custom_event_json_paths ${pathAlias} ON ${pathAlias}.id = ${valueAlias}.path_id`,
+    where: `${valueAlias}.event_pk = ${compiler.eventAlias}.event_pk AND ${valueAlias}.site_pk = ${compiler.eventAlias}.site_pk AND ${pathAlias}.site_pk = ${compiler.eventAlias}.site_pk AND ${pathAlias}.path = ${push(compiler, path)}`,
+  };
+}
+
+/**
+ * A page view's custom properties as payload values: each a string (JSON
+ * type 1) at a top-level path, so a nested path selects none.
+ */
+function pagePropertyValues(
+  compiler: Compiler,
+  valueAlias: string,
+  path: string,
+): PayloadValues {
+  const key = propertyKeyOf(path);
+  return {
+    from: `(SELECT visit_id, key, 1 AS value_type, value AS string_value, NULL AS number_value, NULL AS boolean_value FROM visit_properties) ${valueAlias}`,
+    where:
+      key === null
+        ? "0"
+        : `${valueAlias}.visit_id = ${column(compiler, "visit_id")} AND ${valueAlias}.key = ${push(compiler, key)}`,
+  };
+}
+
 function payloadComparison(
   compiler: Compiler,
   condition: FilterCondition,
@@ -483,12 +530,14 @@ function payloadComparison(
   if (condition.target.kind !== "event-payload")
     throw new TypeError("Payload compiler requires an event-payload target.");
   const valueAlias = `filter_payload_value_${compiler.payloadIndex}`;
-  const pathAlias = `filter_payload_path_${compiler.payloadIndex}`;
+  const rows =
+    compiler.observation === "visit"
+      ? pagePropertyValues(compiler, valueAlias, condition.target.path)
+      : eventPayloadValues(compiler, valueAlias, condition.target.path);
   compiler.payloadIndex += 1;
-  const base = `${valueAlias}.event_pk = ${compiler.eventAlias}.event_pk AND ${valueAlias}.site_pk = ${compiler.eventAlias}.site_pk AND ${pathAlias}.site_pk = ${compiler.eventAlias}.site_pk AND ${pathAlias}.path = ${push(compiler, condition.target.path)}`;
   const conditionValue = legacyConditionValue(condition.value);
   const exists = (extra = "") =>
-    `EXISTS (SELECT 1 FROM custom_event_json_values ${valueAlias} INNER JOIN custom_event_json_paths ${pathAlias} ON ${pathAlias}.id = ${valueAlias}.path_id WHERE ${base}${extra})`;
+    `EXISTS (SELECT 1 FROM ${rows.from} WHERE ${rows.where}${extra})`;
   if (condition.operator === "exists") return exists();
   if (condition.operator === "notExists") return `NOT ${exists()}`;
   if (condition.operator === "isNull")
@@ -524,11 +573,13 @@ function payloadComparison(
         ` AND ${valueColumn} ${condition.operator === "in" ? "IN" : "NOT IN"} (SELECT value FROM json_each(${valueSet})) AND ${valueAlias}.value_type = ${typeBinding}`,
       );
     }
+    // Bound in the order of their placeholders: the type, then the set.
+    const typeBinding = push(compiler, type);
     const bindings = values
       .map((value) => push(compiler, scalar(value)))
       .join(", ");
     return exists(
-      ` AND ${valueAlias}.value_type = ${push(compiler, type)} AND ${valueColumn} ${condition.operator === "in" ? "IN" : "NOT IN"} (${bindings})`,
+      ` AND ${valueAlias}.value_type = ${typeBinding} AND ${valueColumn} ${condition.operator === "in" ? "IN" : "NOT IN"} (${bindings})`,
     );
   }
   const value = values[0]!;
@@ -600,6 +651,7 @@ export function compileFilterDocument(
     options.alias ?? "visit_source",
     options.sessionSource ?? "visit_source",
     options.eventAlias ?? options.alias ?? "event_source",
+    options.observation ?? "event",
   ].join("\u0000");
   const cachedByOptions = FILTER_SQL_CACHE.get(document);
   const cached = cachedByOptions?.get(cacheKey);
@@ -623,6 +675,7 @@ export function compileFilterDocument(
       options.eventAlias ?? options.alias ?? "event_source",
       "event alias",
     ),
+    observation: options.observation ?? "event",
     bindings: [],
     payloadIndex: 0,
     orLikeIndex: 0,

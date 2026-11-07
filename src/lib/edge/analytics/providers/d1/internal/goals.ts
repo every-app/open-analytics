@@ -38,6 +38,7 @@ async function mapGoalDefinition(
     name: String(row.name ?? ""),
     filterDslVersion: config.filterDslVersion,
     filterDsl: config.filterDsl,
+    ...(config.currency === undefined ? {} : { currency: config.currency }),
     semanticFingerprint: await goalSemanticFingerprint(config),
     createdAt: Number(row.created_at ?? 0),
     updatedAt: Number(row.updated_at ?? 0),

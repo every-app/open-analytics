@@ -24,6 +24,10 @@ export {
 } from "@/lib/dashboard/client/data/geo";
 export { fetchPagesDashboard } from "@/lib/dashboard/client/data/pages";
 export {
+  fetchPropertyKeys,
+  fetchPropertyValues,
+} from "@/lib/dashboard/client/data/properties";
+export {
   fetchReferrers,
   fetchUtmDimension,
 } from "@/lib/dashboard/client/data/referrers";

@@ -135,6 +135,8 @@ export const FILTER_SCOPE_CAPABILITIES: Readonly<
   "funnel-analysis": scoped("event"),
   "goal-summary": scoped("event"),
   "goal-timeseries": scoped("event"),
+  "property-keys": scoped("event"),
+  "property-values": scoped("event"),
   "team-dashboard": scoped("event"),
   explore: scoped("event"),
 };

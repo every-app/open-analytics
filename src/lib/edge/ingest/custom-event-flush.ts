@@ -314,9 +314,10 @@ function prepareCustomEventStatements(
     sql: `
       INSERT OR IGNORE INTO custom_events (
         event_id, site_id, site_pk, visit_id, event_name_id, occurred_at, received_at,
-        sequence, node_count, value_count, ae_synced_at, created_at
+        sequence, node_count, value_count, revenue_amount, revenue_currency,
+        ae_synced_at, created_at
       )
-      SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?
+      SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?
       FROM visits
       WHERE site_pk = ? AND visit_id = ?
       LIMIT 1
@@ -332,6 +333,8 @@ function prepareCustomEventStatements(
       row.sequence,
       expanded.nodes.length,
       expanded.values.length,
+      row.revenueAmount,
+      row.revenueCurrency,
       row.createdAt,
       sitePk,
       row.visitId,

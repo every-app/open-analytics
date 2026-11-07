@@ -18,6 +18,12 @@ import {
 import { z } from "zod";
 
 import { BLOCKING_FIELD_IDS, type BlockingFieldId } from "@/lib/blocking";
+import {
+  SCROLL_DEPTH_THRESHOLD_MAX,
+  SCROLL_DEPTH_THRESHOLD_MIN,
+  scrollDepthGoalFilterDsl,
+  ScrollDepthGoalValidationError,
+} from "@/lib/edge/analytics/contract/scroll-depth-goal";
 import { resolveViewer } from "@/lib/edge/auth/viewer";
 import type { Env } from "@/lib/edge/types";
 import {
@@ -82,6 +88,39 @@ const filterSchema = z
   .describe(
     `Filter expression. Fields: ${FILTER_FIELDS}. Examples: ${FILTER_DSL_EXAMPLES.slice(0, 5).join(" | ")}`,
   );
+
+/** A goal's filter DSL: its `filter`, or the scroll depth goal's. */
+function goalFilterDsl(args: {
+  filter?: string;
+  scroll_depth?: number;
+  page_path?: string;
+}): string {
+  if (args.scroll_depth === undefined) {
+    if (args.page_path !== undefined) {
+      throw new ToolError("page_path needs scroll_depth.");
+    }
+    if (args.filter === undefined) {
+      throw new ToolError("Pass filter or scroll_depth.");
+    }
+    return args.filter;
+  }
+  if (args.filter !== undefined) {
+    throw new ToolError("Pass filter or scroll_depth, not both.");
+  }
+  try {
+    return scrollDepthGoalFilterDsl({
+      threshold: args.scroll_depth,
+      pagePath: args.page_path ?? "",
+    });
+  } catch (error) {
+    if (error instanceof ScrollDepthGoalValidationError) {
+      throw new ToolError(
+        "page_path can have one *, or one at each end, e.g. /blog* or *docs*.",
+      );
+    }
+    throw error;
+  }
+}
 
 function parseTime(value: string, name: string): number {
   const ms = Date.parse(value);
@@ -204,8 +243,9 @@ async function organizationId(call: ToolCall): Promise<string> {
 /** Reports an agent can ask a site for, by the dashboard's query names. */
 const SITE_REPORTS = {
   overview:
-    "Headline metrics: views, visitors, sessions, bounce rate, average duration",
-  trend: "Views, visitors and sessions per interval",
+    "Headline metrics: views, visitors, sessions, bounce rate, average duration; with a page.path filter, scroll depth too (in %)",
+  trend:
+    "Views, visitors and sessions per interval; with a page.path filter, scroll depth too (in %)",
   pages: "Top pages",
   referrers: "Top referrers",
   "overview-source-channel": "Traffic by channel (direct, search, social, ...)",
@@ -236,8 +276,13 @@ const SITE_REPORTS = {
   "event-type-fields": "Payload fields of a custom event (params: eventName)",
   funnels: "Funnels; with params.id, that funnel's conversion analysis",
   goals: "Goals; with params.id, one goal's definition",
-  "goal-summary": "A goal's conversions (params: id)",
+  "goal-summary":
+    "A goal's conversions, and for a goal with a currency its revenue: total and average per event that carried revenue (params: id)",
   "goal-timeseries": "A goal's conversions per interval (params: id)",
+  properties:
+    'Custom property keys of page views and events, by visitors; filter by one with event.payload("/<key>")',
+  "property-values":
+    "A custom property's values with visitors, visits, page views and events (params: key)",
   "filter-values":
     "Known values of a filter field, for building filters (params: filterKey, a filter field such as page.path, referrer.domain or geo.country)",
 } as const;
@@ -321,7 +366,7 @@ export const tools = defineTools(
     get_site_report: {
       title: "Site report",
       description:
-        "Read one analytics report for a site: headline metrics, trends, pages, referrers, campaigns, places, devices, custom events, funnels and goals. The report argument lists each report and the params it takes. Lists accept limit; paged lists return a cursor to pass back in params.cursor.",
+        "Read one analytics report for a site: headline metrics, trends, pages, referrers, campaigns, places, devices, custom events, custom properties, funnels and goals. The report argument lists each report and the params it takes. Lists accept limit; paged lists return a cursor to pass back in params.cursor.",
       risk: "read",
       input: z.object({
         site_id: z.string().min(1),
@@ -387,7 +432,7 @@ export const tools = defineTools(
     get_site_settings: {
       title: "Site settings",
       description:
-        "A site's tracking settings (query and hash tracking, outbound links, Do Not Track, bot protection, blocking rules) and its tracking snippet.",
+        "A site's tracking settings (query and hash tracking, outbound links, file downloads, 404 pages, Do Not Track, bot protection, blocking rules) and its tracking snippet.",
       risk: "read",
       input: z.object({ site_id: z.string().min(1) }),
       handler: async (args, call) => {
@@ -487,6 +532,8 @@ export const tools = defineTools(
         track_query_params: z.boolean().optional(),
         track_hash: z.boolean().optional(),
         auto_track_outbound_links: z.boolean().optional(),
+        auto_track_file_downloads: z.boolean().optional(),
+        track_404_pages: z.boolean().optional(),
         ignore_do_not_track: z.boolean().optional(),
         bot_protection_enabled: z.boolean().optional(),
         hosting_proxy_blocking_enabled: z.boolean().optional(),
@@ -502,6 +549,8 @@ export const tools = defineTools(
             trackQueryParams: args.track_query_params,
             trackHash: args.track_hash,
             autoTrackOutboundLinks: args.auto_track_outbound_links,
+            autoTrackFileDownloads: args.auto_track_file_downloads,
+            track404Pages: args.track_404_pages,
             ignoreDoNotTrack: args.ignore_do_not_track,
             botProtectionEnabled: args.bot_protection_enabled,
             hostingProxyBlockingEnabled: args.hosting_proxy_blocking_enabled,
@@ -594,13 +643,41 @@ export const tools = defineTools(
     save_goal: {
       title: "Save goal",
       description:
-        'Create a goal, or replace one when id is given: a filter expression that counts a conversion, e.g. event.name eq "signup". Read it with get_site_report report=goal-summary params.id. Owners and admins only.',
+        'Create a goal, or replace one when id is given: a filter expression that counts a conversion, e.g. event.name eq "signup", or a scroll depth goal with scroll_depth and page_path instead. Read it with get_site_report report=goal-summary params.id. Owners and admins only.',
       risk: "write",
       input: z.object({
         site_id: z.string().min(1),
         id: z.string().optional().describe("The goal to replace"),
         name: z.string().min(1).max(120),
-        filter: z.string().min(1).max(4_000),
+        filter: z
+          .string()
+          .min(1)
+          .max(4_000)
+          .optional()
+          .describe("The conversion's filter expression; or use scroll_depth"),
+        scroll_depth: z
+          .number()
+          .int()
+          .min(SCROLL_DEPTH_THRESHOLD_MIN)
+          .max(SCROLL_DEPTH_THRESHOLD_MAX)
+          .optional()
+          .describe(
+            "Instead of filter: a scroll depth goal, the visitors who scrolled at least this percent down a page",
+          ),
+        page_path: z
+          .string()
+          .max(4_000)
+          .optional()
+          .describe(
+            "The scroll depth goal's page. * matches any characters, slashes included, e.g. /blog*; default every page",
+          ),
+        currency: z
+          .string()
+          .length(3)
+          .optional()
+          .describe(
+            'ISO 4217 code, e.g. USD: the goal then sums the revenue its events were tracked with in this currency. Only for a filter that matches custom events alone, e.g. event.name eq "Purchase". Revenue in other currencies isn\'t converted or counted.',
+          ),
       }),
       handler: async (args, call) =>
         privateApi(call, args.id ? "PATCH" : "POST", "/api/private/goals", {
@@ -608,7 +685,9 @@ export const tools = defineTools(
           body: {
             name: args.name,
             filterDslVersion: 1,
-            filterDsl: args.filter,
+            filterDsl: goalFilterDsl(args),
+            // A replaced goal without a currency loses its revenue.
+            currency: args.currency ?? null,
           },
         }),
     },

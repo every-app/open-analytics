@@ -39,16 +39,20 @@ describe("filter number units", () => {
     );
   });
 
-  it("keeps fixed px values unchanged and exposes display metadata", () => {
+  it("keeps fixed px and % values unchanged and exposes display metadata", () => {
     expect(convertCanonicalNumberToDisplay(640, "px", "px")).toBe(640);
     expect(convertDisplayNumberToCanonical(640, "px", "px")).toBe(640);
+    expect(convertCanonicalNumberToDisplay(75, "%", "%")).toBe(75);
+    expect(convertDisplayNumberToCanonical(75, "%", "%")).toBe(75);
     expect(FILTER_NUMBER_DISPLAY_UNITS).toEqual({
       ms: ["hours", "minutes", "seconds", "milliseconds"],
       ratio: ["percent", "per-mille"],
       px: ["px"],
+      "%": ["%"],
     });
     expect(FILTER_NUMBER_UNIT_DEFINITIONS.seconds.multiplier).toBe(1000);
     expect(getFilterNumberDisplayUnits("px")).toEqual(["px"]);
+    expect(getFilterNumberDisplayUnits("%")).toEqual(["%"]);
   });
 
   it("leaves values alone when no unit is available", () => {

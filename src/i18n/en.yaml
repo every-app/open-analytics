@@ -205,8 +205,9 @@ filterBuilder:
     geo.organization: Network organization
     event.collection: Event collection
     event.name: Event name
-    event.payload: Event properties
+    event.payload: Properties
     page.durationMs: Time on page
+    page.scrollDepth: Scroll depth
     session.collection: Session collection
     session.durationMs: Session duration
     session.views: Page views
@@ -309,7 +310,8 @@ filterBuilder:
   expressionHelpTitle: Filter expression syntax
   expressionHelpDescription: The fields and operators you can use in a filter expression.
   expressionHelpSyntax: Syntax
-  expressionHelpLogicDescription: AND binds more tightly than OR. Use parentheses
+  expressionHelpLogicDescription:
+    AND binds more tightly than OR. Use parentheses
     for nesting; AND(...) and OR(...) preserve an explicit one-condition group.
   expressionHelpValues: Values
   expressionHelpValuesDescription: Strings use JSON double quotes. Numbers and
@@ -322,7 +324,8 @@ filterBuilder:
   expressionHelpFieldOperators: Operators
   expressionHelpOtherFields: Other
   expressionHelpContextTitle: Occurrence time and context intrinsics
-  expressionHelpContextDescription: Lowercase dotted names are registered fields;
+  expressionHelpContextDescription:
+    Lowercase dotted names are registered fields;
     uppercase PAGE, EVENT, SESSION, and VISITOR are entity collections. Inside
     an entity selector, $.member refers to its current entity, and -> explicitly
     projects a collection member. @ names a temporal anchor; Sequence and Period
@@ -549,6 +552,7 @@ dashboard:
     viewsPerVisit: Views per visit
     bounceRate: Bounce rate
     visitDuration: Visit duration
+    scrollDepth: Scroll depth
   details: Details
   detailsTitle: "{card} · {tab}"
   notSet: Not set
@@ -592,14 +596,21 @@ dashboard:
     visitors: Visitors
     visits: Visits
     pageviews: Pageviews
+    events: Events
     bounceRate: Bounce rate
     timeOnPage: Time on page
+    scrollDepth: Scroll depth
   goals:
     title: Goal conversions
     goal: Goal
     uniques: Uniques
     total: Total
     conversionRate: Conversion rate
+    revenue: Revenue
+    averageRevenue: Average
+  properties:
+    title: Properties
+    key: Property
 overview:
   title: Overview
   trendTitle: Traffic trend
@@ -630,7 +641,8 @@ install:
     html: Paste it before {tag} on every page.
     wordpress: Add it with a header scripts plugin such as WPCode, or paste it
       before {tag} in your theme's header.php.
-    shopify: In Online Store → Themes → Edit code, open theme.liquid and paste it
+    shopify:
+      In Online Store → Themes → Edit code, open theme.liquid and paste it
       before {tag}.
     nextjs: Paste it inside {tag} in app/layout.tsx.
     gtm: Create a Custom HTML tag with it, trigger it on All Pages, then publish.
@@ -792,6 +804,25 @@ goals:
   nameLabel: Name
   namePlaceholder: Purchase completed
   filter: Conversion condition
+  revenueCurrency: Revenue currency
+  noRevenue: None
+  revenueCurrencyHint: Adds up the revenue of the custom events this goal
+    matches. Revenue in other currencies isn't converted or counted.
+  revenueCurrencyEventsOnly: A goal with revenue must match only custom events,
+    such as an event name.
+  trigger: Trigger
+  triggerFilter: Filter
+  triggerScrollDepth: Scroll depth
+  scrollThreshold: Scroll depth threshold (1–100%)
+  scrollThresholdInvalid: Enter a whole number from 1 to 100.
+  pagePath: Page path
+  pagePathPlaceholder: /blog*
+  pagePathHint: "* matches any characters, slashes included. Leave it empty for
+    every page."
+  pagePathWildcardUnsupported: Use one *, or one at each end, such as /blog* or
+    *docs*.
+  scrollGoalName: Scroll {threshold}%
+  scrollGoalNameOnPage: Scroll {threshold}% on {path}
   apply: Apply
   cancel: Cancel
   save: Create
@@ -801,7 +832,8 @@ goals:
   creating: Creating...
   delete: Delete
   deleteTitle: Delete goal
-  deleteDescription: This removes the saved goal definition. Historical analytics
+  deleteDescription:
+    This removes the saved goal definition. Historical analytics
     data is not deleted.
   deleteConfirm: Delete goal
   detailLoadError: Couldn't load goal analysis.
@@ -816,6 +848,8 @@ goals:
   total: Total
   converted: Converted
   conversion: Conversion rate
+  revenue: Revenue
+  averageRevenue: Average revenue
   timeseries: Conversion rate
   updated: Updated
 conversions:
@@ -866,7 +900,8 @@ siteSettings:
   publicLinkLabel: Public link
   copiedLink: Link copied
   botProtectionEnabledLabel: Block detected bots
-  botProtectionEnabledHint: High-confidence bot requests are blocked when this is
+  botProtectionEnabledHint:
+    High-confidence bot requests are blocked when this is
     enabled; otherwise they remain included in statistics.
   hostingProxyBlockingEnabledLabel: Block hosting and proxy traffic
   hostingProxyBlockingEnabledHint: Block suspected bot requests from hosting or proxy networks.
@@ -918,6 +953,14 @@ siteSettings:
   autoTrackOutboundLinksLabel: Auto-track outbound link clicks
   autoTrackOutboundLinksHint: When enabled, clicking links to external domains
     automatically reports outbound_click events.
+  autoTrackFileDownloadsLabel: Track file downloads
+  autoTrackFileDownloadsHint: Clicking a link to a file (PDF, ZIP, CSV and other
+    common types, or any link with a download attribute) reports a file_download
+    event with the file's URL.
+  track404PagesLabel: Track 404 pages
+  track404PagesHint:
+    A page served with a 404 status reports a page_not_found event
+    with its path, in browsers that report the status.
   save: Save
   saving: Saving...
   scriptHint: Paste it before </head> on every page.
@@ -939,7 +982,8 @@ siteSettings:
     deleteFailed: Couldn't delete the site.
     invalidInput: Enter a site name and a valid domain.
   publicEnabledHint: Anyone with the link can view this site's reports.
-  blockingRulesHelp: Requests that match a Block rule aren't counted. Allow makes
+  blockingRulesHelp:
+    Requests that match a Block rule aren't counted. Allow makes
     an exception. When several rules of one type match, the last one wins. Use *
     as a wildcard.
   blockingRuleTypeLabel: Type
@@ -1043,10 +1087,12 @@ runtimeConfigError:
   title: Dashboard unavailable
   heading: This dashboard isn't available right now.
   setupSummary: Set up this deployment
-  setupCommand: Set {name} to 32 or more random characters with this command, then
+  setupCommand:
+    Set {name} to 32 or more random characters with this command, then
     reload this page.
   generateHint: Make one with {command}.
-  devSetup: This app is running under {command}. Set {name} in {file}, then reload
+  devSetup:
+    This app is running under {command}. Set {name} in {file}, then reload
     this page.
   docsLabel: Deployment guide
 login: {}
@@ -1085,7 +1131,8 @@ teamManagement:
     loadRulesFailed: Couldn't load notification rules.
     createRule: Create rule
     editRule: Edit rule
-    dialogDescription: "Each rule goes to the member who creates it: to their inbox,
+    dialogDescription:
+      "Each rule goes to the member who creates it: to their inbox,
       and by email when they have email on."
     sendScheduleSection: Send time
     conditionSection: Conditions

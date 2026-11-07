@@ -210,6 +210,30 @@ export function executePrivateQuery(
         ),
     );
   }
+  if (input.pathname === "properties") {
+    return import("./protocol/properties").then(
+      ({ handlePropertyKeysContract }) =>
+        handlePropertyKeysContract(
+          input.env,
+          input.siteId,
+          input.url,
+          ctx,
+          queryContext,
+        ),
+    );
+  }
+  if (input.pathname === "property-values") {
+    return import("./protocol/properties").then(
+      ({ handlePropertyValuesContract }) =>
+        handlePropertyValuesContract(
+          input.env,
+          input.siteId,
+          input.url,
+          ctx,
+          queryContext,
+        ),
+    );
+  }
   if (input.pathname === "event-type-fields") {
     return import("./protocol/events").then(
       ({ handleEventTypeFieldsContract }) =>

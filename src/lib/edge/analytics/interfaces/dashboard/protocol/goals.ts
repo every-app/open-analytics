@@ -17,6 +17,12 @@ interface GoalWriteBody {
   readonly name?: unknown;
   readonly filterDslVersion?: unknown;
   readonly filterDsl?: unknown;
+  /** An ISO 4217 code, or null for a goal without revenue. */
+  readonly currency?: unknown;
+}
+/** A null currency is a goal without revenue; the goal config validates any other. */
+function currencyField(currency: unknown): Pick<GoalConfigV1, "currency"> {
+  return currency === null ? {} : { currency: currency as string };
 }
 function readWriteConfig(
   body: GoalWriteBody,
@@ -26,7 +32,14 @@ function readWriteConfig(
   if (!name || filterDslVersion !== 1 || typeof body.filterDsl !== "string") {
     return null;
   }
-  return { name, config: { filterDslVersion, filterDsl: body.filterDsl } };
+  return {
+    name,
+    config: {
+      filterDslVersion,
+      filterDsl: body.filterDsl,
+      ...(body.currency === undefined ? {} : currencyField(body.currency)),
+    },
+  };
 }
 async function readWriteBody(
   request: Request,
@@ -119,10 +132,13 @@ async function handleGoalUpdate(
   if (filterDslVersion !== 1 || typeof filterDsl !== "string") {
     return badRequest("Invalid goal configuration");
   }
+  const currency =
+    body.currency === undefined ? current.currency : body.currency;
   try {
     const goal = await resource.update(siteId, goalId, name, {
       filterDslVersion,
       filterDsl,
+      ...(currency === undefined ? {} : currencyField(currency)),
     });
     return jsonResponseWith(ctx, { ok: true, data: { goal } });
   } catch (error) {

@@ -2,9 +2,11 @@ import {
   buildRegionLocationValue,
   parseGeoLocationValue,
 } from "@/lib/analytics/geo-location";
+import { propertyPath } from "@/lib/analytics/property-path";
 import {
   analyticsFilterRegistry,
   attachFilterScopePreference,
+  type CanonicalJsonPath,
   FILTER_DOCUMENT_VERSION,
   type FilterCondition,
   type FilterDocument,
@@ -206,23 +208,20 @@ function conditionValueForField(
   });
   return value;
 }
-function withoutFields(
+function withoutConditions(
   expression: FilterExpression | null,
-  fields: ReadonlySet<string>,
+  matches: (condition: FilterCondition) => boolean,
 ): FilterExpression | null {
   if (!expression) return null;
   if (expression.kind === "condition") {
-    return expression.target.kind === "field" &&
-      fields.has(expression.target.field)
-      ? null
-      : expression;
+    return matches(expression) ? null : expression;
   }
   if (expression.kind === "not") {
-    const child = withoutFields(expression.child, fields);
+    const child = withoutConditions(expression.child, matches);
     return child ? { kind: "not", child } : null;
   }
   const children = expression.children
-    .map((child) => withoutFields(child, fields))
+    .map((child) => withoutConditions(child, matches))
     .filter((child): child is FilterExpression => child !== null);
   if (children.length === 0) return null;
   if (children.length === 1) return children[0]!;
@@ -336,8 +335,13 @@ export function withoutDashboardFilter(
   document: FilterDocument,
   key: DashboardFilterControlKey,
 ): FilterDocument {
+  const fields = fieldsForControlKey(key);
   return normalizedDocument(
-    withoutFields(document.root, fieldsForControlKey(key)),
+    withoutConditions(
+      document.root,
+      (condition) =>
+        condition.target.kind === "field" && fields.has(condition.target.field),
+    ),
     document,
   );
 }
@@ -368,6 +372,57 @@ export function setDashboardFilterValue(
         document,
       )
     : base;
+}
+function isPropertyCondition(condition: FilterCondition, path: string) {
+  return (
+    condition.target.kind === "event-payload" && condition.target.path === path
+  );
+}
+/**
+ * The custom property value the page is filtered to for `key`: a payload
+ * condition at its path equal to a string, which matches page views with
+ * the property and events with the payload value.
+ */
+export function propertyFilterValue(
+  document: FilterDocument,
+  key: string,
+): string | undefined {
+  const path = propertyPath(key);
+  let value: string | undefined;
+  visitExpression(document.root, (condition) => {
+    if (
+      value !== undefined ||
+      !isPropertyCondition(condition, path) ||
+      condition.operator !== "eq" ||
+      typeof condition.value !== "string"
+    ) {
+      return;
+    }
+    value = condition.value;
+  });
+  return value;
+}
+/** The filters with `key` filtered to `value`, or not by `key` for null. */
+export function setPropertyFilterValue(
+  document: FilterDocument,
+  key: string,
+  value: string | null,
+): FilterDocument {
+  const path = propertyPath(key);
+  const base = withoutConditions(document.root, (condition) =>
+    isPropertyCondition(condition, path),
+  );
+  if (value === null) return normalizedDocument(base, document);
+  const expression: FilterExpression = {
+    kind: "condition",
+    target: { kind: "event-payload", path: path as CanonicalJsonPath },
+    operator: "eq",
+    value,
+  };
+  return normalizedDocument(
+    base ? { kind: "and", children: [base, expression] } : expression,
+    document,
+  );
 }
 export function dashboardFilterFingerprint(document: FilterDocument): string {
   return filterFingerprint(document, analyticsFilterRegistry);

@@ -281,6 +281,50 @@ describe("private Goal definitions", () => {
     ).resolves.toHaveProperty("status", 201);
   });
 
+  it("stores a revenue currency, keeps it on a partial update, and clears it with null", async () => {
+    const revenueConfig = { ...config, currency: "EUR" };
+    const { env, calls } = createEnv((sql) =>
+      sql.includes("analysis_definitions")
+        ? [storedGoal({ config_json: JSON.stringify(revenueConfig) })]
+        : [],
+    );
+    const send = async (method: string, body: unknown) => {
+      const { request, url } = makeRequest(
+        method === "POST"
+          ? "/api/private/goals"
+          : "/api/private/goals?id=goal-1",
+        { method, body: JSON.stringify(body) },
+      );
+      return (await handleGoal(env, "site-1", url, undefined, request)).status;
+    };
+    const writtenConfigs = () =>
+      calls
+        .filter((call) => call.method === "run")
+        .map((call) =>
+          JSON.parse(
+            String(call.bindings.find((value) => String(value).includes("{"))),
+          ),
+        );
+
+    await expect(
+      send("POST", { name: "Purchase", ...config, currency: "eur" }),
+    ).resolves.toBe(201);
+    await expect(send("PATCH", { name: "Renamed" })).resolves.toBe(200);
+    await expect(send("PATCH", { currency: null })).resolves.toBe(200);
+    expect(writtenConfigs()).toEqual([revenueConfig, revenueConfig, config]);
+
+    // Only a goal whose conversions are all custom events has revenue.
+    await expect(
+      send("POST", {
+        name: "Thank you page",
+        filterDslVersion: 1,
+        filterDsl: 'page.path eq "/thank-you"',
+        currency: "EUR",
+      }),
+    ).resolves.toBe(400);
+    await expect(send("PATCH", { currency: "EURO" })).resolves.toBe(400);
+  });
+
   it("rejects invalid Goal payloads and unsupported methods", async () => {
     const { env } = createEnv();
     const invalid = makeRequest("/api/private/goals", {

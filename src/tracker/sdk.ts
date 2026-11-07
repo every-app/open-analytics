@@ -16,6 +16,8 @@ interface TrackerRuntimeConfig {
   trackHash: boolean;
   ignoreDoNotTrack: boolean;
   autoTrackOutboundLinks: boolean;
+  autoTrackFileDownloads: boolean;
+  track404Pages: boolean;
 }
 
 function takeRuntimeConfig(): TrackerRuntimeConfig {
@@ -33,7 +35,9 @@ function takeRuntimeConfig(): TrackerRuntimeConfig {
     typeof config.trackQueryParams !== "boolean" ||
     typeof config.trackHash !== "boolean" ||
     typeof config.ignoreDoNotTrack !== "boolean" ||
-    typeof config.autoTrackOutboundLinks !== "boolean"
+    typeof config.autoTrackOutboundLinks !== "boolean" ||
+    typeof config.autoTrackFileDownloads !== "boolean" ||
+    typeof config.track404Pages !== "boolean"
   ) {
     throw new Error("OpenAnalytics: runtime configuration is invalid");
   }
@@ -66,6 +70,7 @@ let pendingRouteChange: {
   referrerUrl: string;
   transitionAt: number;
   routeKey: string;
+  scrollDepth: number;
 } | null = null;
 let routeChangeTimer = 0;
 let leaveSent = false;
@@ -75,6 +80,10 @@ let trackedOnce: Set<string> = new Set();
 let debugEnabled = false;
 let uaClientHints: unknown = null;
 let uaClientHintsSettled = false;
+// The current page view's lowest visible edge and the page's height, in px.
+let scrollBottom = 0;
+let scrollHeight = 0;
+let scrollFrame = 0;
 
 // ── Entry guard ──
 const scriptEl = document.currentScript;
@@ -92,6 +101,8 @@ const TRACK_QUERY_PARAMS = runtimeConfig.trackQueryParams;
 const TRACK_HASH = runtimeConfig.trackHash;
 const IGNORE_DO_NOT_TRACK = runtimeConfig.ignoreDoNotTrack;
 const AUTO_TRACK_OUTBOUND_LINKS = runtimeConfig.autoTrackOutboundLinks;
+const AUTO_TRACK_FILE_DOWNLOADS = runtimeConfig.autoTrackFileDownloads;
+const TRACK_404_PAGES = runtimeConfig.track404Pages;
 // Visits from a local copy of the site are never sent.
 const IS_LOCAL =
   location.protocol === "file:" ||
@@ -108,6 +119,16 @@ if (!IGNORE_DO_NOT_TRACK) {
 
 const scriptUrl = new URL(scriptEl.src);
 const collectUrl = new URL("/collect", scriptUrl.origin).toString();
+
+// Every page view's properties: the script tag's data-prop-<key> attributes.
+const PROP_ATTRIBUTE_PREFIX = "data-prop-";
+const scriptProperties: Record<string, string> = {};
+for (const attribute of Array.from(scriptEl.attributes)) {
+  if (attribute.name.startsWith(PROP_ATTRIBUTE_PREFIX)) {
+    scriptProperties[attribute.name.slice(PROP_ATTRIBUTE_PREFIX.length)] =
+      attribute.value;
+  }
+}
 
 const uaClientHintsReady: Promise<UaClientHintsResult | null> =
   readUaClientHints()
@@ -166,6 +187,23 @@ function pagePayloadBase(
   };
 }
 
+// A page view's properties: the script tag's, then the global properties
+// with a scalar value, all as strings. The server applies the limits.
+function pageProperties(): Record<string, string> {
+  const props: Record<string, string> = { ...scriptProperties };
+  for (const key in globalProperties) {
+    const value = globalProperties[key];
+    if (
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      props[key] = String(value);
+    }
+  }
+  return props;
+}
+
 function send(payload: any, useBeacon: boolean): void {
   if (IS_LOCAL) return;
   let body = "";
@@ -211,16 +249,48 @@ function sendWhenUaClientHintsReady(payload: any, useBeacon: boolean): void {
   window.setTimeout(flush, UA_CLIENT_HINT_TIMEOUT_MS);
 }
 
+// ── Scroll depth ──
+
+// The page's full height, measured as Plausible does: the largest of the
+// body's and the document's heights.
+function documentHeight(): number {
+  const body = document.body;
+  const root = document.documentElement;
+  return Math.max(
+    body?.scrollHeight ?? 0,
+    body?.offsetHeight ?? 0,
+    body?.clientHeight ?? 0,
+    root.scrollHeight,
+    root.offsetHeight,
+    root.clientHeight,
+  );
+}
+
+function measureScroll(): void {
+  scrollHeight = documentHeight();
+  scrollBottom = Math.max(scrollBottom, window.scrollY + window.innerHeight);
+}
+
+// How far down the page the visitor scrolled, as a whole percent. It uses the
+// last measurement, so after a route change it still describes the old page.
+// A page that doesn't scroll is seen in full.
+function scrollDepth(): number {
+  return Math.min(100, Math.round((scrollBottom / scrollHeight) * 100));
+}
+
 // ── Visit lifecycle ──
 
+// A route change's pageview carries the scroll depth of the page it ends.
 function startVisit(
   href: string,
   referrerUrl: string,
   startedAt: number,
-  navigation = "",
+  previousScrollDepth?: number,
 ): void {
   leaveSent = false;
   pendingHiddenAt = 0;
+  scrollBottom = 0;
+  measureScroll();
   currentVisit = {
     id: crypto.randomUUID(),
     startedAt,
@@ -245,7 +315,10 @@ function startVisit(
         currentVisit.startedAt,
       ),
       kind: "pageview",
-      ...(navigation ? { navigation } : {}),
+      props: pageProperties(),
+      ...(previousScrollDepth === undefined
+        ? {}
+        : { navigation: "route", previousScrollDepth }),
     },
     false,
   );
@@ -266,6 +339,7 @@ function endCurrentVisit(exitReason: string, useBeacon: boolean): void {
       pathname: url.pathname || "/",
       hostname: url.hostname || "",
       exitReason,
+      scrollDepth: scrollDepth(),
     },
     useBeacon,
   );
@@ -290,6 +364,7 @@ function sendVisibility(
       timestamp: eventAt,
       pathname: url.pathname || "/",
       hostname: url.hostname || "",
+      ...(visibilityState === "hidden" ? { scrollDepth: scrollDepth() } : {}),
     },
     true,
   );
@@ -309,12 +384,9 @@ function handleDocumentVisible(): void {
   pendingHiddenAt = 0;
 }
 
-function commitRouteChange(routeChange: {
-  href: string;
-  referrerUrl: string;
-  transitionAt: number;
-  routeKey: string;
-}): void {
+function commitRouteChange(
+  routeChange: NonNullable<typeof pendingRouteChange>,
+): void {
   pendingRouteChange = null;
   routeChangeTimer = 0;
   const nextKey = routeKey(routeChange.href);
@@ -323,7 +395,7 @@ function commitRouteChange(routeChange: {
     routeChange.href,
     routeChange.referrerUrl,
     routeChange.transitionAt,
-    "route",
+    routeChange.scrollDepth,
   );
 }
 
@@ -344,6 +416,8 @@ function scheduleRouteChange(nextHref: string, nextReferrerUrl: string): void {
     referrerUrl: nextReferrerUrl,
     transitionAt: Date.now(),
     routeKey: nextKey,
+    // The first change of a burst still has the old page on screen.
+    scrollDepth: pendingRouteChange?.scrollDepth ?? scrollDepth(),
   };
   if (routeChangeTimer) {
     clearTimeout(routeChangeTimer);
@@ -386,15 +460,29 @@ function clearGlobalProperties(): void {
   globalProperties = {};
 }
 
-function trackOnce(eventName: string, eventData?: unknown): void {
+// The collector validates revenue; an invalid one is dropped there and the
+// event kept.
+interface TrackOptions {
+  revenue?: { amount: unknown; currency: unknown };
+}
+
+function trackOnce(
+  eventName: string,
+  eventData?: unknown,
+  options?: TrackOptions,
+): void {
   const normalizedName = String(eventName || "").trim();
   if (!normalizedName) return;
   if (trackedOnce.has(normalizedName)) return;
   trackedOnce.add(normalizedName);
-  track(normalizedName, eventData);
+  track(normalizedName, eventData, options);
 }
 
-function track(eventName: string, eventData?: unknown): void {
+function track(
+  eventName: string,
+  eventData?: unknown,
+  options?: TrackOptions,
+): void {
   const normalizedName = String(eventName || "").trim();
   if (!normalizedName || !currentVisit) return;
   if (debugEnabled) {
@@ -428,6 +516,7 @@ function track(eventName: string, eventData?: unknown): void {
         globalProperties,
         eventData === undefined ? {} : eventData,
       ),
+      ...(options?.revenue ? { revenue: options.revenue } : {}),
     },
     false,
   );
@@ -439,9 +528,20 @@ function debug(): void {
 
 // ── Initialization ──
 
+// The HTTP status the page itself was served with, where the browser reports
+// it (Chromium and Firefox); 0 elsewhere.
+function documentResponseStatus(): number {
+  const entry = performance.getEntriesByType("navigation")[0] as
+    (PerformanceEntry & { responseStatus?: number }) | undefined;
+  return entry?.responseStatus ?? 0;
+}
+
 function startInitialVisitWhenReady(): void {
   const startInitialVisit = () => {
     startVisit(window.location.href, document.referrer || "", Date.now());
+    if (TRACK_404_PAGES && documentResponseStatus() === 404) {
+      track("page_not_found", { path: window.location.pathname });
+    }
   };
 
   if (document.readyState === "loading") {
@@ -484,8 +584,35 @@ window.addEventListener("pagehide", () => {
   flushPendingRouteChange();
   sendLeave();
 });
+document.addEventListener(
+  "scroll",
+  () => {
+    if (scrollFrame) return;
+    scrollFrame = requestAnimationFrame(() => {
+      scrollFrame = 0;
+      measureScroll();
+    });
+  },
+  { passive: true },
+);
+// Images and late content change the page's height after the first pageview,
+// so it is measured on load and every 200 ms for 3 s after, as Plausible does.
+const LOAD_MEASURE_INTERVAL_MS = 200;
+const LOAD_MEASURE_COUNT = 15;
+window.addEventListener("load", () => {
+  measureScroll();
+  let remaining = LOAD_MEASURE_COUNT;
+  const timer = window.setInterval(() => {
+    measureScroll();
+    if (--remaining === 0) window.clearInterval(timer);
+  }, LOAD_MEASURE_INTERVAL_MS);
+});
 
-initAutoTrack({ autoTrackOutboundLinks: AUTO_TRACK_OUTBOUND_LINKS, track });
+initAutoTrack({
+  autoTrackOutboundLinks: AUTO_TRACK_OUTBOUND_LINKS,
+  autoTrackFileDownloads: AUTO_TRACK_FILE_DOWNLOADS,
+  track,
+});
 
 // ── Window exposure ──
 const api = {

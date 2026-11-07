@@ -16,6 +16,7 @@ export * from "./overview";
 export * from "./pages";
 export type * from "./pages-dashboard";
 export * from "./policy";
+export * from "./properties";
 export * from "./scoped-filter";
 export type * from "./team-results";
 export type * from "./types";

@@ -92,6 +92,8 @@ function serializeSiteTrackingConfig(
     trackQueryParams: settings.trackQueryParams,
     trackHash: settings.trackHash,
     autoTrackOutboundLinks: settings.autoTrackOutboundLinks,
+    autoTrackFileDownloads: settings.autoTrackFileDownloads,
+    track404Pages: settings.track404Pages,
     ignoreDoNotTrack: settings.ignoreDoNotTrack,
   };
 

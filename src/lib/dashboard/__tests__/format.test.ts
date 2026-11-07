@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  currencyFormat,
   durationFormat,
   intlLocale,
   numberFormat,
@@ -32,6 +33,14 @@ describe("Dashboard Format Utilities", () => {
       expect(percentFormat("en", 0.88)).toMatch(/88\s*%/);
       expect(percentFormat("en", 0.0005)).toMatch(/0\.1\s*%/);
       expect(percentFormat("en", 0)).toMatch(/0\s*%/);
+    });
+  });
+
+  describe("currencyFormat", () => {
+    it("formats an amount in its currency's symbol and minor units", () => {
+      expect(currencyFormat("en", 1234.5, "USD")).toBe("$1,234.50");
+      expect(currencyFormat("en", 15.99, "EUR")).toBe("€15.99");
+      expect(currencyFormat("en", 1500, "JPY")).toBe("¥1,500");
     });
   });
 

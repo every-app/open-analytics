@@ -10,6 +10,7 @@ import type {
   OverviewMetrics,
   TrendPoint,
 } from "@/lib/dashboard-api/client/edge";
+import { type FilterDocument, hasPagePathFilter } from "@/lib/filter-contract";
 
 /** The dashboard's top stats, in Plausible's order. */
 export enum TopStat {
@@ -19,9 +20,33 @@ export enum TopStat {
   ViewsPerVisit = "viewsPerVisit",
   BounceRate = "bounceRate",
   VisitDuration = "visitDuration",
+  ScrollDepth = "scrollDepth",
 }
 
-export const TOP_STATS: readonly TopStat[] = Object.values(TopStat);
+const SITE_STATS: readonly TopStat[] = [
+  TopStat.Visitors,
+  TopStat.Visits,
+  TopStat.Pageviews,
+  TopStat.ViewsPerVisit,
+  TopStat.BounceRate,
+  TopStat.VisitDuration,
+];
+
+// With a page filter, Plausible drops views per visit and shows the page's
+// scroll depth beside its time on page.
+const PAGE_STATS: readonly TopStat[] = [
+  TopStat.Visitors,
+  TopStat.Visits,
+  TopStat.Pageviews,
+  TopStat.BounceRate,
+  TopStat.ScrollDepth,
+  TopStat.VisitDuration,
+];
+
+/** The six stats the dashboard shows for `filters`, as Plausible does. */
+export function topStats(filters: FilterDocument): readonly TopStat[] {
+  return hasPagePathFilter(filters) ? PAGE_STATS : SITE_STATS;
+}
 
 /** The address key holding the stat the main graph draws. */
 export const GRAPH_METRIC_PARAM = "metric";
@@ -31,16 +56,13 @@ export const LOWER_IS_BETTER: ReadonlySet<TopStat> = new Set([
   TopStat.BounceRate,
 ]);
 
-function isTopStat(value: string | null): value is TopStat {
-  return TOP_STATS.includes(value as TopStat);
-}
-
-/** The stat the graph draws: the address's, or unique visitors. */
+/** The stat the graph draws: the address's, when shown, or unique visitors. */
 export function graphMetricFromSearchParams(
   searchParams: URLSearchParams,
+  stats: readonly TopStat[],
 ): TopStat {
   const value = searchParams.get(GRAPH_METRIC_PARAM);
-  return isTopStat(value) ? value : TopStat.Visitors;
+  return stats.find((stat) => stat === value) ?? TopStat.Visitors;
 }
 
 /** The address with the graph drawing `metric`; visitors needs no key. */
@@ -56,17 +78,23 @@ export function withGraphMetric(
 
 type Totals = Pick<
   OverviewMetrics | TrendPoint,
-  "views" | "visitors" | "sessions" | "bounces" | "totalDurationMs"
+  | "views"
+  | "visitors"
+  | "sessions"
+  | "bounces"
+  | "totalDurationMs"
+  | "scrollDepth"
 >;
 
 /**
  * One stat over some totals. The per-visit stats have no value without a
- * visit.
+ * visit, and the scroll depth none without a page view that reported one.
  */
 export function topStatValue(stat: TopStat, totals: Totals): number | null {
   if (stat === TopStat.Visitors) return totals.visitors;
   if (stat === TopStat.Visits) return totals.sessions;
   if (stat === TopStat.Pageviews) return totals.views;
+  if (stat === TopStat.ScrollDepth) return totals.scrollDepth ?? null;
   if (totals.sessions <= 0) return null;
   if (stat === TopStat.ViewsPerVisit) return totals.views / totals.sessions;
   if (stat === TopStat.BounceRate) return totals.bounces / totals.sessions;
@@ -120,6 +148,8 @@ export function graphPoints(
       sessions: totals.sessions + point.sessions,
       bounces: totals.bounces + point.bounces,
       totalDurationMs: totals.totalDurationMs + point.totalDurationMs,
+      // An average can't be added up; the server sends one point per interval.
+      scrollDepth: point.scrollDepth,
     });
   }
   const result: GraphPoint[] = [];

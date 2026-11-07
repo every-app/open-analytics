@@ -38,9 +38,9 @@ import {
   graphMetricFromSearchParams,
   graphPoints,
   LOWER_IS_BETTER,
-  TOP_STATS,
   TopStat,
   topStatChange,
+  topStats,
   topStatValue,
   withGraphMetric,
 } from "./top-stats";
@@ -66,6 +66,9 @@ function statFormatter(
   if (stat === TopStat.BounceRate) {
     return (value) => percentFormat(locale, value);
   }
+  if (stat === TopStat.ScrollDepth) {
+    return (value) => percentFormat(locale, value / 100);
+  }
   if (stat === TopStat.VisitDuration) {
     return (value) => durationFormat(locale, value);
   }
@@ -90,7 +93,8 @@ function statCellBorderClasses(index: number): string {
 
 /**
  * The top stats, and under them the main graph of the one that is picked.
- * Picking a stat redraws the graph with it and keeps it in the address.
+ * Picking a stat redraws the graph with it and keeps it in the address. A
+ * page path filter adds the scroll depth.
  */
 export function OverviewMetricsSection({
   locale,
@@ -101,7 +105,8 @@ export function OverviewMetricsSection({
 }: OverviewMetricsSectionProps) {
   const searchParams = useLiveSearchParams();
   const pathname = usePathname() || "/";
-  const selected = graphMetricFromSearchParams(searchParams);
+  const stats = useMemo(() => topStats(filters), [filters]);
+  const selected = graphMetricFromSearchParams(searchParams, stats);
   const comparisonQuery = useDashboardComparisonQuery(window, filters);
   const summary = useOverviewSummaryQuery({
     siteId,
@@ -125,7 +130,7 @@ export function OverviewMetricsSection({
 
   const tiles = useMemo(
     () =>
-      TOP_STATS.map((stat) => {
+      stats.map((stat) => {
         const current = data ? topStatValue(stat, data.current) : null;
         const reference = data ? topStatValue(stat, data.reference) : null;
         return {
@@ -153,7 +158,7 @@ export function OverviewMetricsSection({
               : undefined,
         };
       }),
-    [comparisonQuery, data, locale, window],
+    [comparisonQuery, data, locale, stats, window],
   );
   const selectedFormat = useMemo(
     () => statFormatter(selected, locale),

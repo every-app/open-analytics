@@ -164,9 +164,10 @@ export async function handlePagesDashboardContract(
     "pagesPerSession",
     "avgDurationMs",
   ] as const;
+  const sortKeys = [...pageMetrics, "scrollDepth"] as const;
   if (
     rawSort !== null &&
-    !pageMetrics.includes(rawSort as (typeof pageMetrics)[number])
+    !sortKeys.includes(rawSort as (typeof sortKeys)[number])
   ) {
     return badRequest("Invalid sort", "invalid-input");
   }
@@ -178,7 +179,7 @@ export async function handlePagesDashboardContract(
   ) {
     return badRequest("Invalid direction", "invalid-input");
   }
-  const sort = (rawSort ?? "views") as (typeof pageMetrics)[number];
+  const sort = (rawSort ?? "views") as (typeof sortKeys)[number];
   const direction = rawDirection ?? "desc";
   const compare = url.searchParams.get("compare");
   if (compare !== null && !isComparisonMode(compare)) {

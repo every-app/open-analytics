@@ -11,6 +11,7 @@ export interface VisitBindingRow {
   endedAt: number | null;
   finalizedAt: number | null;
   durationMs: number | null;
+  scrollDepth: number | null;
   durationSource: string;
   exitReason: string;
   pathname: string;
@@ -62,6 +63,7 @@ export const VISIT_D1_COLUMNS = [
   "ended_at",
   "finalized_at",
   "duration_ms",
+  "scroll_depth",
   "duration_source",
   "exit_reason",
   "pathname",
@@ -109,6 +111,7 @@ type VisitD1Column = (typeof VISIT_D1_COLUMNS)[number];
 const ACTIVE_VISIT_UPDATE_COLUMNS = [
   "status",
   "last_activity_at",
+  "scroll_depth",
 ] as const satisfies readonly VisitD1Column[];
 
 const FINALIZED_VISIT_UPDATE_COLUMNS = [
@@ -117,6 +120,7 @@ const FINALIZED_VISIT_UPDATE_COLUMNS = [
   "ended_at",
   "finalized_at",
   "duration_ms",
+  "scroll_depth",
   "duration_source",
   "exit_reason",
 ] as const satisfies readonly VisitD1Column[];
@@ -181,6 +185,23 @@ export const MARK_ROLLED_UP_DAY_SQL = `
   WHERE site_pk = ?1 AND ?2 BETWEEN first_day AND last_day
 `;
 
+/**
+ * Page views' custom properties, from one JSON array (?1) of
+ * [visit_id, key, value, site_pk, started_at] rows. A page view is flushed
+ * again on each change of its state; its properties never change, so a
+ * flush after the first adds nothing.
+ */
+export const INSERT_VISIT_PROPERTIES_SQL = `
+  INSERT OR IGNORE INTO visit_properties (visit_id, key, value, site_pk, started_at)
+  SELECT
+    json_extract(property.value, '$[0]'),
+    json_extract(property.value, '$[1]'),
+    json_extract(property.value, '$[2]'),
+    json_extract(property.value, '$[3]'),
+    json_extract(property.value, '$[4]')
+  FROM json_each(?1) AS property
+`;
+
 export const CREATE_BUFFERED_CUSTOM_EVENTS_SQL = `
   CREATE TABLE IF NOT EXISTS buffered_custom_events (
     event_id TEXT PRIMARY KEY,
@@ -191,6 +212,8 @@ export const CREATE_BUFFERED_CUSTOM_EVENTS_SQL = `
     sequence INTEGER NOT NULL DEFAULT 0,
     event_name TEXT NOT NULL,
     event_data_json TEXT NOT NULL DEFAULT '{}',
+    revenue_amount REAL,
+    revenue_currency TEXT,
     user_id TEXT NOT NULL DEFAULT '',
     dirty INTEGER NOT NULL DEFAULT 1,
     flush_attempts INTEGER NOT NULL DEFAULT 0,
@@ -218,6 +241,7 @@ export function visitBindings(
     row.endedAt,
     row.finalizedAt,
     row.durationMs,
+    row.scrollDepth,
     row.durationSource || null,
     row.exitReason || null,
     row.pathname,

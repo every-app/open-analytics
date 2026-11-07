@@ -6,6 +6,8 @@ export interface GoalDefinition {
   name: string;
   filterDslVersion: 1;
   filterDsl: string;
+  /** ISO 4217 code of the goal's revenue; absent for a goal without revenue. */
+  currency?: string;
   semanticFingerprint: string;
   createdAt: number;
   updatedAt: number;
@@ -17,9 +19,22 @@ export interface GoalMetric {
   conversionRate: number;
 }
 
+/**
+ * Revenue of the custom events a goal matched, in the goal's currency.
+ * Events in other currencies aren't converted or counted.
+ */
+export interface GoalRevenue {
+  currency: string;
+  total: number;
+  /** `total` per matched event that carried revenue in `currency`. */
+  average: number;
+}
+
 export interface GoalSummary {
   sessions: GoalMetric;
   visitors: GoalMetric;
+  /** Null for a goal without a currency. */
+  revenue: GoalRevenue | null;
 }
 
 export interface GoalTimeseriesPoint {

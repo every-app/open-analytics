@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 
 import {
   TabbedDataTableCard,
-  type TabbedDataTableColumn,
   type TabbedDataTableLoader,
 } from "@/components/dashboard/common/tabbed-data-table-card";
 import { LoadFailedContent } from "@/components/dashboard/common/table-states";
@@ -14,7 +13,6 @@ import {
   fetchGoalSummary,
 } from "@/lib/dashboard/client/data/index";
 import { filterQueryKey } from "@/lib/dashboard/filter-query-key";
-import { numberFormat, percentFormat } from "@/lib/dashboard/format";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type { FilterDocument } from "@/lib/filter-contract/index";
 import type { Locale } from "@/lib/i18n/config";
@@ -23,12 +21,13 @@ import { formatI18nTemplate } from "@/lib/i18n/template";
 import { useRouter } from "@/lib/router";
 
 import {
+  goalConversionColumns,
   type GoalConversionRow,
   goalConversionRows,
   goalHref,
+  type GoalSortKey,
 } from "./goal-conversions";
 
-type GoalSortKey = "uniques" | "total" | "conversionRate";
 const GOALS_TAB = "goals";
 
 interface GoalConversionsCardProps {
@@ -43,8 +42,9 @@ interface GoalConversionsCardProps {
 
 /**
  * Each of the site's goals with its unique conversions, converting visits
- * and conversion rate for the range and filters. Shown once a goal exists;
- * a row opens the goal on Goals & funnels.
+ * ("—" for a scroll depth goal) and conversion rate for the range and
+ * filters, and, once a goal has a currency, its revenue and average revenue.
+ * Shown once a goal exists; a row opens the goal on Goals & funnels.
  */
 export function GoalConversionsCard({
   locale,
@@ -63,31 +63,12 @@ export function GoalConversionsCard({
     enabled: typeof globalThis.window !== "undefined",
   });
   const goalList = goals.data;
+  const hasRevenue =
+    goalList?.some((goal) => goal.currency !== undefined) ?? false;
   const filtersKey = useMemo(() => filterQueryKey(filters), [filters]);
-  const columns = useMemo<
-    readonly TabbedDataTableColumn<GoalConversionRow, GoalSortKey, string>[]
-  >(
-    () => [
-      {
-        key: "uniques",
-        label: labels.uniques,
-        getValue: (row) => row.uniques,
-        format: (value) => numberFormat(locale, value),
-      },
-      {
-        key: "total",
-        label: labels.total,
-        getValue: (row) => row.total,
-        format: (value) => numberFormat(locale, value),
-      },
-      {
-        key: "conversionRate",
-        label: labels.conversionRate,
-        getValue: (row) => row.conversionRate,
-        format: (value) => percentFormat(locale, value),
-      },
-    ],
-    [labels, locale],
+  const columns = useMemo(
+    () => goalConversionColumns(labels, locale, hasRevenue),
+    [hasRevenue, labels, locale],
   );
   const loader = useMemo<
     TabbedDataTableLoader<string, GoalConversionRow, GoalSortKey>

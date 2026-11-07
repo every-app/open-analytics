@@ -40,6 +40,8 @@ function makeSettings(
     trackQueryParams: true,
     trackHash: true,
     autoTrackOutboundLinks: false,
+    autoTrackFileDownloads: false,
+    track404Pages: false,
     domainWhitelist: [],
     pathBlacklist: [],
     ignoreDoNotTrack: true,
@@ -135,6 +137,8 @@ describe("edge script endpoint", () => {
         trackHash: true,
         ignoreDoNotTrack: false,
         autoTrackOutboundLinks: true,
+        autoTrackFileDownloads: true,
+        track404Pages: true,
       }),
     );
 
@@ -156,7 +160,7 @@ describe("edge script endpoint", () => {
       "public, max-age=12, s-maxage=12",
     );
     expect(script).toBe(
-      '"use strict";globalThis["__openanalytics_tracker_runtime_config__"] = {"siteId":"site-1","trackQueryParams":false,"trackHash":true,"ignoreDoNotTrack":false,"autoTrackOutboundLinks":true};\ntracker-sdk',
+      '"use strict";globalThis["__openanalytics_tracker_runtime_config__"] = {"siteId":"site-1","trackQueryParams":false,"trackHash":true,"ignoreDoNotTrack":false,"autoTrackOutboundLinks":true,"autoTrackFileDownloads":true,"track404Pages":true};\ntracker-sdk',
     );
     expect(storage.open).toHaveBeenCalledWith("insightflare-script-cache");
     expect(cache.match).toHaveBeenCalledTimes(1);
@@ -211,7 +215,7 @@ describe("edge script endpoint", () => {
     );
 
     await expect(response.text()).resolves.toBe(
-      'globalThis["__openanalytics_tracker_runtime_config__"] = {"siteId":"site-1","trackQueryParams":true,"trackHash":false,"ignoreDoNotTrack":true,"autoTrackOutboundLinks":false};\ntracker-sdk',
+      'globalThis["__openanalytics_tracker_runtime_config__"] = {"siteId":"site-1","trackQueryParams":true,"trackHash":false,"ignoreDoNotTrack":true,"autoTrackOutboundLinks":false,"autoTrackFileDownloads":false,"track404Pages":false};\ntracker-sdk',
     );
     expect(response.headers.get("cache-control")).toBe(
       "public, max-age=86400, s-maxage=86400",

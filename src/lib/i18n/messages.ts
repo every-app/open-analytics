@@ -459,6 +459,7 @@ export interface AppMessages {
       viewsPerVisit: string;
       bounceRate: string;
       visitDuration: string;
+      scrollDepth: string;
     };
     details: string;
     detailsTitle: string;
@@ -506,8 +507,10 @@ export interface AppMessages {
       visitors: string;
       visits: string;
       pageviews: string;
+      events: string;
       bounceRate: string;
       timeOnPage: string;
+      scrollDepth: string;
     };
     goals: {
       title: string;
@@ -515,6 +518,12 @@ export interface AppMessages {
       uniques: string;
       total: string;
       conversionRate: string;
+      revenue: string;
+      averageRevenue: string;
+    };
+    properties: {
+      title: string;
+      key: string;
     };
   };
   overview: {
@@ -713,6 +722,21 @@ export interface AppMessages {
     nameLabel: string;
     namePlaceholder: string;
     filter: string;
+    revenueCurrency: string;
+    noRevenue: string;
+    revenueCurrencyHint: string;
+    revenueCurrencyEventsOnly: string;
+    trigger: string;
+    triggerFilter: string;
+    triggerScrollDepth: string;
+    scrollThreshold: string;
+    scrollThresholdInvalid: string;
+    pagePath: string;
+    pagePathPlaceholder: string;
+    pagePathHint: string;
+    pagePathWildcardUnsupported: string;
+    scrollGoalName: string;
+    scrollGoalNameOnPage: string;
     apply: string;
     cancel: string;
     save: string;
@@ -736,6 +760,8 @@ export interface AppMessages {
     total: string;
     converted: string;
     conversion: string;
+    revenue: string;
+    averageRevenue: string;
     timeseries: string;
     updated: string;
   };
@@ -861,6 +887,10 @@ export interface AppMessages {
     ignoreDoNotTrackLabel: string;
     autoTrackOutboundLinksLabel: string;
     autoTrackOutboundLinksHint: string;
+    autoTrackFileDownloadsLabel: string;
+    autoTrackFileDownloadsHint: string;
+    track404PagesLabel: string;
+    track404PagesHint: string;
     save: string;
     saving: string;
     scriptHint: string;
@@ -1449,8 +1479,9 @@ const enMessages = {
       "geo.organization": "Network organization",
       "event.collection": "Event collection",
       "event.name": "Event name",
-      "event.payload": "Event properties",
+      "event.payload": "Properties",
       "page.durationMs": "Time on page",
+      "page.scrollDepth": "Scroll depth",
       "session.collection": "Session collection",
       "session.durationMs": "Session duration",
       "session.views": "Page views",
@@ -1812,6 +1843,7 @@ const enMessages = {
       viewsPerVisit: "Views per visit",
       bounceRate: "Bounce rate",
       visitDuration: "Visit duration",
+      scrollDepth: "Scroll depth",
     },
     details: "Details",
     detailsTitle: "{card} · {tab}",
@@ -1859,8 +1891,10 @@ const enMessages = {
       visitors: "Visitors",
       visits: "Visits",
       pageviews: "Pageviews",
+      events: "Events",
       bounceRate: "Bounce rate",
       timeOnPage: "Time on page",
+      scrollDepth: "Scroll depth",
     },
     goals: {
       title: "Goal conversions",
@@ -1868,6 +1902,12 @@ const enMessages = {
       uniques: "Uniques",
       total: "Total",
       conversionRate: "Conversion rate",
+      revenue: "Revenue",
+      averageRevenue: "Average",
+    },
+    properties: {
+      title: "Properties",
+      key: "Property",
     },
   },
   overview: {
@@ -2072,6 +2112,25 @@ const enMessages = {
     nameLabel: "Name",
     namePlaceholder: "Purchase completed",
     filter: "Conversion condition",
+    revenueCurrency: "Revenue currency",
+    noRevenue: "None",
+    revenueCurrencyHint:
+      "Adds up the revenue of the custom events this goal matches. Revenue in other currencies isn't converted or counted.",
+    revenueCurrencyEventsOnly:
+      "A goal with revenue must match only custom events, such as an event name.",
+    trigger: "Trigger",
+    triggerFilter: "Filter",
+    triggerScrollDepth: "Scroll depth",
+    scrollThreshold: "Scroll depth threshold (1–100%)",
+    scrollThresholdInvalid: "Enter a whole number from 1 to 100.",
+    pagePath: "Page path",
+    pagePathPlaceholder: "/blog*",
+    pagePathHint:
+      "* matches any characters, slashes included. Leave it empty for every page.",
+    pagePathWildcardUnsupported:
+      "Use one *, or one at each end, such as /blog* or *docs*.",
+    scrollGoalName: "Scroll {threshold}%",
+    scrollGoalNameOnPage: "Scroll {threshold}% on {path}",
     apply: "Apply",
     cancel: "Cancel",
     save: "Create",
@@ -2096,6 +2155,8 @@ const enMessages = {
     total: "Total",
     converted: "Converted",
     conversion: "Conversion rate",
+    revenue: "Revenue",
+    averageRevenue: "Average revenue",
     timeseries: "Conversion rate",
     updated: "Updated",
   },
@@ -2224,6 +2285,12 @@ const enMessages = {
     autoTrackOutboundLinksLabel: "Auto-track outbound link clicks",
     autoTrackOutboundLinksHint:
       "When enabled, clicking links to external domains automatically reports outbound_click events.",
+    autoTrackFileDownloadsLabel: "Track file downloads",
+    autoTrackFileDownloadsHint:
+      "Clicking a link to a file (PDF, ZIP, CSV and other common types, or any link with a download attribute) reports a file_download event with the file's URL.",
+    track404PagesLabel: "Track 404 pages",
+    track404PagesHint:
+      "A page served with a 404 status reports a page_not_found event with its path, in browsers that report the status.",
     save: "Save",
     saving: "Saving...",
     scriptHint: "Paste it before </head> on every page.",

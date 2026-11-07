@@ -6,6 +6,7 @@ import {
   validateFunnelConfigForWrite,
 } from "@/lib/edge/analytics/contract/funnel-config";
 import { planObservationFilter } from "@/lib/edge/analytics/contract/observation-planner";
+import type { FilterObservationKind } from "@/lib/filter-contract/filter-registry";
 import type { FilterDocument } from "@/lib/filter-contract/filters";
 
 import { compileFilterDocument } from "./filter-compiler";
@@ -17,6 +18,7 @@ import {
 function predicateBindingCount(
   predicate: ReturnType<typeof planObservationFilter>["visit"],
   alias: string,
+  observation: FilterObservationKind,
 ): number {
   if (predicate.kind !== "expression") return 0;
   const document: FilterDocument = { version: 1, root: predicate.expression };
@@ -24,6 +26,7 @@ function predicateBindingCount(
     alias,
     eventAlias: alias,
     sessionSource: "scope_raw_visits",
+    observation,
   }).bindings.length;
 }
 
@@ -37,8 +40,8 @@ export function estimateFunnelSqlBindingCount(config: FunnelConfigV2): number {
     config.steps.length + (config.progressionScope === "visitor" ? 1 : 0);
   for (const step of config.steps) {
     const plan = planObservationFilter(parseFunnelStepFilter(step).root);
-    count += predicateBindingCount(plan.visit, "funnel_visit_filter");
-    count += predicateBindingCount(plan.event, "funnel_event_filter");
+    count += predicateBindingCount(plan.visit, "funnel_visit_filter", "visit");
+    count += predicateBindingCount(plan.event, "funnel_event_filter", "event");
   }
   return count;
 }

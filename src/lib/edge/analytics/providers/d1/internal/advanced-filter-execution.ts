@@ -1,3 +1,4 @@
+import { propertyKeyOf } from "@/lib/analytics/property-path";
 import { classifyTrafficChannel } from "@/lib/analytics/traffic-channel-rules";
 import { browserEngineLabel } from "@/lib/browser-engine";
 import { AnalyticsProviderDomainError } from "@/lib/edge/analytics/application/errors";
@@ -42,6 +43,7 @@ const DATA_COLUMNS = [
   "ended_at",
   "finalized_at",
   "duration_ms",
+  "scroll_depth",
   "duration_source",
   "exit_reason",
   "pathname",
@@ -197,13 +199,18 @@ LIMIT ?`;
 function payloadPaths(expression: FilterDocument["root"]): {
   readonly paths: readonly string[];
   readonly wholePayload: boolean;
+  /** Page-view properties `event.payload("/key")` also matches. */
+  readonly propertyKeys: readonly string[];
 } {
   const paths = new Set<string>();
+  const propertyKeys = new Set<string>();
   let wholePayload = false;
   const target = (value: FilterTargetExpression): void => {
-    if (value.kind === "event-payload" || value.kind === "current-payload")
+    if (value.kind === "event-payload" || value.kind === "current-payload") {
       paths.add(value.path);
-    else if (value.kind === "member") {
+      const key = propertyKeyOf(value.path);
+      if (value.kind === "event-payload" && key !== null) propertyKeys.add(key);
+    } else if (value.kind === "member") {
       target(value.object);
       if (value.member === "payload") wholePayload = true;
     } else if (value.kind === "context-intrinsic") {
@@ -250,7 +257,11 @@ function payloadPaths(expression: FilterDocument["root"]): {
     else node.children.forEach(visit);
   };
   visit(expression);
-  return { paths: [...paths].sort(), wholePayload };
+  return {
+    paths: [...paths].sort(),
+    wholePayload,
+    propertyKeys: [...propertyKeys].sort(),
+  };
 }
 
 async function siteCoverage(
@@ -446,6 +457,61 @@ async function loadPayloads(
   return reconstructPayloads(payloadNodes);
 }
 
+/** Each page view's properties among `keys`, by visit id. */
+async function loadPageProperties(
+  env: Env,
+  siteIds: readonly string[],
+  ranges: readonly {
+    readonly startMs: number;
+    readonly endExclusiveMs: number;
+  }[],
+  keys: readonly string[],
+  diagnostics?: D1ReadDiagnostics,
+  signal?: AbortSignal,
+): Promise<Map<string, Record<string, string>>> {
+  const properties = new Map<string, Record<string, string>>();
+  let count = 0;
+  for (const chunk of siteChunks(siteIds)) {
+    for (const range of ranges) {
+      if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+      const rows = await queryD1All<{
+        visit_id: string;
+        key: string;
+        value: string;
+      }>(
+        env,
+        `SELECT vp.visit_id, vp.key, vp.value
+FROM visit_properties vp
+WHERE vp.site_pk IN (SELECT site_pk FROM site_identities WHERE site_id IN (${chunk.map(() => "?").join(", ")}))
+  AND vp.key IN (${keys.map(() => "?").join(", ")})
+  AND vp.started_at >= ? AND vp.started_at < ?
+LIMIT ?`,
+        [
+          ...chunk,
+          ...keys,
+          range.startMs,
+          range.endExclusiveMs,
+          MAX_ADVANCED_PAYLOAD_NODES + 1,
+        ],
+        diagnostics,
+      );
+      count += rows.length;
+      if (count > MAX_ADVANCED_PAYLOAD_NODES) {
+        throw invalidInput("filters", "filter_payload_node_limit_exceeded");
+      }
+      for (const row of rows) {
+        // No prototype, so a property named __proto__ is kept as its own key.
+        const visit =
+          properties.get(row.visit_id) ??
+          (Object.create(null) as Record<string, string>);
+        visit[row.key] = row.value;
+        properties.set(row.visit_id, visit);
+      }
+    }
+  }
+  return properties;
+}
+
 function directColumn(
   fieldId: string,
   strategy: string,
@@ -523,6 +589,7 @@ function aggregateFacts(
 function entitiesForRows(
   rows: readonly RawEvaluationRow[],
   payloads: ReadonlyMap<string, unknown>,
+  pageProperties: ReadonlyMap<string, Record<string, string>>,
   candidateRange: { readonly startMs: number; readonly endExclusiveMs: number },
   filterRange: {
     readonly startMs: number;
@@ -542,9 +609,12 @@ function entitiesForRows(
     sessionId: row.session_id ?? undefined,
     visitorId: row.visitor_id ?? undefined,
     fields: fieldsFor(row),
-    ...(row.kind === "event"
-      ? { payload: payloads.has(row.id) ? payloads.get(row.id) : {} }
-      : {}),
+    payload:
+      row.kind === "event"
+        ? payloads.has(row.id)
+          ? payloads.get(row.id)
+          : {}
+        : (pageProperties.get(row.visit_id) ?? {}),
   }));
   const candidate = initial.filter(
     (item) =>
@@ -641,7 +711,7 @@ async function evaluateForSites(input: {
   }
   const paths = payloadPaths(input.filters.root);
   const readRanges = evaluationReadRanges(input.time.range, readRange);
-  const [rows, payloads] = await Promise.all([
+  const [rows, payloads, pageProperties] = await Promise.all([
     loadActivities(
       input.env,
       input.siteIds,
@@ -659,6 +729,16 @@ async function evaluateForSites(input: {
           input.signal,
         )
       : Promise.resolve(new Map<string, unknown>()),
+    paths.propertyKeys.length
+      ? loadPageProperties(
+          input.env,
+          input.siteIds,
+          readRanges,
+          paths.propertyKeys,
+          input.diagnostics,
+          input.signal,
+        )
+      : Promise.resolve(new Map<string, Record<string, string>>()),
   ]);
   const entityIds: AdvancedFilterIdentity[] = [];
   const visitIds: AdvancedFilterIdentity[] = [];
@@ -690,6 +770,7 @@ async function evaluateForSites(input: {
     const dataset = entitiesForRows(
       siteRows,
       payloads,
+      pageProperties,
       {
         startMs: input.time.range.startMs,
         endExclusiveMs: input.time.range.endExclusiveMs,

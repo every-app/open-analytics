@@ -310,7 +310,7 @@ export interface FilterFieldDefinition {
   };
   /** Set-to-scalar reduction is only sound when the storage profile proves it. */
   readonly singletonSetEquivalent?: boolean;
-  readonly unit?: "ms" | "px" | "ratio";
+  readonly unit?: "ms" | "px" | "ratio" | "%";
   readonly canonicalize?: (value: FilterValue) => FilterValue;
 }
 
@@ -1804,6 +1804,26 @@ export function stripTopLevelFacet(
     return filterDocumentWithRoot(document, children[0]!);
   }
   return filterDocumentWithRoot(document, { kind: "and", children });
+}
+
+/**
+ * Whether the document filters by page path, with any operator and anywhere
+ * in its AND, OR and NOT tree: Plausible's page filter, which adds the
+ * scroll depth to the top stats. A path inside an advanced expression, such
+ * as a selector's predicate, doesn't count.
+ */
+export function hasPagePathFilter(document: FilterDocument): boolean {
+  const matches = (expression: FilterExpression): boolean => {
+    if (expression.kind === "condition") {
+      return (
+        expression.target.kind === "field" &&
+        expression.target.field === "page.path"
+      );
+    }
+    if (expression.kind === "not") return matches(expression.child);
+    return expression.children.some(matches);
+  };
+  return document.root !== null && matches(document.root);
 }
 
 export function filterConditionCount(document: FilterDocument): number {

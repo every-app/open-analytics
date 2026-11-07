@@ -40,6 +40,7 @@ import {
   isCalendarGranularity,
   temporalDomainExists,
 } from "@/lib/edge/analytics/engine/semantic/time";
+import type { SemanticUnit } from "@/lib/edge/analytics/engine/semantic/value-types";
 
 export type LogicalPlanIssueCode =
   | "invalid-envelope"
@@ -81,7 +82,7 @@ export type LogicalExpressionSlotResolver = (
 function scalar(
   scalarType:
     "boolean" | "number" | "string" | "date" | "datetime" | "json-scalar",
-  unit?: "ms" | "px" | "ratio",
+  unit?: SemanticUnit,
 ): LogicalValueType {
   return { kind: "scalar", scalar: scalarType, ...(unit ? { unit } : {}) };
 }
@@ -154,7 +155,7 @@ function infer(
           "unknown",
         ].includes(expression.valueType.scalar) ||
         (expression.valueType.unit !== undefined &&
-          (!(["ms", "px", "ratio"] as const).includes(
+          (!(["ms", "px", "ratio", "%"] as const).includes(
             expression.valueType.unit,
           ) ||
             expression.valueType.scalar !== "number")) ||

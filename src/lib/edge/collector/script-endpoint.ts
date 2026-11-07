@@ -6,7 +6,7 @@ import type { Env } from "@/lib/edge/types";
 import { SDK_MIN } from "@/tracker/sdk.min";
 const SCRIPT_RESPONSE_CACHE_NAME = "insightflare-script-cache";
 const SCRIPT_RESPONSE_CACHE_TTL_SECONDS = 10 * 60;
-const SCRIPT_CACHE_VERSION = "sdk-prebuilt-v4";
+const SCRIPT_CACHE_VERSION = "sdk-prebuilt-v5";
 const MAX_SCRIPT_RESPONSE_CACHE_TTL_SECONDS = 24 * 60 * 60;
 const TRACKER_RUNTIME_CONFIG_KEY = "__openanalytics_tracker_runtime_config__";
 function responseBadRequest(message: string): Response {
@@ -48,6 +48,8 @@ function applyConfigToSdk(
     trackHash: boolean;
     ignoreDoNotTrack: boolean;
     autoTrackOutboundLinks: boolean;
+    autoTrackFileDownloads: boolean;
+    track404Pages: boolean;
   },
 ): string {
   const assignment = `globalThis[${JSON.stringify(TRACKER_RUNTIME_CONFIG_KEY)}] = ${JSON.stringify(config)};\n`;
@@ -61,6 +63,8 @@ function settingsFingerprint(input: {
   trackHash: boolean;
   ignoreDoNotTrack: boolean;
   autoTrackOutboundLinks: boolean;
+  autoTrackFileDownloads: boolean;
+  track404Pages: boolean;
   siteDomain: string;
 }): string {
   return [
@@ -68,6 +72,8 @@ function settingsFingerprint(input: {
     input.trackHash ? "1" : "0",
     input.ignoreDoNotTrack ? "1" : "0",
     input.autoTrackOutboundLinks ? "1" : "0",
+    input.autoTrackFileDownloads ? "1" : "0",
+    input.track404Pages ? "1" : "0",
     input.siteDomain,
   ].join("|");
 }
@@ -134,6 +140,8 @@ export async function handleTrackerScriptRequest(
     trackHash: settings.trackHash,
     ignoreDoNotTrack: settings.ignoreDoNotTrack,
     autoTrackOutboundLinks: settings.autoTrackOutboundLinks,
+    autoTrackFileDownloads: settings.autoTrackFileDownloads,
+    track404Pages: settings.track404Pages,
   });
 
   const response = new Response(script, {

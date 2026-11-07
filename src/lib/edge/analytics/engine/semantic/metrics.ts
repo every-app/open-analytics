@@ -1,7 +1,7 @@
 import type { ComparisonMetricKey } from "@/lib/edge/analytics/contract/types";
 
 import type { SemanticAttributeId } from "./attributes";
-import type { LogicalValueType } from "./value-types";
+import type { LogicalValueType, SemanticUnit } from "./value-types";
 
 export const SEMANTIC_METRIC_IDS = [
   "views",
@@ -125,7 +125,7 @@ export interface DerivedMetricDefinition extends SemanticMetricBase {
 export type SemanticMetricDefinition =
   AtomicMetricDefinition | DerivedMetricDefinition;
 
-const scalar = (unit?: "ms" | "px" | "ratio"): LogicalValueType => ({
+const scalar = (unit?: SemanticUnit): LogicalValueType => ({
   kind: "scalar",
   scalar: "number",
   ...(unit ? { unit } : {}),

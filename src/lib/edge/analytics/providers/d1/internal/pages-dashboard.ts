@@ -35,6 +35,11 @@ import {
 } from "./pages";
 import { decodePageCursor, encodePageCursor, hasExactKeys } from "./pagination";
 import { scopedDatasetFor } from "./scoped-dataset";
+import {
+  NO_SCROLL_DEPTH_RANK,
+  scrollDepthOf,
+  scrollDepthSql,
+} from "./scroll-depth";
 export interface PageDashboardCursor {
   readonly primary: number;
   readonly secondary: number;
@@ -280,7 +285,7 @@ async function queryPageDashboardComparisonPageFromD1(
   const sideSql = (side: PageDashboardComparisonSide, prefix: string) => `
 ${prefix}_visits AS MATERIALIZED (
   SELECT pathname, session_id AS sessionId, visitor_id AS visitorId,
-    duration_ms AS durationMs
+    duration_ms AS durationMs, scroll_depth AS scrollDepth
   FROM ${side.relation}
   ${side.filterClause || "WHERE 1 = 1"}
   AND TRIM(COALESCE(pathname, '')) != ''
@@ -293,6 +298,14 @@ ${prefix}_path_rollup AS (
     COALESCE(sum(CASE WHEN durationMs IS NOT NULL AND durationMs >= 0 THEN durationMs ELSE 0 END), 0) AS ${prefix}_total_duration
   FROM ${prefix}_visits
   GROUP BY pathname
+),
+${prefix}_path_scroll_depth AS (
+  ${scrollDepthSql({
+    from: `${prefix}_visits`,
+    visitor: "visitorId",
+    depth: "scrollDepth",
+    groupBy: { sql: "pathname", as: "pathname" },
+  })}
 ),
 ${prefix}_path_sessions AS (
   SELECT pathname, sessionId, count(*) AS visitCount
@@ -315,11 +328,13 @@ ${prefix}_metrics AS (
     COALESCE(pb.${prefix}_bounces, 0) AS ${prefix}_bounces,
     pr.${prefix}_total_duration AS ${prefix}_total_duration,
     0 AS ${prefix}_duration_views,
+    psd.scrollDepth AS ${prefix}_scroll_depth,
     CASE WHEN pr.${prefix}_sessions <= 0 THEN 0.0 ELSE COALESCE(pb.${prefix}_bounces, 0) * 1.0 / pr.${prefix}_sessions END AS ${prefix}_bounce_rate,
     CASE WHEN pr.${prefix}_sessions <= 0 THEN 0.0 ELSE pr.${prefix}_views * 1.0 / pr.${prefix}_sessions END AS ${prefix}_pages_per_session,
     CASE WHEN pr.${prefix}_sessions <= 0 THEN 0.0 ELSE pr.${prefix}_total_duration * 1.0 / pr.${prefix}_sessions END AS ${prefix}_avg_duration_ms
   FROM ${prefix}_path_rollup pr
   LEFT JOIN ${prefix}_path_bounces pb ON pb.pathname = pr.pathname
+  LEFT JOIN ${prefix}_path_scroll_depth psd ON psd.pathname = pr.pathname
 )`;
   const sql = `
 WITH
@@ -335,6 +350,7 @@ joined AS (
     COALESCE(c.current_bounces, 0) AS current_bounces,
     COALESCE(c.current_total_duration, 0) AS current_total_duration,
     COALESCE(c.current_duration_views, 0) AS current_duration_views,
+    c.current_scroll_depth AS current_scroll_depth,
     COALESCE(c.current_bounce_rate, 0) AS current_bounce_rate,
     COALESCE(c.current_pages_per_session, 0) AS current_pages_per_session,
     COALESCE(c.current_avg_duration_ms, 0) AS current_avg_duration_ms,
@@ -344,6 +360,7 @@ joined AS (
     COALESCE(r.reference_bounces, 0) AS reference_bounces,
     COALESCE(r.reference_total_duration, 0) AS reference_total_duration,
     COALESCE(r.reference_duration_views, 0) AS reference_duration_views,
+    r.reference_scroll_depth AS reference_scroll_depth,
     COALESCE(r.reference_bounce_rate, 0) AS reference_bounce_rate,
     COALESCE(r.reference_pages_per_session, 0) AS reference_pages_per_session,
     COALESCE(r.reference_avg_duration_ms, 0) AS reference_avg_duration_ms
@@ -412,6 +429,7 @@ LIMIT ?
       bounces: number(row, "current_bounces"),
       totalDuration: number(row, "current_total_duration"),
       durationViews: number(row, "current_duration_views"),
+      scrollDepth: scrollDepthOf(row.current_scroll_depth),
     },
     reference: {
       pathname: String(row.pathname ?? ""),
@@ -421,6 +439,7 @@ LIMIT ?
       bounces: number(row, "reference_bounces"),
       totalDuration: number(row, "reference_total_duration"),
       durationViews: number(row, "reference_duration_views"),
+      scrollDepth: scrollDepthOf(row.reference_scroll_depth),
     },
   }));
   return {
@@ -578,7 +597,9 @@ export async function queryPagesDashboard(
                           ? lastRow.sessions > 0
                             ? lastRow.totalDuration / lastRow.sessions
                             : 0
-                          : lastRow.views,
+                          : input.sort?.key === "scrollDepth"
+                            ? (lastRow.scrollDepth ?? NO_SCROLL_DEPTH_RANK)
+                            : lastRow.views,
               secondary:
                 input.sort?.key === "views" || input.sort?.key === "bounceRate"
                   ? lastRow.sessions
@@ -722,6 +743,7 @@ export async function queryPagesDashboard(
       return {
         pathname: normalizePathname(row.pathname),
         titles: titlesByPath.get(row.pathname) ?? [],
+        scrollDepth: row.scrollDepth,
         trend: trendByPath.get(row.pathname) ?? [],
         ...(comparison
           ? { referenceTrend: comparisonTrendByPath.get(row.pathname) ?? [] }

@@ -17,6 +17,7 @@ import {
 import type { DashboardComparisonQuery } from "@/lib/dashboard/comparison-query";
 import { filterQueryKey } from "@/lib/dashboard/filter-query-key";
 import {
+  currencyFormat,
   intlLocale,
   numberFormat,
   percentFormat,
@@ -26,6 +27,7 @@ import type {
   GoalDefinition,
   GoalSummary,
 } from "@/lib/dashboard-api/client/edge";
+import { scrollDepthGoalFromDsl } from "@/lib/edge/analytics/contract/scroll-depth-goal";
 import type { FilterDocument } from "@/lib/filter-contract/index";
 import type { Locale } from "@/lib/i18n/config";
 import { type AppMessages, getMessages } from "@/lib/i18n/messages";
@@ -95,6 +97,14 @@ function goalMetricRate(
   locale: Locale,
 ): string {
   return percentFormat(locale, summary?.[audience].conversionRate ?? 0);
+}
+function goalRevenueValue(
+  summary: GoalSummary | undefined,
+  amount: "total" | "average",
+  currency: string,
+  locale: Locale,
+): string {
+  return currencyFormat(locale, summary?.revenue?.[amount] ?? 0, currency);
 }
 function GoalDetailSkeleton({
   canManage,
@@ -332,6 +342,29 @@ export function GoalDetail({
       tone: value >= 0 ? ("positive" as const) : ("negative" as const),
     };
   };
+  const revenueItem = (
+    currency: string,
+    amount: "total" | "average",
+    label: string,
+  ) => ({
+    id: `revenue-${amount}`,
+    label,
+    value: goalRevenueValue(goalSummary, amount, currency, locale),
+    detail: comparisonDetail(
+      goalRevenueValue(comparisonGoalSummary, amount, currency, locale),
+    ),
+    detailLoading: comparisonLoading,
+    loading: metricLoading,
+  });
+  // As in Plausible, a scroll depth goal shows its uniques and conversion
+  // rate but not its converting visits.
+  const scrollGoal = scrollDepthGoalFromDsl(goal.filterDsl) !== null;
+  const hiddenItem = (id: string, label: string) => ({
+    id,
+    label,
+    value: "—",
+    loading: metricLoading,
+  });
   const goalMetricItems = [
     {
       id: "visitors",
@@ -344,17 +377,19 @@ export function GoalDetail({
       detailLoading: comparisonLoading,
       loading: metricLoading,
     },
-    {
-      id: "sessions",
-      label: labels.sessions,
-      value: goalMetricValue(goalSummary, "sessions", locale),
-      detail:
-        comparisonDetail(
-          goalMetricValue(comparisonGoalSummary, "sessions", locale),
-        ) ?? `${labels.converted} / ${labels.total}`,
-      detailLoading: comparisonLoading,
-      loading: metricLoading,
-    },
+    scrollGoal
+      ? hiddenItem("sessions", labels.sessions)
+      : {
+          id: "sessions",
+          label: labels.sessions,
+          value: goalMetricValue(goalSummary, "sessions", locale),
+          detail:
+            comparisonDetail(
+              goalMetricValue(comparisonGoalSummary, "sessions", locale),
+            ) ?? `${labels.converted} / ${labels.total}`,
+          detailLoading: comparisonLoading,
+          loading: metricLoading,
+        },
     {
       id: "visitor-conversion",
       label: `${labels.visitors} ${labels.conversion}`,
@@ -367,18 +402,29 @@ export function GoalDetail({
       detailLoading: comparisonLoading,
       loading: metricLoading,
     },
-    {
-      id: "session-conversion",
-      label: `${labels.sessions} ${labels.conversion}`,
-      value: goalMetricRate(goalSummary, "sessions", locale),
-      detail:
-        comparisonDetail(
-          goalMetricRate(comparisonGoalSummary, "sessions", locale),
-        ) ?? goalMetricValue(goalSummary, "sessions", locale),
-      change: conversionChange("sessions"),
-      detailLoading: comparisonLoading,
-      loading: metricLoading,
-    },
+    scrollGoal
+      ? hiddenItem(
+          "session-conversion",
+          `${labels.sessions} ${labels.conversion}`,
+        )
+      : {
+          id: "session-conversion",
+          label: `${labels.sessions} ${labels.conversion}`,
+          value: goalMetricRate(goalSummary, "sessions", locale),
+          detail:
+            comparisonDetail(
+              goalMetricRate(comparisonGoalSummary, "sessions", locale),
+            ) ?? goalMetricValue(goalSummary, "sessions", locale),
+          change: conversionChange("sessions"),
+          detailLoading: comparisonLoading,
+          loading: metricLoading,
+        },
+    ...(goal.currency === undefined
+      ? []
+      : [
+          revenueItem(goal.currency, "total", labels.revenue),
+          revenueItem(goal.currency, "average", labels.averageRevenue),
+        ]),
   ];
 
   return (

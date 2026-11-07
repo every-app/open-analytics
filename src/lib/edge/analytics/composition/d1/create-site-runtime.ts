@@ -8,6 +8,7 @@ import { registerEventProviders } from "./events";
 import { registerFunnelProvider } from "./funnels";
 import { registerGoalProviders } from "./goals";
 import { overviewProvider, trendProvider } from "./overview";
+import { registerPropertyProviders } from "./properties";
 import type { D1SiteRuntimeBindings } from "./shared";
 import { registerSiteContractProviders } from "./site";
 
@@ -28,6 +29,7 @@ export function createD1SiteProviderRegistry(options: D1SiteRuntimeBindings) {
   registerEventProviders(registry, options);
   registerFunnelProvider(registry, options);
   registerGoalProviders(registry, options);
+  registerPropertyProviders(registry, options);
   registry.useMiddleware(d1AdvancedFilterMiddleware(options.env, diagnostics));
 
   return registry;

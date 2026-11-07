@@ -116,6 +116,8 @@ export type QueryOperation =
   | "funnel-analysis"
   | "goal-summary"
   | "goal-timeseries"
+  | "property-keys"
+  | "property-values"
   | "team-dashboard"
   | "explore";
 export type AnalyticsDimension = string;
@@ -375,6 +377,8 @@ export type PagesDashboardMetric =
   | "bounceRate"
   | "pagesPerSession"
   | "avgDurationMs";
+/** The scroll depth sorts the pages but has no comparison. */
+export type PagesDashboardSortKey = PagesDashboardMetric | "scrollDepth";
 export type PagesDashboardSortBy = "current" | "reference" | "change";
 export interface PagesDashboardComparisonQuery {
   readonly current: ComparisonDatasetQuery;
@@ -392,7 +396,7 @@ export interface PagesDashboardQuery extends BaseQuery {
   readonly interval: Interval;
   readonly page?: PageRequest;
   readonly search?: string;
-  readonly sort?: Sort<PagesDashboardMetric>;
+  readonly sort?: Sort<PagesDashboardSortKey>;
   readonly comparison?: PagesDashboardComparisonQuery;
   readonly audience?: QueryAudience;
 }
@@ -434,6 +438,11 @@ export interface OverviewMetrics {
   readonly bounces: number;
   readonly totalDurationMs: number;
   readonly durationViews: number;
+  /**
+   * Each visitor's deepest scroll on each page, averaged over the visitors,
+   * in %; null when no page view reported one. Only with a page path filter.
+   */
+  readonly scrollDepth?: number | null;
 }
 export interface OverviewResult {
   readonly current: OverviewMetrics;

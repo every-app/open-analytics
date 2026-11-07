@@ -108,21 +108,28 @@ export async function fetchGoalTimeseries(
     { dedupe: false, signal: options?.signal },
   );
 }
+/** A goal's fields; a null `currency` is a goal without revenue. */
 export async function createGoal(
   siteId: string,
-  input: { name: string; filterDsl: string },
+  input: { name: string; filterDsl: string; currency: string | null },
 ): Promise<GoalMutationData> {
   return fetchPrivateJsonMutate<GoalMutationData>(
     "/api/private/goals",
     "POST",
     { siteId },
-    { name: input.name, filterDslVersion: 1, filterDsl: input.filterDsl },
+    {
+      name: input.name,
+      filterDslVersion: 1,
+      filterDsl: input.filterDsl,
+      currency: input.currency,
+    },
   );
 }
+/** Changes the given fields; a null `currency` removes the goal's revenue. */
 export async function updateGoal(
   siteId: string,
   goalId: string,
-  input: { name?: string; filterDsl?: string },
+  input: { name?: string; filterDsl?: string; currency?: string | null },
 ): Promise<GoalMutationData> {
   return fetchPrivateJsonMutate<GoalMutationData>(
     "/api/private/goals",

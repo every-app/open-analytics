@@ -63,6 +63,7 @@ function compileObservationPredicate(
       alias,
       eventAlias: alias,
       sessionSource,
+      observation: observationKind,
     },
   );
   return { clause: compiled.clause, bindings: [...compiled.bindings] };

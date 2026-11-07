@@ -337,6 +337,7 @@ export async function readPersistedVisitRow(
         ended_at AS endedAt,
         finalized_at AS finalizedAt,
         duration_ms AS durationMs,
+        scroll_depth AS scrollDepth,
         COALESCE(duration_source, '') AS durationSource,
         COALESCE(exit_reason, '') AS exitReason,
         pathname,
@@ -419,6 +420,7 @@ function insertBufferedVisitRowIfAbsent(
     row.endedAt,
     row.finalizedAt,
     row.durationMs,
+    row.scrollDepth,
     row.durationSource || null,
     row.exitReason || null,
     row.pathname,
@@ -467,7 +469,7 @@ function insertBufferedVisitRowIfAbsent(
     `
       INSERT INTO buffered_visits (
         visit_id, site_id, visitor_id, session_id, status, started_at, last_activity_at,
-        hidden_at, ended_at, finalized_at, duration_ms, duration_source, exit_reason,
+        hidden_at, ended_at, finalized_at, duration_ms, scroll_depth, duration_source, exit_reason,
         pathname, query_string, hash_fragment, hostname, title, referrer_url, referrer_host,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content,
         is_eu, country, region, region_code, city, continent, latitude, longitude,
@@ -536,6 +538,9 @@ export async function insertVisit(
     record.screenWidth,
     record.screenHeight,
     record.language,
+    Object.keys(record.properties).length > 0
+      ? JSON.stringify(record.properties)
+      : null,
     1,
     0,
     null,
@@ -554,6 +559,7 @@ export async function insertVisit(
           is_eu, country, region, region_code, city, continent, latitude, longitude,
           postal_code, metro_code, timezone, as_organization, ua_raw, browser, browser_version,
           os, os_version, device_type, screen_width, screen_height, language,
+          properties_json,
           dirty, flush_attempts, last_flush_error, next_due_at, flush_due_at,
           buffer_revision, created_at, updated_at
         ) VALUES (${bindings.map(() => "?").join(", ")})
@@ -576,6 +582,8 @@ export async function insertCustomEvent(
     sequence: record.sequence,
     eventName: record.eventName,
     eventDataJson: record.eventDataJson,
+    revenueAmount: record.revenueAmount,
+    revenueCurrency: record.revenueCurrency,
   });
 }
 export function insertBufferedCustomEvent(
@@ -592,10 +600,10 @@ export function insertBufferedCustomEvent(
     `
       INSERT INTO buffered_custom_events (
         event_id, site_id, visit_id, occurred_at, received_at, sequence,
-        event_name, event_data_json,
+        event_name, event_data_json, revenue_amount, revenue_currency,
         dirty, flush_attempts, last_flush_error, next_due_at, flush_due_at,
         buffer_revision, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0,
         CASE WHEN EXISTS (
           SELECT 1
           FROM buffered_visits
@@ -612,6 +620,8 @@ export function insertBufferedCustomEvent(
     record.sequence,
     record.eventName,
     record.eventDataJson,
+    record.revenueAmount,
+    record.revenueCurrency,
     record.siteId,
     record.visitId,
     nextDueAt,

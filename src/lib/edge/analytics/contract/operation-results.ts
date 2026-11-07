@@ -161,11 +161,17 @@ export interface CanonicalGoalMetricSummary {
   readonly converted: number;
   readonly conversionRate: number;
 }
+export interface CanonicalGoalRevenueSummary {
+  readonly currency: string;
+  readonly total: number;
+  readonly average: number;
+}
 export interface CanonicalGoalSummaryResult {
   readonly goal: GoalDefinition;
   readonly summary: {
     readonly sessions: CanonicalGoalMetricSummary;
     readonly visitors: CanonicalGoalMetricSummary;
+    readonly revenue: CanonicalGoalRevenueSummary | null;
   };
 }
 export interface CanonicalGoalTimeseriesResult {

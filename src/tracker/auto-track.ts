@@ -1,6 +1,47 @@
 interface AutoTrackOptions {
   autoTrackOutboundLinks: boolean;
+  autoTrackFileDownloads: boolean;
   track(eventName: string, eventData?: unknown): void;
+}
+
+// Plausible's default list of file types counted as downloads.
+const FILE_DOWNLOAD_EXTENSIONS = new Set([
+  "pdf",
+  "xlsx",
+  "docx",
+  "txt",
+  "rtf",
+  "csv",
+  "exe",
+  "key",
+  "pps",
+  "ppt",
+  "pptx",
+  "7z",
+  "pkg",
+  "rar",
+  "gz",
+  "zip",
+  "avi",
+  "mov",
+  "mp4",
+  "mpeg",
+  "wmv",
+  "midi",
+  "mp3",
+  "wav",
+  "wma",
+  "dmg",
+]);
+
+function isFileDownload(anchor: Element, url: URL): boolean {
+  if (anchor.hasAttribute("download")) return true;
+  const fileName = url.pathname.slice(url.pathname.lastIndexOf("/") + 1);
+  const dot = fileName.lastIndexOf(".");
+  return (
+    dot > 0 &&
+    FILE_DOWNLOAD_EXTENSIONS.has(fileName.slice(dot + 1).toLowerCase())
+  );
 }
 
 // data-open-analytics-event-<key> attributes, as dataset keys.
@@ -48,7 +89,7 @@ export function initAutoTrack(options: AutoTrackOptions): void {
     true,
   );
 
-  if (options.autoTrackOutboundLinks) {
+  if (options.autoTrackOutboundLinks || options.autoTrackFileDownloads) {
     const currentHostname = window.location.hostname.toLowerCase();
     document.addEventListener(
       "click",
@@ -64,8 +105,20 @@ export function initAutoTrack(options: AutoTrackOptions): void {
           return;
         }
         if (url.protocol !== "http:" && url.protocol !== "https:") return;
+        // A download is the more specific event, even on another domain.
+        // Its URL is sent without the query string, which can hold tokens.
+        if (options.autoTrackFileDownloads && isFileDownload(anchor, url)) {
+          options.track("file_download", { url: url.origin + url.pathname });
+          return;
+        }
         const targetHostname = url.hostname.toLowerCase();
-        if (!targetHostname || targetHostname === currentHostname) return;
+        if (
+          !options.autoTrackOutboundLinks ||
+          !targetHostname ||
+          targetHostname === currentHostname
+        ) {
+          return;
+        }
         options.track("outbound_click", {
           url: url.href,
           domain: targetHostname,

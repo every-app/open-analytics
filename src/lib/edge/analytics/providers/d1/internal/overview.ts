@@ -1,5 +1,6 @@
 import { scopedFilterMetadata } from "@/lib/edge/analytics/contract";
 import type { Env } from "@/lib/edge/types";
+import { hasPagePathFilter } from "@/lib/filter-contract/filters";
 
 import type {
   ClientDimensionKey,
@@ -35,6 +36,11 @@ import {
   scopedDatasetFor,
   scopedDatasetForUnpreparedReader,
 } from "./scoped-dataset";
+import { scrollDepthOf, scrollDepthSql } from "./scroll-depth";
+/**
+ * The overview totals. With a page path filter they add the scroll depth of
+ * the page views the filters match.
+ */
 export async function queryOverviewFromD1(
   env: Env,
   siteId: string,
@@ -77,6 +83,7 @@ filtered_visits AS MATERIALIZED (
   FROM visit_source
   ${filter.clause}
 ),`;
+  const withScrollDepth = hasPagePathFilter(filters);
   const sql = `
 WITH
 ${sourceSql}
@@ -85,13 +92,25 @@ session_rollup AS (
   FROM ${metricSource} vs
   WHERE vs.session_id != ''
   GROUP BY vs.session_id
-)
+)${
+    withScrollDepth
+      ? `,
+scroll_depth AS (
+  ${scrollDepthSql({ from: metricSource, visitor: "visitor_id", depth: "scroll_depth" })}
+)`
+      : ""
+  }
 SELECT
   count(*) AS views,
 ${entityCounts}
   COALESCE((SELECT count(*) FROM session_rollup WHERE visit_count = 1), 0) AS bounces,
   COALESCE(sum(CASE WHEN duration_ms IS NOT NULL AND duration_ms >= 0 THEN duration_ms ELSE 0 END), 0) AS totalDuration,
-  COALESCE(sum(CASE WHEN duration_ms IS NOT NULL AND duration_ms >= 0 THEN 1 ELSE 0 END), 0) AS durationViews
+  COALESCE(sum(CASE WHEN duration_ms IS NOT NULL AND duration_ms >= 0 THEN 1 ELSE 0 END), 0) AS durationViews${
+    withScrollDepth
+      ? `,
+  (SELECT scrollDepth FROM scroll_depth) AS scrollDepth`
+      : ""
+  }
 FROM ${metricSource}
 `;
   const row =
@@ -112,6 +131,7 @@ FROM ${metricSource}
     bounces: Number(row.bounces ?? 0),
     totalDuration: Number(row.totalDuration ?? 0),
     durationViews: Number(row.durationViews ?? 0),
+    ...(withScrollDepth ? { scrollDepth: scrollDepthOf(row.scrollDepth) } : {}),
   };
 }
 export async function queryTrendFromD1(
@@ -133,7 +153,8 @@ export async function queryTrendFromD1(
 }
 /**
  * Trend rows for the page views in `window`, counted into `buckets`, which
- * may belong to a larger window the caller reads in parts.
+ * may belong to a larger window the caller reads in parts. With a page path
+ * filter each bucket adds the scroll depth of its matching page views.
  */
 async function queryTrendBucketsFromD1(
   env: Env,
@@ -204,6 +225,18 @@ visit_bucket_rollup AS (
   FROM ${metricSource}
   GROUP BY bucket
 ),`;
+  const withScrollDepth = hasPagePathFilter(filters);
+  const scrollDepthRollup = withScrollDepth
+    ? `
+scroll_depth_rollup AS MATERIALIZED (
+  ${scrollDepthSql({
+    from: metricSource,
+    visitor: "visitor_id",
+    depth: "scroll_depth",
+    groupBy: { sql: visitBucket.sql, as: "bucket" },
+  })}
+),`
+    : "";
   const scopedVisitorBucketRollup = scopedDataset
     ? `
 visitor_bucket_rollup AS (
@@ -263,6 +296,7 @@ filtered_visits AS MATERIALIZED (
 WITH
 ${sourceSql}
 ${visitBucketRollup}
+${scrollDepthRollup}
 ${scopedVisitorBucketRollup}
 ${sessionRollup}
 session_bucket_rollup AS (
@@ -281,7 +315,12 @@ SELECT
   sum(sessions) AS sessions,
   sum(bounces) AS bounces,
   sum(totalDuration) AS totalDuration,
-  sum(durationViews) AS durationViews
+  sum(durationViews) AS durationViews${
+    withScrollDepth
+      ? `,
+  (SELECT sd.scrollDepth FROM scroll_depth_rollup sd WHERE sd.bucket = combined.bucket) AS scrollDepth`
+      : ""
+  }
 FROM combined
 GROUP BY bucket
 ORDER BY bucket ASC
@@ -295,6 +334,7 @@ ORDER BY bucket ASC
           ? scopedDataset.bindings.map((binding) => binding.value)
           : [...visitSourceBindings(siteId, window), ...filter.bindings]),
         ...visitBucket.bindings,
+        ...(withScrollDepth ? visitBucket.bindings : []),
         ...(scopedVisitorBucket?.bindings ?? []),
         ...sessionBucket.bindings,
       ],
@@ -309,6 +349,7 @@ ORDER BY bucket ASC
     bounces: Number(row.bounces ?? 0),
     totalDuration: Number(row.totalDuration ?? 0),
     durationViews: Number(row.durationViews ?? 0),
+    ...(withScrollDepth ? { scrollDepth: scrollDepthOf(row.scrollDepth) } : {}),
   }));
 }
 /**

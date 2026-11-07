@@ -25,6 +25,9 @@ import {
 
 import { expandCustomEventData } from "./custom-event-json";
 import { clampTimestamp, resolveTrustedClientTimestamp } from "./normalize";
+import { normalizePageProperties } from "./page-properties";
+import { normalizeEventRevenue } from "./revenue";
+import { normalizeScrollDepth } from "./scroll-depth";
 import type {
   BufferedCustomEventInput,
   NormalizeResult,
@@ -243,6 +246,7 @@ export async function normalizeIngestRecord(
         sessionId,
         previousVisitId: recentOpenVisit?.visitId || "",
         previousVisitStartedAt: recentOpenVisit?.startedAt ?? null,
+        previousScrollDepth: normalizeScrollDepth(client.previousScrollDepth),
         startedAt,
         pathname,
         queryString: clampString(coerceString(client.query || ""), 2048),
@@ -254,6 +258,7 @@ export async function normalizeIngestRecord(
         screenHeight: coerceNumber(client.screenHeight, null),
         language: clampString(coerceString(client.language || ""), 120),
         ...contextGeoBase,
+        properties: normalizePageProperties(client.props),
       } satisfies NormalizedPageview,
     };
   }
@@ -270,6 +275,7 @@ export async function normalizeIngestRecord(
         leaveAt: eventAt,
         exitReason:
           clampString(coerceString(client.exitReason || ""), 40) || "pagehide",
+        scrollDepth: normalizeScrollDepth(client.scrollDepth),
       } satisfies NormalizedLeave,
     };
   }
@@ -296,6 +302,7 @@ export async function normalizeIngestRecord(
         visibilityState,
         receivedAt,
         eventAt,
+        scrollDepth: normalizeScrollDepth(client.scrollDepth),
       } satisfies NormalizedVisibility,
     };
   }
@@ -312,6 +319,7 @@ export async function normalizeIngestRecord(
         detail: { error: eventDataResult.error },
       };
     }
+    const revenue = normalizeEventRevenue(client.revenue);
     const visit = await context.getVisitContext(siteId, visitId);
     const sequence = 0;
     const eventId = clampString(
@@ -328,6 +336,7 @@ export async function normalizeIngestRecord(
         sequence,
         eventName,
         eventDataJson: eventDataResult.data.json,
+        ...revenue,
       });
       return {
         record: null,
@@ -345,6 +354,7 @@ export async function normalizeIngestRecord(
         eventAt,
         eventName,
         eventDataJson: eventDataResult.data.json,
+        ...revenue,
         siteId: visit.siteId,
         visitId: visit.visitId,
         visitorId: visit.visitorId,

@@ -47,6 +47,8 @@ export const DASHBOARD_QUERY_PATHS = [
   "funnels",
   "goal-summary",
   "goal-timeseries",
+  "properties",
+  "property-values",
   "team-dashboard",
 ] as const;
 
@@ -93,6 +95,8 @@ export function operationForQueryRoute(pathname: string): QueryOperation {
   if (pathname === "funnels") return "funnel-analysis";
   if (pathname === "goal-summary") return "goal-summary";
   if (pathname === "goal-timeseries") return "goal-timeseries";
+  if (pathname === "properties") return "property-keys";
+  if (pathname === "property-values") return "property-values";
   if (pathname === "team-dashboard") return "team-dashboard";
   if (pathname === "events-summary") return "event-summary";
   if (pathname === "events-trend") return "event-trend";

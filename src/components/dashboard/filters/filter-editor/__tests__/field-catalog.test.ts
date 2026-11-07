@@ -124,6 +124,12 @@ describe("filter field catalog", () => {
         (field) => field.id === "session.views",
       ),
     ).toBe(false);
+    // The goal editor offers scroll depth goals.
+    expect(
+      allowedFields("private-dashboard", true).find(
+        (field) => field.id === "page.scrollDepth",
+      ),
+    ).toMatchObject({ unit: "%", number: { min: 0, max: 100, step: 1 } });
     const emptyFieldGroups = filterPickerGroups([], messages);
     expect(emptyFieldGroups.map((item) => item.key)).toEqual([
       "page",

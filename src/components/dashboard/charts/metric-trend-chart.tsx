@@ -30,11 +30,54 @@ export interface MetricTrendPoint {
   value: number | null;
 }
 
-interface ChartRow {
+export interface ChartRow {
   timestampMs: number;
   value: number | null;
   comparisonTimestampMs?: number;
   comparisonValue?: number | null;
+}
+
+type SeriesKey = "value" | "comparisonValue";
+
+/**
+ * A value at least as wide as the axis's top tick, which rounds the largest
+ * value up (71% is drawn under an 80% tick): the next power of ten.
+ */
+export function axisLabelBound(max: number): number {
+  return max > 0 ? 10 ** Math.ceil(Math.log10(max)) : 0;
+}
+
+/**
+ * A point with no value on either side (a scroll depth on one day of the
+ * range) draws no line, so it gets a dot of its own.
+ */
+export function isolatedDot(rows: readonly ChartRow[], key: SeriesKey) {
+  const hasValue = (row: ChartRow | undefined) =>
+    row?.[key] !== undefined && row[key] !== null;
+  return function IsolatedDot({
+    cx,
+    cy,
+    index,
+  }: {
+    cx?: number;
+    cy?: number;
+    index?: number;
+  }) {
+    const dotKey = `${key}-${index}`;
+    if (
+      typeof index !== "number" ||
+      !hasValue(rows[index]) ||
+      hasValue(rows[index - 1]) ||
+      hasValue(rows[index + 1]) ||
+      !Number.isFinite(cx) ||
+      !Number.isFinite(cy)
+    ) {
+      return <g key={dotKey} />;
+    }
+    return (
+      <circle key={dotKey} cx={cx} cy={cy} r={3} fill={`var(--color-${key})`} />
+    );
+  };
 }
 
 interface MetricTrendChartProps {
@@ -162,7 +205,10 @@ export function MetricTrendChart({
       row.value ?? 0,
       row.comparisonValue ?? 0,
     ]);
-    return calculateChartYAxisWidth([formatValue(Math.max(0, ...values))], 4);
+    return calculateChartYAxisWidth(
+      [formatValue(axisLabelBound(Math.max(0, ...values)))],
+      4,
+    );
   }, [formatValue, rows]);
 
   return (
@@ -246,7 +292,7 @@ export function MetricTrendChart({
               strokeDasharray="4 3"
               fill="none"
               strokeWidth={1.5}
-              dot={false}
+              dot={isolatedDot(rows, "comparisonValue")}
               activeDot={false}
               isAnimationActive={false}
             />
@@ -257,7 +303,7 @@ export function MetricTrendChart({
             stroke="var(--color-value)"
             fill={`url(#${gradientId})`}
             strokeWidth={2}
-            dot={false}
+            dot={isolatedDot(rows, "value")}
             activeDot={{
               r: 3,
               stroke: "var(--color-value)",

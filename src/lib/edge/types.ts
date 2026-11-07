@@ -74,8 +74,16 @@ export interface TrackerClientPayload {
   referrerUrl?: string;
   exitReason?: string;
   visibilityState?: string;
+  /** The page view's scroll depth, on a hidden visibility payload or a leave. */
+  scrollDepth?: number;
+  /** The depth of the page view a route change ends. */
+  previousScrollDepth?: number;
   eventName?: string;
   eventData?: unknown;
+  /** `{ amount, currency }`, validated by the ingest Durable Object. */
+  revenue?: unknown;
+  /** A page view's custom properties: flat string pairs. */
+  props?: unknown;
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
@@ -142,7 +150,10 @@ export interface NormalizedPageview extends NormalizedVisitContext {
   kind: "pageview";
   previousVisitId: string;
   previousVisitStartedAt: number | null;
+  previousScrollDepth: number | null;
   receivedAt: number;
+  /** Custom properties, normalized by `normalizePageProperties`. */
+  properties: Record<string, string>;
 }
 
 export interface NormalizedLeave {
@@ -153,6 +164,7 @@ export interface NormalizedLeave {
   receivedAt: number;
   leaveAt: number;
   exitReason: string;
+  scrollDepth: number | null;
 }
 
 export interface NormalizedVisibility {
@@ -163,6 +175,7 @@ export interface NormalizedVisibility {
   visibilityState: "hidden" | "visible";
   receivedAt: number;
   eventAt: number;
+  scrollDepth: number | null;
 }
 
 export interface NormalizedCustomEvent extends NormalizedVisitContext {
@@ -173,6 +186,8 @@ export interface NormalizedCustomEvent extends NormalizedVisitContext {
   eventAt: number;
   eventName: string;
   eventDataJson: string;
+  revenueAmount: number | null;
+  revenueCurrency: string | null;
 }
 
 export type NormalizedIngestRecord =

@@ -50,6 +50,7 @@ describe("site Goal analytics operations", () => {
       convertedSessions: 0,
       totalVisitors: 3,
       convertedVisitors: 1,
+      revenue: null,
     });
 
     await expect(readSiteGoalSummary(inputBase)).resolves.toEqual({
@@ -57,6 +58,7 @@ describe("site Goal analytics operations", () => {
       summary: {
         sessions: { total: 0, converted: 0, conversionRate: 0 },
         visitors: { total: 3, converted: 1, conversionRate: 1 / 3 },
+        revenue: null,
       },
     });
     expect(queryGoalSummaryFromD1).toHaveBeenCalledWith(
@@ -66,7 +68,42 @@ describe("site Goal analytics operations", () => {
       inputBase.filters,
       expect.objectContaining({ version: 1, root: expect.any(Object) }),
       undefined,
+      undefined,
     );
+  });
+
+  it("averages a revenue goal's revenue over the events that carried it", async () => {
+    const revenueGoal = { ...goal, currency: "USD" };
+    vi.mocked(queryGoalDefinition).mockResolvedValue(revenueGoal);
+    vi.mocked(queryGoalSummaryFromD1)
+      .mockResolvedValueOnce({
+        totalSessions: 4,
+        convertedSessions: 3,
+        totalVisitors: 4,
+        convertedVisitors: 3,
+        revenue: { total: 30, events: 2 },
+      })
+      .mockResolvedValueOnce({
+        totalSessions: 4,
+        convertedSessions: 0,
+        totalVisitors: 4,
+        convertedVisitors: 0,
+        revenue: { total: 0, events: 0 },
+      });
+
+    const result = await readSiteGoalSummary(inputBase);
+    expect(result?.summary.revenue).toEqual({
+      currency: "USD",
+      total: 30,
+      average: 15,
+    });
+    expect(vi.mocked(queryGoalSummaryFromD1).mock.calls[0]?.[6]).toBe("USD");
+    // No revenue events: an average of zero, not a division by zero.
+    expect((await readSiteGoalSummary(inputBase))?.summary.revenue).toEqual({
+      currency: "USD",
+      total: 0,
+      average: 0,
+    });
   });
 
   it("zero-fills missing SQL buckets and returns the canonical timestamp contract", async () => {

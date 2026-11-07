@@ -51,6 +51,7 @@ import {
 } from "./realtime";
 import { normalizeIngestRecord } from "./record-normalize";
 import { getEarliestDueWork } from "./scheduler";
+import { DEEPEST_SCROLL_DEPTH_SQL } from "./scroll-depth";
 import { advanceAnalyticsSession } from "./session-state";
 import type { SqlBinding } from "./sql";
 import { IngestSqlAccess } from "./sql-access";
@@ -574,6 +575,7 @@ export class IngestDurableObject extends DurableObject {
               ended_at = ?,
               finalized_at = ?,
               duration_ms = ${ENGAGED_DURATION_AT_SQL},
+              scroll_depth = ${DEEPEST_SCROLL_DEPTH_SQL},
               hidden_at = NULL,
               duration_source = 'server',
               dirty = 1,
@@ -594,6 +596,8 @@ export class IngestDurableObject extends DurableObject {
         record.startedAt,
         record.startedAt,
         record.startedAt,
+        record.previousScrollDepth,
+        record.previousScrollDepth,
         flushDueAt,
         flushDueAt,
         flushDueAt,
@@ -930,6 +934,7 @@ export class IngestDurableObject extends DurableObject {
               ended_at = ?,
               finalized_at = ?,
               duration_ms = ?,
+              scroll_depth = ${DEEPEST_SCROLL_DEPTH_SQL},
               duration_source = ?,
               exit_reason = ?,
               dirty = 1,
@@ -949,6 +954,8 @@ export class IngestDurableObject extends DurableObject {
         leaveAt,
         leaveAt,
         durationMs,
+        record.scrollDepth,
+        record.scrollDepth,
         durationSource,
         exitReason,
         flushDueAt,
@@ -1038,6 +1045,7 @@ export class IngestDurableObject extends DurableObject {
           UPDATE buffered_visits
           SET status = 'hidden_pending',
               hidden_at = ?,
+              scroll_depth = ${DEEPEST_SCROLL_DEPTH_SQL},
               last_activity_at = CASE WHEN last_activity_at > ? THEN last_activity_at ELSE ? END,
               dirty = 1,
               buffer_revision = buffer_revision + 1,
@@ -1058,6 +1066,8 @@ export class IngestDurableObject extends DurableObject {
             AND status = 'open'
         `,
         record.eventAt,
+        record.scrollDepth,
+        record.scrollDepth,
         record.eventAt,
         record.eventAt,
         flushDueAt,
@@ -1074,6 +1084,7 @@ export class IngestDurableObject extends DurableObject {
           `
             UPDATE buffered_visits
             SET hidden_at = COALESCE(hidden_at, ?),
+                scroll_depth = ${DEEPEST_SCROLL_DEPTH_SQL},
                 last_activity_at = CASE WHEN last_activity_at > ? THEN last_activity_at ELSE ? END,
                 dirty = 1,
                 buffer_revision = buffer_revision + 1,
@@ -1098,6 +1109,8 @@ export class IngestDurableObject extends DurableObject {
               )
           `,
           record.eventAt,
+          record.scrollDepth,
+          record.scrollDepth,
           record.eventAt,
           record.eventAt,
           flushDueAt,

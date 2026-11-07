@@ -140,6 +140,76 @@ describe("goal v1 config contract", () => {
     );
   });
 
+  it("keeps an upper-cased revenue currency through encode and decode", async () => {
+    const revenueConfig = validateGoalConfigForWrite({
+      ...validConfig,
+      currency: " usd ",
+    });
+    expect(revenueConfig).toEqual({ ...validConfig, currency: "USD" });
+
+    const encoded = encodeGoalConfig(revenueConfig);
+    expect(JSON.parse(encoded.configJson)).toEqual(revenueConfig);
+    expect(decodeGoalConfig(encoded.configVersion, encoded.configJson)).toEqual(
+      revenueConfig,
+    );
+    // A goal without a currency stores no currency key.
+    expect(JSON.parse(encodeGoalConfig(validConfig).configJson)).toEqual(
+      validConfig,
+    );
+    // The currency changes the goal's results, so it changes its identity;
+    // a goal without one keeps the identity it had before currencies.
+    await expect(goalSemanticFingerprint(revenueConfig)).resolves.not.toBe(
+      await goalSemanticFingerprint(validConfig),
+    );
+    await expect(
+      goalSemanticFingerprint({ ...validConfig, currency: "EUR" }),
+    ).resolves.not.toBe(await goalSemanticFingerprint(revenueConfig));
+  });
+
+  it("rejects a currency that isn't ISO 4217", () => {
+    for (const currency of ["US", "USDX", "ZZZ", "", 840, null]) {
+      expect(() =>
+        validateGoalConfigForWrite({
+          ...validConfig,
+          currency: currency as never,
+        }),
+      ).toThrow("goal_currency_invalid");
+    }
+    expect(() =>
+      decodeGoalConfig(1, JSON.stringify({ ...validConfig, currency: "ZZZ" })),
+    ).toThrow("goal_currency_invalid");
+  });
+
+  it("allows a currency only on a goal whose conversions are all custom events", () => {
+    for (const filterDsl of [
+      'event.name eq "Purchase"',
+      'event.name eq "Purchase" AND page.path eq "/checkout"',
+      'event.name eq "Purchase" AND event.payload("/plan") eq "pro"',
+    ]) {
+      expect(
+        validateGoalConfigForWrite({
+          filterDslVersion: 1,
+          filterDsl,
+          currency: "EUR",
+        }).currency,
+      ).toBe("EUR");
+    }
+    for (const filterDsl of [
+      'page.path eq "/thank-you"',
+      'event.name eq "Purchase" OR page.path eq "/thank-you"',
+      // A property also matches the page views that carry it.
+      'event.payload("/plan") eq "pro"',
+    ]) {
+      expect(() =>
+        validateGoalConfigForWrite({
+          filterDslVersion: 1,
+          filterDsl,
+          currency: "EUR",
+        }),
+      ).toThrow("goal_currency_requires_event_goal");
+    }
+  });
+
   it("does not include definition names or timestamps in semantic identity", async () => {
     const first = {
       ...validConfig,

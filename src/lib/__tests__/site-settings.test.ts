@@ -97,6 +97,7 @@ describe("site settings helpers", () => {
         trackQueryParams: "off",
         trackHash: 0,
         autoTrackOutboundLinks: "yes",
+        autoTrackFileDownloads: "on",
         ignoreDnt: "false",
         tracking: {
           trackHash: "on",
@@ -108,6 +109,8 @@ describe("site settings helpers", () => {
       trackQueryParams: false,
       trackHash: true,
       autoTrackOutboundLinks: true,
+      autoTrackFileDownloads: true,
+      track404Pages: false,
       domainWhitelist: ["example.com", "docs.example.com"],
       pathBlacklist: ["/admin", "/settings"],
       ignoreDoNotTrack: false,
@@ -119,10 +122,12 @@ describe("site settings helpers", () => {
       normalizeSiteScriptSettings({
         trackQueryParams: 1,
         autoTrackOutboundLinks: 0,
+        track404Pages: true,
       }),
     ).toMatchObject({
       trackQueryParams: true,
       autoTrackOutboundLinks: false,
+      track404Pages: true,
     });
     expect(
       normalizeSiteScriptSettings({

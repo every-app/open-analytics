@@ -37,6 +37,7 @@ function aggregateMetrics(row: OverviewMetrics) {
       row.sessions > 0 ? Math.round(row.totalDurationMs / row.sessions) : 0,
     bounceRate: row.sessions > 0 ? row.bounces / row.sessions : 0,
     approximateVisitors: false,
+    scrollDepth: row.scrollDepth,
   };
 }
 function trendRows(points: readonly TrendPoint[]) {
@@ -52,6 +53,7 @@ function trendRows(points: readonly TrendPoint[]) {
       point.sessions > 0
         ? Math.round(point.totalDurationMs / point.sessions)
         : 0,
+    scrollDepth: point.scrollDepth,
     source: "detail" as const,
   }));
 }

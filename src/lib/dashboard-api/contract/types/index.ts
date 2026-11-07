@@ -8,5 +8,6 @@ export type * from "./goals";
 export type * from "./overview";
 export type * from "./pages";
 export type * from "./pagination";
+export type * from "./properties";
 export type * from "./referrers";
 export type * from "./technology";

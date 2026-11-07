@@ -5,6 +5,7 @@ import {
 } from "@/lib/edge/analytics/contract";
 import type { QueryWindow } from "@/lib/edge/analytics/providers/d1/internal/core-types";
 import {
+  type GoalRevenueAggregate,
   type GoalSummaryAggregateRow,
   queryGoalSummaryFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/goal-summary";
@@ -16,6 +17,13 @@ export interface GoalMetricSummary {
   readonly total: number;
   readonly converted: number;
   readonly conversionRate: number;
+}
+
+export interface GoalRevenueSummary {
+  readonly currency: string;
+  readonly total: number;
+  /** Plausible's average revenue: `total` per event that carried revenue. */
+  readonly average: number;
 }
 
 export interface SiteGoalSummaryInput {
@@ -32,6 +40,8 @@ export interface SiteGoalSummaryResult {
   readonly summary: {
     readonly sessions: GoalMetricSummary;
     readonly visitors: GoalMetricSummary;
+    /** Null for a goal without a currency. */
+    readonly revenue: GoalRevenueSummary | null;
   };
 }
 
@@ -48,6 +58,17 @@ function metric(total: number, converted: number): GoalMetricSummary {
   };
 }
 
+function revenueSummary(
+  currency: string,
+  revenue: GoalRevenueAggregate,
+): GoalRevenueSummary {
+  return {
+    currency,
+    total: revenue.total,
+    average: revenue.events > 0 ? revenue.total / revenue.events : 0,
+  };
+}
+
 function summary(
   goal: GoalDefinition,
   row: GoalSummaryAggregateRow,
@@ -57,6 +78,10 @@ function summary(
     summary: {
       sessions: metric(row.totalSessions, row.convertedSessions),
       visitors: metric(row.totalVisitors, row.convertedVisitors),
+      revenue:
+        goal.currency !== undefined && row.revenue
+          ? revenueSummary(goal.currency, row.revenue)
+          : null,
     },
   };
 }
@@ -74,6 +99,7 @@ export async function readSiteGoalSummary(
     input.filters,
     parseGoalFilter(goal),
     input.scopedDataset,
+    goal.currency,
   );
   return summary(goal, aggregate);
 }

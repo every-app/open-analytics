@@ -60,6 +60,7 @@ export type FilterColumnStrategy =
   | "column.timezone"
   | "column.as_organization"
   | "column.duration_ms"
+  | "column.scroll_depth"
   | "column.screen_width"
   | "column.screen_height"
   | "column.is_eu"
@@ -131,7 +132,7 @@ export interface RegisteredFilterField extends FilterFieldDefinition {
   readonly evaluation: FilterEvaluation;
   readonly nativeEntity: FilterNativeEntity;
   readonly nullable: boolean;
-  readonly unit?: "ms" | "px" | "ratio";
+  readonly unit?: "ms" | "px" | "ratio" | "%";
   readonly suggestionMode: FilterSuggestionMode;
   readonly compilerStrategy: FilterCompilerStrategy;
 }
@@ -606,7 +607,9 @@ const FIELDS = [
     audiences: PRIVATE_AUDIENCES,
     profile: "event-payload" as const,
     source: "payload" as const,
-    observationKinds: EVENT_OBSERVATIONS,
+    // A path names an event's payload value or, at the top level, a page
+    // view's custom property.
+    observationKinds: VISIT_AND_EVENT_OBSERVATIONS,
     presence: "json-pointer" as const,
     empty: "raw-empty-string" as const,
     comparison: "case-sensitive" as const,
@@ -622,6 +625,11 @@ const FIELDS = [
     conditionEntity: "page",
     unit: "ms",
     number: { min: 0 },
+  }),
+  numeric("page.scrollDepth", PUBLIC_AUDIENCES, "column.scroll_depth", {
+    conditionEntity: "page",
+    unit: "%",
+    number: { min: 0, max: 100, step: 1 },
   }),
   numeric("session.durationMs", PUBLIC_AUDIENCES, "fact.session_duration_ms", {
     source: "session",
@@ -703,6 +711,7 @@ export const ANALYTICS_FILTER_FIELD_DISPLAY_ORDER = [
   "page.title",
   "page.hostname",
   "page.durationMs",
+  "page.scrollDepth",
   "page.query",
   "page.hash",
   "event.name",
@@ -762,7 +771,7 @@ export const analyticsFilterFieldDisplayOrder: ReadonlyMap<string, number> =
   );
 
 /** Bump when canonical IDs, value kinds, or operator semantics change. */
-export const ANALYTICS_FILTER_REGISTRY_REVISION = "analytics-filter-v5";
+export const ANALYTICS_FILTER_REGISTRY_REVISION = "analytics-filter-v6";
 
 const REGISTERED_FIELDS: readonly RegisteredFilterField[] = FIELDS.map(
   (field) => Object.freeze(field),

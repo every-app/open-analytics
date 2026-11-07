@@ -374,6 +374,45 @@ describe("analytics retention", () => {
     ]);
   });
 
+  it("deletes a page view's properties with it in bounded statements", async () => {
+    vi.useFakeTimers({ now: NOW, toFake: ["Date"] });
+    database = createMigratedDatabase();
+    seedSite(database, 1, {
+      firstDay: TODAY - 400,
+      lastDay: TODAY - 1,
+      backfilled: true,
+    });
+    seedDay(database, 1, TODAY - 40, 50);
+    seedDay(database, 1, TODAY - 30);
+    // 30 properties on each page view: 1,500 expired rows, 30 retained.
+    database.exec(`
+      WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 30)
+      INSERT INTO visit_properties (visit_id, key, value, site_pk, started_at)
+      SELECT v.visit_id, 'key-' || n.i, 'value', v.site_pk, v.started_at
+      FROM visits v, n;
+    `);
+    const rowsChanged: number[] = [];
+    const db = budgeted(recordRowsChanged(database, rowsChanged));
+
+    const deleted = await deleteExpiredData(db, TODAY - 30);
+
+    expect(deleted).toMatchObject({ visitsDeleted: 50, complete: true });
+    expect(Math.max(...rowsChanged)).toBe(RETENTION_BATCH_ROWS);
+    expect(
+      database
+        .prepare(
+          "SELECT DISTINCT visit_id FROM visit_properties UNION ALL SELECT visit_id FROM visits",
+        )
+        .all(),
+    ).toEqual([
+      { visit_id: `s1-d${TODAY - 30}-0` },
+      { visit_id: `s1-d${TODAY - 30}-0` },
+    ]);
+    expect(count(database, "SELECT COUNT(*) AS n FROM visit_properties")).toBe(
+      30,
+    );
+  });
+
   it("keeps the page views of a day marked for a rebuild during a run, and of the site's later days", async () => {
     database = createMigratedDatabase();
     seedSite(database, 1, {

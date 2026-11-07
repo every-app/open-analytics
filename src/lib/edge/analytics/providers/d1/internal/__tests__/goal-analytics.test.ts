@@ -133,6 +133,7 @@ describe("Goal D1 analytics", () => {
       convertedSessions: 0,
       totalVisitors: 0,
       convertedVisitors: 0,
+      revenue: null,
     });
   });
 
@@ -153,6 +154,7 @@ describe("Goal D1 analytics", () => {
       convertedSessions: 0,
       totalVisitors: 0,
       convertedVisitors: 0,
+      revenue: null,
     });
     await expect(
       queryGoalTimeseriesFromD1(
@@ -280,6 +282,7 @@ describe("Goal D1 analytics", () => {
       convertedSessions: 2,
       totalVisitors: 2,
       convertedVisitors: 2,
+      revenue: null,
     });
     expect(d1.calls).toHaveLength(1);
     expect(d1.calls[0]).toContain("goal_matched_visits");
@@ -359,6 +362,12 @@ describe("Goal D1 analytics", () => {
         convertedSessions: 2,
         convertedVisitors: 2,
       },
+      // A page view's custom property: visit-3's plan.
+      {
+        source: 'event.payload("/plan") eq "free"',
+        convertedSessions: 1,
+        convertedVisitors: 1,
+      },
       {
         source: 'page.path eq "/checkout"',
         convertedSessions: 1,
@@ -427,6 +436,7 @@ describe("Goal D1 analytics", () => {
       convertedSessions: 2,
       totalVisitors: 4,
       convertedVisitors: 2,
+      revenue: null,
     });
     expect(d1.calls).toHaveLength(1);
     expect(d1.calls[0]).toContain("SELECT COUNT(*) FROM goal_sessions");
@@ -447,6 +457,7 @@ describe("Goal D1 analytics", () => {
       convertedSessions: 2,
       totalVisitors: 2,
       convertedVisitors: 2,
+      revenue: null,
     });
   });
 
@@ -649,6 +660,9 @@ custom_event_json_values AS (
   UNION ALL SELECT 2, 1, 1, 1, 'pro'
   UNION ALL SELECT 4, 1, 1, 1, 'pro'
   UNION ALL SELECT 5, 1, 1, 1, 'pro'
+),
+visit_properties AS (
+  SELECT 'visit-3' AS visit_id, 'plan' AS key, 'free' AS value
 ),
 base_sessions AS (
   SELECT DISTINCT site_pk, session_id FROM base_visits WHERE TRIM(COALESCE(session_id, '')) != ''

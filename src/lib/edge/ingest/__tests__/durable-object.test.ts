@@ -29,6 +29,7 @@ const VISIT_COLUMNS = [
   "ended_at",
   "finalized_at",
   "duration_ms",
+  "scroll_depth",
   "duration_source",
   "exit_reason",
   "pathname",
@@ -208,6 +209,7 @@ class FakeD1Database {
         ended_at INTEGER,
         finalized_at INTEGER,
         duration_ms INTEGER,
+        scroll_depth INTEGER,
         duration_source TEXT,
         exit_reason TEXT,
         pathname TEXT NOT NULL,
@@ -293,6 +295,8 @@ class FakeD1Database {
         sequence INTEGER NOT NULL,
         node_count INTEGER NOT NULL,
         value_count INTEGER NOT NULL,
+        revenue_amount REAL,
+        revenue_currency TEXT,
         user_id TEXT,
         ae_synced_at INTEGER,
         created_at INTEGER NOT NULL
@@ -456,6 +460,7 @@ function visitRecord(overrides: Partial<VisitRecord> = {}): VisitRecord {
     ended_at: null,
     finalized_at: null,
     duration_ms: null,
+    scroll_depth: null,
     duration_source: null,
     exit_reason: null,
     pathname: "/docs",
@@ -1850,6 +1855,58 @@ describe("IngestDurableObject", () => {
     ).toBe(0);
   });
 
+  it("buffers a custom event's validated revenue and flushes it to D1", async () => {
+    const ctx = createTestDo();
+    await postIngest(ctx.object, envelope());
+    for (const [eventId, revenue] of [
+      ["event-paid", { amount: "15.99", currency: "usd" }],
+      // An invalid revenue is dropped; the event is kept.
+      ["event-unpaid", { amount: 10, currency: "dollars" }],
+    ] as const) {
+      await postIngest(
+        ctx.object,
+        envelope({
+          kind: "custom_event",
+          visitId: "visit-1",
+          eventId,
+          eventName: "Purchase",
+          eventData: {},
+          revenue,
+        }),
+      );
+    }
+    const revenueRows = [
+      {
+        event_id: "event-paid",
+        revenue_amount: 15.99,
+        revenue_currency: "USD",
+      },
+      {
+        event_id: "event-unpaid",
+        revenue_amount: null,
+        revenue_currency: null,
+      },
+    ];
+    expect(
+      localRows(
+        ctx.sql,
+        "SELECT event_id, revenue_amount, revenue_currency FROM buffered_custom_events ORDER BY event_id",
+      ),
+    ).toEqual(revenueRows);
+
+    vi.setSystemTime(NOW + 60_000);
+    const flush = await ctx.object.fetch(
+      new Request("https://ingest.internal/flush", { method: "POST" }),
+    );
+    expect(flush.status).toBe(200);
+
+    expect(
+      ctx.d1.all(
+        "SELECT event_id, revenue_amount, revenue_currency FROM custom_events ORDER BY event_id",
+      ),
+    ).toEqual(revenueRows);
+  });
+
   it("does not rewrite visit activity for an out-of-order custom event", async () => {
     const ctx = createTestDo();
     await postIngest(ctx.object, envelope());
@@ -3186,5 +3243,342 @@ describe("rollups of days the ingest buffer writes to afterwards", () => {
     expect(next.summary).toMatchObject({ daysRebuilt: 1 });
     expect(dayRollup(database)).toMatchObject({ views: 2 });
     expect(dirtyDays(database)).toEqual([]);
+  });
+});
+describe("scroll depth", () => {
+  function scrollDepths(ctx: TestDoContext) {
+    return localRows<{ visit_id: string; scroll_depth: number | null }>(
+      ctx.sql,
+      "SELECT visit_id, scroll_depth FROM buffered_visits ORDER BY visit_id",
+    );
+  }
+
+  function hidden(visitId: string, at: number, scrollDepth?: number) {
+    return envelope({
+      kind: "visibility",
+      visitId,
+      visibilityState: "hidden",
+      timestamp: at,
+      ...(scrollDepth === undefined ? {} : { scrollDepth }),
+    });
+  }
+
+  function visible(visitId: string, at: number) {
+    return envelope({
+      kind: "visibility",
+      visitId,
+      visibilityState: "visible",
+      timestamp: at,
+    });
+  }
+
+  function leave(visitId: string, at: number, scrollDepth?: number) {
+    return envelope({
+      kind: "leave",
+      visitId,
+      timestamp: at,
+      ...(scrollDepth === undefined ? {} : { scrollDepth }),
+    });
+  }
+
+  async function flushAt(ctx: TestDoContext, at: number) {
+    vi.setSystemTime(at);
+    const response = await ctx.object.fetch(
+      new Request("https://ingest.internal/flush", { method: "POST" }),
+    );
+    expect(response.status).toBe(200);
+  }
+
+  function d1ScrollDepths(ctx: TestDoContext) {
+    return ctx.d1.all<{
+      visit_id: string;
+      status: string;
+      scroll_depth: number | null;
+    }>("SELECT visit_id, status, scroll_depth FROM visits ORDER BY visit_id");
+  }
+
+  it("keeps the deepest depth a page view reported when it leaves", async () => {
+    const ctx = createTestDo();
+    for (const visitId of ["deeper-before", "deeper-at-leave", "no-depth"]) {
+      await postIngest(
+        ctx.object,
+        envelope({ visitId, startedAt: NOW - 30_000, timestamp: NOW - 30_000 }),
+      );
+    }
+
+    await postIngest(ctx.object, hidden("deeper-before", NOW - 20_000, 40));
+    await postIngest(ctx.object, visible("deeper-before", NOW - 15_000));
+    await postIngest(ctx.object, leave("deeper-before", NOW - 5_000, 30));
+
+    await postIngest(ctx.object, hidden("deeper-at-leave", NOW - 20_000, 20));
+    await postIngest(ctx.object, visible("deeper-at-leave", NOW - 15_000));
+    await postIngest(ctx.object, leave("deeper-at-leave", NOW - 5_000, 80));
+
+    await postIngest(ctx.object, leave("no-depth", NOW - 5_000));
+
+    expect(scrollDepths(ctx)).toEqual([
+      { visit_id: "deeper-at-leave", scroll_depth: 80 },
+      { visit_id: "deeper-before", scroll_depth: 40 },
+      { visit_id: "no-depth", scroll_depth: null },
+    ]);
+  });
+
+  it("merges a second hidden report into a page view that is still hidden", async () => {
+    const ctx = createTestDo();
+    await postIngest(
+      ctx.object,
+      envelope({
+        visitId: "visit-1",
+        startedAt: NOW - 30_000,
+        timestamp: NOW - 30_000,
+      }),
+    );
+
+    await postIngest(ctx.object, hidden("visit-1", NOW - 20_000, 20));
+    await postIngest(ctx.object, hidden("visit-1", NOW - 19_000, 25));
+
+    expect(scrollDepths(ctx)).toEqual([
+      { visit_id: "visit-1", scroll_depth: 25 },
+    ]);
+  });
+
+  it("closes a page ended by a route change with the depth the next pageview carries", async () => {
+    const ctx = createTestDo();
+    const route = (
+      visitId: string,
+      from: string,
+      to: string,
+      at: number,
+      previousScrollDepth?: number,
+    ) =>
+      envelope({
+        visitId,
+        navigation: "route",
+        startedAt: at,
+        timestamp: at,
+        pathname: to,
+        referrerUrl: `https://example.com${from}`,
+        ...(previousScrollDepth === undefined ? {} : { previousScrollDepth }),
+      });
+
+    await postIngest(
+      ctx.object,
+      envelope({
+        visitId: "visit-1",
+        startedAt: NOW - 30_000,
+        timestamp: NOW - 30_000,
+        pathname: "/first",
+      }),
+    );
+    await postIngest(ctx.object, hidden("visit-1", NOW - 28_000, 30));
+    await postIngest(ctx.object, visible("visit-1", NOW - 26_000));
+    await postIngest(
+      ctx.object,
+      route("visit-2", "/first", "/second", NOW - 20_000, 65),
+    );
+    await postIngest(ctx.object, hidden("visit-2", NOW - 18_000, 50));
+    await postIngest(ctx.object, visible("visit-2", NOW - 16_000));
+    // A route pageview without a depth leaves the stored one.
+    await postIngest(ctx.object, route("visit-3", "/second", "/third", NOW));
+
+    expect(
+      localRows(
+        ctx.sql,
+        "SELECT visit_id, status, scroll_depth FROM buffered_visits ORDER BY visit_id",
+      ),
+    ).toEqual([
+      { visit_id: "visit-1", status: "complete", scroll_depth: 65 },
+      { visit_id: "visit-2", status: "complete", scroll_depth: 50 },
+      { visit_id: "visit-3", status: "open", scroll_depth: null },
+    ]);
+  });
+
+  it("keeps a hidden page view's depth when it ends at the hidden timeout", async () => {
+    const ctx = createTestDo();
+    const startedAt = NOW - 40 * 60 * 1000;
+    const hiddenAt = NOW - RECENT_EVENT_RETENTION_MS - 60_000;
+    await postIngest(
+      ctx.object,
+      envelope(
+        { visitId: "visit-1", startedAt, timestamp: startedAt },
+        { receivedAt: startedAt },
+      ),
+    );
+    await postIngest(
+      ctx.object,
+      envelope(
+        {
+          kind: "visibility",
+          visitId: "visit-1",
+          visibilityState: "hidden",
+          timestamp: hiddenAt,
+          scrollDepth: 55,
+        },
+        { receivedAt: hiddenAt },
+      ),
+    );
+
+    await flushAt(ctx, NOW);
+
+    expect(
+      ctx.d1.all(
+        "SELECT status, exit_reason, scroll_depth FROM visits WHERE visit_id = ?",
+        "visit-1",
+      ),
+    ).toEqual([
+      { status: "complete", exit_reason: "hidden_timeout", scroll_depth: 55 },
+    ]);
+  });
+
+  it("flushes the depth to D1 while the page view is hidden and again when it ends", async () => {
+    const ctx = createTestDo();
+    await postIngest(
+      ctx.object,
+      envelope({ visitId: "visit-1", startedAt: NOW, timestamp: NOW }),
+    );
+    await flushAt(ctx, NOW + 60_000);
+    expect(d1ScrollDepths(ctx)).toEqual([
+      { visit_id: "visit-1", status: "open", scroll_depth: null },
+    ]);
+
+    await postIngest(
+      ctx.object,
+      envelope(
+        {
+          kind: "visibility",
+          visitId: "visit-1",
+          visibilityState: "hidden",
+          timestamp: NOW + 60_000,
+          scrollDepth: 35,
+        },
+        { receivedAt: NOW + 60_000 },
+      ),
+    );
+    await flushAt(ctx, NOW + 120_000);
+    expect(d1ScrollDepths(ctx)).toEqual([
+      { visit_id: "visit-1", status: "hidden_pending", scroll_depth: 35 },
+    ]);
+
+    await postIngest(
+      ctx.object,
+      envelope(
+        {
+          kind: "leave",
+          visitId: "visit-1",
+          timestamp: NOW + 120_000,
+          scrollDepth: 70,
+        },
+        { receivedAt: NOW + 120_000 },
+      ),
+    );
+    await flushAt(ctx, NOW + 180_000);
+    expect(d1ScrollDepths(ctx)).toEqual([
+      { visit_id: "visit-1", status: "complete", scroll_depth: 70 },
+    ]);
+  });
+
+  it("keeps the depth of a page view read back from D1", async () => {
+    const ctx = createTestDo();
+    ctx.d1.insertVisit({
+      visit_id: "visit-1",
+      status: "hidden_pending",
+      scroll_depth: 35,
+    });
+
+    // A custom event reads the page view back into the buffer.
+    await postIngest(
+      ctx.object,
+      envelope({
+        kind: "custom_event",
+        visitId: "visit-1",
+        eventName: "signup",
+        eventData: {},
+        timestamp: NOW,
+      }),
+    );
+    await postIngest(ctx.object, leave("visit-1", NOW, 20));
+    await flushAt(ctx, NOW + 60_000);
+
+    expect(d1ScrollDepths(ctx)).toEqual([
+      { visit_id: "visit-1", status: "complete", scroll_depth: 35 },
+    ]);
+  });
+});
+
+describe("page view properties", () => {
+  it("flushes a page view's properties with it, once", async () => {
+    const database = createMigratedDatabase();
+    seedSites(database, [{ siteId: "site-1", sitePk: 1 }]);
+    const ctx = createTestDo({ DB: createSqliteD1Database(database) });
+    const properties = () =>
+      database
+        .prepare(
+          "SELECT visit_id, key, value, site_pk, started_at FROM visit_properties ORDER BY visit_id, key",
+        )
+        .all();
+
+    await postIngest(
+      ctx.object,
+      envelope({
+        visitId: "with-props",
+        props: { author: "Jane", section: "blog", seats: 5 },
+      }),
+    );
+    await postIngest(
+      ctx.object,
+      envelope({ visitId: "without-props", pathname: "/pricing" }),
+    );
+    expect(
+      localRows(
+        ctx.sql,
+        "SELECT visit_id, properties_json FROM buffered_visits ORDER BY visit_id",
+      ),
+    ).toEqual([
+      {
+        visit_id: "with-props",
+        properties_json: JSON.stringify({ author: "Jane", section: "blog" }),
+      },
+      { visit_id: "without-props", properties_json: null },
+    ]);
+    vi.setSystemTime(NOW + 60_000);
+    await ctx.object.alarm();
+
+    const flushed = [
+      {
+        visit_id: "with-props",
+        key: "author",
+        value: "Jane",
+        site_pk: 1,
+        started_at: NOW - 1_000,
+      },
+      {
+        visit_id: "with-props",
+        key: "section",
+        value: "blog",
+        site_pk: 1,
+        started_at: NOW - 1_000,
+      },
+    ];
+    expect(properties()).toEqual(flushed);
+
+    // The leave flushes the page view again; its properties stay as written.
+    await postIngest(
+      ctx.object,
+      envelope({
+        kind: "leave",
+        visitId: "with-props",
+        timestamp: NOW + 70_000,
+      }),
+    );
+    vi.setSystemTime(NOW + 140_000);
+    await ctx.object.alarm();
+
+    expect(
+      database
+        .prepare("SELECT status FROM visits WHERE visit_id = 'with-props'")
+        .get(),
+    ).toEqual({ status: "complete" });
+    expect(properties()).toEqual(flushed);
+    database.close();
   });
 });

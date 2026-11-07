@@ -61,9 +61,10 @@ const EXPIRED_EVENTS_SQL = `
  * `retention_reached_day`, so the rollup task never rebuilds a day from part
  * of its page views. Then it deletes up to a batch of their events' payload
  * values, then of the payload nodes left without values, then the events
- * left without payload, then the page views left without events. No
- * statement cascades, so none changes more than a batch of rows; a large
- * payload takes a few rounds.
+ * left without payload, then up to a batch of the page views' properties,
+ * then the page views left without events or properties. No statement
+ * cascades, so none changes more than a batch of rows; a large payload or
+ * many properties take a few rounds.
  */
 const EXPIRED_ROUND = [
   {
@@ -119,10 +120,24 @@ const EXPIRED_ROUND = [
   },
   {
     sql: `
+      DELETE FROM visit_properties
+      WHERE (visit_id, key) IN (
+        SELECT visit_id, key FROM visit_properties
+        WHERE visit_id IN (${EXPIRED_VISITS_SQL})
+        LIMIT ${RETENTION_BATCH_ROWS}
+      )
+    `,
+    tag: "scheduled_tasks.retention.visit_properties",
+  },
+  {
+    sql: `
       DELETE FROM visits
       WHERE visit_id IN (${EXPIRED_VISITS_SQL})
         AND NOT EXISTS (
           SELECT 1 FROM custom_events e WHERE e.visit_id = visits.visit_id
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM visit_properties p WHERE p.visit_id = visits.visit_id
         )
     `,
     tag: "scheduled_tasks.retention.visits",
@@ -205,21 +220,22 @@ async function deleteExpired(
     const results = await db.batch(
       EXPIRED_ROUND.map((statement) => ({ ...statement, bindings })),
     );
-    const [, values = 0, nodes = 0, events = 0, visits = 0] = results.map(
-      (result) => Number(result.meta?.changes ?? 0),
-    );
+    const [, values = 0, nodes = 0, events = 0, properties = 0, visits = 0] =
+      results.map((result) => Number(result.meta?.changes ?? 0));
     deleted.events += events;
     deleted.visits += visits;
-    // A round that deleted no payload or event found no events; it then
-    // deleted every page view of its batch, the last if the batch was short.
+    // A round that deleted no payload, event or property found none; it
+    // then deleted every page view of its batch, the last if the batch was
+    // short.
     deleted.done =
-      values + nodes + events === 0 && visits < RETENTION_BATCH_ROWS;
+      values + nodes + events + properties === 0 &&
+      visits < RETENTION_BATCH_ROWS;
   }
   return deleted;
 }
 
 /**
- * Deletes page views and their events from whole UTC days before
+ * Deletes page views, their events and properties from whole UTC days before
  * `cutoffDay`, with the queries the database has left, shared between sites
  * by how much each has expired, so a large backlog goes on over the next
  * ticks without holding up smaller sites. A site's day marked for a rebuild, and

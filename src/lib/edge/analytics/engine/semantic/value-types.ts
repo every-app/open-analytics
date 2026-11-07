@@ -7,7 +7,7 @@ export type SemanticScalarType = Exclude<
   FilterScalarType,
   "duration" | "calendar-period"
 >;
-export type SemanticUnit = "ms" | "px" | "ratio";
+export type SemanticUnit = "ms" | "px" | "ratio" | "%";
 export type ElapsedDurationUnit = "ms" | "s" | "m" | "h" | "d" | "w";
 export type CalendarPeriodUnit = "d" | "w" | "mo" | "y";
 

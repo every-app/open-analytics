@@ -7,7 +7,10 @@ import type {
   PagesDashboardData,
   PagesData,
 } from "@/lib/dashboard-api/client/edge";
-import type { PagesDashboardMetric } from "@/lib/dashboard-api/contract/types/pages";
+import type {
+  PagesDashboardMetric,
+  PagesDashboardSortKey,
+} from "@/lib/dashboard-api/contract/types/pages";
 import type { AnalyticsFilterFieldId } from "@/lib/filter-contract";
 export type DashboardFilterOptionData = DashboardFilterOption;
 export type PageCardTabsData = NonNullable<PagesData["tabs"]>;
@@ -54,7 +57,7 @@ export type PagesDashboardListRequestOptions = Omit<
   DashboardListRequestOptions,
   "sort" | "comparisonMetric"
 > & {
-  sort?: PagesDashboardMetric;
+  sort?: PagesDashboardSortKey;
   comparisonMetric?: PagesDashboardMetric;
 };
 export type FetchPrivateJsonOptions = {

@@ -282,6 +282,27 @@ describe("normalizeIngestRecord pageview records", () => {
     expect(result.record.sessionId).not.toBe("");
     expect(result.record.previousVisitId).toBe("");
     expect(result.record.previousVisitStartedAt).toBeNull();
+    expect(result.record.previousScrollDepth).toBeNull();
+    expect(result.record.properties).toEqual({});
+  });
+
+  it("gives a pageview its normalized custom properties", async () => {
+    const { context } = makeContext();
+
+    const result = await normalizeIngestRecord(
+      makeEnvelope({
+        kind: "pageview",
+        visitId: "visit-1",
+        hostname: "example.com",
+        props: { author: " Jane ", seats: 5, "": "x" },
+      }),
+      context,
+    );
+
+    expect(result.record).toMatchObject({
+      kind: "pageview",
+      properties: { author: "Jane" },
+    });
   });
 
   it("stores the source's canonical host and keeps the full referrer URL", async () => {
@@ -481,6 +502,7 @@ describe("normalizeIngestRecord pageview records", () => {
           visitId: "visit-2",
           previousVisitId: "visit-1",
           navigation: "route",
+          previousScrollDepth: 42,
           referrerUrl: "https://example.com/previous",
           hostname: "example.com",
         }),
@@ -492,6 +514,7 @@ describe("normalizeIngestRecord pageview records", () => {
         sessionId: "server-session-1",
         previousVisitId: "visit-1",
         previousVisitStartedAt: receivedAt - 10_000,
+        previousScrollDepth: 42,
       },
     });
   });
@@ -694,7 +717,7 @@ describe("normalizeIngestRecord leave and visibility records", () => {
     const { context } = makeContext();
 
     const result = await normalizeIngestRecord(
-      makeEnvelope({ kind: "leave", visitId: "visit-1" }),
+      makeEnvelope({ kind: "leave", visitId: "visit-1", scrollDepth: 74.6 }),
       context,
     );
 
@@ -706,7 +729,27 @@ describe("normalizeIngestRecord leave and visibility records", () => {
       receivedAt,
       leaveAt: receivedAt - 1_000,
       exitReason: "pagehide",
+      scrollDepth: 75,
     });
+  });
+
+  it("keeps scroll depths whole percents from 0 to 100 and drops unusable ones", async () => {
+    const { context } = makeContext();
+    const depthOf = async (scrollDepth: unknown) => {
+      const result = await normalizeIngestRecord(
+        makeEnvelope({ kind: "leave", visitId: "visit-1", scrollDepth }),
+        context,
+      );
+      return result.record?.kind === "leave" ? result.record.scrollDepth : -1;
+    };
+
+    expect(await depthOf(140)).toBe(100);
+    expect(await depthOf(-3)).toBe(0);
+    expect(await depthOf(0)).toBe(0);
+    expect(await depthOf(undefined)).toBeNull();
+    expect(await depthOf(Number.NaN)).toBeNull();
+    expect(await depthOf(Number.POSITIVE_INFINITY)).toBeNull();
+    expect(await depthOf("deep")).toBeNull();
   });
 
   it("normalizes visibility records", async () => {
@@ -718,6 +761,7 @@ describe("normalizeIngestRecord leave and visibility records", () => {
           kind: "visibility",
           visitId: "visit-1",
           visibilityState: "hidden",
+          scrollDepth: 30,
         }),
         context,
       ),
@@ -730,6 +774,7 @@ describe("normalizeIngestRecord leave and visibility records", () => {
         visibilityState: "hidden",
         receivedAt,
         eventAt: receivedAt - 1_000,
+        scrollDepth: 30,
       },
     });
 
@@ -838,6 +883,8 @@ describe("normalizeIngestRecord custom event records", () => {
         sequence: 0,
         eventName: "signup",
         eventDataJson: '{"plan":"pro"}',
+        revenueAmount: null,
+        revenueCurrency: null,
       },
     ]);
   });
@@ -853,6 +900,7 @@ describe("normalizeIngestRecord custom event records", () => {
         sequence: -5,
         eventName: "signup",
         eventData: { plan: "pro", nested: { ok: true } },
+        revenue: { amount: 15.99, currency: "usd" },
       }),
       state.context,
     );
@@ -877,6 +925,8 @@ describe("normalizeIngestRecord custom event records", () => {
         sequence: 0,
         eventName: "signup",
         eventDataJson: '{"plan":"pro","nested":{"ok":true}}',
+        revenueAmount: 15.99,
+        revenueCurrency: "USD",
       },
     ]);
   });
@@ -892,6 +942,7 @@ describe("normalizeIngestRecord custom event records", () => {
         sequence: 2.9,
         eventName: "signup",
         eventData: { amount: 12, tags: ["new"] },
+        revenue: { amount: "9.50", currency: "EUR" },
       }),
       context,
     );
@@ -903,6 +954,8 @@ describe("normalizeIngestRecord custom event records", () => {
       eventAt: receivedAt - 1_000,
       eventName: "signup",
       eventDataJson: '{"amount":12,"tags":["new"]}',
+      revenueAmount: 9.5,
+      revenueCurrency: "EUR",
       siteId: "site-1",
       visitId: "visit-1",
       visitorId: "visitor-from-visit",
@@ -928,6 +981,8 @@ describe("normalizeIngestRecord custom event records", () => {
         sequence: Number.NaN,
         eventName: "purchase",
         eventData: { amount: 20 },
+        // An invalid revenue is dropped; the event is kept.
+        revenue: { amount: "twenty", currency: "USD" },
       }),
       context,
     );
@@ -937,6 +992,8 @@ describe("normalizeIngestRecord custom event records", () => {
       sequence: 0,
       eventName: "purchase",
       eventDataJson: '{"amount":20}',
+      revenueAmount: null,
+      revenueCurrency: null,
       utmSource: "visit",
       utmMedium: "email",
       utmCampaign: "launch",

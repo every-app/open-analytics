@@ -64,6 +64,7 @@ describe("registry-driven editor metadata", () => {
         "page.title",
         "page.hostname",
         "page.durationMs",
+        "page.scrollDepth",
         "page.query",
         "page.hash",
         "event.name",

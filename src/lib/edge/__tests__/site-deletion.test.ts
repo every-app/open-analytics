@@ -22,6 +22,7 @@ import {
 const NOW = Date.UTC(2026, 10, 6, 13);
 const SITE_TABLES = [
   "visits",
+  "visit_properties",
   "custom_events",
   "custom_event_json_nodes",
   "custom_event_json_values",
@@ -89,6 +90,8 @@ describe("site deletion", () => {
       INSERT INTO custom_event_json_values (event_pk, node_id, site_id, site_pk,
         event_name_id, path_id, occurred_at, value_type, string_value)
         VALUES (1, 1, 'site-1', 1, 1, 1, 0, 1, 'pro'), (2, 1, 'site-2', 2, 2, 2, 0, 1, 'pro');
+      INSERT INTO visit_properties (visit_id, key, value, site_pk, started_at)
+      SELECT visit_id, 'author', 'Jane', site_pk, started_at FROM visits;
     `);
     await runVisitRollups(env, NOW);
     database.exec(`

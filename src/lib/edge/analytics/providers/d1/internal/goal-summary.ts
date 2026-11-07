@@ -14,12 +14,21 @@ import {
   type ScopedDatasetSql,
 } from "./scoped-dataset";
 
+/** The revenue of the goal's matched custom events in its currency. */
+export interface GoalRevenueAggregate {
+  readonly total: number;
+  /** The matched events that carried revenue in the currency. */
+  readonly events: number;
+}
+
 /** The one-row aggregate returned by the summary statement. */
 export interface GoalSummaryAggregateRow {
   readonly totalSessions: number;
   readonly convertedSessions: number;
   readonly totalVisitors: number;
   readonly convertedVisitors: number;
+  /** Null for a goal without a currency. */
+  readonly revenue: GoalRevenueAggregate | null;
 }
 
 /**
@@ -62,10 +71,32 @@ function countValue(value: unknown): number {
 }
 
 /**
+ * The revenue CTE and columns of a goal with a currency: the amounts of its
+ * matched custom events in that currency, the CTE's one binding. Amounts in
+ * other currencies aren't converted or counted.
+ */
+function goalRevenueSql(matchedEventRelation: string) {
+  return {
+    cte: `,
+goal_revenue AS (
+  SELECT
+    COALESCE(SUM(ce.revenue_amount), 0) AS total,
+    COUNT(*) AS events
+  FROM custom_events ce
+  WHERE ce.event_pk IN (SELECT event_pk FROM ${matchedEventRelation})
+    AND ce.revenue_currency = ?
+)`,
+    columns: `,
+  (SELECT total FROM goal_revenue) AS revenueTotal,
+  (SELECT events FROM goal_revenue) AS revenueEvents`,
+  };
+}
+
+/**
  * Execute Goal summary as one D1 statement.  The goal filter is already
  * parsed by the Goal codec before it reaches this engine.  Both global and
- * goal scopes stay in SQL; only the four scalar counts cross the worker
- * boundary.
+ * goal scopes stay in SQL; only the scalar counts (and, for a goal with a
+ * `currency`, its revenue) cross the worker boundary.
  */
 export async function queryGoalSummaryFromD1(
   env: Env,
@@ -74,6 +105,7 @@ export async function queryGoalSummaryFromD1(
   globalFilters: FilterDocument,
   goalFilter: FilterDocument,
   preparedDataset?: ScopedDatasetSql | null,
+  currency?: string,
 ): Promise<GoalSummaryAggregateRow> {
   const dataset = baseGoalDataset(
     siteId,
@@ -86,20 +118,25 @@ export async function queryGoalSummaryFromD1(
     goalFilter,
     "goal",
   );
+  const revenue =
+    currency === undefined
+      ? { cte: "", columns: "" }
+      : goalRevenueSql(goal.matchedEventRelation);
   const rows = await queryD1All<Record<string, unknown>>(
     env,
     `WITH
 ${dataset.ctes.trim()},
-${goal.ctes.trim()}
+${goal.ctes.trim()}${revenue.cte}
 SELECT
   (SELECT COUNT(*) FROM ${dataset.sessionRelation}) AS totalSessions,
   (SELECT COUNT(*) FROM ${goal.sessionRelation}) AS convertedSessions,
   (SELECT COUNT(*) FROM ${dataset.visitorRelation}) AS totalVisitors,
-  (SELECT COUNT(*) FROM ${goal.visitorRelation}) AS convertedVisitors
+  (SELECT COUNT(*) FROM ${goal.visitorRelation}) AS convertedVisitors${revenue.columns}
 `,
     [
       ...dataset.bindings.map((binding) => binding.value),
       ...goal.bindings.map((binding) => binding.value),
+      ...(currency === undefined ? [] : [currency]),
     ],
   );
   const row = rows[0] ?? {};
@@ -108,6 +145,13 @@ SELECT
     convertedSessions: countValue(row.convertedSessions),
     totalVisitors: countValue(row.totalVisitors),
     convertedVisitors: countValue(row.convertedVisitors),
+    revenue:
+      currency === undefined
+        ? null
+        : {
+            total: Number(row.revenueTotal),
+            events: countValue(row.revenueEvents),
+          },
   };
 }
 

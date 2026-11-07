@@ -140,7 +140,11 @@ export function useGoalConversions({
   );
 
   const save = useCallback(
-    async (input: { name: string; filterDsl: string }) => {
+    async (input: {
+      name: string;
+      filterDsl: string;
+      currency: string | null;
+    }) => {
       setSaving(true);
       try {
         const result = editing

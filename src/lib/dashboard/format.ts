@@ -59,6 +59,18 @@ export function percentFormat(locale: Locale, value: number): string {
   return getPercentFormatter(locale).format(value);
 }
 
+/** An amount in an ISO 4217 currency, e.g. "$1,234.50" for USD. */
+export function currencyFormat(
+  locale: Locale,
+  value: number,
+  currency: string,
+): string {
+  return new Intl.NumberFormat(intlLocale(locale), {
+    style: "currency",
+    currency,
+  }).format(value);
+}
+
 type DateValue = number | string | Date | null | undefined;
 
 function toValidDate(value: DateValue): Date | null {

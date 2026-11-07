@@ -19,6 +19,7 @@ import {
   SITE_PK_FROM_SITE_ID_SQL,
   sitePksFromSiteIdsSql,
 } from "@/lib/edge/sites/identity-sql";
+import type { FilterObservationKind } from "@/lib/filter-contract/filter-registry";
 import { filterDocumentUsesAdvancedExpressions } from "@/lib/filter-contract/filter-types";
 import type { FilterScope } from "@/lib/filter-contract/scope-preference";
 
@@ -197,6 +198,7 @@ scope_raw_events AS MATERIALIZED (
     CAST(NULL AS TEXT) AS utm_term,
     CAST(NULL AS TEXT) AS utm_content,
     CAST(NULL AS INTEGER) AS duration_ms,
+    CAST(NULL AS INTEGER) AS scroll_depth,
     CAST(NULL AS INTEGER) AS is_eu,
     CAST(NULL AS TEXT) AS country,
     CAST(NULL AS TEXT) AS region,
@@ -342,6 +344,7 @@ function eventSource(
     v.utm_term,
     v.utm_content,
     v.duration_ms,
+    v.scroll_depth,
     v.is_eu,
     v.country,
     v.region,
@@ -556,6 +559,7 @@ function compileMembershipCondition(
       alias: "v",
       eventAlias: "v",
       sessionSource: "scope_raw_visits",
+      observation: "visit",
     });
     branches.push(`
   SELECT DISTINCT v.site_pk, v.${"SESSION_COLUMN"} AS entity_id
@@ -570,6 +574,7 @@ function compileMembershipCondition(
       alias: "e",
       eventAlias: "e",
       sessionSource: "scope_raw_visits",
+      observation: "event",
     });
     branches.push(`
   SELECT DISTINCT e.site_pk, e.${"SESSION_COLUMN"} AS entity_id
@@ -626,6 +631,7 @@ function scopedObservationRelation(
   alias: string,
   predicate: ObservationPredicatePlan,
   sessionSource: string,
+  observation: FilterObservationKind,
 ): ObservationRelationSql {
   if (predicate.kind === "all") {
     return {
@@ -645,6 +651,7 @@ function scopedObservationRelation(
       alias,
       eventAlias: alias,
       sessionSource,
+      observation,
     },
   );
   return {
@@ -687,6 +694,7 @@ export function applyObservationFilterToScopedDataset(
     `${prefix}_visit_filter`,
     plan.visit,
     sessionSource,
+    "visit",
   );
   const events = scopedObservationRelation(
     matchedEventRelation,
@@ -694,6 +702,7 @@ export function applyObservationFilterToScopedDataset(
     `${prefix}_event_filter`,
     plan.event,
     sessionSource,
+    "event",
   );
 
   const ctes = `
@@ -751,6 +760,7 @@ function compileObservationRelation(
   source: string,
   alias: string,
   predicate: ObservationPredicatePlan,
+  observation: FilterObservationKind,
 ): ObservationRelationSql {
   if (predicate.kind === "all") {
     return { cte: `${name} AS (SELECT * FROM ${source})`, bindings: [] };
@@ -767,6 +777,7 @@ function compileObservationRelation(
       alias,
       eventAlias: alias,
       sessionSource: "scope_raw_visits",
+      observation,
     },
   );
   return {
@@ -905,6 +916,7 @@ export function compileScopedDatasetSql(
         "scope_raw_visits",
         "v",
         observationPlan.visit,
+        "visit",
       )
     : null;
   const matchingEvents = observationPlan
@@ -913,6 +925,7 @@ export function compileScopedDatasetSql(
         "scope_raw_events",
         "e",
         observationPlan.event,
+        "event",
       )
     : null;
   const entityColumnName =

@@ -9,6 +9,11 @@ export interface OverviewMetrics {
   avgDurationMs: number;
   bounceRate: number;
   approximateVisitors?: boolean;
+  /**
+   * Each visitor's deepest scroll on each page, averaged over the visitors,
+   * in %; null when no page view reported one. Only with a page path filter.
+   */
+  scrollDepth?: number | null;
 }
 
 export interface OverviewChangeRates {
@@ -29,6 +34,11 @@ export interface OverviewDetailPoint {
   bounces: number;
   totalDurationMs: number;
   avgDurationMs: number;
+  /**
+   * Each visitor's deepest scroll on each page, averaged over the visitors,
+   * in %; null when no page view reported one. Only with a page path filter.
+   */
+  scrollDepth?: number | null;
   source: "detail";
 }
 
@@ -54,6 +64,11 @@ export interface TrendPoint {
   bounces: number;
   totalDurationMs: number;
   avgDurationMs: number;
+  /**
+   * Each visitor's deepest scroll on each page, averaged over the visitors,
+   * in %; null when no page view reported one. Only with a page path filter.
+   */
+  scrollDepth?: number | null;
   source: "detail";
 }
 

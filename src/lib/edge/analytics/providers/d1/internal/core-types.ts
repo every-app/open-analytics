@@ -14,6 +14,12 @@ export interface OverviewAggregateRow {
   bounces: number;
   totalDuration: number;
   durationViews: number;
+  /**
+   * Each visitor's deepest scroll on each page, averaged over the visitors,
+   * in %; null when no page view reported one. Read only with a page path
+   * filter, the only time the dashboard shows it.
+   */
+  scrollDepth?: number | null;
 }
 export interface TrendAggregateRow extends OverviewAggregateRow {
   bucket: number;
@@ -67,6 +73,7 @@ export interface PageRow {
 }
 export interface PageCardAggregateRow extends OverviewAggregateRow {
   pathname: string;
+  scrollDepth: number | null;
 }
 export interface PageCardTitleRow {
   pathname: string;
