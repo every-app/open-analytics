@@ -1,5 +1,6 @@
 import { UAParser } from "ua-parser-js";
 
+import { canonicalSourceHost } from "@/lib/analytics/source-host";
 import { mergeUaClientHintsIntoHeaders } from "@/lib/edge/collector/client-hints";
 import type {
   Env,
@@ -21,7 +22,6 @@ import {
   resolveSessionWindowMinutes,
   safeHostname,
 } from "@/lib/edge/utils";
-import { visitorDailySaltSecret } from "@/lib/secrets";
 
 import { expandCustomEventData } from "./custom-event-json";
 import { clampTimestamp, resolveTrustedClientTimestamp } from "./normalize";
@@ -32,8 +32,10 @@ import type {
   SessionAttribution,
   StoredOpenVisit,
 } from "./types";
+import { utcDay } from "./visitor-salts";
 interface NormalizeRecordContext {
-  env: Pick<Env, "MAIN_SECRET" | "SESSION_WINDOW_MINUTES">;
+  env: Pick<Env, "SESSION_WINDOW_MINUTES">;
+  visitorSalt(day: string): string;
   getVisitContext(
     siteId: string,
     visitId: string,
@@ -80,10 +82,6 @@ export async function normalizeIngestRecord(
   const nowMs = Date.now();
   const receivedAt = clampTimestamp(envelope.request.receivedAt, nowMs);
   const eventAt = resolveTrustedClientTimestamp(client.timestamp, receivedAt);
-  const visitorSecret = await visitorDailySaltSecret(context.env);
-  if (!visitorSecret) {
-    throw new Error("MAIN_SECRET is required for visitor identity");
-  }
   const startedAt = Math.min(
     resolveTrustedClientTimestamp(client.startedAt, receivedAt, eventAt),
     eventAt,
@@ -103,11 +101,13 @@ export async function normalizeIngestRecord(
   const ua = await new UAParser(uaHeaders).getResult().withClientHints();
   const isEU = Boolean(cf.isEUCountry);
 
-  // A daily-rotating hash: the browser stores nothing, as in Plausible. It
-  // rotates with the UTC day of startedAt, the time the row is filed under,
-  // so no visitor (and no visit, which ends when the id changes) spans two
-  // UTC days and the daily rollups can add days together.
+  // A daily-rotating hash: the browser stores nothing, as in Plausible. The
+  // salt belongs to the UTC day of startedAt, the time the row is filed
+  // under, so no visitor (and no visit, which ends when the id changes)
+  // spans two UTC days and the daily rollups can add days together.
   const visitorId = await deriveVisitorId({
+    salt: context.visitorSalt(utcDay(startedAt)),
+    siteId,
     ip: clampString(
       coerceString(
         requestHeaders["cf-connecting-ip"] ??
@@ -117,8 +117,6 @@ export async function normalizeIngestRecord(
       80,
     ),
     ua: uaRaw,
-    eventAtMs: startedAt,
-    secret: visitorSecret,
   });
 
   const contextGeoBase = {
@@ -156,13 +154,12 @@ export async function normalizeIngestRecord(
       return { record: null, reason: "missing_hostname" };
     }
     const rawReferrerUrl = clampString(coerceString(client.referrerUrl), 2000);
-    const rawReferrerHost = clampString(
-      safeHostname(rawReferrerUrl),
-      255,
-    ).toLowerCase();
+    const rawReferrerHost = safeHostname(rawReferrerUrl);
     const referrerIsSameHostname = isSameHostname(rawReferrerHost, hostname);
     const referrerUrl = referrerIsSameHostname ? "" : rawReferrerUrl;
-    const referrerHost = referrerIsSameHostname ? "" : rawReferrerHost;
+    const referrerHost = referrerIsSameHostname
+      ? ""
+      : clampString(canonicalSourceHost(rawReferrerHost), 255);
     const navigationKind = clampString(coerceString(client.navigation), 40);
     let routePreviousHostname = "";
     let routePreviousPathname = "";
@@ -212,7 +209,6 @@ export async function normalizeIngestRecord(
         visitorId,
         visitId,
         startedAt,
-        secret: visitorSecret,
       }));
     const recentStatus = recentSession?.status || "";
     const recentOpenVisit =
@@ -272,7 +268,6 @@ export async function normalizeIngestRecord(
         visitId,
         receivedAt,
         leaveAt: eventAt,
-        durationMs: coerceNumber(client.durationMs, null),
         exitReason:
           clampString(coerceString(client.exitReason || ""), 40) || "pagehide",
       } satisfies NormalizedLeave,

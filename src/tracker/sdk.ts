@@ -16,7 +16,6 @@ interface TrackerRuntimeConfig {
   trackHash: boolean;
   ignoreDoNotTrack: boolean;
   autoTrackOutboundLinks: boolean;
-  collectToken: string;
 }
 
 function takeRuntimeConfig(): TrackerRuntimeConfig {
@@ -34,8 +33,7 @@ function takeRuntimeConfig(): TrackerRuntimeConfig {
     typeof config.trackQueryParams !== "boolean" ||
     typeof config.trackHash !== "boolean" ||
     typeof config.ignoreDoNotTrack !== "boolean" ||
-    typeof config.autoTrackOutboundLinks !== "boolean" ||
-    typeof config.collectToken !== "string"
+    typeof config.autoTrackOutboundLinks !== "boolean"
   ) {
     throw new Error("OpenAnalytics: runtime configuration is invalid");
   }
@@ -94,7 +92,6 @@ const TRACK_QUERY_PARAMS = runtimeConfig.trackQueryParams;
 const TRACK_HASH = runtimeConfig.trackHash;
 const IGNORE_DO_NOT_TRACK = runtimeConfig.ignoreDoNotTrack;
 const AUTO_TRACK_OUTBOUND_LINKS = runtimeConfig.autoTrackOutboundLinks;
-const COLLECT_TOKEN = runtimeConfig.collectToken;
 // Visits from a local copy of the site are never sent.
 const IS_LOCAL =
   location.protocol === "file:" ||
@@ -173,15 +170,7 @@ function send(payload: any, useBeacon: boolean): void {
   if (IS_LOCAL) return;
   let body = "";
   try {
-    body = JSON.stringify(
-      withUaClientHints(
-        {
-          ...payload,
-          collectToken: COLLECT_TOKEN,
-        },
-        uaClientHints,
-      ),
-    );
+    body = JSON.stringify(withUaClientHints(payload, uaClientHints));
   } catch {
     return;
   }
@@ -274,7 +263,6 @@ function endCurrentVisit(exitReason: string, useBeacon: boolean): void {
       siteId: SITE_ID,
       visitId: currentVisit.id,
       timestamp: eventAt,
-      durationMs: Math.max(0, eventAt - currentVisit.startedAt),
       pathname: url.pathname || "/",
       hostname: url.hostname || "",
       exitReason,

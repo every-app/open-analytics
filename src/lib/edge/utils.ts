@@ -83,22 +83,16 @@ export function clampString(input: string, maxLen: number): string {
   return input.slice(0, maxLen);
 }
 
-export async function deriveDailySalt(
-  secret: string,
-  eventAtMs: number,
-): Promise<string> {
-  const dayStamp = new Date(eventAtMs).toISOString().slice(0, 10);
-  return sha256Hex(`${secret}:${dayStamp}`);
-}
-
+// The salt is random, kept only for its UTC day, and the site is part of the
+// hash: a visitor gets a different id on every site and every day, and no
+// past id can be recomputed once its day's salt is deleted.
 export async function deriveVisitorId(input: {
+  salt: string;
+  siteId: string;
   ip: string;
   ua: string;
-  eventAtMs: number;
-  secret: string;
 }): Promise<string> {
-  const dailySalt = await deriveDailySalt(input.secret, input.eventAtMs);
-  return sha256Hex(`${input.ip}|${input.ua}|${dailySalt}`);
+  return sha256Hex([input.salt, input.siteId, input.ip, input.ua].join("|"));
 }
 
 export function resolveSessionWindowMinutes(input: {
@@ -116,7 +110,6 @@ export async function deriveServerSessionId(input: {
   visitorId: string;
   visitId: string;
   startedAt: number;
-  secret: string;
 }): Promise<string> {
   return sha256Hex(
     [
@@ -125,19 +118,8 @@ export async function deriveServerSessionId(input: {
       input.visitorId,
       input.visitId,
       String(Math.floor(input.startedAt)),
-      input.secret,
     ].join("|"),
   );
-}
-
-export async function deriveSessionId(input: {
-  visitorId: string;
-  eventAtMs: number;
-  sessionWindowMinutes: number;
-}): Promise<string> {
-  const windowMs = input.sessionWindowMinutes * 60 * 1000;
-  const windowIndex = Math.floor(input.eventAtMs / windowMs);
-  return sha256Hex(`${input.visitorId}|${windowIndex}`);
 }
 
 export function nowEpochSeconds(): number {

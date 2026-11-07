@@ -5,9 +5,7 @@ import {
   coerceNumber,
   coerceString,
   DEFAULT_SESSION_WINDOW_MINUTES,
-  deriveDailySalt,
   deriveServerSessionId,
-  deriveSessionId,
   deriveVisitorId,
   isSameHostname,
   jsonCloneRecord,
@@ -70,49 +68,28 @@ describe("edge utility helpers", () => {
       "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
     );
 
-    const eventAtMs = Date.UTC(2026, 4, 26, 12);
-    const salt = await deriveDailySalt("secret", eventAtMs);
-    expect(salt).toMatch(/^[0-9a-f]{64}$/);
-    await expect(
-      deriveDailySalt("secret", eventAtMs + ONE_HOUR_MS),
-    ).resolves.toBe(salt);
-
-    const visitorId = await deriveVisitorId({
+    const visitor = {
+      salt: "salt",
+      siteId: "site-1",
       ip: "203.0.113.10",
       ua: "Mozilla/5.0",
-      eventAtMs,
-      secret: "secret",
-    });
+    };
+    const visitorId = await deriveVisitorId(visitor);
     expect(visitorId).toMatch(/^[0-9a-f]{64}$/);
+    await expect(deriveVisitorId(visitor)).resolves.toBe(visitorId);
     await expect(
-      deriveVisitorId({
-        ip: "203.0.113.10",
-        ua: "Mozilla/5.0",
-        eventAtMs,
-        secret: "secret",
-      }),
-    ).resolves.toBe(visitorId);
-
-    const sessionId = await deriveSessionId({
-      visitorId,
-      eventAtMs,
-      sessionWindowMinutes: 30,
-    });
-    expect(sessionId).toMatch(/^[0-9a-f]{64}$/);
+      deriveVisitorId({ ...visitor, salt: "next-day" }),
+    ).resolves.not.toBe(visitorId);
     await expect(
-      deriveSessionId({
-        visitorId,
-        eventAtMs: eventAtMs + 29 * 60 * 1000,
-        sessionWindowMinutes: 30,
-      }),
-    ).resolves.toBe(sessionId);
+      deriveVisitorId({ ...visitor, siteId: "site-2" }),
+    ).resolves.not.toBe(visitorId);
 
+    const startedAt = Date.UTC(2026, 4, 26, 12);
     const serverSessionId = await deriveServerSessionId({
       siteId: "site-1",
       visitorId,
       visitId: "visit-1",
-      startedAt: eventAtMs,
-      secret: "secret",
+      startedAt,
     });
     expect(serverSessionId).toMatch(/^[0-9a-f]{64}$/);
     await expect(
@@ -120,8 +97,7 @@ describe("edge utility helpers", () => {
         siteId: "site-1",
         visitorId,
         visitId: "visit-1",
-        startedAt: eventAtMs,
-        secret: "secret",
+        startedAt,
       }),
     ).resolves.toBe(serverSessionId);
   });

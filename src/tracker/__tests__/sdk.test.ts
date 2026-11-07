@@ -26,7 +26,6 @@ function setRuntimeConfig(options: ConfiguredSdkOptions = {}) {
     trackHash: options.trackHash !== false,
     ignoreDoNotTrack: options.ignoreDoNotTrack !== false,
     autoTrackOutboundLinks: options.autoTrackOutboundLinks !== false,
-    collectToken: "test-collect-token",
   };
 }
 

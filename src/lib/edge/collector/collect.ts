@@ -6,9 +6,9 @@ import {
   parseBlockingRules,
   withSiteDomainRules,
 } from "@/lib/blocking";
-import { requestIp, verifyCollectToken } from "@/lib/edge/auth/collect-token";
 import { classifyCollectBotTraffic } from "@/lib/edge/collector/bot-protection";
 import { normalizeTrackerUaClientHints } from "@/lib/edge/collector/client-hints";
+import { requestIp } from "@/lib/edge/collector/request-ip";
 import { expandCustomEventData } from "@/lib/edge/ingest/custom-event-json";
 import type { InvocationLogger } from "@/lib/edge/observability/logger";
 import {
@@ -59,9 +59,6 @@ function sanitizeInputPayload(payload: unknown): TrackerClientPayload | null {
     return null;
   }
   return payload as TrackerClientPayload;
-}
-function collectTokenFromPayload(payload: TrackerClientPayload): string {
-  return coerceTrimmedString(payload.collectToken, 4096);
 }
 function coerceTrimmedString(input: unknown, maxLength: number): string {
   if (typeof input !== "string") return "";
@@ -378,7 +375,6 @@ function normalizeForwardPayload(
     kind,
     visitId,
   };
-  delete normalizedPayload.collectToken;
   const uaClientHints = normalizeTrackerUaClientHints(payload.uaClientHints);
   if (uaClientHints) {
     normalizedPayload.uaClientHints = uaClientHints;
@@ -487,26 +483,6 @@ export async function handleCollectRequest(
     } catch {
       logger?.warn("collect.rejected.invalid_json");
       return jsonError(origin, "Invalid JSON payload", 400);
-    }
-  }
-
-  if (payload) {
-    const siteId = normalizeSiteSettingsKey(
-      pickSiteIdFromPayload(payload, url),
-    );
-    const verify = () =>
-      verifyCollectToken({
-        env,
-        token: collectTokenFromPayload(payload),
-        siteId,
-        ip: requestIp(requestWithCf),
-      });
-    const verification = logger
-      ? await logger.measure("collect.token_verify", verify)
-      : await verify();
-    if (!verification.ok) {
-      logger?.warn(`collect.rejected.${verification.reason}`);
-      return noContent(origin);
     }
   }
 

@@ -10,7 +10,6 @@ import type {
   TrackerClientPayload,
 } from "@/lib/edge/types";
 import { deriveVisitorId } from "@/lib/edge/utils";
-import { visitorDailySaltSecret } from "@/lib/secrets";
 const receivedAt = 1_700_000_000_000;
 function makeEnvelope(
   client: Record<string, unknown>,
@@ -119,6 +118,12 @@ function makeRecentSession(
     ...overrides,
   };
 }
+function testSalt(day: string): string {
+  return `salt-${day}`;
+}
+function saltOn(eventAtMs: number): string {
+  return testSalt(new Date(eventAtMs).toISOString().slice(0, 10));
+}
 function makeContext(
   options: {
     visit?: StoredOpenVisit | null;
@@ -131,7 +136,8 @@ function makeContext(
 
   return {
     context: {
-      env: { MAIN_SECRET: "test-secret" },
+      env: {},
+      visitorSalt: testSalt,
       getVisitContext: async () => options.visit ?? null,
       findRecentVisitorSession: async () => options.recentSession ?? null,
       insertBufferedCustomEvent: (record: never) => {
@@ -148,26 +154,7 @@ function makeContext(
     },
   };
 }
-async function expectedVisitorSecret(): Promise<string> {
-  return (await visitorDailySaltSecret({ MAIN_SECRET: "test-secret" }))!;
-}
 describe("normalizeIngestRecord rejection reasons", () => {
-  it("throws when no root secret is configured for visitor identity", async () => {
-    const { context } = makeContext();
-    context.env = {} as typeof context.env;
-
-    await expect(
-      normalizeIngestRecord(
-        makeEnvelope({
-          kind: "pageview",
-          visitId: "visit-1",
-          hostname: "example.com",
-        }),
-        context,
-      ),
-    ).rejects.toThrow("MAIN_SECRET is required for visitor identity");
-  });
-
   it("rejects records missing required site, visit, hostname, or event fields", async () => {
     const { context } = makeContext();
 
@@ -253,10 +240,10 @@ describe("normalizeIngestRecord pageview records", () => {
       },
     );
     const expectedVisitorId = await deriveVisitorId({
+      salt: saltOn(receivedAt - 1_000),
+      siteId: "site-1",
       ip: "203.0.113.10",
       ua: envelope.request.headers["user-agent"]!,
-      eventAtMs: receivedAt - 1_000,
-      secret: await expectedVisitorSecret(),
     });
 
     const result = await normalizeIngestRecord(envelope, context);
@@ -297,6 +284,46 @@ describe("normalizeIngestRecord pageview records", () => {
     expect(result.record.previousVisitStartedAt).toBeNull();
   });
 
+  it("stores the source's canonical host and keeps the full referrer URL", async () => {
+    const { context } = makeContext();
+    const pageview = (hostname: string, referrerUrl: string) =>
+      normalizeIngestRecord(
+        makeEnvelope({
+          kind: "pageview",
+          visitId: "visit-1",
+          hostname,
+          referrerUrl,
+        }),
+        context,
+      );
+
+    await expect(
+      pageview("example.com", "https://www.google.co.uk/search?q=docs"),
+    ).resolves.toMatchObject({
+      record: {
+        referrerUrl: "https://www.google.co.uk/search?q=docs",
+        referrerHost: "google.com",
+      },
+    });
+    await expect(
+      pageview(
+        "example.com",
+        "android-app://com.google.android.googlequicksearchbox/",
+      ),
+    ).resolves.toMatchObject({
+      record: {
+        referrerUrl: "android-app://com.google.android.googlequicksearchbox/",
+        referrerHost: "google.com",
+      },
+    });
+    // The site's own pages are compared before the host is canonicalized.
+    await expect(
+      pageview("www.example.com", "https://www.example.com/previous"),
+    ).resolves.toMatchObject({
+      record: { referrerUrl: "", referrerHost: "" },
+    });
+  });
+
   it("rotates the visitor id with the UTC day the page view is filed under", async () => {
     const { context } = makeContext();
     const midnight = Date.UTC(2026, 10, 6);
@@ -313,10 +340,10 @@ describe("normalizeIngestRecord pageview records", () => {
     );
     const visitorOn = async (eventAtMs: number) =>
       deriveVisitorId({
+        salt: saltOn(eventAtMs),
+        siteId: "site-1",
         ip: "203.0.113.10",
         ua: envelope.request.headers["user-agent"]!,
-        eventAtMs,
-        secret: await expectedVisitorSecret(),
       });
 
     const result = await normalizeIngestRecord(envelope, context);
@@ -330,13 +357,38 @@ describe("normalizeIngestRecord pageview records", () => {
     );
   });
 
+  it("gives the same browser a different visitor id on each site", async () => {
+    const { context } = makeContext();
+    const pageviewOn = (siteId: string) =>
+      normalizeIngestRecord(
+        makeEnvelope({
+          kind: "pageview",
+          siteId,
+          visitId: "visit-1",
+          hostname: "example.com",
+        }),
+        context,
+      );
+
+    const first = await pageviewOn("site-1");
+    const second = await pageviewOn("site-2");
+
+    if (
+      first.record?.kind !== "pageview" ||
+      second.record?.kind !== "pageview"
+    ) {
+      throw new Error("Expected pageview records");
+    }
+    expect(first.record.visitorId).not.toBe(second.record.visitorId);
+  });
+
   it("ignores client visitor ids, parses cross-site referrers, and prefers client timezone", async () => {
     const { context } = makeContext();
     const expectedVisitorId = await deriveVisitorId({
+      salt: saltOn(receivedAt - 1_000),
+      siteId: "site-1",
       ip: "203.0.113.10",
       ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
-      eventAtMs: receivedAt - 1_000,
-      secret: await expectedVisitorSecret(),
     });
 
     const result = await normalizeIngestRecord(
@@ -538,10 +590,10 @@ describe("normalizeIngestRecord pageview records", () => {
       },
     );
     const expectedVisitorId = await deriveVisitorId({
+      salt: saltOn(receivedAt - 1_000),
+      siteId: "s".repeat(120),
       ip: "198.51.100.42",
       ua: "TestAgent/1.0",
-      eventAtMs: receivedAt - 1_000,
-      secret: await expectedVisitorSecret(),
     });
 
     const result = await normalizeIngestRecord(envelope, context);
@@ -638,15 +690,11 @@ describe("normalizeIngestRecord leave and visibility records", () => {
     ).resolves.toMatchObject({ record: null, reason: "missing_visit_id" });
   });
 
-  it("drops an invalid leave duration", async () => {
+  it("normalizes leave records", async () => {
     const { context } = makeContext();
 
     const result = await normalizeIngestRecord(
-      makeEnvelope({
-        kind: "leave",
-        visitId: "visit-1",
-        durationMs: "bad",
-      }),
+      makeEnvelope({ kind: "leave", visitId: "visit-1" }),
       context,
     );
 
@@ -657,34 +705,7 @@ describe("normalizeIngestRecord leave and visibility records", () => {
       visitId: "visit-1",
       receivedAt,
       leaveAt: receivedAt - 1_000,
-      durationMs: null,
       exitReason: "pagehide",
-    });
-  });
-
-  it("keeps a numeric leave duration", async () => {
-    const { context } = makeContext();
-
-    await expect(
-      normalizeIngestRecord(
-        makeEnvelope({
-          kind: "leave",
-          visitId: "visit-1",
-          durationMs: 1234.5,
-        }),
-        context,
-      ),
-    ).resolves.toEqual({
-      record: {
-        kind: "leave",
-        traceId: "trace-1",
-        siteId: "site-1",
-        visitId: "visit-1",
-        receivedAt,
-        leaveAt: receivedAt - 1_000,
-        durationMs: 1234.5,
-        exitReason: "pagehide",
-      },
     });
   });
 

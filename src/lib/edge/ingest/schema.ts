@@ -378,6 +378,7 @@ export function initializeIngestSqlSchema(
         started_at INTEGER NOT NULL,
         last_activity_at INTEGER NOT NULL,
         hidden_at INTEGER,
+        hidden_ms INTEGER NOT NULL DEFAULT 0,
         ended_at INTEGER,
         finalized_at INTEGER,
         duration_ms INTEGER,
@@ -441,6 +442,12 @@ export function initializeIngestSqlSchema(
   ensureColumn(sql, "buffered_visits", "user_id", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(sql, "buffered_visits", "user_name", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(sql, "buffered_visits", "hidden_at", "INTEGER");
+  ensureColumn(
+    sql,
+    "buffered_visits",
+    "hidden_ms",
+    "INTEGER NOT NULL DEFAULT 0",
+  );
   ensureColumn(sql, "buffered_visits", "next_due_at", "INTEGER");
   ensureColumn(sql, "buffered_visits", "flush_due_at", "INTEGER");
   ensureColumn(
@@ -580,5 +587,11 @@ export function initializeIngestSqlSchema(
   sql.exec(`
       CREATE INDEX IF NOT EXISTS idx_analytics_sessions_next_due
       ON analytics_sessions(next_due_at, session_id)
+    `);
+  sql.exec(`
+      CREATE TABLE IF NOT EXISTS visitor_salts (
+        day TEXT PRIMARY KEY,
+        salt TEXT NOT NULL
+      )
     `);
 }

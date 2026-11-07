@@ -39,5 +39,6 @@ Or declare them in HTML:
 
 - A pageview is a new path. A change to the query string alone is the same page, and so is a new `#hash` unless hash tracking is on in the site's Settings. `history.replaceState` is never a pageview.
 - A visit takes its source from its first page: the referrer and the `utm_*` tags. UTM tags are recorded even when query-string tracking is off.
-- Nothing is stored in the browser. Visitors are counted with a hash of the IP address, user agent and a salt that changes every day, so the same person on two days counts twice.
+- Nothing is stored in the browser. Visitors are counted with a hash of the IP address, user agent, site and a random salt. Each site gets a new salt every UTC day, and the old one is deleted shortly after its day ends, so a visitor ID can't be recomputed afterward or matched across sites. The same person on two days counts twice.
+- Visit duration counts only the time the page is visible. Time in a background tab is left out.
 - Only the site's domain and its subdomains are counted. Pages on `localhost`, `127.0.0.1` or `file://` send nothing. To count another domain, add it as an allowed domain (`-other.example`) in the site's blocking rules.

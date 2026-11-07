@@ -23,6 +23,8 @@ function createEnv(resultSets: Record<string, unknown>[][]): {
   const prepare = vi.fn((sql: string) => ({
     bind: vi.fn((...bindings: Binding[]) => ({
       all: vi.fn(async () => {
+        // No site has rolled-up days here, so reads take the raw path.
+        if (sql.includes("FROM visit_rollup_state")) return { results: [] };
         calls.push({ sql, bindings });
         return { results: pending.shift() ?? [] };
       }),
@@ -219,7 +221,7 @@ describe("comparison dimension readers", () => {
 
     expect(entry.items[0]?.key).toBe("/entry");
     expect(exit.items[0]?.key).toBe("/new-exit");
-    expect(calls[0]?.sql).toContain("current_ranked");
+    expect(calls[0]?.sql).toContain("session_path_rollup");
     expect(calls[1]?.sql).toContain("latest_rank");
     expect(exit.pagination.nextCursor).toEqual(expect.any(String));
   });

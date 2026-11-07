@@ -143,10 +143,7 @@ describe("edge script endpoint", () => {
         url: "https://example.com/script.js?siteId=%20site-1%20",
         ip: "203.0.113.9",
       }),
-      makeEnv({
-        MAIN_SECRET: "main-secret",
-        SCRIPT_CACHE_TTL_SECONDS: "12.9",
-      }),
+      makeEnv({ SCRIPT_CACHE_TTL_SECONDS: "12.9" }),
     );
 
     const script = await response.text();
@@ -155,11 +152,12 @@ describe("edge script endpoint", () => {
       "application/javascript; charset=utf-8",
     );
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
-    expect(response.headers.get("cache-control")).toBe("private, no-store");
-    expect(script).toMatch(
-      /^"use strict";globalThis\["__openanalytics_tracker_runtime_config__"\] = \{"siteId":"site-1","trackQueryParams":false,"trackHash":true,"ignoreDoNotTrack":false,"autoTrackOutboundLinks":true,"collectToken":"eyJ/,
+    expect(response.headers.get("cache-control")).toBe(
+      "public, max-age=12, s-maxage=12",
     );
-    expect(script).toMatch(/\ntracker-sdk$/);
+    expect(script).toBe(
+      '"use strict";globalThis["__openanalytics_tracker_runtime_config__"] = {"siteId":"site-1","trackQueryParams":false,"trackHash":true,"ignoreDoNotTrack":false,"autoTrackOutboundLinks":true};\ntracker-sdk',
+    );
     expect(storage.open).toHaveBeenCalledWith("insightflare-script-cache");
     expect(cache.match).toHaveBeenCalledTimes(1);
     expect(cache.put).toHaveBeenCalledTimes(1);
@@ -187,12 +185,14 @@ describe("edge script endpoint", () => {
 
     const response = await handleTrackerScriptRequest(
       makeRequest({}),
-      makeEnv({ MAIN_SECRET: "main-secret" }),
+      makeEnv(),
     );
 
     await expect(response.text()).resolves.toBe("cached script");
     expect(response.headers.get("x-cache-hit")).toBe("1");
-    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.headers.get("cache-control")).toBe(
+      "public, max-age=600, s-maxage=600",
+    );
     expect(cache.put).not.toHaveBeenCalled();
   });
 
@@ -207,16 +207,15 @@ describe("edge script endpoint", () => {
 
     const response = await handleTrackerScriptRequest(
       makeRequest({}),
-      makeEnv({
-        MAIN_SECRET: "main-secret",
-        SCRIPT_CACHE_TTL_SECONDS: "999999",
-      }),
+      makeEnv({ SCRIPT_CACHE_TTL_SECONDS: "999999" }),
     );
 
-    await expect(response.text()).resolves.toMatch(
-      /^globalThis\["__openanalytics_tracker_runtime_config__"\] = \{"siteId":"site-1","trackQueryParams":true,"trackHash":false,"ignoreDoNotTrack":true,"autoTrackOutboundLinks":false,"collectToken":"eyJ/,
+    await expect(response.text()).resolves.toBe(
+      'globalThis["__openanalytics_tracker_runtime_config__"] = {"siteId":"site-1","trackQueryParams":true,"trackHash":false,"ignoreDoNotTrack":true,"autoTrackOutboundLinks":false};\ntracker-sdk',
     );
-    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.headers.get("cache-control")).toBe(
+      "public, max-age=86400, s-maxage=86400",
+    );
   });
 
   it("renders scripts when the edge cache is unavailable", async () => {
@@ -227,34 +226,35 @@ describe("edge script endpoint", () => {
 
     const response = await handleTrackerScriptRequest(
       makeRequest({}),
-      makeEnv({
-        MAIN_SECRET: "main-secret",
-        SCRIPT_CACHE_TTL_SECONDS: "-1",
-      }),
+      makeEnv({ SCRIPT_CACHE_TTL_SECONDS: "-1" }),
     );
 
     await expect(response.text()).resolves.toContain('"siteId":"site-1",');
-    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.headers.get("cache-control")).toBe(
+      "public, max-age=600, s-maxage=600",
+    );
   });
 
-  it("varies script cache entries by client IP because collect tokens are IP-bound", async () => {
+  it("serves every visitor the same cached script for a site", async () => {
     const cache = {
       match: vi.fn().mockResolvedValue(null),
       put: vi.fn().mockResolvedValue(undefined),
     };
     vi.stubGlobal("caches", cacheStorageWith(cache));
+    readSiteTrackingConfigMock.mockResolvedValue(makeSettings());
 
-    await handleTrackerScriptRequest(
+    const first = await handleTrackerScriptRequest(
       makeRequest({ ip: "203.0.113.1" }),
-      makeEnv({ MAIN_SECRET: "main-secret" }),
+      makeEnv(),
     );
-    await handleTrackerScriptRequest(
+    const second = await handleTrackerScriptRequest(
       makeRequest({ ip: "203.0.113.2" }),
-      makeEnv({ MAIN_SECRET: "main-secret" }),
+      makeEnv(),
     );
 
     const firstKey = (cache.match.mock.calls[0]![0] as Request).url;
     const secondKey = (cache.match.mock.calls[1]![0] as Request).url;
-    expect(firstKey).not.toBe(secondKey);
+    expect(firstKey).toBe(secondKey);
+    await expect(first.text()).resolves.toBe(await second.text());
   });
 });

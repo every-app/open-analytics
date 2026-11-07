@@ -2,6 +2,7 @@ import type { DatabaseSync } from "node:sqlite";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { loadMigrations } from "@/../scripts/schema/database";
 import { createDatabaseRuntime } from "@/lib/db";
 import {
   createRollupTestEnv,
@@ -212,5 +213,53 @@ describe("rollup rebuilds and retention", () => {
         "SELECT retention_reached_day AS n FROM visit_rollup_state WHERE site_pk = 1",
       ),
     ).toBe(after);
+  });
+
+  it("rebuilds the channels of rolled-up days retention hasn't reached after the channel rules change", async () => {
+    const { database, env } = setup([1]);
+    const [reached, open] = [CUTOFF_DAY + 1, CUTOFF_DAY + 2];
+    for (const day of [reached, open]) {
+      insertPageViews(database, 1, day, 2, "hn");
+    }
+    database.exec(
+      "UPDATE visits SET referrer_host = 'news.ycombinator.com' WHERE site_pk = 1",
+    );
+    await runVisitRollups(env, NOW);
+    // The days as the old rules rolled them up, with retention at the first.
+    database.exec(
+      "UPDATE visit_daily_dimension_rollups SET value = 'referral' WHERE dimension = 'source.channel'",
+    );
+    database
+      .prepare(
+        "UPDATE visit_rollup_state SET retention_reached_day = ? WHERE site_pk = 1",
+      )
+      .run(reached);
+    const channels = () =>
+      database
+        .prepare(
+          `SELECT day, value FROM visit_daily_dimension_rollups
+           WHERE site_pk = 1 AND dimension = 'source.channel' ORDER BY day`,
+        )
+        .all();
+
+    database.exec(
+      loadMigrations().find(
+        (migration) => migration.file === "0006_rebuild_channel_rollups.sql",
+      )!.sql,
+    );
+
+    expect(
+      database
+        .prepare("SELECT site_pk, day FROM visit_rollup_dirty_days")
+        .all(),
+    ).toEqual([{ site_pk: 1, day: open }]);
+    await runVisitRollups(env, NOW);
+    expect(channels()).toEqual([
+      { day: reached, value: "referral" },
+      { day: open, value: "social" },
+    ]);
+    expect(
+      count(database, "SELECT COUNT(*) AS n FROM visit_rollup_dirty_days"),
+    ).toBe(0);
   });
 });

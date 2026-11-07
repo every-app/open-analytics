@@ -72,7 +72,6 @@ export interface TrackerClientPayload {
   screenWidth?: number;
   screenHeight?: number;
   referrerUrl?: string;
-  durationMs?: number;
   exitReason?: string;
   visibilityState?: string;
   eventName?: string;
@@ -83,7 +82,6 @@ export interface TrackerClientPayload {
   utmTerm?: string;
   utmContent?: string;
   uaClientHints?: TrackerUaClientHints;
-  collectToken?: string;
 }
 
 export interface IngestEnvelope {
@@ -154,7 +152,6 @@ export interface NormalizedLeave {
   visitId: string;
   receivedAt: number;
   leaveAt: number;
-  durationMs: number | null;
   exitReason: string;
 }
 

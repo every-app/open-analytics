@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { issueCollectToken } from "@/lib/edge/auth/collect-token";
 import {
   handleCollectOptionsRequest,
   handleCollectRequest,
@@ -48,19 +47,9 @@ const env = {
 const ctx = {
   waitUntil: vi.fn(),
 };
-async function makePayload(overrides: Record<string, unknown> = {}) {
-  const tokenSiteId = String(
-    overrides.collectTokenSiteId ?? overrides.siteId ?? "site-1",
-  );
-  const siteId = String(overrides.siteId ?? "site-1");
-  const tokenIp = String(overrides.collectTokenIp ?? "203.0.113.10");
-  const {
-    collectTokenSiteId: _collectTokenSiteId,
-    collectTokenIp: _collectTokenIp,
-    ...payloadOverrides
-  } = overrides;
+function makePayload(overrides: Record<string, unknown> = {}) {
   return {
-    siteId,
+    siteId: "site-1",
     kind: "pageview",
     visitId: "visit-1",
     previousVisitId: "previous-visit-1",
@@ -68,12 +57,7 @@ async function makePayload(overrides: Record<string, unknown> = {}) {
     pathname: "/pricing?plan=pro#hero",
     hostname: "Example.COM.",
     timestamp: 1_800_000_000_000,
-    collectToken: await issueCollectToken({
-      env,
-      siteId: tokenSiteId.trim() || "default",
-      ip: tokenIp,
-    }),
-    ...payloadOverrides,
+    ...overrides,
   };
 }
 function makeRuntimeRequest(input: {
@@ -239,7 +223,7 @@ describe("collect route", () => {
   it("rejects custom event payloads with invalid eventData before forwarding", async () => {
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload({
+      body: makePayload({
         kind: "custom_event",
         eventName: "Signup",
         eventData: ["not", "an", "object"],
@@ -265,7 +249,7 @@ describe("collect route", () => {
   it("returns a controlled validation error when custom event payloads omit eventData", async () => {
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload({
+      body: makePayload({
         kind: "custom_event",
         eventName: "Signup",
       }),
@@ -289,7 +273,7 @@ describe("collect route", () => {
 
   it("rejects custom event payloads when eventData cannot be JSON serialized", async () => {
     const body = JSON.stringify(
-      await makePayload({
+      makePayload({
         kind: "custom_event",
         eventName: "Signup",
         eventData: { explode: true },
@@ -335,7 +319,7 @@ describe("collect route", () => {
   it("blocks bot traffic by default", async () => {
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload(),
+      body: makePayload(),
       headers: {
         "user-agent": "Googlebot/2.1",
       },
@@ -360,7 +344,7 @@ describe("collect route", () => {
     });
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload(),
+      body: makePayload(),
       headers: {
         "user-agent": "Googlebot/2.1",
       },
@@ -385,7 +369,7 @@ describe("collect route", () => {
     });
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload(),
+      body: makePayload(),
       headers: {
         "user-agent": CHROME_UA,
       },
@@ -411,7 +395,7 @@ describe("collect route", () => {
     });
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload(),
+      body: makePayload(),
       headers: {
         "user-agent": CHROME_UA,
       },
@@ -430,53 +414,12 @@ describe("collect route", () => {
     expect(ctx.waitUntil).toHaveBeenCalledTimes(1);
   });
 
-  it("drops direct collect requests without a valid collect token", async () => {
-    const request = makeRuntimeRequest({
-      origin: "https://example.com",
-      body: {
-        ...(await makePayload()),
-        collectToken: "",
-      },
-    });
-
-    const response = await handleCollectRequest(
-      request,
-      env as never,
-      ctx as never,
-      new URL(request.url),
-    );
-
-    expect(response.status).toBe(204);
-    expect(readSiteTrackingConfigMock).not.toHaveBeenCalled();
-    expect(env.INGEST_DO.idFromName).not.toHaveBeenCalled();
-    expect(env.INGEST_DO.get).not.toHaveBeenCalled();
-  });
-
-  it("drops collect requests when the token IP does not match the request IP", async () => {
-    const request = makeRuntimeRequest({
-      origin: "https://example.com",
-      body: await makePayload({ collectTokenIp: "203.0.113.20" }),
-    });
-
-    const response = await handleCollectRequest(
-      request,
-      env as never,
-      ctx as never,
-      new URL(request.url),
-    );
-
-    expect(response.status).toBe(204);
-    expect(readSiteTrackingConfigMock).not.toHaveBeenCalled();
-    expect(env.INGEST_DO.idFromName).not.toHaveBeenCalled();
-    expect(env.INGEST_DO.get).not.toHaveBeenCalled();
-  });
-
   it("drops empty, malformed, and unsupported payloads with no forwarding", async () => {
     const scenarios: unknown[] = [
       undefined,
       null,
       [],
-      await makePayload({ kind: "screenview" }),
+      makePayload({ kind: "screenview" }),
     ];
 
     for (const body of scenarios) {
@@ -508,7 +451,7 @@ describe("collect route", () => {
       }
       const request = makeRuntimeRequest({
         origin: "https://example.com",
-        body: await makePayload(),
+        body: makePayload(),
       });
 
       const response = await handleCollectRequest(
@@ -532,7 +475,7 @@ describe("collect route", () => {
     });
     const request = makeRuntimeRequest({
       origin: "https://blocked.example",
-      body: await makePayload(),
+      body: makePayload(),
     });
 
     const response = await handleCollectRequest(
@@ -557,7 +500,7 @@ describe("collect route", () => {
     });
     const request = makeRuntimeRequest({
       origin: "file:///Users/example/page.html",
-      body: await makePayload(),
+      body: makePayload(),
     });
 
     const response = await handleCollectRequest(
@@ -580,7 +523,7 @@ describe("collect route", () => {
     });
     const request = makeRuntimeRequest({
       origin: "https://Allowed.Example.",
-      body: await makePayload(),
+      body: makePayload(),
     });
 
     const response = await handleCollectRequest(
@@ -605,7 +548,7 @@ describe("collect route", () => {
     });
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload({
+      body: makePayload({
         pathname: "https://example.com/private/account?tab=billing",
       }),
     });
@@ -691,7 +634,7 @@ describe("collect route", () => {
         origin: "https://example.com",
         headers: item.headers as unknown as HeadersInit,
         cf: item.cf,
-        body: await makePayload(item.payload),
+        body: makePayload(item.payload),
       });
 
       const response = await handleCollectRequest(
@@ -713,7 +656,7 @@ describe("collect route", () => {
       const logger = makeLogger();
       const request = makeRuntimeRequest({
         origin: `https://${hostname}`,
-        body: await makePayload({ hostname }),
+        body: makePayload({ hostname }),
       });
 
       const response = await handleCollectRequest(
@@ -745,7 +688,7 @@ describe("collect route", () => {
       });
       const request = makeRuntimeRequest({
         origin: `https://${hostname}`,
-        body: await makePayload({ hostname }),
+        body: makePayload({ hostname }),
       });
 
       const response = await handleCollectRequest(
@@ -767,7 +710,7 @@ describe("collect route", () => {
     });
     const request = makeRuntimeRequest({
       origin: "https://other.com",
-      body: await makePayload({ hostname: "other.com" }),
+      body: makePayload({ hostname: "other.com" }),
     });
 
     const response = await handleCollectRequest(
@@ -793,7 +736,7 @@ describe("collect route", () => {
     });
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload(),
+      body: makePayload(),
     });
 
     const response = await handleCollectRequest(
@@ -811,7 +754,7 @@ describe("collect route", () => {
   it("forwards normalized pageview payloads to the ingest Durable Object", async () => {
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload({
+      body: makePayload({
         siteId: "  site-1  ",
         pathname: "pricing//plans?from=nav#hero",
         hostname: "Example.COM.",
@@ -885,7 +828,7 @@ describe("collect route", () => {
   it("removes literal tab and Unicode whitespace before ingest forwarding", async () => {
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload({
+      body: makePayload({
         pathname: "pricing\t/plan\u00a0\u3000",
       }),
       headers: { "user-agent": CHROME_UA },
@@ -909,7 +852,7 @@ describe("collect route", () => {
       pathBlacklist: ["", "/private"],
     });
     const request = makeRuntimeRequest({
-      body: await makePayload({
+      body: makePayload({
         pathname: "?utm_source=newsletter",
       }),
     });
@@ -935,8 +878,7 @@ describe("collect route", () => {
     const request = makeRuntimeRequest({
       url: "https://collector.test/collect?siteId=query-site",
       origin: "https://example.com",
-      body: await makePayload({
-        collectTokenSiteId: "query-site",
+      body: makePayload({
         siteId: "",
         kind: "visibility",
         visibilityState: "hidden",
@@ -969,7 +911,7 @@ describe("collect route", () => {
   it("uses the default siteId when the payload and query omit one", async () => {
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload({
+      body: makePayload({
         siteId: "",
         kind: "leave",
         pathname: "",
@@ -998,7 +940,7 @@ describe("collect route", () => {
   it("rejects whitespace-only siteIds before reading settings", async () => {
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload({
+      body: makePayload({
         siteId: "   ",
       }),
     });
@@ -1018,7 +960,7 @@ describe("collect route", () => {
   it("forwards custom events after event name normalization", async () => {
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload({
+      body: makePayload({
         kind: "custom_event",
         eventName: "  Trial Started  ",
         eventData: {
@@ -1053,7 +995,7 @@ describe("collect route", () => {
   it("forwards visibility events after state and path normalization", async () => {
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload({
+      body: makePayload({
         kind: "visibility",
         visibilityState: "hidden",
         pathname: "https://example.com/docs/page?tab=one",
@@ -1090,7 +1032,7 @@ describe("collect route", () => {
     const expectedTraceId = `${Date.now().toString(36)}-i`;
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload(),
+      body: makePayload(),
     });
 
     const response = await handleCollectRequest(
@@ -1122,7 +1064,7 @@ describe("collect route", () => {
     for (const overrides of scenarios) {
       const request = makeRuntimeRequest({
         origin: "https://example.com",
-        body: await makePayload(overrides),
+        body: makePayload(overrides),
       });
 
       const response = await handleCollectRequest(
@@ -1146,7 +1088,7 @@ describe("collect route", () => {
     });
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload(),
+      body: makePayload(),
     });
 
     const response = await handleCollectRequest(
@@ -1169,7 +1111,7 @@ describe("collect route", () => {
     });
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload(),
+      body: makePayload(),
     });
 
     const response = await handleCollectRequest(
@@ -1194,7 +1136,7 @@ describe("collect route", () => {
     });
     const request = makeRuntimeRequest({
       origin: "https://example.com",
-      body: await makePayload(),
+      body: makePayload(),
     });
 
     const response = await handleCollectRequest(

@@ -606,6 +606,7 @@ overview:
   direct: Direct
   channelLabels:
     direct: Direct
+    ai_assistants: AI assistants
     organic_search: Organic search
     social: Social
     paid_search: Paid search

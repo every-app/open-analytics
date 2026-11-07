@@ -8,6 +8,7 @@ import {
   MousePointerIcon,
   SearchIcon,
   ShareIcon,
+  SparklesIcon,
   TagIcon,
 } from "lucide-react";
 
@@ -15,6 +16,8 @@ import type { TrafficChannelId } from "@/lib/analytics/traffic-channel-rules";
 export function TrafficChannelIcon({ channel }: { channel: TrafficChannelId }) {
   const className = "size-4 text-muted-foreground";
   switch (channel) {
+    case "ai_assistants":
+      return <SparklesIcon className={className} />;
     case "organic_search":
       return <SearchIcon className={className} />;
     case "social":

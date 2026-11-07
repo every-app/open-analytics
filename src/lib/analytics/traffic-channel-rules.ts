@@ -1,11 +1,12 @@
 /**
- * Shared acquisition rules used by dashboard presets and channel aggregation.
- * Keep the domain lists and the discovery-tag policy here so both consumers
- * evolve together.
+ * How a visit's source maps to a channel. The SQL expression and
+ * classifyTrafficChannel apply the same rules in the same order, from the
+ * same lists; keep both here.
  */
 
 export const TRAFFIC_CHANNEL_IDS = [
   "direct",
+  "ai_assistants",
   "organic_search",
   "social",
   "paid_search",
@@ -19,7 +20,6 @@ export const TRAFFIC_CHANNEL_IDS = [
 ] as const;
 
 export type TrafficChannelId = (typeof TRAFFIC_CHANNEL_IDS)[number];
-export type DiscoveryChannelId = "organic_search" | "social";
 
 export interface TrafficChannelSqlColumns {
   readonly referrerHost?: string;
@@ -28,152 +28,75 @@ export interface TrafficChannelSqlColumns {
   readonly utmCampaign?: string;
 }
 
-export const TRAFFIC_CHANNEL_RULES: Readonly<
-  Record<
-    DiscoveryChannelId,
-    {
-      readonly referrerDomains: readonly string[];
-      readonly requiresUntaggedCampaign: true;
-    }
-  >
-> = {
-  organic_search: {
-    referrerDomains: [
-      // Google uses country-specific registrable domains rather than one suffix.
-      "google.com",
-      "google.com.hk",
-      "google.co.uk",
-      "google.co.jp",
-      "google.de",
-      "google.fr",
-      "google.ca",
-      "google.com.au",
-      "google.co.in",
-      "google.com.br",
-      "google.es",
-      "google.it",
-      "google.nl",
-      "google.pl",
-      "google.com.mx",
-      "google.com.tr",
-      "google.com.sg",
-      "google.co.kr",
-      "google.co.id",
-      "google.com.tw",
-      "bing.com",
-      "duckduckgo.com",
-      "search.yahoo.com",
-      "search.yahoo.co.jp",
-      "baidu.com",
-      "yandex.ru",
-      "yandex.com",
-      "ecosia.org",
-      "naver.com",
-      "sogou.com",
-      "so.com",
-    ],
-    requiresUntaggedCampaign: true,
-  },
-  social: {
-    referrerDomains: [
-      "linkedin.com",
-      "facebook.com",
-      "instagram.com",
-      "twitter.com",
-      "x.com",
-      "reddit.com",
-      "tiktok.com",
-      "youtube.com",
-      "pinterest.com",
-      "weibo.com",
-      "zhihu.com",
-    ],
-    requiresUntaggedCampaign: true,
-  },
-};
+/*
+ * Source domains, as SQLite GLOB patterns: each matches the host itself and
+ * its subdomains. Ingest stores a source's canonical host (source-host.ts);
+ * the variants older page views kept are listed too, so they classify the
+ * same.
+ */
 
-const CAMPAIGN_UTM_FIELDS = ["source", "medium", "campaign"] as const;
+const AI_ASSISTANT_DOMAINS = [
+  "chatgpt.com",
+  "chat.openai.com",
+  "perplexity.ai",
+  "claude.ai",
+  "gemini.google.com",
+  "copilot.microsoft.com",
+  "chat.deepseek.com",
+  "chat.mistral.ai",
+  "grok.com",
+  "meta.ai",
+  "poe.com",
+] as const;
 
-function buildDomainFilterDsl(channel: DiscoveryChannelId): string {
-  const rule = TRAFFIC_CHANNEL_RULES[channel];
-  return `(${rule.referrerDomains
-    .map(
-      (domain) =>
-        `(referrer.domain eq ${JSON.stringify(domain)} OR referrer.domain endsWith ${JSON.stringify(`.${domain}`)})`,
-    )
-    .join(" OR ")})`;
-}
+const SEARCH_ENGINE_DOMAINS = [
+  "google.com",
+  // Google's country domains: google.de, google.co.uk, google.com.hk.
+  "google.[a-z][a-z]",
+  "google.co.[a-z][a-z]",
+  "google.com.[a-z][a-z]",
+  // The Google app on Android.
+  "com.google.android.googlequicksearchbox",
+  "bing.com",
+  "duckduckgo.com",
+  "search.yahoo.com",
+  "search.yahoo.co.jp",
+  "baidu.com",
+  "yandex.ru",
+  "yandex.com",
+  "ecosia.org",
+  "naver.com",
+  "sogou.com",
+  "so.com",
+  "search.brave.com",
+  "startpage.com",
+  "qwant.com",
+  "kagi.com",
+] as const;
 
-function buildUntaggedCampaignFilterDsl(): string {
-  return `(${CAMPAIGN_UTM_FIELDS.map(
-    (field) => `(utm.${field} notExists OR utm.${field} isEmpty)`,
-  ).join(" AND ")})`;
-}
+const SOCIAL_DOMAINS = [
+  "facebook.com",
+  "instagram.com",
+  "threads.net",
+  "threads.com",
+  "x.com",
+  "twitter.com",
+  "t.co",
+  "linkedin.com",
+  "lnkd.in",
+  "reddit.com",
+  "youtube.com",
+  "youtu.be",
+  "tiktok.com",
+  "pinterest.com",
+  "bsky.app",
+  "mastodon.social",
+  "news.ycombinator.com",
+  "weibo.com",
+  "zhihu.com",
+] as const;
 
-export function buildDomainDiscoveryFilterDsl(
-  channel: DiscoveryChannelId,
-): string {
-  const rule = TRAFFIC_CHANNEL_RULES[channel];
-  const domainExpression = buildDomainFilterDsl(channel);
-  return rule.requiresUntaggedCampaign
-    ? `${domainExpression} AND ${buildUntaggedCampaignFilterDsl()}`
-    : domainExpression;
-}
-
-export function buildCombinedDiscoveryFilterDsl(
-  channels: readonly DiscoveryChannelId[],
-): string {
-  if (channels.length === 0) return "false";
-  const domainExpression = channels.map(buildDomainFilterDsl).join(" OR ");
-  const requiresUntaggedCampaign = channels.some(
-    (channel) => TRAFFIC_CHANNEL_RULES[channel].requiresUntaggedCampaign,
-  );
-  return requiresUntaggedCampaign
-    ? `(${domainExpression}) AND ${buildUntaggedCampaignFilterDsl()}`
-    : `(${domainExpression})`;
-}
-
-export function buildDomainDiscoverySqlPredicate(
-  channel: DiscoveryChannelId,
-  column = "referrer_host",
-  columns: TrafficChannelSqlColumns = {},
-): string {
-  const rule = TRAFFIC_CHANNEL_RULES[channel];
-  const normalizedColumn = `LOWER(TRIM(COALESCE(${column}, '')))`;
-  const domainExpression = `(${rule.referrerDomains
-    .map(
-      (domain) =>
-        `(${normalizedColumn}=LOWER('${domain}') OR ${normalizedColumn} LIKE LOWER('%.${domain}'))`,
-    )
-    .join(" OR ")})`;
-
-  if (!rule.requiresUntaggedCampaign) return domainExpression;
-  return `${domainExpression} AND ${buildUntaggedCampaignSqlPredicate(columns)}`;
-}
-
-export function buildUntaggedCampaignSqlPredicate(
-  columns: TrafficChannelSqlColumns = {},
-): string {
-  const utmSource = columns.utmSource ?? "utm_source";
-  const utmMedium = columns.utmMedium ?? "utm_medium";
-  const utmCampaign = columns.utmCampaign ?? "utm_campaign";
-  return `TRIM(COALESCE(${utmSource}, '')) = ''
-    AND TRIM(COALESCE(${utmMedium}, '')) = ''
-    AND TRIM(COALESCE(${utmCampaign}, '')) = ''`;
-}
-
-export function buildTaggedCampaignSqlPredicate(
-  columns: TrafficChannelSqlColumns = {},
-): string {
-  const utmSource = columns.utmSource ?? "utm_source";
-  const utmMedium = columns.utmMedium ?? "utm_medium";
-  const utmCampaign = columns.utmCampaign ?? "utm_campaign";
-  return `TRIM(COALESCE(${utmSource}, '')) != ''
-    OR TRIM(COALESCE(${utmMedium}, '')) != ''
-    OR TRIM(COALESCE(${utmCampaign}, '')) != ''`;
-}
-
-export const UTM_CHANNEL_MEDIUMS = {
+const UTM_CHANNEL_MEDIUMS = {
   paid_search: ["cpc", "ppc", "paidsearch", "paid-search"],
   paid_social: ["paid_social", "paid-social", "social_ads", "social-ads"],
   display: ["display", "banner", "programmatic"],
@@ -184,58 +107,89 @@ export const UTM_CHANNEL_MEDIUMS = {
   Record<
     Exclude<
       TrafficChannelId,
-      DiscoveryChannelId | "direct" | "referral" | "campaign"
+      | "ai_assistants"
+      | "organic_search"
+      | "social"
+      | "direct"
+      | "referral"
+      | "campaign"
     >,
     readonly string[]
   >
 >;
 
-export type UtmMediumChannel = keyof typeof UTM_CHANNEL_MEDIUMS;
+type UtmMediumChannel = keyof typeof UTM_CHANNEL_MEDIUMS;
 
-export function buildUtmMediumSqlPredicate(
-  channel: UtmMediumChannel,
-  column = "utm_medium",
-): string {
-  const normalizedColumn = `LOWER(TRIM(COALESCE(${column}, '')))`;
-  return `(${UTM_CHANNEL_MEDIUMS[channel]
-    .map((medium) => `${normalizedColumn}=LOWER('${medium}')`)
+const UTM_MEDIUM_CHANNELS = Object.entries(UTM_CHANNEL_MEDIUMS) as Array<
+  [UtmMediumChannel, readonly string[]]
+>;
+
+function normalizedSql(column: string): string {
+  return `LOWER(TRIM(COALESCE(${column}, '')))`;
+}
+
+function blankSql(column: string): string {
+  return `TRIM(COALESCE(${column}, '')) = ''`;
+}
+
+function domainSql(column: string, domains: readonly string[]): string {
+  const value = normalizedSql(column);
+  return `(${domains
+    .map((domain) => `${value} GLOB '${domain}' OR ${value} GLOB '*.${domain}'`)
     .join(" OR ")})`;
 }
 
 /**
- * Builds the derived channel expression for a visit row. Callers may provide
- * qualified columns so the same precedence can be used in filters and
- * aggregates without duplicating the classification logic.
+ * The derived channel of a visit row, in this order:
+ *
+ * 1. AI assistants: the referrer or utm_source is an AI assistant, with no
+ *    utm_medium or utm_campaign. ChatGPT tags its links
+ *    `utm_source=chatgpt.com`. It comes first because gemini.google.com is
+ *    also a Google host.
+ * 2. Organic search, then social: the referrer's domain, with no UTM tags.
+ * 3. The channel of a known utm_medium, then Campaign for any other tags.
+ * 4. Referral when there is a referrer, else Direct.
+ *
+ * Callers may pass qualified columns so filters and aggregates share it.
  */
 export function buildTrafficChannelSqlExpression(
   columns: TrafficChannelSqlColumns = {},
 ): string {
   const referrerHost = columns.referrerHost ?? "referrer_host";
+  const utmSource = columns.utmSource ?? "utm_source";
   const utmMedium = columns.utmMedium ?? "utm_medium";
-  const mappedMediums = (
-    Object.keys(UTM_CHANNEL_MEDIUMS) as Array<keyof typeof UTM_CHANNEL_MEDIUMS>
-  )
-    .map(
-      (channel) =>
-        `WHEN ${buildUtmMediumSqlPredicate(channel, utmMedium)} THEN '${channel}'`,
-    )
-    .join("\n    ");
+  const utmCampaign = columns.utmCampaign ?? "utm_campaign";
+  const untagged = `${blankSql(utmSource)} AND ${blankSql(utmMedium)} AND ${blankSql(utmCampaign)}`;
+  const mediums = UTM_MEDIUM_CHANNELS.map(
+    ([channel, values]) =>
+      `WHEN ${normalizedSql(utmMedium)} IN (${values.map((value) => `'${value}'`).join(", ")}) THEN '${channel}'`,
+  ).join("\n    ");
 
   return `CASE
-    WHEN ${buildDomainDiscoverySqlPredicate(
-      "organic_search",
-      referrerHost,
-      columns,
-    )} THEN 'organic_search'
-    WHEN ${buildDomainDiscoverySqlPredicate("social", referrerHost, columns)} THEN 'social'
-    ${mappedMediums}
-    WHEN ${buildTaggedCampaignSqlPredicate(columns)} THEN 'campaign'
-    WHEN TRIM(COALESCE(${referrerHost}, '')) != '' THEN 'referral'
-    WHEN ${buildUntaggedCampaignSqlPredicate(columns)}
-      AND TRIM(COALESCE(${referrerHost}, '')) = '' THEN 'direct'
-    ELSE 'other'
+    WHEN ${blankSql(utmMedium)} AND ${blankSql(utmCampaign)}
+      AND (${domainSql(referrerHost, AI_ASSISTANT_DOMAINS)}
+        OR ${domainSql(utmSource, AI_ASSISTANT_DOMAINS)}) THEN 'ai_assistants'
+    WHEN ${untagged}
+      AND ${domainSql(referrerHost, SEARCH_ENGINE_DOMAINS)} THEN 'organic_search'
+    WHEN ${untagged}
+      AND ${domainSql(referrerHost, SOCIAL_DOMAINS)} THEN 'social'
+    ${mediums}
+    WHEN NOT (${untagged}) THEN 'campaign'
+    WHEN NOT ${blankSql(referrerHost)} THEN 'referral'
+    ELSE 'direct'
   END`;
 }
+
+/** domainSql's twin: GLOB's `[a-z]` is a regular expression class too. */
+function domainPattern(domains: readonly string[]): RegExp {
+  return new RegExp(
+    `(?:^|\\.)(?:${domains.map((domain) => domain.replaceAll(".", "\\.")).join("|")})$`,
+  );
+}
+
+const AI_ASSISTANT_PATTERN = domainPattern(AI_ASSISTANT_DOMAINS);
+const SEARCH_ENGINE_PATTERN = domainPattern(SEARCH_ENGINE_DOMAINS);
+const SOCIAL_PATTERN = domainPattern(SOCIAL_DOMAINS);
 
 export interface TrafficChannelAttributionInput {
   readonly referrerHost?: string | null;
@@ -250,13 +204,9 @@ function normalizeAttributionValue(value: string | null | undefined): string {
     .toLowerCase();
 }
 
-function matchesReferrerDomain(host: string, domain: string): boolean {
-  return host === domain || host.endsWith(`.${domain}`);
-}
-
 /**
- * Classify an individual visit using the same precedence as the SQL channel
- * aggregate. This is used by demo data, where aggregation happens in memory.
+ * Classify one visit as buildTrafficChannelSqlExpression does, for filters
+ * evaluated in memory.
  */
 export function classifyTrafficChannel(
   input: TrafficChannelAttributionInput,
@@ -267,23 +217,22 @@ export function classifyTrafficChannel(
   const utmCampaign = normalizeAttributionValue(input.utmCampaign);
   const isUntagged = !utmSource && !utmMedium && !utmCampaign;
 
-  if (isUntagged) {
-    for (const channel of ["organic_search", "social"] as const) {
-      if (
-        TRAFFIC_CHANNEL_RULES[channel].referrerDomains.some((domain) =>
-          matchesReferrerDomain(referrerHost, domain),
-        )
-      ) {
-        return channel;
-      }
-    }
+  if (
+    !utmMedium &&
+    !utmCampaign &&
+    (AI_ASSISTANT_PATTERN.test(referrerHost) ||
+      AI_ASSISTANT_PATTERN.test(utmSource))
+  ) {
+    return "ai_assistants";
   }
+  if (isUntagged && SEARCH_ENGINE_PATTERN.test(referrerHost)) {
+    return "organic_search";
+  }
+  if (isUntagged && SOCIAL_PATTERN.test(referrerHost)) return "social";
 
-  const mediumChannel = (
-    Object.entries(UTM_CHANNEL_MEDIUMS) as Array<
-      [UtmMediumChannel, readonly string[]]
-    >
-  ).find(([, mediums]) => mediums.includes(utmMedium));
+  const mediumChannel = UTM_MEDIUM_CHANNELS.find(([, mediums]) =>
+    mediums.includes(utmMedium),
+  );
   if (mediumChannel) return mediumChannel[0];
   if (!isUntagged) return "campaign";
   if (referrerHost) return "referral";

@@ -35,6 +35,7 @@ import {
   VISIT_TIMEOUT_MS,
   WS_PRESENCE_LEAVE_EVENT,
 } from "./constants";
+import { ENGAGED_DURATION_AT_SQL, engagedDurationMs } from "./engaged-time";
 import {
   cleanupBufferedRows as cleanupBufferedRowsInFlushStore,
   flushPendingToD1 as flushPendingToD1InFlushStore,
@@ -65,6 +66,7 @@ import {
   hasOpenVisitsForVisitor,
   readVisitCleanupDueAt,
 } from "./visit-cleanup-query";
+import { deleteExpiredVisitorSalts, visitorSaltFor } from "./visitor-salts";
 import {
   getDurableObjectWebSockets,
   WEBSOCKET_ATTACHMENT_VERSION,
@@ -162,6 +164,9 @@ export class IngestDurableObject extends DurableObject {
 
     if (url.pathname === "/reconcile" && request.method === "POST") {
       logger.info("do.alarm.reconcile_internal_started");
+      // The every-30-minutes sweep calls this on every site, so a quiet
+      // site's salt is still deleted soon after its day ends.
+      deleteExpiredVisitorSalts(this.sql, Date.now());
       await this.reconcileAlarm(logger);
       logger.info("do.alarm.reconcile_internal_completed");
       return jsonResponse({ ok: true });
@@ -546,6 +551,7 @@ export class IngestDurableObject extends DurableObject {
   ): Promise<NormalizeResult> {
     return normalizeIngestRecord(envelope, {
       env: this.doEnv,
+      visitorSalt: (day) => visitorSaltFor(this.sql, day, Date.now()),
       getVisitContext: this.getVisitContext.bind(this),
       findRecentVisitorSession: this.findRecentVisitorSession.bind(this),
       insertBufferedCustomEvent: this.insertBufferedCustomEvent.bind(this),
@@ -560,19 +566,15 @@ export class IngestDurableObject extends DurableObject {
 
     if (record.previousVisitId && record.previousVisitStartedAt !== null) {
       const flushDueAt = record.receivedAt + D1_FLUSH_INTERVAL_MS;
-      const durationMs = Math.max(
-        0,
-        record.startedAt - record.previousVisitStartedAt,
-      );
       const closedPrevious = this.sqlRun(
         `
           UPDATE buffered_visits
           SET status = 'complete',
               last_activity_at = ?,
-              hidden_at = NULL,
               ended_at = ?,
               finalized_at = ?,
-              duration_ms = ?,
+              duration_ms = ${ENGAGED_DURATION_AT_SQL},
+              hidden_at = NULL,
               duration_source = 'server',
               dirty = 1,
               buffer_revision = buffer_revision + 1,
@@ -590,7 +592,8 @@ export class IngestDurableObject extends DurableObject {
         record.startedAt,
         record.startedAt,
         record.startedAt,
-        durationMs,
+        record.startedAt,
+        record.startedAt,
         flushDueAt,
         flushDueAt,
         flushDueAt,
@@ -854,6 +857,7 @@ export class IngestDurableObject extends DurableObject {
       longitude: number | null;
       status: string;
       hiddenAt: number | null;
+      hiddenMs: number;
     }>(
       `
         SELECT visit_id AS visitId, started_at AS startedAt, visitor_id AS visitorId, site_id AS siteId,
@@ -878,7 +882,7 @@ export class IngestDurableObject extends DurableObject {
                latitude, longitude, ended_at AS endedAt, finalized_at AS finalizedAt,
                duration_ms AS durationMs, duration_source AS durationSource,
                exit_reason AS exitReason,
-               status, hidden_at AS hiddenAt
+               status, hidden_at AS hiddenAt, hidden_ms AS hiddenMs
         FROM buffered_visits
         WHERE site_id = ? AND visit_id = ? AND status IN ('open', 'hidden_pending')
         LIMIT 1
@@ -902,7 +906,12 @@ export class IngestDurableObject extends DurableObject {
         hiddenAt !== null && reportedLeaveAt - hiddenAt > HIDDEN_LEAVE_GRACE_MS;
       const leaveAt = useHiddenFallback ? hiddenAt : reportedLeaveAt;
       closedLeaveAt = leaveAt;
-      const durationMs = Math.max(0, leaveAt - visit.startedAt);
+      const durationMs = engagedDurationMs({
+        startedAt: visit.startedAt,
+        endAt: leaveAt,
+        hiddenAt,
+        hiddenMs: visit.hiddenMs,
+      });
       const durationSource = useHiddenFallback ? "hidden" : "server";
       const exitReason = useHiddenFallback
         ? "hidden_timeout"
@@ -1119,6 +1128,10 @@ export class IngestDurableObject extends DurableObject {
       `
         UPDATE buffered_visits
         SET status = 'open',
+            hidden_ms = hidden_ms + CASE
+              WHEN hidden_at IS NULL THEN 0
+              ELSE MAX(0, ? - MAX(hidden_at, started_at))
+            END,
             hidden_at = NULL,
             last_activity_at = CASE WHEN last_activity_at > ? THEN last_activity_at ELSE ? END,
             dirty = 1,
@@ -1140,6 +1153,7 @@ export class IngestDurableObject extends DurableObject {
           AND status = 'hidden_pending'
           AND (hidden_at IS NULL OR ? - hidden_at <= ?)
       `,
+      record.eventAt,
       record.eventAt,
       record.eventAt,
       flushDueAt,

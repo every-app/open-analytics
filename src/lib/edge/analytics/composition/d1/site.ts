@@ -15,6 +15,7 @@ import {
   queryComparisonSessionPathPageFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/comparison-dimensions";
 import {
+  DIRECT_REFERRER_FILTER_VALUE,
   geoTabLabel,
   mapDimensionRows,
   mapGeoTabs,
@@ -23,7 +24,6 @@ import {
 import {
   cityValueExpr,
   clientDimensionDefinition,
-  referrerDomainDimensionDefinition,
   regionValueExpr,
   utmDimensionDefinition,
 } from "@/lib/edge/analytics/providers/d1/internal/core-dimensions";
@@ -54,13 +54,16 @@ import {
   stringField,
   timeWindow,
 } from "./shared";
+/**
+ * What a comparison groups a tab's page views by. Rolled-up tabs group
+ * exactly as their card does, so an unfiltered comparison reads the rollups.
+ */
 function overviewTabExpression(tab: string): string | null {
-  if (tab === "page.path") return "TRIM(COALESCE(pathname, ''))";
+  if (tab === "page.path") return "pathname";
   if (tab === "page.query") return "TRIM(COALESCE(query_string, ''))";
   if (tab === "page.title") return "TRIM(COALESCE(title, ''))";
   if (tab === "page.hostname") return "TRIM(COALESCE(hostname, ''))";
-  if (tab === "source.domain")
-    return referrerDomainDimensionDefinition().labelExpr;
+  if (tab === "source.domain") return "referrer_host";
   if (tab === "source.link") return "TRIM(COALESCE(referrer_url, ''))";
   if (tab === "source.channel") return buildTrafficChannelSqlExpression();
   if (tab.startsWith("client.")) {
@@ -75,7 +78,7 @@ function overviewTabExpression(tab: string): string | null {
         "source" | "medium" | "campaign" | "term" | "content",
     ).labelExpr;
   }
-  if (tab === "geo.country") return "TRIM(COALESCE(country, ''))";
+  if (tab === "geo.country") return "country";
   if (tab === "geo.region") return regionValueExpr();
   if (tab === "geo.city") return cityValueExpr();
   if (tab === "geo.continent") return "TRIM(COALESCE(continent, ''))";
@@ -206,6 +209,10 @@ export async function overviewTabData(
           sortBy: comparison.sortBy,
           direction: comparison.direction,
           search,
+          // Page views with no referrer host are direct visits.
+          ...(tab === "source.domain"
+            ? { emptyKey: DIRECT_REFERRER_FILTER_VALUE }
+            : {}),
         },
         cursor,
         audience,

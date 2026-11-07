@@ -1,9 +1,4 @@
 import {
-  COLLECT_TOKEN_TTL_SECONDS,
-  issueCollectToken,
-  requestIp,
-} from "@/lib/edge/auth/collect-token";
-import {
   normalizeSiteSettingsKey,
   readSiteTrackingConfig,
 } from "@/lib/edge/sites/settings-store";
@@ -11,7 +6,7 @@ import type { Env } from "@/lib/edge/types";
 import { SDK_MIN } from "@/tracker/sdk.min";
 const SCRIPT_RESPONSE_CACHE_NAME = "insightflare-script-cache";
 const SCRIPT_RESPONSE_CACHE_TTL_SECONDS = 10 * 60;
-const SCRIPT_CACHE_VERSION = "sdk-prebuilt-v3";
+const SCRIPT_CACHE_VERSION = "sdk-prebuilt-v4";
 const MAX_SCRIPT_RESPONSE_CACHE_TTL_SECONDS = 24 * 60 * 60;
 const TRACKER_RUNTIME_CONFIG_KEY = "__openanalytics_tracker_runtime_config__";
 function responseBadRequest(message: string): Response {
@@ -53,7 +48,6 @@ function applyConfigToSdk(
     trackHash: boolean;
     ignoreDoNotTrack: boolean;
     autoTrackOutboundLinks: boolean;
-    collectToken: string;
   },
 ): string {
   const assignment = `globalThis[${JSON.stringify(TRACKER_RUNTIME_CONFIG_KEY)}] = ${JSON.stringify(config)};\n`;
@@ -68,7 +62,6 @@ function settingsFingerprint(input: {
   ignoreDoNotTrack: boolean;
   autoTrackOutboundLinks: boolean;
   siteDomain: string;
-  requestIp: string;
 }): string {
   return [
     input.trackQueryParams ? "1" : "0",
@@ -76,7 +69,6 @@ function settingsFingerprint(input: {
     input.ignoreDoNotTrack ? "1" : "0",
     input.autoTrackOutboundLinks ? "1" : "0",
     input.siteDomain,
-    input.requestIp,
   ].join("|");
 }
 function scriptCacheKeyRequest(siteId: string, fingerprint: string): Request {
@@ -93,24 +85,8 @@ function resolveScriptCacheTtlSeconds(env: Env): number {
   }
   return Math.max(
     1,
-    Math.min(
-      MAX_SCRIPT_RESPONSE_CACHE_TTL_SECONDS,
-      COLLECT_TOKEN_TTL_SECONDS,
-      Math.floor(raw),
-    ),
+    Math.min(MAX_SCRIPT_RESPONSE_CACHE_TTL_SECONDS, Math.floor(raw)),
   );
-}
-function withPrivateNoStore(response: Response): Response {
-  // The IP-scoped Worker cache may reuse this response, but clients and shared
-  // CDN caches must not store the token-bearing script.
-  const headers = new Headers(response.headers);
-  headers.set("cache-control", "private, no-store");
-
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
 }
 export async function handleTrackerScriptRequest(
   request: Request,
@@ -141,35 +117,15 @@ export async function handleTrackerScriptRequest(
   }
 
   const ttlSeconds = resolveScriptCacheTtlSeconds(env);
-  const clientIp = requestIp(request);
   const fingerprint = [
     SCRIPT_CACHE_VERSION,
-    settingsFingerprint({
-      ...settings,
-      autoTrackOutboundLinks: settings.autoTrackOutboundLinks,
-      requestIp: clientIp,
-    }),
+    settingsFingerprint(settings),
   ].join("|");
   const cacheKey = scriptCacheKeyRequest(siteId, fingerprint);
   const scriptCache = await openEdgeCache(SCRIPT_RESPONSE_CACHE_NAME);
   if (scriptCache) {
     const cached = await scriptCache.match(cacheKey);
-    if (cached) {
-      return withPrivateNoStore(cached);
-    }
-  }
-
-  let collectToken = "";
-  try {
-    collectToken = await issueCollectToken({
-      env,
-      siteId,
-      ip: clientIp,
-    });
-  } catch (error) {
-    // The script is public: log the cause, answer with a fixed code.
-    console.error("collect_token_unavailable", error);
-    return responseInternalServerError("collect_token_unavailable");
+    if (cached) return cached;
   }
 
   const script = applyConfigToSdk(SDK_MIN, {
@@ -178,7 +134,6 @@ export async function handleTrackerScriptRequest(
     trackHash: settings.trackHash,
     ignoreDoNotTrack: settings.ignoreDoNotTrack,
     autoTrackOutboundLinks: settings.autoTrackOutboundLinks,
-    collectToken,
   });
 
   const response = new Response(script, {
@@ -196,5 +151,5 @@ export async function handleTrackerScriptRequest(
     await scriptCache.put(cacheKey, response.clone());
   }
 
-  return withPrivateNoStore(response);
+  return response;
 }

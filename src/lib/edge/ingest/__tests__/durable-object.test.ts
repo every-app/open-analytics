@@ -1175,7 +1175,6 @@ describe("IngestDurableObject", () => {
         kind: "leave",
         visitId: "visit-2",
         timestamp: NOW - 5_000,
-        durationMs: 4_567.8,
       }),
     );
 
@@ -1222,7 +1221,6 @@ describe("IngestDurableObject", () => {
         kind: "leave",
         visitId: "visit-2",
         timestamp: NOW - 5_000,
-        durationMs: 4_567.8,
       }),
     );
     expect(
@@ -1446,7 +1444,7 @@ describe("IngestDurableObject", () => {
     ).toEqual([{ visit_id: "next-visit", ...ENTRY_ATTRIBUTION }]);
   });
 
-  it("keeps hidden visits pending and lets pagehide override within the grace window", async () => {
+  it("keeps hidden visits pending and ends their duration when the tab was hidden", async () => {
     const ctx = createTestDo();
 
     await postIngest(
@@ -1515,7 +1513,6 @@ describe("IngestDurableObject", () => {
         kind: "leave",
         visitId: "hidden-visit",
         timestamp: NOW,
-        durationMs: 20_000,
       }),
     );
 
@@ -1538,10 +1535,65 @@ describe("IngestDurableObject", () => {
       status: "complete",
       hidden_at: null,
       ended_at: NOW,
-      duration_ms: 20_000,
+      // Visible from NOW - 20s until hidden at NOW - 10s.
+      duration_ms: 10_000,
       duration_source: "server",
       exit_reason: "pagehide",
     });
+  });
+
+  it("leaves hidden stretches the visitor came back from out of the duration", async () => {
+    const ctx = createTestDo();
+    const visibility = (
+      visitId: string,
+      visibilityState: "hidden" | "visible",
+      timestamp: number,
+    ) =>
+      postIngest(
+        ctx.object,
+        envelope({ kind: "visibility", visitId, visibilityState, timestamp }),
+      );
+
+    await postIngest(
+      ctx.object,
+      envelope({
+        visitId: "visit-1",
+        startedAt: NOW - 25_000,
+        timestamp: NOW - 25_000,
+        pathname: "/first",
+      }),
+    );
+    await visibility("visit-1", "hidden", NOW - 20_000);
+    await visibility("visit-1", "visible", NOW - 12_000);
+    await postIngest(
+      ctx.object,
+      envelope({
+        visitId: "visit-2",
+        navigation: "route",
+        startedAt: NOW - 5_000,
+        timestamp: NOW - 5_000,
+        pathname: "/second",
+        referrerUrl: "https://example.com/first",
+      }),
+    );
+    await visibility("visit-2", "hidden", NOW - 4_000);
+    await visibility("visit-2", "visible", NOW - 3_000);
+    await postIngest(
+      ctx.object,
+      envelope({ kind: "leave", visitId: "visit-2", timestamp: NOW }),
+    );
+
+    expect(
+      localRows<{ visit_id: string; duration_ms: number | null }>(
+        ctx.sql,
+        "SELECT visit_id, duration_ms FROM buffered_visits ORDER BY visit_id",
+      ),
+    ).toEqual([
+      // 20s on the page, 8s of it hidden.
+      { visit_id: "visit-1", duration_ms: 12_000 },
+      // 5s on the page, 1s of it hidden.
+      { visit_id: "visit-2", duration_ms: 4_000 },
+    ]);
   });
 
   it("skips visibility broadcasts when the visit context is unavailable", async () => {
@@ -1609,6 +1661,8 @@ describe("IngestDurableObject", () => {
     const ctx = createTestDo();
     const startedAt = NOW - 40 * 60 * 1000;
     const hiddenAt = NOW - RECENT_EVENT_RETENTION_MS - 60_000;
+    const awayFrom = startedAt + 60_000;
+    const backAt = startedAt + 180_000;
 
     await postIngest(
       ctx.object,
@@ -1621,18 +1675,22 @@ describe("IngestDurableObject", () => {
         { receivedAt: startedAt },
       ),
     );
-    await postIngest(
-      ctx.object,
-      envelope(
-        {
-          kind: "visibility",
-          visitId: "hidden-timeout-visit",
-          visibilityState: "hidden",
-          timestamp: hiddenAt,
-        },
-        { receivedAt: hiddenAt },
-      ),
-    );
+    const visibility = (visibilityState: "hidden" | "visible", at: number) =>
+      postIngest(
+        ctx.object,
+        envelope(
+          {
+            kind: "visibility",
+            visitId: "hidden-timeout-visit",
+            visibilityState,
+            timestamp: at,
+          },
+          { receivedAt: at },
+        ),
+      );
+    await visibility("hidden", awayFrom);
+    await visibility("visible", backAt);
+    await visibility("hidden", hiddenAt);
 
     const flush = await ctx.object.fetch(
       new Request("https://ingest.internal/flush", { method: "POST" }),
@@ -1655,7 +1713,7 @@ describe("IngestDurableObject", () => {
     ).toEqual({
       status: "complete",
       ended_at: hiddenAt,
-      duration_ms: hiddenAt - startedAt,
+      duration_ms: hiddenAt - startedAt - (backAt - awayFrom),
       duration_source: "hidden",
       exit_reason: "hidden_timeout",
     });

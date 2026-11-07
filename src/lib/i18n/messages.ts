@@ -523,6 +523,7 @@ export interface AppMessages {
     direct: string;
     channelLabels: {
       direct: string;
+      ai_assistants: string;
       organic_search: string;
       social: string;
       paid_search: string;
@@ -1875,6 +1876,7 @@ const enMessages = {
     direct: "Direct",
     channelLabels: {
       direct: "Direct",
+      ai_assistants: "AI assistants",
       organic_search: "Organic search",
       social: "Social",
       paid_search: "Paid search",

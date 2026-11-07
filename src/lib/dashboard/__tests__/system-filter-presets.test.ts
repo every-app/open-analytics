@@ -51,18 +51,14 @@ describe("system filter presets", () => {
     }
   });
 
-  it("matches registered search domains and their subdomains safely", () => {
+  it("finds organic search through the channel rules", () => {
     const searchDiscovery = SYSTEM_FILTER_PRESETS.find(
       (preset) => preset.id === "organicSearchDiscovery",
     )!;
 
-    expect(searchDiscovery.filterDsl).toContain(
-      'referrer.domain eq "google.com"',
+    expect(searchDiscovery.filterDsl).toBe(
+      'traffic.channel eq "organic_search"',
     );
-    expect(searchDiscovery.filterDsl).toContain(
-      'referrer.domain endsWith ".google.com"',
-    );
-    expect(searchDiscovery.filterDsl).not.toMatch(/referrer\.domain in \[/);
   });
 
   it("round-trips selector option values", () => {

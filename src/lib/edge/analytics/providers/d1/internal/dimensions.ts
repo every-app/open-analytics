@@ -226,6 +226,31 @@ dimension_rollup AS (${grouping("filtered_visits")}
   };
 }
 
+/** A card's rows (value, views, sessions, visitors) as a statement of their own. */
+export async function dimensionRowsSql(
+  env: Env,
+  siteId: string,
+  window: QueryWindow,
+  filters: FilterDocument,
+  selectExpr: string,
+  diagnostics?: D1ReadDiagnostics,
+): Promise<BoundSql> {
+  const aggregate = await dimensionAggregate(
+    env,
+    siteId,
+    window,
+    filters,
+    selectExpr,
+    diagnostics,
+  );
+  return {
+    sql: `WITH
+${aggregate.sql}
+SELECT value, views, sessions, visitors FROM dimension_rollup`,
+    bindings: aggregate.bindings,
+  };
+}
+
 export async function queryDimensionFromD1(
   env: Env,
   siteId: string,
@@ -533,6 +558,31 @@ session_path_rollup AS (
     bindings: scopedDataset
       ? scopedDataset.bindings.map((binding) => binding.value)
       : [...visitSourceBindings(siteId, window), ...(filter?.bindings ?? [])],
+  };
+}
+
+/** Visits by entry or exit page (value, views, sessions, visitors) as a statement of their own. */
+export async function sessionPathRowsSql(
+  env: Env,
+  siteId: string,
+  window: QueryWindow,
+  filters: FilterDocument,
+  kind: SessionPathKind,
+  diagnostics?: D1ReadDiagnostics,
+): Promise<BoundSql> {
+  const aggregate = await sessionPathAggregate(
+    env,
+    siteId,
+    window,
+    filters,
+    kind,
+    diagnostics,
+  );
+  return {
+    sql: `WITH
+${aggregate.sql}
+SELECT value, views, sessions, visitors FROM session_path_rollup`,
+    bindings: aggregate.bindings,
   };
 }
 

@@ -1,27 +1,25 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
-  buildDomainDiscoverySqlPredicate,
-  buildUtmMediumSqlPredicate,
-} from "@/lib/analytics/traffic-channel-rules";
-import {
   buildTrafficChannelCaseSql,
   queryChannelsFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/channels";
 
 describe("channel aggregate query", () => {
-  it("classifies discovery before tagged and referral traffic using shared SQL", () => {
+  it("classifies AI assistants, then discovery, then tagged and referral traffic", () => {
     const sql = buildTrafficChannelCaseSql();
-    const organic = buildDomainDiscoverySqlPredicate("organic_search");
-    const social = buildDomainDiscoverySqlPredicate("social");
-    const paidSearch = buildUtmMediumSqlPredicate("paid_search");
+    const order = [
+      "THEN 'ai_assistants'",
+      "THEN 'organic_search'",
+      "THEN 'social'",
+      "THEN 'paid_search'",
+      "THEN 'campaign'",
+      "THEN 'referral'",
+      "ELSE 'direct'",
+    ].map((branch) => sql.indexOf(branch));
 
-    expect(sql.indexOf(organic)).toBeGreaterThanOrEqual(0);
-    expect(sql.indexOf(social)).toBeGreaterThan(sql.indexOf(organic));
-    expect(sql.indexOf(paidSearch)).toBeGreaterThan(sql.indexOf(social));
-    expect(sql).toContain("THEN 'campaign'");
-    expect(sql).toContain("THEN 'referral'");
-    expect(sql).toContain("THEN 'direct'");
+    expect(order.every((index) => index >= 0)).toBe(true);
+    expect(order).toEqual([...order].sort((left, right) => left - right));
   });
 
   it("uses visit_source/filter bindings and stable metric ordering", async () => {

@@ -4,7 +4,6 @@
  * participate in the saved-filter API or D1 storage.
  */
 
-import { buildDomainDiscoveryFilterDsl } from "@/lib/analytics/traffic-channel-rules";
 import {
   analyticsFilterRegistry,
   assertFilterAudience,
@@ -41,7 +40,7 @@ export const SYSTEM_FILTER_PRESETS: readonly SystemFilterPreset[] = [
   },
   {
     id: "organicSearchDiscovery",
-    filterDsl: buildDomainDiscoveryFilterDsl("organic_search"),
+    filterDsl: 'traffic.channel eq "organic_search"',
     scope: "preserve",
   },
   {

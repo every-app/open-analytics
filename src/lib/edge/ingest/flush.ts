@@ -13,6 +13,7 @@ import {
   WS_PRESENCE_LEAVE_EVENT,
 } from "./constants";
 import { flushCustomEventRowIndividually } from "./custom-event-flush";
+import { engagedDurationMs } from "./engaged-time";
 import {
   type IngestFlushContext,
   recordFlushCounter,
@@ -70,6 +71,7 @@ interface TimedOutVisitCandidate {
   startedAt: number;
   lastActivityAt: number;
   hiddenAt: number | null;
+  hiddenMs: number;
   pathname: string;
   queryString: string;
   hash: string;
@@ -501,6 +503,7 @@ export async function flushTimeouts(
         started_at AS startedAt,
         last_activity_at AS lastActivityAt,
         hidden_at AS hiddenAt,
+        hidden_ms AS hiddenMs,
         pathname,
         query_string AS queryString,
         hash_fragment AS hash,
@@ -619,6 +622,7 @@ async function flushHiddenFallbacks(
         started_at AS startedAt,
         last_activity_at AS lastActivityAt,
         hidden_at AS hiddenAt,
+        hidden_ms AS hiddenMs,
         pathname,
         query_string AS queryString,
         hash_fragment AS hash,
@@ -672,7 +676,12 @@ async function flushHiddenFallbacks(
 
   for (const visit of rows) {
     const hiddenAt = Math.max(visit.hiddenAt ?? now, visit.startedAt);
-    const durationMs = Math.max(0, hiddenAt - visit.startedAt);
+    const durationMs = engagedDurationMs({
+      startedAt: visit.startedAt,
+      endAt: hiddenAt,
+      hiddenAt,
+      hiddenMs: visit.hiddenMs,
+    });
     const rowsWritten = context.sqlRun(
       `
         UPDATE buffered_visits

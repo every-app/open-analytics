@@ -33,7 +33,7 @@ The first installs the latest release, which the Release workflow publishes on e
 
 To deploy your own changes instead, clone this repository next to the Every App checkout and run that checkout's CLI from this directory: `node ../every-app/packages/cli/bin/everyapp.js deploy` (the CLI installed here runs `dev`, `db migrate` and `release`; a deploy also updates the Gateway, which only a checkout can build).
 
-`MAIN_SECRET` signs collect tokens and derives visitor hashes. The deploy generates it when it's unset and keeps it after that: changing it splits visitor counts. To set your own (32 or more random characters): `pnpm everyapp secret set MAIN_SECRET --app analytics`.
+`MAIN_SECRET` signs pagination cursors. The deploy generates it when it's unset and keeps it after that. To set your own (32 or more random characters): `pnpm everyapp secret set MAIN_SECRET --app analytics`.
 
 Then open `https://analytics.<your gateway domain>`, create a site, and add its tracking snippet to your website.
 
