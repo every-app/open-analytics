@@ -4,11 +4,11 @@ import {
   DEFAULT_RETENTION_CONFIG,
   normalizeRetentionConfig,
   RETENTION_CONFIG_KEY,
+  type RetentionConfig,
 } from "@/lib/retention";
-import type { ScheduledTaskRetentionConfig } from "@/lib/scheduled-tasks";
 export async function readRetentionConfig(
   env: Pick<Env, "DB">,
-): Promise<ScheduledTaskRetentionConfig> {
+): Promise<RetentionConfig> {
   try {
     return normalizeRetentionConfig(
       await readConfig(env, RETENTION_CONFIG_KEY),
@@ -19,8 +19,8 @@ export async function readRetentionConfig(
 }
 export async function writeRetentionConfig(
   env: Pick<Env, "DB">,
-  value: ScheduledTaskRetentionConfig,
-): Promise<ScheduledTaskRetentionConfig> {
+  value: RetentionConfig,
+): Promise<RetentionConfig> {
   const normalized = normalizeRetentionConfig(value);
   await upsertConfig(env, RETENTION_CONFIG_KEY, { ...normalized });
   return normalized;

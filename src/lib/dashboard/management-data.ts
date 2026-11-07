@@ -1,22 +1,12 @@
 import type { NotificationPreferencesData } from "@/lib/dashboard-api/client/edge";
 import type {
-  MemberData,
   NotificationMessageData,
   NotificationRuleData,
   SiteData,
 } from "@/lib/dashboard-api/contract/types";
 import type { PublicNotificationEmailConfig } from "@/lib/notifications/email-config";
-import type { PageResult } from "@/lib/pagination";
-import type {
-  ScheduledTaskRetentionConfig,
-  ScheduledTaskRun,
-  ScheduledTaskRunGroup,
-  ScheduledTaskRunLog,
-  ScheduledTasksData,
-  ScheduledTaskSummary,
-} from "@/lib/scheduled-tasks";
+import type { RetentionConfig } from "@/lib/retention";
 import type { SiteSettingsConfig } from "@/lib/site-settings";
-import type { SystemPerformanceData } from "@/lib/system-performance";
 export type ManagementJsonValue =
   | string
   | number
@@ -27,15 +17,6 @@ export type ManagementJsonValue =
 export type ManagementJsonObject = {
   [key: string]: ManagementJsonValue;
 };
-export type SerializableNotificationRuleData = Omit<
-  NotificationRuleData,
-  "schedule" | "condition" | "recipient" | "state"
-> & {
-  schedule: ManagementJsonObject;
-  condition: ManagementJsonObject;
-  recipient: ManagementJsonObject;
-  state: ManagementJsonObject;
-};
 export type SerializableNotificationMessageData = Omit<
   NotificationMessageData,
   "data" | "channels" | "deliveryResults"
@@ -43,41 +24,6 @@ export type SerializableNotificationMessageData = Omit<
   data: ManagementJsonObject;
   channels: ManagementJsonObject;
   deliveryResults: ManagementJsonObject;
-};
-export type SerializableScheduledTaskRun = Omit<ScheduledTaskRun, "summary"> & {
-  summary: ManagementJsonObject;
-};
-export type SerializableScheduledTaskRunLog = Omit<
-  ScheduledTaskRunLog,
-  "data"
-> & {
-  data: ManagementJsonObject;
-};
-export type SerializableScheduledTaskRunGroup = Omit<
-  ScheduledTaskRunGroup,
-  "summary" | "runs"
-> & {
-  summary: ManagementJsonObject;
-  runs: SerializableScheduledTaskRun[];
-};
-export type SerializableScheduledTaskSummary = Omit<
-  ScheduledTaskSummary,
-  "lastRun"
-> & {
-  lastRun: SerializableScheduledTaskRun | null;
-};
-export type SerializableScheduledTasksData = Omit<
-  ScheduledTasksData,
-  "tasks" | "runs" | "selectedRun" | "logs"
-> & {
-  tasks: SerializableScheduledTaskSummary[];
-  runs: Omit<PageResult<ScheduledTaskRunGroup>, "items"> & {
-    items: SerializableScheduledTaskRunGroup[];
-  };
-  selectedRun: SerializableScheduledTaskRunGroup | null;
-  logs: Omit<PageResult<ScheduledTaskRunLog>, "items"> & {
-    items: SerializableScheduledTaskRunLog[];
-  };
 };
 export interface ScriptSnippetData {
   siteId: string;
@@ -91,9 +37,8 @@ export interface SiteSettingsInitialData {
   fetchedAt: number;
 }
 export interface TeamNotificationsInitialData {
-  rules: SerializableNotificationRuleData[];
+  rules: NotificationRuleData[];
   sites: SiteData[];
-  members: MemberData[];
   /** Null when the gateway's email status couldn't be read. */
   emailConfigured: boolean | null;
   fetchedAt: number;
@@ -111,13 +56,6 @@ export interface AccountNotificationPreferencesInitialData {
 }
 export interface SystemSettingsInitialData {
   notificationEmail: PublicNotificationEmailConfig;
-  scheduledTaskRetention: ScheduledTaskRetentionConfig;
-  fetchedAt: number;
-}
-export type ScheduledTasksInitialData = SerializableScheduledTasksData & {
-  fetchedAt: number;
-};
-export interface SystemPerformanceInitialData {
-  data: SystemPerformanceData;
+  retention: RetentionConfig;
   fetchedAt: number;
 }

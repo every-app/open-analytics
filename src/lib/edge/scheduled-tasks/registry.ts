@@ -1,49 +1,32 @@
-import type { ScheduledTaskDefinitionInfo } from "@/lib/scheduled-tasks";
+type InternalSchedule =
+  | { kind: "interval"; everyMinutes: 30 | 60 }
+  | { kind: "daily"; timezone: "UTC" };
 
+interface ScheduledTaskDefinitionInfo {
+  key: string;
+  internalSchedule: InternalSchedule;
+}
+
+/** The tasks the 30-minute cron dispatches, each on its own schedule. */
 export const SCHEDULED_TASKS: ScheduledTaskDefinitionInfo[] = [
   {
+    // Aggregates closed visit rows into hourly rollups.
     key: "visit_hourly_rollup",
-    name: "Hourly visit aggregation",
-    description:
-      "Aggregates closed visit rows into hourly rollups for dashboard counters and trends.",
-    schedule: "Every hour",
-    trigger: "cron",
-    enabled: true,
     internalSchedule: { kind: "interval", everyMinutes: 60 },
   },
   {
+    // Evaluates notification rules and delivers their messages.
     key: "notification_tick",
-    name: "Notification dispatch",
-    description: "Evaluates notification rules and dispatches messages.",
-    schedule: "Every 30 minutes",
-    trigger: "cron",
-    enabled: true,
     internalSchedule: { kind: "interval", everyMinutes: 30 },
   },
   {
+    // Deletes expired notifications and refreshes D1 query statistics.
     key: "database_maintenance",
-    name: "Database maintenance",
-    description:
-      "Removes expired operational records, marks stale runs, and optimizes D1 query statistics.",
-    schedule: "Every day",
-    trigger: "cron",
-    enabled: true,
     internalSchedule: { kind: "daily", timezone: "UTC" },
   },
   {
+    // Deletes expired page views and events; hourly totals are kept.
     key: "analytics_retention",
-    name: "Analytics retention",
-    description:
-      "Deletes expired page views and events. Hourly totals are kept.",
-    schedule: "Every day",
-    trigger: "cron",
-    enabled: true,
     internalSchedule: { kind: "daily", timezone: "UTC" },
   },
 ];
-
-export function getScheduledTaskDefinition(
-  key: string,
-): ScheduledTaskDefinitionInfo | null {
-  return SCHEDULED_TASKS.find((task) => task.key === key) ?? null;
-}

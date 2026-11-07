@@ -6,28 +6,15 @@ import { renderNotificationPlainText } from "@/lib/notifications/email-text";
 import type { NotificationMessage } from "@/lib/notifications/message";
 import { notificationEmailPreviewMessage } from "@/lib/notifications/preview-data";
 
-function fallbackMessage(): NotificationMessage {
-  return {
-    ...notificationEmailPreviewMessage("test", "en"),
-    id: "preview-fallback",
-    type: "system",
-    title: "Fallback title",
-    summary: "Fallback summary",
-    bodyText: "Fallback body",
-    data: { locale: "en" },
-  };
-}
-
 describe("renderNotificationEmail", () => {
   it("renders report html and text", async () => {
     const rendered = await renderNotificationEmail({
       message: notificationEmailPreviewMessage("report", "en"),
       locale: "en",
-      timeZone: "Asia/Shanghai",
     });
 
-    expect(rendered.subject).toContain("daily traffic report");
-    expect(rendered.html).toContain("daily traffic report");
+    expect(rendered.subject).toContain("weekly traffic report");
+    expect(rendered.html).toContain("weekly traffic report");
     expect(rendered.html).toContain("views");
     expect(rendered.html).toContain("visitors");
     expect(rendered.html).toContain("sessions");
@@ -51,7 +38,7 @@ describe("renderNotificationEmail", () => {
     expect(rendered.html).not.toContain("max-width:680px");
     expect(rendered.html).not.toContain("light dark");
     expect(rendered.html).not.toContain("stylesheet");
-    expect(rendered.text).toContain("Core metrics");
+    expect(rendered.text).toContain("Core metrics:");
     expect(rendered.text).not.toContain("<html");
     expect(rendered.text).not.toContain("[object Object]");
   });
@@ -81,7 +68,6 @@ describe("renderNotificationEmail", () => {
     const rendered = await renderNotificationEmail({
       message,
       locale: "en",
-      timeZone: "Asia/Shanghai",
     });
 
     expect(rendered.html).toContain("very-long-path-without-natural-breaks");
@@ -90,50 +76,20 @@ describe("renderNotificationEmail", () => {
     expect(rendered.html).toContain("width:116px");
   });
 
-  it("renders threshold html and text", async () => {
-    const rendered = await renderNotificationEmail({
-      message: notificationEmailPreviewMessage("threshold", "en"),
-      locale: "en",
-      timeZone: "Asia/Shanghai",
-    });
-
-    expect(rendered.html).toContain("traffic threshold reached");
-    expect(rendered.html).toContain("Warning");
-    expect(rendered.html).toContain("visitors");
-    expect(rendered.html).toContain("&gt;=");
-    expect(rendered.text).toContain("Metric: visitors");
-  });
-
-  it("renders milestone html with the shared email design", async () => {
-    const rendered = await renderNotificationEmail({
-      message: notificationEmailPreviewMessage("milestone", "en"),
-      locale: "en",
-      timeZone: "Asia/Shanghai",
-    });
-
-    expect(rendered.html).toContain("reached");
-    expect(rendered.html).toContain("Success");
-    expect(rendered.html).toContain("Milestone");
-    expect(rendered.html).toContain("Current value");
-    expect(rendered.text).toContain("Traffic milestone reached");
-    expect(rendered.text).toContain("Milestone: 50,000");
-  });
-
   it("renders change html with the shared email design", async () => {
     const rendered = await renderNotificationEmail({
       message: notificationEmailPreviewMessage("change", "en"),
       locale: "en",
-      timeZone: "Asia/Shanghai",
     });
 
     expect(rendered.html).toContain("traffic change alert");
     expect(rendered.html).toContain("Warning");
     expect(rendered.html).toContain("Previous value");
     expect(rendered.html).toContain("Change");
-    expect(rendered.text).toContain("changed by");
+    expect(rendered.text).toContain("changed by +102%");
     expect(rendered.text).toContain("Previous value: 920");
     expect(rendered.text).toContain("Current value: 1,860");
-    expect(rendered.text).toContain("Change: 102%");
+    expect(rendered.text).toContain("Change: +102%");
   });
 
   it("returns the same text as the direct plain text renderer", async () => {
@@ -141,7 +97,6 @@ describe("renderNotificationEmail", () => {
     const rendered = await renderNotificationEmail({
       message,
       locale: "en",
-      timeZone: "UTC",
     });
     const content = buildNotificationContentForMessage({
       message,
@@ -153,33 +108,7 @@ describe("renderNotificationEmail", () => {
         content,
         message,
         locale: "en",
-        timeZone: "UTC",
       }),
     );
-  });
-
-  it("renders health html and text with timezone", async () => {
-    const rendered = await renderNotificationEmail({
-      message: notificationEmailPreviewMessage("health", "en"),
-      locale: "en",
-      timeZone: "Asia/Shanghai",
-    });
-
-    expect(rendered.html).toContain("Last seen");
-    expect(rendered.html).toContain("Critical");
-    expect(rendered.text).toContain("Last seen:");
-    expect(rendered.text).toContain("2026");
-  });
-
-  it("renders fallback messages without object or html leakage", async () => {
-    const rendered = await renderNotificationEmail({
-      message: fallbackMessage(),
-      locale: "en",
-    });
-
-    expect(rendered.subject).toBe("Fallback title");
-    expect(rendered.text).toContain("Fallback body");
-    expect(rendered.html).not.toContain("[object Object]");
-    expect(rendered.text).not.toContain("<html");
   });
 });

@@ -80,5 +80,5 @@ export async function requestAdminService<T>(
       extractErrorMessage(response, `admin_service_${route}_failed`),
     );
   }
-  return (response.data === undefined ? response : response.data) as T;
+  return response.data as T;
 }

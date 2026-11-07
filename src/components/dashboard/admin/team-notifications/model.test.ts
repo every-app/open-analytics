@@ -1,433 +1,143 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  browserDefaultTimeZone,
   buildRulePayload,
-  conditionLabel,
-  cooldownLabel,
-  defaultMetricCondition,
   defaultName,
-  defaultRecipientUserIds,
   EMPTY_FORM,
-  formatRunAt,
   inferFormFromRule,
-  isCoolingDown,
-  isReportType,
-  isScheduleKind,
-  memberName,
-  nextConditionId,
-  nextRunLabel,
-  previewSummary,
-  recipientLabel,
-  recipientTextFromForm,
-  REPORT_TYPES,
-  ruleSummaryLines,
-  ruleSummaryTitle,
-  ruleTypeLabel,
-  scheduleKindFromReportType,
-  scheduleLabel,
-  scheduleTextFromForm,
+  ruleConditionLabel,
   siteLabel,
   TIME_OPTIONS,
-  WEEK_DAY_INDEXES,
 } from "@/components/dashboard/admin/team-notifications/model";
 import type {
-  MemberData,
   NotificationRuleData,
-  NotificationRuleEvaluationData,
   SiteData,
 } from "@/lib/dashboard-api/client/edge";
-import type { AppMessages } from "@/lib/i18n/messages";
+import { getMessages } from "@/lib/i18n/messages";
+import { parseNotificationRuleConfig } from "@/lib/notifications/rules";
 
-const copy = {
-  nextRunStates: {
-    disabled: "disabled",
-    coolingDown: "cooldown",
-    dueNow: "due",
-  },
-  scheduleDaily: "Daily {time}",
-  scheduleWeekly: "Weekly {day} {time}",
-  scheduleMonthly: "Monthly {day} {time}",
-  scheduleQuarterly: "Quarterly {day} {time}",
-  scheduleYearly: "Yearly {month}/{day} {time}",
-  scheduleInterval: "Every {minutes} minutes",
-  scheduleCustom: "Custom",
-  weekDays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-  ruleTypes: {
-    report: "Report",
-    milestone: "Milestone",
-    threshold: "Threshold",
-    change: "Change",
-    health: "Health",
-  },
-  recipientModes: {
-    creator: "Creator",
-    all_team_members: "Everyone",
-    team_admins: "Admins",
-    users: "Selected users",
-  },
-  customRecipientsEmpty: "No recipients",
-  cooldownUnits: { minutes: "minutes", hours: "hours", days: "days" },
-  siteLabel: "Site",
-  defaultNames: {
-    report: "{site} report",
-    milestone: "{site} milestone",
-    threshold: "{site} threshold",
-    change: "{site} change",
-    health: "{site} health",
-  },
-  summaryReportSchedule: "{period}: {schedule}",
-  reportPeriods: {
-    daily: "Daily report",
-    weekly: "Weekly report",
-    monthly: "Monthly report",
-    quarterly: "Quarterly report",
-    yearly: "Yearly report",
-  },
-  summaryWhenConditions: "{combinator} {type}",
-  summaryWhenSingleCondition: "{type}",
-  matchAny: "any",
-  matchAll: "all",
-  metrics: { views: "views", visitors: "visitors", sessions: "sessions" },
-  windows: {
-    last_1h: "last hour",
-    last_24h: "last day",
-    yesterday: "yesterday",
-  },
-  summaryConditionChange: "{metric} {operator} {value} {mode} {window}",
-  summaryConditionThreshold: "{metric} {operator} {value} {window}",
-  changeModeAbsolute: "absolute",
-  changeModePercent: "percent",
-  conditionReport: "{period}",
-  summaryMilestoneCondition: "{metric} every {step}",
-  summaryHealthCondition: "No data for {hours} hours",
-} as unknown as AppMessages["teamManagement"]["notifications"];
-
-const terms = {
-  emptyConditions: "No conditions",
-  and: " AND ",
-  or: " OR ",
-  not: "NOT ({description})",
-} as unknown as AppMessages["conditionDescription"];
-
-const rule = (overrides: Record<string, unknown> = {}): NotificationRuleData =>
-  ({
-    id: "r1",
-    name: "",
-    type: "report",
-    siteId: "s1",
-    enabled: true,
-    schedule: { kind: "daily", time: "09:00", timezone: "UTC" },
-    condition: { reportType: "daily" },
-    recipient: { mode: "creator" },
-    nextRunAt: null,
-    cooldownUntil: null,
-    ...overrides,
-  }) as unknown as NotificationRuleData;
-
-const members = [
-  { userId: "u1", name: "Ada", email: "ada@example.test" },
-  { userId: "u2", name: null, email: "grace@example.test" },
-] as MemberData[];
+const copy = getMessages("en").teamManagement.notifications;
 
 const sites = [
-  { id: "s1", name: "Example", domain: "example.test" },
+  { id: "site-1", name: "Docs", domain: "docs.example.com" },
+  { id: "site-2", name: "example.com", domain: "example.com" },
 ] as SiteData[];
 
+const common = {
+  id: "rule-1",
+  teamId: "team-1",
+  siteId: "site-1",
+  name: "Docs weekly",
+  enabled: true,
+  lastCheckedAt: null,
+  lastTriggeredAt: null,
+  nextRunAt: null,
+  cooldownUntil: null,
+  createdByUserId: "user-1",
+  createdAt: 1,
+  updatedAt: 1,
+};
+const weekly: NotificationRuleData = {
+  ...common,
+  type: "report",
+  schedule: {
+    kind: "weekly",
+    dayOfWeek: 3,
+    time: "09:30",
+    timezone: "Asia/Tokyo",
+  },
+};
+const monthly: NotificationRuleData = {
+  ...common,
+  type: "report",
+  schedule: { kind: "monthly", dayOfMonth: 15, time: "07:00", timezone: "UTC" },
+};
+const drop: NotificationRuleData = {
+  ...common,
+  type: "change",
+  condition: { direction: "drop", window: "last_24h", percent: 40 },
+};
+
 describe("team notification rule model", () => {
-  it("normalizes basic schedule, recipient, and display helpers", () => {
-    expect(defaultMetricCondition()).toMatchObject({
-      id: "condition-1",
-      metric: "visitors",
-    });
-    expect(defaultMetricCondition("c2").id).toBe("c2");
-    expect(nextConditionId([])).toMatch(/^condition-\d+-1$/);
+  it("offers a send time every half hour", () => {
     expect(TIME_OPTIONS).toHaveLength(48);
-    expect(WEEK_DAY_INDEXES).toEqual([0, 1, 2, 3, 4, 5, 6]);
-    expect(REPORT_TYPES).toEqual([
-      "daily",
-      "weekly",
-      "monthly",
-      "quarterly",
-      "yearly",
-    ]);
-    expect(scheduleKindFromReportType("weekly")).toBe("weekly");
-    expect(isScheduleKind("interval")).toBe(true);
-    expect(isScheduleKind("custom")).toBe(false);
-    expect(isReportType("yearly")).toBe(true);
-    expect(isReportType("interval")).toBe(false);
-    expect(formatRunAt("en", null)).toBe("-");
-    expect(formatRunAt("en", 1)).not.toBe("-");
-    expect(browserDefaultTimeZone()).toBeTruthy();
-
-    expect(isCoolingDown(rule({ cooldownUntil: 101 }), 100)).toBe(true);
-    expect(isCoolingDown(rule({ cooldownUntil: 100 }), 100)).toBe(false);
-    expect(nextRunLabel(copy, "en", rule({ enabled: false }), 100)).toBe(
-      "disabled",
-    );
-    expect(nextRunLabel(copy, "en", rule({ cooldownUntil: 101 }), 100)).toBe(
-      "cooldown",
-    );
-    expect(nextRunLabel(copy, "en", rule({ nextRunAt: 99 }), 100)).toBe("due");
-    expect(nextRunLabel(copy, "en", rule({ nextRunAt: 1000 }), 100)).not.toBe(
-      "due",
-    );
-
-    expect(
-      scheduleLabel(copy, rule({ schedule: { kind: "daily", time: "08:30" } })),
-    ).toBe("Daily 08:30");
-    expect(
-      scheduleLabel(
-        copy,
-        rule({ schedule: { kind: "weekly", dayOfWeek: 1, time: "09:00" } }),
-      ),
-    ).toBe("Weekly Mon 09:00");
-    expect(
-      scheduleLabel(
-        copy,
-        rule({ schedule: { kind: "monthly", dayOfMonth: 2, time: "10:00" } }),
-      ),
-    ).toBe("Monthly 2 10:00");
-    expect(
-      scheduleLabel(
-        copy,
-        rule({ schedule: { kind: "quarterly", dayOfMonth: 3, time: "11:00" } }),
-      ),
-    ).toBe("Quarterly 3 11:00");
-    expect(
-      scheduleLabel(
-        copy,
-        rule({
-          schedule: { kind: "yearly", month: 4, dayOfMonth: 5, time: "12:00" },
-        }),
-      ),
-    ).toBe("Yearly 4/5 12:00");
-    expect(
-      scheduleLabel(
-        copy,
-        rule({ schedule: { kind: "interval", everyMinutes: 15 } }),
-      ),
-    ).toBe("Every 15 minutes");
-    expect(scheduleLabel(copy, rule({ schedule: { kind: "other" } }))).toBe(
-      "Custom",
-    );
-
-    expect(memberName(undefined)).toBe("");
-    expect(memberName(members[0])).toBe("Ada");
-    expect(memberName(members[1])).toBe("grace@example.test");
-    expect(
-      memberName({ userId: "u3", name: "", email: "" } as MemberData),
-    ).toBe("u3");
-    expect(defaultRecipientUserIds(members, "u2")).toEqual(["u2"]);
-    expect(defaultRecipientUserIds(members, "missing")).toEqual(["u1"]);
-    expect(defaultRecipientUserIds([], "missing")).toEqual([]);
-    expect(
-      recipientLabel(
-        copy,
-        { mode: "users", userIds: ["u1", "missing"] },
-        new Map(members.map((item) => [item.userId, item])),
-      ),
-    ).toBe("Ada, missing");
-    expect(
-      recipientLabel(copy, { mode: "users", userIds: [] }, new Map()),
-    ).toBe("Selected users");
-    expect(recipientLabel(copy, { mode: "creator" }, new Map())).toBe(
-      "Creator",
-    );
-    expect(recipientLabel(copy, { mode: "unknown" }, new Map())).toBe("Admins");
-    expect(recipientTextFromForm(copy, EMPTY_FORM, new Map())).toBe("Creator");
-    expect(
-      recipientTextFromForm(
-        copy,
-        { ...EMPTY_FORM, recipientKind: "custom" },
-        new Map(),
-      ),
-    ).toBe("No recipients");
-    expect(
-      recipientTextFromForm(
-        copy,
-        { ...EMPTY_FORM, recipientKind: "custom", recipientUserIds: ["u1"] },
-        new Map(members.map((item) => [item.userId, item])),
-      ),
-    ).toBe("Ada");
-    expect(siteLabel(new Map([["s1", sites[0]!]]), "s1")).toBe(
-      "Example (example.test)",
-    );
-    expect(siteLabel(new Map(), "s2")).toBe("s2");
-    expect(siteLabel(new Map(), null)).toBe("-");
-    expect(previewSummary(null)).toBe("");
-    expect(
-      previewSummary({
-        status: "triggered",
-        message: { summary: "hit" },
-      } as NotificationRuleEvaluationData),
-    ).toBe("hit");
-    expect(
-      previewSummary({
-        status: "checked",
-        summary: "checked",
-      } as NotificationRuleEvaluationData),
-    ).toBe("checked");
-    expect(
-      previewSummary({
-        status: "skipped",
-        reason: "quiet",
-      } as NotificationRuleEvaluationData),
-    ).toBe("quiet");
+    expect(TIME_OPTIONS.slice(0, 3)).toEqual(["00:00", "00:30", "01:00"]);
   });
 
-  it("round-trips rule forms and emits each schedule and condition payload", () => {
-    const inferred = inferFormFromRule(
-      rule({
-        type: "threshold",
-        enabled: false,
-        schedule: { kind: "weekly", dayOfWeek: 2, time: "12:00" },
-        condition: {
-          any: [
-            {
-              metric: "views",
-              window: "yesterday",
-              operator: "<",
-              value: 5,
-              mode: "absolute",
-            },
-          ],
-          cooldownMinutes: 2880,
-        },
-        recipient: { mode: "users", userIds: ["u1"] },
-      }),
+  it("describes when each rule sends", () => {
+    expect(ruleConditionLabel(copy, weekly)).toBe("Weekly Wed 09:30");
+    expect(ruleConditionLabel(copy, monthly)).toBe("Monthly day 15 07:00");
+    expect(ruleConditionLabel(copy, drop)).toBe(
+      "Drop of 40% or more (Last 24 hours)",
     );
-    expect(inferred).toMatchObject({
-      type: "threshold",
-      enabled: false,
-      scheduleKind: "weekly",
-      combinator: "any",
-      recipientKind: "custom",
-      recipientUserIds: ["u1"],
-      cooldownValue: "2",
-      cooldownUnit: "days",
-      conditions: [
-        {
-          metric: "views",
-          window: "yesterday",
-          operator: "<",
-          changeMode: "absolute",
-        },
-      ],
-    });
-    expect(
-      inferFormFromRule(
-        rule({ type: "invalid", schedule: { kind: "bad" }, condition: {} }),
-      ),
-    ).toMatchObject({
-      type: "report",
-      scheduleKind: "interval",
-      reportType: "daily",
-    });
-    expect(
-      inferFormFromRule(rule({ condition: { all: [], cooldownMinutes: 90 } })),
-    ).toMatchObject({ cooldownValue: "90", cooldownUnit: "minutes" });
+  });
 
-    expect(defaultName(copy, "report", sites[0])).toBe("Example report");
-    expect(defaultName(copy, "health")).toBe("Site health");
-    expect(
-      scheduleTextFromForm(copy, { ...EMPTY_FORM, scheduleKind: "daily" }, 0),
-    ).toContain("Daily 08:00");
-    expect(
-      scheduleTextFromForm(
-        copy,
-        { ...EMPTY_FORM, scheduleKind: "weekly", dayOfWeek: "6" },
-        0,
-      ),
-    ).toContain("Weekly Sat 08:00");
-    expect(
-      scheduleTextFromForm(
-        copy,
-        { ...EMPTY_FORM, scheduleKind: "monthly", dayOfMonth: "10" },
-        0,
-      ),
-    ).toContain("Monthly 10 08:00");
-    expect(
-      scheduleTextFromForm(
-        copy,
-        { ...EMPTY_FORM, scheduleKind: "quarterly" },
-        0,
-      ),
-    ).toContain("Quarterly");
-    expect(
-      scheduleTextFromForm(copy, { ...EMPTY_FORM, scheduleKind: "yearly" }, 0),
-    ).toContain("Yearly");
-    expect(
-      scheduleTextFromForm(
-        copy,
-        { ...EMPTY_FORM, scheduleKind: "interval", everyMinutes: "15" },
-        0,
-      ),
-    ).toBe("Every 15 minutes");
+  it("labels sites, and names a rule after its site", () => {
+    const siteById = new Map(sites.map((site) => [site.id, site]));
+    expect(siteLabel(siteById, "site-1")).toBe("Docs (docs.example.com)");
+    expect(siteLabel(siteById, "site-2")).toBe("example.com");
+    expect(siteLabel(siteById, "gone")).toBe("gone");
+    expect(defaultName(copy, "report", sites[0])).toBe("Docs report");
+    expect(defaultName(copy, "change")).toBe("Site traffic alert");
+  });
 
-    const base = { ...EMPTY_FORM, siteId: "s1", name: "  " };
-    for (const type of [
-      "report",
-      "milestone",
-      "threshold",
-      "change",
-      "health",
-    ] as const) {
-      for (const scheduleKind of [
-        "daily",
-        "weekly",
-        "monthly",
-        "quarterly",
-        "yearly",
-        "interval",
-      ] as const) {
-        const form = {
-          ...base,
-          type,
-          scheduleKind,
-          conditions: [defaultMetricCondition("c1")],
-          cooldownValue: "2",
-          cooldownUnit: "hours" as const,
-        };
-        const payload = buildRulePayload(copy, form, sites);
-        expect(payload.type).toBe(type);
-        expect(payload.name).toBe(`Example ${type}`);
-        expect(payload.schedule.kind).toBe(scheduleKind);
-        expect(payload.recipient.mode).toBe("creator");
-        if (type === "threshold" || type === "change" || type === "health") {
-          expect(payload.condition).toHaveProperty("cooldownMinutes", 120);
-        }
-      }
+  it("fills the form from a saved rule and builds it back", () => {
+    for (const rule of [weekly, monthly, drop]) {
+      const payload = buildRulePayload(copy, inferFormFromRule(rule), sites);
+      expect(payload.name).toBe(rule.name);
+      expect(payload.siteId).toBe(rule.siteId);
+      // What the form sends back is what the server stores.
+      expect(parseNotificationRuleConfig(payload)).toEqual(
+        rule.type === "report"
+          ? { type: "report", schedule: rule.schedule }
+          : { type: "change", condition: rule.condition },
+      );
     }
-    const custom = buildRulePayload(
-      copy,
-      {
-        ...base,
-        name: "Named",
-        recipientKind: "custom",
-        recipientUserIds: ["u2"],
+  });
+
+  it("builds a new rule from the defaults, named after its site", () => {
+    expect(
+      buildRulePayload(copy, { ...EMPTY_FORM, siteId: "site-1" }, sites),
+    ).toEqual({
+      name: "Docs report",
+      siteId: "site-1",
+      type: "report",
+      schedule: {
+        kind: "weekly",
+        dayOfWeek: 1,
+        time: "08:00",
+        timezone: "UTC",
       },
-      sites,
-    );
-    expect(custom).toMatchObject({
-      name: "Named",
-      recipient: { mode: "users", userIds: ["u2"] },
     });
     expect(
-      conditionLabel(
+      buildRulePayload(
         copy,
-        terms,
-        rule({ condition: { reportType: "weekly" } }),
+        {
+          ...EMPTY_FORM,
+          siteId: "site-2",
+          name: "  ",
+          type: "change",
+          percent: "75",
+        },
+        sites,
       ),
-    ).toContain("Weekly report");
-    const form = { ...EMPTY_FORM, type: "threshold" as const };
-    expect(ruleSummaryLines(copy, terms, form)).toHaveLength(1);
-    expect(ruleSummaryTitle(copy, form, 0)).toContain("all Threshold");
-    expect(ruleSummaryTitle(copy, { ...form, type: "report" }, 0)).toContain(
-      "Daily",
-    );
-    expect(ruleSummaryTitle(copy, { ...form, type: "milestone" }, 0)).toBe(
-      "Milestone",
-    );
+    ).toEqual({
+      name: "example.com traffic alert",
+      siteId: "site-2",
+      type: "change",
+      condition: { direction: "spike", window: "last_1h", percent: 75 },
+    });
+    expect(
+      buildRulePayload(
+        copy,
+        {
+          ...EMPTY_FORM,
+          siteId: "site-1",
+          frequency: "monthly",
+          dayOfMonth: "31",
+        },
+        sites,
+      ),
+    ).toMatchObject({ schedule: { kind: "monthly", dayOfMonth: 31 } });
   });
 });

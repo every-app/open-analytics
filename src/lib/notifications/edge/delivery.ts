@@ -17,7 +17,6 @@ export interface NotificationDeliveryUser {
   id: string;
   email: string;
   preferencesJson?: string | null;
-  timeZone?: string | null;
 }
 const PROVIDER = "every-app";
 function maskEmail(value: string): string {
@@ -98,7 +97,6 @@ export async function deliverNotificationMessage(
     rendered = await renderNotificationEmail({
       message,
       locale: DEFAULT_LOCALE,
-      timeZone: user.timeZone,
     });
   } catch (error) {
     await context.logger?.warn(

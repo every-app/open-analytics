@@ -29,7 +29,6 @@ export interface NotificationPreferences {
   webPush: boolean;
   attention: {
     reportsCreateUnread: boolean;
-    milestonesCreateUnread: boolean;
     alertsCreateUnread: boolean;
   };
 }
@@ -40,7 +39,6 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   webPush: false,
   attention: {
     reportsCreateUnread: false,
-    milestonesCreateUnread: false,
     alertsCreateUnread: true,
   },
 };
@@ -79,10 +77,6 @@ export function normalizeNotificationPreferences(
         attention.reportsCreateUnread,
         defaults.attention.reportsCreateUnread,
       ),
-      milestonesCreateUnread: booleanOr(
-        attention.milestonesCreateUnread,
-        defaults.attention.milestonesCreateUnread,
-      ),
       alertsCreateUnread: booleanOr(
         attention.alertsCreateUnread,
         defaults.attention.alertsCreateUnread,
@@ -108,10 +102,6 @@ export function mergeNotificationPreferencesUpdate(
       reportsCreateUnread: booleanOr(
         attention.reportsCreateUnread,
         current.attention.reportsCreateUnread,
-      ),
-      milestonesCreateUnread: booleanOr(
-        attention.milestonesCreateUnread,
-        current.attention.milestonesCreateUnread,
       ),
       alertsCreateUnread: booleanOr(
         attention.alertsCreateUnread,
@@ -172,23 +162,12 @@ export function isNotificationChannelEnabled(
   return false;
 }
 
+/** Whether a new message arrives unread, from the person's preferences. */
 export function shouldCreateUnreadAttention(input: {
   preferences: NotificationPreferences;
   type: NotificationMessageType;
-  fallback: boolean;
 }): boolean {
-  if (input.type === "report") {
-    return input.preferences.attention.reportsCreateUnread;
-  }
-  if (input.type === "milestone") {
-    return input.preferences.attention.milestonesCreateUnread;
-  }
-  if (
-    input.type === "threshold" ||
-    input.type === "change" ||
-    input.type === "health"
-  ) {
-    return input.preferences.attention.alertsCreateUnread;
-  }
-  return input.fallback;
+  return input.type === "report"
+    ? input.preferences.attention.reportsCreateUnread
+    : input.preferences.attention.alertsCreateUnread;
 }

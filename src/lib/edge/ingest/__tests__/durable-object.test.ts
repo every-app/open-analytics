@@ -1045,7 +1045,7 @@ describe("IngestDurableObject", () => {
     ).toBe(0);
   });
 
-  it("buffers pageviews, normalizes context, exposes snapshots, and reports diagnostics", async () => {
+  it("buffers pageviews, normalizes context, and exposes snapshots", async () => {
     const ctx = createTestDo();
 
     const response = await postIngest(ctx.object, envelope());
@@ -1116,31 +1116,6 @@ describe("IngestDurableObject", () => {
           screenHeight: 900,
         },
       ],
-    });
-
-    const diagnostic = await ctx.object.fetch(
-      new Request("https://ingest.internal/diagnostic"),
-    );
-    expect(diagnostic.status).toBe(200);
-    await expect(diagnostic.json()).resolves.toMatchObject({
-      ok: true,
-      snapshotAt: NOW,
-      visits: {
-        total: 1,
-        byStatus: { open: 1 },
-        open: { total: 1, stale: 0, timedOut: 0, hardAged: 0 },
-        dirty: { total: 1, stuck: 0, maxFlushAttempts: 0 },
-      },
-      customEvents: {
-        total: 0,
-        dirty: 0,
-      },
-      alarm: {
-        scheduledAt: NOW + 60_000,
-        nextDueAt: NOW + 60_000,
-        nextDueKind: "flush",
-        nextDueEntity: "visit",
-      },
     });
   });
 
@@ -2689,127 +2664,6 @@ describe("IngestDurableObject", () => {
         "event-delete",
       )[0]?.events,
     ).toBe(0);
-  });
-
-  it("reports diagnostics when alarm lookup fails", async () => {
-    const ctx = createTestDo();
-    vi.mocked(ctx.state.storage.getAlarm).mockRejectedValueOnce(
-      new Error("alarm unavailable"),
-    );
-
-    const diagnostic = await ctx.object.fetch(
-      new Request("https://ingest.internal/diagnostic"),
-    );
-
-    expect(diagnostic.status).toBe(200);
-    await expect(diagnostic.json()).resolves.toMatchObject({
-      ok: true,
-      alarm: {
-        scheduledAt: null,
-      },
-    });
-  });
-
-  it("normalizes diagnostics when storage aggregates are missing or nonnumeric", async () => {
-    const ctx = createTestDo();
-    const originalExec = ctx.sql.exec.bind(ctx.sql);
-    vi.spyOn(ctx.sql, "exec").mockImplementation(
-      (query: string, ...bindings: SqlBinding[]) => {
-        const normalized = query.replace(/\s+/g, " ");
-        if (normalized.includes("SELECT COUNT(*) AS c FROM buffered_visits")) {
-          return new SqlResult([], 0);
-        }
-        if (
-          normalized.includes(
-            "SELECT status, COUNT(*) AS c FROM buffered_visits GROUP BY status",
-          )
-        ) {
-          return new SqlResult([{ status: "open", c: null }], 0);
-        }
-        if (normalized.includes("oldestStartedAt")) {
-          return new SqlResult(
-            [
-              {
-                total: "NaN",
-                stale: "Infinity",
-                timedOut: "nope",
-                hardAged: null,
-                futureSkewed: "1",
-                oldestStartedAt: "not-a-timestamp",
-                newestActivityAt: "123",
-                futureMaxActivityAt: undefined,
-              } as SqlRow,
-            ],
-            0,
-          );
-        }
-        if (
-          normalized.includes("FROM buffered_visits") &&
-          normalized.includes("MAX(flush_attempts) AS maxAttempts")
-        ) {
-          return new SqlResult(
-            [{ total: "NaN", stuck: "Infinity", maxAttempts: "5" }],
-            0,
-          );
-        }
-        if (normalized.includes("FROM buffered_custom_events")) {
-          return new SqlResult(
-            [
-              {
-                total: "NaN",
-                dirty: "bad",
-                stuck: "Infinity",
-                maxAttempts: "nope",
-                oldestOccurredAt: "bad",
-              },
-            ],
-            0,
-          );
-        }
-        return originalExec(query, ...bindings);
-      },
-    );
-    vi.mocked(ctx.state.storage.getAlarm).mockResolvedValueOnce(
-      "not-a-number" as never,
-    );
-
-    const diagnostic = await ctx.object.fetch(
-      new Request("https://ingest.internal/diagnostic"),
-    );
-
-    expect(diagnostic.status).toBe(200);
-    await expect(diagnostic.json()).resolves.toMatchObject({
-      ok: true,
-      visits: {
-        total: 0,
-        byStatus: { open: 0 },
-        open: {
-          total: 0,
-          stale: 0,
-          timedOut: 0,
-          hardAged: 0,
-          futureSkewed: 1,
-          oldestStartedAt: null,
-          newestActivityAt: 123,
-          futureMaxActivityAt: null,
-        },
-        dirty: {
-          total: 0,
-          stuck: 0,
-          maxFlushAttempts: 5,
-        },
-      },
-      customEvents: {
-        total: 0,
-        dirty: 0,
-        stuck: 0,
-        maxFlushAttempts: 0,
-        oldestOccurredAt: null,
-      },
-      alarm: {
-        scheduledAt: null,
-      },
-    });
   });
 
   it("repairs legacy buffered custom event schemas during initialization", () => {

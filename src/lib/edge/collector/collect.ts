@@ -9,7 +9,6 @@ import {
 import { requestIp, verifyCollectToken } from "@/lib/edge/auth/collect-token";
 import { classifyCollectBotTraffic } from "@/lib/edge/collector/bot-protection";
 import { normalizeTrackerUaClientHints } from "@/lib/edge/collector/client-hints";
-import { recordBlockedRequest } from "@/lib/edge/collector/request-observations";
 import { expandCustomEventData } from "@/lib/edge/ingest/custom-event-json";
 import type { InvocationLogger } from "@/lib/edge/observability/logger";
 import {
@@ -36,18 +35,6 @@ const CORS_BASE_HEADERS = {
   // beacon's response.
   "cross-origin-resource-policy": "cross-origin",
 };
-const CUSTOM_BLOCK_REASON_BY_FIELD: Readonly<Record<BlockingFieldId, string>> =
-  {
-    domains: "blocked_domains",
-    paths: "blocked_paths",
-    queryParameters: "blocked_query_parameters",
-    referrers: "blocked_referrers",
-    userAgents: "blocked_user_agents",
-    ips: "blocked_ips",
-    asns: "blocked_asns",
-    countries: "blocked_countries",
-    regions: "blocked_regions",
-  };
 const SUPPORTED_KINDS = new Set<TrackerPayloadKind>([
   "pageview",
   "leave",
@@ -228,7 +215,6 @@ type CollectionDecision =
       allowOrigin: string | null;
       siteId: string;
       payload: null;
-      normalizedPayload?: TrackerClientPayload;
       blockedFields?: readonly BlockingFieldId[];
       reason: string;
       detail?: Record<string, unknown>;
@@ -334,7 +320,6 @@ async function decideCollectionPolicy(
       allowOrigin: origin,
       siteId,
       payload: null,
-      normalizedPayload: normalizedPayloadResult.payload,
       blockedFields: ["domains"],
       reason: "origin_not_allowed",
       detail: { origin, originHostname },
@@ -357,7 +342,6 @@ async function decideCollectionPolicy(
       allowOrigin: origin,
       siteId,
       payload: null,
-      normalizedPayload: normalizedPayloadResult.payload,
       blockedFields: firstBlock
         ? BLOCKING_FIELD_IDS.filter((field) =>
             blocking.blockedBy.some((match) => match.field === field),
@@ -540,22 +524,8 @@ export async function handleCollectRequest(
     ? await logger.measure("collect.policy", decide)
     : await decide();
   if (!decision.shouldForward) {
-    if (
-      decision.normalizedPayload &&
-      decision.blockedFields &&
-      decision.blockedFields.length > 0
-    ) {
+    if (decision.blockedFields && decision.blockedFields.length > 0) {
       logger?.info("collect.custom_blocked");
-      recordBlockedRequest(env, ctx, {
-        request: requestWithCf,
-        siteId: decision.siteId,
-        category: "custom_block",
-        reasons: customBlockReasons(decision.blockedFields),
-        kind: decision.normalizedPayload.kind,
-        hostname: decision.normalizedPayload.hostname,
-        pathname: decision.normalizedPayload.pathname,
-        origin: decision.allowOrigin,
-      });
     }
     logger?.warn(`collect.rejected.${decision.reason}`);
     return noContent(decision.allowOrigin);
@@ -572,16 +542,6 @@ export async function handleCollectRequest(
     decision.scriptSettings.botProtectionEnabled !== false
   ) {
     logger?.info("collect.bot_diverted");
-    recordBlockedRequest(env, ctx, {
-      request: requestWithCf,
-      siteId: decision.siteId,
-      category: "bot",
-      reasons: classification.reasons,
-      kind: decision.payload.kind,
-      hostname: decision.payload.hostname,
-      pathname: decision.payload.pathname,
-      origin: decision.allowOrigin,
-    });
     return noContent(decision.allowOrigin);
   }
 
@@ -592,16 +552,6 @@ export async function handleCollectRequest(
       classification.reasons.includes("network_service_asn"))
   ) {
     logger?.info("collect.bot_diverted");
-    recordBlockedRequest(env, ctx, {
-      request: requestWithCf,
-      siteId: decision.siteId,
-      category: "suspected_bot",
-      reasons: classification.reasons,
-      kind: decision.payload.kind,
-      hostname: decision.payload.hostname,
-      pathname: decision.payload.pathname,
-      origin: decision.allowOrigin,
-    });
     return noContent(decision.allowOrigin);
   }
 
@@ -634,13 +584,4 @@ export async function handleCollectRequest(
   ctx.waitUntil(logger ? logger.track(forward) : forward);
 
   return noContent(decision.allowOrigin);
-}
-function customBlockReasons(fields: readonly BlockingFieldId[]): string[] {
-  const fieldSet = new Set(fields);
-  return [
-    "custom_block",
-    ...BLOCKING_FIELD_IDS.filter((field) => fieldSet.has(field)).map(
-      (field) => CUSTOM_BLOCK_REASON_BY_FIELD[field],
-    ),
-  ];
 }

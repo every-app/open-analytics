@@ -18,103 +18,75 @@ import {
   getOrCreateCachedPromise,
 } from "@/lib/notifications/edge/notification-cache";
 import {
-  loadCumulativeMetricValue,
-  loadDailyReportData,
-  loadMetricValue,
-  loadPreviousMetricValue,
-  loadSiteLastSeenAt,
+  loadReportData,
+  loadVisitorChange,
   notificationReportWindowFor,
-  notificationWindowFor,
 } from "@/lib/notifications/edge/report-data";
-function envWithLastSeen(lastSeenAt: number | null) {
-  const bind = vi.fn(() => ({
-    first: vi.fn(() => Promise.resolve({ lastSeenAt })),
-  }));
+
+function envWithSite(site: { name: string; domain: string } | null) {
   return {
-    env: {
-      DB: {
-        prepare: vi.fn(() => ({ bind })),
-      },
+    DB: {
+      prepare: vi.fn(() => ({
+        bind: vi.fn(() => ({ first: vi.fn(() => Promise.resolve(site)) })),
+      })),
     },
-    bind,
-  };
+  } as never;
 }
+
 describe("notification report data", () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
-  it("builds rolling and timezone-aware report windows", () => {
-    expect(
-      notificationWindowFor({
-        window: "last_1h",
-        now: 3_600,
-        timezone: "Mars/Base",
-      }),
-    ).toMatchObject({
-      startMs: 0,
-      endExclusiveMs: 3_600_000,
-      nowMs: 3_600_000,
-      timeZone: "UTC",
-      label: "last 1 hour",
-    });
-    expect(
-      notificationWindowFor({
-        window: "last_24h",
-        now: 90_000,
-        timezone: "Asia/Shanghai",
-      }),
-    ).toMatchObject({
-      startMs: 3_600_000,
-      endExclusiveMs: 90_000_000,
-      timeZone: "Asia/Shanghai",
-      label: "last 24 hours",
-    });
-    expect(
-      notificationWindowFor({
-        window: "yesterday",
-        now: Date.UTC(2026, 5, 30, 12) / 1000,
-        timezone: "UTC",
-      }),
-    ).toMatchObject({
-      label: "2026-06-29",
-    });
-  });
-
-  it("builds calendar report windows for previous complete periods", () => {
-    const now = Date.UTC(2026, 6, 15, 12) / 1000;
+  it("covers the last full week (Monday to Sunday) or month", () => {
+    const now = Date.UTC(2026, 6, 15, 12) / 1000; // Wednesday
 
     expect(
       notificationReportWindowFor({
         reportType: "weekly",
         now,
         timezone: "UTC",
-      }).label,
-    ).toBe("2026-07-06 to 2026-07-12");
+      }),
+    ).toMatchObject({
+      startMs: Date.UTC(2026, 6, 6),
+      endExclusiveMs: Date.UTC(2026, 6, 13),
+      label: "2026-07-06 to 2026-07-12",
+    });
     expect(
       notificationReportWindowFor({
         reportType: "monthly",
         now,
         timezone: "UTC",
-      }).label,
-    ).toBe("2026-06");
+      }),
+    ).toMatchObject({
+      startMs: Date.UTC(2026, 5, 1),
+      endExclusiveMs: Date.UTC(2026, 6, 1),
+      label: "2026-06",
+    });
+    // January reports on the previous December, in the schedule's zone.
     expect(
       notificationReportWindowFor({
-        reportType: "quarterly",
-        now,
-        timezone: "UTC",
-      }).label,
-    ).toBe("2026 Q2");
+        reportType: "monthly",
+        now: Date.UTC(2027, 0, 1, 3) / 1000,
+        timezone: "Asia/Tokyo",
+      }),
+    ).toMatchObject({
+      startMs: Date.UTC(2026, 10, 30, 15),
+      endExclusiveMs: Date.UTC(2026, 11, 31, 15),
+      timeZone: "Asia/Tokyo",
+      label: "2026-12",
+    });
+    // An unknown zone reads as UTC.
     expect(
       notificationReportWindowFor({
-        reportType: "yearly",
+        reportType: "weekly",
         now,
-        timezone: "UTC",
-      }).label,
-    ).toBe("2025");
+        timezone: "Mars/Base",
+      }).timeZone,
+    ).toBe("UTC");
   });
 
-  it("loads daily report data from site metadata and aggregate queries", async () => {
+  it("loads a report from the site and its aggregate queries", async () => {
     queryOverviewAggregate.mockResolvedValue({
       value: { views: 100, visitors: 40, sessions: 55 },
     });
@@ -126,28 +98,24 @@ describe("notification report data", () => {
       { referrer: "example.com", sessions: 8 },
       { referrer: "", sessions: 4 },
     ]);
-    const env = {
-      DB: {
-        prepare: vi.fn(() => ({
-          bind: vi.fn(() => ({
-            first: vi.fn(() =>
-              Promise.resolve({ name: "Demo", domain: "example.test" }),
-            ),
-          })),
-        })),
-      },
-    };
+    const env = envWithSite({ name: "Demo", domain: "example.test" });
 
-    const report = await loadDailyReportData(env as never, {
+    const report = await loadReportData(env, {
       siteId: "site-1",
-      now: Date.UTC(2026, 5, 30, 12) / 1000,
+      now: Date.UTC(2026, 6, 15, 12) / 1000,
       timezone: "UTC",
+      reportType: "weekly",
     });
 
-    expect(report).toMatchObject({
+    expect(report).toEqual({
       siteName: "Demo",
       siteDomain: "example.test",
-      range: { label: "2026-06-29" },
+      reportType: "weekly",
+      range: {
+        from: Date.UTC(2026, 6, 6) / 1000,
+        to: Date.UTC(2026, 6, 13) / 1000,
+        label: "2026-07-06 to 2026-07-12",
+      },
       metrics: { views: 100, visitors: 40, sessions: 55 },
       topPages: [
         { path: "/pricing", views: 20 },
@@ -161,161 +129,104 @@ describe("notification report data", () => {
     expect(queryTopPagesFromD1).toHaveBeenCalledWith(
       env,
       "site-1",
-      expect.objectContaining({ label: "2026-06-29" }),
+      expect.objectContaining({ label: "2026-07-06 to 2026-07-12" }),
       5,
       false,
       EMPTY_FILTER_DOCUMENT,
     );
   });
 
-  it("returns null daily report data when the site is missing", async () => {
-    const env = {
-      DB: {
-        prepare: vi.fn(() => ({
-          bind: vi.fn(() => ({
-            first: vi.fn(() => Promise.resolve(null)),
-          })),
-        })),
-      },
-    };
-
+  it("returns no report when the site is missing", async () => {
     await expect(
-      loadDailyReportData(env as never, { siteId: "missing", now: 1 }),
+      loadReportData(envWithSite(null), {
+        siteId: "missing",
+        now: 1,
+        reportType: "monthly",
+      }),
     ).resolves.toBeNull();
     expect(queryOverviewAggregate).not.toHaveBeenCalled();
   });
 
-  it("loads a selected metric value for a window", async () => {
+  it("shares one report between members who set up the same one", async () => {
     queryOverviewAggregate.mockResolvedValue({
-      value: { views: 100, visitors: 40, sessions: 55 },
-    });
-
-    await expect(
-      loadMetricValue({} as never, {
-        siteId: "site-1",
-        metric: "sessions",
-        window: "last_1h",
-        now: 3_600,
-      }),
-    ).resolves.toMatchObject({
-      metric: "sessions",
-      window: "last_1h",
-      value: 55,
-      range: { from: 0, to: 3_600 },
-    });
-  });
-
-  it("reuses overview queries only within the same invocation and window", async () => {
-    queryOverviewAggregate.mockResolvedValue({
-      value: { views: 100, visitors: 40, sessions: 55 },
-    });
-    const cache = createNotificationInvocationCache();
-
-    await Promise.all([
-      loadMetricValue({} as never, {
-        siteId: "site-1",
-        metric: "views",
-        window: "last_24h",
-        now: 86_400,
-        cache,
-      }),
-      loadMetricValue({} as never, {
-        siteId: "site-1",
-        metric: "visitors",
-        window: "last_24h",
-        now: 86_400,
-        cache,
-      }),
-      loadMetricValue({} as never, {
-        siteId: "site-1",
-        metric: "views",
-        window: "last_24h",
-        now: 86_400,
-        cache,
-      }),
-    ]);
-
-    expect(queryOverviewAggregate).toHaveBeenCalledTimes(1);
-
-    await loadMetricValue({} as never, {
-      siteId: "site-2",
-      metric: "views",
-      window: "last_24h",
-      now: 86_400,
-      cache,
-    });
-    await loadMetricValue({} as never, {
-      siteId: "site-1",
-      metric: "views",
-      window: "last_1h",
-      now: 86_400,
-      cache,
-    });
-
-    expect(queryOverviewAggregate).toHaveBeenCalledTimes(3);
-  });
-
-  it("caches reports, previous windows, cumulative values, and last-seen data", async () => {
-    queryOverviewAggregate.mockResolvedValue({
-      value: { views: 100, visitors: 40, sessions: 55 },
+      value: { views: 1, visitors: 1, sessions: 1 },
     });
     queryTopPagesFromD1.mockResolvedValue([]);
     queryTopReferrersFromD1.mockResolvedValue([]);
-    const prepare = vi.fn(() => ({
-      bind: vi.fn(() => ({
-        first: vi.fn(() =>
-          Promise.resolve({ name: "Demo", domain: "example.test" }),
-        ),
-      })),
-    }));
-    const env = { DB: { prepare } };
+    const env = envWithSite({ name: "Demo", domain: "example.test" });
     const cache = createNotificationInvocationCache();
-
-    const reportInput = {
+    const input = {
       siteId: "site-1",
-      now: Date.UTC(2026, 5, 30, 12) / 1000,
       timezone: "UTC",
+      reportType: "weekly" as const,
       cache,
     };
-    await Promise.all([
-      loadDailyReportData(env as never, reportInput),
-      loadDailyReportData(env as never, reportInput),
-    ]);
-    expect(prepare).toHaveBeenCalledTimes(1);
+
+    // Two checks seconds apart in the same tick read the same week.
+    const first = await loadReportData(env, {
+      ...input,
+      now: Date.UTC(2026, 6, 15, 12) / 1000,
+    });
+    const second = await loadReportData(env, {
+      ...input,
+      now: Date.UTC(2026, 6, 15, 12, 0, 5) / 1000,
+    });
+
+    expect(second).toBe(first);
     expect(queryTopPagesFromD1).toHaveBeenCalledTimes(1);
-    expect(queryTopReferrersFromD1).toHaveBeenCalledTimes(1);
+  });
 
-    await Promise.all([
-      loadPreviousMetricValue({} as never, {
-        siteId: "site-1",
-        metric: "views",
-        window: "last_24h",
-        now: 86_400,
-        cache,
-      }),
-      loadPreviousMetricValue({} as never, {
-        siteId: "site-1",
-        metric: "visitors",
-        window: "last_24h",
-        now: 86_400,
-        cache,
-      }),
-      loadCumulativeMetricValue({} as never, {
-        siteId: "site-1",
-        metric: "sessions",
-        now: 86_400,
-        cache,
-      }),
-    ]);
-    expect(queryOverviewAggregate).toHaveBeenCalledTimes(3);
+  it("compares visitors in a window with the window before it", async () => {
+    queryOverviewAggregate.mockImplementation(async (_env, _site, window) => ({
+      value: {
+        views: 0,
+        sessions: 0,
+        visitors: window.endExclusiveMs === 7_200_000 ? 30 : 20,
+      },
+    }));
 
-    const lastSeenEnv = envWithLastSeen(1_800_000_123_000).env;
-    const lastSeenCache = createNotificationInvocationCache();
-    await Promise.all([
-      loadSiteLastSeenAt(lastSeenEnv as never, "site-1", lastSeenCache),
-      loadSiteLastSeenAt(lastSeenEnv as never, "site-1", lastSeenCache),
-    ]);
-    expect(lastSeenEnv.DB.prepare).toHaveBeenCalledTimes(1);
+    await expect(
+      loadVisitorChange({} as never, {
+        siteId: "site-1",
+        window: "last_1h",
+        now: 7_200,
+      }),
+    ).resolves.toEqual({
+      current: 30,
+      previous: 20,
+      range: { from: 3_600, to: 7_200 },
+      previousRange: { from: 0, to: 3_600 },
+    });
+
+    await loadVisitorChange({} as never, {
+      siteId: "site-1",
+      window: "last_24h",
+      now: 200_000,
+    });
+    expect(queryOverviewAggregate).toHaveBeenLastCalledWith(
+      {},
+      "site-1",
+      expect.objectContaining({
+        startMs: (200_000 - 2 * 86_400) * 1000,
+        endExclusiveMs: (200_000 - 86_400) * 1000,
+      }),
+      EMPTY_FILTER_DOCUMENT,
+    );
+  });
+
+  it("reuses overview queries within one invocation and window", async () => {
+    queryOverviewAggregate.mockResolvedValue({
+      value: { views: 0, visitors: 5, sessions: 0 },
+    });
+    const cache = createNotificationInvocationCache();
+    const input = { siteId: "site-1", window: "last_1h" as const, now: 7_200 };
+
+    await loadVisitorChange({} as never, { ...input, cache });
+    await loadVisitorChange({} as never, { ...input, cache });
+    expect(queryOverviewAggregate).toHaveBeenCalledTimes(2);
+
+    await loadVisitorChange({} as never, input);
+    expect(queryOverviewAggregate).toHaveBeenCalledTimes(4);
   });
 
   it("does not retain a rejected cache entry", async () => {
@@ -326,36 +237,5 @@ describe("notification report data", () => {
     ).rejects.toThrow("temporary");
     await Promise.resolve();
     expect(cache).toHaveLength(0);
-  });
-
-  it("queries the current visits table when loading site last seen time", async () => {
-    const { env, bind } = envWithLastSeen(1_800_000_123_000);
-
-    await expect(loadSiteLastSeenAt(env as never, "site-1")).resolves.toBe(
-      1_800_000_123,
-    );
-    expect(bind).toHaveBeenCalledWith("site-1");
-    expect(env.DB.prepare).toHaveBeenCalledWith(
-      expect.stringContaining('FROM "visits"'),
-    );
-    expect(env.DB.prepare).not.toHaveBeenCalledWith(
-      expect.stringContaining("visits_archive"),
-    );
-  });
-
-  it("returns the latest visits timestamp in seconds", async () => {
-    const { env } = envWithLastSeen(1_800_000_100_000);
-
-    await expect(loadSiteLastSeenAt(env as never, "site-1")).resolves.toBe(
-      1_800_000_100,
-    );
-  });
-
-  it("returns null when the site has no visits", async () => {
-    const { env } = envWithLastSeen(null);
-
-    await expect(
-      loadSiteLastSeenAt(env as never, "site-1"),
-    ).resolves.toBeNull();
   });
 });

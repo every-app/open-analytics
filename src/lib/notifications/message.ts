@@ -11,7 +11,6 @@ export interface NotificationMessage {
   siteId: string | null;
   userId: string;
   ruleId: string | null;
-  runId: string | null;
   batchId: string | null;
   type: NotificationMessageType;
   severity: NotificationSeverity;
@@ -39,7 +38,6 @@ export interface NotificationMessage {
 export interface NotificationMessageDraft {
   type: NotificationMessageType;
   severity: NotificationSeverity;
-  requiresAttention: boolean;
   title: string;
   summary: string;
   bodyText: string;

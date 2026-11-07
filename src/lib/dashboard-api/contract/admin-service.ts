@@ -11,16 +11,10 @@ export type AdminServiceRoute =
   | "site-config"
   | "script-snippet"
   | "notification-email"
-  | "request-observation"
+  | "retention"
   | "get-started"
   | "site-tracking"
   | "notification-rules"
-  | "notification-rules/preview"
-  | "notification-rules/run"
-  | "notification-test"
-  | "system-performance"
-  | "scheduled-tasks"
-  | "do-diagnostic"
   | "notifications"
   | "notifications/preferences"
   | "notifications/read-all"
@@ -33,16 +27,10 @@ const STATIC_ADMIN_SERVICE_ROUTES = new Set<AdminServiceRoute>([
   "site-config",
   "script-snippet",
   "notification-email",
-  "request-observation",
+  "retention",
   "get-started",
   "site-tracking",
   "notification-rules",
-  "notification-rules/preview",
-  "notification-rules/run",
-  "notification-test",
-  "system-performance",
-  "scheduled-tasks",
-  "do-diagnostic",
 ]);
 
 export function adminServicePath(route: AdminServiceRoute): string {

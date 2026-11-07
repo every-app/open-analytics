@@ -35,19 +35,6 @@ describe("admin service client", () => {
     });
   });
 
-  it("accepts diagnostic payloads that intentionally omit the data envelope", async () => {
-    fetchEdgeJsonMock.mockResolvedValue({
-      ok: true,
-      summary: { healthy: true },
-    });
-
-    await expect(
-      requestAdminService<{ ok: boolean; summary: { healthy: boolean } }>(
-        "system-performance",
-      ),
-    ).resolves.toEqual({ ok: true, summary: { healthy: true } });
-  });
-
   it("raises the shared API error message for unsuccessful responses", async () => {
     fetchEdgeJsonMock.mockResolvedValue({
       ok: false,
@@ -62,13 +49,13 @@ describe("admin service client", () => {
   it("reads the server's sentence out of a failed transport", async () => {
     fetchEdgeJsonMock.mockRejectedValue(
       new Error(
-        'Edge API failed (404 POST /api/private/admin/notification-rules/run): {"ok":false,"requestId":"req-1","timestamp":"2026-10-24T00:00:00.000Z","error":{"code":"not_found","message":"Not Found"}}',
+        'Edge API failed (404 PATCH /api/private/admin/notification-rules): {"ok":false,"requestId":"req-1","timestamp":"2026-10-24T00:00:00.000Z","error":{"code":"not_found","message":"Not Found"}}',
       ),
     );
 
     await expect(
-      requestAdminService("notification-rules/run", {
-        method: "POST",
+      requestAdminService("notification-rules", {
+        method: "PATCH",
         body: { ruleId: "gone" },
       }),
     ).rejects.toThrow(/^Not Found$/);

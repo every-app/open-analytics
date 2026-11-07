@@ -99,7 +99,6 @@ describe("typed DAL mutation differential checks", () => {
             webPush: true,
             attention: {
               reportsCreateUnread: true,
-              milestonesCreateUnread: false,
               alertsCreateUnread: true,
             },
           }),
@@ -109,7 +108,7 @@ describe("typed DAL mutation differential checks", () => {
     const update = {
       email: true,
       webPush: false,
-      attention: { milestonesCreateUnread: true },
+      attention: { reportsCreateUnread: true },
     };
     const current = legacy.database
       .prepare(

@@ -147,7 +147,6 @@ export interface AppMessages {
     and: string;
     or: string;
     not: string;
-    emptyConditions: string;
     emptyFilter: string;
     filterEquals: string;
     filterNotEquals: string;
@@ -1117,7 +1116,6 @@ export interface AppMessages {
       invalidInput: string;
     };
     publicEnabledHint: string;
-    viewBlockedRequests: string;
     blockingRulesHelp: string;
     blockingRuleTypeLabel: string;
     blockingRuleActionLabel: string;
@@ -1172,7 +1170,6 @@ export interface AppMessages {
     preferencesTitle: string;
     emailNotificationsLabel: string;
     reportsUnreadLabel: string;
-    milestonesUnreadLabel: string;
     alertsUnreadLabel: string;
     preferencesSaveFailed: string;
     detailFields: Record<string, never>;
@@ -1193,21 +1190,13 @@ export interface AppMessages {
       visits: string;
       viewsUnit: string;
       direct: string;
-      metric: string;
       window: string;
       currentValue: string;
       previousValue: string;
-      threshold: string;
-      milestone: string;
       change: string;
-      mode: string;
-      lastSeen: string;
-      never: string;
       noPageData: string;
       noReferrerData: string;
       footer: string;
-      fallbackSubject: string;
-      trackingHint: string;
       severity: {
         info: string;
         success: string;
@@ -1215,53 +1204,24 @@ export interface AppMessages {
         critical: string;
       };
     };
-    test: {
-      subject: string;
-      title: string;
-      summary: string;
-      body: string;
-    };
     report: {
       subject: string;
       title: string;
       summary: string;
       periodLabels: {
-        daily: string;
         weekly: string;
         monthly: string;
-        quarterly: string;
-        yearly: string;
       };
-    };
-    milestone: {
-      subject: string;
-      title: string;
-      summary: string;
-    };
-    threshold: {
-      subject: string;
-      title: string;
-      summary: string;
-      metricLabels: {
-        views: string;
-        visitors: string;
-        sessions: string;
-      };
-      windows: {
-        last_1h: string;
-        last_24h: string;
-        yesterday: string;
-      };
-    };
-    health: {
-      subject: string;
-      title: string;
-      noHistory: string;
     };
     change: {
       subject: string;
       title: string;
       summary: string;
+      metric: string;
+      windows: {
+        last_1h: string;
+        last_24h: string;
+      };
     };
   };
   runtimeConfigError: {
@@ -1312,59 +1272,32 @@ export interface AppMessages {
       empty: string;
       enabledCount: string;
       loadingRules: string;
-      deliveryTestTitle: string;
-      inAppTestHint: string;
-      emailTestConfiguredHint: string;
-      sendTestNotification: string;
       loadRulesFailed: string;
-      testNotificationSent: string;
-      testNotificationSentNoEmail: string;
-      sendTestNotificationFailed: string;
       createRule: string;
       editRule: string;
       dialogDescription: string;
-      scheduleSection: string;
       sendScheduleSection: string;
-      checkSection: string;
       conditionSection: string;
-      deliverySection: string;
-      summarySection: string;
-      liveSummaryDescription: string;
       nameLabel: string;
       siteLabel: string;
       chooseSite: string;
       ruleTypeLabel: string;
-      recipientLabel: string;
-      enabledLabel: string;
-      enabledHint: string;
       scheduleLabel: string;
       timeLabel: string;
       timezoneLabel: string;
-      intervalLabel: string;
       dayLabel: string;
       dayOfMonthLabel: string;
-      monthLabel: string;
-      reportPeriodLabel: string;
-      milestoneEveryLabel: string;
-      matchLabel: string;
-      matchAll: string;
-      matchAny: string;
-      changeValueLabel: string;
-      changeModeLabel: string;
-      changeModePercent: string;
-      changeModeAbsolute: string;
       addCondition: string;
       removeCondition: string;
-      conditionItemTitle: string;
-      metricLabel: string;
       windowLabel: string;
-      operatorLabel: string;
-      valueLabel: string;
-      cooldownLabel: string;
-      cooldownDescription: string;
-      noDataHoursLabel: string;
+      directionLabel: string;
+      percentLabel: string;
+      alertCondition: string;
+      directions: {
+        spike: string;
+        drop: string;
+      };
       pleaseChooseSite: string;
-      pleaseChooseRecipients: string;
       ruleCreated: string;
       ruleUpdated: string;
       createRuleFailed: string;
@@ -1372,159 +1305,47 @@ export interface AppMessages {
       deleteConfirm: string;
       ruleDeleted: string;
       deleteRuleFailed: string;
-      lastChecked: string;
       actions: string;
       edit: string;
       enable: string;
       disable: string;
       delete: string;
       saveRule: string;
-      preview: string;
-      runNow: string;
-      previewFailed: string;
-      runFailed: string;
-      runFailedWithReason: string;
-      previewFailedWithReason: string;
-      runNotTriggered: string;
-      runSkipped: string;
-      runNoRecipients: string;
-      runSentOne: string;
-      runSentMany: string;
-      runEmailFailed: string;
-      runEmailNotSetUp: string;
-      runEmailSent: string;
-      runEmailOff: string;
-      previewDialogTitle: string;
-      previewDialogDescription: string;
-      coolingDownUntil: string;
-      scheduleDaily: string;
       scheduleWeekly: string;
       scheduleMonthly: string;
-      scheduleQuarterly: string;
-      scheduleYearly: string;
-      scheduleInterval: string;
-      scheduleCustom: string;
-      conditionReport: string;
-      summaryWhenConditions: string;
-      summaryWhenSingleCondition: string;
-      summaryConditionThreshold: string;
-      summaryConditionChange: string;
-      summaryReportSchedule: string;
-      summaryMilestoneCondition: string;
-      summaryHealthCondition: string;
       defaultNames: {
         report: string;
-        milestone: string;
-        threshold: string;
         change: string;
-        health: string;
       };
       columns: {
         name: string;
         type: string;
-        site: string;
-        recipient: string;
-        schedule: string;
         condition: string;
-        nextRun: string;
         status: string;
       };
       status: {
         enabled: string;
         disabled: string;
       };
-      nextRunStates: {
-        disabled: string;
-        coolingDown: string;
-        dueNow: string;
-      };
-      previewFields: {
-        status: string;
-        summary: string;
-        title: string;
-        htmlPreview: string;
-        bodyText: string;
-        createdAt: string;
-        updatedAt: string;
-        loadingContent: string;
-        noHtmlPreview: string;
-      };
       ruleTypes: {
         report: string;
-        milestone: string;
-        threshold: string;
         change: string;
-        health: string;
-        test: string;
       };
       ruleTypeDescriptions: {
         report: string;
-        milestone: string;
-        threshold: string;
         change: string;
-        health: string;
-      };
-      recipientModes: {
-        creator: string;
-        team_admins: string;
-        all_team_members: string;
-        users: string;
-      };
-      recipientKindLabel: string;
-      recipientPresetLabel: string;
-      customRecipientsEmpty: string;
-      noTeamMembers: string;
-      recipientKinds: {
-        preset: string;
-        custom: string;
       };
       scheduleKinds: {
-        daily: string;
         weekly: string;
         monthly: string;
-        quarterly: string;
-        yearly: string;
-        interval: string;
-      };
-      reportPeriods: {
-        daily: string;
-        weekly: string;
-        monthly: string;
-        quarterly: string;
-        yearly: string;
-      };
-      cooldownUnits: {
-        minutes: string;
-        hours: string;
-        days: string;
-      };
-      intervalOptions: {
-        every30Minutes: string;
-        everyHour: string;
-        every6Hours: string;
-        every12Hours: string;
-        everyDay: string;
-        every7Days: string;
-        every30Days: string;
       };
       weekDays: string[];
-      metrics: {
-        views: string;
-        visitors: string;
-        sessions: string;
-      };
       windows: {
         last_1h: string;
         last_24h: string;
-        yesterday: string;
       };
       addSiteFirst: string;
       deleteDescription: string;
-      previewStatuses: {
-        skipped: string;
-        checked: string;
-        triggered: string;
-      };
     };
     publicLinks: {
       copyLink: string;
@@ -1546,92 +1367,6 @@ export interface AppMessages {
   };
   managementPages: {
     versionUpdates: Record<string, never>;
-    scheduledTasks: {
-      empty: string;
-      refresh: string;
-      loadFailed: string;
-      loadMore: string;
-      allStatuses: string;
-      runs24h: string;
-      successRate24h: string;
-      problemRuns24h: string;
-      failed: string;
-      partial: string;
-      lastRun: string;
-      staleRunning: string;
-      taskListTitle: string;
-      task: string;
-      schedule: string;
-      enabled: string;
-      enabledYes: string;
-      enabledNo: string;
-      taskStateSaved: string;
-      taskStateSaveFailed: string;
-      lastStatus: string;
-      runs30d: string;
-      successRate30d: string;
-      avgDuration: string;
-      runHistoryTitle: string;
-      nextRun: string;
-      noRuns: string;
-      scheduledAt: string;
-      startedAt: string;
-      finishedAt: string;
-      trigger: string;
-      triggerTypes: {
-        manual: string;
-        cron: string;
-        retry: string;
-      };
-      tasks: string;
-      taskCount: string;
-      subtaskCount: string;
-      taskResult: string;
-      statusLabel: string;
-      duration: string;
-      sites: string;
-      hours: string;
-      rows: string;
-      rulesScanned: string;
-      messagesCreated: string;
-      emailFailed: string;
-      logs: string;
-      viewLogs: string;
-      logTitle: string;
-      noRunSelected: string;
-      noLogs: string;
-      error: string;
-      status: {
-        running: string;
-        success: string;
-        partial: string;
-        failed: string;
-        skipped: string;
-      };
-      taskDefinitions: {
-        visit_hourly_rollup: {
-          name: string;
-          description: string;
-          schedule: string;
-        };
-        notification_tick: {
-          name: string;
-          description: string;
-          schedule: string;
-        };
-        database_maintenance: {
-          name: string;
-          description: string;
-          schedule: string;
-        };
-        analytics_retention: {
-          name: string;
-          description: string;
-          schedule: string;
-        };
-      };
-      keptForDays: string;
-    };
   };
   adminUsers: {
     columns: Record<string, never>;
@@ -1651,58 +1386,8 @@ export interface AppMessages {
     columns: Record<string, never>;
   };
   requestObservation: {
-    blockedTotal: string;
-    retentionNote: string;
-    topReasons: string;
-    recentTitle: string;
-    categoryLabels: {
-      custom_block: string;
-      bot: string;
-      suspected_bot: string;
-    };
     tabs: Record<string, never>;
-    refresh: string;
-    loadFailed: string;
-    noData: string;
-    time: string;
-    site: string;
-    location: string;
-    network: string;
-    reason: string;
-    userAgent: string;
-    emptyValue: string;
-    pathname: string;
-    country: string;
-    ipPrefix: string;
-    botReasonLabels: {
-      missing_ua: string;
-      ua_too_long: string;
-      ua_isbot: string;
-      script_ua: string;
-      cf_bot_score_low: string;
-      cf_verified_bot_category: string;
-      hosting_asn: string;
-      network_service_asn: string;
-      transit_asn: string;
-      access_asn: string;
-      missing_browser_provenance: string;
-      origin_hostname_mismatch: string;
-      custom_block: string;
-      blocked_domains: string;
-      blocked_paths: string;
-      blocked_query_parameters: string;
-      blocked_referrers: string;
-      blocked_user_agents: string;
-      blocked_ips: string;
-      blocked_asns: string;
-      blocked_countries: string;
-      blocked_regions: string;
-    };
     requestKindLabels: Record<string, never>;
-    overviewLabels: {
-      windowDay: string;
-      windowDays: string;
-    };
     normalDetail: Record<string, never>;
   };
   systemSettings: {
@@ -1711,8 +1396,6 @@ export interface AppMessages {
     emailSenderLabel: string;
     retentionTitle: string;
     retentionDescription: string;
-    scheduledTaskLogsDaysLabel: string;
-    notificationTestDaysLabel: string;
     notificationAttentionDaysLabel: string;
     notificationDefaultDaysLabel: string;
     analyticsDetailDaysLabel: string;
@@ -1727,90 +1410,6 @@ export interface AppMessages {
     retentionLowerTitle: string;
     retentionLowerDescription: string;
     retentionLowerConfirm: string;
-  };
-  systemPerformance: {
-    refresh: string;
-    loadFailed: string;
-    noData: string;
-    range15m: string;
-    range1h: string;
-    range6h: string;
-    range24h: string;
-    totalEvents: string;
-    p95Latency: string;
-    p50Latency: string;
-    p75Latency: string;
-    p50Label: string;
-    p75Label: string;
-    p95Label: string;
-    dataFreshness: string;
-    noRecentWrite: string;
-    clockAnomalies: string;
-    delayed: string;
-    future: string;
-    latencyPercentileTrend: string;
-    latencyPercentileTrendDescription: string;
-    throughputTrend: string;
-    throughputTrendDescription: string;
-    visits: string;
-    customEvents: string;
-    anomalyBucket: string;
-    openVisitHealth: string;
-    openVisitHealthDescription: string;
-    open: string;
-    stale: string;
-    timedOut: string;
-    oldestOpen: string;
-    latestActivity: string;
-    latencySampleHealth: string;
-    latencySampleHealthDescription: string;
-    trustedSamples: string;
-    topSitesTitle: string;
-    topSitesDescription: string;
-    events: string;
-    avgLatency: string;
-    slowestEventsTitle: string;
-    slowestEventsDescription: string;
-    eventTime: string;
-    serverTime: string;
-    estimatedDelay: string;
-    doDiagnosticTitle: string;
-    doDiagnosticDescription: string;
-    doDiagnosticLoadFailed: string;
-    doDiagnosticLoading: string;
-    doDiagnosticRun: string;
-    doDiagnosticEmpty: string;
-    doDiagnosticUnreachable: string;
-    doDiagnosticReachableSites: string;
-    doDiagnosticTotalSites: string;
-    doDiagnosticActiveAlarms: string;
-    doDiagnosticBufferedVisits: string;
-    doDiagnosticOpenVisits: string;
-    doDiagnosticOpenStale: string;
-    doDiagnosticOpenTimedOut: string;
-    doDiagnosticOpenHardAged: string;
-    doDiagnosticOpenFutureSkew: string;
-    doDiagnosticStuckDirty: string;
-    doDiagnosticMaxFlushAttempts: string;
-    doDiagnosticBufferedCustomEvents: string;
-    doDiagnosticOldestOpen: string;
-    doDiagnosticFutureMaxActivity: string;
-    doDiagnosticSiteList: string;
-    doDiagnosticSiteListDescription: string;
-    doDiagnosticSiteFailed: string;
-    doDiagnosticSiteOpen: string;
-    doDiagnosticSiteStuck: string;
-    doDiagnosticSiteFuture: string;
-    doDiagnosticSiteHardAged: string;
-    doDiagnosticSiteAlarm: string;
-    doDiagnosticSiteAlarmNone: string;
-    doDiagnosticSiteAlarmDue: string;
-    doDiagnosticSiteNextDue: string;
-    doDiagnosticSiteNextDueFlush: string;
-    doDiagnosticSiteNextDueHidden: string;
-    doDiagnosticSiteNextDueTimeout: string;
-    doDiagnosticSiteResponseMs: string;
-    doDiagnosticHealthy: string;
   };
   loginForm: Record<string, never>;
   logoutAction: Record<string, never>;
@@ -1862,14 +1461,6 @@ export interface AppMessages {
     account: string;
     notifications: string;
     cancel: string;
-  };
-  systemHealth: {
-    tabs: {
-      tasks: string;
-      blocked: string;
-      ingestion: string;
-      data: string;
-    };
   };
 }
 
@@ -2034,7 +1625,6 @@ const enMessages = {
     and: "and",
     or: "or",
     not: "not ({description})",
-    emptyConditions: "No conditions",
     emptyFilter: "No filter conditions",
     filterEquals: "{field} equals {value}",
     filterNotEquals: "{field} does not equal {value}",
@@ -3159,7 +2749,6 @@ const enMessages = {
       invalidInput: "Enter a site name and a valid domain.",
     },
     publicEnabledHint: "Anyone with the link can view this site's reports.",
-    viewBlockedRequests: "See blocked requests",
     blockingRulesHelp:
       "Requests that match a Block rule aren't counted. Allow makes an exception. When several rules of one type match, the last one wins. Use * as a wildcard.",
     blockingRuleTypeLabel: "Type",
@@ -3216,7 +2805,6 @@ const enMessages = {
     preferencesTitle: "Notification preferences",
     emailNotificationsLabel: "Email notifications",
     reportsUnreadLabel: "Unread badge for reports",
-    milestonesUnreadLabel: "Unread badge for milestones",
     alertsUnreadLabel: "Unread badge for alerts",
     preferencesSaveFailed: "Couldn't save notification preferences.",
     detailFields: {},
@@ -3237,22 +2825,13 @@ const enMessages = {
       visits: "visits",
       viewsUnit: "views",
       direct: "Direct",
-      metric: "Metric",
       window: "Window",
       currentValue: "Current value",
       previousValue: "Previous value",
-      threshold: "Threshold",
-      milestone: "Milestone",
       change: "Change",
-      mode: "Mode",
-      lastSeen: "Last seen",
-      never: "Never",
       noPageData: "No page data yet.",
       noReferrerData: "No referrer data yet.",
       footer: "This email was sent by the OpenAnalytics notification system.",
-      fallbackSubject: "OpenAnalytics notification",
-      trackingHint:
-        "Check whether the tracking script is installed correctly or whether the site still has traffic.",
       severity: {
         info: "Info",
         success: "Success",
@@ -3260,55 +2839,24 @@ const enMessages = {
         critical: "Critical",
       },
     },
-    test: {
-      subject: "OpenAnalytics notification test",
-      title: "OpenAnalytics notification test",
-      summary: "This is a test notification from OpenAnalytics.",
-      body: "Reports and alerts you turn on arrive under Notifications in OpenAnalytics and, when email is set up on this gateway, by email too.",
-    },
     report: {
       subject: "{site} {periodLabel} traffic report",
       title: "{site} {periodLabel} traffic report",
       summary: "{date}: {visitors} visitors and {views} views.",
       periodLabels: {
-        daily: "daily",
         weekly: "weekly",
         monthly: "monthly",
-        quarterly: "quarterly",
-        yearly: "yearly",
       },
-    },
-    milestone: {
-      subject: "{site} reached {bucket} {metric}",
-      title: "{site} reached {bucket} {metric}",
-      summary: "Traffic milestone reached: {bucket} {metric}.",
-    },
-    threshold: {
-      subject: "{site} traffic threshold reached",
-      title: "{site} traffic threshold reached",
-      summary:
-        "{metric} for {window} is {value}, matching threshold {operator} {target}.",
-      metricLabels: {
-        views: "views",
-        visitors: "visitors",
-        sessions: "sessions",
-      },
-      windows: {
-        last_1h: "Last hour",
-        last_24h: "Last 24 hours",
-        yesterday: "Yesterday",
-      },
-    },
-    health: {
-      subject: "{site} has not received traffic data for {hours} hours",
-      title: "{site} has not received traffic data for {hours} hours",
-      noHistory:
-        "No historical traffic data is available. Check whether the tracking script is installed correctly.",
     },
     change: {
       subject: "{site} traffic change alert",
       title: "{site} traffic change alert",
       summary: "{metric} for {window} changed by {change}.",
+      metric: "visitors",
+      windows: {
+        last_1h: "Last hour",
+        last_24h: "Last 24 hours",
+      },
     },
   },
   runtimeConfigError: {
@@ -3362,60 +2910,33 @@ const enMessages = {
       empty: "No notification rules yet.",
       enabledCount: "{count} of {total} enabled.",
       loadingRules: "Loading notification rules",
-      deliveryTestTitle: "Delivery test",
-      inAppTestHint: "Sends you an in-app notification.",
-      emailTestConfiguredHint: "Sends you a test email.",
-      sendTestNotification: "Send test notification",
       loadRulesFailed: "Couldn't load notification rules.",
-      testNotificationSent: "Test notification sent.",
-      testNotificationSentNoEmail:
-        "Test notification sent. No email went out: email isn't set up on this gateway.",
-      sendTestNotificationFailed: "Couldn't send the test notification.",
       createRule: "Create rule",
       editRule: "Edit rule",
-      dialogDescription: "Set up a notification rule for this organization.",
-      scheduleSection: "Schedule",
+      dialogDescription:
+        "Each rule goes to the member who creates it: to their inbox, and by email when they have email on.",
       sendScheduleSection: "Send time",
-      checkSection: "Check frequency",
       conditionSection: "Conditions",
-      deliverySection: "Delivery",
-      summarySection: "Summary",
-      liveSummaryDescription: "Confirm how this rule will run.",
       nameLabel: "Name",
       siteLabel: "Site",
       chooseSite: "Choose site",
       ruleTypeLabel: "Rule type",
-      recipientLabel: "Recipient",
-      enabledLabel: "Enabled",
-      enabledHint: "Run this rule",
       scheduleLabel: "Schedule",
       timeLabel: "Time",
       timezoneLabel: "Time zone",
-      intervalLabel: "Interval",
       dayLabel: "Day",
       dayOfMonthLabel: "Day of month",
-      monthLabel: "Month",
-      reportPeriodLabel: "Report period",
-      milestoneEveryLabel: "Every milestone",
-      matchLabel: "Match",
-      matchAll: "All",
-      matchAny: "Any",
-      changeValueLabel: "Change value",
-      changeModeLabel: "Change mode",
-      changeModePercent: "Percent",
-      changeModeAbsolute: "Absolute",
       addCondition: "Add condition",
       removeCondition: "Remove",
-      conditionItemTitle: "Condition {index}",
-      metricLabel: "Metric",
       windowLabel: "Window",
-      operatorLabel: "Operator",
-      valueLabel: "Value",
-      cooldownLabel: "Cooldown",
-      cooldownDescription: "Wait this long before notifying again.",
-      noDataHoursLabel: "Hours without data",
+      directionLabel: "Direction",
+      percentLabel: "By at least (%)",
+      alertCondition: "{direction} of {percent}% or more ({window})",
+      directions: {
+        spike: "Spike",
+        drop: "Drop",
+      },
       pleaseChooseSite: "Choose a site.",
-      pleaseChooseRecipients: "Choose at least one recipient.",
       ruleCreated: "Rule created.",
       ruleUpdated: "Rule updated.",
       createRuleFailed: "Couldn't create the rule.",
@@ -3423,166 +2944,47 @@ const enMessages = {
       deleteConfirm: 'Delete "{name}"?',
       ruleDeleted: "Rule deleted.",
       deleteRuleFailed: "Couldn't delete the rule.",
-      lastChecked: "Last checked",
       actions: "Actions",
       edit: "Edit",
       enable: "Enable",
       disable: "Disable",
       delete: "Delete",
       saveRule: "Save rule",
-      preview: "Preview",
-      runNow: "Run now",
-      previewFailed: "Couldn't preview the rule.",
-      runFailed: "Couldn't run the rule.",
-      runFailedWithReason: "Couldn't run the rule: {reason}",
-      previewFailedWithReason: "Couldn't preview the rule: {reason}",
-      runNotTriggered: "Checked. Nothing to send right now.",
-      runSkipped:
-        "Couldn't check this rule: its site is missing or its condition isn't valid. Edit the rule.",
-      runNoRecipients:
-        "No one to send to: no member of this organization matches this rule's recipients.",
-      runSentOne: "Sent 1 notification.",
-      runSentMany: "Sent {count} notifications.",
-      runEmailFailed: "Email failed for {failed} of them.",
-      runEmailNotSetUp:
-        "No email went out: email isn't set up on this gateway.",
-      runEmailSent: "Email went out to {sent} of them.",
-      runEmailOff: "Email is off in their notification preferences.",
-      previewDialogTitle: "Rule preview",
-      previewDialogDescription:
-        "Evaluate this rule without creating messages or sending email.",
-      coolingDownUntil: "Cooling down until {time}",
-      scheduleDaily: "Daily {time}",
       scheduleWeekly: "Weekly {day} {time}",
       scheduleMonthly: "Monthly day {day} {time}",
-      scheduleQuarterly: "Quarterly day {day} {time}",
-      scheduleYearly: "Yearly {month}/{day} {time}",
-      scheduleInterval: "Every {minutes} min",
-      scheduleCustom: "Custom",
-      conditionReport: "{period}",
-      summaryWhenConditions:
-        "When {combinator} of the following conditions match, send a {type} notification:",
-      summaryWhenSingleCondition:
-        "When this condition matches, send a {type} notification:",
-      summaryConditionThreshold: "{window} {metric} {operator} {value}",
-      summaryConditionChange:
-        "{window} {metric} {mode} change {operator} {value}",
-      summaryReportSchedule: "{period}: {schedule}",
-      summaryMilestoneCondition: "{metric} reaches every {step}",
-      summaryHealthCondition: "No data for {hours} hours",
       defaultNames: {
-        report: "{site} daily report",
-        milestone: "{site} traffic milestone",
-        threshold: "{site} traffic threshold",
-        change: "{site} traffic change",
-        health: "{site} health check",
+        report: "{site} report",
+        change: "{site} traffic alert",
       },
       columns: {
         name: "Name",
         type: "Type",
-        site: "Site",
-        recipient: "Recipient",
-        schedule: "Schedule",
         condition: "Condition",
-        nextRun: "Next run",
         status: "Status",
       },
       status: {
         enabled: "Enabled",
         disabled: "Disabled",
       },
-      nextRunStates: {
-        disabled: "Disabled",
-        coolingDown: "Cooling down",
-        dueNow: "Due now",
-      },
-      previewFields: {
-        status: "Result",
-        summary: "Summary",
-        title: "Title",
-        htmlPreview: "HTML preview",
-        bodyText: "Body text",
-        createdAt: "Created at",
-        updatedAt: "Updated at",
-        loadingContent: "Loading evaluated report content",
-        noHtmlPreview: "This preview has no HTML content.",
-      },
       ruleTypes: {
         report: "Report",
-        milestone: "Milestone",
-        threshold: "Threshold",
-        change: "Change",
-        health: "Health",
-        test: "Test",
+        change: "Traffic alert",
       },
       ruleTypeDescriptions: {
         report: "Send a site overview on a schedule",
-        milestone: "Notify when a metric reaches each step",
-        threshold: "Notify when a metric crosses a limit",
-        change: "Notify on period-over-period movement",
-        health: "Notify when tracking goes quiet",
-      },
-      recipientModes: {
-        creator: "Rule creator",
-        team_admins: "Organization admins",
-        all_team_members: "All members",
-        users: "Selected users",
-      },
-      recipientKindLabel: "Send to",
-      recipientPresetLabel: "Group",
-      customRecipientsEmpty: "No recipients selected",
-      noTeamMembers: "No organization members yet.",
-      recipientKinds: {
-        preset: "A group",
-        custom: "Specific people",
+        change: "Notify when visitors spike or drop",
       },
       scheduleKinds: {
-        daily: "Daily",
         weekly: "Weekly",
         monthly: "Monthly",
-        quarterly: "Quarterly",
-        yearly: "Yearly",
-        interval: "Interval",
-      },
-      reportPeriods: {
-        daily: "Daily report",
-        weekly: "Weekly report",
-        monthly: "Monthly report",
-        quarterly: "Quarterly report",
-        yearly: "Yearly report",
-      },
-      cooldownUnits: {
-        minutes: "minutes",
-        hours: "hours",
-        days: "days",
-      },
-      intervalOptions: {
-        every30Minutes: "Every 30 minutes",
-        everyHour: "Every hour",
-        every6Hours: "Every 6 hours",
-        every12Hours: "Every 12 hours",
-        everyDay: "Every day",
-        every7Days: "Every 7 days",
-        every30Days: "Every 30 days",
       },
       weekDays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-      metrics: {
-        views: "Views",
-        visitors: "Visitors",
-        sessions: "Sessions",
-      },
       windows: {
         last_1h: "Last hour",
         last_24h: "Last 24 hours",
-        yesterday: "Yesterday",
       },
       addSiteFirst: "Add a site first.",
       deleteDescription: "This can't be undone.",
-      previewStatuses: {
-        skipped: "Skipped",
-        checked: "Not triggered",
-        triggered: "Triggered",
-      },
     },
     publicLinks: {
       copyLink: "Copy link",
@@ -3604,95 +3006,6 @@ const enMessages = {
   },
   managementPages: {
     versionUpdates: {},
-    scheduledTasks: {
-      empty: "No scheduled tasks yet.",
-      refresh: "Refresh",
-      loadFailed: "Couldn't load scheduled tasks.",
-      loadMore: "Load more",
-      allStatuses: "All statuses",
-      runs24h: "Runs (last 24 hours)",
-      successRate24h: "Success rate (last 24 hours)",
-      problemRuns24h: "Failed or partial runs",
-      failed: "Failed",
-      partial: "Partial",
-      lastRun: "Last run",
-      staleRunning: "Long-running unfinished runs",
-      taskListTitle: "Tasks",
-      task: "Task",
-      schedule: "Schedule",
-      enabled: "State",
-      enabledYes: "Enabled",
-      enabledNo: "Disabled",
-      taskStateSaved: "Task state updated.",
-      taskStateSaveFailed: "Couldn't update task state.",
-      lastStatus: "Last status",
-      runs30d: "Runs (30 days)",
-      successRate30d: "Success rate (30 days)",
-      avgDuration: "Avg. duration",
-      runHistoryTitle: "Run history",
-      nextRun: "Next run",
-      noRuns: "No runs yet.",
-      scheduledAt: "Scheduled",
-      startedAt: "Started",
-      finishedAt: "Finished",
-      trigger: "Trigger",
-      triggerTypes: {
-        manual: "Manual",
-        cron: "Scheduled",
-        retry: "Retry",
-      },
-      tasks: "Tasks",
-      taskCount: "Tasks",
-      subtaskCount: "Subtasks",
-      taskResult: "Task result",
-      statusLabel: "Status",
-      duration: "Duration",
-      sites: "Sites",
-      hours: "Hours",
-      rows: "Rows",
-      rulesScanned: "Rules",
-      messagesCreated: "Messages",
-      emailFailed: "Email failed",
-      logs: "Logs",
-      viewLogs: "View logs",
-      logTitle: "Run logs",
-      noRunSelected: "Select a run to inspect logs.",
-      noLogs: "No logs for this run.",
-      error: "Error",
-      status: {
-        running: "Running",
-        success: "Success",
-        partial: "Partial",
-        failed: "Failed",
-        skipped: "Skipped",
-      },
-      taskDefinitions: {
-        visit_hourly_rollup: {
-          name: "Hourly visit aggregation",
-          description:
-            "Rolls finished visits up into hourly totals for reports.",
-          schedule: "Every hour",
-        },
-        notification_tick: {
-          name: "Notification dispatch",
-          description: "Evaluates notification rules and dispatches messages.",
-          schedule: "Every 30 minutes",
-        },
-        database_maintenance: {
-          name: "Database maintenance",
-          description:
-            "Removes expired task runs and notifications, and tunes the database.",
-          schedule: "Every day",
-        },
-        analytics_retention: {
-          name: "Analytics retention",
-          description:
-            "Deletes expired page views and events. Hourly totals are kept.",
-          schedule: "Every day",
-        },
-      },
-      keptForDays: "Kept for {days} days",
-    },
   },
   adminUsers: {
     columns: {},
@@ -3712,59 +3025,8 @@ const enMessages = {
     columns: {},
   },
   requestObservation: {
-    blockedTotal: "Blocked requests",
-    retentionNote:
-      "Kept for 30 days. Allowed traffic is in each site's dashboards.",
-    topReasons: "Reasons",
-    recentTitle: "Latest blocked requests",
-    categoryLabels: {
-      custom_block: "Block rule",
-      bot: "Bot",
-      suspected_bot: "Hosting network",
-    },
     tabs: {},
-    refresh: "Refresh",
-    loadFailed: "Couldn't load blocked requests.",
-    noData: "No blocked requests in this period.",
-    time: "Time",
-    site: "Site",
-    location: "Location",
-    network: "Network",
-    reason: "Reason",
-    userAgent: "User agent",
-    emptyValue: "Unknown",
-    pathname: "Path",
-    country: "Country / region",
-    ipPrefix: "IP prefix",
-    botReasonLabels: {
-      missing_ua: "Missing user agent",
-      ua_too_long: "User agent too long",
-      ua_isbot: "User agent matches a bot",
-      script_ua: "Script client user agent",
-      cf_bot_score_low: "Low Cloudflare bot score",
-      cf_verified_bot_category: "Cloudflare verified bot category",
-      hosting_asn: "Hosting ASN",
-      network_service_asn: "Network service ASN",
-      transit_asn: "Transit ASN",
-      access_asn: "Access ASN",
-      missing_browser_provenance: "Missing browser provenance",
-      origin_hostname_mismatch: "Origin and hostname mismatch",
-      custom_block: "Custom block rule matched",
-      blocked_domains: "Blocked domains",
-      blocked_paths: "Blocked paths",
-      blocked_query_parameters: "Blocked query parameters",
-      blocked_referrers: "Blocked referrers",
-      blocked_user_agents: "Blocked user agents",
-      blocked_ips: "Blocked IPs",
-      blocked_asns: "Blocked ASNs",
-      blocked_countries: "Blocked countries",
-      blocked_regions: "Blocked regions",
-    },
     requestKindLabels: {},
-    overviewLabels: {
-      windowDay: "Last 24 hours",
-      windowDays: "Last {days} days",
-    },
     normalDetail: {},
   },
   systemSettings: {
@@ -3774,9 +3036,7 @@ const enMessages = {
     emailSenderLabel: "Sender",
     retentionTitle: "Data retention",
     retentionDescription:
-      "Configure how long task runs, task logs, notification messages and detailed analytics remain available. Task and notification changes affect new records only; detailed analytics older than the new limit are deleted on the next daily run.",
-    scheduledTaskLogsDaysLabel: "Scheduled task logs and runs (days)",
-    notificationTestDaysLabel: "Test notifications (days)",
+      "Configure how long notification messages and detailed analytics remain available. Notification changes affect new messages only; detailed analytics older than the new limit are deleted on the next daily run.",
     notificationAttentionDaysLabel: "Warning and critical notifications (days)",
     notificationDefaultDaysLabel: "Other notifications (days)",
     analyticsDetailDaysLabel:
@@ -3793,93 +3053,6 @@ const enMessages = {
     retentionLowerDescription:
       "Page views and events older than {days} days are deleted on the next daily run. Hourly totals are kept. This can't be undone.",
     retentionLowerConfirm: "Save and delete",
-  },
-  systemPerformance: {
-    refresh: "Refresh",
-    loadFailed: "Couldn't load ingestion data.",
-    noData: "No ingestion data in this period.",
-    range15m: "Last 15 minutes",
-    range1h: "Last hour",
-    range6h: "Last 6 hours",
-    range24h: "Last 24 hours",
-    totalEvents: "Accepted events",
-    p95Latency: "P95 estimated delay",
-    p50Latency: "P50",
-    p75Latency: "P75",
-    p50Label: "P50",
-    p75Label: "P75",
-    p95Label: "P95",
-    dataFreshness: "Data freshness",
-    noRecentWrite: "No recent write",
-    clockAnomalies: "Clock / delay anomalies",
-    delayed: "Delayed",
-    future: "Future timestamps",
-    latencyPercentileTrend: "Latency percentile trend",
-    latencyPercentileTrendDescription:
-      "View estimated P50, P75, and P95 delay for received events.",
-    throughputTrend: "Accepted event throughput",
-    throughputTrendDescription: "View the throughput of received events.",
-    visits: "Visits",
-    customEvents: "Custom events",
-    anomalyBucket: "Anomaly bucket",
-    openVisitHealth: "Open visit backlog",
-    openVisitHealthDescription: "Visits that haven't ended yet.",
-    open: "Open",
-    stale: "Stale",
-    timedOut: "Timed out",
-    oldestOpen: "Oldest open",
-    latestActivity: "Latest activity",
-    latencySampleHealth: "Latency sample health",
-    latencySampleHealthDescription: "View the delay of trusted events.",
-    trustedSamples: "Trusted samples",
-    topSitesTitle: "Top sites by load",
-    topSitesDescription: "Sites receiving the most events in the current view.",
-    events: "Events",
-    avgLatency: "Avg delay",
-    slowestEventsTitle: "Slowest events",
-    slowestEventsDescription:
-      "Events with the longest delay between happening and being saved.",
-    eventTime: "Event time",
-    serverTime: "Server write time",
-    estimatedDelay: "Estimated delay",
-    doDiagnosticTitle: "Buffered data",
-    doDiagnosticDescription:
-      "Checks each site for data that hasn't been saved yet.",
-    doDiagnosticLoadFailed: "Couldn't check buffered data.",
-    doDiagnosticLoading: "Checking each site…",
-    doDiagnosticRun: "Check buffered data",
-    doDiagnosticEmpty: "No buffered data.",
-    doDiagnosticUnreachable: "Unreachable sites",
-    doDiagnosticReachableSites: "Reachable sites",
-    doDiagnosticTotalSites: "Total sites",
-    doDiagnosticActiveAlarms: "Active alarms",
-    doDiagnosticBufferedVisits: "Buffered visits",
-    doDiagnosticOpenVisits: "Buffered open visits",
-    doDiagnosticOpenStale: "Idle over 30 minutes",
-    doDiagnosticOpenTimedOut: "Idle over 12 hours",
-    doDiagnosticOpenHardAged: "Started over 36 hours ago",
-    doDiagnosticOpenFutureSkew: "Future timestamps",
-    doDiagnosticStuckDirty: "Stuck unsaved",
-    doDiagnosticMaxFlushAttempts: "Max retry attempts",
-    doDiagnosticBufferedCustomEvents: "Buffered custom events",
-    doDiagnosticOldestOpen: "Oldest open visit",
-    doDiagnosticFutureMaxActivity: "Latest future activity time",
-    doDiagnosticSiteList: "Top risk sites",
-    doDiagnosticSiteListDescription: "The 20 sites most at risk.",
-    doDiagnosticSiteFailed: "Unreachable",
-    doDiagnosticSiteOpen: "Open",
-    doDiagnosticSiteStuck: "Stuck",
-    doDiagnosticSiteFuture: "Future timestamps",
-    doDiagnosticSiteHardAged: "Over 36 hours old",
-    doDiagnosticSiteAlarm: "Alarm",
-    doDiagnosticSiteAlarmNone: "None",
-    doDiagnosticSiteAlarmDue: "Due",
-    doDiagnosticSiteNextDue: "Next due",
-    doDiagnosticSiteNextDueFlush: "Flush",
-    doDiagnosticSiteNextDueHidden: "Hidden fallback",
-    doDiagnosticSiteNextDueTimeout: "Visit timeout",
-    doDiagnosticSiteResponseMs: "Response time",
-    doDiagnosticHealthy: "No abnormal buffered rows detected.",
   },
   loginForm: {},
   logoutAction: {},
@@ -3927,18 +3100,10 @@ const enMessages = {
   },
   settingsNav: {
     label: "Settings",
-    system: "System health",
+    system: "System",
     account: "Account",
     notifications: "Notification rules",
     cancel: "Cancel",
-  },
-  systemHealth: {
-    tabs: {
-      tasks: "Scheduled tasks",
-      blocked: "Blocked requests",
-      ingestion: "Ingestion",
-      data: "Data",
-    },
   },
 } as AppMessages;
 

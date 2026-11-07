@@ -2,13 +2,14 @@ import { DatabaseSync } from "node:sqlite";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { loadMigrations } from "@/../scripts/schema/database";
+
 const runScheduledTask = vi.hoisted(() => vi.fn());
 const runHourlyAggregation = vi.hoisted(() => vi.fn());
 const runNotificationTick = vi.hoisted(() => vi.fn());
 const runDatabaseMaintenance = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/edge/scheduled-tasks/runner", () => ({
-  STALE_RUNNING_MS: 6 * 60 * 60 * 1000,
   runScheduledTask,
 }));
 vi.mock("@/lib/edge/scheduled-tasks/hourly-rollup", () => ({
@@ -29,19 +30,17 @@ class FakeD1Database {
   readonly calls: Array<{ method: "all" | "run"; sql: string }> = [];
   failNextUpdate = false;
 
-  constructor() {
-    this.db.exec(`
-      CREATE TABLE scheduled_task_schedule_state (
-        task_key TEXT PRIMARY KEY,
-        enabled INTEGER NOT NULL DEFAULT 1,
-        next_run_at INTEGER NOT NULL,
-        last_run_at INTEGER,
-        claim_token TEXT,
-        claim_expires_at INTEGER,
-        last_error TEXT,
-        updated_at INTEGER NOT NULL DEFAULT (unixepoch())
-      );
-    `);
+  /**
+   * The real schema, migration by migration; `afterBaseline` runs between the
+   * baseline and the later migrations, as production data did. The baseline's
+   * task rows are cleared unless that hook keeps them.
+   */
+  constructor(afterBaseline?: (db: DatabaseSync) => void) {
+    const [baseline, ...later] = loadMigrations();
+    this.db.exec(baseline!.sql);
+    if (afterBaseline) afterBaseline(this.db);
+    else this.db.exec("DELETE FROM scheduled_task_schedule_state");
+    for (const migration of later) this.db.exec(migration.sql);
   }
 
   prepare(sql: string) {
@@ -87,12 +86,12 @@ function observability() {
   } as never;
 }
 
-function seed(d1: FakeD1Database, key: string, nextRunAt: number, enabled = 1) {
+function seed(d1: FakeD1Database, key: string, nextRunAt: number) {
   d1.db
     .prepare(
-      "INSERT INTO scheduled_task_schedule_state (task_key, enabled, next_run_at) VALUES (?, ?, ?)",
+      "INSERT INTO scheduled_task_schedule_state (task_key, next_run_at) VALUES (?, ?)",
     )
-    .run(key, enabled, nextRunAt);
+    .run(key, nextRunAt);
 }
 
 function createEnv(d1: FakeD1Database) {
@@ -116,7 +115,7 @@ describe("internal scheduled task dispatcher", () => {
     await dispatchInternalScheduledTasks(createEnv(d1), now, observability());
 
     expect(runScheduledTask).toHaveBeenCalledTimes(1);
-    expect(runScheduledTask.mock.calls[0]?.[1].key).toBe("notification_tick");
+    expect(runScheduledTask.mock.calls[0]?.[1]).toBe("notification_tick");
     d1.close();
   });
 
@@ -127,14 +126,19 @@ describe("internal scheduled task dispatcher", () => {
     seed(d1, "notification_tick", 0);
     seed(d1, "visit_hourly_rollup", 0);
     seed(d1, "database_maintenance", 0);
+    const env = createEnv(d1);
 
-    await dispatchInternalScheduledTasks(createEnv(d1), now, observability());
+    await dispatchInternalScheduledTasks(env, now, observability());
 
-    expect(runScheduledTask.mock.calls.map((call) => call[1].key)).toEqual([
+    expect(runScheduledTask.mock.calls.map((call) => call[1])).toEqual([
       "notification_tick",
       "visit_hourly_rollup",
       "database_maintenance",
     ]);
+    // The rollup runs for the tick's own time, not the clock's.
+    const logger = { info: vi.fn() };
+    await runScheduledTask.mock.calls[1]?.[2]({ logger });
+    expect(runHourlyAggregation).toHaveBeenCalledWith(env, now, { logger });
     expect(
       d1.db
         .prepare(
@@ -153,6 +157,33 @@ describe("internal scheduled task dispatcher", () => {
     expect(
       d1.calls.filter(({ method }) => method === "all")[0]?.sql,
     ).not.toMatch(/ORDER BY/i);
+    d1.close();
+  });
+
+  it("records a failed task's error and still schedules its next run", async () => {
+    const d1 = new FakeD1Database();
+    const now = Date.UTC(2026, 7, 31, 10, 0);
+    seed(d1, "analytics_retention", 0);
+    runScheduledTask.mockRejectedValueOnce(new Error("D1 timed out"));
+    const logs = observability() as unknown as {
+      error: ReturnType<typeof vi.fn>;
+    };
+
+    await dispatchInternalScheduledTasks(createEnv(d1), now, logs as never);
+
+    expect(runScheduledTask.mock.calls[0]?.[1]).toBe("analytics_retention");
+    expect(logs.error).toHaveBeenCalledWith("scheduled_task.handler_failed");
+    expect(
+      d1.db
+        .prepare(
+          "SELECT claim_token, last_error, next_run_at FROM scheduled_task_schedule_state WHERE task_key = ?",
+        )
+        .get("analytics_retention"),
+    ).toEqual({
+      claim_token: null,
+      last_error: "Error: D1 timed out",
+      next_run_at: Date.UTC(2026, 8, 1) / 1000,
+    });
     d1.close();
   });
 
@@ -262,15 +293,23 @@ describe("internal scheduled task dispatcher", () => {
     d1.close();
   });
 
-  it("does not claim disabled tasks", async () => {
-    const d1 = new FakeD1Database();
+  it("runs a task that was turned off before tasks always ran", async () => {
+    // Production could turn a task off; its next_run_at then stayed due.
+    const d1 = new FakeD1Database((db) => {
+      db.exec(`
+        DELETE FROM scheduled_task_schedule_state
+        WHERE task_key <> 'notification_tick';
+        UPDATE scheduled_task_schedule_state
+        SET enabled = 0
+        WHERE task_key = 'notification_tick';
+      `);
+    });
     const now = Date.UTC(2026, 7, 31, 10, 30);
-    seed(d1, "notification_tick", 0, 0);
 
     await dispatchInternalScheduledTasks(createEnv(d1), now, observability());
 
-    expect(runScheduledTask).not.toHaveBeenCalled();
-    expect(d1.calls.filter(({ method }) => method === "run")).toHaveLength(0);
+    expect(runScheduledTask).toHaveBeenCalledTimes(1);
+    expect(runScheduledTask.mock.calls[0]?.[1]).toBe("notification_tick");
     d1.close();
   });
 

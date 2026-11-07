@@ -24,7 +24,7 @@ import { runAnalyticsRetention } from "./analytics-retention";
 import { runDatabaseMaintenance } from "./database-maintenance";
 import { runHourlyAggregation } from "./hourly-rollup";
 import { SCHEDULED_TASKS } from "./registry";
-import { runScheduledTask, STALE_RUNNING_MS } from "./runner";
+import { runScheduledTask } from "./runner";
 
 const TASK_ORDER = [
   "notification_tick",
@@ -33,9 +33,11 @@ const TASK_ORDER = [
   "analytics_retention",
 ] as const;
 
+// A claim older than this belongs to a run that died; another tick may retake it.
+const CLAIM_TTL_SECONDS = 6 * 60 * 60;
+
 interface ScheduleStateRow {
   taskKey: string;
-  enabled: number;
   nextRunAt: number;
 }
 
@@ -65,16 +67,9 @@ async function loadDueStates(
 ): Promise<ScheduleStateRow[]> {
   const scheduleState = schema.scheduled_task_schedule_state;
   const states = scan(scheduleState);
-  const dueStates = filter(
-    states,
-    and(
-      eq(states.columns.enabled, param(1)),
-      lte(states.columns.next_run_at, param(now)),
-    ),
-  );
+  const dueStates = filter(states, lte(states.columns.next_run_at, param(now)));
   const query = project(dueStates, {
     taskKey: dueStates.columns.task_key,
-    enabled: dueStates.columns.enabled,
     nextRunAt: dueStates.columns.next_run_at,
   });
   const result = await createD1DatabaseClient(env.DB).all(
@@ -108,12 +103,11 @@ async function claimTask(
         update(scheduleState, (columns) => ({
           set: {
             claim_token: claimToken,
-            claim_expires_at: now + Math.trunc(STALE_RUNNING_MS / 1000),
+            claim_expires_at: now + CLAIM_TTL_SECONDS,
             updated_at: unixepoch(),
           },
           where: and(
             eq(columns.task_key, param(taskKey)),
-            eq(columns.enabled, param(1)),
             lte(columns.next_run_at, param(now)),
             or(
               isNull(columns.claim_token),
@@ -171,47 +165,31 @@ async function executeTask(
   scheduledTime: number,
   observability: InvocationLogger,
 ): Promise<void> {
-  const definition = SCHEDULED_TASKS.find((task) => task.key === taskKey);
-  if (!definition) return;
   const claimToken = crypto.randomUUID();
   const now = nowSeconds(scheduledTime);
   if (!(await claimTask(env, taskKey, now, claimToken))) return;
 
   try {
-    const taskDefinition = {
-      key: definition.key,
-      name: definition.name,
-      triggerType: "cron" as const,
-    };
     if (taskKey === "notification_tick") {
-      await runScheduledTask(
-        env,
-        taskDefinition,
-        scheduledTime,
-        runNotificationTick,
-        observability,
-      );
+      await runScheduledTask(env, taskKey, runNotificationTick, observability);
     } else if (taskKey === "visit_hourly_rollup") {
       await runScheduledTask(
         env,
-        taskDefinition,
-        scheduledTime,
+        taskKey,
         ({ logger }) => runHourlyAggregation(env, scheduledTime, { logger }),
         observability,
       );
     } else if (taskKey === "analytics_retention") {
       await runScheduledTask(
         env,
-        taskDefinition,
-        scheduledTime,
+        taskKey,
         runAnalyticsRetention,
         observability,
       );
     } else {
       await runScheduledTask(
         env,
-        taskDefinition,
-        scheduledTime,
+        taskKey,
         runDatabaseMaintenance,
         observability,
       );

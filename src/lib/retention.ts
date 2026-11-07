@@ -1,8 +1,12 @@
-import type { ScheduledTaskRetentionConfig } from "./scheduled-tasks";
+/** How long the instance keeps notifications and detailed analytics, in days. */
+export interface RetentionConfig {
+  notificationAttentionDays: number;
+  notificationDefaultDays: number;
+  /** Page views and custom events older than this are deleted; hourly totals stay. */
+  analyticsDetailDays: number;
+}
 
-export const DEFAULT_RETENTION_CONFIG: ScheduledTaskRetentionConfig = {
-  scheduledTaskLogsDays: 30,
-  notificationTestDays: 30,
+export const DEFAULT_RETENTION_CONFIG: RetentionConfig = {
   notificationAttentionDays: 180,
   notificationDefaultDays: 120,
   analyticsDetailDays: 396,
@@ -22,19 +26,9 @@ function validRetentionDays(value: unknown): value is number {
 }
 
 export function normalizeRetentionConfig(
-  value:
-    | Partial<ScheduledTaskRetentionConfig>
-    | Record<string, unknown>
-    | null
-    | undefined,
-): ScheduledTaskRetentionConfig {
+  value: Partial<RetentionConfig> | Record<string, unknown> | null | undefined,
+): RetentionConfig {
   return {
-    scheduledTaskLogsDays: validRetentionDays(value?.scheduledTaskLogsDays)
-      ? value.scheduledTaskLogsDays
-      : DEFAULT_RETENTION_CONFIG.scheduledTaskLogsDays,
-    notificationTestDays: validRetentionDays(value?.notificationTestDays)
-      ? value.notificationTestDays
-      : DEFAULT_RETENTION_CONFIG.notificationTestDays,
     notificationAttentionDays: validRetentionDays(
       value?.notificationAttentionDays,
     )
@@ -50,17 +44,16 @@ export function normalizeRetentionConfig(
 }
 
 export function mergeRetentionConfig(
-  current: ScheduledTaskRetentionConfig,
+  current: RetentionConfig,
   patch: Record<string, unknown>,
-): ScheduledTaskRetentionConfig {
+): RetentionConfig {
   return normalizeRetentionConfig({ ...current, ...patch });
 }
 
 export function retentionDaysForNotification(
-  input: { type: string; severity: string },
-  config: ScheduledTaskRetentionConfig = DEFAULT_RETENTION_CONFIG,
+  input: { severity: string },
+  config: RetentionConfig = DEFAULT_RETENTION_CONFIG,
 ): number {
-  if (input.type === "test") return config.notificationTestDays;
   if (input.severity === "warning" || input.severity === "critical") {
     return config.notificationAttentionDays;
   }

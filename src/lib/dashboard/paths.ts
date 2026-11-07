@@ -35,22 +35,3 @@ export function buildSettingsPath(section?: SettingsSection): string {
   const base = "/settings";
   return section ? `${base}/${section}` : base;
 }
-
-/** System health's tabs, in the order the page lists them. */
-export const SYSTEM_HEALTH_TABS = [
-  "tasks",
-  "blocked",
-  "ingestion",
-  "data",
-] as const;
-
-export type SystemHealthTab = (typeof SYSTEM_HEALTH_TABS)[number];
-
-export function isSystemHealthTab(value: unknown): value is SystemHealthTab {
-  return SYSTEM_HEALTH_TABS.includes(value as SystemHealthTab);
-}
-
-/** One tab of System health. */
-export function buildSystemHealthPath(tab: SystemHealthTab): string {
-  return `${buildSettingsPath("system")}?tab=${tab}`;
-}

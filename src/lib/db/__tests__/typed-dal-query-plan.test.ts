@@ -52,12 +52,11 @@ function createFixture(): DatabaseSync {
     insertSite.run(`site-${index}`, teamId, `Site ${index}`, `${index}.test`);
   }
   const insertScheduleState = database.prepare(
-    "INSERT INTO scheduled_task_schedule_state (task_key, enabled, next_run_at) VALUES (?, ?, ?)",
+    "INSERT INTO scheduled_task_schedule_state (task_key, next_run_at) VALUES (?, ?)",
   );
   for (let index = 0; index < 480; index += 1) {
     insertScheduleState.run(
       `fixture-task-${index}`,
-      index % 2,
       index % 3 === 0 ? 10_000 : 1,
     );
   }
@@ -251,31 +250,8 @@ describe("Typed DAL SQLite query-plan guards", () => {
     expectIndexSearch(typedWorkspacePlan, "sqlite_autoindex_teams_1");
   });
 
-  it("keeps scheduled due, claim, and run updates on their existing indexes", () => {
+  it("keeps the scheduled-task claim on the task's primary key", () => {
     const database = createFixture();
-
-    const states = scan(schema.scheduled_task_schedule_state);
-    const dueStates = filter(
-      states,
-      and(
-        eq(states.columns.enabled, param(1)),
-        lte(states.columns.next_run_at, param(2_000)),
-      ),
-    );
-    const dueQuery = compileD1Query(
-      project(dueStates, {
-        taskKey: dueStates.columns.task_key,
-        enabled: dueStates.columns.enabled,
-        nextRunAt: dueStates.columns.next_run_at,
-      }),
-    );
-    const duePlan = explainQueryPlan(database, dueQuery);
-    const legacyDuePlan = explainQueryPlan(database, {
-      sql: "SELECT task_key AS taskKey, enabled, next_run_at AS nextRunAt FROM scheduled_task_schedule_state WHERE enabled=? AND next_run_at<=?",
-      bindings: [1, 2_000],
-    });
-    expectIndexSearch(duePlan, "idx_scheduled_task_schedule_due");
-    expectIndexSearch(legacyDuePlan, "idx_scheduled_task_schedule_due");
 
     const claim = compileD1Mutation(
       update(schema.scheduled_task_schedule_state, (columns) => ({
@@ -286,7 +262,6 @@ describe("Typed DAL SQLite query-plan guards", () => {
         },
         where: and(
           eq(columns.task_key, param("notification_tick")),
-          eq(columns.enabled, param(1)),
           lte(columns.next_run_at, param(2_000)),
           or(
             isNull(columns.claim_token),
@@ -299,25 +274,6 @@ describe("Typed DAL SQLite query-plan guards", () => {
     expectIndexSearch(
       explainQueryPlan(database, claim),
       "sqlite_autoindex_scheduled_task_schedule_state_1",
-    );
-
-    const finishRun = compileD1Mutation(
-      update(schema.scheduled_task_runs, (columns) => ({
-        set: {
-          status: param("success"),
-          finished_at_ms: param(2_000),
-          duration_ms: param(10),
-          summary_json: param("{}"),
-          error_name: param(null),
-          error_message: param(null),
-          error_stack: param(null),
-        },
-        where: eq(columns.id, param("run-id")),
-      })),
-    );
-    expectIndexSearch(
-      explainQueryPlan(database, finishRun),
-      "sqlite_autoindex_scheduled_task_runs_1",
     );
   });
 });

@@ -1,9 +1,5 @@
-import {
-  canManageSite,
-  canManageTeam,
-  canReadTeam,
-} from "@/lib/edge/admin/access";
-import { type Actor, requireActor } from "@/lib/edge/admin/auth";
+import { canReadTeam } from "@/lib/edge/admin/access";
+import { requireActor } from "@/lib/edge/admin/auth";
 import {
   bad,
   forb,
@@ -12,7 +8,6 @@ import {
   nf,
   parseJson,
 } from "@/lib/edge/admin/response";
-import { runScheduledTask } from "@/lib/edge/scheduled-tasks/runner";
 import type { Env } from "@/lib/edge/types";
 import {
   countUnreadAttentionMessages,
@@ -21,52 +16,35 @@ import {
   markNotificationMessageRead,
 } from "@/lib/notifications/edge/message-store";
 import {
-  createManualTestNotification,
-  createNotificationRulePreview,
-  NOTIFICATION_TASK_KEY,
-  NOTIFICATION_TASK_NAME,
-  type NotificationTaskSummary,
-  runNotificationRuleManually,
-} from "@/lib/notifications/edge/notification-task";
-import {
   getUserNotificationPreferences,
   updateUserNotificationPreferences,
 } from "@/lib/notifications/edge/preferences";
 import {
   createNotificationRule,
   deleteNotificationRule,
-  getNotificationRule,
   listNotificationRules,
   updateNotificationRule,
   type UpdateNotificationRuleInput,
 } from "@/lib/notifications/edge/rule-store";
-import type { NotificationMessage } from "@/lib/notifications/message";
+import {
+  InvalidNotificationRuleError,
+  parseNotificationRuleConfig,
+} from "@/lib/notifications/rules";
 function stringParam(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 function hasOwn(input: object, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(input, key);
 }
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
 function parseLimit(url: URL): number {
   const raw = Math.trunc(Number(url.searchParams.get("limit") ?? 50));
   if (!Number.isFinite(raw)) return 50;
   return Math.max(1, Math.min(100, raw));
 }
-async function getManageableRule(env: Env, actor: Actor, ruleId: string) {
-  const rule = await getNotificationRule(env, ruleId);
-  if (!rule) throw new Error("Not Found");
-  if (!canManageTeam(actor, rule.teamId)) {
-    throw new Error("Forbidden");
-  }
-  if (rule.siteId && !(await canManageSite(env, actor, rule.siteId))) {
-    throw new Error("Forbidden");
-  }
-  return rule;
-}
 function mapError(error: unknown, req: Request): Response {
+  if (error instanceof InvalidNotificationRuleError) {
+    return bad(error.message, undefined, req);
+  }
   const message = error instanceof Error ? error.message : String(error);
   if (message === "Forbidden") return forb("Forbidden", undefined, req);
   if (message === "Not Found") return nf("Not Found", undefined, req);
@@ -91,48 +69,35 @@ export async function handleNotificationRulesAdmin(
     if (req.method === "POST") {
       const body = await parseJson(req);
       const teamId = stringParam(body.teamId);
+      const siteId = stringParam(body.siteId);
       if (!teamId) return bad("teamId is required", undefined, req);
+      if (!siteId) return bad("siteId is required", undefined, req);
       const rule = await createNotificationRule(env, actor, {
         teamId,
-        siteId: stringParam(body.siteId) || null,
-        name: stringParam(body.name) || "Notification rule",
-        description: stringParam(body.description),
-        type: Object.prototype.hasOwnProperty.call(body, "type")
-          ? (stringParam(body.type) as never)
-          : undefined,
+        siteId,
+        name: stringParam(body.name),
         enabled: typeof body.enabled === "boolean" ? body.enabled : undefined,
-        schedule: body.schedule ?? body.scheduleJson,
-        condition:
-          body.condition && typeof body.condition === "object"
-            ? (body.condition as Record<string, unknown>)
-            : undefined,
-        recipient: body.recipient as never,
+        config: parseNotificationRuleConfig(body),
       });
       return jsonResponseFor(req, { ok: true, data: rule });
     }
 
     if (req.method === "PATCH") {
       const body = await parseJson(req);
-      const ruleId = stringParam(body.ruleId || body.id);
+      const ruleId = stringParam(body.ruleId);
       if (!ruleId) return bad("ruleId is required", undefined, req);
       const input: UpdateNotificationRuleInput = { ruleId };
-      if (hasOwn(body, "teamId")) input.teamId = stringParam(body.teamId);
       if (hasOwn(body, "siteId")) {
-        input.siteId = stringParam(body.siteId) || null;
+        const siteId = stringParam(body.siteId);
+        if (!siteId) return bad("siteId is required", undefined, req);
+        input.siteId = siteId;
       }
       if (hasOwn(body, "name")) input.name = stringParam(body.name);
-      if (hasOwn(body, "description")) {
-        input.description = stringParam(body.description);
+      if (typeof body.enabled === "boolean") input.enabled = body.enabled;
+      // A rule's type, schedule and condition change together.
+      if (hasOwn(body, "type")) {
+        input.config = parseNotificationRuleConfig(body);
       }
-      if (hasOwn(body, "type")) input.type = stringParam(body.type) as never;
-      if (hasOwn(body, "enabled") && typeof body.enabled === "boolean") {
-        input.enabled = body.enabled;
-      }
-      if (hasOwn(body, "schedule")) input.schedule = body.schedule;
-      if (hasOwn(body, "condition") && isRecord(body.condition)) {
-        input.condition = body.condition;
-      }
-      if (hasOwn(body, "recipient")) input.recipient = body.recipient as never;
       const rule = await updateNotificationRule(env, actor, input);
       return jsonResponseFor(req, { ok: true, data: rule });
     }
@@ -147,69 +112,6 @@ export async function handleNotificationRulesAdmin(
     return mapError(error, req);
   }
   return na(req);
-}
-export async function handleNotificationRulePreviewAdmin(
-  req: Request,
-  env: Env,
-): Promise<Response> {
-  const actor = await requireActor(env, req);
-  if (actor instanceof Response) return actor;
-  if (req.method !== "POST") return na(req);
-
-  try {
-    const body = await parseJson(req);
-    const ruleId = stringParam(body.ruleId || body.id);
-    if (!ruleId) return bad("ruleId is required", undefined, req);
-    const rule = await getManageableRule(env, actor, ruleId);
-    const evaluation = await createNotificationRulePreview(env, rule);
-    return jsonResponseFor(req, { ok: true, data: evaluation });
-  } catch (error) {
-    return mapError(error, req);
-  }
-}
-export async function handleNotificationRuleRunAdmin(
-  req: Request,
-  env: Env,
-): Promise<Response> {
-  const actor = await requireActor(env, req);
-  if (actor instanceof Response) return actor;
-  if (req.method !== "POST") return na(req);
-
-  try {
-    const body = await parseJson(req);
-    const ruleId = stringParam(body.ruleId || body.id);
-    if (!ruleId) return bad("ruleId is required", undefined, req);
-    const rule = await getManageableRule(env, actor, ruleId);
-    const payload: {
-      current: Awaited<ReturnType<typeof runNotificationRuleManually>> | null;
-    } = { current: null };
-    await runScheduledTask(
-      env,
-      {
-        key: NOTIFICATION_TASK_KEY,
-        name: NOTIFICATION_TASK_NAME,
-        triggerType: "manual",
-        scopeType: "notification_rule",
-        scopeId: rule.id,
-      },
-      undefined,
-      async (context) => {
-        payload.current = await runNotificationRuleManually({
-          env,
-          context,
-          rule,
-        });
-        return {
-          status:
-            payload.current.summary.emailFailed > 0 ? "partial" : "success",
-          summary: { ...payload.current.summary },
-        };
-      },
-    );
-    return jsonResponseFor(req, { ok: true, data: payload.current });
-  } catch (error) {
-    return mapError(error, req);
-  }
 }
 export async function handleNotifications(
   req: Request,
@@ -316,70 +218,4 @@ export async function handleNotificationsReadAll(
     teamId,
   });
   return jsonResponseFor(req, { ok: true, data: { updated } });
-}
-export async function handleNotificationTestAdmin(
-  req: Request,
-  env: Env,
-): Promise<Response> {
-  const actor = await requireActor(env, req);
-  if (actor instanceof Response) return actor;
-  if (req.method !== "POST") return na(req);
-  const body = await parseJson(req);
-  const teamId = stringParam(body.teamId);
-  const siteId = stringParam(body.siteId) || null;
-  const requestedUserId = stringParam(body.userId) || actor.user.id;
-  if (!teamId) return bad("teamId is required", undefined, req);
-  if (!canReadTeam(actor, teamId)) {
-    return forb("Forbidden", undefined, req);
-  }
-  // A test notification goes to the person who asked for it, never to
-  // another member.
-  if (requestedUserId !== actor.user.id) {
-    return forb(
-      "You can only send a test notification to yourself",
-      undefined,
-      req,
-    );
-  }
-
-  const payload: {
-    current: {
-      message: NotificationMessage | null;
-      summary: NotificationTaskSummary;
-    } | null;
-  } = { current: null };
-  await runScheduledTask(
-    env,
-    {
-      key: NOTIFICATION_TASK_KEY,
-      name: NOTIFICATION_TASK_NAME,
-      triggerType: "manual",
-      scopeType: "team",
-      scopeId: teamId,
-    },
-    undefined,
-    async (context) => {
-      payload.current = await createManualTestNotification({
-        env,
-        context,
-        teamId,
-        siteId,
-        userId: requestedUserId,
-      });
-      const current = payload.current;
-      return {
-        status:
-          current.message?.deliveryStatus === "failed" ? "partial" : "success",
-        summary: { ...current.summary },
-      };
-    },
-  );
-  const result = payload.current;
-  return jsonResponseFor(req, {
-    ok: true,
-    data: {
-      message: result?.message ?? null,
-      summary: result?.summary ?? null,
-    },
-  });
 }

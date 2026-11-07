@@ -19,7 +19,7 @@ describe("admin service route contract", () => {
       "session",
       "members",
       "notification-rules",
-      "system-performance",
+      "retention",
     ] as const;
 
     for (const route of routes) {

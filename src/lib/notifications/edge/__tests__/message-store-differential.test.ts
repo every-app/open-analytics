@@ -23,9 +23,7 @@ import {
 } from "@/lib/notifications/edge/message-store";
 import { safeJsonStringify } from "@/lib/notifications/json";
 import {
-  defaultRequiresAttention,
   normalizeNotificationDeliveryStatus,
-  normalizeNotificationMessageType,
   normalizeNotificationSeverity,
 } from "@/lib/notifications/message-types";
 import { notificationRuleExpiresAtSeconds } from "@/lib/notifications/schedule";
@@ -228,7 +226,7 @@ function createFixture() {
       "site-2",
       "user-1",
       null,
-      "threshold",
+      "change",
       "info",
       1,
       "Other team",
@@ -278,7 +276,6 @@ const MESSAGE_SELECT = `
   site_id AS siteId,
   user_id AS userId,
   rule_id AS ruleId,
-  run_id AS runId,
   batch_id AS batchId,
   type,
   severity,
@@ -778,6 +775,7 @@ describe("notification message store Typed DAL differential", () => {
       ruleId: "rule-1",
       type: "report" as const,
       severity: "warning" as const,
+      requiresAttention: true,
       title: "  Differential title  ",
       summary: "  Summary  ",
       bodyText: "  Body  ",
@@ -787,16 +785,15 @@ describe("notification message store Typed DAL differential", () => {
       triggeredAt: 699,
       now: 700,
     };
-    const type = normalizeNotificationMessageType(input.type);
+    const type = input.type;
     const severity = normalizeNotificationSeverity(input.severity);
     const status = normalizeNotificationDeliveryStatus(input.deliveryStatus);
     const expiry = notificationRuleExpiresAtSeconds({
-      type,
       severity,
       createdAtSeconds: input.now,
     });
-    const attention = defaultRequiresAttention({ type, severity });
-    const insertSql = `INSERT INTO notification_messages (id, team_id, site_id, user_id, rule_id, run_id, batch_id, type, severity, requires_attention, title, summary, body_text, body_html, data_json, channels_json, delivery_status, delivery_results_json, triggered_at, created_at, updated_at, sent_at, failed_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const attention = input.requiresAttention;
+    const insertSql = `INSERT INTO notification_messages (id, team_id, site_id, user_id, rule_id, batch_id, type, severity, requires_attention, title, summary, body_text, body_html, data_json, channels_json, delivery_status, delivery_results_json, triggered_at, created_at, updated_at, sent_at, failed_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     createLegacy.database
       .prepare(insertSql)
       .run(
@@ -805,7 +802,6 @@ describe("notification message store Typed DAL differential", () => {
         input.siteId,
         input.userId,
         input.ruleId,
-        null,
         null,
         type,
         severity,

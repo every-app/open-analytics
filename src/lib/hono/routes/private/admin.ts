@@ -31,31 +31,7 @@ privateAdminRoutes.all(
   "/notification-rules",
   adminServiceRoute("notification-rules"),
 );
-privateAdminRoutes.all(
-  "/notification-rules/preview",
-  adminServiceRoute("notification-rules/preview"),
-);
-privateAdminRoutes.all(
-  "/notification-rules/run",
-  adminServiceRoute("notification-rules/run"),
-);
-privateAdminRoutes.all(
-  "/notification-test",
-  adminServiceRoute("notification-test"),
-);
-privateAdminRoutes.all(
-  "/system-performance",
-  adminServiceRoute("system-performance"),
-);
-privateAdminRoutes.all(
-  "/scheduled-tasks",
-  adminServiceRoute("scheduled-tasks"),
-);
-privateAdminRoutes.all("/do-diagnostic", adminServiceRoute("do-diagnostic"));
-privateAdminRoutes.all(
-  "/request-observation",
-  adminServiceRoute("request-observation"),
-);
+privateAdminRoutes.all("/retention", adminServiceRoute("retention"));
 privateAdminRoutes.all("/get-started", adminServiceRoute("get-started"));
 privateAdminRoutes.all("/site-tracking", adminServiceRoute("site-tracking"));
 privateAdminRoutes.all("/*", () => nf());

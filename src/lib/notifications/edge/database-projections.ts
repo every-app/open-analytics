@@ -7,13 +7,10 @@ export function notificationRuleRows() {
     teamId: rules.columns.team_id,
     siteId: rules.columns.site_id,
     name: rules.columns.name,
-    description: rules.columns.description,
     type: rules.columns.type,
     enabled: rules.columns.enabled,
     scheduleJson: rules.columns.schedule_json,
     conditionJson: rules.columns.condition_json,
-    recipientJson: rules.columns.recipient_json,
-    stateJson: rules.columns.state_json,
     lastCheckedAt: rules.columns.last_checked_at,
     lastTriggeredAt: rules.columns.last_triggered_at,
     nextRunAt: rules.columns.next_run_at,
@@ -32,7 +29,6 @@ export function notificationMessageRows() {
     siteId: messages.columns.site_id,
     userId: messages.columns.user_id,
     ruleId: messages.columns.rule_id,
-    runId: messages.columns.run_id,
     batchId: messages.columns.batch_id,
     type: messages.columns.type,
     severity: messages.columns.severity,
@@ -64,6 +60,5 @@ export function notificationRecipientRows() {
     id: users.columns.id,
     email: users.columns.email,
     preferencesJson: users.columns.notification_preferences_json,
-    timeZone: users.columns.timezone,
   });
 }

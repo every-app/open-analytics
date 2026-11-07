@@ -18,9 +18,8 @@ function row(input: Record<string, unknown> = {}) {
     siteId: null,
     userId: "user-1",
     ruleId: null,
-    runId: null,
     batchId: null,
-    type: "threshold",
+    type: "change",
     severity: "warning",
     requiresAttention: 1,
     title: "Title",
@@ -55,9 +54,8 @@ describe("notification message store", () => {
           siteId: undefined,
           userId: 3,
           ruleId: 4,
-          runId: 5,
           batchId: 6,
-          type: "unknown",
+          type: "report",
           severity: "severe",
           requiresAttention: 0,
           title: null,
@@ -82,9 +80,8 @@ describe("notification message store", () => {
       siteId: null,
       userId: "3",
       ruleId: "4",
-      runId: "5",
       batchId: "6",
-      type: "system",
+      type: "report",
       severity: "info",
       requiresAttention: false,
       title: "",
@@ -102,6 +99,12 @@ describe("notification message store", () => {
       failedAt: null,
       expiresAt: null,
     });
+  });
+
+  it("refuses a row of a message type the app no longer has", () => {
+    expect(() =>
+      mapNotificationMessage(row({ type: "threshold" }) as never),
+    ).toThrow("Unknown notification message type: threshold");
   });
 
   it("creates messages with defaults, truncation, and sent timestamps", async () => {
@@ -147,7 +150,8 @@ describe("notification message store", () => {
       teamId: "team-1",
       siteId: "site-1",
       userId: "user-1",
-      type: "health",
+      type: "change",
+      requiresAttention: true,
       title: ` ${"T".repeat(300)} `,
       summary: " Summary ",
       bodyText: " Body ",
@@ -164,8 +168,7 @@ describe("notification message store", () => {
       "user-1",
       null,
       null,
-      null,
-      "health",
+      "change",
       "info",
       1,
       "T".repeat(240),
@@ -209,7 +212,6 @@ describe("notification message store", () => {
                     id: "msg-failed",
                     siteId: null,
                     ruleId: "rule-1",
-                    runId: "run-1",
                     batchId: "batch-1",
                     type: "report",
                     severity: "critical",
@@ -230,7 +232,6 @@ describe("notification message store", () => {
         teamId: "team-1",
         userId: "user-1",
         ruleId: "rule-1",
-        runId: "run-1",
         batchId: "batch-1",
         type: "report",
         severity: "critical",
@@ -245,7 +246,6 @@ describe("notification message store", () => {
     ).resolves.toMatchObject({
       id: "msg-failed",
       ruleId: "rule-1",
-      runId: "run-1",
       batchId: "batch-1",
       deliveryStatus: "failed",
       failedAt: 2000,
@@ -257,7 +257,6 @@ describe("notification message store", () => {
       null,
       "user-1",
       "rule-1",
-      "run-1",
       "batch-1",
       "report",
       "critical",
@@ -302,7 +301,7 @@ describe("notification message store", () => {
       userId: "user-1",
       teamId: "team-1",
       siteId: "site-1",
-      type: "threshold",
+      type: "change",
       severity: "warning",
       unread: true,
       before: 12.8,
@@ -321,7 +320,7 @@ describe("notification message store", () => {
     expect(calls[0]?.slice(2)).toEqual([
       "team-1",
       "site-1",
-      "threshold",
+      "change",
       "warning",
       12,
       100,

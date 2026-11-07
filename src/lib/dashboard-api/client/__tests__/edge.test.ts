@@ -5,8 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dashboardFilterDocumentFromPresentation } from "@/lib/dashboard/filter-state";
 import {
   createAdminSite,
-  createNotificationRule,
-  deleteNotificationRule,
   fetchAdminMe,
   fetchAdminMembers,
   fetchAdminScriptSnippet,
@@ -15,7 +13,6 @@ import {
   fetchNotificationEmailConfig,
   fetchNotificationMessages,
   fetchNotificationPreferences,
-  fetchNotificationRules,
   fetchPublicOverview,
   fetchPublicPages,
   fetchPublicReferrers,
@@ -23,14 +20,10 @@ import {
   fetchPublicTrend,
   markAllNotificationMessagesRead,
   markNotificationMessageRead,
-  previewNotificationRule,
   removeAdminSite,
-  runNotificationRuleNow,
-  sendNotificationTest,
   updateAdminSite,
   updateMyProfile,
   updateNotificationPreferences,
-  updateNotificationRule,
   upsertAdminSiteConfig,
 } from "@/lib/dashboard-api/client/edge";
 import { requestHeader } from "@/lib/request-headers";
@@ -284,63 +277,11 @@ describe("edge client request wrappers", () => {
     ]);
   });
 
-  it("serializes notification rule and preference wrappers", async () => {
-    await fetchNotificationRules({ teamId: "team-1" });
-    expect(lastFetchCall()[0]).toBe(
-      "http://127.0.0.1:8787/api/private/admin/notification-rules?teamId=team-1",
-    );
-
+  it("serializes notification email and preference wrappers", async () => {
     await fetchNotificationEmailConfig();
     expect(lastFetchCall()[0]).toBe(
       "http://127.0.0.1:8787/api/private/admin/notification-email",
     );
-
-    await createNotificationRule({
-      teamId: "team-1",
-      siteId: null,
-      name: "Daily report",
-      enabled: true,
-      schedule: { kind: "daily" },
-      condition: { metric: "views" },
-      recipient: { mode: "creator" },
-    });
-    let [, init] = lastFetchCall();
-    expect(init.method).toBe("POST");
-    expect(init.body).toBe(
-      JSON.stringify({
-        teamId: "team-1",
-        siteId: null,
-        name: "Daily report",
-        enabled: true,
-        schedule: { kind: "daily" },
-        condition: { metric: "views" },
-        recipient: { mode: "creator" },
-      }),
-    );
-
-    await updateNotificationRule({ ruleId: "rule-1", enabled: false });
-    [, init] = lastFetchCall();
-    expect(init.method).toBe("PATCH");
-    expect(init.body).toBe(
-      JSON.stringify({ ruleId: "rule-1", enabled: false }),
-    );
-
-    await deleteNotificationRule({ ruleId: "rule 1" });
-    let [url] = lastFetchCall();
-    expect(url).toBe(
-      "http://127.0.0.1:8787/api/private/admin/notification-rules?id=rule+1",
-    );
-    expect(lastFetchCall()[1].method).toBe("DELETE");
-
-    await previewNotificationRule({ ruleId: "rule-1" });
-    expect(lastFetchCall()[1].method).toBe("POST");
-
-    await runNotificationRuleNow({ ruleId: "rule-1" });
-    [url, init] = lastFetchCall();
-    expect(url).toBe(
-      "http://127.0.0.1:8787/api/private/admin/notification-rules/run",
-    );
-    expect(init.body).toBe(JSON.stringify({ ruleId: "rule-1" }));
 
     await fetchNotificationPreferences();
     expect(lastFetchCall()[0]).toBe(
@@ -355,7 +296,7 @@ describe("edge client request wrappers", () => {
       email: true,
       attention: { alertsCreateUnread: false },
     });
-    [, init] = lastFetchCall();
+    const [, init] = lastFetchCall();
     expect(init.method).toBe("PATCH");
     expect(init.body).toBe(
       JSON.stringify({
@@ -419,14 +360,6 @@ describe("edge client request wrappers", () => {
     expect(lastFetchCall()[1].body).toBe(
       JSON.stringify({ teamId: "team-1", read: true }),
     );
-
-    await sendNotificationTest({ teamId: "team-1", siteId: "site-1" });
-    expect(lastFetchCall()[0]).toBe(
-      "http://127.0.0.1:8787/api/private/admin/notification-test",
-    );
-    expect(lastFetchCall()[1].body).toBe(
-      JSON.stringify({ teamId: "team-1", siteId: "site-1" }),
-    );
   });
 
   it("normalizes incomplete notification preference responses", async () => {
@@ -445,7 +378,6 @@ describe("edge client request wrappers", () => {
       webPush: false,
       attention: {
         reportsCreateUnread: false,
-        milestonesCreateUnread: false,
         alertsCreateUnread: true,
       },
     });

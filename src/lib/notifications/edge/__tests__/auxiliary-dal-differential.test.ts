@@ -8,10 +8,7 @@ import {
   createSqliteD1Database,
   type SqliteD1Trace,
 } from "@/lib/db/__tests__/sqlite-d1";
-import {
-  loadSiteInfo,
-  loadSiteLastSeenAt,
-} from "@/lib/notifications/edge/report-data";
+import { loadSiteInfo } from "@/lib/notifications/edge/report-data";
 
 const databases = new Set<DatabaseSync>();
 
@@ -99,39 +96,5 @@ describe("notification auxiliary reads Typed DAL differential checks", () => {
       ["site-1", 1],
       ["missing-site", 1],
     ]);
-  });
-
-  it("matches legacy site identity MAX reads, empty results, and the visits index", async () => {
-    const { database, env, trace } = createFixture();
-    const legacySql = `
-      SELECT MAX(last_activity_at) AS lastSeenAt
-      FROM visits
-      WHERE site_pk = (
-        SELECT site_pk FROM site_identities WHERE site_id = ? LIMIT 1
-      )
-    `;
-    const legacyRow = database.prepare(legacySql).get("site-1") as {
-      lastSeenAt: number | null;
-    };
-    const expected =
-      legacyRow.lastSeenAt === null
-        ? null
-        : Math.floor(legacyRow.lastSeenAt / 1000);
-
-    await expect(loadSiteLastSeenAt(env, "site-1")).resolves.toBe(expected);
-    await expect(loadSiteLastSeenAt(env, "missing-site")).resolves.toBeNull();
-    expect(trace.preparedSql).toHaveLength(2);
-    expect(trace.bindings).toEqual([["site-1"], ["missing-site"]]);
-
-    const typedPlan = explainQueryPlan(database, {
-      sql: trace.preparedSql[0]!,
-      bindings: trace.bindings[0]!,
-    });
-    const legacyPlan = explainQueryPlan(database, {
-      sql: legacySql,
-      bindings: ["site-1"],
-    });
-    expect(typedPlan.join(" ")).toContain("idx_visits_site_pk_last_activity");
-    expect(legacyPlan.join(" ")).toContain("idx_visits_site_pk_last_activity");
   });
 });

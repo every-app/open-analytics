@@ -1,560 +1,222 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ScheduledTaskContext } from "@/lib/edge/scheduled-tasks/runner";
-import {
-  createManualTestNotification,
-  createNotificationRulePreview,
-  runNotificationRuleManually,
-  runNotificationTick,
-} from "@/lib/notifications/edge/notification-task";
+import { runNotificationTick } from "@/lib/notifications/edge/notification-task";
 import type { NotificationRule } from "@/lib/notifications/edge/rule-store";
-import type { NotificationMessage } from "@/lib/notifications/message";
+
 const listDueNotificationRules = vi.hoisted(() => vi.fn());
-const resolveNotificationRecipients = vi.hoisted(() => vi.fn());
-const advanceNotificationRuleSchedule = vi.hoisted(() => vi.fn());
-const applyNotificationRuleManualRunResult = vi.hoisted(() => vi.fn());
+const resolveNotificationRecipient = vi.hoisted(() => vi.fn());
+const recordNotificationRuleCheck = vi.hoisted(() => vi.fn());
+const scheduleUnscheduledReports = vi.hoisted(() => vi.fn());
 const evaluateNotificationRule = vi.hoisted(() => vi.fn());
 const createNotificationMessage = vi.hoisted(() => vi.fn());
 const deliverNotificationMessage = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/notifications/edge/rule-store", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
+
+vi.mock("@/lib/notifications/edge/rule-store", () => ({
   listDueNotificationRules,
-  resolveNotificationRecipients,
-  advanceNotificationRuleSchedule,
-  applyNotificationRuleManualRunResult,
+  resolveNotificationRecipient,
+  recordNotificationRuleCheck,
+  scheduleUnscheduledReports,
 }));
 vi.mock("@/lib/notifications/edge/evaluator", () => ({
   evaluateNotificationRule,
 }));
-vi.mock("@/lib/notifications/edge/message-store", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
+vi.mock("@/lib/notifications/edge/message-store", () => ({
   createNotificationMessage,
 }));
 vi.mock("@/lib/notifications/edge/delivery", () => ({
   deliverNotificationMessage,
 }));
-function rule(input: Partial<NotificationRule> = {}): NotificationRule {
+
+function rule(id: string): NotificationRule {
   return {
-    id: "rule-1",
+    id,
     teamId: "team-1",
     siteId: "site-1",
-    name: "Rule",
-    description: "",
-    type: "threshold",
+    name: id,
     enabled: true,
-    schedule: { kind: "interval", everyMinutes: 60 },
-    condition: {},
-    recipient: { mode: "team_admins" },
-    state: {},
+    type: "change",
+    condition: { direction: "spike", window: "last_1h", percent: 50 },
     lastCheckedAt: null,
     lastTriggeredAt: null,
-    nextRunAt: 1,
+    nextRunAt: 0,
     cooldownUntil: null,
-    createdByUserId: "user-1",
+    createdByUserId: "creator",
     createdAt: 1,
     updatedAt: 1,
-    ...input,
   };
 }
-function message(
-  input: Partial<NotificationMessage> = {},
-): NotificationMessage {
-  return {
-    id: "msg-1",
-    teamId: "team-1",
-    siteId: "site-1",
-    userId: "user-1",
-    ruleId: "rule-1",
-    runId: "run-1",
-    batchId: "batch-1",
-    type: "threshold",
+
+const spike = {
+  status: "triggered",
+  cooldownUntil: 99_999,
+  message: {
+    type: "change",
     severity: "warning",
-    requiresAttention: true,
-    title: "Title",
-    summary: "Summary",
-    bodyText: "Body",
-    bodyHtml: "",
-    data: {},
-    channels: {},
-    deliveryStatus: "sent",
-    deliveryResults: { email: { status: "sent" } },
-    errorMessage: "",
-    readAt: null,
-    dismissedAt: null,
-    archivedAt: null,
-    triggeredAt: 1,
-    createdAt: 1,
-    updatedAt: 1,
-    sentAt: 1,
-    failedAt: null,
-    expiresAt: null,
-    ...input,
-  };
-}
-function context(): ScheduledTaskContext & {
-  events: string[];
-} {
+    title: "example.com traffic spike",
+    summary: "Visitors rose 50% (100 to 150).",
+    bodyText: "Visitors rose 50% (100 to 150).",
+    data: {
+      siteDomain: "example.com",
+      window: "last_1h",
+      current: 150,
+      previous: 100,
+      change: 50,
+    },
+  },
+};
+
+function context(): ScheduledTaskContext & { events: string[] } {
   const events: string[] = [];
-  const logger = {
-    debug: vi.fn((event: string) => {
-      events.push(event);
-      return Promise.resolve();
-    }),
-    info: vi.fn((event: string) => {
-      events.push(event);
-      return Promise.resolve();
-    }),
-    warn: vi.fn((event: string) => {
-      events.push(event);
-      return Promise.resolve();
-    }),
-    error: vi.fn((event: string) => {
-      events.push(event);
-      return Promise.resolve();
-    }),
+  const log = (event: string) => {
+    events.push(event);
+    return Promise.resolve();
   };
   return {
     env: {} as never,
-    runId: "run-1",
-    invocationId: "invocation-1",
-    scheduledTime: null,
     startedAt: Date.now(),
-    logger,
-    externalFetch: fetch.bind(globalThis),
+    logger: { debug: log, info: log, warn: log, error: log },
     events,
   };
 }
-describe("notification task", () => {
+
+function delivered(status: string) {
+  return { deliveryResults: { email: { status } } };
+}
+
+describe("notification tick", () => {
   beforeEach(() => {
-    vi.resetAllMocks();
-    advanceNotificationRuleSchedule.mockResolvedValue(undefined);
-    applyNotificationRuleManualRunResult.mockResolvedValue(undefined);
+    vi.clearAllMocks();
+    resolveNotificationRecipient.mockResolvedValue({
+      id: "creator",
+      email: "creator@example.com",
+      preferencesJson: JSON.stringify({
+        attention: { alertsCreateUnread: false },
+      }),
+    });
+    createNotificationMessage.mockImplementation(async (_env, input) => ({
+      id: `message-${input.ruleId}`,
+      ...input,
+    }));
+    deliverNotificationMessage.mockResolvedValue(delivered("sent"));
   });
 
-  it("creates and delivers messages for triggered rules", async () => {
-    listDueNotificationRules.mockResolvedValue([rule()]);
-    evaluateNotificationRule.mockResolvedValue({
-      status: "triggered",
-      cooldownUntil: 2000,
-      message: {
-        type: "threshold",
-        severity: "warning",
-        requiresAttention: true,
-        title: "Traffic threshold",
-        summary: "Visitors reached the threshold",
-        bodyText: "Body",
-        data: { metric: "visitors" },
-      },
-      data: { metric: "visitors" },
-    });
-    resolveNotificationRecipients.mockResolvedValue([
-      {
-        id: "user-1",
-        email: "user@example.test",
-        preferencesJson: "{}",
-      },
-    ]);
-    createNotificationMessage.mockResolvedValue(message());
-    deliverNotificationMessage.mockResolvedValue(message());
-
-    const ctx = context();
-    const outcome = await runNotificationTick(ctx);
-
-    expect(outcome.status).toBe("success");
-    expect(outcome.summary).toMatchObject({
-      rulesScanned: 1,
-      rulesChecked: 1,
-      rulesTriggered: 1,
-      messagesCreated: 1,
-      emailSent: 1,
-    });
-    expect(createNotificationMessage).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        type: "threshold",
-        severity: "warning",
-        requiresAttention: true,
-      }),
-    );
-    expect(advanceNotificationRuleSchedule).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        triggeredAt: expect.any(Number),
-        cooldownUntil: 2000,
-      }),
-    );
-    expect(ctx.events).toContain("notification_rule_checked");
-    expect(ctx.events).toContain("notification_rule_triggered");
-  });
-
-  it("advances checked rules without creating messages", async () => {
-    listDueNotificationRules.mockResolvedValue([rule()]);
-    evaluateNotificationRule.mockResolvedValue({
-      status: "checked",
-      triggered: false,
-      summary: "Not over threshold",
-      data: { value: 5 },
-    });
+  it("sends a triggered rule to its creator and records the check", async () => {
+    listDueNotificationRules.mockResolvedValue([rule("rule-1")]);
+    evaluateNotificationRule.mockResolvedValue(spike);
 
     const outcome = await runNotificationTick(context());
 
-    expect(outcome.summary).toMatchObject({
-      rulesScanned: 1,
-      rulesChecked: 1,
-      rulesTriggered: 0,
-      messagesCreated: 0,
-    });
-    expect(createNotificationMessage).not.toHaveBeenCalled();
-    expect(advanceNotificationRuleSchedule).toHaveBeenCalled();
-  });
-
-  it("shares one invocation cache across every rule evaluated by a tick", async () => {
-    listDueNotificationRules.mockResolvedValue([
-      rule({ id: "rule-1" }),
-      rule({ id: "rule-2" }),
-    ]);
-    evaluateNotificationRule.mockResolvedValue({
-      status: "checked",
-      triggered: false,
-      summary: "Not triggered",
-    });
-
-    await runNotificationTick(context());
-
-    expect(evaluateNotificationRule).toHaveBeenCalledTimes(2);
-    const firstCache = evaluateNotificationRule.mock.calls[0]?.[3];
-    const secondCache = evaluateNotificationRule.mock.calls[1]?.[3];
-    expect(firstCache).toBe(secondCache);
-    expect(firstCache).not.toBeUndefined();
-  });
-
-  it("continues when one rule evaluation fails", async () => {
-    listDueNotificationRules.mockResolvedValue([rule({ id: "bad" }), rule()]);
-    evaluateNotificationRule
-      .mockRejectedValueOnce(new Error("boom"))
-      .mockResolvedValueOnce({
-        status: "checked",
-        triggered: false,
-        summary: "Not triggered",
-      });
-
-    const ctx = context();
-    const outcome = await runNotificationTick(ctx);
-
-    expect(outcome.summary).toMatchObject({
-      rulesScanned: 2,
-      rulesChecked: 1,
-      rulesSkipped: 1,
-    });
-    expect(ctx.events).toContain("notification_rule_failed");
-    expect(advanceNotificationRuleSchedule).toHaveBeenCalledTimes(2);
-  });
-
-  it("previews a rule without creating messages or advancing schedule", async () => {
-    evaluateNotificationRule.mockResolvedValue({
-      status: "checked",
-      triggered: false,
-      summary: "Not triggered",
-    });
-
-    const result = await createNotificationRulePreview({} as never, rule());
-
-    expect(result).toMatchObject({
-      status: "checked",
-      triggered: false,
-    });
-    expect(createNotificationMessage).not.toHaveBeenCalled();
-    expect(deliverNotificationMessage).not.toHaveBeenCalled();
-    expect(advanceNotificationRuleSchedule).not.toHaveBeenCalled();
-  });
-
-  it("manually runs a triggered rule and applies manual run state", async () => {
-    evaluateNotificationRule.mockResolvedValue({
-      status: "triggered",
-      message: {
-        type: "threshold",
+    // Reports the rules migration left unscheduled get their slot first.
+    expect(scheduleUnscheduledReports).toHaveBeenCalledBefore(
+      listDueNotificationRules,
+    );
+    expect(resolveNotificationRecipient).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({ id: "rule-1" }),
+    );
+    expect(createNotificationMessage).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({
+        userId: "creator",
+        ruleId: "rule-1",
+        type: "change",
         severity: "warning",
-        requiresAttention: true,
-        title: "Traffic threshold",
-        summary: "Visitors reached the threshold",
-        bodyText: "Body",
-      },
-    });
-    resolveNotificationRecipients.mockResolvedValue([
-      { id: "user-1", email: "user@example.test", preferencesJson: "{}" },
-    ]);
-    createNotificationMessage.mockResolvedValue(message());
-    deliverNotificationMessage.mockResolvedValue(
-      message({
-        deliveryResults: {
-          email: { status: "skipped", reason: "recipient_email_invalid" },
-        },
+        // Their preference says alerts don't arrive unread.
+        requiresAttention: false,
+        title: "example.com traffic change alert",
+        data: expect.objectContaining({ locale: "en", change: 50 }),
       }),
     );
-
-    const outcome = await runNotificationRuleManually({
-      env: {} as never,
-      context: context(),
-      rule: rule(),
-    });
-
-    expect(outcome.messageCount).toBe(1);
-    expect(outcome.summary).toMatchObject({
-      rulesScanned: 1,
-      rulesChecked: 1,
-      rulesTriggered: 1,
-      messagesCreated: 1,
-      emailSkipped: 1,
-      emailSkippedInvalidRecipient: 1,
-    });
-    expect(advanceNotificationRuleSchedule).not.toHaveBeenCalled();
-    expect(applyNotificationRuleManualRunResult).toHaveBeenCalledWith(
+    expect(deliverNotificationMessage).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({ id: "message-rule-1" }),
+      expect.objectContaining({ id: "creator" }),
       expect.anything(),
-      expect.objectContaining({
-        rule: expect.objectContaining({ id: "rule-1" }),
-        triggeredAt: expect.any(Number),
-      }),
     );
-  });
-
-  it("tracks skipped evaluation and missing recipients in manual runs", async () => {
-    evaluateNotificationRule.mockResolvedValueOnce({
-      status: "skipped",
-      reason: "cooldown",
-      data: { cooldownUntil: 2000 },
-    });
-
-    const skipped = await runNotificationRuleManually({
-      env: {} as never,
-      context: context(),
-      rule: rule(),
-    });
-
-    expect(skipped).toMatchObject({
-      messageCount: 0,
-      summary: { rulesScanned: 1, rulesChecked: 1, rulesSkipped: 1 },
-    });
-    expect(applyNotificationRuleManualRunResult).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
+    expect(recordNotificationRuleCheck).toHaveBeenCalledWith(
+      {},
+      {
         rule: expect.objectContaining({ id: "rule-1" }),
         checkedAt: expect.any(Number),
-      }),
-    );
-
-    evaluateNotificationRule.mockResolvedValueOnce({
-      status: "triggered",
-      message: {
-        type: "threshold",
-        severity: "critical",
-        requiresAttention: true,
-        title: "Traffic threshold",
-        summary: "Visitors reached the threshold",
-        bodyText: "Body",
+        triggeredAt: expect.any(Number),
+        cooldownUntil: 99_999,
       },
-    });
-    resolveNotificationRecipients.mockResolvedValueOnce([]);
-
-    const noRecipients = await runNotificationRuleManually({
-      env: {} as never,
-      context: context(),
-      rule: rule({ recipient: { mode: "users", userIds: [] } }),
-    });
-
-    expect(noRecipients).toMatchObject({
-      messageCount: 0,
+    );
+    expect(outcome).toEqual({
+      status: "success",
       summary: {
         rulesScanned: 1,
         rulesChecked: 1,
+        rulesSkipped: 0,
         rulesTriggered: 1,
-        rulesSkipped: 1,
+        messagesCreated: 1,
+        emailSent: 1,
+        emailFailed: 0,
+        emailSkipped: 0,
       },
     });
-    expect(createNotificationMessage).not.toHaveBeenCalled();
   });
 
-  it("collects delivery stats across sent, failed, and system skipped email results", async () => {
-    evaluateNotificationRule.mockResolvedValue({
-      status: "triggered",
-      message: {
-        type: "threshold",
-        severity: "warning",
-        requiresAttention: true,
-        title: "Traffic threshold",
-        summary: "Visitors reached the threshold",
-        bodyText: "Body",
-      },
-    });
-    resolveNotificationRecipients.mockResolvedValue([
-      { id: "sent", email: "sent@example.test", preferencesJson: "{}" },
-      { id: "failed", email: "failed@example.test", preferencesJson: "{}" },
-      { id: "system", email: "system@example.test", preferencesJson: "{}" },
-      { id: "none", email: "none@example.test", preferencesJson: "{}" },
+  it("records checks that sent nothing and keeps going after a failure", async () => {
+    listDueNotificationRules.mockResolvedValue([
+      rule("quiet"),
+      rule("gone-site"),
+      rule("broken"),
+      rule("no-creator"),
+      rule("email-failed"),
+      rule("email-skipped"),
     ]);
-    createNotificationMessage.mockImplementation((_env, input) =>
-      Promise.resolve(
-        message({ id: `msg-${input.userId}`, userId: input.userId }),
-      ),
+    evaluateNotificationRule.mockImplementation(async (_env, current) => {
+      if (current.id === "quiet")
+        return { status: "checked", triggered: false };
+      if (current.id === "gone-site") {
+        return { status: "skipped", reason: "site_not_found" };
+      }
+      if (current.id === "broken") throw new Error("D1 unavailable");
+      return spike;
+    });
+    resolveNotificationRecipient.mockImplementation(async (_env, current) =>
+      current.id === "no-creator"
+        ? null
+        : { id: "creator", email: "c@example.com", preferencesJson: "{}" },
     );
-    deliverNotificationMessage
-      .mockResolvedValueOnce(
-        message({
-          deliveryResults: { email: { status: "sent" } },
-        }),
-      )
-      .mockResolvedValueOnce(
-        message({
-          deliveryResults: { email: { status: "failed" } },
-        }),
-      )
-      .mockResolvedValueOnce(
-        message({
-          deliveryResults: {
-            email: { status: "skipped", reason: "system_email_unconfigured" },
-          },
-        }),
-      )
-      .mockResolvedValueOnce(message({ deliveryResults: {} }));
+    deliverNotificationMessage.mockImplementation(async (_env, message) =>
+      delivered(message.ruleId === "email-failed" ? "failed" : "skipped"),
+    );
+    const ctx = context();
 
-    const outcome = await runNotificationRuleManually({
-      env: {} as never,
-      context: context(),
-      rule: rule(),
+    const outcome = await runNotificationTick(ctx);
+
+    expect(outcome).toEqual({
+      status: "partial",
+      summary: {
+        rulesScanned: 6,
+        rulesChecked: 5,
+        rulesSkipped: 3,
+        rulesTriggered: 3,
+        messagesCreated: 2,
+        emailSent: 0,
+        emailFailed: 1,
+        emailSkipped: 1,
+      },
     });
-
-    expect(outcome.summary).toMatchObject({
-      messagesCreated: 4,
-      inAppCreated: 4,
-      emailAttempted: 2,
-      emailSent: 1,
-      emailFailed: 1,
-      emailSkipped: 1,
-      emailSkippedBySystem: 1,
-    });
-  });
-
-  it("renders triggered rule messages in English for every recipient in one batch", async () => {
-    evaluateNotificationRule.mockResolvedValue({
-      status: "triggered",
-      message: {
-        type: "report",
-        severity: "info",
-        requiresAttention: false,
-        title: "Daily traffic report",
-        summary: "Traffic report summary",
-        bodyText: "Traffic report body",
-        data: {
-          siteDomain: "example.com",
-          range: { label: "Yesterday" },
-          metrics: { views: 1200, visitors: 450, sessions: 620 },
-          topPages: [{ path: "/", views: 500 }],
-          topReferrers: [{ source: "Direct", views: 300 }],
+    expect(recordNotificationRuleCheck).toHaveBeenCalledTimes(6);
+    for (const id of ["quiet", "gone-site", "broken"]) {
+      expect(recordNotificationRuleCheck).toHaveBeenCalledWith(
+        {},
+        {
+          rule: expect.objectContaining({ id }),
+          checkedAt: expect.any(Number),
         },
-      },
-    });
-    resolveNotificationRecipients.mockResolvedValue([
-      { id: "user-1", email: "one@example.test", preferencesJson: "{}" },
-      { id: "user-2", email: "two@example.test", preferencesJson: "{}" },
-    ]);
-    createNotificationMessage.mockImplementation((_env, input) =>
-      Promise.resolve(
-        message({
-          id: `msg-${input.userId}`,
-          userId: input.userId,
-          batchId: input.batchId,
-          title: input.title,
-          bodyText: input.bodyText,
-          data: input.data,
-        }),
-      ),
-    );
-    deliverNotificationMessage.mockImplementation((_env, msg) =>
-      Promise.resolve(msg),
-    );
-
-    await runNotificationRuleManually({
-      env: {} as never,
-      context: context(),
-      rule: rule({ type: "report" }),
-    });
-
-    expect(createNotificationMessage).toHaveBeenCalledTimes(2);
-    const [, firstInput] = createNotificationMessage.mock.calls[0];
-    const [, secondInput] = createNotificationMessage.mock.calls[1];
-    expect(firstInput.batchId).toBe(secondInput.batchId);
-    for (const input of [firstInput, secondInput]) {
-      expect(input.title).toContain("daily traffic report");
-      expect(input.bodyText).toContain("Core metrics");
-      expect(input.data.locale).toBe("en");
+      );
     }
-  });
-
-  it("creates manual test notifications and handles missing test recipients", async () => {
-    type TestRecipientRow = {
-      id: string;
-      email: string;
-      preferencesJson: string;
-      timeZone?: string | null;
-    };
-    const first = vi.fn<() => Promise<TestRecipientRow | null>>(() =>
-      Promise.resolve({
-        id: "user-1",
-        email: "user@example.test",
-        preferencesJson: "{}",
-      }),
+    expect(ctx.events).toEqual(
+      expect.arrayContaining([
+        "notification_rule_skipped",
+        "notification_rule_failed",
+        "notification_tick_finish",
+      ]),
     );
-    const env = {
-      DB: {
-        prepare: vi.fn(() => ({
-          bind: vi.fn(() => ({ first })),
-        })),
-      },
-    };
-    createNotificationMessage.mockResolvedValue(message({ type: "test" }));
-    deliverNotificationMessage.mockResolvedValue(
-      message({
-        type: "test",
-        deliveryResults: {
-          email: { status: "skipped", reason: "secret_decryption_failed" },
-        },
-      }),
-    );
-
-    const created = await createManualTestNotification({
-      env: env as never,
-      context: context(),
-      teamId: "team-1",
-      siteId: null,
-      userId: "user-1",
-    });
-
-    expect(created.summary).toMatchObject({
-      messagesCreated: 1,
-      inAppCreated: 1,
-      emailSkipped: 1,
-      emailSkippedBySystem: 1,
-    });
-    expect(createNotificationMessage).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        type: "test",
-        severity: "info",
-        requiresAttention: false,
-        data: { source: "manual_test", locale: "en" },
-      }),
-    );
-
-    first.mockResolvedValueOnce(null);
-    const missing = await createManualTestNotification({
-      env: env as never,
-      context: context(),
-      teamId: "team-1",
-      userId: "missing",
-    });
-
-    expect(missing).toMatchObject({
-      message: null,
-      summary: { messagesCreated: 0 },
-    });
   });
 });

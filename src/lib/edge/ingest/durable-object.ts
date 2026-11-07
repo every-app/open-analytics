@@ -37,7 +37,6 @@ import {
   VISIT_TIMEOUT_MS,
   WS_PRESENCE_LEAVE_EVENT,
 } from "./constants";
-import { handleIngestDiagnostic } from "./diagnostic";
 import {
   cleanupBufferedRows as cleanupBufferedRowsInFlushStore,
   flushPendingToD1 as flushPendingToD1InFlushStore,
@@ -161,10 +160,6 @@ export class IngestDurableObject extends DurableObject {
 
     if (url.pathname === "/active" && request.method === "GET") {
       return this.handleActive(logger);
-    }
-
-    if (url.pathname === "/diagnostic" && request.method === "GET") {
-      return this.handleDiagnostic(logger);
     }
 
     if (url.pathname === "/reconcile" && request.method === "POST") {
@@ -515,18 +510,6 @@ export class IngestDurableObject extends DurableObject {
           });
 
     return jsonResponse({ ok: true, activeNow });
-  }
-
-  private async handleDiagnostic(logger: InvocationLogger): Promise<Response> {
-    return logger.measure("do.diagnostic", () =>
-      handleIngestDiagnostic({
-        sqlAll: <T>(query: string, ...bindings: SqlBinding[]) =>
-          this.sql.measuredSqlAll<T>(logger, query, ...bindings),
-        sqlOne: <T>(query: string, ...bindings: SqlBinding[]) =>
-          this.sql.measuredSqlOne<T>(logger, query, ...bindings),
-        getAlarm: () => this.getAlarm(logger),
-      }),
-    );
   }
 
   private async getAlarm(logger: InvocationLogger): Promise<number | null> {

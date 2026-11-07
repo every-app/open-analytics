@@ -8,32 +8,30 @@ import {
 } from "@/lib/retention";
 
 describe("retention configuration", () => {
-  it("falls back per field for missing and invalid values", () => {
+  it("falls back per field and drops settings that no longer exist", () => {
     expect(
       normalizeRetentionConfig({
         scheduledTaskLogsDays: 45,
-        notificationTestDays: 0,
+        notificationTestDays: 7,
         notificationAttentionDays: "180",
+        notificationDefaultDays: 0,
+        analyticsDetailDays: 90,
       }),
-    ).toEqual({
-      ...DEFAULT_RETENTION_CONFIG,
-      scheduledTaskLogsDays: 45,
-    });
+    ).toEqual({ ...DEFAULT_RETENTION_CONFIG, analyticsDetailDays: 90 });
   });
 
   it("merges configured retention without changing the defaults", () => {
     const config = mergeRetentionConfig(DEFAULT_RETENTION_CONFIG, {
-      notificationTestDays: 7,
+      notificationDefaultDays: 7,
     });
-    expect(config).toMatchObject({
-      scheduledTaskLogsDays: 30,
-      notificationTestDays: 7,
+    expect(config).toEqual({
       notificationAttentionDays: 180,
-      notificationDefaultDays: 120,
+      notificationDefaultDays: 7,
+      analyticsDetailDays: 396,
     });
+    expect(DEFAULT_RETENTION_CONFIG.notificationDefaultDays).toBe(120);
     expect(
       notificationRuleExpiresAtSeconds({
-        type: "test",
         severity: "info",
         createdAtSeconds: 1000,
         retention: config,

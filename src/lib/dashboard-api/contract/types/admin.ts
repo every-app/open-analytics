@@ -1,4 +1,5 @@
 import type { TeamRole } from "@/lib/dashboard/permissions";
+import type { NotificationRuleConfig } from "@/lib/notifications/rules";
 
 /** The organization's workspace: every site belongs to it (viewer.ts). */
 export interface TeamData {
@@ -48,18 +49,13 @@ export interface AccountUserData {
 export type NotificationDeliveryStatus =
   "created" | "sending" | "sent" | "partial" | "failed" | "skipped";
 
-export interface NotificationRuleData {
+/** A report or alert for one site, sent to the member who created it. */
+export type NotificationRuleData = {
   id: string;
   teamId: string;
-  siteId: string | null;
+  siteId: string;
   name: string;
-  description: string;
-  type: string;
   enabled: boolean;
-  schedule: Record<string, unknown>;
-  condition: Record<string, unknown>;
-  recipient: Record<string, unknown>;
-  state: Record<string, unknown>;
   lastCheckedAt: number | null;
   lastTriggeredAt: number | null;
   nextRunAt: number | null;
@@ -67,42 +63,7 @@ export interface NotificationRuleData {
   createdByUserId: string | null;
   createdAt: number;
   updatedAt: number;
-}
-
-export type NotificationRuleEvaluationData =
-  | {
-      status: "skipped";
-      reason: string;
-      data?: Record<string, unknown>;
-    }
-  | {
-      status: "checked";
-      triggered: false;
-      summary: string;
-      data?: Record<string, unknown>;
-    }
-  | {
-      status: "triggered";
-      message: {
-        type: string;
-        severity: string;
-        requiresAttention: boolean;
-        title: string;
-        summary: string;
-        bodyText: string;
-        bodyHtml?: string;
-        data?: Record<string, unknown>;
-      };
-      cooldownUntil?: number | null;
-      data?: Record<string, unknown>;
-    };
-
-export interface NotificationRuleRunData {
-  evaluation: NotificationRuleEvaluationData;
-  messages: NotificationMessageData[];
-  messageCount: number;
-  summary: Record<string, unknown>;
-}
+} & NotificationRuleConfig;
 
 export interface NotificationMessageData {
   id: string;
@@ -110,7 +71,6 @@ export interface NotificationMessageData {
   siteId: string | null;
   userId: string;
   ruleId: string | null;
-  runId: string | null;
   batchId: string | null;
   type: string;
   severity: string;

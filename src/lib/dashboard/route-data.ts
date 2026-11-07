@@ -6,12 +6,8 @@ import {
   type AccountNotificationPreferencesInitialData,
   type ManagementJsonObject,
   type NotificationCenterInitialData,
-  type ScheduledTasksInitialData,
   type SerializableNotificationMessageData,
-  type SerializableNotificationRuleData,
-  type SerializableScheduledTasksData,
   type SiteSettingsInitialData,
-  type SystemPerformanceInitialData,
   type SystemSettingsInitialData,
   type TeamNotificationsInitialData,
 } from "@/lib/dashboard/management-data";
@@ -26,10 +22,7 @@ import { resolveTeamDashboardRequest } from "@/lib/dashboard/server/query";
 import type { TeamDashboardSnapshot } from "@/lib/dashboard/team-dashboard-query";
 import { normalizeNotificationPreferencesData } from "@/lib/dashboard-api/client/edge";
 import { fetchPublicSite } from "@/lib/dashboard-api/client/edge";
-import type {
-  NotificationMessageData,
-  NotificationRuleData,
-} from "@/lib/dashboard-api/contract/types";
+import type { NotificationMessageData } from "@/lib/dashboard-api/contract/types";
 import { createTeamDashboardQueryRuntime } from "@/lib/edge/analytics/composition/ssr-query-runtime";
 import {
   createQueryTime,
@@ -38,25 +31,12 @@ import {
 } from "@/lib/edge/analytics/contract";
 import { resolveEdgeRuntime } from "@/lib/edge/runtime";
 import type { Locale } from "@/lib/i18n/config";
-import { DEFAULT_RETENTION_CONFIG } from "@/lib/retention";
-import type { ScheduledTasksData } from "@/lib/scheduled-tasks";
 import { normalizeSiteScriptSettings } from "@/lib/site-settings";
 import { gatewayHostname } from "@/lib/theme-cookie";
 function serializeManagementJsonObject(
   value: Record<string, unknown>,
 ): ManagementJsonObject {
   return JSON.parse(JSON.stringify(value)) as ManagementJsonObject;
-}
-function serializeNotificationRule(
-  rule: NotificationRuleData,
-): SerializableNotificationRuleData {
-  return {
-    ...rule,
-    schedule: serializeManagementJsonObject(rule.schedule),
-    condition: serializeManagementJsonObject(rule.condition),
-    recipient: serializeManagementJsonObject(rule.recipient),
-    state: serializeManagementJsonObject(rule.state),
-  };
 }
 function serializeNotificationMessage(
   message: NotificationMessageData,
@@ -67,11 +47,6 @@ function serializeNotificationMessage(
     channels: serializeManagementJsonObject(message.channels),
     deliveryResults: serializeManagementJsonObject(message.deliveryResults),
   };
-}
-function serializeScheduledTasksData(
-  data: ScheduledTasksData,
-): SerializableScheduledTasksData {
-  return JSON.parse(JSON.stringify(data)) as SerializableScheduledTasksData;
 }
 /** Provides the SSR-safe initial query window to the dashboard shell. */
 export const loadDashboardInitialWindow = createServerFn({
@@ -174,17 +149,15 @@ export const loadTeamNotificationsInitialData = createServerFn({
 })
   .validator((data: { teamId: string }) => data)
   .handler(async ({ data }): Promise<TeamNotificationsInitialData | null> => {
-    const [rules, sites, members, emailConfig] = await Promise.all([
+    const [rules, sites, emailConfig] = await Promise.all([
       readDashboardAdmin("notification-rules", { teamId: data.teamId }),
       readDashboardAdmin("sites", { teamId: data.teamId }),
-      readDashboardAdmin("members", { teamId: data.teamId }),
       readDashboardAdmin("notification-email"),
     ]);
-    if (!rules || !sites || !members) return null;
+    if (!rules || !sites) return null;
     return {
-      rules: rules.map(serializeNotificationRule),
+      rules,
       sites,
-      members,
       emailConfigured: emailConfig?.enabled ?? null,
       fetchedAt: Date.now(),
     };
@@ -226,38 +199,12 @@ export const loadAccountNotificationPreferences = createServerFn({
 export const loadSystemSettingsInitialData = createServerFn({
   method: "GET",
 }).handler(async (): Promise<SystemSettingsInitialData | null> => {
-  const [notificationEmail, scheduledTasks] = await Promise.all([
+  const [notificationEmail, retention] = await Promise.all([
     readDashboardAdmin("notification-email"),
-    readDashboardAdmin("scheduled-tasks", { limit: 1 }),
+    readDashboardAdmin("retention"),
   ]);
-  if (!notificationEmail) return null;
-  return {
-    notificationEmail,
-    scheduledTaskRetention:
-      scheduledTasks?.retention ?? DEFAULT_RETENTION_CONFIG,
-    fetchedAt: Date.now(),
-  };
-});
-export const loadScheduledTasksInitialData = createServerFn({
-  method: "GET",
-}).handler(async (): Promise<ScheduledTasksInitialData | null> => {
-  const data = await readDashboardAdmin("scheduled-tasks", {
-    limit: 50,
-  });
-  return data
-    ? {
-        ...serializeScheduledTasksData(data),
-        fetchedAt: Date.now(),
-      }
-    : null;
-});
-export const loadSystemPerformanceInitialData = createServerFn({
-  method: "GET",
-}).handler(async (): Promise<SystemPerformanceInitialData | null> => {
-  const data = await readDashboardAdmin("system-performance", {
-    minutes: 60,
-  });
-  return data ? { data, fetchedAt: Date.now() } : null;
+  if (!notificationEmail || !retention) return null;
+  return { notificationEmail, retention, fetchedAt: Date.now() };
 });
 /**
  * The shared site behind a public link. Not a server function: an anonymous

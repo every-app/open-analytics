@@ -4,9 +4,6 @@ import type {
   AccountUserData,
   MemberData,
   NotificationMessageData,
-  NotificationRuleData,
-  NotificationRuleEvaluationData,
-  NotificationRuleRunData,
   OverviewData,
   PagesData,
   QueryFilters,
@@ -333,20 +330,6 @@ export async function fetchAdminMe(): Promise<{
   });
   return res.data;
 }
-export async function fetchNotificationRules(input: {
-  teamId: string;
-  signal?: AbortSignal;
-}): Promise<NotificationRuleData[]> {
-  const res = await fetchEdgeJson<{
-    ok: boolean;
-    data: unknown;
-  }>({
-    path: adminServicePath("notification-rules"),
-    params: { teamId: input.teamId },
-    signal: input.signal,
-  });
-  return Array.isArray(res.data) ? (res.data as NotificationRuleData[]) : [];
-}
 export async function fetchNotificationEmailConfig(options?: {
   signal?: AbortSignal;
 }): Promise<PublicNotificationEmailConfig> {
@@ -356,88 +339,6 @@ export async function fetchNotificationEmailConfig(options?: {
   }>({
     path: adminServicePath("notification-email"),
     signal: options?.signal,
-  });
-  return res.data;
-}
-export async function createNotificationRule(input: {
-  teamId: string;
-  name: string;
-  siteId?: string | null;
-  description?: string;
-  type?: string;
-  enabled?: boolean;
-  schedule?: Record<string, unknown>;
-  condition?: Record<string, unknown>;
-  recipient?: Record<string, unknown>;
-}): Promise<NotificationRuleData> {
-  const res = await fetchEdgeJson<{
-    ok: boolean;
-    data: NotificationRuleData;
-  }>({
-    method: "POST",
-    path: adminServicePath("notification-rules"),
-    body: input,
-  });
-  return res.data;
-}
-export async function updateNotificationRule(input: {
-  ruleId: string;
-  teamId?: string;
-  siteId?: string | null;
-  name?: string;
-  description?: string;
-  type?: string;
-  enabled?: boolean;
-  schedule?: Record<string, unknown>;
-  condition?: Record<string, unknown>;
-  recipient?: Record<string, unknown>;
-}): Promise<NotificationRuleData> {
-  const res = await fetchEdgeJson<{
-    ok: boolean;
-    data: NotificationRuleData;
-  }>({
-    method: "PATCH",
-    path: adminServicePath("notification-rules"),
-    body: input,
-  });
-  return res.data;
-}
-export async function deleteNotificationRule(input: {
-  ruleId: string;
-}): Promise<{ id: string; removed: boolean }> {
-  const res = await fetchEdgeJson<{
-    ok: boolean;
-    data: { id: string; removed: boolean };
-  }>({
-    method: "DELETE",
-    path: adminServicePath("notification-rules"),
-    params: { id: input.ruleId },
-  });
-  return res.data;
-}
-export async function previewNotificationRule(input: {
-  ruleId: string;
-}): Promise<NotificationRuleEvaluationData> {
-  const res = await fetchEdgeJson<{
-    ok: boolean;
-    data: NotificationRuleEvaluationData;
-  }>({
-    method: "POST",
-    path: adminServicePath("notification-rules/preview"),
-    body: input,
-  });
-  return res.data;
-}
-export async function runNotificationRuleNow(input: {
-  ruleId: string;
-}): Promise<NotificationRuleRunData> {
-  const res = await fetchEdgeJson<{
-    ok: boolean;
-    data: NotificationRuleRunData;
-  }>({
-    method: "POST",
-    path: adminServicePath("notification-rules/run"),
-    body: input,
   });
   return res.data;
 }
@@ -524,7 +425,6 @@ export interface NotificationPreferencesData {
   webPush: boolean;
   attention: {
     reportsCreateUnread: boolean;
-    milestonesCreateUnread: boolean;
     alertsCreateUnread: boolean;
   };
 }
@@ -535,7 +435,6 @@ export const DEFAULT_NOTIFICATION_PREFERENCES_DATA: NotificationPreferencesData 
     webPush: false,
     attention: {
       reportsCreateUnread: false,
-      milestonesCreateUnread: false,
       alertsCreateUnread: true,
     },
   };
@@ -559,10 +458,6 @@ export function normalizeNotificationPreferencesData(
       reportsCreateUnread: booleanOr(
         attention.reportsCreateUnread,
         defaults.attention.reportsCreateUnread,
-      ),
-      milestonesCreateUnread: booleanOr(
-        attention.milestonesCreateUnread,
-        defaults.attention.milestonesCreateUnread,
       ),
       alertsCreateUnread: booleanOr(
         attention.alertsCreateUnread,
@@ -600,27 +495,6 @@ export async function updateNotificationPreferences(
     body: input,
   });
   return normalizeNotificationPreferencesData(res.data);
-}
-export async function sendNotificationTest(input: {
-  teamId: string;
-  siteId?: string;
-  userId?: string;
-}): Promise<{
-  message: NotificationMessageData | null;
-  summary: Record<string, unknown> | null;
-}> {
-  const res = await fetchEdgeJson<{
-    ok: boolean;
-    data: {
-      message: NotificationMessageData | null;
-      summary: Record<string, unknown> | null;
-    };
-  }>({
-    method: "POST",
-    path: adminServicePath("notification-test"),
-    body: input,
-  });
-  return res.data;
 }
 export async function updateMyProfile(input: {
   name?: string;

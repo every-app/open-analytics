@@ -1,14 +1,7 @@
-export type NotificationRuleType =
-  "report" | "milestone" | "threshold" | "change" | "health" | "test";
+import { NOTIFICATION_RULE_TYPES, type NotificationRuleType } from "./rules";
 
-export type NotificationMessageType =
-  | "report"
-  | "milestone"
-  | "threshold"
-  | "change"
-  | "health"
-  | "system"
-  | "test";
+/** Every message comes from a rule, and carries that rule's type. */
+export type NotificationMessageType = NotificationRuleType;
 
 export type NotificationSeverity = "info" | "success" | "warning" | "critical";
 
@@ -16,25 +9,6 @@ export type NotificationDeliveryStatus =
   "created" | "sending" | "sent" | "partial" | "failed" | "skipped";
 
 export type NotificationChannel = "inApp" | "email" | "webPush";
-
-const RULE_TYPES = new Set<NotificationRuleType>([
-  "report",
-  "milestone",
-  "threshold",
-  "change",
-  "health",
-  "test",
-]);
-
-const MESSAGE_TYPES = new Set<NotificationMessageType>([
-  "report",
-  "milestone",
-  "threshold",
-  "change",
-  "health",
-  "system",
-  "test",
-]);
 
 const SEVERITIES = new Set<NotificationSeverity>([
   "info",
@@ -52,20 +26,13 @@ const DELIVERY_STATUSES = new Set<NotificationDeliveryStatus>([
   "skipped",
 ]);
 
-export function normalizeNotificationRuleType(
-  value: unknown,
-): NotificationRuleType {
-  return RULE_TYPES.has(value as NotificationRuleType)
-    ? (value as NotificationRuleType)
-    : "test";
-}
-
-export function normalizeNotificationMessageType(
+export function parseNotificationMessageType(
   value: unknown,
 ): NotificationMessageType {
-  return MESSAGE_TYPES.has(value as NotificationMessageType)
-    ? (value as NotificationMessageType)
-    : "system";
+  if (NOTIFICATION_RULE_TYPES.includes(value as NotificationMessageType)) {
+    return value as NotificationMessageType;
+  }
+  throw new Error(`Unknown notification message type: ${String(value)}`);
 }
 
 export function normalizeNotificationSeverity(
@@ -82,14 +49,4 @@ export function normalizeNotificationDeliveryStatus(
   return DELIVERY_STATUSES.has(value as NotificationDeliveryStatus)
     ? (value as NotificationDeliveryStatus)
     : "created";
-}
-
-export function defaultRequiresAttention(input: {
-  type: NotificationMessageType;
-  severity: NotificationSeverity;
-}): boolean {
-  if (input.severity === "warning" || input.severity === "critical") {
-    return true;
-  }
-  return input.type === "threshold" || input.type === "health";
 }

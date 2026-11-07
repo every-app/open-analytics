@@ -80,7 +80,6 @@ export function NotificationPreferencesPopover({
 
   const attentionRows: Array<{ key: AttentionKey; label: string }> = [
     { key: "reportsCreateUnread", label: copy.reportsUnreadLabel },
-    { key: "milestonesCreateUnread", label: copy.milestonesUnreadLabel },
     { key: "alertsCreateUnread", label: copy.alertsUnreadLabel },
   ];
 

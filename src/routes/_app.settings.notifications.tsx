@@ -41,7 +41,6 @@ function Page() {
       locale={locale}
       messages={messages}
       teamId={c.activeTeam.id}
-      currentUserId={c.user.id}
       initialData={teamNotificationsInitialData}
     />
   );

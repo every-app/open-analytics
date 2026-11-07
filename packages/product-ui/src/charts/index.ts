@@ -14,12 +14,6 @@ export {
   EventTrendLegend,
 } from "./event-trend-bar-chart";
 export type {
-  LatencyPercentileChartLabels,
-  LatencyPercentileChartPoint,
-  LatencyPercentileChartProps,
-} from "./latency-percentile-chart";
-export { LatencyPercentileChart } from "./latency-percentile-chart";
-export type {
   MetricAreaChartProps,
   MetricAreaPoint,
 } from "./metric-area-chart";

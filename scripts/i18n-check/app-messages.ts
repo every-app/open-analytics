@@ -77,6 +77,26 @@ export function getAppMessagesType(
   return { type, symbol };
 }
 
+/**
+ * Pick<AppMessages, "a" | "b"> and other slices of the root: every property
+ * is one of the root's, with the root's type, so its keys read as the root's.
+ */
+function isAppMessagesSlice(
+  type: ts.Type,
+  checker: ts.TypeChecker,
+  appMessagesType: ts.Type,
+): boolean {
+  const rootKeys = new Set(
+    appMessagesType.getProperties().map((property) => property.name),
+  );
+  const properties = type.getProperties();
+  return (
+    properties.length > 0 &&
+    properties.every((property) => rootKeys.has(property.name)) &&
+    checker.isTypeAssignableTo(appMessagesType, type)
+  );
+}
+
 export function isRootAppMessagesType(
   type: ts.Type,
   checker: ts.TypeChecker,
@@ -95,6 +115,14 @@ export function isRootAppMessagesType(
 
   const symbol = type.getSymbol();
   if (symbol === appMessagesSymbol) return true;
+
+  if (
+    "isTypeAssignableTo" in checker &&
+    typeof checker.isTypeAssignableTo === "function" &&
+    isAppMessagesSlice(type, checker, appMessagesType)
+  ) {
+    return true;
+  }
 
   if (
     "isTypeAssignableTo" in checker &&

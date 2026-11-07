@@ -3,22 +3,24 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   handleNotificationPreferences,
   handleNotificationRead,
-  handleNotificationRulePreviewAdmin,
-  handleNotificationRuleRunAdmin,
   handleNotificationRulesAdmin,
   handleNotifications,
   handleNotificationsReadAll,
-  handleNotificationTestAdmin,
 } from "@/lib/edge/admin/notifications/handler";
+const WEEKLY = { kind: "weekly", dayOfWeek: 1, time: "08:00", timezone: "UTC" };
+const ALERT = { direction: "spike", window: "last_1h", percent: 50 };
+const ALERT_BODY = {
+  teamId: "team-1",
+  siteId: "site-1",
+  type: "change",
+  condition: ALERT,
+};
 const requireActor = vi.hoisted(() => vi.fn());
-const canManageTeam = vi.hoisted(() => vi.fn());
-const canManageSite = vi.hoisted(() => vi.fn());
 const canReadTeam = vi.hoisted(() => vi.fn());
 const createNotificationRule = vi.hoisted(() => vi.fn());
 const deleteNotificationRule = vi.hoisted(() => vi.fn());
 const listNotificationRules = vi.hoisted(() => vi.fn());
 const updateNotificationRule = vi.hoisted(() => vi.fn());
-const getNotificationRule = vi.hoisted(() => vi.fn());
 const listNotificationMessagesForTeam = vi.hoisted(() => vi.fn());
 const listNotificationMessagesForUser = vi.hoisted(() => vi.fn());
 const countUnreadAttentionMessages = vi.hoisted(() => vi.fn());
@@ -26,22 +28,15 @@ const markNotificationMessageRead = vi.hoisted(() => vi.fn());
 const markAllNotificationMessagesRead = vi.hoisted(() => vi.fn());
 const getUserNotificationPreferences = vi.hoisted(() => vi.fn());
 const updateUserNotificationPreferences = vi.hoisted(() => vi.fn());
-const createManualTestNotification = vi.hoisted(() => vi.fn());
-const createNotificationRulePreview = vi.hoisted(() => vi.fn());
-const runNotificationRuleManually = vi.hoisted(() => vi.fn());
-const runScheduledTask = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/edge/admin/auth", () => ({
   requireActor,
 }));
 vi.mock("@/lib/edge/admin/access", () => ({
-  canManageSite,
-  canManageTeam,
   canReadTeam,
 }));
 vi.mock("@/lib/notifications/edge/rule-store", () => ({
   createNotificationRule,
   deleteNotificationRule,
-  getNotificationRule,
   listNotificationRules,
   updateNotificationRule,
 }));
@@ -55,16 +50,6 @@ vi.mock("@/lib/notifications/edge/message-store", () => ({
 vi.mock("@/lib/notifications/edge/preferences", () => ({
   getUserNotificationPreferences,
   updateUserNotificationPreferences,
-}));
-vi.mock("@/lib/notifications/edge/notification-task", () => ({
-  createManualTestNotification,
-  createNotificationRulePreview,
-  runNotificationRuleManually,
-  NOTIFICATION_TASK_KEY: "notification_tick",
-  NOTIFICATION_TASK_NAME: "Notification dispatch",
-}));
-vi.mock("@/lib/edge/scheduled-tasks/runner", () => ({
-  runScheduledTask,
 }));
 function request(path: string, body: Record<string, unknown>): Request {
   return new Request(`https://edge.test${path}`, {
@@ -122,18 +107,6 @@ describe("admin notification handlers", () => {
     updateUserNotificationPreferences.mockResolvedValue({
       channels: { email: true },
     });
-    createNotificationRulePreview.mockResolvedValue({ status: "checked" });
-    runNotificationRuleManually.mockResolvedValue({
-      summary: { emailFailed: 0 },
-      messageCount: 0,
-    });
-    createManualTestNotification.mockResolvedValue({
-      message: { id: "msg-test", deliveryStatus: "sent" },
-      summary: { messagesCreated: 1 },
-    });
-    runScheduledTask.mockImplementation(async (_env, _task, _opts, handler) =>
-      handler({ runId: "run-1", logger: {}, startedAt: Date.now() }),
-    );
   });
 
   it("lists, creates, and deletes notification rules", async () => {
@@ -149,13 +122,10 @@ describe("admin notification handlers", () => {
       request("/api/private/admin/notification-rules", {
         teamId: " team-1 ",
         siteId: " site-1 ",
-        name: "",
-        description: " Desc ",
+        name: " Weekly ",
         type: "report",
         enabled: false,
-        scheduleJson: { kind: "daily" },
-        condition: { metric: "views" },
-        recipient: { mode: "creator" },
+        schedule: WEEKLY,
       }),
       {} as never,
       new URL("https://edge.test/api/private/admin/notification-rules"),
@@ -185,12 +155,13 @@ describe("admin notification handlers", () => {
     expect(createNotificationRule).toHaveBeenCalledWith(
       expect.anything(),
       expect.anything(),
-      expect.objectContaining({
+      {
         teamId: "team-1",
         siteId: "site-1",
-        name: "Notification rule",
+        name: "Weekly",
         enabled: false,
-      }),
+        config: { type: "report", schedule: WEEKLY },
+      },
     );
     expect(deleteNotificationRule).toHaveBeenCalledWith(
       expect.anything(),
@@ -241,7 +212,7 @@ describe("admin notification handlers", () => {
     deleteNotificationRule.mockRejectedValueOnce(new Error("Forbidden"));
 
     const create = await handleNotificationRulesAdmin(
-      request("/api/private/admin/notification-rules", { teamId: "team-1" }),
+      request("/api/private/admin/notification-rules", ALERT_BODY),
       {} as never,
       new URL("https://edge.test/api/private/admin/notification-rules"),
     );
@@ -272,6 +243,33 @@ describe("admin notification handlers", () => {
       {} as never,
       new URL("https://edge.test/api/private/admin/notification-rules"),
     );
+    const missingSite = await handleNotificationRulesAdmin(
+      request("/api/private/admin/notification-rules", { teamId: "team-1" }),
+      {} as never,
+      new URL("https://edge.test/api/private/admin/notification-rules"),
+    );
+    const removedType = await handleNotificationRulesAdmin(
+      request("/api/private/admin/notification-rules", {
+        ...ALERT_BODY,
+        type: "threshold",
+      }),
+      {} as never,
+      new URL("https://edge.test/api/private/admin/notification-rules"),
+    );
+    const badSchedule = await handleNotificationRulesAdmin(
+      patchRequest({
+        ruleId: "rule-1",
+        type: "report",
+        schedule: { ...WEEKLY, kind: "daily" },
+      }),
+      {} as never,
+      new URL("https://edge.test/api/private/admin/notification-rules"),
+    );
+    const blankSite = await handleNotificationRulesAdmin(
+      patchRequest({ ruleId: "rule-1", siteId: " " }),
+      {} as never,
+      new URL("https://edge.test/api/private/admin/notification-rules"),
+    );
     const missingPatchId = await handleNotificationRulesAdmin(
       patchRequest({ name: "Missing id" }),
       {} as never,
@@ -290,6 +288,14 @@ describe("admin notification handlers", () => {
     );
 
     expect(missingTeam.status).toBe(400);
+    expect(missingSite.status).toBe(400);
+    expect(removedType.status).toBe(400);
+    await expect(removedType.json()).resolves.toMatchObject({
+      error: { message: "type must be one of report, change" },
+    });
+    expect(badSchedule.status).toBe(400);
+    expect(blankSite.status).toBe(400);
+    expect(createNotificationRule).not.toHaveBeenCalled();
     expect(missingPatchId.status).toBe(400);
     expect(missingDeleteId.status).toBe(400);
     expect(notFound.status).toBe(404);
@@ -309,21 +315,11 @@ describe("admin notification handlers", () => {
       {} as never,
       new URL("https://edge.test/api/private/admin/notification-rules"),
     );
-    const unsupportedPreview = await handleNotificationRulePreviewAdmin(
-      getRequest("/api/private/admin/notification-rules/preview"),
-      {} as never,
-    );
-    const unsupportedRun = await handleNotificationRuleRunAdmin(
-      getRequest("/api/private/admin/notification-rules/run"),
-      {} as never,
-    );
     expect(unsupportedRules.status).toBe(405);
-    expect(unsupportedPreview.status).toBe(405);
-    expect(unsupportedRun.status).toBe(405);
 
     createNotificationRule.mockRejectedValueOnce(new Error("Forbidden"));
     const forbidden = await handleNotificationRulesAdmin(
-      request("/api/private/admin/notification-rules", { teamId: "team-1" }),
+      request("/api/private/admin/notification-rules", ALERT_BODY),
       {} as never,
       new URL("https://edge.test/api/private/admin/notification-rules"),
     );
@@ -378,21 +374,16 @@ describe("admin notification handlers", () => {
     );
   });
 
-  it("passes all supported explicit fields for notification rule patches", async () => {
-    const schedule = { kind: "daily", time: "09:00" };
-    const recipient = { mode: "team" };
+  it("changes a rule's type, schedule and condition together", async () => {
     await handleNotificationRulesAdmin(
       patchRequest({
-        id: "rule-1",
-        teamId: " team-2 ",
-        siteId: " ",
+        ruleId: "rule-1",
+        siteId: " site-2 ",
         name: " Renamed ",
-        description: " Updated ",
-        type: "traffic_spike",
         enabled: "nope",
-        schedule,
-        condition: { metric: "views" },
-        recipient,
+        type: "change",
+        condition: ALERT,
+        schedule: WEEKLY,
       }),
       {} as never,
       new URL("https://edge.test/api/private/admin/notification-rules"),
@@ -403,19 +394,14 @@ describe("admin notification handlers", () => {
       expect.anything(),
       {
         ruleId: "rule-1",
-        teamId: "team-2",
-        siteId: null,
+        siteId: "site-2",
         name: "Renamed",
-        description: "Updated",
-        type: "traffic_spike",
-        schedule,
-        condition: { metric: "views" },
-        recipient,
+        config: { type: "change", condition: ALERT },
       },
     );
   });
 
-  it("ignores non-record notification rule conditions", async () => {
+  it("leaves the rule's config alone when no type is sent", async () => {
     await handleNotificationRulesAdmin(
       patchRequest({ ruleId: "rule-1", condition: ["bad"] }),
       {} as never,
@@ -427,138 +413,6 @@ describe("admin notification handlers", () => {
       expect.anything(),
       { ruleId: "rule-1" },
     );
-  });
-
-  it("denies preview and manual run when the actor cannot manage the rule", async () => {
-    getNotificationRule.mockResolvedValue(rule());
-    canManageTeam.mockReturnValue(false);
-
-    const preview = await handleNotificationRulePreviewAdmin(
-      request("/api/private/admin/notification-rules/preview", {
-        ruleId: "rule-1",
-      }),
-      {} as never,
-    );
-    const run = await handleNotificationRuleRunAdmin(
-      request("/api/private/admin/notification-rules/run", {
-        ruleId: "rule-1",
-      }),
-      {} as never,
-    );
-
-    expect(preview.status).toBe(403);
-    expect(run.status).toBe(403);
-    expect(createNotificationRulePreview).not.toHaveBeenCalled();
-    expect(runScheduledTask).not.toHaveBeenCalled();
-    expect(runNotificationRuleManually).not.toHaveBeenCalled();
-  });
-
-  it("previews and manually runs manageable rules", async () => {
-    getNotificationRule.mockResolvedValue(rule());
-    canManageTeam.mockReturnValue(true);
-    canManageSite.mockResolvedValue(true);
-
-    const preview = await handleNotificationRulePreviewAdmin(
-      request("/api/private/admin/notification-rules/preview", {
-        id: "rule-1",
-      }),
-      {} as never,
-    );
-    const run = await handleNotificationRuleRunAdmin(
-      request("/api/private/admin/notification-rules/run", {
-        ruleId: "rule-1",
-      }),
-      {} as never,
-    );
-
-    expect(preview.status).toBe(200);
-    expect(run.status).toBe(200);
-    expect(createNotificationRulePreview).toHaveBeenCalledWith(
-      expect.anything(),
-      rule(),
-    );
-    expect(runScheduledTask).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        scopeType: "notification_rule",
-        scopeId: "rule-1",
-      }),
-      undefined,
-      expect.any(Function),
-    );
-  });
-
-  it("previews site-less rules and marks failed manual runs as partial", async () => {
-    getNotificationRule.mockResolvedValue({ ...rule(), siteId: null });
-    canManageTeam.mockReturnValue(true);
-    runNotificationRuleManually.mockResolvedValueOnce({
-      summary: { emailFailed: 1 },
-      messageCount: 1,
-    });
-    const taskResults: Array<{ status: string }> = [];
-    runScheduledTask.mockImplementationOnce(
-      async (_env, _task, _opts, handler) => {
-        taskResults.push(
-          await handler({ runId: "run-2", logger: {}, startedAt: Date.now() }),
-        );
-      },
-    );
-
-    const preview = await handleNotificationRulePreviewAdmin(
-      request("/api/private/admin/notification-rules/preview", {
-        ruleId: "rule-1",
-      }),
-      {} as never,
-    );
-    const run = await handleNotificationRuleRunAdmin(
-      request("/api/private/admin/notification-rules/run", { id: "rule-1" }),
-      {} as never,
-    );
-
-    expect(preview.status).toBe(200);
-    expect(run.status).toBe(200);
-    expect(canManageSite).not.toHaveBeenCalled();
-    expect(taskResults).toEqual([
-      expect.objectContaining({ status: "partial" }),
-    ]);
-  });
-
-  it("maps unmanaged rule sites to forbidden responses", async () => {
-    getNotificationRule.mockResolvedValue(rule());
-    canManageTeam.mockReturnValue(true);
-    canManageSite.mockResolvedValue(false);
-
-    const preview = await handleNotificationRulePreviewAdmin(
-      request("/api/private/admin/notification-rules/preview", {
-        ruleId: "rule-1",
-      }),
-      {} as never,
-    );
-
-    expect(preview.status).toBe(403);
-    expect(createNotificationRulePreview).not.toHaveBeenCalled();
-  });
-
-  it("validates preview and run payloads and maps missing manageable rules", async () => {
-    const missingPreviewId = await handleNotificationRulePreviewAdmin(
-      request("/api/private/admin/notification-rules/preview", {}),
-      {} as never,
-    );
-    const missingRunId = await handleNotificationRuleRunAdmin(
-      request("/api/private/admin/notification-rules/run", {}),
-      {} as never,
-    );
-    getNotificationRule.mockResolvedValue(null);
-    const notFound = await handleNotificationRulePreviewAdmin(
-      request("/api/private/admin/notification-rules/preview", {
-        id: "missing",
-      }),
-      {} as never,
-    );
-
-    expect(missingPreviewId.status).toBe(400);
-    expect(missingRunId.status).toBe(400);
-    expect(notFound.status).toBe(404);
   });
 
   it("lists the actor's own notifications with the request's filters", async () => {
@@ -747,18 +601,6 @@ describe("admin notification handlers", () => {
     requireActor.mockResolvedValue(new Response("nope", { status: 401 }));
 
     const responses = await Promise.all([
-      handleNotificationRulePreviewAdmin(
-        request("/api/private/admin/notification-rules/preview", {
-          ruleId: "rule-1",
-        }),
-        {} as never,
-      ),
-      handleNotificationRuleRunAdmin(
-        request("/api/private/admin/notification-rules/run", {
-          ruleId: "rule-1",
-        }),
-        {} as never,
-      ),
       handleNotifications(
         getRequest("/api/private/notifications"),
         {} as never,
@@ -777,14 +619,10 @@ describe("admin notification handlers", () => {
         methodRequest("PATCH", "/api/private/notifications/read-all", {}),
         {} as never,
       ),
-      handleNotificationTestAdmin(
-        request("/api/private/admin/notification-test", { teamId: "team-1" }),
-        {} as never,
-      ),
     ]);
 
     expect(responses.map((response) => response.status)).toEqual([
-      401, 401, 401, 401, 401, 401, 401,
+      401, 401, 401, 401,
     ]);
   });
 
@@ -812,80 +650,5 @@ describe("admin notification handlers", () => {
     expect(unsupportedRead.status).toBe(405);
     expect(missingReadId.status).toBe(400);
     expect(unsupportedReadAll.status).toBe(405);
-  });
-
-  it("sends a test notification to the actor only", async () => {
-    canReadTeam.mockReturnValue(true);
-    canManageTeam.mockReturnValue(true);
-
-    const self = await handleNotificationTestAdmin(
-      request("/api/private/admin/notification-test", {
-        teamId: "team-1",
-        siteId: "site-1",
-      }),
-      {} as never,
-    );
-    const ownId = await handleNotificationTestAdmin(
-      request("/api/private/admin/notification-test", {
-        teamId: "team-1",
-        userId: "user-1",
-      }),
-      {} as never,
-    );
-    const otherUser = await handleNotificationTestAdmin(
-      request("/api/private/admin/notification-test", {
-        teamId: "team-1",
-        siteId: "site-1",
-        userId: "user-2",
-      }),
-      {} as never,
-    );
-
-    expect(self.status).toBe(200);
-    expect(ownId.status).toBe(200);
-    expect(otherUser.status).toBe(403);
-    expect(createManualTestNotification).toHaveBeenCalledTimes(2);
-    expect(createManualTestNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        teamId: "team-1",
-        siteId: "site-1",
-        userId: "user-1",
-      }),
-    );
-    expect(createManualTestNotification).not.toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "user-2" }),
-    );
-  });
-
-  it("validates manual test notification permissions and partial outcomes", async () => {
-    const missingTeam = await handleNotificationTestAdmin(
-      request("/api/private/admin/notification-test", {}),
-      {} as never,
-    );
-    canReadTeam.mockReturnValueOnce(false);
-    const unreadableTeam = await handleNotificationTestAdmin(
-      request("/api/private/admin/notification-test", { teamId: "team-1" }),
-      {} as never,
-    );
-    canReadTeam.mockReturnValue(true);
-    canManageTeam.mockReturnValue(true);
-    createManualTestNotification.mockResolvedValueOnce({
-      message: { id: "msg-test", deliveryStatus: "failed" },
-      summary: { messagesCreated: 1 },
-    });
-    const partial = await handleNotificationTestAdmin(
-      request("/api/private/admin/notification-test", { teamId: "team-1" }),
-      {} as never,
-    );
-
-    expect(missingTeam.status).toBe(400);
-    expect(unreadableTeam.status).toBe(403);
-    expect(partial.status).toBe(200);
-    expect(runScheduledTask).toHaveBeenLastCalledWith(
-      expect.anything(),
-      expect.objectContaining({ scopeType: "team", scopeId: "team-1" }),
-      undefined,
-      expect.any(Function),
-    );
   });
 });

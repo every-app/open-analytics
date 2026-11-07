@@ -6,15 +6,6 @@ vi.mock("@/lib/dashboard-api/client/admin-service", () => ({
   requestAdminService,
 }));
 
-import {
-  formatAge,
-  formatEventKind,
-  formatLatency,
-  formatMetricNumber,
-  formatMetricRate,
-  formatPercent,
-  windowLabel,
-} from "@/components/dashboard/admin/system-performance/formatters";
 import type {
   TabbedDataTableColumn,
   TabbedDataTableRowBase,
@@ -251,30 +242,6 @@ describe("recently split dashboard helpers", () => {
       method: "PATCH",
       body: { teamId: "team-1" },
     });
-  });
-
-  it("formats system performance values across units and ranges", () => {
-    expect(formatMetricNumber("en", 12.6)).toBe("13");
-    expect(formatMetricRate("en", 12.35)).toBe("12.4");
-    expect(formatPercent("en", 0.125)).toBe("12.5%");
-    expect(formatLatency("en", null)).toBe("--");
-    expect(formatLatency("en", Number.NaN)).toBe("--");
-    expect(formatLatency("en", -5)).toBe("0 ms");
-    expect(formatLatency("en", 999)).toBe("999 ms");
-    expect(formatLatency("en", 1250)).toBe("1.25 s");
-    expect(formatAge("en", null)).toBe("--");
-    expect(formatAge("en", Number.POSITIVE_INFINITY)).toBe("--");
-    expect(formatAge("en", -1)).toBe("0 s");
-    expect(formatAge("en", 59_000)).toBe("59 s");
-    expect(formatAge("en", 60_000)).toBe("1 min");
-    expect(formatAge("en", 3_600_000)).toBe("1 h");
-    expect(formatAge("en", 3_660_000)).toBe("1 h 1 min");
-    expect(formatEventKind(messages, "custom_event")).toBe("Custom event");
-    expect(formatEventKind(messages, "anything-else")).toBe("Page view");
-    expect(windowLabel(messages, 15)).toBe("15m");
-    expect(windowLabel(messages, 60)).toBe("1h");
-    expect(windowLabel(messages, 360)).toBe("6h");
-    expect(windowLabel(messages, 1440)).toBe("24h");
   });
 
   it("provides filter catalog labels, groups, and event-name detection", () => {

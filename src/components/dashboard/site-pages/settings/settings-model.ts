@@ -24,7 +24,6 @@ export interface SiteSettingsClientPageProps {
     "id" | "name" | "domain" | "publicEnabled" | "publicSlug"
   >;
   /** Whether the viewer can open System health, where blocked requests show. */
-  canViewSystemHealth: boolean;
   initialData?: SiteSettingsInitialData | null;
 }
 function safeSlug(value: string): string {

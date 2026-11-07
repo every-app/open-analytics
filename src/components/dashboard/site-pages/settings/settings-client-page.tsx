@@ -9,7 +9,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@insightflare/ui/alert-dialog";
-import { Button } from "@insightflare/ui/button";
 import { Input } from "@insightflare/ui/input";
 import { Skeleton } from "@insightflare/ui/skeleton";
 import { Slider } from "@insightflare/ui/slider";
@@ -31,11 +30,11 @@ import {
   SettingsRow,
   SettingsSection,
 } from "@/components/settings/settings-section";
-import { buildSitePath, buildSystemHealthPath } from "@/lib/dashboard/paths";
+import { buildSitePath } from "@/lib/dashboard/paths";
 import { dashboardShellQueryOptions } from "@/lib/dashboard/route-query";
 import { requestAdminService } from "@/lib/dashboard-api/client/admin-service";
 import type { SiteData } from "@/lib/dashboard-api/client/edge";
-import Link, { useRouter } from "@/lib/router";
+import { useRouter } from "@/lib/router";
 import {
   normalizeSiteScriptSettings,
   type SiteScriptSettings,
@@ -71,7 +70,6 @@ export function SettingsClientPage({
   messages,
   siteSlug,
   site,
-  canViewSystemHealth,
   initialData = null,
 }: SiteSettingsClientPageProps) {
   const router = useRouter();
@@ -550,18 +548,7 @@ export function SettingsClientPage({
         </SettingsCard>
       </SettingsSection>
 
-      <SettingsSection
-        title={copy.sections.protection.title}
-        action={
-          canViewSystemHealth ? (
-            <Button asChild variant="link" size="sm">
-              <Link href={buildSystemHealthPath("blocked")}>
-                {copy.viewBlockedRequests}
-              </Link>
-            </Button>
-          ) : null
-        }
-      >
+      <SettingsSection title={copy.sections.protection.title}>
         <SettingsCard>{protectionSwitches.map(switchRow)}</SettingsCard>
       </SettingsSection>
 

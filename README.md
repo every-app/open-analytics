@@ -10,8 +10,8 @@
 - A 3 KB tracker with custom events and Web Vitals.
 - Dashboards for pages, referrers, campaigns, sessions, funnels, goals, retention and devices, with a live view.
 - Read-only public share links for any site.
-- Scheduled and threshold email reports.
-- Bot filtering, with a page that shows what was blocked.
+- Weekly or monthly reports and traffic spike or drop alerts, in an in-app inbox and by email.
+- Bot filtering.
 - MCP tools so your agents can query reports and manage sites.
 
 ## Install on EveryApp

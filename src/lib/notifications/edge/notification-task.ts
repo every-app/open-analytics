@@ -1,16 +1,7 @@
-import {
-  compileD1Query,
-  createD1DatabaseClient,
-  eq,
-  filter,
-  limit,
-  param,
-} from "@/lib/db";
 import type {
   ScheduledTaskContext,
   ScheduledTaskOutcome,
 } from "@/lib/edge/scheduled-tasks/runner";
-import type { Env } from "@/lib/edge/types";
 import { DEFAULT_LOCALE } from "@/lib/i18n/config";
 import { buildLocalizedNotificationMessageFields } from "@/lib/notifications/localized-message";
 import type {
@@ -18,14 +9,9 @@ import type {
   NotificationMessageDraft,
 } from "@/lib/notifications/message";
 import { DEFAULT_RETENTION_CONFIG } from "@/lib/retention";
-import type { ScheduledTaskRetentionConfig } from "@/lib/scheduled-tasks";
 
-import { notificationRecipientRows } from "./database-projections";
 import { deliverNotificationMessage } from "./delivery";
-import {
-  evaluateNotificationRule,
-  type NotificationRuleEvaluationResult,
-} from "./evaluator";
+import { evaluateNotificationRule } from "./evaluator";
 import { createNotificationMessage } from "./message-store";
 import { createNotificationInvocationCache } from "./notification-cache";
 import {
@@ -33,211 +19,118 @@ import {
   shouldCreateUnreadAttention,
 } from "./preferences";
 import {
-  advanceNotificationRuleSchedule,
-  applyNotificationRuleManualRunResult,
   listDueNotificationRules,
   type NotificationRule,
-  resolveNotificationRecipients,
+  recordNotificationRuleCheck,
+  resolveNotificationRecipient,
+  scheduleUnscheduledReports,
 } from "./rule-store";
-export const NOTIFICATION_TASK_KEY = "notification_tick";
-export const NOTIFICATION_TASK_NAME = "Notification dispatch";
+
 export interface NotificationTaskSummary {
   rulesScanned: number;
   rulesChecked: number;
   rulesSkipped: number;
   rulesTriggered: number;
   messagesCreated: number;
-  inAppCreated: number;
-  emailAttempted: number;
   emailSent: number;
   emailFailed: number;
-  skippedByPreference: number;
   emailSkipped: number;
-  emailSkippedByPreference: number;
-  emailSkippedBySystem: number;
-  emailSkippedInvalidRecipient: number;
-  durationMs: number;
 }
-function emptySummary(startedAt: number): NotificationTaskSummary {
+function emptySummary(): NotificationTaskSummary {
   return {
     rulesScanned: 0,
     rulesChecked: 0,
     rulesSkipped: 0,
     rulesTriggered: 0,
     messagesCreated: 0,
-    inAppCreated: 0,
-    emailAttempted: 0,
     emailSent: 0,
     emailFailed: 0,
-    skippedByPreference: 0,
     emailSkipped: 0,
-    emailSkippedByPreference: 0,
-    emailSkippedBySystem: 0,
-    emailSkippedInvalidRecipient: 0,
-    durationMs: Date.now() - startedAt,
   };
 }
-function collectDeliveryStats(
+function countEmail(
   summary: NotificationTaskSummary,
   message: NotificationMessage | null,
 ) {
   const email = message?.deliveryResults.email;
   if (!email || typeof email !== "object" || Array.isArray(email)) return;
-  const status = String((email as Record<string, unknown>).status ?? "");
-  if (status === "sent") {
-    summary.emailAttempted += 1;
-    summary.emailSent += 1;
-    return;
-  }
-  if (status === "failed") {
-    summary.emailAttempted += 1;
-    summary.emailFailed += 1;
-    return;
-  }
-  if (status === "skipped") {
-    const reason = String((email as Record<string, unknown>).reason ?? "");
-    summary.emailSkipped += 1;
-    if (reason === "user_preference_disabled") {
-      summary.skippedByPreference += 1;
-      summary.emailSkippedByPreference += 1;
-      return;
-    }
-    if (reason === "recipient_email_invalid") {
-      summary.emailSkippedInvalidRecipient += 1;
-      return;
-    }
-    if (
-      reason === "system_email_unconfigured" ||
-      reason === "secret_decryption_failed"
-    ) {
-      summary.emailSkippedBySystem += 1;
-    }
-  }
+  const status = (email as Record<string, unknown>).status;
+  if (status === "sent") summary.emailSent += 1;
+  else if (status === "failed") summary.emailFailed += 1;
+  else if (status === "skipped") summary.emailSkipped += 1;
 }
-async function createAndDeliverMessages(input: {
-  env: Env;
+/** One message in the creator's inbox, then email if they want it. */
+async function sendToCreator(input: {
   context: ScheduledTaskContext;
   rule: NotificationRule;
   draft: NotificationMessageDraft;
   triggeredAt: number;
   summary: NotificationTaskSummary;
-  retention: ScheduledTaskRetentionConfig;
-}): Promise<NotificationMessage[]> {
-  const { env, context, rule, draft, triggeredAt, summary, retention } = input;
-  const recipients = await resolveNotificationRecipients(env, rule);
-  if (recipients.length === 0) {
+}): Promise<void> {
+  const { context, rule, draft, triggeredAt, summary } = input;
+  const { env, logger } = context;
+  const user = await resolveNotificationRecipient(env, rule);
+  if (!user) {
     summary.rulesSkipped += 1;
-    await context.logger.warn(
+    await logger.warn(
       "notification_rule_skipped",
-      "Notification rule has no recipients",
-      { ruleId: rule.id, recipientMode: rule.recipient.mode },
+      "The rule's creator can no longer open the app",
+      { ruleId: rule.id },
     );
-    return [];
+    return;
   }
-
-  const batchId = crypto.randomUUID();
-  const messages: NotificationMessage[] = [];
-  await context.logger.info(
-    "notification_rule_triggered",
-    "Notification rule triggered",
-    {
-      ruleId: rule.id,
-      batchId,
-      recipientCount: recipients.length,
-      ...(draft.data ?? {}),
-    },
+  const localized = buildLocalizedNotificationMessageFields({
+    draft,
+    locale: DEFAULT_LOCALE,
+  });
+  const message = await createNotificationMessage(env, {
+    teamId: rule.teamId,
+    siteId: rule.siteId,
+    userId: user.id,
+    ruleId: rule.id,
+    batchId: crypto.randomUUID(),
+    type: draft.type,
+    severity: draft.severity,
+    requiresAttention: shouldCreateUnreadAttention({
+      preferences: normalizeNotificationPreferences(user.preferencesJson),
+      type: draft.type,
+    }),
+    title: localized.title,
+    summary: localized.summary,
+    bodyText: localized.bodyText,
+    data: { ...(draft.data ?? {}), locale: localized.locale },
+    triggeredAt,
+    retention: context.retention ?? DEFAULT_RETENTION_CONFIG,
+  });
+  summary.messagesCreated += 1;
+  await logger.info(
+    "notification_messages_created",
+    "Notification message created",
+    { ruleId: rule.id, messageId: message.id },
   );
-
-  for (const user of recipients) {
-    const localized = buildLocalizedNotificationMessageFields({
-      draft,
-      locale: DEFAULT_LOCALE,
-      timeZone: user.timeZone,
-    });
-    const preferences = normalizeNotificationPreferences(user.preferencesJson);
-    const requiresAttention = shouldCreateUnreadAttention({
-      preferences,
-      type: draft.type,
-      fallback: draft.requiresAttention,
-    });
-    const message = await createNotificationMessage(env, {
-      teamId: rule.teamId,
-      siteId: rule.siteId,
-      userId: user.id,
-      ruleId: rule.id,
-      runId: context.runId,
-      batchId,
-      type: draft.type,
-      severity: draft.severity,
-      requiresAttention,
-      title: localized.title,
-      summary: localized.summary,
-      bodyText: localized.bodyText,
-      bodyHtml: "",
-      data: {
-        ruleId: rule.id,
-        batchId,
-        ...(draft.data ?? {}),
-        locale: localized.locale,
-      },
-      triggeredAt,
-      retention,
-    });
-    summary.messagesCreated += 1;
-    summary.inAppCreated += 1;
-    await context.logger.info(
-      "notification_messages_created",
-      "Notification message created",
-      {
-        ruleId: rule.id,
-        messageId: message.id,
-        userId: user.id,
-        batchId,
-      },
-    );
-    const delivered = await deliverNotificationMessage(env, message, user, {
-      logger: context.logger,
-    });
-    collectDeliveryStats(summary, delivered);
-    if (delivered) messages.push(delivered);
-  }
-  return messages;
+  countEmail(
+    summary,
+    await deliverNotificationMessage(env, message, user, { logger }),
+  );
 }
+/**
+ * Checks every due rule: a report whose time has come, and every alert out
+ * of its cooldown. A rule that fails is logged and the rest still run.
+ */
 export async function runNotificationTick(
   context: ScheduledTaskContext,
 ): Promise<ScheduledTaskOutcome> {
-  const { env, logger, startedAt } = context;
-  const now = Math.floor(Date.now() / 1000);
-  const summary = emptySummary(startedAt);
+  const { env, logger } = context;
+  const summary = emptySummary();
   const cache = createNotificationInvocationCache();
-  const retention = context.retention ?? DEFAULT_RETENTION_CONFIG;
-
-  await logger.info("notification_tick_start", "Notification tick started", {
-    now,
-  });
+  const now = Math.floor(Date.now() / 1000);
+  await scheduleUnscheduledReports(env, now);
   const rules = await listDueNotificationRules(env, now);
   summary.rulesScanned = rules.length;
-  await logger.info(
-    "notification_candidates",
-    "Loaded due notification rules",
-    {
-      count: rules.length,
-    },
-  );
 
   for (const rule of rules) {
     const checkedAt = Math.floor(Date.now() / 1000);
     try {
-      await logger.info(
-        "notification_rule_checked",
-        "Evaluating notification rule",
-        {
-          ruleId: rule.id,
-          teamId: rule.teamId,
-          siteId: rule.siteId,
-          type: rule.type,
-        },
-      );
       const evaluation = await evaluateNotificationRule(
         env,
         rule,
@@ -245,55 +138,31 @@ export async function runNotificationTick(
         cache,
       );
       summary.rulesChecked += 1;
-
       if (evaluation.status === "skipped") {
         summary.rulesSkipped += 1;
         await logger.info(
           "notification_rule_skipped",
           "Notification rule was skipped",
-          {
-            ruleId: rule.id,
-            type: rule.type,
-            reason: evaluation.reason,
-            ...(evaluation.data ?? {}),
-          },
+          { ruleId: rule.id, reason: evaluation.reason },
         );
-        await advanceNotificationRuleSchedule(env, { rule, checkedAt });
+      }
+      if (evaluation.status !== "triggered") {
+        await recordNotificationRuleCheck(env, { rule, checkedAt });
         continue;
       }
-
-      if (evaluation.status === "checked") {
-        await logger.info(
-          "notification_rule_not_triggered",
-          "Notification rule was checked and did not trigger",
-          {
-            ruleId: rule.id,
-            type: rule.type,
-            summary: evaluation.summary,
-            ...(evaluation.data ?? {}),
-          },
-        );
-        await advanceNotificationRuleSchedule(env, { rule, checkedAt });
-        continue;
-      }
-
       summary.rulesTriggered += 1;
-      await createAndDeliverMessages({
-        env,
+      await sendToCreator({
         context,
         rule,
         draft: evaluation.message,
         triggeredAt: checkedAt,
         summary,
-        retention,
       });
-
-      await advanceNotificationRuleSchedule(env, {
+      await recordNotificationRuleCheck(env, {
         rule,
         checkedAt,
         triggeredAt: checkedAt,
-        cooldownUntil: evaluation.cooldownUntil ?? null,
-        state: evaluation.state ?? rule.state,
+        cooldownUntil: evaluation.cooldownUntil,
       });
     } catch (error) {
       summary.rulesSkipped += 1;
@@ -305,11 +174,10 @@ export async function runNotificationTick(
           error: error instanceof Error ? error.message : String(error),
         },
       );
-      await advanceNotificationRuleSchedule(env, { rule, checkedAt });
+      await recordNotificationRuleCheck(env, { rule, checkedAt });
     }
   }
 
-  summary.durationMs = Date.now() - startedAt;
   await logger.info("notification_tick_finish", "Notification tick finished", {
     ...summary,
   });
@@ -317,185 +185,4 @@ export async function runNotificationTick(
     status: summary.emailFailed > 0 ? "partial" : "success",
     summary: { ...summary },
   };
-}
-export async function createNotificationRulePreview(
-  env: Env,
-  rule: NotificationRule,
-): Promise<NotificationRuleEvaluationResult> {
-  return evaluateNotificationRule(
-    env,
-    rule,
-    Math.floor(Date.now() / 1000),
-    createNotificationInvocationCache(),
-  );
-}
-export async function runNotificationRuleManually(input: {
-  env: Env;
-  context: ScheduledTaskContext;
-  rule: NotificationRule;
-}): Promise<{
-  evaluation: NotificationRuleEvaluationResult;
-  messages: NotificationMessage[];
-  messageCount: number;
-  summary: NotificationTaskSummary;
-}> {
-  const { env, context, rule } = input;
-  const checkedAt = Math.floor(Date.now() / 1000);
-  const summary = emptySummary(context.startedAt);
-  const cache = createNotificationInvocationCache();
-  const retention = context.retention ?? DEFAULT_RETENTION_CONFIG;
-  summary.rulesScanned = 1;
-
-  await context.logger.info(
-    "notification_rule_manual_run_start",
-    "Manually running notification rule",
-    {
-      ruleId: rule.id,
-      teamId: rule.teamId,
-      siteId: rule.siteId,
-      type: rule.type,
-    },
-  );
-  const evaluation = await evaluateNotificationRule(
-    env,
-    rule,
-    checkedAt,
-    cache,
-  );
-  summary.rulesChecked = 1;
-
-  if (evaluation.status === "skipped") {
-    summary.rulesSkipped = 1;
-    await context.logger.info(
-      "notification_rule_skipped",
-      "Notification rule was skipped during manual run",
-      {
-        ruleId: rule.id,
-        type: rule.type,
-        reason: evaluation.reason,
-        ...(evaluation.data ?? {}),
-      },
-    );
-    await applyNotificationRuleManualRunResult(env, { rule, checkedAt });
-    summary.durationMs = Date.now() - context.startedAt;
-    return { evaluation, messages: [], messageCount: 0, summary };
-  }
-
-  if (evaluation.status === "checked") {
-    await context.logger.info(
-      "notification_rule_not_triggered",
-      "Notification rule was checked during manual run and did not trigger",
-      {
-        ruleId: rule.id,
-        type: rule.type,
-        summary: evaluation.summary,
-        ...(evaluation.data ?? {}),
-      },
-    );
-    await applyNotificationRuleManualRunResult(env, { rule, checkedAt });
-    summary.durationMs = Date.now() - context.startedAt;
-    return { evaluation, messages: [], messageCount: 0, summary };
-  }
-
-  summary.rulesTriggered = 1;
-  const messages = await createAndDeliverMessages({
-    env,
-    context,
-    rule,
-    draft: evaluation.message,
-    triggeredAt: checkedAt,
-    summary,
-    retention,
-  });
-  await applyNotificationRuleManualRunResult(env, {
-    rule,
-    checkedAt,
-    triggeredAt: checkedAt,
-    cooldownUntil: evaluation.cooldownUntil ?? null,
-    state: evaluation.state ?? rule.state,
-  });
-  summary.durationMs = Date.now() - context.startedAt;
-  return {
-    evaluation,
-    messages,
-    messageCount: messages.length,
-    summary,
-  };
-}
-export async function createManualTestNotification(input: {
-  env: Env;
-  context: ScheduledTaskContext;
-  teamId: string;
-  siteId?: string | null;
-  userId: string;
-}): Promise<{
-  message: NotificationMessage | null;
-  summary: NotificationTaskSummary;
-}> {
-  const { env, context, teamId, siteId, userId } = input;
-  const summary = emptySummary(context.startedAt);
-  const retention = context.retention ?? DEFAULT_RETENTION_CONFIG;
-  const now = Math.floor(Date.now() / 1000);
-  const users = notificationRecipientRows();
-  const matchingUser = filter(users, eq(users.columns.id, param(userId)));
-  const userQuery = limit(matchingUser, 1);
-  const userRow = await createD1DatabaseClient(env.DB).first(
-    compileD1Query(userQuery, { tag: "notifications.users.first" }),
-  );
-  const user =
-    userRow && typeof userRow.id === "string"
-      ? { ...userRow, id: userRow.id }
-      : null;
-  if (!user) {
-    await context.logger.warn(
-      "notification_delivery_skipped",
-      "Manual test notification recipient was not found",
-      { userId },
-    );
-    return { message: null, summary };
-  }
-  const localized = buildLocalizedNotificationMessageFields({
-    draft: {
-      type: "test",
-      severity: "info",
-      requiresAttention: false,
-      title: "OpenAnalytics notification test",
-      summary: "This is a test notification from OpenAnalytics.",
-      bodyText:
-        "Reports and alerts you turn on arrive in your OpenAnalytics inbox and, when email is set up on this gateway, by email too.",
-      data: { source: "manual_test" },
-    },
-    locale: DEFAULT_LOCALE,
-    timeZone: user.timeZone,
-  });
-  const message = await createNotificationMessage(env, {
-    teamId,
-    siteId: siteId ?? null,
-    userId,
-    runId: context.runId,
-    batchId: crypto.randomUUID(),
-    type: "test",
-    severity: "info",
-    requiresAttention: false,
-    title: localized.title,
-    summary: localized.summary,
-    bodyText: localized.bodyText,
-    bodyHtml: "",
-    data: { source: "manual_test", locale: localized.locale },
-    triggeredAt: now,
-    retention,
-  });
-  summary.messagesCreated = 1;
-  summary.inAppCreated = 1;
-  await context.logger.info(
-    "notification_messages_created",
-    "Manual test notification message created",
-    { messageId: message.id, userId, teamId, siteId: siteId ?? null },
-  );
-  const delivered = await deliverNotificationMessage(env, message, user, {
-    logger: context.logger,
-  });
-  collectDeliveryStats(summary, delivered);
-  summary.durationMs = Date.now() - context.startedAt;
-  return { message: delivered, summary };
 }

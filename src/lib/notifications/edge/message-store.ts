@@ -25,16 +25,15 @@ import { clampString } from "@/lib/edge/utils";
 import { safeJsonStringify, safeParseRecord } from "@/lib/notifications/json";
 import type { NotificationMessage } from "@/lib/notifications/message";
 import {
-  defaultRequiresAttention,
   normalizeNotificationDeliveryStatus,
-  normalizeNotificationMessageType,
   normalizeNotificationSeverity,
   type NotificationDeliveryStatus,
   type NotificationMessageType,
   type NotificationSeverity,
+  parseNotificationMessageType,
 } from "@/lib/notifications/message-types";
 import { notificationRuleExpiresAtSeconds } from "@/lib/notifications/schedule";
-import type { ScheduledTaskRetentionConfig } from "@/lib/scheduled-tasks";
+import type { RetentionConfig } from "@/lib/retention";
 
 import { notificationMessageRows } from "./database-projections";
 type MessageProjection = ReturnType<typeof notificationMessageRows>;
@@ -53,11 +52,10 @@ export interface CreateNotificationMessageInput {
   siteId?: string | null;
   userId: string;
   ruleId?: string | null;
-  runId?: string | null;
   batchId?: string | null;
   type: NotificationMessageType;
   severity?: NotificationSeverity;
-  requiresAttention?: boolean;
+  requiresAttention: boolean;
   title: string;
   summary?: string;
   bodyText?: string;
@@ -68,7 +66,7 @@ export interface CreateNotificationMessageInput {
   deliveryResults?: Record<string, unknown>;
   triggeredAt?: number | null;
   now?: number;
-  retention?: ScheduledTaskRetentionConfig;
+  retention?: RetentionConfig;
 }
 export interface ListNotificationMessagesInput {
   userId?: string;
@@ -183,13 +181,11 @@ export function mapNotificationMessage(row: MessageRow): NotificationMessage {
       row.ruleId === null || row.ruleId === undefined
         ? null
         : String(row.ruleId),
-    runId:
-      row.runId === null || row.runId === undefined ? null : String(row.runId),
     batchId:
       row.batchId === null || row.batchId === undefined
         ? null
         : String(row.batchId),
-    type: normalizeNotificationMessageType(row.type),
+    type: parseNotificationMessageType(row.type),
     severity: normalizeNotificationSeverity(row.severity),
     requiresAttention: Number(row.requiresAttention ?? 0) === 1,
     title: String(row.title ?? ""),
@@ -253,15 +249,11 @@ export async function createNotificationMessage(
 ): Promise<NotificationMessage> {
   const now = Math.trunc(input.now ?? Date.now() / 1000);
   const id = crypto.randomUUID();
-  const type = normalizeNotificationMessageType(input.type);
   const severity = normalizeNotificationSeverity(input.severity);
-  const requiresAttention =
-    input.requiresAttention ?? defaultRequiresAttention({ type, severity });
   const deliveryStatus = normalizeNotificationDeliveryStatus(
     input.deliveryStatus ?? "created",
   );
   const expiresAt = notificationRuleExpiresAtSeconds({
-    type,
     severity,
     createdAtSeconds: now,
     retention: input.retention,
@@ -275,11 +267,10 @@ export async function createNotificationMessage(
         site_id: input.siteId ?? null,
         user_id: input.userId,
         rule_id: input.ruleId ?? null,
-        run_id: input.runId ?? null,
         batch_id: input.batchId ?? null,
-        type,
+        type: input.type,
         severity,
-        requires_attention: requiresAttention ? 1 : 0,
+        requires_attention: input.requiresAttention ? 1 : 0,
         title: clampString(input.title.trim(), 240),
         summary: clampString((input.summary ?? "").trim(), 500),
         body_text: clampString((input.bodyText ?? "").trim(), 4000),

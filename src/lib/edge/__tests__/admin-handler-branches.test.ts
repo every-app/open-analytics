@@ -15,10 +15,6 @@ import {
   handleSitesAdmin,
 } from "@/lib/edge/admin/sites/handler";
 import {
-  handleDoDiagnosticAdmin,
-  handleSystemPerformanceAdmin,
-} from "@/lib/edge/admin/system/handler";
-import {
   handleMembersAdmin,
   handleProfileAdmin,
 } from "@/lib/edge/admin/users/handlers";
@@ -347,54 +343,5 @@ describe("admin handler low branches", () => {
           '<script defer src="https://edge.test/script.js?siteId=site%201"></script>',
       },
     });
-  });
-
-  it("rejects non-admin and unsupported methods before system admin database work", async () => {
-    const env = createEnv();
-    const nonAdminResolver = vi.fn().mockResolvedValue({ isAdmin: false });
-    const adminResolver = vi.fn().mockResolvedValue({ isAdmin: true });
-    const performanceUrl = new URL(
-      "https://edge.test/admin/system-performance",
-    );
-    const diagnosticUrl = new URL("https://edge.test/admin/do-diagnostic");
-
-    const performanceForbidden = await handleSystemPerformanceAdmin(
-      request("/admin/system-performance", { method: "GET" }),
-      env.env,
-      performanceUrl,
-      nonAdminResolver,
-    );
-    expect(performanceForbidden.status).toBe(403);
-    await expect(jsonOf(performanceForbidden)).resolves.toMatchObject({
-      error: { message: "Only system admin can view system performance" },
-    });
-
-    const performanceMethod = await handleSystemPerformanceAdmin(
-      request("/admin/system-performance", { method: "POST" }),
-      env.env,
-      performanceUrl,
-      adminResolver,
-    );
-    expect(performanceMethod.status).toBe(405);
-
-    const diagnosticForbidden = await handleDoDiagnosticAdmin(
-      request("/admin/do-diagnostic", { method: "GET" }),
-      env.env,
-      diagnosticUrl,
-      nonAdminResolver,
-    );
-    expect(diagnosticForbidden.status).toBe(403);
-    await expect(jsonOf(diagnosticForbidden)).resolves.toMatchObject({
-      error: { message: "Only system admin can view DO diagnostics" },
-    });
-
-    const diagnosticMethod = await handleDoDiagnosticAdmin(
-      request("/admin/do-diagnostic", { method: "POST" }),
-      env.env,
-      diagnosticUrl,
-      adminResolver,
-    );
-    expect(diagnosticMethod.status).toBe(405);
-    expect(env.prepare).not.toHaveBeenCalled();
   });
 });

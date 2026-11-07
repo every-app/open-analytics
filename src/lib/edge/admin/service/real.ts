@@ -1,17 +1,13 @@
-import { requireActor } from "@/lib/edge/admin/auth";
 import { handleNotificationEmailConfigAdmin } from "@/lib/edge/admin/notifications/email";
 import {
   handleNotificationPreferences,
   handleNotificationRead,
-  handleNotificationRulePreviewAdmin,
-  handleNotificationRuleRunAdmin,
   handleNotificationRulesAdmin,
   handleNotifications,
   handleNotificationsReadAll,
-  handleNotificationTestAdmin,
 } from "@/lib/edge/admin/notifications/handler";
 import { nf } from "@/lib/edge/admin/response";
-import { handleScheduledTasksAdmin } from "@/lib/edge/admin/scheduled-tasks/handler";
+import { handleRetentionAdmin } from "@/lib/edge/admin/retention/handler";
 import type { AdminServiceRequest } from "@/lib/edge/admin/service/index";
 import {
   handleGetStartedAdmin,
@@ -22,11 +18,6 @@ import {
   handleSiteConfigAdmin,
   handleSitesAdmin,
 } from "@/lib/edge/admin/sites/handler";
-import {
-  handleDoDiagnosticAdmin,
-  handleSystemPerformanceAdmin,
-} from "@/lib/edge/admin/system/handler";
-import { handleRequestObservationAdmin } from "@/lib/edge/admin/system/request-observation";
 import {
   handleAuthMeAdmin,
   handleMembersAdmin,
@@ -59,24 +50,12 @@ export async function executeRealAdminService(
       return handleNotificationEmailConfigAdmin(request, env);
     case "notification-rules":
       return handleNotificationRulesAdmin(request, env, url);
-    case "notification-rules/preview":
-      return handleNotificationRulePreviewAdmin(request, env);
-    case "notification-rules/run":
-      return handleNotificationRuleRunAdmin(request, env);
-    case "notification-test":
-      return handleNotificationTestAdmin(request, env);
-    case "request-observation":
-      return handleRequestObservationAdmin(request, env, url);
+    case "retention":
+      return handleRetentionAdmin(request, env);
     case "get-started":
       return handleGetStartedAdmin(request, env);
     case "site-tracking":
       return handleSiteTrackingAdmin(request, env, url);
-    case "system-performance":
-      return handleSystemPerformanceAdmin(request, env, url, requireActor);
-    case "scheduled-tasks":
-      return handleScheduledTasksAdmin(request, env, url, requireActor);
-    case "do-diagnostic":
-      return handleDoDiagnosticAdmin(request, env, url, requireActor);
     case "notifications":
       return handleNotifications(request, env, url);
     case "notifications/preferences":

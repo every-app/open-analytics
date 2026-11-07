@@ -352,9 +352,6 @@ describe("collect route", () => {
     expect(response.status).toBe(204);
     expect(readSiteTrackingConfigMock).toHaveBeenCalledWith(env, "site-1");
     expect(env.INGEST_DO.get).not.toHaveBeenCalled();
-    expect(env.DB.prepare).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO request_observations"),
-    );
   });
 
   it("forwards bot traffic when bot protection is disabled", async () => {

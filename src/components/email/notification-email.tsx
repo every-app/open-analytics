@@ -14,20 +14,16 @@ import {
 } from "@/components/email/ui/email-table";
 import {
   createEmailTextStyles,
-  emailBreakTextStyle,
   emailTableResetStyle,
   emailTheme,
 } from "@/components/email/ui/email-theme";
 import type { Locale } from "@/lib/i18n/config";
-import type { NotificationContent } from "@/lib/notifications/content";
 import {
-  notificationMetricLabel,
+  formatNotificationChange,
+  type NotificationContent,
   notificationWindowLabel,
 } from "@/lib/notifications/content";
-import {
-  formatNotificationDateTime,
-  formatNotificationNumber,
-} from "@/lib/notifications/email-format";
+import { formatNotificationNumber } from "@/lib/notifications/email-format";
 import { NOTIFICATION_EMAIL_MESSAGES } from "@/lib/notifications/email-i18n";
 import type { NotificationMessage } from "@/lib/notifications/message";
 
@@ -35,7 +31,6 @@ export interface NotificationEmailProps {
   locale: Locale;
   content: NotificationContent;
   message: NotificationMessage;
-  timeZone?: string | null;
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -55,17 +50,6 @@ function rows(value: unknown): Array<Record<string, unknown>> {
 
 function textValue(value: unknown, fallback = ""): string {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
-}
-
-function formatLastSeen(
-  value: unknown,
-  locale: Locale,
-  timeZone?: string | null,
-): string {
-  const messages = NOTIFICATION_EMAIL_MESSAGES[locale];
-  return (
-    formatNotificationDateTime(value, locale, timeZone) || messages.common.never
-  );
 }
 
 function Intro({ content }: { content: NotificationContent }) {
@@ -152,69 +136,8 @@ function ReportEmail({ locale, message }: NotificationEmailProps) {
   );
 }
 
-function ThresholdEmail({ locale, message }: NotificationEmailProps) {
-  const messages = NOTIFICATION_EMAIL_MESSAGES[locale];
-  const operator = textValue(message.data.operator, ">=");
-  return (
-    <>
-      <EmailBadge severity="warning">
-        {messages.common.severity.warning}
-      </EmailBadge>
-      <EmailTable
-        rows={[
-          {
-            label: messages.common.metric,
-            value: notificationMetricLabel(locale, message.data.metric),
-          },
-          {
-            label: messages.common.window,
-            value: notificationWindowLabel(locale, message.data.window),
-          },
-          {
-            label: messages.common.currentValue,
-            value: formatNotificationNumber(message.data.value, locale),
-          },
-          {
-            label: messages.common.threshold,
-            value: `${operator} ${formatNotificationNumber(message.data.target, locale)}`,
-          },
-        ]}
-      />
-    </>
-  );
-}
-
-function MilestoneEmail({ locale, message }: NotificationEmailProps) {
-  const messages = NOTIFICATION_EMAIL_MESSAGES[locale];
-  return (
-    <>
-      <EmailBadge severity="success">
-        {messages.common.severity.success}
-      </EmailBadge>
-      <EmailMetricGrid>
-        <EmailMetricCard
-          label={messages.common.metric}
-          value={notificationMetricLabel(locale, message.data.metric)}
-        />
-        <EmailMetricCard
-          label={messages.common.milestone}
-          value={formatNotificationNumber(message.data.bucket, locale)}
-        />
-        <EmailMetricCard
-          label={messages.common.currentValue}
-          value={formatNotificationNumber(message.data.value, locale)}
-        />
-      </EmailMetricGrid>
-    </>
-  );
-}
-
 function ChangeEmail({ locale, message }: NotificationEmailProps) {
   const messages = NOTIFICATION_EMAIL_MESSAGES[locale];
-  const changeValue = `${formatNotificationNumber(
-    message.data.change,
-    locale,
-  )}${message.data.mode === "percent" ? "%" : ""}`;
   return (
     <>
       <EmailBadge severity={message.severity}>
@@ -222,10 +145,6 @@ function ChangeEmail({ locale, message }: NotificationEmailProps) {
       </EmailBadge>
       <EmailTable
         rows={[
-          {
-            label: messages.common.metric,
-            value: notificationMetricLabel(locale, message.data.metric),
-          },
           {
             label: messages.common.window,
             value: notificationWindowLabel(locale, message.data.window),
@@ -240,96 +159,11 @@ function ChangeEmail({ locale, message }: NotificationEmailProps) {
           },
           {
             label: messages.common.change,
-            value: changeValue,
+            value: formatNotificationChange(message.data.change, locale),
           },
         ]}
       />
     </>
-  );
-}
-
-function HealthEmail({
-  locale,
-  content,
-  message,
-  timeZone,
-}: NotificationEmailProps) {
-  const messages = NOTIFICATION_EMAIL_MESSAGES[locale];
-  return (
-    <>
-      <EmailBadge severity="critical">
-        {messages.common.severity.critical}
-      </EmailBadge>
-      <EmailTable
-        rows={[
-          {
-            label: messages.common.lastSeen,
-            value: formatLastSeen(message.data.lastSeenAt, locale, timeZone),
-          },
-        ]}
-      />
-      <table
-        role="presentation"
-        cellPadding="0"
-        cellSpacing="0"
-        width="100%"
-        style={{
-          width: "100%",
-          margin: "16px 0 0",
-          ...emailTableResetStyle,
-        }}
-      >
-        <tbody>
-          <tr>
-            <td
-              style={{
-                padding: "12px",
-                border: `1px solid ${emailTheme.colors.destructiveBorder}`,
-                borderRadius: emailTheme.radius,
-                backgroundColor: emailTheme.colors.destructiveSoft,
-                color: "#525252",
-                fontSize: "14px",
-                lineHeight: "22px",
-                ...emailBreakTextStyle,
-              }}
-            >
-              {content.summary}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </>
-  );
-}
-
-function FallbackEmail({ content }: { content: NotificationContent }) {
-  return (
-    <table
-      role="presentation"
-      cellPadding="0"
-      cellSpacing="0"
-      width="100%"
-      style={{
-        width: "100%",
-        ...emailTableResetStyle,
-      }}
-    >
-      <tbody>
-        <tr>
-          <td
-            style={{
-              color: "#404040",
-              fontSize: "14px",
-              lineHeight: "22px",
-              whiteSpace: "pre-line",
-              ...emailBreakTextStyle,
-            }}
-          >
-            {content.bodyText}
-          </td>
-        </tr>
-      </tbody>
-    </table>
   );
 }
 
@@ -339,18 +173,11 @@ export function NotificationEmail(props: NotificationEmailProps) {
     <EmailLayout locale={locale} preview={content.summary}>
       <EmailCard>
         <Intro content={content} />
-        {message.type === "report" ? <ReportEmail {...props} /> : null}
-        {message.type === "milestone" ? <MilestoneEmail {...props} /> : null}
-        {message.type === "threshold" ? <ThresholdEmail {...props} /> : null}
-        {message.type === "change" ? <ChangeEmail {...props} /> : null}
-        {message.type === "health" ? <HealthEmail {...props} /> : null}
-        {message.type !== "report" &&
-        message.type !== "milestone" &&
-        message.type !== "threshold" &&
-        message.type !== "change" &&
-        message.type !== "health" ? (
-          <FallbackEmail content={content} />
-        ) : null}
+        {message.type === "report" ? (
+          <ReportEmail {...props} />
+        ) : (
+          <ChangeEmail {...props} />
+        )}
       </EmailCard>
     </EmailLayout>
   );

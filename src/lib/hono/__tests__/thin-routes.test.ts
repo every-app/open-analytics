@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   handleNotificationPreferences,
   handleNotificationRead,
-  handleNotificationRulePreviewAdmin,
+  handleNotificationRulesAdmin,
   handleNotifications,
   handleNotificationsReadAll,
 } from "@/lib/edge/admin/notifications/handler";
@@ -29,7 +29,7 @@ vi.mock("@/lib/edge/admin/users/handlers", () => ({
 vi.mock("@/lib/edge/admin/notifications/handler", () => ({
   handleNotificationPreferences: vi.fn(),
   handleNotificationRead: vi.fn(),
-  handleNotificationRulePreviewAdmin: vi.fn(),
+  handleNotificationRulesAdmin: vi.fn(),
   handleNotifications: vi.fn(),
   handleNotificationsReadAll: vi.fn(),
 }));
@@ -56,8 +56,8 @@ describe("thin Hono route modules", () => {
     vi.mocked(handleNotificationsReadAll).mockResolvedValue(
       new Response("read-all"),
     );
-    vi.mocked(handleNotificationRulePreviewAdmin).mockResolvedValue(
-      new Response("rule-preview"),
+    vi.mocked(handleNotificationRulesAdmin).mockResolvedValue(
+      new Response("rules"),
     );
   });
 
@@ -120,12 +120,12 @@ describe("thin Hono route modules", () => {
     expect(handleNotificationsReadAll).toHaveBeenCalled();
   }, 10_000);
 
-  it("forwards the private admin rule preview", async () => {
+  it("forwards the private admin notification rules", async () => {
     await privateAdminRoutes.fetch(
-      request("/notification-rules/preview"),
+      request("/notification-rules"),
       env as never,
     );
 
-    expect(handleNotificationRulePreviewAdmin).toHaveBeenCalled();
+    expect(handleNotificationRulesAdmin).toHaveBeenCalled();
   });
 });

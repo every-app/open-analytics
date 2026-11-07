@@ -10,11 +10,9 @@ import type {
   TeamData,
 } from "@/lib/dashboard-api/contract/types";
 import type { GetStartedData } from "@/lib/edge/admin/setup/get-started";
-import type { RequestObservationSummary } from "@/lib/edge/collector/request-observations";
 import type { PublicNotificationEmailConfig } from "@/lib/notifications/email-config";
-import type { ScheduledTasksData } from "@/lib/scheduled-tasks";
+import type { RetentionConfig } from "@/lib/retention";
 import type { SiteSettingsConfig } from "@/lib/site-settings";
-import type { SystemPerformanceData } from "@/lib/system-performance";
 export {
   adminServicePath,
   type AdminServiceRoute,
@@ -24,7 +22,7 @@ import type { Env } from "@/lib/edge/types";
 /**
  * Management routes are deliberately modeled separately from analytics
  * operations. Analytics has a read-only query contract; admin service routes
- * also include mutations, tests, previews, and operational commands.
+ * also include mutations.
  */
 export interface AdminServiceRequest {
   readonly route: AdminServiceRoute;
@@ -51,9 +49,7 @@ export interface AdminServiceReadMap {
   "notification-rules": NotificationRuleData[];
   "notification-email": PublicNotificationEmailConfig;
   "notifications/preferences": NotificationPreferencesData;
-  "scheduled-tasks": ScheduledTasksData;
-  "system-performance": SystemPerformanceData;
-  "request-observation": RequestObservationSummary;
+  retention: RetentionConfig;
   "get-started": GetStartedData;
   "site-tracking": { hasData: boolean };
 }

@@ -28,24 +28,16 @@ import {
   DEFAULT_RETENTION_CONFIG,
   MAX_RETENTION_DAYS,
   MIN_RETENTION_DAYS,
+  type RetentionConfig,
 } from "@/lib/retention";
-import type {
-  ScheduledTaskRetentionConfig,
-  ScheduledTasksData,
-} from "@/lib/scheduled-tasks";
 
-const FIELDS: ReadonlyArray<keyof ScheduledTaskRetentionConfig> = [
+const FIELDS: ReadonlyArray<keyof RetentionConfig> = [
   "analyticsDetailDays",
-  "scheduledTaskLogsDays",
-  "notificationTestDays",
   "notificationAttentionDays",
   "notificationDefaultDays",
 ];
 
-function sameConfig(
-  left: ScheduledTaskRetentionConfig,
-  right: ScheduledTaskRetentionConfig,
-): boolean {
+function sameConfig(left: RetentionConfig, right: RetentionConfig): boolean {
   return FIELDS.every((key) => left[key] === right[key]);
 }
 
@@ -58,8 +50,7 @@ function validDays(value: number): boolean {
 }
 
 /**
- * How long the instance keeps task runs, notifications and detailed
- * analytics. Lowering analytics retention deletes data on the next daily
+ * How long the instance keeps notifications and detailed analytics. Lowering analytics retention deletes data on the next daily
  * run, so it asks first.
  */
 export function DataRetentionSettings({
@@ -70,16 +61,14 @@ export function DataRetentionSettings({
   initialData: SystemSettingsInitialData | null;
 }) {
   const copy = messages.systemSettings;
-  const [saved, setSaved] = useState<ScheduledTaskRetentionConfig>(
-    initialData?.scheduledTaskRetention ?? DEFAULT_RETENTION_CONFIG,
+  const [saved, setSaved] = useState<RetentionConfig>(
+    initialData?.retention ?? DEFAULT_RETENTION_CONFIG,
   );
-  const [config, setConfig] = useState<ScheduledTaskRetentionConfig>(saved);
+  const [config, setConfig] = useState<RetentionConfig>(saved);
   const [saving, setSaving] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const labels: Record<keyof ScheduledTaskRetentionConfig, string> = {
+  const labels: Record<keyof RetentionConfig, string> = {
     analyticsDetailDays: copy.analyticsDetailDaysLabel,
-    scheduledTaskLogsDays: copy.scheduledTaskLogsDaysLabel,
-    notificationTestDays: copy.notificationTestDaysLabel,
     notificationAttentionDays: copy.notificationAttentionDaysLabel,
     notificationDefaultDays: copy.notificationDefaultDaysLabel,
   };
@@ -91,12 +80,12 @@ export function DataRetentionSettings({
   async function save() {
     setSaving(true);
     try {
-      const data = await requestAdminService<ScheduledTasksData>(
-        "scheduled-tasks",
-        { method: "PATCH", body: { retention: config } },
-      );
-      setSaved(data.retention);
-      setConfig(data.retention);
+      const data = await requestAdminService<RetentionConfig>("retention", {
+        method: "PATCH",
+        body: { retention: config },
+      });
+      setSaved(data);
+      setConfig(data);
       setConfirmOpen(false);
       toast.success(copy.retentionSaved);
     } catch (error) {

@@ -12,7 +12,6 @@ import type { NotificationMessage } from "@/lib/notifications/message";
 export interface RenderNotificationEmailInput {
   message: NotificationMessage;
   locale: Locale;
-  timeZone?: string | null;
 }
 
 export interface RenderedNotificationEmail {
@@ -27,11 +26,7 @@ export function buildNotificationContentForMessage(input: {
 }): NotificationContent {
   return buildNotificationContent({
     type: input.message.type,
-    severity: input.message.severity,
     data: input.message.data,
-    fallbackTitle: input.message.title,
-    fallbackSummary: input.message.summary,
-    fallbackBodyText: input.message.bodyText,
     locale: input.locale,
   });
 }
@@ -39,15 +34,9 @@ export function buildNotificationContentForMessage(input: {
 export async function renderNotificationEmail({
   message,
   locale,
-  timeZone,
 }: RenderNotificationEmailInput): Promise<RenderedNotificationEmail> {
   const content = buildNotificationContentForMessage({ message, locale });
-  const text = renderNotificationPlainText({
-    content,
-    message,
-    locale,
-    timeZone,
-  });
+  const text = renderNotificationPlainText({ content, message, locale });
   const { NotificationEmail } =
     await import("@/components/email/notification-email");
   const html = `<!doctype html>${renderToStaticMarkup(
@@ -55,7 +44,6 @@ export async function renderNotificationEmail({
       locale,
       content,
       message,
-      timeZone,
     }),
   )}`;
   return {

@@ -1,12 +1,6 @@
 import type { queryOverviewAggregate } from "@/lib/edge/analytics/providers/d1/internal/overview";
 
-import type {
-  MetricValueResult,
-  NotificationMetric,
-  NotificationMetricWindow,
-  NotificationReportType,
-  ReportData,
-} from "./report-data";
+import type { ReportData } from "./report-data";
 
 export type NotificationOverviewLoaderResult = Awaited<
   ReturnType<typeof queryOverviewAggregate>
@@ -25,10 +19,6 @@ export interface NotificationInvocationCache {
   sites: Map<string, Promise<NotificationSiteInfo | null>>;
   overviews: Map<string, Promise<NotificationOverviewLoaderResult>>;
   reports: Map<string, Promise<ReportData | null>>;
-  metrics: Map<string, Promise<MetricValueResult>>;
-  previousMetrics: Map<string, Promise<MetricValueResult>>;
-  cumulativeMetrics: Map<string, Promise<number>>;
-  lastSeenAt: Map<string, Promise<number | null>>;
 }
 
 export function createNotificationInvocationCache(): NotificationInvocationCache {
@@ -36,10 +26,6 @@ export function createNotificationInvocationCache(): NotificationInvocationCache
     sites: new Map(),
     overviews: new Map(),
     reports: new Map(),
-    metrics: new Map(),
-    previousMetrics: new Map(),
-    cumulativeMetrics: new Map(),
-    lastSeenAt: new Map(),
   };
 }
 
@@ -67,19 +53,3 @@ export function notificationCacheKey(parts: readonly unknown[]): string {
     })
     .join("|");
 }
-
-export type NotificationMetricCacheKey = readonly [
-  string,
-  NotificationMetric,
-  NotificationMetricWindow,
-  number,
-  number,
-  string,
-];
-
-export type NotificationReportCacheKey = readonly [
-  string,
-  NotificationReportType,
-  number,
-  string,
-];

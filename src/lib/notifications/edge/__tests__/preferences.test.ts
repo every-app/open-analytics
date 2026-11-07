@@ -42,7 +42,6 @@ describe("notification preferences", () => {
         webPush: true,
         attention: {
           reportsCreateUnread: true,
-          milestonesCreateUnread: false,
           alertsCreateUnread: false,
         },
       }),
@@ -50,7 +49,7 @@ describe("notification preferences", () => {
         email: true,
         webPush: false,
         attention: {
-          milestonesCreateUnread: true,
+          reportsCreateUnread: false,
         },
       },
     );
@@ -60,8 +59,7 @@ describe("notification preferences", () => {
       email: true,
       webPush: true,
       attention: {
-        reportsCreateUnread: true,
-        milestonesCreateUnread: true,
+        reportsCreateUnread: false,
         alertsCreateUnread: false,
       },
     });
@@ -74,7 +72,6 @@ describe("notification preferences", () => {
       webPush: true,
       attention: {
         reportsCreateUnread: true,
-        milestonesCreateUnread: false,
         alertsCreateUnread: true,
       },
     });
@@ -84,34 +81,18 @@ describe("notification preferences", () => {
     expect(isNotificationChannelEnabled(preferences, "unknown" as never)).toBe(
       false,
     );
+    expect(shouldCreateUnreadAttention({ preferences, type: "report" })).toBe(
+      true,
+    );
     expect(
       shouldCreateUnreadAttention({
-        preferences,
-        type: "report",
-        fallback: false,
-      }),
-    ).toBe(true);
-    expect(
-      shouldCreateUnreadAttention({
-        preferences,
-        type: "milestone",
-        fallback: true,
+        preferences: {
+          ...preferences,
+          attention: { ...preferences.attention, alertsCreateUnread: false },
+        },
+        type: "change",
       }),
     ).toBe(false);
-    expect(
-      shouldCreateUnreadAttention({
-        preferences,
-        type: "threshold",
-        fallback: false,
-      }),
-    ).toBe(true);
-    expect(
-      shouldCreateUnreadAttention({
-        preferences,
-        type: "system",
-        fallback: true,
-      }),
-    ).toBe(true);
   });
 
   it("loads and updates user preferences in the database", async () => {
@@ -164,7 +145,6 @@ describe("notification preferences", () => {
         webPush: false,
         attention: {
           reportsCreateUnread: true,
-          milestonesCreateUnread: false,
           alertsCreateUnread: true,
         },
       }),

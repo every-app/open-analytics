@@ -108,7 +108,6 @@ export default defineConfig({
         "src/lib/dashboard-api/contract/types/**",
         "src/lib/edge/ingest/flush-types.ts",
         "src/lib/edge/ingest/types.ts",
-        "src/lib/system-performance.ts",
       ],
     },
   },

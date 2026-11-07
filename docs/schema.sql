@@ -156,7 +156,6 @@ CREATE TABLE notification_messages (
   site_id TEXT,
   user_id TEXT NOT NULL,
   rule_id TEXT,
-  run_id TEXT,
   batch_id TEXT,
   type TEXT NOT NULL,
   severity TEXT NOT NULL DEFAULT 'info',
@@ -191,8 +190,6 @@ CREATE INDEX idx_notification_messages_expires_at
   ON notification_messages(expires_at);
 CREATE INDEX idx_notification_messages_rule_created
   ON notification_messages(rule_id, created_at DESC);
-CREATE INDEX idx_notification_messages_run
-  ON notification_messages(run_id);
 CREATE INDEX idx_notification_messages_site_created
   ON notification_messages(site_id, created_at DESC);
 CREATE INDEX idx_notification_messages_team_created
@@ -207,12 +204,10 @@ CREATE TABLE notification_rules (
   team_id TEXT NOT NULL,
   site_id TEXT,
   name TEXT NOT NULL,
-  description TEXT,
   type TEXT NOT NULL,
   enabled INTEGER NOT NULL DEFAULT 1,
   schedule_json TEXT NOT NULL DEFAULT '{}',
   condition_json TEXT NOT NULL DEFAULT '{}',
-  recipient_json TEXT NOT NULL DEFAULT '{}',
   last_checked_at INTEGER,
   last_triggered_at INTEGER,
   next_run_at INTEGER,
@@ -220,7 +215,6 @@ CREATE TABLE notification_rules (
   created_by_user_id TEXT,
   created_at INTEGER NOT NULL DEFAULT (unixepoch()),
   updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  state_json TEXT NOT NULL DEFAULT '{}',
   FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
   FOREIGN KEY (site_id) REFERENCES sites(id) ON DELETE CASCADE,
   FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -234,28 +228,6 @@ CREATE INDEX idx_notification_rules_team
   ON notification_rules(team_id, enabled, updated_at DESC);
 CREATE INDEX idx_notification_rules_type
   ON notification_rules(type, enabled);
-
-CREATE TABLE request_observations (
-  id INTEGER PRIMARY KEY,
-  site_id TEXT NOT NULL,
-  received_at INTEGER NOT NULL,
-  category TEXT NOT NULL,
-  reasons TEXT NOT NULL DEFAULT '',
-  kind TEXT NOT NULL DEFAULT '',
-  country TEXT NOT NULL DEFAULT '',
-  region TEXT NOT NULL DEFAULT '',
-  city TEXT NOT NULL DEFAULT '',
-  asn INTEGER,
-  as_organization TEXT NOT NULL DEFAULT '',
-  ip_prefix TEXT NOT NULL DEFAULT '',
-  user_agent TEXT NOT NULL DEFAULT '',
-  hostname TEXT NOT NULL DEFAULT '',
-  pathname TEXT NOT NULL DEFAULT '',
-  origin TEXT NOT NULL DEFAULT ''
-);
-
-CREATE INDEX idx_request_observations_received_at
-  ON request_observations(received_at);
 
 CREATE TABLE saved_filters (
   id TEXT PRIMARY KEY,
@@ -285,57 +257,8 @@ CREATE INDEX idx_saved_filters_site_owner_updated
 CREATE INDEX idx_saved_filters_site_visibility_updated
   ON saved_filters(site_id, visibility, updated_at DESC, id DESC);
 
-CREATE TABLE scheduled_task_run_logs (
-  id TEXT PRIMARY KEY,
-  run_id TEXT NOT NULL,
-  task_key TEXT NOT NULL,
-  sequence INTEGER NOT NULL,
-  level TEXT NOT NULL,
-  event TEXT NOT NULL,
-  message TEXT NOT NULL,
-  data_json TEXT NOT NULL DEFAULT '{}',
-  created_at_ms INTEGER NOT NULL,
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  expires_at INTEGER NOT NULL
-);
-
-CREATE INDEX idx_scheduled_task_run_logs_expires_at
-  ON scheduled_task_run_logs(expires_at);
-CREATE INDEX idx_scheduled_task_run_logs_run_sequence
-  ON scheduled_task_run_logs(run_id, sequence);
-
-CREATE TABLE scheduled_task_runs (
-  id TEXT PRIMARY KEY,
-  invocation_id TEXT NOT NULL,
-  task_key TEXT NOT NULL,
-  task_name TEXT NOT NULL,
-  trigger_type TEXT NOT NULL,
-  status TEXT NOT NULL,
-  scheduled_at_ms INTEGER,
-  started_at_ms INTEGER NOT NULL,
-  finished_at_ms INTEGER,
-  duration_ms INTEGER,
-  scope_type TEXT NOT NULL DEFAULT 'system',
-  scope_id TEXT,
-  summary_json TEXT NOT NULL DEFAULT '{}',
-  error_name TEXT,
-  error_message TEXT,
-  error_stack TEXT,
-  worker_version TEXT,
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  expires_at INTEGER NOT NULL
-);
-
-CREATE INDEX idx_scheduled_task_runs_expires_at
-  ON scheduled_task_runs(expires_at);
-CREATE INDEX idx_scheduled_task_runs_status_started
-  ON scheduled_task_runs(status, started_at_ms);
-CREATE INDEX idx_scheduled_task_runs_task_started
-  ON scheduled_task_runs(task_key, started_at_ms);
-
 CREATE TABLE scheduled_task_schedule_state (
   task_key TEXT PRIMARY KEY,
-  enabled INTEGER NOT NULL DEFAULT 1,
   next_run_at INTEGER NOT NULL,
   last_run_at INTEGER,
   claim_token TEXT,
@@ -343,9 +266,6 @@ CREATE TABLE scheduled_task_schedule_state (
   last_error TEXT,
   updated_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
-
-CREATE INDEX idx_scheduled_task_schedule_due
-  ON scheduled_task_schedule_state(enabled, next_run_at);
 
 CREATE TABLE site_identities (
   site_pk INTEGER PRIMARY KEY,

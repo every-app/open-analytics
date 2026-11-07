@@ -90,10 +90,8 @@ import {
   loadNotificationCenterInitialData,
   loadRequestOrigin,
   loadRuntimeSetupMode,
-  loadScheduledTasksInitialData,
   loadShareSite,
   loadSiteSettingsInitialData,
-  loadSystemPerformanceInitialData,
   loadSystemSettingsInitialData,
   loadTeamDashboardSnapshot,
   loadTeamNotificationsInitialData,
@@ -448,7 +446,6 @@ describe("Dashboard route data loaders", () => {
         webPush: false,
         attention: {
           reportsCreateUnread: true,
-          milestonesCreateUnread: false,
           alertsCreateUnread: true,
         },
       };
@@ -466,79 +463,19 @@ describe("Dashboard route data loaders", () => {
         preferences,
       );
 
-      mockAdminReads({ "notification-email": { enabled: true } });
+      mockAdminReads({
+        "notification-email": { enabled: true },
+        retention: DEFAULT_RETENTION_CONFIG,
+      });
       await expect(loadSystemSettingsInitialData()).resolves.toEqual({
         notificationEmail: { enabled: true },
-        scheduledTaskRetention: DEFAULT_RETENTION_CONFIG,
+        retention: DEFAULT_RETENTION_CONFIG,
         fetchedAt: expect.any(Number),
       });
-    });
 
-    it("loads the first scheduled-task page and system performance snapshot", async () => {
-      const scheduledTasks = {
-        ok: true,
-        generatedAt: 100,
-        retentionDays: 30,
-        tasks: [],
-        runs: {
-          items: [],
-          pagination: {
-            limit: 50,
-            returned: 0,
-            hasMore: false,
-            nextCursor: null,
-          },
-        },
-        logs: {
-          items: [],
-          pagination: {
-            limit: 200,
-            returned: 0,
-            hasMore: false,
-            nextCursor: null,
-          },
-        },
-        selectedRun: null,
-        health: {
-          totalRuns24h: 0,
-          failedRuns24h: 0,
-          partialRuns24h: 0,
-          runningRuns: 0,
-          staleRunningRuns: 0,
-          successRate24h: null,
-          lastRunAt: null,
-        },
-      };
-      mockAdminReads({ "scheduled-tasks": scheduledTasks });
-
-      await expect(loadScheduledTasksInitialData()).resolves.toMatchObject({
-        ...scheduledTasks,
-        fetchedAt: expect.any(Number),
-      });
-      expect(readDashboardAdmin).toHaveBeenCalledWith("scheduled-tasks", {
-        limit: 50,
-      });
-
-      const systemPerformance = {
-        ok: true,
-        generatedAt: 200,
-        window: { minutes: 60 },
-        thresholds: {},
-        summary: { totalEvents: 10 },
-        openVisits: { total: 2 },
-        trend: [],
-        topSites: [],
-        slowEvents: [],
-      };
-      mockAdminReads({ "system-performance": systemPerformance });
-
-      await expect(loadSystemPerformanceInitialData()).resolves.toEqual({
-        data: systemPerformance,
-        fetchedAt: expect.any(Number),
-      });
-      expect(readDashboardAdmin).toHaveBeenCalledWith("system-performance", {
-        minutes: 60,
-      });
+      // Neither half is guessed: a failed read leaves the page to its defaults.
+      mockAdminReads({ "notification-email": { enabled: true } });
+      await expect(loadSystemSettingsInitialData()).resolves.toBeNull();
     });
   });
 
