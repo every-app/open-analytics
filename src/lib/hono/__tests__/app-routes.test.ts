@@ -30,7 +30,7 @@ vi.mock("@/lib/edge/admin/users/handlers", () => ({
   handleProfileAdmin: vi.fn(),
 }));
 vi.mock("@/lib/edge/admin/setup/get-started", () => ({
-  readSiteHasData: vi.fn().mockResolvedValue(true),
+  readSiteFirstDataAt: vi.fn().mockResolvedValue(1_700_000_000_000),
 }));
 vi.mock("@/lib/edge/collector/collect", () => ({
   handleCollectOptionsRequest: vi.fn(),

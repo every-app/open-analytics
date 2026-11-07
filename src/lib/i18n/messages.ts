@@ -17,7 +17,6 @@ export interface AppMessages {
       mobile: string;
       tablet: string;
     };
-    timeRelativePair: string;
     id: string;
     views: string;
     sessions: string;
@@ -28,11 +27,7 @@ export interface AppMessages {
     title: string;
     hostname: string;
     referrerHost: string;
-    entryPage: string;
-    exitPage: string;
     referrer: string;
-    event: string;
-    location: string;
     browser: string;
     operatingSystem: string;
     deviceType: string;
@@ -53,9 +48,7 @@ export interface AppMessages {
     retry: string;
     filteredEmpty: string;
     clearFilters: string;
-    trend: string;
     unknown: string;
-    site: string;
     system: string;
     theme: string;
     language: string;
@@ -71,35 +64,25 @@ export interface AppMessages {
       scopeLabel: string;
       currentTab: string;
       allTabs: string;
-      rowsLabel: string;
-      currentView: string;
-      rawRows: string;
       fileNameLabel: string;
       download: string;
       empty: string;
     };
-    tableColumns: {
-      action: string;
-      title: string;
-      description: string;
-      visible: string;
-      required: string;
-      reset: string;
-      dragHint: string;
-      close: string;
-    };
-    close: string;
     sitesFiltered: string;
     cumulativeTraffic: string;
-    cumulativeEvents: string;
   };
   ranges: {
     today: string;
     yesterday: string;
+    last24h: string;
     last7d: string;
     last30d: string;
     last90d: string;
+    monthToDate: string;
+    lastMonth: string;
+    yearToDate: string;
     last12m: string;
+    allTime: string;
     custom: string;
   };
   intervals: {
@@ -116,6 +99,7 @@ export interface AppMessages {
     compareTimeLabel: string;
     compareCurrentPeriod: string;
     comparePreviousPeriod: string;
+    compareYearOverYear: string;
     compareFilterLabel: string;
     compareFollowCurrentFilter: string;
     compareCustomFilter: string;
@@ -130,11 +114,19 @@ export interface AppMessages {
     customApply: string;
     filterTitle: string;
     previousPeriod: string;
+    yearAgo: string;
     nextPeriod: string;
     customSelectionSummary: string;
   };
   filters: {
     clear: string;
+  };
+  filterPills: {
+    label: string;
+    is: string;
+    isNot: string;
+    valueSeparator: string;
+    remove: string;
   };
   conditionDescription: {
     and: string;
@@ -199,6 +191,7 @@ export interface AppMessages {
     valueLoading: string;
     valueSearchPlaceholder: string;
     valueListPlaceholder: string;
+    valueShowMore: string;
     removeValue: string;
     rangeStartPlaceholder: string;
     rangeEndPlaceholder: string;
@@ -457,15 +450,76 @@ export interface AppMessages {
     exitReason: string;
     leaveAt: string;
   };
+  dashboard: {
+    statsLabel: string;
+    stats: {
+      visitors: string;
+      visits: string;
+      pageviews: string;
+      viewsPerVisit: string;
+      bounceRate: string;
+      visitDuration: string;
+    };
+    details: string;
+    detailsTitle: string;
+    notSet: string;
+    cards: {
+      sources: string;
+      pages: string;
+      locations: string;
+      devices: string;
+    };
+    tabs: {
+      channels: string;
+      sources: string;
+      campaigns: string;
+      utm: {
+        source: string;
+        medium: string;
+        campaign: string;
+        term: string;
+        content: string;
+      };
+      topPages: string;
+      entryPages: string;
+      exitPages: string;
+      map: string;
+      countries: string;
+      regions: string;
+      cities: string;
+      browsers: string;
+      operatingSystems: string;
+      devices: string;
+    };
+    columns: {
+      source: string;
+      channel: string;
+      page: string;
+      entryPage: string;
+      exitPage: string;
+      country: string;
+      region: string;
+      city: string;
+      browser: string;
+      operatingSystem: string;
+      device: string;
+      visitors: string;
+      visits: string;
+      pageviews: string;
+      bounceRate: string;
+      timeOnPage: string;
+    };
+    goals: {
+      title: string;
+      goal: string;
+      uniques: string;
+      total: string;
+      conversionRate: string;
+    };
+  };
   overview: {
     title: string;
     trendTitle: string;
-    sourceTab: string;
-    sourceDomainColumn: string;
-    sourceLinkTab: string;
-    sourceLinkColumn: string;
-    channelTab: string;
-    channelColumn: string;
     direct: string;
     channelLabels: {
       direct: string;
@@ -506,31 +560,10 @@ export interface AppMessages {
     dismiss: string;
   };
   pages: {
-    title: string;
-    pagesPerSession: string;
-    changePercentColumnLabel: string;
-    changePointsColumnLabel: string;
-    percentagePointSuffix: string;
-    untitled: string;
-    empty: string;
-    loadMoreError: string;
-    trendTitle: string;
-    otherPages: string;
-    hashTab: string;
-    noHash: string;
-    queryTab: string;
     noQuery: string;
-    eventTab: string;
-    eventsMetric: string;
-    viewDetails: string;
   };
   referrers: Record<string, never>;
   campaigns: {
-    tabSource: string;
-    tabMedium: string;
-    tabCampaign: string;
-    tabTerm: string;
-    tabContent: string;
     notSet: string;
   };
   sessions: Record<string, never>;
@@ -718,11 +751,6 @@ export interface AppMessages {
   visitorDetail: Record<string, never>;
   retention: Record<string, never>;
   geo: {
-    mapTitle: string;
-    countryLabel: string;
-    regionLabel: string;
-    cityLabel: string;
-    timezoneDeltaVsLocal: string;
     investigation: {
       typeLabels: Record<string, string>;
     };
@@ -731,9 +759,7 @@ export interface AppMessages {
     dimensions: Record<string, never>;
     screenBucketLabels: Record<string, never>;
   };
-  browsers: {
-    otherLabel: string;
-  };
+  browsers: Record<string, never>;
   performance: Record<string, never>;
   share: {
     noData: string;
@@ -1168,7 +1194,6 @@ export interface AppMessages {
     switchSite: string;
     siteSettings: string;
     addSite: string;
-    sections: string;
   };
   teamEntry: Record<string, never>;
   getStarted: {
@@ -1217,7 +1242,6 @@ const enMessages = {
       mobile: "Mobile",
       tablet: "Tablet",
     },
-    timeRelativePair: "{absolute} ({relative})",
     id: "ID",
     views: "Views",
     sessions: "Sessions",
@@ -1228,11 +1252,7 @@ const enMessages = {
     title: "Title",
     hostname: "Hostname",
     referrerHost: "Referrer host",
-    entryPage: "Entry page",
-    exitPage: "Exit page",
     referrer: "Referrer",
-    event: "Event",
-    location: "Location",
     browser: "Browser",
     operatingSystem: "Operating system",
     deviceType: "Device type",
@@ -1268,9 +1288,7 @@ const enMessages = {
     retry: "Retry",
     filteredEmpty: "Nothing matches these filters",
     clearFilters: "Clear filters",
-    trend: "Trend",
     unknown: "Unknown",
-    site: "Site",
     system: "System",
     theme: "Theme",
     language: "Language",
@@ -1282,39 +1300,30 @@ const enMessages = {
     tableExport: {
       action: "Export",
       title: "Export CSV",
-      description: "Download table data as a CSV file.",
+      description:
+        "Download every row for the range and filters as a CSV file.",
       scopeLabel: "Scope",
       currentTab: "Current tab",
       allTabs: "All tabs",
-      rowsLabel: "Data",
-      currentView: "Current displayed data",
-      rawRows: "Original data",
       fileNameLabel: "File name",
       download: "Export CSV",
       empty: "No rows available to export.",
     },
-    tableColumns: {
-      action: "Columns",
-      title: "Configure columns",
-      description: "Choose which columns to show and drag to reorder them.",
-      visible: "Visible columns",
-      required: "Required",
-      reset: "Reset to default",
-      dragHint: "Drag to reorder",
-      close: "Close",
-    },
-    close: "Close",
     sitesFiltered: "{active} / {total} sites filtered",
     cumulativeTraffic: "Cumulative traffic",
-    cumulativeEvents: "Cumulative events",
   },
   ranges: {
     today: "Today",
     yesterday: "Yesterday",
+    last24h: "Last 24 hours",
     last7d: "Last 7 days",
     last30d: "Last 30 days",
     last90d: "Last 90 days",
+    monthToDate: "Month to date",
+    lastMonth: "Last month",
+    yearToDate: "Year to date",
     last12m: "Last 12 months",
+    allTime: "All time",
     custom: "Custom range",
   },
   intervals: {
@@ -1331,6 +1340,7 @@ const enMessages = {
     compareTimeLabel: "Comparison period",
     compareCurrentPeriod: "Current period",
     comparePreviousPeriod: "Previous period",
+    compareYearOverYear: "Year over year",
     compareFilterLabel: "Comparison filter",
     compareFollowCurrentFilter: "Follow current filter",
     compareCustomFilter: "Custom filter",
@@ -1345,11 +1355,19 @@ const enMessages = {
     customApply: "Apply date range",
     filterTitle: "Filters",
     previousPeriod: "Previous period",
+    yearAgo: "Same period last year",
     nextPeriod: "Next period",
     customSelectionSummary: "Selected range: {from} to {to} ({days} days)",
   },
   filters: {
     clear: "Clear",
+  },
+  filterPills: {
+    label: "Filters",
+    is: "{field} is {value}",
+    isNot: "{field} is not {value}",
+    valueSeparator: " or ",
+    remove: "Remove filter: {filter}",
   },
   conditionDescription: {
     and: "and",
@@ -1512,6 +1530,7 @@ const enMessages = {
     valueLoading: "Loading values",
     valueSearchPlaceholder: "Search or enter a value",
     valueListPlaceholder: "Search or enter a value, then press Enter",
+    valueShowMore: "Show more",
     removeValue: 'Remove filter value "{value}"',
     rangeStartPlaceholder: "Lower bound",
     rangeEndPlaceholder: "Upper bound",
@@ -1782,15 +1801,76 @@ const enMessages = {
     exitReason: "Exit reason",
     leaveAt: "Left at",
   },
+  dashboard: {
+    statsLabel: "Top stats",
+    stats: {
+      visitors: "Unique visitors",
+      visits: "Total visits",
+      pageviews: "Total pageviews",
+      viewsPerVisit: "Views per visit",
+      bounceRate: "Bounce rate",
+      visitDuration: "Visit duration",
+    },
+    details: "Details",
+    detailsTitle: "{card} · {tab}",
+    notSet: "Not set",
+    cards: {
+      sources: "Sources",
+      pages: "Pages",
+      locations: "Locations",
+      devices: "Devices",
+    },
+    tabs: {
+      channels: "Channels",
+      sources: "Sources",
+      campaigns: "Campaigns",
+      utm: {
+        source: "UTM source",
+        medium: "UTM medium",
+        campaign: "UTM campaign",
+        term: "UTM term",
+        content: "UTM content",
+      },
+      topPages: "Top pages",
+      entryPages: "Entry pages",
+      exitPages: "Exit pages",
+      map: "Map",
+      countries: "Countries",
+      regions: "Regions",
+      cities: "Cities",
+      browsers: "Browser",
+      operatingSystems: "Operating system",
+      devices: "Device type",
+    },
+    columns: {
+      source: "Source",
+      channel: "Channel",
+      page: "Page",
+      entryPage: "Entry page",
+      exitPage: "Exit page",
+      country: "Country",
+      region: "Region",
+      city: "City",
+      browser: "Browser",
+      operatingSystem: "Operating system",
+      device: "Device",
+      visitors: "Visitors",
+      visits: "Visits",
+      pageviews: "Pageviews",
+      bounceRate: "Bounce rate",
+      timeOnPage: "Time on page",
+    },
+    goals: {
+      title: "Goal conversions",
+      goal: "Goal",
+      uniques: "Uniques",
+      total: "Total",
+      conversionRate: "Conversion rate",
+    },
+  },
   overview: {
     title: "Overview",
     trendTitle: "Traffic trend",
-    sourceTab: "Source",
-    sourceDomainColumn: "Source (domain)",
-    sourceLinkTab: "Source link",
-    sourceLinkColumn: "Source link",
-    channelTab: "Channel",
-    channelColumn: "Channel",
     direct: "Direct",
     channelLabels: {
       direct: "Direct",
@@ -1833,31 +1913,10 @@ const enMessages = {
     dismiss: "Dismiss",
   },
   pages: {
-    title: "Pages",
-    pagesPerSession: "Pages / session",
-    changePercentColumnLabel: "{metric} change (%)",
-    changePointsColumnLabel: "{metric} change (pp)",
-    percentagePointSuffix: "pp",
-    untitled: "Untitled page",
-    empty: "No pages yet",
-    loadMoreError: "Couldn't load more pages.",
-    trendTitle: "Page traffic trend",
-    otherPages: "Other pages",
-    hashTab: "Anchor",
-    noHash: "No anchor",
-    queryTab: "Query parameters",
     noQuery: "No query parameters",
-    eventTab: "Events",
-    eventsMetric: "Event count",
-    viewDetails: "View details",
   },
   referrers: {},
   campaigns: {
-    tabSource: "UTM source",
-    tabMedium: "Medium",
-    tabCampaign: "Campaign",
-    tabTerm: "Term",
-    tabContent: "Content",
     notSet: "Not set",
   },
   sessions: {},
@@ -2050,11 +2109,6 @@ const enMessages = {
   visitorDetail: {},
   retention: {},
   geo: {
-    mapTitle: "Visitors by location",
-    countryLabel: "Country / region",
-    regionLabel: "Region",
-    cityLabel: "City",
-    timezoneDeltaVsLocal: "Difference from local time: {delta}",
     investigation: {
       typeLabels: {},
     },
@@ -2063,9 +2117,7 @@ const enMessages = {
     dimensions: {},
     screenBucketLabels: {},
   },
-  browsers: {
-    otherLabel: "Other",
-  },
+  browsers: {},
   performance: {},
   share: {
     noData: "No data yet",
@@ -2514,7 +2566,6 @@ const enMessages = {
     switchSite: "Switch site",
     siteSettings: "Site settings",
     addSite: "Add site",
-    sections: "Sections",
   },
   teamEntry: {},
   getStarted: {

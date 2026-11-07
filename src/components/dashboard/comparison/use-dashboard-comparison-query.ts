@@ -35,11 +35,22 @@ export function useDashboardComparisonQuery(
     ],
   );
 }
+/**
+ * What the comparison series is called: the period it reads when it follows
+ * the page's filters, or just "Compare" when it has filters of its own.
+ */
 export function dashboardComparisonLabel(
   messages: AppMessages,
   comparisonQuery: DashboardComparisonQuery | null | undefined,
 ): string {
-  return comparisonQuery?.mode === "previous" && !comparisonQuery.filters.root
-    ? messages.dashboardHeader.previousPeriod
-    : messages.dashboardHeader.compareButton;
+  if (!comparisonQuery || comparisonQuery.filters.root) {
+    return messages.dashboardHeader.compareButton;
+  }
+  if (comparisonQuery.mode === "previous") {
+    return messages.dashboardHeader.previousPeriod;
+  }
+  if (comparisonQuery.mode === "year") {
+    return messages.dashboardHeader.yearAgo;
+  }
+  return messages.dashboardHeader.compareButton;
 }

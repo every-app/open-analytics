@@ -8,6 +8,7 @@ import { type Actor, requireActor } from "@/lib/edge/admin/auth";
 import {
   handleGetStartedAdmin,
   handleSiteTrackingAdmin,
+  readTeamFirstDataAt,
 } from "@/lib/edge/admin/setup/get-started";
 import type { Env } from "@/lib/edge/types";
 
@@ -45,14 +46,19 @@ function seedSite(
   return sitePk;
 }
 
-function seedVisit(database: DatabaseSync, pk: number, siteId: string) {
+function seedVisit(
+  database: DatabaseSync,
+  pk: number,
+  siteId: string,
+  startedAt = 1,
+) {
   database
     .prepare(
       `INSERT INTO visits (visit_id, site_pk, site_id, visitor_id, session_id, status,
          started_at, last_activity_at, pathname, hostname)
-       VALUES (?, ?, ?, 'v', 'x', 'complete', 1, 1, '/', 'example.com')`,
+       VALUES (?, ?, ?, 'v', 'x', 'complete', ?, ?, '/', 'example.com')`,
     )
-    .run(`${siteId}-visit`, pk, siteId);
+    .run(`${siteId}-visit`, pk, siteId, startedAt, startedAt);
 }
 
 function seedMembers(database: DatabaseSync, teamId: string, count: number) {
@@ -179,20 +185,69 @@ describe("get started", () => {
     expect(status).toBe(403);
   });
 
-  it("says whether one of the organization's sites has a page view yet", async () => {
+  it("says whether one of the organization's sites has a page view yet, and when the first came", async () => {
     seedTeam(database, "org-1");
     seedTeam(database, "org-2");
     const tracked = seedSite(database, "org-1", "tracked");
     seedVisit(database, tracked, "tracked");
+    const rolledUp = seedSite(database, "org-1", "rolled-up");
+    database
+      .prepare(
+        `INSERT INTO visit_hourly_rollups (site_id, site_pk, hour_bucket, input_cutoff_ms)
+         VALUES ('rolled-up', ?, 5, 0)`,
+      )
+      .run(rolledUp);
     seedSite(database, "org-1", "waiting");
     seedSite(database, "org-2", "elsewhere");
 
     expect((await siteTracking(database, "tracked")).body.data).toEqual({
       hasData: true,
+      firstDataAt: 1,
+    });
+    // Retention can leave only the rolled-up hours of older data.
+    expect((await siteTracking(database, "rolled-up")).body.data).toEqual({
+      hasData: true,
+      firstDataAt: 5 * 60 * 60 * 1000,
     });
     expect((await siteTracking(database, "waiting")).body.data).toEqual({
       hasData: false,
+      firstDataAt: null,
     });
     expect((await siteTracking(database, "elsewhere")).status).toBe(403);
+  });
+
+  it("starts the organization's All time at the first page view of any of its sites", async () => {
+    const hour = 60 * 60 * 1000;
+    seedTeam(database, "org-1");
+    seedTeam(database, "org-2");
+    seedTeam(database, "org-3");
+    seedVisit(
+      database,
+      seedSite(database, "org-1", "recent"),
+      "recent",
+      9 * hour,
+    );
+    // The oldest data can be rolled-up hours alone, after retention.
+    const rolledUp = seedSite(database, "org-1", "rolled-up");
+    database
+      .prepare(
+        `INSERT INTO visit_hourly_rollups (site_id, site_pk, hour_bucket, input_cutoff_ms)
+         VALUES ('rolled-up', ?, 2, 0)`,
+      )
+      .run(rolledUp);
+    seedSite(database, "org-1", "waiting");
+    // Another organization's older data doesn't count.
+    seedVisit(
+      database,
+      seedSite(database, "org-2", "elsewhere"),
+      "elsewhere",
+      1,
+    );
+    seedSite(database, "org-3", "untracked");
+    const env = { DB: createSqliteD1Database(database) } as Env;
+
+    expect(await readTeamFirstDataAt(env, "org-1")).toBe(2 * hour);
+    expect(await readTeamFirstDataAt(env, "org-2")).toBe(1);
+    expect(await readTeamFirstDataAt(env, "org-3")).toBeNull();
   });
 });

@@ -58,7 +58,7 @@ describe("geo point D1 queries", () => {
     ]);
 
     await expect(
-      queryGeoPointsFromD1(env, siteId, window, EMPTY_FILTER_DOCUMENT, 5),
+      queryGeoPointsFromD1(env, siteId, window, EMPTY_FILTER_DOCUMENT),
     ).resolves.toEqual({
       points: [
         {
@@ -93,7 +93,7 @@ describe("geo point D1 queries", () => {
     ]);
 
     await expect(
-      queryGeoPointsFromD1(env, siteId, window, EMPTY_FILTER_DOCUMENT, 25),
+      queryGeoPointsFromD1(env, siteId, window, EMPTY_FILTER_DOCUMENT),
     ).resolves.toEqual({
       points: [
         {
@@ -111,7 +111,10 @@ describe("geo point D1 queries", () => {
       regionCounts: [],
       cityCounts: [],
     });
-    expect(calls[0].bindings).toEqual([...visitBindings(window), 25]);
+    // Every point and every country: no LIMIT.
+    expect(calls[0].bindings).toEqual(visitBindings(window));
+    expect(calls[0].sql).not.toContain("LIMIT");
+    expect(calls[1].sql).not.toContain("LIMIT");
     expect(calls[0].sql).not.toContain(
       "WHERE LOWER(TRIM(COALESCE(country, ''))) = ?\n  WHERE",
     );
@@ -124,7 +127,7 @@ describe("geo point D1 queries", () => {
     const { env } = createD1Env([[], [{ country: null }]]);
 
     await expect(
-      queryGeoPointsFromD1(env, siteId, window, EMPTY_FILTER_DOCUMENT, 10),
+      queryGeoPointsFromD1(env, siteId, window, EMPTY_FILTER_DOCUMENT),
     ).resolves.toMatchObject({
       countryCounts: [{ country: "", views: 0, sessions: 0, visitors: 0 }],
       regionCounts: [],
@@ -150,13 +153,7 @@ describe("geo point D1 queries", () => {
     ]);
 
     await expect(
-      queryGeoPointsFromD1(
-        env,
-        siteId,
-        window,
-        filterFixture({ geo: "US" }),
-        10,
-      ),
+      queryGeoPointsFromD1(env, siteId, window, filterFixture({ geo: "US" })),
     ).resolves.toMatchObject({
       countryCounts: [],
       regionCounts: [
@@ -196,7 +193,6 @@ describe("geo point D1 queries", () => {
         siteId,
         window,
         filterFixture({ geo: "US::CA::California" }),
-        10,
       ),
     ).resolves.toMatchObject({
       countryCounts: [],
@@ -234,7 +230,6 @@ describe("geo point D1 queries", () => {
         siteId,
         window,
         filterFixture({ geo: "US" }),
-        10,
       ),
     ).resolves.toMatchObject({
       regionCounts: [
@@ -265,7 +260,6 @@ describe("geo point D1 queries", () => {
         siteId,
         window,
         filterFixture({ geo: "US::NY::NY" }),
-        10,
       ),
     ).resolves.toMatchObject({
       regionCounts: [],
@@ -303,7 +297,6 @@ describe("geo point D1 queries", () => {
         siteId,
         window,
         filterFixture({ geo: "CA" }),
-        10,
       ),
     ).resolves.toMatchObject({
       regionCounts: [
@@ -339,7 +332,6 @@ describe("geo point D1 queries", () => {
         siteId,
         window,
         filterFixture({ geo: "CA::ON::Ontario" }),
-        10,
       ),
     ).resolves.toMatchObject({
       regionCounts: [],

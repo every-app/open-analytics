@@ -10,7 +10,6 @@ import {
 import { queryWindowToTime } from "@/lib/edge/analytics/contract";
 import {
   parseBooleanSearchParam,
-  parseLimit,
   parseWindow,
 } from "@/lib/edge/analytics/interfaces/dashboard/protocol/parsers";
 import {
@@ -40,8 +39,7 @@ export async function handleOverviewGeoPointsContract(
       context: queryContext,
       time: queryWindowToTime(window),
       filters,
-      limit: parseLimit(url, 5000, 20000),
-    } as BaseQuery & { readonly limit: number },
+    } as BaseQuery,
   );
   if (!result.ok) return queryErrorResponse(result.error);
   const { points, ...summary } = result.data;

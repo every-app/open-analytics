@@ -35,6 +35,7 @@ import {
 } from "@/lib/dashboard/client/history";
 import type { DashboardComparisonQuery } from "@/lib/dashboard/comparison-query";
 import { serializeDashboardSearchParams } from "@/lib/dashboard/filter-state";
+import { GOAL_QUERY_PARAM } from "@/lib/dashboard/paths";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type { GoalDefinition } from "@/lib/dashboard-api/client/edge";
 import type { FilterDocument } from "@/lib/filter-contract/index";
@@ -44,9 +45,6 @@ import type { AppMessages } from "@/lib/i18n/messages";
 import { GoalCard, GoalCardSkeleton } from "./goal-card";
 import { GoalDetail } from "./goal-detail";
 import { GoalEditor } from "./goal-editor";
-
-/** Route query key opening a goal on the Conversions page. */
-export const GOAL_QUERY_PARAM = "goal";
 
 export function goalDefinitionQueryKey(siteId: string, goalId: string) {
   return ["dashboard", "goal-definition", siteId, goalId] as const;

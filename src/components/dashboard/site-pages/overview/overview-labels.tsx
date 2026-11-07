@@ -2,17 +2,12 @@ import { memo, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
 
-import { intlLocale } from "@/lib/dashboard/format";
-import type { Locale } from "@/lib/i18n/config";
-import { formatI18nTemplate } from "@/lib/i18n/template";
-
 import {
   leadingLabelLetter,
   resolveFaviconUrlForLabel,
   sanitizeHostname,
   toAbsoluteHttpsUrl,
 } from "./overview-url";
-import { type PageCardTab } from "./types";
 const UMAMI_BROWSER_ICON_PREFIX = "umami-browser:";
 const UMAMI_OS_ICON_PREFIX = "umami-os:";
 const UMAMI_BROWSER_ICON_DIR = "/images/browser";
@@ -302,164 +297,8 @@ export const LabelWithLeadingIcon = memo(function LabelWithLeadingIcon({
 export function normalizeDimensionLabel(
   value: string,
   unknownLabel: string,
-  options?: { screenSize?: boolean },
 ): string {
-  const normalized = value.trim();
-  if (!normalized) return unknownLabel;
-  if (options?.screenSize && (normalized === "0x0" || normalized === "0X0")) {
-    return unknownLabel;
-  }
-  return normalized;
-}
-const timezoneNameFormatterCache = new Map<string, Intl.DateTimeFormat>();
-const timezonePartsFormatterCache = new Map<string, Intl.DateTimeFormat>();
-function getTimezoneNameFormatter(
-  locale: Locale,
-  timeZone: string,
-): Intl.DateTimeFormat | null {
-  const cacheKey = `${locale}::${timeZone}`;
-  const cached = timezoneNameFormatterCache.get(cacheKey);
-  if (cached) return cached;
-
-  try {
-    const formatter = new Intl.DateTimeFormat(intlLocale(locale), {
-      timeZone,
-      timeZoneName: "long",
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-    });
-    timezoneNameFormatterCache.set(cacheKey, formatter);
-    return formatter;
-  } catch {
-    return null;
-  }
-}
-function getTimezonePartsFormatter(
-  timeZone: string,
-): Intl.DateTimeFormat | null {
-  const cached = timezonePartsFormatterCache.get(timeZone);
-  if (cached) return cached;
-
-  try {
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hourCycle: "h23",
-    });
-    timezonePartsFormatterCache.set(timeZone, formatter);
-    return formatter;
-  } catch {
-    return null;
-  }
-}
-function resolveTimezoneOffsetMinutes(
-  timeZone: string,
-  timestampMs: number,
-): number | null {
-  const formatter = getTimezonePartsFormatter(timeZone);
-  if (!formatter) return null;
-
-  const date = new Date(timestampMs);
-  if (!Number.isFinite(date.getTime())) return null;
-
-  const parts = formatter.formatToParts(date);
-  let year = NaN;
-  let month = NaN;
-  let day = NaN;
-  let hour = NaN;
-  let minute = NaN;
-  let second = NaN;
-
-  for (const part of parts) {
-    const value = Number(part.value);
-    if (!Number.isFinite(value)) continue;
-    if (part.type === "year") year = value;
-    else if (part.type === "month") month = value;
-    else if (part.type === "day") day = value;
-    else if (part.type === "hour") hour = value;
-    else if (part.type === "minute") minute = value;
-    else if (part.type === "second") second = value;
-  }
-
-  if (
-    !Number.isFinite(year) ||
-    !Number.isFinite(month) ||
-    !Number.isFinite(day) ||
-    !Number.isFinite(hour) ||
-    !Number.isFinite(minute) ||
-    !Number.isFinite(second)
-  ) {
-    return null;
-  }
-
-  const asUtc = Date.UTC(year, month - 1, day, hour, minute, second);
-  return Math.round((asUtc - timestampMs) / 60000);
-}
-function formatUtcOffset(offsetMinutes: number): string {
-  const sign = offsetMinutes >= 0 ? "+" : "-";
-  const absolute = Math.abs(offsetMinutes);
-  const hours = Math.floor(absolute / 60)
-    .toString()
-    .padStart(2, "0");
-  const minutes = (absolute % 60).toString().padStart(2, "0");
-  return `UTC${sign}${hours}:${minutes}`;
-}
-function formatLocalTimeDeltaLabel(
-  deltaMinutes: number,
-  template: string,
-): string {
-  const sign = deltaMinutes >= 0 ? "+" : "-";
-  const absolute = Math.abs(deltaMinutes);
-  const hours = Math.floor(absolute / 60)
-    .toString()
-    .padStart(2, "0");
-  const minutes = (absolute % 60).toString().padStart(2, "0");
-  const delta = `${sign}${hours}:${minutes}`;
-  return formatI18nTemplate(template, { delta });
-}
-export function resolveTimezoneDisplayLabel(params: {
-  value: string;
-  locale: Locale;
-  unknownLabel: string;
-  timestampMs: number;
-  timezoneDeltaVsLocal: string;
-}): string {
-  const normalized = normalizeDimensionLabel(params.value, params.unknownLabel);
-  if (normalized === params.unknownLabel) return normalized;
-
-  const baseTimestamp =
-    Number.isFinite(params.timestampMs) && params.timestampMs > 0
-      ? params.timestampMs
-      : Date.now();
-  const date = new Date(baseTimestamp);
-  if (!Number.isFinite(date.getTime())) return normalized;
-
-  const nameFormatter = getTimezoneNameFormatter(params.locale, normalized);
-  const localizedName =
-    nameFormatter
-      ?.formatToParts(date)
-      .find((part) => part.type === "timeZoneName")
-      ?.value.trim() || null;
-  const offsetMinutes = resolveTimezoneOffsetMinutes(
-    normalized,
-    date.getTime(),
-  );
-
-  if (!localizedName && offsetMinutes === null) return normalized;
-  if (offsetMinutes !== null) {
-    const localOffsetMinutes = -date.getTimezoneOffset();
-    const localDelta = offsetMinutes - localOffsetMinutes;
-    const prefix = localizedName || normalized;
-    return `${prefix} (${formatUtcOffset(offsetMinutes)}, ${formatLocalTimeDeltaLabel(localDelta, params.timezoneDeltaVsLocal)})`;
-  }
-  if (localizedName) return localizedName;
-  return normalized;
+  return value.trim() || unknownLabel;
 }
 const DomainOrUrlIcon = memo(function DomainOrUrlIcon({
   label,
@@ -551,34 +390,19 @@ export const LabelWithOptionalIcon = memo(function LabelWithOptionalIcon({
     </span>
   );
 });
-export function resolvePageCardTargetUrl(params: {
-  tab: PageCardTab;
-  value: string;
-  unknownLabel: string;
-  fallbackHostname: string;
-}): string | null {
-  const { tab, value, unknownLabel, fallbackHostname } = params;
-  const raw = value.trim();
-  if (raw.length === 0 || raw === unknownLabel) {
+/** The page's address on the site, to open it from its row. */
+export function resolvePageUrl(
+  path: string,
+  siteDomain: string,
+): string | null {
+  const raw = path.trim();
+  if (raw.length === 0) return null;
+  if (!raw.startsWith("/")) return toAbsoluteHttpsUrl(raw);
+  const host = sanitizeHostname(siteDomain);
+  if (host.length === 0) return null;
+  try {
+    return new URL(raw, `https://${host}`).toString();
+  } catch {
     return null;
   }
-
-  if (tab === "hostname") {
-    return toAbsoluteHttpsUrl(raw);
-  }
-
-  if (tab === "path" || tab === "entry" || tab === "exit") {
-    if (raw.startsWith("/")) {
-      const host = sanitizeHostname(fallbackHostname);
-      if (host.length === 0) return null;
-      try {
-        return new URL(raw, `https://${host}`).toString();
-      } catch {
-        return null;
-      }
-    }
-    return toAbsoluteHttpsUrl(raw);
-  }
-
-  return null;
 }

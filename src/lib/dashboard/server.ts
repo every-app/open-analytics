@@ -12,6 +12,7 @@ import {
   type AdminServiceReadMap,
   readAdminService,
 } from "@/lib/edge/admin/service/index";
+import { readTeamFirstDataAt } from "@/lib/edge/admin/setup/get-started";
 import { resolveEdgeRuntime } from "@/lib/edge/runtime";
 export { buildSitePath } from "@/lib/dashboard/paths";
 export interface SiteWithSlug extends SiteData {
@@ -22,6 +23,8 @@ export interface DashboardTeamContext {
   user: AccountUserData;
   activeTeam: TeamData;
   sites: SiteWithSlug[];
+  /** The first page view of any of its sites, or null before one; All time on All sites starts there. */
+  firstDataAt: number | null;
   unreadAttentionCount: number;
   /** The Every App gateway's home, for leaving the app. */
   gatewayUrl: string;
@@ -110,16 +113,18 @@ export const getDashboardTeamContext = cache(
     const activeTeam = me?.teams[0];
     if (!me || !activeTeam) return null;
 
-    const [sites, unreadAttentionCount, runtime] = await Promise.all([
+    const runtime = await getAdminRuntime();
+    const [sites, firstDataAt, unreadAttentionCount] = await Promise.all([
       getDashboardTeamSites(activeTeam.id),
+      readTeamFirstDataAt(runtime.env, activeTeam.id),
       getUnreadAttentionCount(),
-      getAdminRuntime(),
     ]);
 
     return {
       user: me.user,
       activeTeam,
       sites,
+      firstDataAt,
       unreadAttentionCount,
       gatewayUrl: runtime.env.GATEWAY_URL || "/",
     };

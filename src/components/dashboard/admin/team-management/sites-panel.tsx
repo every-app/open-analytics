@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 import { SiteBrandIcon } from "@/components/dashboard/common/site-brand-icon";
-import { useSiteHasData } from "@/components/dashboard/site-pages/common/use-site-has-data";
+import { useSiteTracking } from "@/components/dashboard/site-pages/common/use-site-tracking";
 import {
   durationFormat,
   numberFormat,
@@ -78,7 +78,7 @@ function SiteCardBody({
   waitingLabel: string;
   children: ReactNode;
 }) {
-  if (useSiteHasData(siteId) === false) {
+  if (useSiteTracking(siteId).data?.hasData === false) {
     return (
       <CardContent>
         <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">

@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import {
-  FileTextIcon,
+  ActivityIcon,
   LayoutDashboardIcon,
   type LucideIcon,
   SettingsIcon,
@@ -20,16 +20,15 @@ export interface SidebarSite {
 }
 
 /** A site's report pages, by the key their path ends in ("" for Overview). */
-export type SiteNavKey =
-  "overview" | "realtime" | "pages" | "funnels" | "settings";
+export type SiteNavKey = "overview" | "realtime" | "funnels" | "settings";
 
 /**
- * The sidebar's site pages, in order. Site settings comes last. Real-time has
- * no entry: the live count in the header opens it.
+ * The sidebar's site pages, in order. Site settings comes last. The live
+ * count in the header opens Real-time too.
  */
 export const SITE_NAV_ITEMS = [
   "overview",
-  "pages",
+  "realtime",
   "funnels",
   "settings",
 ] as const satisfies readonly SiteNavKey[];
@@ -38,7 +37,7 @@ export type SiteNavItem = (typeof SITE_NAV_ITEMS)[number];
 
 const SITE_NAV_ITEM_ICONS: Record<SiteNavItem, LucideIcon> = {
   overview: LayoutDashboardIcon,
-  pages: FileTextIcon,
+  realtime: ActivityIcon,
   funnels: TargetIcon,
   settings: SettingsIcon,
 };
@@ -58,7 +57,7 @@ export function siteNavLabel(key: SiteNavKey, messages: AppMessages): string {
   return messages.navigation[key];
 }
 
-const SITE_NAV_KEYS = new Set<string>([...SITE_NAV_ITEMS, "realtime"]);
+const SITE_NAV_KEYS = new Set<string>(SITE_NAV_ITEMS);
 
 export function isSiteNavKey(value: string): value is SiteNavKey {
   return SITE_NAV_KEYS.has(value);

@@ -51,7 +51,7 @@ export interface AdminServiceReadMap {
   "notifications/preferences": NotificationPreferencesData;
   retention: RetentionConfig;
   "get-started": GetStartedData;
-  "site-tracking": { hasData: boolean };
+  "site-tracking": { hasData: boolean; firstDataAt: number | null };
 }
 export async function executeAdminService(
   input: AdminServiceRequest,

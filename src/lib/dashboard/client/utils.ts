@@ -125,34 +125,6 @@ export function normalizeOverviewRows(
     return normalized;
   });
 }
-export function decodeHashLabel(value: string): string {
-  const normalized = String(value || "").trim();
-  if (!normalized) return "";
-
-  const prefixed = normalized.startsWith("#") ? normalized : `#${normalized}`;
-  const encodedFragment = prefixed.slice(1);
-  if (!encodedFragment) return "";
-
-  try {
-    return `#${decodeURIComponent(encodedFragment)}`;
-  } catch {
-    return prefixed;
-  }
-}
-export function decodeQueryLabel(value: string): string {
-  const normalized = String(value || "").trim();
-  if (!normalized) return "";
-
-  const prefixed = normalized.startsWith("?") ? normalized : `?${normalized}`;
-  const encodedQuery = prefixed.slice(1);
-  if (!encodedQuery) return "";
-
-  try {
-    return `?${decodeURIComponent(encodedQuery)}`;
-  } catch {
-    return prefixed;
-  }
-}
 export function withFilters(
   params: PrivateRequestParams,
   filters?: FilterDocument,

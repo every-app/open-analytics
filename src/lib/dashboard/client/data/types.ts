@@ -1,4 +1,4 @@
-import type { TimeWindow } from "@/lib/dashboard/query-state";
+import type { DashboardComparisonQuery } from "@/lib/dashboard/comparison-query";
 import type {
   DashboardFilterOption,
   OverviewClientDimensionTabsData as OverviewClientDimensionTabsResponse,
@@ -8,10 +8,7 @@ import type {
   PagesData,
 } from "@/lib/dashboard-api/client/edge";
 import type { PagesDashboardMetric } from "@/lib/dashboard-api/contract/types/pages";
-import type {
-  AnalyticsFilterFieldId,
-  FilterDocument,
-} from "@/lib/filter-contract";
+import type { AnalyticsFilterFieldId } from "@/lib/filter-contract";
 export type DashboardFilterOptionData = DashboardFilterOption;
 export type PageCardTabsData = NonNullable<PagesData["tabs"]>;
 export type OverviewClientDimensionTabsData =
@@ -48,11 +45,7 @@ export type DashboardListRequestOptions = {
   search?: string;
   sort?: "views" | "sessions" | "visitors";
   direction?: SortDirection;
-  comparison?: {
-    mode: "same" | "previous";
-    window: TimeWindow;
-    filters: FilterDocument;
-  } | null;
+  comparison?: DashboardComparisonQuery | null;
   comparisonMetric?: "views" | "visitors" | "sessions";
   comparisonSortBy?: "current" | "reference" | "change";
   signal?: AbortSignal;
@@ -68,13 +61,10 @@ export type FetchPrivateJsonOptions = {
   signal?: AbortSignal;
   dedupe?: boolean;
 };
-export type OverviewPageCardTab =
-  "path" | "query" | "title" | "hostname" | "entry" | "exit";
-export type OverviewSourceCardTab = "domain" | "link" | "channel";
-export type OverviewClientDimensionTab =
-  "browser" | "osVersion" | "deviceType" | "language" | "screenSize";
-export type OverviewGeoDimensionTab =
-  "country" | "region" | "city" | "continent" | "timezone" | "organization";
+export type OverviewPageCardTab = "path" | "entry" | "exit";
+export type OverviewSourceCardTab = "domain" | "channel";
+export type OverviewClientDimensionTab = "browser" | "osVersion" | "deviceType";
+export type OverviewGeoDimensionTab = "country" | "region" | "city";
 export type DashboardFilterOptionKey = Exclude<
   AnalyticsFilterFieldId,
   "event.payload"

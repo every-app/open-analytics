@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { Hono } from "hono";
 
-import { readSiteHasData } from "@/lib/edge/admin/setup/get-started";
+import { readSiteFirstDataAt } from "@/lib/edge/admin/setup/get-started";
 import { PUBLIC_QUERY_CACHE_OPTIONS } from "@/lib/edge/analytics/composition/dashboard-cache";
 import { jsonResponse } from "@/lib/edge/analytics/interfaces/dashboard/protocol/responses";
 import { PUBLIC_QUERY_PATHS } from "@/lib/edge/analytics/interfaces/dashboard/protocol/router";
@@ -46,6 +46,7 @@ publicQueryRoutes.get(
     if (!site) {
       throw new Error("public site context missing");
     }
+    const firstDataAt = await readSiteFirstDataAt(c.env, site.id);
     return jsonResponse({
       ok: true,
       data: {
@@ -53,7 +54,8 @@ publicQueryRoutes.get(
         name: site.name,
         domain: site.domain,
         id: site.id,
-        hasData: await readSiteHasData(c.env, site.id),
+        hasData: firstDataAt !== null,
+        firstDataAt,
       },
     });
   },

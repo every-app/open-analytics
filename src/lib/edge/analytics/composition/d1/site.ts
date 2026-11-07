@@ -648,7 +648,6 @@ export function registerSiteContractProviders(
           options.siteId,
           timeWindow(request.time),
           request.filters ?? EMPTY_FILTER_DOCUMENT,
-          numberField(request, "limit", 5000),
         );
         return {
           value: {

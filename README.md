@@ -8,7 +8,10 @@
 
 - No cookies, nothing stored in the browser and no stored IP addresses.
 - A 3 KB tracker with custom events.
-- An overview of pages, sources and UTM campaigns, locations and devices, a pages report, funnels and goals, and a live view.
+- One dashboard per site, as in Plausible: unique visitors, visits, pageviews, views per visit, bounce rate and visit duration, with a graph of whichever you pick; Sources (channels, referrers and UTM campaigns), Pages (top, entry and exit), Locations (a map, countries, regions and cities) and Devices (browser, operating system and device type); and each goal's conversions.
+- Click any row to filter the whole dashboard by it; active filters show as pills you can remove. Each card's Details view lists every row with search, sorting and CSV export.
+- Ranges from the last 24 hours to all time, with keyboard shortcuts, and comparison with the previous period or the same dates a year earlier.
+- Funnels and goals, and a live view.
 - Read-only public share links for any site.
 - Weekly or monthly reports and traffic spike or drop alerts, in an in-app inbox and by email.
 - Bot filtering.

@@ -2,6 +2,7 @@ import {
   addZonedInterval,
   isValidTimeZone,
   normalizeTimeZone,
+  shiftZonedRangeYears,
   startOfZonedInterval,
 } from "@/lib/analytics/time-zone";
 import {
@@ -112,6 +113,28 @@ export function previousComparableWindow(window: QueryWindow): QueryWindow {
       ? { paginationBinding: window.paginationBinding }
       : {}),
   };
+}
+/**
+ * What a comparison sets the period against: the same period under other
+ * filters, the period just before, or the same dates a year earlier.
+ */
+export const COMPARISON_MODES = ["same", "previous", "year"] as const;
+export type ComparisonMode = (typeof COMPARISON_MODES)[number];
+export function isComparisonMode(value: string): value is ComparisonMode {
+  return (COMPARISON_MODES as readonly string[]).includes(value);
+}
+/** The same dates a year earlier, in the window's zone. */
+export function yearAgoComparableWindow(window: QueryWindow): QueryWindow {
+  return { ...window, ...shiftZonedRangeYears(window, -1, window.timeZone) };
+}
+/** The window a comparison of this mode reads. */
+export function comparisonReferenceWindow(
+  mode: ComparisonMode,
+  window: QueryWindow,
+): QueryWindow {
+  if (mode === "previous") return previousComparableWindow(window);
+  if (mode === "year") return yearAgoComparableWindow(window);
+  return window;
 }
 export function percentChange(
   current: number,

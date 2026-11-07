@@ -299,16 +299,18 @@ export function startOfZonedDay(timestampMs: number, timeZone: string): number {
   });
 }
 
+// Minutes and hours are cut and stepped in elapsed time, not by the wall
+// clock: across a daylight-saving change a clock hour is skipped or repeated,
+// and each real hour still gets its own bucket.
+const MINUTE_MS = 60_000;
+const HOUR_MS = 60 * MINUTE_MS;
+
 export function startOfZonedMinute(
   timestampMs: number,
   timeZone: string,
 ): number {
   const parts = zonedParts(timestampMs, timeZone);
-  return zonedTimeToUtcMs(timeZone, {
-    ...parts,
-    second: 0,
-    millisecond: 0,
-  });
+  return Math.floor(timestampMs) - parts.second * 1000 - parts.millisecond;
 }
 
 export function startOfZonedHour(
@@ -316,12 +318,7 @@ export function startOfZonedHour(
   timeZone: string,
 ): number {
   const parts = zonedParts(timestampMs, timeZone);
-  return zonedTimeToUtcMs(timeZone, {
-    ...parts,
-    minute: 0,
-    second: 0,
-    millisecond: 0,
-  });
+  return startOfZonedMinute(timestampMs, timeZone) - parts.minute * MINUTE_MS;
 }
 
 export function endOfZonedDay(timestampMs: number, timeZone: string): number {
@@ -395,19 +392,9 @@ export function addZonedInterval(
   timeZone: string,
   amount = 1,
 ): number {
+  if (interval === "minute") return timestampMs + amount * MINUTE_MS;
+  if (interval === "hour") return timestampMs + amount * HOUR_MS;
   const parts = zonedParts(timestampMs, timeZone);
-  if (interval === "minute") {
-    return zonedTimeToUtcMs(timeZone, {
-      ...parts,
-      minute: parts.minute + amount,
-    });
-  }
-  if (interval === "hour") {
-    return zonedTimeToUtcMs(timeZone, {
-      ...parts,
-      hour: parts.hour + amount,
-    });
-  }
   if (interval === "day") {
     const next = addCalendarDays(parts, amount);
     return zonedTimeToUtcMs(timeZone, {
@@ -433,6 +420,44 @@ export function addZonedInterval(
     month: next.month,
     day: next.day,
   });
+}
+
+/**
+ * The same wall-clock moment some calendar years away in the zone. A 29
+ * February with no counterpart lands on the 28th.
+ */
+export function shiftZonedYears(
+  timestampMs: number,
+  years: number,
+  timeZone: string,
+): number {
+  const parts = zonedParts(timestampMs, timeZone);
+  const target = addCalendarMonths(parts, years * 12);
+  return zonedTimeToUtcMs(timeZone, { ...parts, ...target });
+}
+
+/**
+ * A half-open range moved to the same dates some calendar years away in the
+ * zone. Its first and last included moments move, and the exclusive end is
+ * rebuilt from the last one, so a range whose last day is 28 or 29 February
+ * keeps that day. Only a range that would collapse (the last 24 hours ending
+ * on 29 February, whose ends both land on the 28th) keeps its length instead.
+ */
+export function shiftZonedRangeYears(
+  range: { startMs: number; endExclusiveMs: number },
+  years: number,
+  timeZone: string,
+): { startMs: number; endExclusiveMs: number } {
+  const startMs = shiftZonedYears(range.startMs, years, timeZone);
+  const endExclusiveMs =
+    shiftZonedYears(range.endExclusiveMs - 1, years, timeZone) + 1;
+  return {
+    startMs,
+    endExclusiveMs:
+      endExclusiveMs > startMs
+        ? endExclusiveMs
+        : startMs + (range.endExclusiveMs - range.startMs),
+  };
 }
 
 export function startOfZonedYear(

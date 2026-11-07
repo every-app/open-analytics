@@ -3,11 +3,7 @@ import {
   buildRegionLocationValue,
   canonicalizeGeoLocationValue,
 } from "@/lib/analytics/geo-location";
-import { type DashboardFilterControlKey } from "@/lib/dashboard/filter-state";
 import { isSameGeoLabel } from "@/lib/dashboard/geo-translation";
-import { normalizePagePath } from "@/lib/dashboard/page-detail";
-import { parseFilterDocumentFromSearchParams } from "@/lib/dashboard/query-state";
-import { type FilterDocument } from "@/lib/filter-contract/index";
 import {
   resolveCountryFlagCode,
   resolveCountryLabel,
@@ -15,98 +11,9 @@ import {
 import type { Locale } from "@/lib/i18n/config";
 
 import { normalizeDimensionLabel } from "./overview-labels";
-import {
-  type ClientDimensionCardTab,
-  type GeoDimensionCardTab,
-  type GeoLocationTab,
-  type PageCardDetailTab,
-  type PageCardNavigableTab,
-  type PageCardTab,
-  type SourceCardTab,
-} from "./types";
-import { UTM_TABS } from "./utm-tabs";
-export const PAGE_CARD_TABS: PageCardTab[] = [
-  "path",
-  "title",
-  "hostname",
-  "entry",
-  "exit",
-];
-export const SOURCE_CARD_TABS: SourceCardTab[] = [
-  "domain",
-  "link",
-  "channel",
-  ...UTM_TABS,
-];
-export const PAGE_CARD_NAVIGABLE_TAB_LIST: PageCardNavigableTab[] = [
-  "path",
-  "hostname",
-  "entry",
-  "exit",
-];
-export const PAGE_CARD_DETAIL_TAB_LIST: PageCardDetailTab[] = [
-  "path",
-  "entry",
-  "exit",
-];
+import type { LocationTab } from "./types";
+
 export const ABSOLUTE_URL_PATTERN = /^[a-z][a-z\d+\-.]*:\/\//i;
-export const PAGE_CARD_FILTER_CONTROL_BY_TAB: Record<
-  PageCardTab,
-  DashboardFilterControlKey
-> = {
-  path: "path",
-  query: "query",
-  title: "title",
-  hostname: "hostname",
-  entry: "entry",
-  exit: "exit",
-};
-export const SOURCE_CARD_FILTER_CONTROL_BY_TAB: Record<
-  SourceCardTab,
-  DashboardFilterControlKey
-> = {
-  domain: "sourceDomain",
-  link: "sourceLink",
-  channel: "channel",
-  source: "utmSource",
-  medium: "utmMedium",
-  campaign: "utmCampaign",
-  term: "utmTerm",
-  content: "utmContent",
-};
-export const CLIENT_DIMENSION_CARD_TABS: ClientDimensionCardTab[] = [
-  "browser",
-  "osVersion",
-  "deviceType",
-  "language",
-  "screenSize",
-];
-export const GEO_DIMENSION_CARD_TABS: GeoDimensionCardTab[] = [
-  "country",
-  "region",
-  "city",
-  "continent",
-  "timezone",
-  "organization",
-];
-export const CLIENT_DIMENSION_CARD_FILTER_CONTROL_BY_TAB: Record<
-  ClientDimensionCardTab,
-  DashboardFilterControlKey
-> = {
-  browser: "clientBrowser",
-  osVersion: "clientOsVersion",
-  deviceType: "clientDeviceType",
-  language: "clientLanguage",
-  screenSize: "clientScreenSize",
-};
-export const GEO_AUX_FILTER_CONTROL_BY_TAB: Record<
-  Exclude<GeoDimensionCardTab, GeoLocationTab>,
-  DashboardFilterControlKey
-> = {
-  continent: "geoContinent",
-  timezone: "geoTimezone",
-  organization: "geoOrganization",
-};
 export const DIRECT_REFERRER_FILTER_VALUE = "__direct__";
 const GEO_REGION_VALUE_SEPARATOR = "::";
 export function extractGeoCountryCodeFromFilterValue(
@@ -121,23 +28,13 @@ export function extractGeoCountryCodeFromFilterValue(
   if (!country) return null;
   return /^[A-Z]{2}$/.test(country) ? country : null;
 }
-export function parseOverviewCardFilters(
-  searchParams: URLSearchParams,
-): FilterDocument {
-  return parseFilterDocumentFromSearchParams(searchParams);
-}
-export function isGeoLocationTab(
-  tab: GeoDimensionCardTab,
-): tab is GeoLocationTab {
-  return tab === "country" || tab === "region" || tab === "city";
-}
 export function canonicalizeGeoFilterValue(
   raw: string | null | undefined,
 ): string | null {
   return canonicalizeGeoLocationValue(raw);
 }
 export function resolveGeoLocationHighlightValue(
-  tab: GeoLocationTab,
+  tab: Exclude<LocationTab, "map">,
   geoFilterValue: string | null,
 ): string | null {
   if (!geoFilterValue) return null;
@@ -366,34 +263,6 @@ export function resolveGeoCityBreadcrumbData(
       hideCity,
     },
   };
-}
-export function buildPagesPagePath(pathname: string): string {
-  const normalized = pathname.trim().replace(/\/+$/, "");
-  if (!normalized) return "/pages";
-  if (normalized.endsWith("/pages")) return normalized;
-  if (normalized.endsWith("/pages/detail")) {
-    return normalized.replace(/\/detail$/, "");
-  }
-  return `${normalized}/pages`;
-}
-export function isPageCardDetailTab(
-  tab: PageCardTab,
-): tab is PageCardDetailTab {
-  return tab === "path" || tab === "entry" || tab === "exit";
-}
-export function resolvePageCardDetailPath(params: {
-  tab?: PageCardDetailTab;
-  basePath: string;
-  value: string;
-  unknownLabel: string;
-}): string | null {
-  const raw = params.value.trim();
-  if (raw.length === 0 || raw === params.unknownLabel) return null;
-
-  const normalizedPath = normalizePagePath(raw);
-  if (!normalizedPath) return null;
-
-  return normalizedPath;
 }
 export function resolveGeoDimensionRowRawValue(item: {
   label?: string;

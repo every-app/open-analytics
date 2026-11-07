@@ -5,6 +5,7 @@ import {
 import { withFilters, withPagination } from "@/lib/dashboard/client/utils";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type {
+  GoalDefinition,
   GoalDeleteData,
   GoalListData,
   GoalMutationData,
@@ -24,6 +25,26 @@ export async function fetchGoals(
   return fetchPrivateJson<GoalListData>("/api/private/goals", requestParams, {
     signal: options?.signal,
   });
+}
+/** Every goal of the site, read page by page. */
+export async function fetchAllGoals(
+  siteId: string,
+  options?: { signal?: AbortSignal },
+): Promise<GoalDefinition[]> {
+  const goals: GoalDefinition[] = [];
+  let cursor: string | null = null;
+  do {
+    const { data } = await fetchGoals(siteId, {
+      cursor,
+      signal: options?.signal,
+    });
+    goals.push(...data.items);
+    if (data.pagination.hasMore && !data.pagination.nextCursor) {
+      throw new Error("goal_list_cursor_missing");
+    }
+    cursor = data.pagination.hasMore ? data.pagination.nextCursor : null;
+  } while (cursor);
+  return goals;
 }
 export async function fetchGoalDefinition(
   siteId: string,

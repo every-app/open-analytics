@@ -1,13 +1,9 @@
-import {
-  emptyOverviewClientDimensionTabs,
-  emptyOverviewGeoDimensionTabs,
-  emptyOverviewGeoPoints,
-} from "@/lib/dashboard/client/data/empty";
 export {
   createFunnel,
   createGoal,
   deleteFunnel,
   deleteGoal,
+  fetchAllGoals,
   fetchEventTypeFields,
   fetchEventTypeFieldValues,
   fetchFunnelDetail,
@@ -26,23 +22,16 @@ export {
   fetchOverviewGeoDimensionTabPage,
   fetchOverviewGeoPoints,
 } from "@/lib/dashboard/client/data/geo";
-export {
-  fetchPageCardTabs,
-  fetchPagesDashboard,
-  fetchPagesShareTrend,
-} from "@/lib/dashboard/client/data/pages";
+export { fetchPagesDashboard } from "@/lib/dashboard/client/data/pages";
 export {
   fetchReferrers,
   fetchUtmDimension,
 } from "@/lib/dashboard/client/data/referrers";
 export {
-  fetchEventTypesTab,
   fetchFilterValues,
   fetchOverviewClientDimensionTab,
   fetchOverviewPageCardTab,
   fetchOverviewSourceCardTab,
-  fetchPageHashTab,
-  fetchPageQueryTab,
 } from "@/lib/dashboard/client/data/tabs";
 export type {
   DashboardFilterOptionData,
@@ -64,8 +53,6 @@ export type {
   UtmDimensionTab,
 } from "@/lib/dashboard/client/data/types";
 export {
-  decodeHashLabel,
-  decodeQueryLabel,
   normalizeOverviewRows,
   toQueryString,
   withFilters,
@@ -77,7 +64,3 @@ export {
   fetchSavedFilters,
   updateSavedFilter,
 } from "@/lib/dashboard/saved-filter-data";
-export const emptyOverviewClientDimensionTabsData =
-  emptyOverviewClientDimensionTabs;
-export const emptyOverviewGeoDimensionTabsData = emptyOverviewGeoDimensionTabs;
-export const emptyOverviewGeoPointsData = emptyOverviewGeoPoints;

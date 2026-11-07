@@ -361,7 +361,6 @@ describe("TypedQueryApplicationService", () => {
     const onApplicationError = vi.fn();
     const service = new TypedQueryApplicationService(
       undefined,
-      undefined,
       onApplicationError,
     );
 
@@ -380,7 +379,6 @@ describe("TypedQueryApplicationService", () => {
       throw new Error("logging failed");
     });
     const service = new TypedQueryApplicationService(
-      undefined,
       undefined,
       onApplicationError,
     );
@@ -416,12 +414,8 @@ describe("TypedQueryApplicationService", () => {
     expect(run).not.toHaveBeenCalled();
   });
 
-  it("rejects abort, deadline, and cost before provider execution", async () => {
-    const service = new TypedQueryApplicationService(undefined, {
-      rangeUnitMs: 1,
-      maxCost: 2,
-      providerWeights: { d1: 1, rollup: 1, realtime: 1, mixed: 1 },
-    });
+  it("rejects abort and deadline before provider execution", async () => {
+    const service = new TypedQueryApplicationService();
     const run = vi.fn().mockResolvedValue("unreachable");
     const controller = new AbortController();
     controller.abort();
@@ -440,14 +434,6 @@ describe("TypedQueryApplicationService", () => {
     ).resolves.toEqual({
       ok: false,
       error: { kind: "deadline-exceeded" },
-    });
-    await expect(
-      service.execute(invocation("pages", run), {
-        cost: { rangeMs: 2, provider: "d1" },
-      }),
-    ).resolves.toEqual({
-      ok: false,
-      error: { kind: "query-cost-exceeded", cost: 2 },
     });
     expect(run).not.toHaveBeenCalled();
   });
@@ -488,35 +474,32 @@ describe("TypedQueryApplicationService", () => {
     });
   });
 
-  it("accounts for nested entity membership and payload source cost", async () => {
+  it("plans nested entity membership and payload sources", async () => {
     const overviewReader = reader();
     const filters = parseFilterDsl(
       "session.durationMs gt 10 AND session.views gt 1",
       analyticsFilterRegistry,
     );
     const context = siteQueryContext("site-1", "private-dashboard");
-    const result = await new TypedQueryApplicationService().execute(
-      {
-        kind: "typed-query",
-        operation: "overview",
-        query: {
-          context,
-          time,
-          filters,
-        } as OverviewQuery,
-        providerRegistry: new AnalyticsProviderRegistry().register("overview", {
-          execute: async (input) => {
-            const result = await overviewReader.readOverview(input as never);
-            return {
-              value: { current: result.value },
-              source: result.source,
-              approximateVisitors: result.approximateVisitors,
-            };
-          },
-        }),
-      },
-      { cost: { rangeMs: 1, provider: "d1" } },
-    );
+    const result = await new TypedQueryApplicationService().execute({
+      kind: "typed-query",
+      operation: "overview",
+      query: {
+        context,
+        time,
+        filters,
+      } as OverviewQuery,
+      providerRegistry: new AnalyticsProviderRegistry().register("overview", {
+        execute: async (input) => {
+          const result = await overviewReader.readOverview(input as never);
+          return {
+            value: { current: result.value },
+            source: result.source,
+            approximateVisitors: result.approximateVisitors,
+          };
+        },
+      }),
+    });
 
     expect(result).toMatchObject({ ok: true, data: { current: { views: 1 } } });
     expect(overviewReader.readOverview).toHaveBeenCalledWith(
@@ -529,24 +512,21 @@ describe("TypedQueryApplicationService", () => {
       'event.payload("/plan") eq "pro"',
       analyticsFilterRegistry,
     );
-    const payloadResult = await new TypedQueryApplicationService().execute(
-      {
-        kind: "typed-query",
-        operation: "overview",
-        query: { context, time, filters: payloadFilters } as OverviewQuery,
-        providerRegistry: new AnalyticsProviderRegistry().register("overview", {
-          execute: async (input) => {
-            const result = await overviewReader.readOverview(input as never);
-            return {
-              value: { current: result.value },
-              source: result.source,
-              approximateVisitors: result.approximateVisitors,
-            };
-          },
-        }),
-      },
-      { cost: { rangeMs: 1, provider: "d1" } },
-    );
+    const payloadResult = await new TypedQueryApplicationService().execute({
+      kind: "typed-query",
+      operation: "overview",
+      query: { context, time, filters: payloadFilters } as OverviewQuery,
+      providerRegistry: new AnalyticsProviderRegistry().register("overview", {
+        execute: async (input) => {
+          const result = await overviewReader.readOverview(input as never);
+          return {
+            value: { current: result.value },
+            source: result.source,
+            approximateVisitors: result.approximateVisitors,
+          };
+        },
+      }),
+    });
     expect(payloadResult).toMatchObject({
       ok: true,
       data: { current: { views: 1 } },
@@ -556,59 +536,53 @@ describe("TypedQueryApplicationService", () => {
       "NOT session.durationMs gt 10",
       analyticsFilterRegistry,
     );
-    const notResult = await new TypedQueryApplicationService().execute(
-      {
-        kind: "typed-query",
-        operation: "overview",
-        query: { context, time, filters: notFilters } as OverviewQuery,
-        providerRegistry: new AnalyticsProviderRegistry().register("overview", {
-          execute: async (input) => {
-            const result = await overviewReader.readOverview(input as never);
-            return {
-              value: { current: result.value },
-              source: result.source,
-              approximateVisitors: result.approximateVisitors,
-            };
-          },
-        }),
-      },
-      { cost: { rangeMs: 1, provider: "d1" } },
-    );
+    const notResult = await new TypedQueryApplicationService().execute({
+      kind: "typed-query",
+      operation: "overview",
+      query: { context, time, filters: notFilters } as OverviewQuery,
+      providerRegistry: new AnalyticsProviderRegistry().register("overview", {
+        execute: async (input) => {
+          const result = await overviewReader.readOverview(input as never);
+          return {
+            value: { current: result.value },
+            source: result.source,
+            approximateVisitors: result.approximateVisitors,
+          };
+        },
+      }),
+    });
     expect(notResult).toMatchObject({
       ok: true,
       data: { current: { views: 1 } },
     });
   });
 
-  it("walks Relation steps when estimating the complexity budget", async () => {
+  it("plans Relation steps", async () => {
     const overviewReader = reader();
     const relationFilters = parseFilterDsl(
       'VISITOR { sequence([EVENT { $.name eq "signup" }, PAGE { $.path eq "/pricing" }]) exists } exists',
       analyticsFilterRegistry,
     );
-    const result = await new TypedQueryApplicationService().execute(
-      {
-        kind: "typed-query",
-        operation: "overview",
-        query: {
-          context: siteQueryContext("site-1", "private-dashboard"),
-          time,
-          filters: relationFilters,
-          scopePreference: "visitor",
-        } as OverviewQuery,
-        providerRegistry: new AnalyticsProviderRegistry().register("overview", {
-          execute: async (input) => {
-            const overview = await overviewReader.readOverview(input as never);
-            return {
-              value: { current: overview.value },
-              source: overview.source,
-              approximateVisitors: overview.approximateVisitors,
-            };
-          },
-        }),
-      },
-      { cost: { rangeMs: 1, provider: "d1" } },
-    );
+    const result = await new TypedQueryApplicationService().execute({
+      kind: "typed-query",
+      operation: "overview",
+      query: {
+        context: siteQueryContext("site-1", "private-dashboard"),
+        time,
+        filters: relationFilters,
+        scopePreference: "visitor",
+      } as OverviewQuery,
+      providerRegistry: new AnalyticsProviderRegistry().register("overview", {
+        execute: async (input) => {
+          const overview = await overviewReader.readOverview(input as never);
+          return {
+            value: { current: overview.value },
+            source: overview.source,
+            approximateVisitors: overview.approximateVisitors,
+          };
+        },
+      }),
+    });
 
     expect(result, JSON.stringify(result)).toMatchObject({
       ok: true,
@@ -766,24 +740,6 @@ describe("TypedQueryApplicationService", () => {
     expect(result).toMatchObject({
       ok: false,
       error: { kind: "capability-denied", capability: "overview" },
-    });
-    expect(overviewReader.readOverview).not.toHaveBeenCalled();
-  });
-
-  it("rejects a weighted cost at the policy ceiling", async () => {
-    const overviewReader = reader();
-    const service = new TypedQueryApplicationService(undefined, {
-      rangeUnitMs: 1,
-      maxCost: 10,
-      providerWeights: { d1: 1, rollup: 1, realtime: 1, mixed: 1 },
-    });
-    const result = await service.execute(overviewInvocation(overviewReader), {
-      cost: { rangeMs: 10, provider: "d1" },
-    });
-
-    expect(result).toEqual({
-      ok: false,
-      error: { kind: "query-cost-exceeded", cost: 10 },
     });
     expect(overviewReader.readOverview).not.toHaveBeenCalled();
   });

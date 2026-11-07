@@ -112,8 +112,6 @@ export interface TabbedDataTableSearchConfig<
 
 export type TabbedDataTableExportScope = "currentTab" | "allTabs";
 
-export type TabbedDataTableExportRows = "currentView" | "rawRows";
-
 export interface TabbedDataTableExportLabels {
   action?: string;
   title?: string;
@@ -121,13 +119,9 @@ export interface TabbedDataTableExportLabels {
   scopeLabel?: string;
   currentTab?: string;
   allTabs?: string;
-  rowsLabel?: string;
-  currentView?: string;
-  rawRows?: string;
   fileNameLabel?: string;
   download?: string;
   empty?: string;
-  budgetExceeded?: string;
 }
 
 export interface TabbedDataTableExportConfig<
@@ -138,7 +132,6 @@ export interface TabbedDataTableExportConfig<
   enabled?: boolean;
   filename?: string | ((tab: TabbedDataTableTab<TTab>) => string);
   defaultScope?: TabbedDataTableExportScope;
-  defaultRows?: TabbedDataTableExportRows;
   labels?: TabbedDataTableExportLabels;
   getRowLabel?: (row: TRow, tab: TTab) => string;
   getCellValue?: (

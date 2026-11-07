@@ -23,7 +23,6 @@ const DURATION_UNITS: Record<
 
 const NUMBER_FORMATTERS = new Map<string, Intl.NumberFormat>();
 const PERCENT_FORMATTERS = new Map<string, Intl.NumberFormat>();
-const PERCENT_ONE_DECIMAL_FORMATTERS = new Map<string, Intl.NumberFormat>();
 
 function getNumberFormatter(locale: Locale): Intl.NumberFormat {
   const key = intlLocale(locale);
@@ -48,20 +47,6 @@ function getPercentFormatter(locale: Locale): Intl.NumberFormat {
   return formatter;
 }
 
-function getPercentOneDecimalFormatter(locale: Locale): Intl.NumberFormat {
-  const key = intlLocale(locale);
-  const cached = PERCENT_ONE_DECIMAL_FORMATTERS.get(key);
-  if (cached) return cached;
-
-  const formatter = new Intl.NumberFormat(key, {
-    style: "percent",
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
-  PERCENT_ONE_DECIMAL_FORMATTERS.set(key, formatter);
-  return formatter;
-}
-
 export function intlLocale(locale: Locale): string {
   return INTL_LOCALE[locale];
 }
@@ -72,13 +57,6 @@ export function numberFormat(locale: Locale, value: number): string {
 
 export function percentFormat(locale: Locale, value: number): string {
   return getPercentFormatter(locale).format(value);
-}
-
-export function percentFormatWithOneDecimal(
-  locale: Locale,
-  value: number,
-): string {
-  return getPercentOneDecimalFormatter(locale).format(value);
 }
 
 type DateValue = number | string | Date | null | undefined;
@@ -112,74 +90,25 @@ function toValidDate(value: DateValue): Date | null {
   return null;
 }
 
-function formatDate(
-  locale: Locale,
-  value: DateValue,
-  options: Intl.DateTimeFormatOptions,
-  timeZone?: string,
-): string {
-  const date = toValidDate(value);
-  if (!date) return "--";
-
-  return new Intl.DateTimeFormat(intlLocale(locale), {
-    ...options,
-    ...(timeZone ? { timeZone } : {}),
-  }).format(date);
-}
-
+/**
+ * A date and time to the minute, in the given zone. The zone is required:
+ * text rendered on the server and again in the browser must name the same
+ * zone, or hydration fails.
+ */
 export function shortDateTime(
   locale: Locale,
   value: DateValue,
-  timeZone?: string,
+  timeZone: string,
 ): string {
-  return formatDate(
-    locale,
-    value,
-    {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    },
+  const date = toValidDate(value);
+  if (!date) return "--";
+  return new Intl.DateTimeFormat(intlLocale(locale), {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
     timeZone,
-  );
-}
-
-export function shortDateTimeWithSeconds(
-  locale: Locale,
-  value: DateValue,
-  timeZone?: string,
-  options: Pick<Intl.DateTimeFormatOptions, "year"> = {},
-): string {
-  return formatDate(
-    locale,
-    value,
-    {
-      ...options,
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    },
-    timeZone,
-  );
-}
-
-export function shortDate(
-  locale: Locale,
-  value: DateValue,
-  timeZone?: string,
-): string {
-  return formatDate(
-    locale,
-    value,
-    {
-      month: "short",
-      day: "numeric",
-    },
-    timeZone,
-  );
+  }).format(date);
 }
 
 export function durationFormat(locale: Locale, ms: number): string {

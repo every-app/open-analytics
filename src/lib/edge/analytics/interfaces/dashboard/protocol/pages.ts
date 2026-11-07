@@ -1,10 +1,11 @@
 import { createEdgeSiteAnalyticsRuntime } from "@/lib/edge/analytics/composition";
 import { parseFilterUrlForAudience } from "@/lib/edge/analytics/contract";
 import {
+  comparisonReferenceWindow,
+  isComparisonMode,
   type PagesDashboardComparisonQuery,
   type PagesDashboardQuery,
   type PagesQuery,
-  previousComparableWindow,
   type ReferrersQuery,
   siteQueryContext,
 } from "@/lib/edge/analytics/contract";
@@ -180,7 +181,7 @@ export async function handlePagesDashboardContract(
   const sort = (rawSort ?? "views") as (typeof pageMetrics)[number];
   const direction = rawDirection ?? "desc";
   const compare = url.searchParams.get("compare");
-  if (compare !== null && compare !== "same" && compare !== "previous") {
+  if (compare !== null && !isComparisonMode(compare)) {
     return badRequest("Invalid comparison", "invalid-input");
   }
   const compareFilterParams = new URLSearchParams();
@@ -204,18 +205,17 @@ export async function handlePagesDashboardContract(
         ? "change"
         : "current";
   let comparison: PagesDashboardComparisonQuery | undefined;
-  if (compare === "same" || compare === "previous") {
+  if (compare !== null) {
     const referenceFilters = compareFilterParams.size
       ? parseFilterUrlForAudience(
           queryContext.policy.audience,
           compareFilterParams,
         )
-      : compare === "previous"
+      : compare !== "same"
         ? filters
         : ({ version: 1, root: null } as typeof filters);
     if (compare !== "same" || referenceFilters.root) {
-      const referenceWindow =
-        compare === "previous" ? previousComparableWindow(window) : window;
+      const referenceWindow = comparisonReferenceWindow(compare, window);
       comparison = {
         current: { time: queryWindowToTime(window), filters },
         reference: {

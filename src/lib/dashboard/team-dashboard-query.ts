@@ -82,9 +82,7 @@ function bucketStarts(
     window.interval,
     window.timeZone,
   );
-  const hardLimit = 2000;
-
-  for (let index = 0; index < hardLimit && current <= end; index += 1) {
+  while (current <= end) {
     starts.push(current);
     let next = addZonedInterval(current, window.interval, window.timeZone);
     if (!Number.isFinite(next) || next <= current) {

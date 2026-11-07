@@ -3,9 +3,11 @@ import { SidebarTrigger } from "@insightflare/ui/sidebar";
 
 import { AppShellLayout } from "@/components/app-shell-layout";
 import { SiteBrandIcon } from "@/components/dashboard/common/site-brand-icon";
+import { LoadFailedContent } from "@/components/dashboard/common/table-states";
+import { FilterPills } from "@/components/dashboard/filters/filter-pills";
 import { DashboardHeaderControls } from "@/components/dashboard/shell/dashboard-header-controls";
 import { DashboardQueryProvider } from "@/components/dashboard/shell/dashboard-query-provider";
-import { useSiteHasData } from "@/components/dashboard/site-pages/common/use-site-has-data";
+import { useSiteTracking } from "@/components/dashboard/site-pages/common/use-site-tracking";
 import { FirstViewsBanner } from "@/components/dashboard/site-pages/install/first-views-banner";
 import { InstallScriptPage } from "@/components/dashboard/site-pages/install/install-script-page";
 import { useAccountTimeZonePreference } from "@/components/time-zone-provider";
@@ -46,6 +48,8 @@ interface DashboardShellProps {
   team: TeamData;
   gatewayUrl: string;
   sites: SidebarSite[];
+  /** The organization's first page view, where All time on All sites starts. */
+  firstDataAt: number | null;
   unreadAttentionCount?: number;
   initialQueryWindow?: TimeWindow;
   children: ReactNode;
@@ -65,6 +69,7 @@ export function DashboardShell({
   team,
   gatewayUrl,
   sites,
+  firstDataAt,
   unreadAttentionCount = 0,
   initialQueryWindow,
   children,
@@ -86,7 +91,16 @@ export function DashboardShell({
       )
     : undefined;
   const section = routeState.siteSection;
-  const siteHasData = useSiteHasData(activeSite?.id);
+  const siteTracking = useSiteTracking(activeSite?.id);
+  const siteHasData = siteTracking.data?.hasData;
+  // A site page waits for the site's tracking state: it decides between the
+  // install view and the reports, and where All time starts. If it can't be
+  // read, the page says so and offers to try again.
+  const awaitingSiteTracking =
+    activeSite !== undefined &&
+    section !== undefined &&
+    section !== "settings" &&
+    siteTracking.data === undefined;
   // Until a site's first page view, its report pages show only how to
   // install the script; Site settings stays open.
   const awaitingFirstView =
@@ -152,6 +166,9 @@ export function DashboardShell({
   return (
     <DashboardQueryProvider
       scopeKey={activeSite?.id ?? ""}
+      dataStart={
+        routeState.siteSlug ? siteTracking.data?.firstDataAt : firstDataAt
+      }
       initialWindow={initialQueryWindow}
       initialFilters={initialFilters}
       initialScopePreference={initialScopePreference}
@@ -183,8 +200,8 @@ export function DashboardShell({
                 <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
                   {pageTitle}
                 </div>
-                <div className="min-w-0 shrink-0">
-                  {awaitingFirstView ? null : (
+                <div className="min-w-0">
+                  {awaitingSiteTracking || awaitingFirstView ? null : (
                     <DashboardHeaderControls
                       locale={locale}
                       messages={messages}
@@ -206,13 +223,32 @@ export function DashboardShell({
                   )}
                 </div>
               </div>
+              {routeState.siteSlug &&
+              section !== "realtime" &&
+              !awaitingSiteTracking &&
+              !awaitingFirstView ? (
+                <FilterPills
+                  locale={locale}
+                  messages={messages}
+                  className="px-4 pb-2.5 md:px-6"
+                />
+              ) : null}
             </>
           ) : undefined
         }
         contentClassName={contentClassName}
         contentDataAttributes={{ "data-dashboard-content": "" }}
       >
-        {awaitingFirstView ? (
+        {awaitingSiteTracking ? (
+          siteTracking.failed ? (
+            <div className="flex min-h-[280px] items-center justify-center text-sm text-destructive">
+              <LoadFailedContent
+                messages={messages}
+                onRetry={siteTracking.retry}
+              />
+            </div>
+          ) : null
+        ) : awaitingFirstView ? (
           <InstallScriptPage messages={messages} siteId={activeSite.id} />
         ) : (
           <>

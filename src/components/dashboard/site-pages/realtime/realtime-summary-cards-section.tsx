@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 
-import { OverviewPagesSection } from "@/components/dashboard/site-pages/overview/pages-section";
-import { type OverviewPagesSectionCardData } from "@/components/dashboard/site-pages/overview/types";
+import { OverviewReportCards } from "@/components/dashboard/site-pages/overview/report-cards";
+import { type LocalCardData } from "@/components/dashboard/site-pages/overview/types";
 import {
   buildLocalityLocationValue,
   buildRegionLocationValue,
@@ -265,7 +265,7 @@ function aggregateSessionBoundaryRows(
 function buildCardData(
   visits: RealtimeVisit[],
   messages: AppMessages,
-): OverviewPagesSectionCardData {
+): LocalCardData {
   const sessionBoundaries = buildSessionBoundaries(visits);
   const sessionKeys = new Set(visits.map((visit) => sessionKeyOf(visit)));
   const aggregated = aggregateVisitDimensions(visits, [
@@ -276,28 +276,11 @@ function buildCardData(
       resolveLabel: (value) => value || "/",
     },
     {
-      key: "title",
-      getValue: (visit) => visit.title,
-      emptyLabel: messages.common.unknown,
-    },
-    {
-      key: "hostname",
-      getValue: (visit) => visit.hostname,
-      emptyLabel: messages.common.unknown,
-    },
-    {
       key: "domain",
       getValue: (visit) => visit.referrerHost,
       emptyLabel: messages.overview.direct,
       emptyKey: DIRECT_REFERRER_FILTER_VALUE,
-      resolveLabel: (value) => value || messages.overview.direct,
-    },
-    {
-      key: "link",
-      getValue: (visit) => visit.referrerUrl,
-      emptyLabel: messages.overview.direct,
-      emptyKey: DIRECT_REFERRER_FILTER_VALUE,
-      resolveLabel: (value) => value || messages.overview.direct,
+      resolveLabel: (value) => value || DIRECT_REFERRER_FILTER_VALUE,
     },
     {
       key: "browser",
@@ -315,16 +298,6 @@ function buildCardData(
       emptyLabel: messages.common.unknown,
     },
     {
-      key: "language",
-      getValue: (visit) => visit.language,
-      emptyLabel: messages.common.unknown,
-    },
-    {
-      key: "screenSize",
-      getValue: (visit) => visit.screenSize,
-      emptyLabel: messages.common.unknown,
-    },
-    {
       key: "country",
       getValue: (visit) => visit.country,
       emptyLabel: messages.common.unknown,
@@ -339,29 +312,11 @@ function buildCardData(
       getValue: resolveVisitCityValue,
       emptyLabel: messages.common.unknown,
     },
-    {
-      key: "continent",
-      getValue: (visit) => visit.continent,
-      emptyLabel: messages.common.unknown,
-    },
-    {
-      key: "timezone",
-      getValue: (visit) => visit.timezone,
-      emptyLabel: messages.common.unknown,
-    },
-    {
-      key: "organization",
-      getValue: (visit) => visit.organization,
-      emptyLabel: messages.common.unknown,
-    },
   ]);
 
   return {
     page: {
       path: aggregated.path,
-      query: [],
-      title: aggregated.title,
-      hostname: aggregated.hostname,
       entry: aggregateSessionBoundaryRows(
         sessionKeys,
         sessionBoundaries,
@@ -381,24 +336,16 @@ function buildCardData(
         },
       ),
     },
-    source: {
-      domain: aggregated.domain,
-      link: aggregated.link,
-    },
+    source: { domain: aggregated.domain },
     client: {
       browser: aggregated.browser,
       osVersion: aggregated.osVersion,
       deviceType: aggregated.deviceType,
-      language: aggregated.language,
-      screenSize: aggregated.screenSize,
     },
     geo: {
       country: aggregated.country,
       region: aggregated.region,
       city: aggregated.city,
-      continent: aggregated.continent,
-      timezone: aggregated.timezone,
-      organization: aggregated.organization,
     },
   };
 }
@@ -411,22 +358,20 @@ export const RealtimeSummaryCardsSection = memo(
     visits,
     filters,
   }: RealtimeSummaryCardsSectionProps) {
-    const cardDataOverride = useMemo(
+    const localData = useMemo(
       () => buildCardData(visits, messages),
       [messages, visits],
     );
 
     return (
-      <OverviewPagesSection
+      <OverviewReportCards
         locale={locale}
         messages={messages}
         siteId={siteId}
         siteDomain={siteDomain}
-        pathname=""
         filters={filters}
-        cardDataOverride={cardDataOverride}
-        comparisonEnabled={false}
-        tableContentTransitionKey="realtime"
+        filtered={false}
+        localData={localData}
       />
     );
   },

@@ -52,7 +52,6 @@ import { DownloadIcon, SearchIcon } from "lucide-react";
 import type {
   TabbedDataTableCardProps,
   TabbedDataTableColumn,
-  TabbedDataTableExportRows,
   TabbedDataTableExportScope,
   TabbedDataTableQueryHook,
   TabbedDataTableRowBase,
@@ -79,8 +78,6 @@ export interface TabbedDataTableCardDataControllerProps<
 > extends TabbedDataTableCardProps<TTab, TRow, TKey> {
   useDataQuery: TabbedDataTableQueryHook<TRow>;
 }
-export const MAX_EXPORT_ROWS = 50_000;
-export const MAX_EXPORT_PAGES = 500;
 function TabbedDataTableCardDataControllerImpl<
   TTab extends string,
   TRow extends TabbedDataTableRowBase,
@@ -176,10 +173,7 @@ function TabbedDataTableCardDataControllerImpl<
   const [exporting, setExporting] = useState(false);
   const [exportScope, setExportScope] =
     useState<TabbedDataTableExportScope>("currentTab");
-  const [exportRows, setExportRows] =
-    useState<TabbedDataTableExportRows>("currentView");
   const [exportFilename, setExportFilename] = useState("");
-  const [exportError, setExportError] = useState<string | null>(null);
   const exportAbortControllerRef = useRef<AbortController | null>(null);
   useEffect(() => () => exportAbortControllerRef.current?.abort(), []);
   const activeSearchTab =
@@ -210,10 +204,10 @@ function TabbedDataTableCardDataControllerImpl<
   }, [controlled, onValueChange, selectedTab, tabsKey]);
 
   const searchConfig = search === false ? null : (search ?? {});
-  const searchEnabled = searchConfig?.enabled ?? true;
+  const searchEnabled = searchConfig !== null && (searchConfig.enabled ?? true);
   const exportConfig =
     exportConfigProp === false ? null : (exportConfigProp ?? {});
-  const exportEnabled = exportConfig?.enabled ?? true;
+  const exportEnabled = exportConfig !== null && (exportConfig.enabled ?? true);
   const exportLabels = {
     ...DEFAULT_EXPORT_LABELS,
     ...exportConfig?.labels,
@@ -501,16 +495,9 @@ function TabbedDataTableCardDataControllerImpl<
 
   useEffect(() => {
     if (!exportOpen) return;
-    setExportError(null);
     setExportScope(exportConfig?.defaultScope ?? "currentTab");
-    setExportRows(exportConfig?.defaultRows ?? "currentView");
     setExportFilename(defaultExportFilename);
-  }, [
-    defaultExportFilename,
-    exportConfig?.defaultRows,
-    exportConfig?.defaultScope,
-    exportOpen,
-  ]);
+  }, [defaultExportFilename, exportConfig?.defaultScope, exportOpen]);
 
   function setActiveTab(next: TTab) {
     setPendingSort(null);
@@ -602,20 +589,12 @@ function TabbedDataTableCardDataControllerImpl<
     );
   }
 
+  /** The report's rows for the tab, as it answered them. */
   function exportRowsForTab(
     tab: TTab,
     rowsByTabOverride?: ReadonlyMap<TTab, readonly TRow[]>,
   ) {
-    const sourceRows = rowsByTabOverride?.has(tab)
-      ? (rowsByTabOverride.get(tab) ?? [])
-      : exportRows === "rawRows"
-        ? (rawRowsByTab[tab] ?? [])
-        : (resolvedRowsByTab[tab] ?? []);
-    return exportRows === "rawRows"
-      ? sourceRows
-      : filterRows
-        ? filterRows(sourceRows, tab)
-        : sourceRows;
+    return rowsByTabOverride?.get(tab) ?? rawRowsByTab[tab] ?? [];
   }
 
   function buildExportCsv(
@@ -663,12 +642,14 @@ function TabbedDataTableCardDataControllerImpl<
     );
   }
 
+  /**
+   * Every row of the selected tabs, for the range, filters and search: the
+   * rows already loaded, then each further page until the last.
+   */
   async function collectRowsForExport(signal: AbortSignal) {
     const selectedTabs =
       exportScope === "allTabs" ? [...tabs] : [activeTabMeta];
     const rowsByTabForExport = new Map<TTab, readonly TRow[]>();
-    let exportRowCount = 0;
-    let exportPageCount = 0;
 
     for (const tabMeta of selectedTabs) {
       const tab = tabMeta.value;
@@ -684,18 +665,7 @@ function TabbedDataTableCardDataControllerImpl<
         tabPageData?.pages.flatMap((page) => page.items) ??
         [];
       const lastPage = completedTabRows ? undefined : tabPageData?.pages.at(-1);
-      let rows =
-        exportRows === "rawRows"
-          ? [...loadedRawRows]
-          : [...normalizeRows(loadedRawRows, tab)];
-      exportRowCount += rows.length;
-      exportPageCount += tabPageData?.pages.length ?? 0;
-      if (
-        exportRowCount > MAX_EXPORT_ROWS ||
-        exportPageCount > MAX_EXPORT_PAGES
-      ) {
-        throw new Error("export_budget_exceeded");
-      }
+      const rows = [...loadedRawRows];
       let hasMore = completedTabRows
         ? false
         : tabPageData === undefined || Boolean(lastPage?.pagination.hasMore);
@@ -718,29 +688,11 @@ function TabbedDataTableCardDataControllerImpl<
           sort: effectiveSortByTab[tab],
           signal,
         });
-        exportPageCount += 1;
-        const pageRows =
-          exportRows === "rawRows"
-            ? [...page.items]
-            : normalizeRows(page.items, tab);
-        if (
-          exportPageCount > MAX_EXPORT_PAGES ||
-          exportRowCount + pageRows.length > MAX_EXPORT_ROWS
-        ) {
-          throw new Error("export_budget_exceeded");
-        }
-        rows = [...rows, ...pageRows];
-        exportRowCount += pageRows.length;
+        rows.push(...page.items);
         hasMore = page.pagination.hasMore;
         cursor = page.pagination.nextCursor;
         if (hasMore && cursor === null) {
           throw new Error("The export page did not provide a next cursor.");
-        }
-        if (hasMore && exportRowCount >= MAX_EXPORT_ROWS) {
-          throw new Error("export_budget_exceeded");
-        }
-        if (hasMore && exportPageCount >= MAX_EXPORT_PAGES) {
-          throw new Error("export_budget_exceeded");
         }
       }
 
@@ -755,7 +707,6 @@ function TabbedDataTableCardDataControllerImpl<
     const controller = new AbortController();
     exportAbortControllerRef.current = controller;
     setExporting(true);
-    setExportError(null);
     try {
       const rowsByTabForExport = await collectRowsForExport(controller.signal);
       if (countExportRows(rowsByTabForExport) === 0) return;
@@ -764,14 +715,7 @@ function TabbedDataTableCardDataControllerImpl<
       setExportOpen(false);
     } catch (error) {
       if (!(error instanceof Error && error.name === "AbortError")) {
-        if (
-          error instanceof Error &&
-          error.message === "export_budget_exceeded"
-        ) {
-          setExportError(exportLabels.budgetExceeded);
-        } else {
-          console.error("Failed to export table data", error);
-        }
+        console.error("Failed to export table data", error);
       }
     } finally {
       if (exportAbortControllerRef.current === controller) {
@@ -923,32 +867,6 @@ function TabbedDataTableCardDataControllerImpl<
             <div className="grid gap-2">
               <label
                 className="text-xs font-medium"
-                htmlFor="table-export-rows"
-              >
-                {exportLabels.rowsLabel}
-              </label>
-              <Select
-                value={exportRows}
-                onValueChange={(value) =>
-                  setExportRows(value as TabbedDataTableExportRows)
-                }
-              >
-                <SelectTrigger id="table-export-rows" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="currentView">
-                    {exportLabels.currentView}
-                  </SelectItem>
-                  <SelectItem value="rawRows">
-                    {exportLabels.rawRows}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <label
-                className="text-xs font-medium"
                 htmlFor="table-export-name"
               >
                 {exportLabels.fileNameLabel}
@@ -962,11 +880,6 @@ function TabbedDataTableCardDataControllerImpl<
             {exportRowCount === 0 && !exportCanLoadRows ? (
               <p className="text-xs text-muted-foreground">
                 {exportLabels.empty}
-              </p>
-            ) : null}
-            {exportError ? (
-              <p className="text-xs text-destructive" role="alert">
-                {exportError}
               </p>
             ) : null}
           </div>

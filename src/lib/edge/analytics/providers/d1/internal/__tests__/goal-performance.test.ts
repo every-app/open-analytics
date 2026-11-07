@@ -4,7 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
 
 import { D1_MAX_BOUND_PARAMETERS, D1_MAX_SQL_UTF8_BYTES } from "@/lib/db";
-import { GOAL_TIMESERIES_MAX_BUCKETS } from "@/lib/edge/analytics/application/goal-cost";
+import { GOAL_TIMESERIES_MAX_BUCKETS } from "@/lib/edge/analytics/application/goal-buckets";
 import {
   analyticsFilterRegistry,
   type FilterDocument,

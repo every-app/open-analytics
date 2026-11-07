@@ -22,9 +22,5 @@ const logApplicationError: AnalyticsApplicationErrorHandler = (
 export function createAnalyticsQueryApplicationService(
   cache?: OperationResultCache,
 ): TypedQueryApplicationService {
-  return new TypedQueryApplicationService(
-    cache,
-    undefined,
-    logApplicationError,
-  );
+  return new TypedQueryApplicationService(cache, logApplicationError);
 }

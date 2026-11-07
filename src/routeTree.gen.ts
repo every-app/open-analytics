@@ -21,10 +21,8 @@ import { Route as AppSettingsNotificationsRouteImport } from './routes/_app.sett
 import { Route as AppSettingsSystemRouteImport } from './routes/_app.settings.system'
 import { Route as AppSitesSiteSlugRouteImport } from './routes/_app.sites.$siteSlug'
 import { Route as ShareSlugIndexRouteImport } from './routes/share.$slug.index'
-import { Route as ShareSlugPagesRouteImport } from './routes/share.$slug.pages'
 import { Route as AppSitesSiteSlugIndexRouteImport } from './routes/_app.sites.$siteSlug.index'
 import { Route as AppSitesSiteSlugFunnelsRouteImport } from './routes/_app.sites.$siteSlug.funnels'
-import { Route as AppSitesSiteSlugPagesRouteImport } from './routes/_app.sites.$siteSlug.pages'
 import { Route as AppSitesSiteSlugRealtimeRouteImport } from './routes/_app.sites.$siteSlug.realtime'
 import { Route as AppSitesSiteSlugSettingsRouteImport } from './routes/_app.sites.$siteSlug.settings'
 
@@ -88,11 +86,6 @@ const ShareSlugIndexRoute = ShareSlugIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ShareSlugRoute,
 } as any)
-const ShareSlugPagesRoute = ShareSlugPagesRouteImport.update({
-  id: '/pages',
-  path: '/pages',
-  getParentRoute: () => ShareSlugRoute,
-} as any)
 const AppSitesSiteSlugIndexRoute = AppSitesSiteSlugIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -101,11 +94,6 @@ const AppSitesSiteSlugIndexRoute = AppSitesSiteSlugIndexRouteImport.update({
 const AppSitesSiteSlugFunnelsRoute = AppSitesSiteSlugFunnelsRouteImport.update({
   id: '/funnels',
   path: '/funnels',
-  getParentRoute: () => AppSitesSiteSlugRoute,
-} as any)
-const AppSitesSiteSlugPagesRoute = AppSitesSiteSlugPagesRouteImport.update({
-  id: '/pages',
-  path: '/pages',
   getParentRoute: () => AppSitesSiteSlugRoute,
 } as any)
 const AppSitesSiteSlugRealtimeRoute =
@@ -131,11 +119,9 @@ export interface FileRoutesByFullPath {
   '/settings/notifications': typeof AppSettingsNotificationsRoute
   '/settings/system': typeof AppSettingsSystemRoute
   '/sites/$siteSlug': typeof AppSitesSiteSlugRouteWithChildren
-  '/share/$slug/pages': typeof ShareSlugPagesRoute
   '/settings/': typeof AppSettingsIndexRoute
   '/share/$slug/': typeof ShareSlugIndexRoute
   '/sites/$siteSlug/funnels': typeof AppSitesSiteSlugFunnelsRoute
-  '/sites/$siteSlug/pages': typeof AppSitesSiteSlugPagesRoute
   '/sites/$siteSlug/realtime': typeof AppSitesSiteSlugRealtimeRoute
   '/sites/$siteSlug/settings': typeof AppSitesSiteSlugSettingsRoute
   '/sites/$siteSlug/': typeof AppSitesSiteSlugIndexRoute
@@ -147,11 +133,9 @@ export interface FileRoutesByTo {
   '/settings/account': typeof AppSettingsAccountRoute
   '/settings/notifications': typeof AppSettingsNotificationsRoute
   '/settings/system': typeof AppSettingsSystemRoute
-  '/share/$slug/pages': typeof ShareSlugPagesRoute
   '/settings': typeof AppSettingsIndexRoute
   '/share/$slug': typeof ShareSlugIndexRoute
   '/sites/$siteSlug/funnels': typeof AppSitesSiteSlugFunnelsRoute
-  '/sites/$siteSlug/pages': typeof AppSitesSiteSlugPagesRoute
   '/sites/$siteSlug/realtime': typeof AppSitesSiteSlugRealtimeRoute
   '/sites/$siteSlug/settings': typeof AppSitesSiteSlugSettingsRoute
   '/sites/$siteSlug': typeof AppSitesSiteSlugIndexRoute
@@ -168,11 +152,9 @@ export interface FileRoutesById {
   '/_app/settings/notifications': typeof AppSettingsNotificationsRoute
   '/_app/settings/system': typeof AppSettingsSystemRoute
   '/_app/sites/$siteSlug': typeof AppSitesSiteSlugRouteWithChildren
-  '/share/$slug/pages': typeof ShareSlugPagesRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
   '/share/$slug/': typeof ShareSlugIndexRoute
   '/_app/sites/$siteSlug/funnels': typeof AppSitesSiteSlugFunnelsRoute
-  '/_app/sites/$siteSlug/pages': typeof AppSitesSiteSlugPagesRoute
   '/_app/sites/$siteSlug/realtime': typeof AppSitesSiteSlugRealtimeRoute
   '/_app/sites/$siteSlug/settings': typeof AppSitesSiteSlugSettingsRoute
   '/_app/sites/$siteSlug/': typeof AppSitesSiteSlugIndexRoute
@@ -189,11 +171,9 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/settings/system'
     | '/sites/$siteSlug'
-    | '/share/$slug/pages'
     | '/settings/'
     | '/share/$slug/'
     | '/sites/$siteSlug/funnels'
-    | '/sites/$siteSlug/pages'
     | '/sites/$siteSlug/realtime'
     | '/sites/$siteSlug/settings'
     | '/sites/$siteSlug/'
@@ -205,11 +185,9 @@ export interface FileRouteTypes {
     | '/settings/account'
     | '/settings/notifications'
     | '/settings/system'
-    | '/share/$slug/pages'
     | '/settings'
     | '/share/$slug'
     | '/sites/$siteSlug/funnels'
-    | '/sites/$siteSlug/pages'
     | '/sites/$siteSlug/realtime'
     | '/sites/$siteSlug/settings'
     | '/sites/$siteSlug'
@@ -225,11 +203,9 @@ export interface FileRouteTypes {
     | '/_app/settings/notifications'
     | '/_app/settings/system'
     | '/_app/sites/$siteSlug'
-    | '/share/$slug/pages'
     | '/_app/settings/'
     | '/share/$slug/'
     | '/_app/sites/$siteSlug/funnels'
-    | '/_app/sites/$siteSlug/pages'
     | '/_app/sites/$siteSlug/realtime'
     | '/_app/sites/$siteSlug/settings'
     | '/_app/sites/$siteSlug/'
@@ -327,13 +303,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShareSlugIndexRouteImport
       parentRoute: typeof ShareSlugRoute
     }
-    '/share/$slug/pages': {
-      id: '/share/$slug/pages'
-      path: '/pages'
-      fullPath: '/share/$slug/pages'
-      preLoaderRoute: typeof ShareSlugPagesRouteImport
-      parentRoute: typeof ShareSlugRoute
-    }
     '/_app/sites/$siteSlug/': {
       id: '/_app/sites/$siteSlug/'
       path: '/'
@@ -346,13 +315,6 @@ declare module '@tanstack/react-router' {
       path: '/funnels'
       fullPath: '/sites/$siteSlug/funnels'
       preLoaderRoute: typeof AppSitesSiteSlugFunnelsRouteImport
-      parentRoute: typeof AppSitesSiteSlugRoute
-    }
-    '/_app/sites/$siteSlug/pages': {
-      id: '/_app/sites/$siteSlug/pages'
-      path: '/pages'
-      fullPath: '/sites/$siteSlug/pages'
-      preLoaderRoute: typeof AppSitesSiteSlugPagesRouteImport
       parentRoute: typeof AppSitesSiteSlugRoute
     }
     '/_app/sites/$siteSlug/realtime': {
@@ -392,7 +354,6 @@ const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
 
 interface AppSitesSiteSlugRouteChildren {
   AppSitesSiteSlugFunnelsRoute: typeof AppSitesSiteSlugFunnelsRoute
-  AppSitesSiteSlugPagesRoute: typeof AppSitesSiteSlugPagesRoute
   AppSitesSiteSlugRealtimeRoute: typeof AppSitesSiteSlugRealtimeRoute
   AppSitesSiteSlugSettingsRoute: typeof AppSitesSiteSlugSettingsRoute
   AppSitesSiteSlugIndexRoute: typeof AppSitesSiteSlugIndexRoute
@@ -400,7 +361,6 @@ interface AppSitesSiteSlugRouteChildren {
 
 const AppSitesSiteSlugRouteChildren: AppSitesSiteSlugRouteChildren = {
   AppSitesSiteSlugFunnelsRoute: AppSitesSiteSlugFunnelsRoute,
-  AppSitesSiteSlugPagesRoute: AppSitesSiteSlugPagesRoute,
   AppSitesSiteSlugRealtimeRoute: AppSitesSiteSlugRealtimeRoute,
   AppSitesSiteSlugSettingsRoute: AppSitesSiteSlugSettingsRoute,
   AppSitesSiteSlugIndexRoute: AppSitesSiteSlugIndexRoute,
@@ -426,12 +386,10 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface ShareSlugRouteChildren {
-  ShareSlugPagesRoute: typeof ShareSlugPagesRoute
   ShareSlugIndexRoute: typeof ShareSlugIndexRoute
 }
 
 const ShareSlugRouteChildren: ShareSlugRouteChildren = {
-  ShareSlugPagesRoute: ShareSlugPagesRoute,
   ShareSlugIndexRoute: ShareSlugIndexRoute,
 }
 

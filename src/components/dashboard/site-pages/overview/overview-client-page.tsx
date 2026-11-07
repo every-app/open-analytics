@@ -1,131 +1,66 @@
-import { useCallback, useMemo } from "react";
-import { PageHeading } from "@insightflare/ui/page-heading";
+import { useMemo } from "react";
 
-import { OverviewGeoPointsMapCard } from "@/components/dashboard/geo/overview-geo-points-map-card";
 import { useDashboardQuery } from "@/components/dashboard/shell/dashboard-query-provider";
-import {
-  replaceUrlWithoutNavigation,
-  useLiveSearchParams,
-} from "@/lib/dashboard/client/history";
-import {
-  dashboardFilterValue,
-  serializeDashboardSearchParams,
-  setDashboardFilterValue,
-  withDashboardFilterSearchParams,
-} from "@/lib/dashboard/filter-state";
 import { resolveFilterScope } from "@/lib/edge/analytics/contract/scoped-filter";
 import { attachFilterScopePreference } from "@/lib/filter-contract";
-import { usePathname } from "@/lib/router";
 
-import { OverviewMetricsSection, OverviewTrendSection } from "./metrics";
-import {
-  extractGeoCountryCodeFromFilterValue,
-  parseOverviewCardFilters,
-} from "./overview-filter-model";
-import { OverviewPagesSection } from "./pages-section";
+import { GoalConversionsCard } from "./goal-conversions-card";
+import { OverviewMetricsSection } from "./metrics";
+import { OverviewReportCards } from "./report-cards";
 import { type OverviewClientPageProps } from "./types";
+
+/**
+ * The site's one dashboard, as in Plausible: the top stats and the graph of
+ * the picked one, then the Sources, Pages, Locations and Devices cards, then
+ * the goals' conversions.
+ */
 export function OverviewClientPage({
   locale,
   messages,
   siteId,
   siteDomain,
-  pathname,
-  showSourceLinkTab,
+  goalsPath,
 }: OverviewClientPageProps) {
-  const searchParams = useLiveSearchParams();
-  const livePathname = usePathname() || pathname;
-  const { window, scopePreference } = useDashboardQuery();
-  const resolvedScope = useMemo(
-    () => resolveFilterScope("overview", scopePreference),
-    [scopePreference],
-  );
-  const searchParamsKey = searchParams.toString();
+  const { window, filters, scopePreference } = useDashboardQuery();
+  const resolvedScope = resolveFilterScope("overview", scopePreference);
+  // Auto scope is resolved once for the dashboard and passed to every
+  // request; the address stays Auto.
   const requestFilters = useMemo(
-    () => parseOverviewCardFilters(new URLSearchParams(searchParamsKey)),
-    [searchParamsKey],
-  );
-  // Overview's Auto scope is resolved once by the parent operation (event)
-  // and passed to every dashboard child request. The URL remains Auto.
-  const resolvedRequestFilters = useMemo(
     () =>
       resolvedScope
-        ? attachFilterScopePreference(requestFilters, resolvedScope)
-        : requestFilters,
-    [requestFilters, resolvedScope],
-  );
-  const selectedGeoValue = dashboardFilterValue(requestFilters, "geo") ?? null;
-  const selectedGeoCountry = useMemo(() => {
-    return extractGeoCountryCodeFromFilterValue(selectedGeoValue);
-  }, [selectedGeoValue]);
-  const handleMapCountrySelect = useCallback(
-    (countryCode: string | null) => {
-      const normalizedCurrent = String(selectedGeoCountry ?? "")
-        .trim()
-        .toUpperCase();
-      const normalizedNext = String(countryCode ?? "")
-        .trim()
-        .toUpperCase();
-      const nextCountry =
-        normalizedNext.length > 0 && normalizedNext !== normalizedCurrent
-          ? normalizedNext
-          : undefined;
-      const nextDocument = setDashboardFilterValue(
-        requestFilters,
-        "geo",
-        nextCountry,
-      );
-      const params = withDashboardFilterSearchParams(
-        searchParams,
-        nextDocument,
-      );
-      const nextQuery = serializeDashboardSearchParams(params);
-      const target = nextQuery ? `${livePathname}?${nextQuery}` : livePathname;
-      const current = serializeDashboardSearchParams(searchParams);
-      if (nextQuery !== current) {
-        replaceUrlWithoutNavigation(target);
-      }
-    },
-    [livePathname, requestFilters, searchParams, selectedGeoCountry],
+        ? attachFilterScopePreference(filters, resolvedScope)
+        : filters,
+    [filters, resolvedScope],
   );
 
   return (
     <div className="space-y-6">
-      <PageHeading title={messages.navigation.overview} />
       <OverviewMetricsSection
         locale={locale}
         messages={messages}
         siteId={siteId}
         window={window}
-        filters={resolvedRequestFilters}
+        filters={requestFilters}
       />
-      <OverviewTrendSection
-        locale={locale}
-        messages={messages}
-        siteId={siteId}
-        window={window}
-        filters={resolvedRequestFilters}
-      />
-      <OverviewPagesSection
+      <OverviewReportCards
         locale={locale}
         messages={messages}
         siteId={siteId}
         siteDomain={siteDomain}
-        pathname={pathname}
-        filters={resolvedRequestFilters}
-        filtered={Boolean(requestFilters.root)}
+        filters={requestFilters}
+        filtered={Boolean(filters.root)}
         resolvedScope={resolvedScope ?? undefined}
-        showSourceLinkTab={showSourceLinkTab}
       />
-      <OverviewGeoPointsMapCard
-        locale={locale}
-        messages={messages}
-        siteId={siteId}
-        window={window}
-        filters={resolvedRequestFilters}
-        resolvedScope={resolvedScope ?? undefined}
-        selectedCountryCode={selectedGeoCountry}
-        onCountrySelect={handleMapCountrySelect}
-      />
+      {goalsPath ? (
+        <GoalConversionsCard
+          locale={locale}
+          messages={messages}
+          siteId={siteId}
+          window={window}
+          filters={filters}
+          goalsPath={goalsPath}
+        />
+      ) : null}
     </div>
   );
 }

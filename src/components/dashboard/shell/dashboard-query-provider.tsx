@@ -25,6 +25,7 @@ import {
   clampIntervalForRange,
   type CustomTimeRange,
   type DashboardInterval,
+  type DataStart,
   DEFAULT_RANGE_PRESET,
   finestIntervalForRange,
   parseFilterDocumentFromSearchParams,
@@ -58,12 +59,12 @@ interface DashboardQueryContextValue {
   clearUiFilters: () => void;
   allowedIntervals: DashboardInterval[];
   timeZone: string;
-  maxRangeDays?: number;
 }
 interface DashboardQueryProviderProps {
   children: ReactNode;
   scopeKey?: string;
-  maxRangeDays?: number;
+  /** Where All time starts: the site's first page view, or the organization's. */
+  dataStart?: DataStart;
   initialWindow?: TimeWindow;
   initialFilters?: FilterDocument;
   initialScopePreference?: FilterScopePreference;
@@ -177,30 +178,10 @@ function buildInitialState(
     scopePreference,
   };
 }
-function clampCustomRangeToMaxDays(
-  range: CustomTimeRange | null,
-  maxRangeDays?: number,
-): CustomTimeRange | null {
-  if (!range || !maxRangeDays) return range;
-  const maxSpan = maxRangeDays * 24 * 60 * 60 * 1000;
-  if (range.to - range.from <= maxSpan) return range;
-  return {
-    from: Math.max(0, range.to - maxSpan),
-    to: range.to,
-  };
-}
-function clampPresetForMaxDays(
-  range: RangePreset,
-  maxRangeDays?: number,
-): RangePreset {
-  if (!maxRangeDays) return range;
-  if (range === "12m" && maxRangeDays <= 90) return "90d";
-  return range;
-}
 export function DashboardQueryProvider({
   children,
   scopeKey = "",
-  maxRangeDays,
+  dataStart,
   initialWindow,
   initialFilters,
   initialScopePreference,
@@ -249,14 +230,12 @@ export function DashboardQueryProvider({
       initialFilters ?? initialRouteQueryDocument,
     ),
   );
-  const [range, setRangeState] = useState<RangePreset>(
-    clampPresetForMaxDays(initial.range, maxRangeDays),
-  );
+  const [range, setRangeState] = useState<RangePreset>(initial.range);
   const [interval, setIntervalState] = useState<DashboardInterval>(
     initial.interval,
   );
   const [customRange, setCustomRangeState] = useState<CustomTimeRange | null>(
-    clampCustomRangeToMaxDays(initial.customRange, maxRangeDays),
+    initial.customRange,
   );
   const [uiFilters, setUiFiltersState] = useState<FilterDocument>(
     initial.uiFilters,
@@ -278,16 +257,13 @@ export function DashboardQueryProvider({
 
   const resolvedWindow = useMemo(
     () =>
-      resolveTimeWindow(
-        clampPresetForMaxDays(range, maxRangeDays),
-        Date.now(),
-        {
-          customRange: customRange || undefined,
-          interval,
-          timeZone,
-        },
-      ),
-    [range, maxRangeDays, customRange, interval, timeZone],
+      resolveTimeWindow(range, Date.now(), {
+        customRange: customRange || undefined,
+        interval,
+        timeZone,
+        dataStart,
+      }),
+    [range, customRange, interval, timeZone, dataStart],
   );
   const windowState = useMemo(() => {
     const snapshot = initialWindowRef.current;
@@ -295,14 +271,17 @@ export function DashboardQueryProvider({
       snapshot?.preset === "custom"
         ? { from: snapshot.from, to: snapshot.to }
         : null;
+    // The server starts All time at the organization's first page view, so
+    // its window stands only while it starts where this page's does.
     const isInitialSelection =
       snapshot &&
       range === snapshot.preset &&
       interval === snapshot.interval &&
       timeZone === snapshot.timeZone &&
+      (range !== "all" || snapshot.from === resolvedWindow.from) &&
       JSON.stringify(customRange) === JSON.stringify(initialCustomRange);
     return isInitialSelection ? snapshot : resolvedWindow;
-  }, [customRange, interval, range, resolvedWindow, timeZone]);
+  }, [customRange, range, interval, resolvedWindow, timeZone]);
 
   useEffect(() => {
     const clamped = clampIntervalForRange(
@@ -382,38 +361,30 @@ export function DashboardQueryProvider({
 
   const setRange = useCallback(
     (next: RangePreset) => {
-      const clampedNext = clampPresetForMaxDays(next, maxRangeDays);
       if (next === "custom" && !customRange) {
-        setRangeState(clampedNext);
+        setRangeState(next);
         return;
       }
-      const nextWindow = resolveTimeWindow(clampedNext, Date.now(), {
+      const nextWindow = resolveTimeWindow(next, Date.now(), {
         customRange: customRange || undefined,
         interval: null,
         timeZone,
+        dataStart,
       });
-      setRangeState(clampedNext);
+      setRangeState(next);
       setIntervalState(finestIntervalForRange(nextWindow.from, nextWindow.to));
     },
-    [customRange, maxRangeDays, timeZone],
+    [customRange, dataStart, timeZone],
   );
 
-  const setCustomRange = useCallback(
-    (next: CustomTimeRange | null) => {
-      const normalized = clampCustomRangeToMaxDays(
-        normalizeCustomRange(next),
-        maxRangeDays,
-      );
-      setCustomRangeState(normalized);
-      if (normalized) {
-        setRangeState("custom");
-        setIntervalState(
-          finestIntervalForRange(normalized.from, normalized.to),
-        );
-      }
-    },
-    [maxRangeDays],
-  );
+  const setCustomRange = useCallback((next: CustomTimeRange | null) => {
+    const normalized = normalizeCustomRange(next);
+    setCustomRangeState(normalized);
+    if (normalized) {
+      setRangeState("custom");
+      setIntervalState(finestIntervalForRange(normalized.from, normalized.to));
+    }
+  }, []);
 
   const setInterval = useCallback((next: DashboardInterval) => {
     setIntervalState(next);
@@ -478,7 +449,6 @@ export function DashboardQueryProvider({
       clearUiFilters,
       allowedIntervals,
       timeZone,
-      maxRangeDays,
     }),
     [
       range,
@@ -495,7 +465,6 @@ export function DashboardQueryProvider({
       clearUiFilters,
       allowedIntervals,
       timeZone,
-      maxRangeDays,
     ],
   );
 
@@ -525,7 +494,6 @@ function useDashboardQueryContext(): DashboardQueryContextValue {
       clearUiFilters: () => {},
       allowedIntervals: ["hour", "day", "week", "month"],
       timeZone: fallbackWindow.timeZone,
-      maxRangeDays: undefined,
     };
   }
   return context;

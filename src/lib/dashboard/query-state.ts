@@ -4,6 +4,7 @@ import {
   resolveReportingTimeZone,
   startOfZonedDay,
   startOfZonedMonth,
+  startOfZonedYear,
   zonedParts,
   zonedTimeToUtcMs,
 } from "@/lib/analytics/time-zone";
@@ -28,12 +29,29 @@ import {
   serializeDashboardSearchParams,
 } from "./filter-state";
 export type RangePreset =
-  "today" | "yesterday" | "7d" | "30d" | "90d" | "12m" | "custom";
+  | "today"
+  | "yesterday"
+  | "24h"
+  | "7d"
+  | "30d"
+  | "90d"
+  | "mtd"
+  | "lastMonth"
+  | "ytd"
+  | "12m"
+  | "all"
+  | "custom";
 export type DashboardInterval = "minute" | "hour" | "day" | "week" | "month";
 export interface CustomTimeRange {
   from: number;
   to: number;
 }
+/**
+ * When the data starts, for All time: the first page view's time, of the site
+ * or, on All sites, of any of the organization's sites. Null before the first
+ * page view, and undefined while not yet known: All time is then today.
+ */
+export type DataStart = number | null | undefined;
 export interface TimeWindow {
   preset: RangePreset;
   from: number;
@@ -46,10 +64,15 @@ export const DEFAULT_RANGE_PRESET: RangePreset = "30d";
 export const RANGE_PRESETS: readonly RangePreset[] = [
   "today",
   "yesterday",
+  "24h",
   "7d",
   "30d",
   "90d",
+  "mtd",
+  "lastMonth",
+  "ytd",
   "12m",
+  "all",
   "custom",
 ] as const;
 const INTERVAL_ORDER: readonly DashboardInterval[] = [
@@ -101,7 +124,8 @@ function rangeBounds(
   preset: RangePreset,
   now: number,
   timeZone: string,
-  customRange?: CustomTimeRange,
+  customRange: CustomTimeRange | undefined,
+  dataStart: DataStart,
 ): { from: number; to: number } {
   if (preset === "today") {
     return { from: startOfZonedDay(now, timeZone), to: now };
@@ -114,6 +138,9 @@ function rangeBounds(
       to: startToday,
     };
   }
+  if (preset === "24h") {
+    return { from: now - DAY_MS, to: now };
+  }
   if (preset === "7d") {
     return { from: startOfZonedDay(now, timeZone) - 7 * DAY_MS, to: now };
   }
@@ -123,9 +150,28 @@ function rangeBounds(
   if (preset === "90d") {
     return { from: startOfZonedDay(now, timeZone) - 90 * DAY_MS, to: now };
   }
+  if (preset === "mtd") {
+    return { from: startOfZonedMonth(now, timeZone), to: now };
+  }
+  if (preset === "lastMonth") {
+    const startThisMonth = startOfZonedMonth(now, timeZone);
+    return {
+      from: startOfZonedMonth(startThisMonth - 1, timeZone),
+      to: startThisMonth,
+    };
+  }
+  if (preset === "ytd") {
+    return { from: startOfZonedYear(now, timeZone), to: now };
+  }
   if (preset === "12m") {
     return {
       from: startOfZonedMonth(subtractZonedMonths(now, 12, timeZone), timeZone),
+      to: now,
+    };
+  }
+  if (preset === "all") {
+    return {
+      from: startOfZonedDay(Math.min(dataStart ?? now, now), timeZone),
       to: now,
     };
   }
@@ -135,7 +181,7 @@ function rangeBounds(
       to: Math.max(customRange.from + 1, customRange.to),
     };
   }
-  return rangeBounds(DEFAULT_RANGE_PRESET, now, timeZone);
+  return rangeBounds(DEFAULT_RANGE_PRESET, now, timeZone, undefined, dataStart);
 }
 function spanMs(from: number, to: number): number {
   return Math.max(1, to - from);
@@ -188,6 +234,7 @@ export function resolveTimeWindow(
     customRange?: CustomTimeRange;
     interval?: DashboardInterval | null;
     timeZone?: string | null;
+    dataStart?: DataStart;
   },
 ): TimeWindow {
   const preset = resolveRangePreset(range);
@@ -199,6 +246,7 @@ export function resolveTimeWindow(
       : cacheAlignedPresetNow(now),
     timeZone,
     options?.customRange,
+    options?.dataStart,
   );
   const interval = clampIntervalForRange(
     options?.interval,

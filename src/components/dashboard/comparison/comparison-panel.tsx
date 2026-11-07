@@ -30,11 +30,12 @@ import {
 import { FilterEditor } from "@/components/dashboard/filters/filter-editor";
 import { SavedFilterSelect } from "@/components/dashboard/filters/filter-panel";
 import { fetchSavedFilters } from "@/lib/dashboard/client/data/index";
+import type { DashboardComparisonMode } from "@/lib/dashboard/filter-state";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type { FilterScope } from "@/lib/filter-contract/index";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
-export type ComparisonPeriod = "same" | "previous";
+export type ComparisonPeriod = DashboardComparisonMode;
 export type ComparisonFilterMode = "current" | "custom";
 export interface ComparisonSettings {
   readonly period: ComparisonPeriod;
@@ -238,6 +239,12 @@ export function ComparisonPanel({
             value="previous"
             label={messages.dashboardHeader.comparePreviousPeriod}
             selected={period === "previous"}
+          />
+          <ComparisonOption
+            id="comparison-period-year"
+            value="year"
+            label={messages.dashboardHeader.compareYearOverYear}
+            selected={period === "year"}
           />
         </RadioGroup>
       </section>

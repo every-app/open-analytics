@@ -10,6 +10,7 @@ import {
   analyticsFilterRegistry,
   buildCalendarBucketPlan,
   ComparisonDomainError,
+  comparisonReferenceWindow,
   createQueryTime,
   createTimeRange,
   EMPTY_FILTER_DOCUMENT,
@@ -20,6 +21,7 @@ import {
   executeTrend,
   hasFilters,
   inclusiveRangeToExclusive,
+  isComparisonMode,
   normalizeFilterDocument,
   normalizeReportingTimeZone,
   previousComparableRange,
@@ -43,6 +45,27 @@ describe("query contract time helpers", () => {
       startMs: 0,
       endExclusiveMs: 1_000,
     });
+  });
+
+  it("reads the same window, the one before, or the same dates a year back", () => {
+    const window = {
+      startMs: Date.UTC(2026, 2, 1),
+      endExclusiveMs: Date.UTC(2026, 3, 1),
+      nowMs: Date.UTC(2026, 3, 1),
+      timeZone: normalizeReportingTimeZone("America/New_York"),
+    };
+    expect(comparisonReferenceWindow("same", window)).toBe(window);
+    expect(comparisonReferenceWindow("previous", window)).toMatchObject({
+      startMs: Date.UTC(2026, 2, 1) - 31 * 24 * 60 * 60 * 1000,
+      endExclusiveMs: Date.UTC(2026, 2, 1),
+    });
+    expect(comparisonReferenceWindow("year", window)).toEqual({
+      ...window,
+      startMs: Date.UTC(2025, 2, 1),
+      endExclusiveMs: Date.UTC(2025, 3, 1),
+    });
+    expect(isComparisonMode("year")).toBe(true);
+    expect(isComparisonMode("decade")).toBe(false);
   });
 
   it("creates query time only from valid captured instants", () => {

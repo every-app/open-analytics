@@ -1,23 +1,13 @@
 import type { OperationResultCache } from "@/lib/edge/analytics/application/cache";
 import { type OperationCachePolicy } from "@/lib/edge/analytics/application/cache";
-import {
-  calculateQueryCost,
-  defaultQueryCostPolicy,
-  type QueryCostInput,
-  type QueryCostPolicy,
-} from "@/lib/edge/analytics/application/cost";
 import type {
   AnalyticsResult,
   CanonicalQuery,
   CanonicalResult,
-  EntitySetExpression,
-  FilterExpression,
   FilterScope,
-  FilterTargetExpression,
   QueryInput,
   QueryOperation,
   QueryTime,
-  ScopedFilterPlan,
 } from "@/lib/edge/analytics/contract";
 import { ComparisonDomainError } from "@/lib/edge/analytics/contract/comparison";
 import { prepareScopedQuery } from "@/lib/edge/analytics/contract/scoped-filter";
@@ -34,8 +24,6 @@ export interface QueryExecutionContext {
   /** One request-scoped clock captured before provider execution. */
   readonly capturedAtMs?: number;
   readonly now?: () => number;
-  /** Optional normalized cost dimensions supplied by the DTO adapter. */
-  readonly cost?: QueryCostInput;
   /** Optional protocol-owned cache policy carried through the runtime boundary. */
   readonly cache?: {
     readonly key: string;
@@ -52,9 +40,7 @@ export interface QueryExecutionContext {
 }
 export interface AnalyticsQueryEvent {
   readonly operation: string;
-  readonly phase:
-    "start" | "success" | "cancelled" | "deadline" | "cost" | "failure";
-  readonly cost?: number;
+  readonly phase: "start" | "success" | "cancelled" | "deadline" | "failure";
   readonly requestedScope?: string;
   readonly resolvedScope?: FilterScope;
   readonly requiredSources?: readonly string[];
@@ -102,7 +88,6 @@ function executionDomainError(
 function emit(
   context: QueryExecutionContext,
   phase: AnalyticsQueryEvent["phase"],
-  cost?: number,
   query?: QueryInput,
 ): void {
   try {
@@ -110,7 +95,6 @@ function emit(
     context.onEvent?.({
       operation: context.operation ?? "unknown",
       phase,
-      ...(cost === undefined ? {} : { cost }),
       ...(plan
         ? {
             requestedScope: query?.scopePreference ?? "auto",
@@ -124,162 +108,6 @@ function emit(
     // Observability must never change query behavior.
   }
 }
-function entityExpressionComplexity(
-  expression: EntitySetExpression | null,
-): number {
-  if (!expression || expression.kind === "condition") return 1;
-  if (expression.kind === "not") {
-    return 1 + entityExpressionComplexity(expression.child);
-  }
-  return Math.max(
-    1,
-    1 +
-      expression.children.reduce(
-        (total, child) => total + entityExpressionComplexity(child),
-        0,
-      ),
-  );
-}
-function scopeAwareCostInput(
-  input: QueryCostInput | undefined,
-  query: QueryInput,
-): QueryCostInput | undefined {
-  const plan: ScopedFilterPlan | undefined = query.scopePlan;
-  const dimensions = advancedFilterCostDimensions(query.filters?.root);
-  const times: QueryTime[] = [];
-  const record = query as QueryInput & Record<string, unknown>;
-  const directTime = record.time;
-  if (directTime && typeof directTime === "object" && "range" in directTime)
-    times.push(directTime as QueryTime);
-  for (const sideName of ["current", "reference"] as const) {
-    const side = record[sideName];
-    if (
-      side &&
-      typeof side === "object" &&
-      "time" in side &&
-      (side as { time?: unknown }).time &&
-      typeof (side as { time: unknown }).time === "object"
-    )
-      times.push((side as { time: QueryTime }).time);
-  }
-  const candidateRangeMs = Math.max(
-    1,
-    ...times.map((time) => time.range.endExclusiveMs - time.range.startMs),
-  );
-  const readRangeMs = Math.max(
-    1,
-    ...times.map((time) => {
-      const range = time.readRange ?? time.range;
-      return range.endExclusiveMs - range.startMs;
-    }),
-  );
-  const base: QueryCostInput = {
-    ...(input ?? { rangeMs: candidateRangeMs }),
-    rangeMs: input?.rangeMs ?? candidateRangeMs,
-    readRangeMs,
-    expressionDepth: Math.max(input?.expressionDepth ?? 1, dimensions.depth),
-    relationStepCount: Math.max(
-      input?.relationStepCount ?? 1,
-      dimensions.relationSteps,
-    ),
-    relationMatchScale: Math.max(
-      input?.relationMatchScale ?? 1,
-      dimensions.matchScale,
-    ),
-    filterComplexity: Math.max(input?.filterComplexity ?? 1, dimensions.nodes),
-    sideCount: Math.max(input?.sideCount ?? 1, times.length || 1),
-  };
-  if (!plan) return base;
-  return {
-    ...base,
-    scope: plan.scope,
-    requiredSourceCount: Math.max(1, plan.requiredSources.size),
-    entityAlgebraComplexity:
-      plan.membership.kind === "entity"
-        ? entityExpressionComplexity(plan.membership.expression)
-        : 1,
-    eventPayloadComplexity: plan.requiredSources.has("payload") ? 2 : 1,
-    requiresRawSource: plan.requiresRawSource,
-  };
-}
-
-function advancedFilterCostDimensions(
-  expression: FilterExpression | null | undefined,
-) {
-  const result = { depth: 1, nodes: 0, relationSteps: 1, matchScale: 1 };
-  const targetVisit = (target: FilterTargetExpression, depth: number): void => {
-    result.depth = Math.max(result.depth, depth);
-    result.nodes += 1;
-    switch (target.kind) {
-      case "context-intrinsic":
-        if (target.intrinsic === "same") targetVisit(target.input, depth + 1);
-        break;
-      case "occurrence-time":
-        targetVisit(target.input, depth + 1);
-        break;
-      case "member":
-        targetVisit(target.object, depth + 1);
-        break;
-      case "selector":
-        targetVisit(target.collection, depth + 1);
-        expressionVisit(target.predicate, depth + 1);
-        break;
-      case "projection":
-        targetVisit(target.collection, depth + 1);
-        break;
-      case "reducer":
-        targetVisit(target.input, depth + 1);
-        break;
-      case "arithmetic":
-        targetVisit(target.left, depth + 1);
-        targetVisit(target.right, depth + 1);
-        break;
-      case "bucket":
-        targetVisit(target.input, depth + 1);
-        break;
-      case "window":
-        targetVisit(target.collection, depth + 1);
-        targetVisit(target.anchor, depth + 1);
-        break;
-      case "periods":
-        targetVisit(target.collection, depth + 1);
-        break;
-      case "sequence":
-        result.relationSteps += target.steps.length;
-        result.matchScale = Math.min(
-          1_000_000,
-          result.matchScale *
-            Math.max(1, target.steps.length - 1) ** target.steps.length,
-        );
-        target.steps.forEach((step) => targetVisit(step, depth + 1));
-        break;
-      case "adjacent":
-        targetVisit(target.sequence, depth + 1);
-        break;
-      case "without":
-        targetVisit(target.sequence, depth + 1);
-        targetVisit(target.excluded, depth + 1);
-        break;
-    }
-  };
-  const expressionVisit = (item: FilterExpression, depth: number): void => {
-    result.depth = Math.max(result.depth, depth);
-    result.nodes += 1;
-    if (item.kind === "condition") {
-      targetVisit(item.target, depth + 1);
-      if (
-        item.value &&
-        typeof item.value === "object" &&
-        !Array.isArray(item.value) &&
-        "kind" in item.value
-      )
-        targetVisit(item.value as FilterTargetExpression, depth + 1);
-    } else if (item.kind === "not") expressionVisit(item.child, depth + 1);
-    else item.children.forEach((child) => expressionVisit(child, depth + 1));
-  };
-  if (expression) expressionVisit(expression, 1);
-  return result;
-}
 class UncacheableResult extends Error {
   constructor(readonly value: unknown) {
     super("analytics result must not enter cache");
@@ -288,23 +116,8 @@ class UncacheableResult extends Error {
 export class TypedQueryApplicationService {
   constructor(
     private readonly cache?: OperationResultCache,
-    private readonly costPolicy: QueryCostPolicy = defaultQueryCostPolicy,
     private readonly onApplicationError?: AnalyticsApplicationErrorHandler,
   ) {}
-
-  private costError(costInput: QueryCostInput | undefined): {
-    readonly ok: false;
-    readonly error: {
-      readonly kind: "query-cost-exceeded";
-      readonly cost: number;
-    };
-  } | null {
-    if (!costInput) return null;
-    const cost = calculateQueryCost(costInput, this.costPolicy);
-    return cost >= this.costPolicy.maxCost
-      ? { ok: false, error: { kind: "query-cost-exceeded", cost } }
-      : null;
-  }
 
   private async executeTypedQuery<Operation extends QueryOperation>(
     invocation: TypedQueryOperationInvocation<Operation>,
@@ -371,20 +184,6 @@ export class TypedQueryApplicationService {
     if (validationError) {
       emit(executionContext, "failure");
       return { ok: false, error: validationError };
-    }
-
-    const costInput = scopeAwareCostInput(executionContext.cost, preparedQuery);
-    const costError = this.costError(costInput);
-    if (costError) {
-      emit(
-        executionContext,
-        "cost",
-        costError.error.kind === "query-cost-exceeded"
-          ? costError.error.cost
-          : undefined,
-        preparedQuery,
-      );
-      return costError;
     }
 
     try {
@@ -454,7 +253,7 @@ export class TypedQueryApplicationService {
         );
         return after;
       }
-      emit(executionContext, "success", undefined, preparedQuery);
+      emit(executionContext, "success", preparedQuery);
       return {
         ok: true,
         data: result.value,

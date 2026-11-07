@@ -1,13 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
-  decodeHashLabel,
-  decodeQueryLabel,
-  emptyOverviewClientDimensionTabsData,
-  emptyOverviewGeoDimensionTabsData,
-  emptyOverviewGeoPointsData,
   fetchEventTypeFieldValues,
-  fetchEventTypesTab,
   fetchFilterValues,
   fetchFunnelDetail,
   fetchFunnels,
@@ -17,11 +11,8 @@ import {
   fetchOverviewGeoPoints,
   fetchOverviewPageCardTab,
   fetchOverviewSourceCardTab,
-  fetchPageCardTabs,
-  fetchPageHashTab,
   fetchPages,
   fetchPagesDashboard,
-  fetchPagesShareTrend,
   fetchReferrers,
   fetchTrend,
   fetchUtmDimension,
@@ -132,39 +123,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
       expect(normalizeOverviewRows(undefined)).toEqual([]);
       expect(normalizeOverviewRows(null as any)).toEqual([]);
       expect(normalizeOverviewRows({} as any)).toEqual([]);
-    });
-  });
-
-  describe("decodeHashLabel & decodeQueryLabel", () => {
-    it("should parse simple hashes and queries adding prefixes if missing", () => {
-      expect(decodeHashLabel("pricing")).toBe("#pricing");
-      expect(decodeHashLabel("#pricing")).toBe("#pricing");
-
-      expect(decodeQueryLabel("ref=google")).toBe("?ref=google");
-      expect(decodeQueryLabel("?ref=google")).toBe("?ref=google");
-    });
-
-    it("should decode encoded URL fragments correctly", () => {
-      // %E4%B8%AD%E6%96%87 is "中文"
-      expect(decodeHashLabel("%E4%B8%AD%E6%96%87")).toBe("#中文");
-      expect(decodeQueryLabel("q=%E4%B8%AD%E6%96%87")).toBe("?q=中文");
-    });
-
-    it("should gracefully handle malformed URL encoding without crashing", () => {
-      const malformed = "%E0%A%AB"; // Invalid URI sequence
-      expect(decodeHashLabel(malformed)).toBe(`#${malformed}`);
-      expect(decodeQueryLabel(malformed)).toBe(`?${malformed}`);
-    });
-
-    it("should return empty string for empty inputs", () => {
-      expect(decodeHashLabel("")).toBe("");
-      expect(decodeHashLabel("   ")).toBe("");
-      expect(decodeQueryLabel(null as any)).toBe("");
-    });
-
-    it("should return empty string for bare hash and query prefixes", () => {
-      expect(decodeHashLabel("#")).toBe("");
-      expect(decodeQueryLabel("?")).toBe("");
     });
   });
 
@@ -293,11 +251,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
         "string",
       );
       expect(emptyEvtField.data.items).toHaveLength(0);
-
-      // Call exported empty objects
-      expect(emptyOverviewClientDimensionTabsData()).toBeDefined();
-      expect(emptyOverviewGeoDimensionTabsData()).toBeDefined();
-      expect(emptyOverviewGeoPointsData()).toBeDefined();
     });
   });
 
@@ -469,37 +422,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
       );
     });
 
-    it("forwards query cancellation signals for share trend data sources", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockImplementation((url: string) =>
-          Promise.resolve(
-            freshJsonResponse(
-              url.includes("/api/private/pages-dashboard") ||
-                url.includes("/api/private/event-types")
-                ? { ok: true, data: emptyPaginatedCollection }
-                : { ok: true, data: [] },
-            ),
-          ),
-        );
-      globalThis.fetch = fetchMock as any;
-      const controller = new AbortController();
-      const options = { limit: 5, signal: controller.signal };
-
-      await Promise.all([
-        fetchEventTypesTab("signal-event-types", mockWindow, undefined, {
-          limit: 100,
-          signal: controller.signal,
-        }),
-        fetchPagesShareTrend("signal-pages", mockWindow, undefined, options),
-      ]);
-
-      expect(fetchMock).toHaveBeenCalledTimes(3);
-      for (const [, init] of fetchMock.mock.calls) {
-        expect((init as RequestInit).signal).toBe(controller.signal);
-      }
-    });
-
     it("should propagate non-OK HTTP responses as thrown errors", async () => {
       globalThis.fetch = vi
         .fn()
@@ -600,11 +522,10 @@ describe("Dashboard Client Data Processing Utilities", () => {
       expect(params.get("limit")).toBe("12");
 
       await fetchOverviewGeoPoints("option-geo-points", mockWindow, undefined, {
-        limit: 25,
         applyGeoFilter: true,
       });
       params = paramsFromCall(fetchMock, 1);
-      expect(params.get("limit")).toBe("25");
+      expect(params.has("limit")).toBe(false);
       expect(params.get("applyGeoFilter")).toBe("1");
 
       await fetchPagesDashboard(
@@ -831,7 +752,7 @@ describe("Dashboard Client Data Processing Utilities", () => {
       await fetchOverviewPageCardTab(
         "page-tab-signal",
         mockWindow,
-        "title",
+        "entry",
         undefined,
         { signal: controller.signal },
       );
@@ -850,7 +771,7 @@ describe("Dashboard Client Data Processing Utilities", () => {
         fetchOverviewPageCardTab(
           "page-tab-aborted",
           mockWindow,
-          "title",
+          "entry",
           undefined,
           { signal: controller.signal },
         ),
@@ -893,55 +814,41 @@ describe("Dashboard Client Data Processing Utilities", () => {
           },
         },
       });
+    });
 
-      const shareTrend = await fetchPagesShareTrend(
-        "fallback-share-trend",
-        mockWindow,
-        undefined,
-        { limit: 0 },
-      );
-      expect(shareTrend).toMatchObject({
-        ok: true,
-        interval: "hour",
-        series: [],
-        data: [],
-      });
+    // A failed request fails the dashboard's reads, so their cards say
+    // "Couldn't load" instead of drawing zeros.
+    it("rejects when a dashboard report request fails", async () => {
+      globalThis.fetch = vi
+        .fn()
+        .mockImplementation(() =>
+          Promise.resolve(new Response("D1 DB is overloaded", { status: 500 })),
+        );
 
       await expect(
-        fetchOverviewGeoPoints("fallback-geo-points", mockWindow),
-      ).resolves.toEqual({
-        ok: true,
-        data: [],
-        countryCounts: [],
-        regionCounts: [],
-        cityCounts: [],
-      });
+        fetchOverviewGeoPoints("failed-geo-points", mockWindow),
+      ).rejects.toThrow("Request failed (500");
       await expect(
-        fetchOverviewPageCardTab("fallback-page-tab", mockWindow, "path"),
-      ).resolves.toEqual(emptyPaginatedCollection);
+        fetchOverviewPageCardTab("failed-page-tab", mockWindow, "path"),
+      ).rejects.toThrow("Request failed (500");
       await expect(
-        fetchPageHashTab("fallback-hash", mockWindow),
-      ).resolves.toEqual(emptyPaginatedCollection);
-      await expect(
-        fetchOverviewSourceCardTab("fallback-source", mockWindow, "link"),
-      ).resolves.toEqual(emptyPaginatedCollection);
-      await expect(
-        fetchEventTypesTab("fallback-types", mockWindow),
-      ).resolves.toEqual(emptyPaginatedCollection);
+        fetchOverviewSourceCardTab("failed-source", mockWindow, "channel"),
+      ).rejects.toThrow("Request failed (500");
       await expect(
         fetchOverviewClientDimensionTab(
-          "fallback-client-tab",
+          "failed-client-tab",
           mockWindow,
-          "language",
+          "browser",
         ),
-      ).resolves.toEqual(emptyPaginatedCollection);
+      ).rejects.toThrow("Request failed (500");
       await expect(
         fetchOverviewGeoDimensionTabPage(
-          "fallback-geo-tab",
+          "failed-geo-tab",
           mockWindow,
           "country",
-        ).then((page) => page.items),
-      ).resolves.toEqual([]);
+        ),
+      ).rejects.toThrow("Request failed (500");
+      // Filter suggestions are a convenience of the editor: none on failure.
       await expect(
         fetchFilterValues("fallback-filter-options", mockWindow, "geo.country"),
       ).resolves.toEqual(emptyPaginatedCollection);
@@ -1157,104 +1064,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
           "country",
         ).then((page) => page.items),
       ).rejects.toThrow("pagination_contract_violation");
-    });
-
-    it("should fall back to empty page card tabs when tabs are omitted", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(freshJsonResponse({ ok: true, data: [] }));
-      globalThis.fetch = fetchMock as any;
-
-      await expect(
-        fetchPageCardTabs("page-card-no-tabs", mockWindow),
-      ).resolves.toEqual({
-        path: [],
-        title: [],
-        hostname: [],
-        entry: [],
-        exit: [],
-      });
-    });
-
-    it("should build page share trend without other series when top pages cover totals", async () => {
-      const fetchMock = vi.fn().mockImplementation((url: string) => {
-        if (url.includes("/api/private/pages-dashboard")) {
-          return Promise.resolve(
-            freshJsonResponse({
-              ok: true,
-              interval: "hour",
-              data: {
-                items: [
-                  {
-                    pathname: "/docs",
-                    metrics: { views: 8, sessions: 2 },
-                    trend: [{ timestampMs: 2000, views: 8 }, { views: null }],
-                  },
-                  {
-                    pathname: "/blog",
-                    metrics: { views: 3, sessions: 1 },
-                    trend: [{ timestampMs: 1000, views: 3 }],
-                  },
-                ],
-                pagination: {
-                  limit: 12,
-                  returned: 2,
-                  hasMore: false,
-                  nextCursor: null,
-                },
-              },
-            }),
-          );
-        }
-        return Promise.resolve(
-          freshJsonResponse({
-            ok: true,
-            interval: "hour",
-            data: [
-              { timestampMs: 1000, views: 2 },
-              { timestampMs: 2000, views: 5 },
-              { timestampMs: 0, views: 0 },
-            ],
-          }),
-        );
-      });
-      globalThis.fetch = fetchMock as any;
-
-      const trend = await fetchPagesShareTrend(
-        "share-no-other",
-        mockWindow,
-        undefined,
-        { limit: 20 },
-      );
-
-      expect(paramsFromCall(fetchMock, 0).get("limit")).toBe("12");
-      expect(trend.series).toEqual([
-        {
-          key: "page_0",
-          label: "/docs",
-          views: 8,
-          visitors: 8,
-          sessions: 2,
-        },
-        {
-          key: "page_1",
-          label: "/blog",
-          views: 3,
-          visitors: 3,
-          sessions: 1,
-        },
-      ]);
-      expect(trend.data.map((point) => point.timestampMs)).toEqual([
-        0, 1000, 2000,
-      ]);
-      expect(trend.data[0]).toMatchObject({
-        totalVisitors: 0,
-        visitorsBySeries: { page_0: 0 },
-      });
-      expect(trend.data[2]).toMatchObject({
-        totalVisitors: 8,
-        visitorsBySeries: { page_0: 8 },
-      });
     });
 
     it("should return empty field values when the field path is nullish", async () => {

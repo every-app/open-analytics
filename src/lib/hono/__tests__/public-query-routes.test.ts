@@ -38,7 +38,7 @@ vi.mock("@/lib/edge/auth/site-access", async (importOriginal) => {
   };
 });
 vi.mock("@/lib/edge/admin/setup/get-started", () => ({
-  readSiteHasData: vi.fn().mockResolvedValue(true),
+  readSiteFirstDataAt: vi.fn().mockResolvedValue(1_700_000_000_000),
 }));
 vi.mock("@/lib/edge/analytics/interfaces/dashboard/protocol/overview", () => ({
   handleOverviewContract: vi.fn(),
@@ -89,7 +89,12 @@ describe("Hono public query routes", () => {
 
     expect(body).toMatchObject({
       ok: true,
-      data: { slug: "demo", id: "site-1", hasData: true },
+      data: {
+        slug: "demo",
+        id: "site-1",
+        hasData: true,
+        firstDataAt: 1_700_000_000_000,
+      },
     });
     expect(fetchPublicSite).toHaveBeenCalledWith(
       env,

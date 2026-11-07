@@ -255,12 +255,30 @@ describe("dashboard query preferences", () => {
       customRange: null,
     });
     expect(
-      resolveDashboardInitialWindow(cookie, Date.UTC(2026, 0, 10)),
+      resolveDashboardInitialWindow(cookie, null, Date.UTC(2026, 0, 10)),
     ).toMatchObject({
       preset: "7d",
       interval: "day",
       timeZone: "Asia/Tokyo",
     });
+  });
+
+  it("starts a saved All time at the data's first page view, however long ago", () => {
+    const cookie =
+      "insightflare-dashboard-query=%7B%22range%22%3A%22all%22%2C%22interval%22%3A%22month%22%2C%22customRange%22%3Anull%7D";
+    const now = Date.UTC(2026, 10, 7, 12);
+    const window = resolveDashboardInitialWindow(
+      cookie,
+      Date.UTC(2019, 2, 14, 9, 30),
+      now,
+    );
+    expect(window).toMatchObject({
+      preset: "all",
+      from: Date.UTC(2019, 2, 14),
+      interval: "month",
+      timeZone: "UTC",
+    });
+    expect(window.to).toBeGreaterThanOrEqual(now);
   });
 
   it("falls back safely for absent, malformed, and invalid preference cookies", () => {

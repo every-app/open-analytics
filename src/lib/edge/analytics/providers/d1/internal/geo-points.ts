@@ -25,7 +25,6 @@ export async function queryGeoPointsFromD1(
   siteId: string,
   window: QueryWindow,
   filters: FilterDocument,
-  limit: number,
   diagnostics?: D1ReadDiagnostics,
 ): Promise<GeoPointAggregate> {
   const scopedDataset = scopedDatasetFor(siteId, window, filters);
@@ -89,7 +88,6 @@ SELECT
   point_count AS pointCount
 FROM filtered_visits
 ORDER BY timestampMs DESC
-LIMIT ?
 `;
   const points = (
     await queryD1All<Record<string, unknown>>(
@@ -102,7 +100,6 @@ LIMIT ?
               ...visitSourceBindings(siteId, window),
               ...(filter?.bindings ?? []),
             ]),
-        limit,
       ],
       diagnostics,
     )
@@ -132,7 +129,6 @@ SELECT
 FROM filtered_visits
 GROUP BY country
 ORDER BY views DESC, sessions DESC, country ASC
-LIMIT 300
 `;
     countryCounts.push(
       ...(
@@ -184,7 +180,6 @@ WHERE
   )
 GROUP BY country, regionCode, region
 ORDER BY views DESC, sessions DESC, region ASC, regionCode ASC
-LIMIT 400
 `;
     regionCounts.push(
       ...(
@@ -253,7 +248,6 @@ WHERE
   AND TRIM(COALESCE(city, '')) != ''
 GROUP BY country, regionCode, region, city
 ORDER BY views DESC, sessions DESC, city ASC
-LIMIT 600
 `;
     cityCounts.push(
       ...(

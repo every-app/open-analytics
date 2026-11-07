@@ -15,6 +15,7 @@ import {
 import { resolveDashboardInitialWindow } from "@/lib/dashboard/query-preferences";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import {
+  type DashboardTeamContext,
   getDashboardTeamContext,
   getDashboardTeamSites,
   readDashboardAdmin,
@@ -24,6 +25,7 @@ import type { TeamDashboardSnapshot } from "@/lib/dashboard/team-dashboard-query
 import { normalizeNotificationPreferencesData } from "@/lib/dashboard-api/client/edge";
 import { fetchPublicSite } from "@/lib/dashboard-api/client/edge";
 import type { NotificationMessageData } from "@/lib/dashboard-api/contract/types";
+import { readTeamFirstDataAt } from "@/lib/edge/admin/setup/get-started";
 import { createTeamDashboardQueryRuntime } from "@/lib/edge/analytics/composition/ssr-query-runtime";
 import {
   createQueryTime,
@@ -62,11 +64,25 @@ function serializeNotificationMessage(
     deliveryResults: serializeManagementJsonObject(message.deliveryResults),
   };
 }
-/** Provides the SSR-safe initial query window to the dashboard shell. */
-export const loadDashboardInitialWindow = createServerFn({
-  method: "GET",
-}).handler((): TimeWindow =>
-  resolveDashboardInitialWindow(getRequest().headers.get("cookie")),
+/**
+ * The workspace, its sites and the signed-in person for the app layout, with
+ * the saved range resolved on the server; All time starts at the
+ * organization's first page view.
+ */
+export const loadDashboardShell = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{
+    teamContext: DashboardTeamContext | null;
+    initialDashboardWindow: TimeWindow;
+  }> => {
+    const teamContext = await getDashboardTeamContext();
+    return {
+      teamContext,
+      initialDashboardWindow: resolveDashboardInitialWindow(
+        getRequest().headers.get("cookie"),
+        teamContext?.firstDataAt,
+      ),
+    };
+  },
 );
 /** The Gateway's hostname, where the shared theme cookie lives; null standalone. */
 export const loadGatewayHostname = createServerFn({ method: "GET" }).handler(
@@ -74,10 +90,6 @@ export const loadGatewayHostname = createServerFn({ method: "GET" }).handler(
     const runtime = await resolveEdgeRuntime(getRequest());
     return gatewayHostname(runtime.env.GATEWAY_URL);
   },
-);
-/** The workspace, its sites and the signed-in person, for the app layout. */
-export const loadDashboardTeam = createServerFn({ method: "GET" }).handler(() =>
-  getDashboardTeamContext(),
 );
 /** Loads the first team-dashboard snapshot on the server for a stable hydrate. */
 export const loadTeamDashboardSnapshot = createServerFn({ method: "GET" })
@@ -92,9 +104,15 @@ export const loadTeamDashboardSnapshot = createServerFn({ method: "GET" })
     });
     if (resolved instanceof Response) return null;
 
-    const preloadedSites = await getDashboardTeamSites(data.teamId);
+    const [preloadedSites, firstDataAt] = await Promise.all([
+      getDashboardTeamSites(data.teamId),
+      readTeamFirstDataAt(resolved.env, resolved.teamId),
+    ]);
 
-    const window = resolveDashboardInitialWindow(request.headers.get("cookie"));
+    const window = resolveDashboardInitialWindow(
+      request.headers.get("cookie"),
+      firstDataAt,
+    );
     const filters = parseDashboardUrlFilters(request.url);
     const teamDashboardRuntime = createTeamDashboardQueryRuntime({
       env: resolved.env,

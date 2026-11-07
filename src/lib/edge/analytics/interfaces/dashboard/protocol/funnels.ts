@@ -1,4 +1,3 @@
-import { funnelAnalysisCost } from "@/lib/edge/analytics/application/funnel-cost";
 import { createEdgeSiteAnalyticsRuntime } from "@/lib/edge/analytics/composition";
 import {
   type FunnelConfigV2,
@@ -72,7 +71,6 @@ export async function handleFunnelAnalysisContract(
       filters,
       funnelId,
     },
-    { cost: funnelAnalysisCost(window.endExclusiveMs - window.startMs) },
   );
   if (!result.ok) return queryErrorResponse(result.error);
   if (!("funnel" in result.data)) {

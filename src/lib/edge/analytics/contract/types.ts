@@ -129,7 +129,6 @@ export type DetailCapability =
   | "event.breakdowns"
   | "event.fields";
 export interface QueryLimits {
-  readonly maxRangeMs?: number;
   readonly maxBuckets?: number;
   readonly maxLimit?: number;
   readonly maxFilterClauses?: number;
@@ -182,7 +181,6 @@ export interface InputIssue {
 export type AnalyticsDomainError =
   | { readonly kind: "request-cancelled" }
   | { readonly kind: "deadline-exceeded" }
-  | { readonly kind: "query-cost-exceeded"; readonly cost: number }
   | { readonly kind: "invalid-input"; readonly issues: readonly InputIssue[] }
   | { readonly kind: "invalid-cursor"; readonly cursorKind: string }
   | {

@@ -5,6 +5,8 @@ import { bad, forb, jsonResponseFor, na } from "@/lib/edge/admin/response";
 import type { Env } from "@/lib/edge/types";
 import { clampString } from "@/lib/edge/utils";
 
+const HOUR_MS = 60 * 60 * 1000;
+
 /** Get started's steps, in the order the card offers them. */
 export const GET_STARTED_STEPS = [
   "site",
@@ -77,23 +79,67 @@ export async function readGetStarted(
   };
 }
 
-/** Whether a site has received a page view yet. */
-export async function readSiteHasData(
+/**
+ * When the first page view of the sites `identities` selects (as `si`, by
+ * `?1`) happened, in milliseconds, or null before one has. Rolled-up hours
+ * count too, for data older than the raw rows.
+ */
+async function readFirstDataAt(
+  env: Pick<Env, "DB">,
+  identities: string,
+  binding: string,
+  tag: string,
+): Promise<number | null> {
+  const row = await createDatabaseRuntime(env.DB).first<{
+    firstDataAt: number | null;
+  }>({
+    sql: `
+      SELECT MIN(first_at) AS firstDataAt FROM (
+        SELECT (
+          SELECT MIN(v.started_at) FROM visits v WHERE v.site_pk = si.site_pk
+        ) AS first_at
+        FROM ${identities}
+        UNION ALL
+        SELECT (
+          SELECT MIN(r.hour_bucket) FROM visit_hourly_rollups r
+          WHERE r.site_pk = si.site_pk
+        ) * ${HOUR_MS} AS first_at
+        FROM ${identities}
+      )
+    `,
+    bindings: [binding],
+    tag,
+  });
+  return row?.firstDataAt ?? null;
+}
+
+/** When a site's first page view happened; All time starts there. */
+export function readSiteFirstDataAt(
   env: Pick<Env, "DB">,
   siteId: string,
-): Promise<boolean> {
-  const row = await createDatabaseRuntime(env.DB).first<{ hasData: number }>({
-    sql: `
-      SELECT EXISTS (
-        SELECT 1 FROM sites s
-        JOIN site_identities si ON si.site_id = s.id
-        WHERE s.id = ? AND (${SITE_HAS_DATA})
-      ) AS hasData
-    `,
-    bindings: [siteId],
-    tag: "admin.get_started.site_has_data",
-  });
-  return Boolean(row?.hasData);
+): Promise<number | null> {
+  return readFirstDataAt(
+    env,
+    "site_identities si WHERE si.site_id = ?1",
+    siteId,
+    "admin.get_started.site_first_data",
+  );
+}
+
+/**
+ * When the first page view of any of the organization's sites happened; All
+ * time on All sites starts there.
+ */
+export function readTeamFirstDataAt(
+  env: Pick<Env, "DB">,
+  teamId: string,
+): Promise<number | null> {
+  return readFirstDataAt(
+    env,
+    "site_identities si JOIN sites s ON s.id = si.site_id WHERE s.team_id = ?1",
+    teamId,
+    "admin.get_started.team_first_data",
+  );
 }
 
 /** The organization's Get started progress, for its owners and admins. */
@@ -127,8 +173,9 @@ export async function handleSiteTrackingAdmin(
   if (!(await canReadSite(env, actor, siteId))) {
     return forb("Site access denied", undefined, req);
   }
+  const firstDataAt = await readSiteFirstDataAt(env, siteId);
   return jsonResponseFor(req, {
     ok: true,
-    data: { hasData: await readSiteHasData(env, siteId) },
+    data: { hasData: firstDataAt !== null, firstDataAt },
   });
 }

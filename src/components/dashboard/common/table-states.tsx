@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Button } from "@insightflare/ui/button";
 import { RotateCwIcon, XIcon } from "lucide-react";
 
-import { useClearDashboardFilters } from "@/components/dashboard/filters/use-clear-dashboard-filters";
+import { useClearDashboardFilters } from "@/components/dashboard/filters/use-dashboard-filters";
 import type { AppMessages } from "@/lib/i18n/messages";
 
 /** Filters hide every row: say so, and offer to clear them. */

@@ -1,364 +1,298 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { MetricAreaChart } from "@insightflare/product-ui/charts";
-import { TrafficPairBarChart } from "@insightflare/product-ui/charts";
-import { AutoResizer } from "@insightflare/ui/auto-resizer";
-import { AutoTransition } from "@insightflare/ui/auto-transition";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@insightflare/ui/card";
+import { Card, CardContent } from "@insightflare/ui/card";
 import { Spinner } from "@insightflare/ui/spinner";
-import { ChartLineIcon } from "lucide-react";
 
+import { MetricTrendChart } from "@/components/dashboard/charts/metric-trend-chart";
+import { LoadFailedContent } from "@/components/dashboard/common/table-states";
+import {
+  dashboardComparisonLabel,
+  useDashboardComparisonQuery,
+} from "@/components/dashboard/comparison/use-dashboard-comparison-query";
+import {
+  replaceUrlWithoutNavigation,
+  useLiveSearchParams,
+} from "@/lib/dashboard/client/history";
+import { serializeDashboardSearchParams } from "@/lib/dashboard/filter-state";
 import {
   durationFormat,
   intlLocale,
   numberFormat,
   percentFormat,
 } from "@/lib/dashboard/format";
+import type { TimeWindow } from "@/lib/dashboard/query-state";
+import type { FilterDocument } from "@/lib/filter-contract/index";
+import type { Locale } from "@/lib/i18n/config";
+import type { AppMessages } from "@/lib/i18n/messages";
+import { usePathname } from "@/lib/router";
+import { cn } from "@/lib/utils";
 
+import { useOverviewSummaryQuery } from "./metrics-data";
 import {
-  buildOverviewMetricSeries,
-  comparisonLabelForQuery,
-  useOverviewComparisonQuery,
-  useOverviewSummaryQuery,
-} from "./metrics-data";
-import {
-  buildEmptyTrendData,
   ChangeRateInline,
   COMPARISON_AREA_COLOR,
-  EMPTY_TREND_POINTS,
-  emptyOverviewData,
-  emptyTrendData,
   METRIC_AREA_COLOR,
-  metricCellBorderClasses,
-  normalizeTrendData,
-  toDeltaPercent,
 } from "./overview-model";
-import { type OverviewDataSectionProps } from "./types";
+import {
+  alignComparisonPoints,
+  graphMetricFromSearchParams,
+  graphPoints,
+  LOWER_IS_BETTER,
+  TOP_STATS,
+  TopStat,
+  topStatChange,
+  topStatValue,
+  withGraphMetric,
+} from "./top-stats";
+
+interface OverviewMetricsSectionProps {
+  locale: Locale;
+  messages: AppMessages;
+  siteId: string;
+  window: TimeWindow;
+  filters: FilterDocument;
+}
+
+function statFormatter(
+  stat: TopStat,
+  locale: Locale,
+): (value: number) => string {
+  if (stat === TopStat.ViewsPerVisit) {
+    const formatter = new Intl.NumberFormat(intlLocale(locale), {
+      maximumFractionDigits: 2,
+    });
+    return (value) => formatter.format(value);
+  }
+  if (stat === TopStat.BounceRate) {
+    return (value) => percentFormat(locale, value);
+  }
+  if (stat === TopStat.VisitDuration) {
+    return (value) => durationFormat(locale, value);
+  }
+  return (value) => numberFormat(locale, Math.round(value));
+}
+
+const COUNT_STATS: ReadonlySet<TopStat> = new Set([
+  TopStat.Visitors,
+  TopStat.Visits,
+  TopStat.Pageviews,
+]);
+
+/** Two columns on phones, three from large screens, with inner borders. */
+function statCellBorderClasses(index: number): string {
+  return cn(
+    index % 2 !== 0 && "border-l",
+    index >= 2 && "border-t",
+    index % 3 !== 0 ? "lg:border-l" : "lg:border-l-0",
+    index >= 3 ? "lg:border-t" : "lg:border-t-0",
+  );
+}
+
+/**
+ * The top stats, and under them the main graph of the one that is picked.
+ * Picking a stat redraws the graph with it and keeps it in the address.
+ */
 export function OverviewMetricsSection({
   locale,
   messages,
   siteId,
   window,
   filters,
-}: OverviewDataSectionProps) {
-  const comparisonQuery = useOverviewComparisonQuery(window, filters);
-  const {
-    data: metricsData,
-    isPlaceholderData,
-    isPending,
-  } = useOverviewSummaryQuery({
+}: OverviewMetricsSectionProps) {
+  const searchParams = useLiveSearchParams();
+  const pathname = usePathname() || "/";
+  const selected = graphMetricFromSearchParams(searchParams);
+  const comparisonQuery = useDashboardComparisonQuery(window, filters);
+  const summary = useOverviewSummaryQuery({
     siteId,
     window,
     filters,
     comparisonQuery,
   });
-  const loading = isPending || isPlaceholderData;
-  const overview = metricsData?.overview ?? emptyOverviewData();
-  const previousOverview = metricsData?.previousOverview ?? emptyOverviewData();
-  const detailSeries = metricsData?.trendData.data ?? EMPTY_TREND_POINTS;
-  const comparisonOverview = metricsData?.comparisonOverview;
-  const comparisonDetailSeries =
-    metricsData?.comparisonTrendData?.data ?? EMPTY_TREND_POINTS;
+  const data = summary.data;
+  const comparisonLabel = dashboardComparisonLabel(messages, comparisonQuery);
+  const labels: Record<TopStat, string> = messages.dashboard.stats;
 
-  const pagesPerSessionFormatter = useMemo(
+  const selectStat = useCallback(
+    (stat: TopStat) => {
+      const query = serializeDashboardSearchParams(
+        withGraphMetric(searchParams, stat),
+      );
+      replaceUrlWithoutNavigation(query ? `${pathname}?${query}` : pathname);
+    },
+    [pathname, searchParams],
+  );
+
+  const tiles = useMemo(
     () =>
-      new Intl.NumberFormat(intlLocale(locale), {
-        maximumFractionDigits: 2,
+      TOP_STATS.map((stat) => {
+        const current = data ? topStatValue(stat, data.current) : null;
+        const reference = data ? topStatValue(stat, data.reference) : null;
+        return {
+          stat,
+          current,
+          change: topStatChange(current, reference),
+          format: statFormatter(stat, locale),
+          trend: data
+            ? graphPoints(window, data.currentPoints, stat).flatMap((point) =>
+                point.value === null
+                  ? []
+                  : [{ timestampMs: point.timestampMs, value: point.value }],
+              )
+            : [],
+          comparisonTrend:
+            data?.comparisonPoints && comparisonQuery
+              ? graphPoints(
+                  comparisonQuery.window,
+                  data.comparisonPoints,
+                  stat,
+                ).map((point) => ({
+                  timestampMs: point.timestampMs,
+                  value: point.value ?? 0,
+                }))
+              : undefined,
+        };
       }),
-    [locale],
+    [comparisonQuery, data, locale, window],
   );
-  const previous = previousOverview.data;
-  const currentPagesPerSession =
-    overview.data.sessions > 0
-      ? overview.data.views / overview.data.sessions
-      : 0;
-  const previousPagesPerSession =
-    previous.sessions > 0 ? previous.views / previous.sessions : 0;
-
-  const metricSeries = useMemo(
-    () => buildOverviewMetricSeries(detailSeries),
-    [detailSeries],
+  const selectedFormat = useMemo(
+    () => statFormatter(selected, locale),
+    [locale, selected],
   );
-  const comparisonMetricSeries = useMemo(
-    () => buildOverviewMetricSeries(comparisonDetailSeries),
-    [comparisonDetailSeries],
-  );
-  const comparison = comparisonOverview?.data ?? emptyOverviewData().data;
-  const comparisonPagesPerSession =
-    comparison.sessions > 0 ? comparison.views / comparison.sessions : 0;
-  const metricChartAnimationKey = useMemo(() => {
-    const firstTimestamp = detailSeries[0]?.timestampMs ?? 0;
-    const lastTimestamp =
-      detailSeries[detailSeries.length - 1]?.timestampMs ?? 0;
-    const comparisonFirstTimestamp =
-      comparisonDetailSeries[0]?.timestampMs ?? 0;
-    const comparisonLastTimestamp =
-      comparisonDetailSeries[comparisonDetailSeries.length - 1]?.timestampMs ??
-      0;
-    return `${detailSeries.length}:${firstTimestamp}:${lastTimestamp}:${comparisonQuery?.mode ?? "none"}:${comparisonDetailSeries.length}:${comparisonFirstTimestamp}:${comparisonLastTimestamp}`;
-  }, [comparisonDetailSeries, comparisonQuery?.mode, detailSeries]);
-  const comparisonLabel = comparisonLabelForQuery(messages, comparisonQuery);
-  const hasComparisonData = Boolean(
-    comparisonQuery &&
-    metricsData?.comparisonOverview &&
-    metricsData.comparisonTrendData,
-  );
-  const reference = comparisonQuery ? comparison : previous;
-  const referencePagesPerSession = comparisonQuery
-    ? comparisonPagesPerSession
-    : previousPagesPerSession;
-
-  const metrics = useMemo(
-    () => [
-      {
-        key: "views" as const,
-        label: messages.common.views,
-        value: numberFormat(locale, overview.data.views),
-        delta: toDeltaPercent(overview.data.views, reference.views),
-        trend: metricSeries.views,
-        comparisonTrend: comparisonMetricSeries.views,
-        formatTrendValue: (value: number) =>
-          numberFormat(locale, Math.round(value)),
-      },
-      {
-        key: "visitors" as const,
-        label: messages.common.visitors,
-        value: numberFormat(locale, overview.data.visitors),
-        delta: toDeltaPercent(overview.data.visitors, reference.visitors),
-        trend: metricSeries.visitors,
-        comparisonTrend: comparisonMetricSeries.visitors,
-        formatTrendValue: (value: number) =>
-          numberFormat(locale, Math.round(value)),
-      },
-      {
-        key: "sessions" as const,
-        label: messages.common.sessions,
-        value: numberFormat(locale, overview.data.sessions),
-        delta: toDeltaPercent(overview.data.sessions, reference.sessions),
-        trend: metricSeries.sessions,
-        comparisonTrend: comparisonMetricSeries.sessions,
-        formatTrendValue: (value: number) =>
-          numberFormat(locale, Math.round(value)),
-      },
-      {
-        key: "bounceRate" as const,
-        label: messages.common.bounceRate,
-        value: percentFormat(locale, overview.data.bounceRate),
-        delta: toDeltaPercent(overview.data.bounceRate, reference.bounceRate),
-        lowerIsBetter: true,
-        trend: metricSeries.bounceRate,
-        comparisonTrend: comparisonMetricSeries.bounceRate,
-        formatTrendValue: (value: number) => percentFormat(locale, value),
-      },
-      {
-        key: "pagesPerSession" as const,
-        label: messages.teamManagement.sites.pagesPerSession,
-        value: pagesPerSessionFormatter.format(currentPagesPerSession),
-        delta: toDeltaPercent(currentPagesPerSession, referencePagesPerSession),
-        trend: metricSeries.pagesPerSession,
-        comparisonTrend: comparisonMetricSeries.pagesPerSession,
-        formatTrendValue: (value: number) =>
-          pagesPerSessionFormatter.format(value),
-      },
-      {
-        key: "avgDuration" as const,
-        label: messages.common.avgDuration,
-        value: durationFormat(locale, overview.data.avgDurationMs),
-        delta: toDeltaPercent(
-          overview.data.avgDurationMs,
-          reference.avgDurationMs,
-        ),
-        trend: metricSeries.avgDuration,
-        comparisonTrend: comparisonMetricSeries.avgDuration,
-        formatTrendValue: (value: number) =>
-          durationFormat(locale, Math.max(0, Math.round(value))),
-      },
-    ],
-    [
-      currentPagesPerSession,
-      comparisonMetricSeries,
-      locale,
-      messages.common.avgDuration,
-      messages.common.bounceRate,
-      messages.common.sessions,
-      messages.common.views,
-      messages.common.visitors,
-      messages.teamManagement.sites.pagesPerSession,
-      metricSeries,
-      overview.data.avgDurationMs,
-      overview.data.bounceRate,
-      overview.data.sessions,
-      overview.data.visitors,
-      overview.data.views,
-      pagesPerSessionFormatter,
-      reference.avgDurationMs,
-      reference.bounceRate,
-      reference.sessions,
-      reference.visitors,
-      reference.views,
-      referencePagesPerSession,
-    ],
-  );
+  const graph = useMemo(() => {
+    if (!data) return null;
+    const points = graphPoints(window, data.currentPoints, selected);
+    return {
+      points,
+      comparison:
+        data.comparisonPoints && comparisonQuery
+          ? {
+              label: comparisonLabel,
+              points: alignComparisonPoints(
+                window,
+                comparisonQuery.mode,
+                points,
+                graphPoints(
+                  comparisonQuery.window,
+                  data.comparisonPoints,
+                  selected,
+                ),
+              ),
+            }
+          : undefined,
+    };
+  }, [comparisonLabel, comparisonQuery, data, selected, window]);
+  const refreshing = summary.isPlaceholderData || summary.isFetching;
+  const failed = summary.isError && !summary.isFetching;
+  const retry = () => void summary.refetch();
 
   return (
-    <Card className="gap-0 py-0">
-      <CardContent className="px-0">
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {metrics.map((item, index) => {
-            const hasDelta =
-              typeof item.delta === "number" && Number.isFinite(item.delta);
-            const effectiveDelta = hasDelta ? (item.delta ?? 0) : null;
-            const comparisonPoints = hasComparisonData
-              ? item.comparisonTrend
-              : undefined;
-
-            return (
-              <div key={item.label} className={metricCellBorderClasses(index)}>
-                <div className="relative min-h-[74px]">
-                  <div className="absolute inset-y-0 right-0 w-1/2 min-w-0">
-                    <MetricAreaChart
-                      points={item.trend}
-                      color={METRIC_AREA_COLOR}
-                      locale={locale}
-                      timeZone={window.timeZone}
-                      interval={window.interval}
-                      label={item.label}
-                      formatValue={item.formatTrendValue}
-                      animationKey={metricChartAnimationKey}
-                      comparisonPoints={comparisonPoints}
-                      comparisonColor={COMPARISON_AREA_COLOR}
-                      comparisonLabel={comparisonLabel}
-                    />
-                  </div>
-                  <div className="pointer-events-none relative z-10 flex min-h-[74px] min-w-0 flex-col justify-between px-3 py-2.5">
-                    <p className="truncate text-xs text-muted-foreground mb-4">
-                      {item.label}
-                    </p>
-                    <div>
-                      <AutoResizer initial>
-                        <AutoTransition initial>
-                          {loading ? (
-                            <div
-                              key="loading"
-                              className="inline-flex h-6 items-center"
-                            >
-                              <Spinner className="size-5" />
-                            </div>
-                          ) : (
-                            <p
-                              key="value"
-                              className="inline-flex h-6 items-end gap-1.5 text-2xl font-semibold leading-none tracking-tight tabular-nums"
-                            >
-                              <span>{item.value}</span>
-                              <ChangeRateInline
-                                value={effectiveDelta}
-                                lowerIsBetter={item.lowerIsBetter}
-                              />
-                            </p>
-                          )}
-                        </AutoTransition>
-                      </AutoResizer>
+    <div className="space-y-6">
+      <Card className="gap-0 py-0">
+        <CardContent className="px-0">
+          {failed ? (
+            <div className="flex min-h-[148px] items-center justify-center text-sm text-destructive">
+              <LoadFailedContent messages={messages} onRetry={retry} />
+            </div>
+          ) : (
+            <section
+              className="grid grid-cols-2 lg:grid-cols-3"
+              aria-label={messages.dashboard.statsLabel}
+            >
+              {tiles.map((tile, index) => {
+                const active = tile.stat === selected;
+                return (
+                  <button
+                    type="button"
+                    key={tile.stat}
+                    aria-pressed={active}
+                    onClick={() => selectStat(tile.stat)}
+                    className={cn(
+                      "group relative min-h-[74px] cursor-pointer text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+                      "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:z-20 after:h-0.5 after:transition-colors",
+                      active
+                        ? "after:bg-primary"
+                        : "after:bg-transparent hover:after:bg-border",
+                      statCellBorderClasses(index),
+                    )}
+                  >
+                    <div className="absolute inset-y-0 right-0 w-1/2 min-w-0">
+                      <MetricAreaChart
+                        points={tile.trend}
+                        color={METRIC_AREA_COLOR}
+                        locale={locale}
+                        timeZone={window.timeZone}
+                        interval={window.interval}
+                        label={labels[tile.stat]}
+                        formatValue={tile.format}
+                        animationKey={`${window.from}:${window.to}:${comparisonQuery?.mode ?? "none"}`}
+                        comparisonPoints={tile.comparisonTrend}
+                        comparisonColor={COMPARISON_AREA_COLOR}
+                        comparisonLabel={comparisonLabel}
+                      />
                     </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </section>
-      </CardContent>
-    </Card>
-  );
-}
-export function OverviewTrendSection({
-  locale,
-  messages,
-  siteId,
-  window,
-  filters,
-}: OverviewDataSectionProps) {
-  const comparisonQuery = useOverviewComparisonQuery(window, filters);
-  const currentDataWindow = useMemo(
-    () => ({
-      from: window.from,
-      to: window.to,
-      interval: window.interval,
-      timeZone: window.timeZone,
-    }),
-    [window.from, window.interval, window.timeZone, window.to],
-  );
-  const {
-    data: trendQueryData,
-    isPlaceholderData,
-    isPending,
-  } = useOverviewSummaryQuery({
-    siteId,
-    window,
-    filters,
-    comparisonQuery,
-  });
-  const loading = isPending || isPlaceholderData;
-  const trendData =
-    trendQueryData?.trendData ?? emptyTrendData(window.interval);
-  const dataWindow = trendQueryData?.dataWindow ?? currentDataWindow;
-  const hasTrendData = Boolean(trendQueryData);
-
-  const trendDisplayData = useMemo(() => {
-    if (!hasTrendData && isPending) {
-      return buildEmptyTrendData(dataWindow);
-    }
-    return normalizeTrendData(dataWindow, trendData.data);
-  }, [
-    dataWindow.from,
-    dataWindow.interval,
-    dataWindow.timeZone,
-    dataWindow.to,
-    hasTrendData,
-    isPending,
-    trendData.data,
-  ]);
-  const comparisonTrendDisplayData = useMemo(() => {
-    if (!comparisonQuery || !trendQueryData?.comparisonTrendData) {
-      return undefined;
-    }
-    return normalizeTrendData(
-      comparisonQuery.window,
-      trendQueryData.comparisonTrendData.data,
-    );
-  }, [comparisonQuery, trendQueryData?.comparisonTrendData]);
-  const comparisonLabel = comparisonLabelForQuery(messages, comparisonQuery);
-  return (
-    <Card className="overflow-visible">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="inline-flex items-center gap-2">
-          <ChartLineIcon className="size-4" />
-          {messages.overview.trendTitle}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div>
-          <TrafficPairBarChart
-            data={trendDisplayData}
-            locale={locale}
-            timeZone={dataWindow.timeZone}
-            interval={dataWindow.interval}
-            viewsLabel={messages.common.views}
-            visitorsLabel={messages.common.visitors}
-            axisDateFormat="regular"
-            showLegend
-            loading={loading}
-            className="h-[280px]"
-            range={comparisonQuery ? window : undefined}
-            comparisonData={comparisonTrendDisplayData}
-            comparisonRange={comparisonQuery?.window}
-            currentPeriodLabel={messages.dashboardHeader.compareCurrentPeriod}
-            comparisonLabel={comparisonLabel}
-          />
-        </div>
-      </CardContent>
-    </Card>
+                    <div className="pointer-events-none relative z-10 flex min-h-[74px] min-w-0 flex-col justify-between px-3 py-2.5">
+                      <p
+                        className={cn(
+                          "mb-4 truncate text-xs",
+                          active
+                            ? "font-medium text-foreground"
+                            : "text-muted-foreground group-hover:text-foreground",
+                        )}
+                      >
+                        {labels[tile.stat]}
+                      </p>
+                      {data ? (
+                        <p
+                          className={cn(
+                            "inline-flex h-6 flex-wrap items-end gap-x-1.5 text-2xl font-semibold leading-none tracking-tight tabular-nums transition-opacity",
+                            refreshing && "opacity-60",
+                          )}
+                        >
+                          <span>
+                            {tile.current === null
+                              ? "—"
+                              : tile.format(tile.current)}
+                          </span>
+                          <ChangeRateInline
+                            value={tile.change}
+                            lowerIsBetter={LOWER_IS_BETTER.has(tile.stat)}
+                          />
+                        </p>
+                      ) : (
+                        <div className="inline-flex h-6 items-center">
+                          <Spinner className="size-5" />
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </section>
+          )}
+        </CardContent>
+      </Card>
+      <Card className="overflow-visible">
+        <CardContent>
+          {failed ? (
+            <div className="flex h-[280px] items-center justify-center text-sm text-destructive">
+              <LoadFailedContent messages={messages} onRetry={retry} />
+            </div>
+          ) : (
+            <MetricTrendChart
+              locale={locale}
+              timeZone={window.timeZone}
+              interval={window.interval}
+              label={labels[selected]}
+              points={graph?.points ?? []}
+              formatValue={selectedFormat}
+              wholeNumbers={COUNT_STATS.has(selected)}
+              comparison={graph?.comparison}
+              loading={!data || refreshing}
+            />
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

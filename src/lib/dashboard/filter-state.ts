@@ -83,7 +83,7 @@ export const EMPTY_DASHBOARD_FILTER_DOCUMENT: FilterDocument = Object.freeze({
   version: FILTER_DOCUMENT_VERSION,
   root: null,
 });
-export const DASHBOARD_COMPARISON_MODES = ["same", "previous"] as const;
+export const DASHBOARD_COMPARISON_MODES = ["same", "previous", "year"] as const;
 export type DashboardComparisonMode =
   (typeof DASHBOARD_COMPARISON_MODES)[number];
 export interface DashboardComparisonSearchState {

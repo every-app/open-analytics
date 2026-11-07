@@ -26,7 +26,7 @@ function SiteOverviewPage() {
       messages={messages}
       siteId={siteContext.activeSite.id}
       siteDomain={siteContext.activeSite.domain}
-      pathname={buildSitePath(siteContext.activeSite.slug)}
+      goalsPath={buildSitePath(siteContext.activeSite.slug, "funnels")}
     />
   );
 }

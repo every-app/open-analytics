@@ -6,10 +6,8 @@ import {
   fetchFunnels,
   fetchPages,
 } from "@/lib/dashboard/client/data/core";
-import { fetchPageCardTabs } from "@/lib/dashboard/client/data/pages";
 import { fetchReferrers } from "@/lib/dashboard/client/data/referrers";
 import {
-  fetchEventTypesTab,
   fetchFilterValues,
   fetchOverviewSourceCardTab,
 } from "@/lib/dashboard/client/data/tabs";
@@ -120,11 +118,10 @@ describe("paginated dashboard client requests", () => {
     });
   });
 
-  it("adds pagination options to event types and field values requests", async () => {
+  it("adds pagination options to event field and value requests", async () => {
     const signal = new AbortController().signal;
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(jsonResponse({ ok: true, data: collection() }))
       .mockResolvedValueOnce(
         jsonResponse({
           ok: true,
@@ -142,12 +139,6 @@ describe("paginated dashboard client requests", () => {
       );
     globalThis.fetch = fetchMock;
 
-    await fetchEventTypesTab(
-      publicDashboardSiteId("public-dashboard"),
-      window,
-      undefined,
-      { limit: 11, cursor: "event-cursor", signal },
-    );
     await fetchEventTypeFields(
       publicDashboardSiteId("public-dashboard"),
       window,
@@ -165,30 +156,8 @@ describe("paginated dashboard client requests", () => {
       { limit: 7, cursor: "value-cursor", signal },
     );
 
-    expect(
-      new URL(String(fetchMock.mock.calls[0][0]), "https://test.local"),
-    ).toMatchObject({
-      pathname: "/api/public/share/public-dashboard/event-types",
-    });
-    expect(fetchMock.mock.calls[0][1]).toMatchObject({
-      signal,
-      credentials: "omit",
-    });
-    expect(
-      new URL(
-        String(fetchMock.mock.calls[0][0]),
-        "https://test.local",
-      ).searchParams.get("limit"),
-    ).toBe("11");
-    expect(
-      new URL(
-        String(fetchMock.mock.calls[0][0]),
-        "https://test.local",
-      ).searchParams.get("cursor"),
-    ).toBe("event-cursor");
-
     const fieldsUrl = new URL(
-      String(fetchMock.mock.calls[1][0]),
+      String(fetchMock.mock.calls[0][0]),
       "https://test.local",
     );
     expect(fieldsUrl.pathname).toBe(
@@ -197,13 +166,13 @@ describe("paginated dashboard client requests", () => {
     expect(fieldsUrl.searchParams.get("eventName")).toBe("Signup");
     expect(fieldsUrl.searchParams.get("limit")).toBe("13");
     expect(fieldsUrl.searchParams.get("cursor")).toBe("field-cursor");
-    expect(fetchMock.mock.calls[1][1]).toMatchObject({
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({
       signal,
       credentials: "omit",
     });
 
     const valuesUrl = new URL(
-      String(fetchMock.mock.calls[2][0]),
+      String(fetchMock.mock.calls[1][0]),
       "https://test.local",
     );
     expect(valuesUrl.pathname).toBe(
@@ -213,7 +182,7 @@ describe("paginated dashboard client requests", () => {
     expect(valuesUrl.searchParams.get("fieldPath")).toBe("payload.plan");
     expect(valuesUrl.searchParams.get("limit")).toBe("7");
     expect(valuesUrl.searchParams.get("cursor")).toBe("value-cursor");
-    expect(fetchMock.mock.calls[2][1]).toMatchObject({
+    expect(fetchMock.mock.calls[1][1]).toMatchObject({
       signal,
       credentials: "omit",
     });
@@ -323,43 +292,5 @@ describe("paginated dashboard client requests", () => {
     expect(() =>
       normalizePaginatedCollection({ items: "not-an-array", pagination: {} }),
     ).toThrow("pagination_contract_violation");
-  });
-
-  it("passes pagination options through page card tab requests", async () => {
-    const signal = new AbortController().signal;
-    const fetchMock = vi.fn().mockResolvedValue(
-      jsonResponse({
-        ok: true,
-        data: collection(),
-        tabs: {
-          path: [],
-          title: [],
-          hostname: [],
-          entry: [],
-          exit: [],
-        },
-      }),
-    );
-    globalThis.fetch = fetchMock;
-
-    await fetchPageCardTabs(
-      publicDashboardSiteId("page-tabs"),
-      window,
-      undefined,
-      { limit: 19, cursor: "tabs-cursor", signal },
-    );
-
-    const url = new URL(
-      String(fetchMock.mock.calls[0][0]),
-      "https://test.local",
-    );
-    expect(url.pathname).toBe("/api/public/share/page-tabs/pages");
-    expect(url.searchParams.get("limit")).toBe("19");
-    expect(url.searchParams.get("cursor")).toBe("tabs-cursor");
-    expect(url.searchParams.has("siteId")).toBe(false);
-    expect(fetchMock.mock.calls[0][1]).toMatchObject({
-      signal,
-      credentials: "omit",
-    });
   });
 });

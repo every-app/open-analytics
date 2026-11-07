@@ -3426,8 +3426,10 @@ describe("edge overview D1 queries and handlers", () => {
         },
       ],
     });
-    expect(calls[0].bindings.at(-1)).toBe(9);
-    expect(calls[2].bindings.at(-1)).toBe(10);
+    // A limit in the address is ignored: the map reads every point.
+    expect(calls[0].bindings).not.toContain(9);
+    expect(calls[0].sql).not.toContain("LIMIT");
+    expect(calls[2].bindings).not.toContain(10);
     expect(calls[2].bindings).toEqual(
       expect.arrayContaining(["us", "california"]),
     );

@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { OverviewClientPage } from "@/components/dashboard/site-pages/overview/overview-client-page";
 import { APP_NAME } from "@/lib/constants";
-import { sharePath } from "@/lib/dashboard/share-path";
 export const Route = createFileRoute("/share/$slug/")({
   head: ({ match }) => ({
     meta: [{ title: `${match.context.shareContext.site.name} · ${APP_NAME}` }],
@@ -11,15 +10,12 @@ export const Route = createFileRoute("/share/$slug/")({
 });
 function Page() {
   const { locale, messages, shareContext: c } = Route.useRouteContext();
-  const { slug } = Route.useParams();
   return (
     <OverviewClientPage
       locale={locale}
       messages={messages}
       siteId={c.publicSiteId}
       siteDomain={c.site.domain}
-      pathname={sharePath(slug)}
-      showSourceLinkTab={false}
     />
   );
 }

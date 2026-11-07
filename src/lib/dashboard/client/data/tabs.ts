@@ -1,7 +1,4 @@
-import {
-  emptyDashboardFilterOptions,
-  emptyOverviewTab,
-} from "@/lib/dashboard/client/data/empty";
+import { emptyDashboardFilterOptions } from "@/lib/dashboard/client/data/empty";
 import type {
   DashboardFilterOptionKey,
   DashboardListRequestOptions,
@@ -11,8 +8,6 @@ import type {
 } from "@/lib/dashboard/client/data/types";
 import { fetchPrivateJson } from "@/lib/dashboard/client/request";
 import {
-  decodeHashLabel,
-  decodeQueryLabel,
   normalizeOverviewRows,
   normalizePaginatedCollection,
   withComparison,
@@ -32,13 +27,7 @@ const clientPathByTab: Record<OverviewClientDimensionTab, string> = {
   browser: "browser",
   osVersion: "os-version",
   deviceType: "device-type",
-  language: "language",
-  screenSize: "screen-size",
 };
-function emptyOverviewTabUnlessAborted(error: unknown): OverviewTabData {
-  if (error instanceof Error && error.name === "AbortError") throw error;
-  return emptyOverviewTab();
-}
 export async function fetchOverviewPageCardTab(
   siteId: string,
   window: TimeWindow,
@@ -46,12 +35,8 @@ export async function fetchOverviewPageCardTab(
   filters?: FilterDocument,
   options?: OverviewTableRequestOptions,
 ): Promise<OverviewTabData["data"]> {
-  const endpoint =
-    tab === "query"
-      ? "/api/private/page-query"
-      : `/api/private/overview-page-${tab}`;
   const payload = await fetchPrivateJson<OverviewTabData>(
-    endpoint,
+    `/api/private/overview-page-${tab}`,
     withComparison(
       withFilters(
         withPagination(
@@ -79,76 +64,11 @@ export async function fetchOverviewPageCardTab(
       },
     ),
     { signal: options?.signal },
-  ).catch(emptyOverviewTabUnlessAborted);
+  );
   const data = normalizePaginatedCollection<
     OverviewTabData["data"]["items"][number]
   >(payload.data);
-  const items = normalizeOverviewRows(data.items);
-  return {
-    ...data,
-    items:
-      tab === "query"
-        ? items.map((row) => ({
-            ...row,
-            label: decodeQueryLabel(row.label),
-          }))
-        : items,
-  };
-}
-export async function fetchPageHashTab(
-  siteId: string,
-  window: TimeWindow,
-  filters?: FilterDocument,
-  options?: OverviewTableRequestOptions,
-): Promise<OverviewTabData["data"]> {
-  const payload = await fetchPrivateJson<OverviewTabData>(
-    "/api/private/page-hash",
-    withComparison(
-      withFilters(
-        withPagination(
-          {
-            siteId,
-            from: window.from,
-            to: window.to,
-            timeZone: window.timeZone,
-            ...(options?.search?.trim()
-              ? { search: options.search.trim() }
-              : {}),
-            ...(options?.sort ? { sort: options.sort } : {}),
-            ...(options?.direction ? { direction: options.direction } : {}),
-          },
-          options,
-          100,
-        ),
-        filters,
-        options?.resolvedScope,
-      ),
-      options?.comparison,
-      {
-        metric: options?.comparisonMetric,
-        sortBy: options?.comparisonSortBy,
-      },
-    ),
-    { signal: options?.signal },
-  ).catch(emptyOverviewTabUnlessAborted);
-  const data = normalizePaginatedCollection<
-    OverviewTabData["data"]["items"][number]
-  >(payload.data);
-  return {
-    ...data,
-    items: normalizeOverviewRows(data.items).map((row) => ({
-      ...row,
-      label: decodeHashLabel(row.label),
-    })),
-  };
-}
-export async function fetchPageQueryTab(
-  siteId: string,
-  window: TimeWindow,
-  filters?: FilterDocument,
-  options?: OverviewTableRequestOptions,
-): Promise<OverviewTabData["data"]> {
-  return fetchOverviewPageCardTab(siteId, window, "query", filters, options);
+  return { ...data, items: normalizeOverviewRows(data.items) };
 }
 export async function fetchOverviewSourceCardTab(
   siteId: string,
@@ -186,38 +106,7 @@ export async function fetchOverviewSourceCardTab(
       },
     ),
     { signal: options?.signal },
-  ).catch(emptyOverviewTabUnlessAborted);
-  const data = normalizePaginatedCollection<
-    OverviewTabData["data"]["items"][number]
-  >(payload.data);
-  return { ...data, items: normalizeOverviewRows(data.items) };
-}
-export async function fetchEventTypesTab(
-  siteId: string,
-  window: TimeWindow,
-  filters?: FilterDocument,
-  options?: DashboardListRequestOptions,
-): Promise<OverviewTabData["data"]> {
-  const payload = await fetchPrivateJson<OverviewTabData>(
-    "/api/private/event-types",
-    withFilters(
-      withPagination(
-        {
-          siteId,
-          from: window.from,
-          to: window.to,
-          timeZone: window.timeZone,
-          ...(options?.search?.trim() ? { search: options.search.trim() } : {}),
-          ...(options?.sort ? { sort: options.sort } : {}),
-          ...(options?.direction ? { direction: options.direction } : {}),
-        },
-        options,
-        100,
-      ),
-      filters,
-    ),
-    { signal: options?.signal },
-  ).catch(emptyOverviewTabUnlessAborted);
+  );
   const data = normalizePaginatedCollection<
     OverviewTabData["data"]["items"][number]
   >(payload.data);
@@ -259,7 +148,7 @@ export async function fetchOverviewClientDimensionTab(
       },
     ),
     { signal: options?.signal },
-  ).catch(emptyOverviewTabUnlessAborted);
+  );
   const data = normalizePaginatedCollection<
     OverviewTabData["data"]["items"][number]
   >(payload.data);

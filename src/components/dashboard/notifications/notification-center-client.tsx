@@ -10,6 +10,8 @@ import { BellIcon, CheckCheckIcon, CheckIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { NotificationPreferencesPopover } from "@/components/dashboard/notifications/notification-preferences-popover";
+import { useReportingTimeZone } from "@/components/time-zone-provider";
+import { useHydrated } from "@/hooks/use-hydrated";
 import { shortDateTime } from "@/lib/dashboard/format";
 import type {
   AccountNotificationPreferencesInitialData,
@@ -23,6 +25,26 @@ import type { AppMessages } from "@/lib/i18n/messages";
 import Link from "@/lib/router";
 
 const VIEWS = ["all", "unread"] as const;
+
+/**
+ * When a message came, in the viewer's reporting time zone. The server can't
+ * know the browser's zone, so the text waits for hydration.
+ */
+function MessageTime({
+  locale,
+  timestampMs,
+}: {
+  locale: Locale;
+  timestampMs: number;
+}) {
+  const { timeZone } = useReportingTimeZone();
+  const hydrated = useHydrated();
+  return (
+    <time dateTime={new Date(timestampMs).toISOString()}>
+      {hydrated ? shortDateTime(locale, timestampMs, timeZone) : null}
+    </time>
+  );
+}
 type InboxView = (typeof VIEWS)[number];
 
 type InboxSite = { id: string; name: string; slug: string };
@@ -277,7 +299,10 @@ function NotificationCard({
                   {site.name}
                 </Link>
               ) : null}
-              <span>{shortDateTime(locale, item.createdAt * 1000)}</span>
+              <MessageTime
+                locale={locale}
+                timestampMs={item.createdAt * 1000}
+              />
               {item.severity === "warning" || item.severity === "critical" ? (
                 <Badge
                   variant={

@@ -46,6 +46,8 @@ describe("dashboard query-state helpers", () => {
     it("accepts known presets and falls back for missing or unknown values", () => {
       expect(resolveRangePreset("today")).toBe("today");
       expect(resolveRangePreset("custom")).toBe("custom");
+      expect(resolveRangePreset("all")).toBe("all");
+      expect(resolveRangePreset("lastMonth")).toBe("lastMonth");
       expect(resolveRangePreset(null)).toBe(DEFAULT_RANGE_PRESET);
       expect(resolveRangePreset("last-century")).toBe(DEFAULT_RANGE_PRESET);
     });
@@ -88,7 +90,9 @@ describe("dashboard query-state helpers", () => {
     const now = Date.UTC(2026, 4, 26, 15, 14, 59, 999);
 
     it("falls back to the default range for a range it no longer offers", () => {
-      expect(resolveTimeWindow("24h", now, { timeZone: "UTC" })).toMatchObject({
+      expect(
+        resolveTimeWindow("realtime", now, { timeZone: "UTC" }),
+      ).toMatchObject({
         preset: "30d",
         from: Date.UTC(2026, 4, 26) - 30 * DAY_MS,
         to: now,
@@ -154,6 +158,65 @@ describe("dashboard query-state helpers", () => {
         from: Date.UTC(2025, 4, 1),
         to: now,
         interval: "month",
+      });
+    });
+
+    it("resolves the last 24 hours and the calendar month and year ranges", () => {
+      expect(resolveTimeWindow("24h", now, { timeZone: "UTC" })).toMatchObject({
+        from: now - DAY_MS,
+        to: now,
+        interval: "hour",
+      });
+      expect(resolveTimeWindow("mtd", now, { timeZone: "UTC" })).toMatchObject({
+        from: Date.UTC(2026, 4, 1),
+        to: now,
+        interval: "day",
+      });
+      expect(
+        resolveTimeWindow("lastMonth", now, { timeZone: "UTC" }),
+      ).toMatchObject({
+        from: Date.UTC(2026, 3, 1),
+        to: Date.UTC(2026, 4, 1),
+        interval: "day",
+      });
+      expect(resolveTimeWindow("ytd", now, { timeZone: "UTC" })).toMatchObject({
+        from: Date.UTC(2026, 0, 1),
+        to: now,
+        interval: "month",
+      });
+      expect(
+        resolveTimeWindow("mtd", now, { timeZone: "Asia/Tokyo" }).from,
+      ).toBe(Date.UTC(2026, 4, 1) - 9 * HOUR_MS);
+    });
+
+    it("starts All time on the day of the first data, the site's or the organization's", () => {
+      const firstView = Date.UTC(2025, 10, 3, 17, 30);
+      expect(
+        resolveTimeWindow("all", now, {
+          timeZone: "UTC",
+          dataStart: firstView,
+        }),
+      ).toMatchObject({
+        preset: "all",
+        from: Date.UTC(2025, 10, 3),
+        to: now,
+        interval: "month",
+      });
+      // A site without data yet: All time is today.
+      expect(
+        resolveTimeWindow("all", now, { timeZone: "UTC", dataStart: null }),
+      ).toMatchObject({ from: Date.UTC(2026, 4, 26), interval: "hour" });
+      // Years of data are all of it: never cut to a year.
+      expect(
+        resolveTimeWindow("all", now, {
+          timeZone: "UTC",
+          dataStart: Date.UTC(2017, 0, 9, 8),
+        }),
+      ).toMatchObject({ preset: "all", from: Date.UTC(2017, 0, 9) });
+      // Before the start is known, All time is today.
+      expect(resolveTimeWindow("all", now, { timeZone: "UTC" })).toMatchObject({
+        preset: "all",
+        from: Date.UTC(2026, 4, 26),
       });
     });
 

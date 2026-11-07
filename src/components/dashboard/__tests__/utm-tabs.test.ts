@@ -1,14 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { buildUtmRows } from "@/components/dashboard/site-pages/overview/overview-card-data";
 import {
-  SOURCE_CARD_FILTER_CONTROL_BY_TAB,
-  SOURCE_CARD_TABS,
-} from "@/components/dashboard/site-pages/overview/overview-filter-model";
-import {
-  buildUtmSourceCardRows,
-  isUtmTab,
   UTM_TABS,
-  utmTabLabel,
   withUtmTag,
 } from "@/components/dashboard/site-pages/overview/utm-tabs";
 import {
@@ -24,36 +18,15 @@ import {
   formatFilterDsl,
   parseFilterDsl,
 } from "@/lib/filter-contract/index";
-import { getMessages } from "@/lib/i18n/messages";
-
-const messages = getMessages("en");
 
 describe("Sources card UTM tabs", () => {
-  it("follows the referrer tabs with one tab per UTM parameter", () => {
+  it("has one tab per UTM parameter", () => {
     expect(UTM_TABS).toEqual([
-      "source",
       "medium",
+      "source",
       "campaign",
-      "term",
       "content",
-    ]);
-    expect(SOURCE_CARD_TABS).toEqual([
-      "domain",
-      "link",
-      "channel",
-      ...UTM_TABS,
-    ]);
-    expect(UTM_TABS.every(isUtmTab)).toBe(true);
-    expect(["domain", "link", "channel"].some(isUtmTab)).toBe(false);
-  });
-
-  it("labels each tab with its campaign copy", () => {
-    expect(UTM_TABS.map((tab) => utmTabLabel(tab, messages))).toEqual([
-      messages.campaigns.tabSource,
-      messages.campaigns.tabMedium,
-      messages.campaigns.tabCampaign,
-      messages.campaigns.tabTerm,
-      messages.campaigns.tabContent,
+      "term",
     ]);
   });
 
@@ -86,13 +59,14 @@ describe("Sources card UTM tabs", () => {
     const apiRows = [
       { key: "newsletter", label: "newsletter", views: 3, sessions: 1 },
     ] as unknown as DimensionRow[];
-    expect(
-      buildUtmSourceCardRows("source", apiRows, "(not set)")[0],
-    ).toMatchObject({ key: "newsletter", filterValue: "newsletter" });
+    expect(buildUtmRows("source", apiRows, "(not set)")[0]).toMatchObject({
+      key: "newsletter",
+      filterValue: "newsletter",
+    });
   });
 
   it("builds source card rows with trimmed values, a not-set label, and comparisons", () => {
-    const rows = buildUtmSourceCardRows(
+    const rows = buildUtmRows(
       "term",
       [
         {
@@ -125,8 +99,8 @@ describe("Sources card UTM tabs", () => {
         key: "analytics",
         label: "analytics",
         filterValue: "analytics",
-        targetUrl: null,
         views: 12,
+        sessions: 4,
         visitors: 3,
         reference: undefined,
         change: undefined,
@@ -136,8 +110,8 @@ describe("Sources card UTM tabs", () => {
         key: "__empty__:term:1",
         label: "(not set)",
         filterValue: "",
-        targetUrl: null,
         views: 0,
+        sessions: 0,
         visitors: 0,
         reference: undefined,
         change: undefined,
@@ -153,7 +127,7 @@ describe("Sources card UTM tabs", () => {
       }),
     ]);
     expect(
-      buildUtmSourceCardRows(
+      buildUtmRows(
         "source",
         [{ value: "google", label: "google", views: 1, sessions: 1 }],
         "(not set)",
@@ -162,10 +136,9 @@ describe("Sources card UTM tabs", () => {
   });
 
   it("filters the dashboard by a clicked UTM row", () => {
-    expect(SOURCE_CARD_FILTER_CONTROL_BY_TAB.campaign).toBe("utmCampaign");
     const filtered = setDashboardFilterValue(
       EMPTY_DASHBOARD_FILTER_DOCUMENT,
-      SOURCE_CARD_FILTER_CONTROL_BY_TAB.campaign,
+      "utmCampaign",
       "launch",
     );
     expect(formatFilterDsl(filtered)).toBe('utm.campaign eq "launch"');

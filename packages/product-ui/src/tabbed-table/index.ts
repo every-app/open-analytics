@@ -1,6 +1,4 @@
 export {
-  MAX_EXPORT_PAGES,
-  MAX_EXPORT_ROWS,
   TabbedDataTableCardDataController,
   type TabbedDataTableCardDataControllerProps,
 } from "./tabbed-data-table-card";

@@ -3,6 +3,7 @@ import { resolveReportingTimeZone } from "@/lib/analytics/time-zone";
 import {
   type CustomTimeRange,
   type DashboardInterval,
+  type DataStart,
   DEFAULT_RANGE_PRESET,
   type RangePreset,
   resolveRangePreset,
@@ -83,8 +84,10 @@ export function readDashboardQueryPreferences(
     return { range: DEFAULT_RANGE_PRESET, customRange: null };
   }
 }
+/** The saved range, where All time starts at `dataStart`. */
 export function resolveDashboardInitialWindow(
   cookieHeader: string | null,
+  dataStart: DataStart,
   now = Date.now(),
 ): TimeWindow {
   const preferences = readDashboardQueryPreferences(cookieHeader);
@@ -92,6 +95,7 @@ export function resolveDashboardInitialWindow(
     interval: preferences.interval,
     customRange: preferences.customRange ?? undefined,
     timeZone: readReportingTimeZoneFromCookie(cookieHeader),
+    dataStart,
   });
 }
 /** Persists only range controls. Filters remain represented by the URL. */

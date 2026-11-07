@@ -16,6 +16,7 @@ import type { TimeWindow } from "@/lib/dashboard/query-state";
 import {
   createGoal,
   deleteGoal,
+  fetchAllGoals,
   fetchGoalDefinition,
   fetchGoals,
   fetchGoalSummary,
@@ -64,6 +65,44 @@ describe("goal data client helpers", () => {
       "/api/private/goals",
       { siteId: "site-1", id: "goal-1" },
       { signal: controller.signal, dedupe: false },
+    );
+  });
+
+  it("reads every goal of a site, past the first page", async () => {
+    const goal = (id: string) => ({ id, name: id });
+    mocks.fetchPrivateJson
+      .mockResolvedValueOnce({
+        ok: true,
+        data: {
+          items: [goal("a"), goal("b")],
+          pagination: { hasMore: true, nextCursor: "page-2" },
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        data: {
+          items: [goal("c")],
+          pagination: { hasMore: false, nextCursor: null },
+        },
+      });
+
+    await expect(fetchAllGoals("site-1")).resolves.toEqual([
+      goal("a"),
+      goal("b"),
+      goal("c"),
+    ]);
+    expect(mocks.fetchPrivateJson).toHaveBeenLastCalledWith(
+      "/api/private/goals",
+      expect.objectContaining({ siteId: "site-1", cursor: "page-2" }),
+      { signal: undefined },
+    );
+
+    mocks.fetchPrivateJson.mockResolvedValueOnce({
+      ok: true,
+      data: { items: [], pagination: { hasMore: true, nextCursor: null } },
+    });
+    await expect(fetchAllGoals("site-1")).rejects.toThrow(
+      "goal_list_cursor_missing",
     );
   });
 

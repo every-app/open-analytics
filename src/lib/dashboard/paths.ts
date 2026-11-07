@@ -1,9 +1,12 @@
-export type SiteSection = "realtime" | "pages" | "funnels" | "settings";
+export type SiteSection = "realtime" | "funnels" | "settings";
 
 export function buildSitePath(siteSlug: string, section?: SiteSection): string {
   const base = `/sites/${siteSlug}`;
   return section ? `${base}/${section}` : base;
 }
+
+/** Goals & funnels' address key opening one goal. */
+export const GOAL_QUERY_PARAM = "goal";
 
 /**
  * The pages under Settings, in the order its navigation lists them, and who

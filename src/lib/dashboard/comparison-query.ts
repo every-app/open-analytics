@@ -1,3 +1,4 @@
+import { shiftZonedRangeYears } from "@/lib/analytics/time-zone";
 import {
   attachFilterScopePreference,
   type FilterDocument,
@@ -32,11 +33,21 @@ function previousComparisonWindow(window: TimeWindow): TimeWindow | null {
   };
 }
 
+/** The same dates a year earlier, in the window's zone. */
+export function yearAgoComparisonWindow(window: TimeWindow): TimeWindow {
+  const range = shiftZonedRangeYears(
+    { startMs: window.from, endExclusiveMs: window.to },
+    -1,
+    window.timeZone,
+  );
+  return { ...window, from: range.startMs, to: range.endExclusiveMs };
+}
+
 /**
  * Resolves the comparison request that should accompany a dashboard query.
  *
- * A previous-period comparison without compareFilter follows the current
- * filter. A same-period comparison is only valid when compareFilter exists;
+ * A previous-period or year-over-year comparison without compareFilter
+ * follows the current filter. A same-period comparison is only valid when compareFilter exists;
  * parseDashboardComparisonSearchParams already enforces that rule.
  */
 export function resolveDashboardComparisonQuery(
@@ -50,7 +61,9 @@ export function resolveDashboardComparisonQuery(
   const comparisonWindow =
     state.mode === "same"
       ? currentWindow
-      : previousComparisonWindow(currentWindow);
+      : state.mode === "year"
+        ? yearAgoComparisonWindow(currentWindow)
+        : previousComparisonWindow(currentWindow);
   if (!comparisonWindow) return null;
 
   const comparisonFilters = state.filterDocument.root

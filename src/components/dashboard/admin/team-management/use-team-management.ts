@@ -27,14 +27,17 @@ export function useTeamManagement({
 }: TeamManagementClientProps) {
   const { window: selectedWindow } = useDashboardQuery();
 
+  // A custom range must match the snapshot's, and All time start where it did.
   const canUseInitialSnapshotWindow =
     teamDashboardSnapshot &&
     selectedWindow.preset === teamDashboardSnapshot.range &&
     selectedWindow.interval === teamDashboardSnapshot.window.interval &&
     selectedWindow.timeZone === teamDashboardSnapshot.window.timeZone &&
-    (selectedWindow.preset !== "custom" ||
-      (selectedWindow.from === teamDashboardSnapshot.window.from &&
-        selectedWindow.to === teamDashboardSnapshot.window.to));
+    (selectedWindow.preset === "custom"
+      ? selectedWindow.from === teamDashboardSnapshot.window.from &&
+        selectedWindow.to === teamDashboardSnapshot.window.to
+      : selectedWindow.preset !== "all" ||
+        selectedWindow.from === teamDashboardSnapshot.window.from);
 
   const window = canUseInitialSnapshotWindow
     ? {

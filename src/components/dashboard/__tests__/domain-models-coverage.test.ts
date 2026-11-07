@@ -15,26 +15,24 @@ import {
   formatDateSpan,
   INTERVAL_ORDER,
   intervalLabel,
-  RANGE_PRESET_OPTIONS,
+  MENU_RANGE_PRESETS,
+  rangeForShortcut,
   rangeLabel,
   ROLLING_RANGE_PRESETS,
   shiftTimeWindow,
+  stepTimeWindow,
   toCalendarDate,
   toDateRange,
 } from "@/components/dashboard/shell/dashboard-header-controls/range";
 import {
-  buildPagesPagePath,
   canonicalizeGeoFilterValue,
   extractGeoCountryCodeFromFilterValue,
-  isGeoLocationTab,
-  isPageCardDetailTab,
-  parseOverviewCardFilters,
   resolveGeoCityBreadcrumbData,
   resolveGeoDimensionRowRawValue,
   resolveGeoLocationHighlightValue,
   resolveGeoRegionBreadcrumbData,
-  resolvePageCardDetailPath,
 } from "@/components/dashboard/site-pages/overview/overview-filter-model";
+import { zonedTimeToUtcMs } from "@/lib/analytics/time-zone";
 import { EMPTY_DASHBOARD_FILTER_DOCUMENT } from "@/lib/dashboard/filter-state";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type { SiteData } from "@/lib/dashboard-api/client/edge";
@@ -60,6 +58,7 @@ const messages = {
     last30d: "30d",
     last90d: "90d",
     last12m: "12m",
+    lastMonth: "lastMonth",
     custom: "custom",
   },
   intervals: {
@@ -86,14 +85,36 @@ describe("dashboard domain model helpers", () => {
     expect(ROLLING_RANGE_PRESETS.has("30d")).toBe(true);
     expect(ROLLING_RANGE_PRESETS.has("custom")).toBe(false);
     expect(INTERVAL_ORDER).toEqual(["minute", "hour", "day", "week", "month"]);
-    expect(RANGE_PRESET_OPTIONS).toEqual([
+    expect(MENU_RANGE_PRESETS).toEqual([
       "today",
       "yesterday",
+      "24h",
       "7d",
       "30d",
       "90d",
+      "mtd",
+      "lastMonth",
+      "ytd",
       "12m",
+      "all",
     ]);
+    const key = (keyValue: string, target: EventTarget | null = null) => ({
+      key: keyValue,
+      altKey: false,
+      ctrlKey: false,
+      metaKey: false,
+      shiftKey: false,
+      target,
+    });
+    expect(rangeForShortcut(key("T"))).toBe("today");
+    expect(rangeForShortcut(key("3"))).toBe("30d");
+    expect(rangeForShortcut(key("a"))).toBe("all");
+    expect(rangeForShortcut({ ...key("t"), metaKey: true })).toBeNull();
+    expect(
+      rangeForShortcut(key("t", document.createElement("input"))),
+    ).toBeNull();
+    expect(rangeForShortcut(key("q"))).toBeNull();
+    expect(rangeLabel(messages, "lastMonth")).toBe("lastMonth");
     expect(rangeLabel(messages, "today")).toBe("today");
     expect(rangeLabel(messages, "custom")).toBe("custom");
     expect(rangeLabel(messages, "12m")).toBe("12m");
@@ -104,7 +125,7 @@ describe("dashboard domain model helpers", () => {
     expect(toCalendarDate(Date.UTC(2024, 4, 6), "UTC")?.getDate()).toBe(6);
     expect(toDateRange(undefined, 1, "UTC")).toBeUndefined();
     expect(
-      toDateRange(Date.UTC(2024, 4, 6), Date.UTC(2024, 4, 7), "UTC"),
+      toDateRange(Date.UTC(2024, 4, 6), Date.UTC(2024, 4, 8), "UTC"),
     ).toMatchObject({ from: new Date(2024, 4, 6), to: new Date(2024, 4, 7) });
     expect(formatDateSpan("en", "UTC", undefined, 1)).toBe("");
     expect(
@@ -124,6 +145,69 @@ describe("dashboard domain model helpers", () => {
       to: 201,
     });
     expect(shiftTimeWindow(100, 200, "next", 200)).toBeNull();
+  });
+
+  it("steps calendar ranges by whole months in the zone", () => {
+    const timeZone = "America/Los_Angeles";
+    const monthStart = (year: number, month: number) =>
+      zonedTimeToUtcMs(timeZone, {
+        year,
+        month,
+        day: 1,
+        hour: 0,
+        minute: 0,
+        second: 0,
+        millisecond: 0,
+      });
+    const now = Date.UTC(2026, 10, 6, 20);
+    const month = (year: number, monthOfYear: number) => ({
+      from: monthStart(year, monthOfYear),
+      to: monthStart(year, monthOfYear + 1),
+    });
+    const october = { ...month(2026, 10), timeZone };
+
+    // Last month is October; a step back is September, not 30 days earlier.
+    const september = stepTimeWindow("lastMonth", october, "previous", now);
+    expect(september).toEqual(month(2026, 9));
+    expect(formatDateSpan("en", timeZone, september!.from, september!.to)).toBe(
+      "Sep 1, 2026 - Sep 30, 2026",
+    );
+    // The custom range it became keeps stepping by month.
+    expect(
+      stepTimeWindow(
+        "custom",
+        { ...month(2026, 9), timeZone },
+        "previous",
+        now,
+      ),
+    ).toEqual(month(2026, 8));
+    expect(stepTimeWindow("lastMonth", october, "next", now)).toEqual(
+      month(2026, 11),
+    );
+    expect(
+      stepTimeWindow("custom", { ...month(2026, 11), timeZone }, "next", now),
+    ).toBeNull();
+    // Month to date and Year to date step back to the whole month or year.
+    expect(
+      stepTimeWindow(
+        "mtd",
+        { from: monthStart(2026, 11), to: now, timeZone },
+        "previous",
+        now,
+      ),
+    ).toEqual(month(2026, 10));
+    expect(
+      stepTimeWindow(
+        "ytd",
+        { from: monthStart(2026, 1), to: now, timeZone },
+        "previous",
+        now,
+      ),
+    ).toEqual({ from: monthStart(2025, 1), to: monthStart(2026, 1) });
+    // Fixed-length ranges still step by their length.
+    expect(
+      stepTimeWindow("7d", { from: 100, to: 200, timeZone }, "previous", 500),
+    ).toEqual({ from: 0, to: 99 });
   });
 
   it("covers site-management metric, slug, and sorting helpers", () => {
@@ -152,15 +236,12 @@ describe("dashboard domain model helpers", () => {
     ).toEqual(["a", "b", "c"]);
   });
 
-  it("normalizes overview geo filters, breadcrumbs, and page paths", () => {
+  it("normalizes overview geo filters and breadcrumbs", () => {
     expect(extractGeoCountryCodeFromFilterValue(null)).toBeNull();
     expect(extractGeoCountryCodeFromFilterValue("  us::ca::California ")).toBe(
       "US",
     );
     expect(extractGeoCountryCodeFromFilterValue("California")).toBeNull();
-    expect(parseOverviewCardFilters(new URLSearchParams()).root).toBeNull();
-    expect(isGeoLocationTab("country")).toBe(true);
-    expect(isGeoLocationTab("organization")).toBe(false);
     expect(canonicalizeGeoFilterValue(null)).toBeNull();
     expect(canonicalizeGeoFilterValue(" us::ca::California ")).toBe(
       "US::CA::California",
@@ -262,28 +343,5 @@ describe("dashboard domain model helpers", () => {
       "fallback",
     );
     expect(resolveGeoDimensionRowRawValue({ value: " raw " })).toBe("raw");
-    expect(buildPagesPagePath("")).toBe("/pages");
-    expect(buildPagesPagePath("/site/pages/detail")).toBe("/site/pages");
-    expect(buildPagesPagePath("/site/pages")).toBe("/site/pages");
-    expect(buildPagesPagePath("/site")).toBe("/site/pages");
-    expect(isPageCardDetailTab("path")).toBe(true);
-    expect(isPageCardDetailTab("entry")).toBe(true);
-    expect(isPageCardDetailTab("exit")).toBe(true);
-    expect(isPageCardDetailTab("hostname")).toBe(false);
-    expect(
-      resolvePageCardDetailPath({
-        basePath: "/site/pages",
-        value: " /pricing ",
-        unknownLabel: "Unknown",
-        tab: "path",
-      }),
-    ).toBe("/pricing");
-    expect(
-      resolvePageCardDetailPath({
-        basePath: "/site/pages",
-        value: "Unknown",
-        unknownLabel: "Unknown",
-      }),
-    ).toBeNull();
   });
 });

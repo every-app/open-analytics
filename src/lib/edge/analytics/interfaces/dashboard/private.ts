@@ -1,7 +1,4 @@
-import {
-  GOAL_TIMESERIES_MAX_BUCKETS,
-  goalQueryCost,
-} from "@/lib/edge/analytics/application/goal-cost";
+import { goalTimeseriesHasTooManyBuckets } from "@/lib/edge/analytics/application/goal-buckets";
 import { createEdgeSiteAnalyticsRuntime } from "@/lib/edge/analytics/composition";
 import {
   analyticsDiagnosticHeaders,
@@ -12,10 +9,8 @@ import {
   buildCalendarBucketPlan,
   createQueryTime,
   createTimeRange,
-  filterConditionCount,
   normalizeReportingTimeZone,
   parseFilterUrlForAudience,
-  parseGoalFilter,
   siteQueryContext,
   teamQueryContext,
 } from "@/lib/edge/analytics/contract";
@@ -312,15 +307,15 @@ export function executePrivateQuery(
         return queryErrorResponse({ kind: "internal", operation });
       }
       if (!goal) return notFound();
-      const cost = goalQueryCost({
-        filters,
-        startMs: window.startMs,
-        endExclusiveMs: window.endExclusiveMs,
-        timeZone: window.timeZone,
-        goalFilterComplexity: filterConditionCount(parseGoalFilter(goal)),
-        ...(input.pathname === "goal-timeseries" ? { interval } : {}),
-      });
-      if ((cost.bucketCount ?? 1) > GOAL_TIMESERIES_MAX_BUCKETS) {
+      if (
+        input.pathname === "goal-timeseries" &&
+        goalTimeseriesHasTooManyBuckets({
+          startMs: window.startMs,
+          endExclusiveMs: window.endExclusiveMs,
+          timeZone: window.timeZone,
+          interval,
+        })
+      ) {
         return queryErrorResponse({
           kind: "range-not-supported",
           reason: "too-many-buckets",
@@ -338,7 +333,7 @@ export function executePrivateQuery(
         goalId,
         ...(input.pathname === "goal-timeseries" ? { interval } : {}),
       };
-      return runtime.execute(operation, query, { cost }).then((result) => {
+      return runtime.execute(operation, query).then((result) => {
         if (!result.ok) return queryErrorResponse(result.error);
         if (!result.data) return notFound();
         return jsonResponseWith(

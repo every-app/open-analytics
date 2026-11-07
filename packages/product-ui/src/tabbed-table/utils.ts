@@ -105,12 +105,7 @@ export const DEFAULT_EXPORT_LABELS = {
   scopeLabel: "Scope",
   currentTab: "Current tab",
   allTabs: "All tabs",
-  rowsLabel: "Data",
-  currentView: "Current displayed data",
-  rawRows: "Original data",
   fileNameLabel: "File name",
   download: "Export CSV",
   empty: "No rows available to export.",
-  budgetExceeded:
-    "Export limit reached. Narrow the time range or add filters and try again.",
 } satisfies Required<TabbedDataTableExportLabels>;

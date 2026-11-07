@@ -12,6 +12,11 @@ const mocks = vi.hoisted(() => ({
   sites: vi.fn<(teamId: string) => Promise<unknown>>(),
   notifications: vi.fn<() => Promise<unknown>>(),
   resolveEdgeRuntime: vi.fn(),
+  readTeamFirstDataAt:
+    vi.fn<(env: unknown, teamId: string) => Promise<number | null>>(),
+}));
+vi.mock("@/lib/edge/admin/setup/get-started", () => ({
+  readTeamFirstDataAt: mocks.readTeamFirstDataAt,
 }));
 vi.mock("@/lib/edge/admin/service/index", () => ({
   readAdminService: (input: { route: string; url: URL }) => {
@@ -66,6 +71,7 @@ describe("dashboard server helpers", () => {
       site({ id: "site-2", domain: "blog.example.test" }),
     ]);
     mocks.notifications.mockResolvedValue({ unreadAttentionCount: 3 });
+    mocks.readTeamFirstDataAt.mockResolvedValue(1_600_000_000_000);
     mocks.resolveEdgeRuntime.mockResolvedValue({
       request: new Request("https://app.test/app"),
       env: { GATEWAY_URL: "https://gateway.test" },
@@ -93,10 +99,15 @@ describe("dashboard server helpers", () => {
         expect.objectContaining({ id: "site-1", slug: "docs-example-test" }),
         expect.objectContaining({ id: "site-2", slug: "blog-example-test" }),
       ],
+      firstDataAt: 1_600_000_000_000,
       unreadAttentionCount: 3,
       gatewayUrl: "https://gateway.test",
     });
     expect(mocks.sites).toHaveBeenCalledWith("team-1");
+    expect(mocks.readTeamFirstDataAt).toHaveBeenCalledWith(
+      { GATEWAY_URL: "https://gateway.test" },
+      "team-1",
+    );
   });
 
   it("falls back when sites, notifications, or the gateway URL are unavailable", async () => {

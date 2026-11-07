@@ -63,6 +63,20 @@ import {
   LIST_OPERATORS,
   stripSuggestionFacet,
 } from "./model";
+/**
+ * What the event field picker shows. A failed page (the first or a later
+ * one) is an error with a retry, never a shorter list that looks complete.
+ */
+export function fieldPickerMenuState(query: {
+  isError: boolean;
+  isFetching: boolean;
+  hasMorePages: boolean;
+  suggestionCount: number;
+}): "error" | "loading" | "suggestions" | "empty" {
+  if (query.isError) return "error";
+  if (query.isFetching || query.hasMorePages) return "loading";
+  return query.suggestionCount > 0 ? "suggestions" : "empty";
+}
 export function SearchablePayloadPathInput({
   condition,
   document,
@@ -122,24 +136,35 @@ export function SearchablePayloadPathInput({
         ? lastPage.data.pagination.nextCursor
         : undefined,
   });
-  const fields =
-    fieldsQuery.data?.pages.flatMap((page) => page.data.items) ?? [];
+  // The search runs over every field, so the picker reads all of their pages.
+  const {
+    fetchNextPage: fetchNextFields,
+    isFetchingNextPage: fetchingMoreFields,
+  } = fieldsQuery;
+  const hasMoreFields =
+    fieldsQuery.hasNextPage && !fieldsQuery.isFetchNextPageError;
+  useEffect(() => {
+    if (open && hasMoreFields && !fetchingMoreFields) void fetchNextFields();
+  }, [fetchNextFields, fetchingMoreFields, hasMoreFields, open]);
+  const fields = useMemo(
+    () => fieldsQuery.data?.pages.flatMap((page) => page.data.items) ?? [],
+    [fieldsQuery.data],
+  );
   const suggestions = useMemo(() => {
     const search = deferredSearchToken.trim().toLocaleLowerCase();
-    return fields
-      .filter(
-        (field) =>
-          field.path &&
-          (!needsValue || isSelectablePayloadFieldType(field.valueType)) &&
-          (!search || field.path.toLocaleLowerCase().includes(search)),
-      )
-      .slice(0, 12);
+    return fields.filter(
+      (field) =>
+        field.path &&
+        (!needsValue || isSelectablePayloadFieldType(field.valueType)) &&
+        (!search || field.path.toLocaleLowerCase().includes(search)),
+    );
   }, [deferredSearchToken, fields, needsValue]);
-  const menuState = fieldsQuery.isFetching
-    ? "loading"
-    : suggestions.length > 0
-      ? "suggestions"
-      : "empty";
+  const menuState = fieldPickerMenuState({
+    isError: fieldsQuery.isError,
+    isFetching: fieldsQuery.isFetching,
+    hasMorePages: hasMoreFields,
+    suggestionCount: suggestions.length,
+  });
 
   useEffect(() => {
     if (open) setSearchToken("");
@@ -177,11 +202,28 @@ export function SearchablePayloadPathInput({
       >
         <AutoResizer className="min-h-0 flex-1" initial duration={0.18}>
           <AutoTransition transitionKey={menuState} duration={0.18}>
-            {fieldsQuery.isFetching ? (
+            {menuState === "error" ? (
+              <div className="flex min-h-10 items-center justify-center gap-2 text-xs text-destructive">
+                <span>{messages.common.loadFailed}</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() =>
+                    void (fieldsQuery.isFetchNextPageError
+                      ? fetchNextFields()
+                      : fieldsQuery.refetch())
+                  }
+                >
+                  {messages.common.retry}
+                </Button>
+              </div>
+            ) : menuState === "loading" ? (
               <div className="flex min-h-10 items-center justify-center text-muted-foreground">
                 <Spinner aria-label={messages.filterBuilder.valueLoading} />
               </div>
-            ) : suggestions.length > 0 ? (
+            ) : menuState === "suggestions" ? (
               <div className="pt-1">
                 {suggestions.map((field) => (
                   <button
@@ -406,6 +448,9 @@ export function SearchableValueInput({
   });
   const suggestions =
     suggestionsQuery.data?.pages.flatMap((page) => page.items) ?? [];
+  // A further page loads below the values already listed.
+  const loadingSuggestions =
+    suggestionsQuery.isFetching && !suggestionsQuery.isFetchingNextPage;
   const inputMode =
     valueKind === "number" || condition.scalarKind === "number"
       ? "decimal"
@@ -452,7 +497,7 @@ export function SearchableValueInput({
       ? convertDisplayTextToCanonical(valueText, displayUnit, numberUnit)
       : valueText;
 
-  const menuState = suggestionsQuery.isFetching
+  const menuState = loadingSuggestions
     ? "loading"
     : suggestions.length > 0
       ? "suggestions"
@@ -629,7 +674,7 @@ export function SearchableValueInput({
         >
           <AutoResizer className="min-h-0 flex-1" initial duration={0.18}>
             <AutoTransition transitionKey={menuState} duration={0.18}>
-              {suggestionsQuery.isFetching ? (
+              {loadingSuggestions ? (
                 <div className="flex min-h-10 items-center justify-center text-muted-foreground">
                   <Spinner aria-label={messages.filterBuilder.valueLoading} />
                 </div>
@@ -684,6 +729,22 @@ export function SearchableValueInput({
                       </button>
                     );
                   })}
+                  {suggestionsQuery.hasNextPage ? (
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-center px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                      disabled={suggestionsQuery.isFetchingNextPage}
+                      onClick={() => void suggestionsQuery.fetchNextPage()}
+                    >
+                      {suggestionsQuery.isFetchingNextPage ? (
+                        <Spinner
+                          aria-label={messages.filterBuilder.valueLoading}
+                        />
+                      ) : (
+                        messages.filterBuilder.valueShowMore
+                      )}
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
             </AutoTransition>

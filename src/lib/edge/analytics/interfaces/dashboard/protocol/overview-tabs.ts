@@ -2,11 +2,12 @@ import { createEdgeSiteAnalyticsRuntime } from "@/lib/edge/analytics/composition
 import {
   type CanonicalChannelsQuery,
   type CanonicalDimensionQuery,
+  comparisonReferenceWindow,
   type FilterDocument,
+  isComparisonMode,
   type OverviewTableComparisonQuery,
   type OverviewTabResult,
   parseFilterUrlForAudience,
-  previousComparableWindow,
   withoutGeoFilter,
 } from "@/lib/edge/analytics/contract";
 import { siteQueryContext } from "@/lib/edge/analytics/contract";
@@ -84,26 +85,25 @@ export async function handleOverviewTabContract(
       );
     }
   }
-  if (compare !== null && compare !== "same" && compare !== "previous") {
+  if (compare !== null && !isComparisonMode(compare)) {
     return badRequest("Invalid comparison", "invalid-input");
   }
   let comparison: OverviewTableComparisonQuery | undefined;
   let currentComparisonFilters: FilterDocument = filters;
   let referenceComparisonFilters: FilterDocument = filters;
-  if (compare === "same" || compare === "previous") {
+  if (compare !== null) {
     referenceComparisonFilters = compareFilterParams.size
       ? parseFilterUrlForAudience(
           queryContext.policy.audience,
           compareFilterParams,
         )
-      : compare === "previous"
+      : compare !== "same"
         ? filters
         : ({ version: 1, root: null } as FilterDocument);
     if (compare === "same" && !referenceComparisonFilters.root) {
       comparison = undefined;
     } else {
-      const referenceWindow =
-        compare === "previous" ? previousComparableWindow(window) : window;
+      const referenceWindow = comparisonReferenceWindow(compare, window);
       if (tab === "geo.country") {
         currentComparisonFilters = withoutGeoFilter(currentComparisonFilters);
         referenceComparisonFilters = withoutGeoFilter(

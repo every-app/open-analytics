@@ -5,10 +5,7 @@ import {
   intlLocale,
   numberFormat,
   percentFormat,
-  percentFormatWithOneDecimal,
-  shortDate,
   shortDateTime,
-  shortDateTimeWithSeconds,
 } from "@/lib/dashboard/format";
 
 describe("Dashboard Format Utilities", () => {
@@ -38,50 +35,41 @@ describe("Dashboard Format Utilities", () => {
     });
   });
 
-  describe("percentFormatWithOneDecimal", () => {
-    it("should always include one fraction digit", () => {
-      expect(percentFormatWithOneDecimal("en", 0.05)).toMatch(/5\.0\s*%/);
-      expect(percentFormatWithOneDecimal("en", 0)).toMatch(/0\.0\s*%/);
-    });
-  });
-
-  describe("shortDateTime & shortDate edge cases (toValidDate internal logic)", () => {
+  describe("shortDateTime edge cases (toValidDate internal logic)", () => {
     it("should return double-dash fallback for null, undefined, empty, or whitespace values", () => {
-      expect(shortDateTime("en", null)).toBe("--");
-      expect(shortDateTime("en", undefined)).toBe("--");
-      expect(shortDateTime("en", "")).toBe("--");
-      expect(shortDateTime("en", "   ")).toBe("--");
+      expect(shortDateTime("en", null, "UTC")).toBe("--");
+      expect(shortDateTime("en", undefined, "UTC")).toBe("--");
+      expect(shortDateTime("en", "", "UTC")).toBe("--");
+      expect(shortDateTime("en", "   ", "UTC")).toBe("--");
     });
 
     it("should return fallback for invalid string or non-finite numeric date formats", () => {
-      expect(shortDateTime("en", "not-a-date")).toBe("--");
-      expect(shortDateTime("en", NaN as any)).toBe("--");
-      expect(shortDateTime("en", Infinity as any)).toBe("--");
-      expect(shortDateTime("en", -Infinity as any)).toBe("--");
-      expect(shortDateTime("en", new Date("invalid-date-obj"))).toBe("--");
-      expect(shortDateTime("en", false as any)).toBe("--");
+      expect(shortDateTime("en", "not-a-date", "UTC")).toBe("--");
+      expect(shortDateTime("en", NaN as any, "UTC")).toBe("--");
+      expect(shortDateTime("en", Infinity as any, "UTC")).toBe("--");
+      expect(shortDateTime("en", -Infinity as any, "UTC")).toBe("--");
+      expect(shortDateTime("en", new Date("invalid-date-obj"), "UTC")).toBe(
+        "--",
+      );
+      expect(shortDateTime("en", false as any, "UTC")).toBe("--");
     });
 
     it("should return fallback for numeric timestamps less than or equal to zero", () => {
-      expect(shortDateTime("en", 0)).toBe("--");
-      expect(shortDateTime("en", -123456789)).toBe("--");
-      expect(shortDateTime("en", "-500")).toBe("--");
-      expect(shortDateTime("en", "0")).toBe("--");
+      expect(shortDateTime("en", 0, "UTC")).toBe("--");
+      expect(shortDateTime("en", -123456789, "UTC")).toBe("--");
+      expect(shortDateTime("en", "-500", "UTC")).toBe("--");
+      expect(shortDateTime("en", "0", "UTC")).toBe("--");
     });
 
     it("should return fallback for positive numbers that exceed the valid date range", () => {
       // Finite and > 0, but `new Date(value)` produces an Invalid Date.
-      expect(shortDateTime("en", (8.64e15 + 1000) as any)).toBe("--");
+      expect(shortDateTime("en", (8.64e15 + 1000) as any, "UTC")).toBe("--");
       // Numeric-string path reaching the same invalid-Date branch.
-      expect(shortDateTime("en", "1e20" as any)).toBe("--");
+      expect(shortDateTime("en", "1e20" as any, "UTC")).toBe("--");
     });
 
     it("should correctly parse and format valid Date objects", () => {
       const date = new Date(Date.UTC(2026, 4, 25, 3, 43, 43)); // May 25, 2026 03:43:43 UTC
-      const resultDate = shortDate("en", date, "UTC");
-      expect(resultDate).toContain("May");
-      expect(resultDate).toContain("25");
-
       const resultDateTime = shortDateTime("en", date, "UTC");
       expect(resultDateTime).toContain("May");
       expect(resultDateTime).toContain("25");
@@ -91,20 +79,21 @@ describe("Dashboard Format Utilities", () => {
 
     it("should correctly parse and format valid numeric and string-numeric timestamps", () => {
       const timestamp = Date.UTC(2026, 4, 25, 3, 43, 43); // 1779680623000
-      expect(shortDate("en", timestamp, "UTC")).toContain("May");
-      expect(shortDate("en", String(timestamp), "UTC")).toContain("25");
+      expect(shortDateTime("en", timestamp, "UTC")).toContain("May");
+      expect(shortDateTime("en", String(timestamp), "UTC")).toContain("25");
     });
 
     it("should correctly parse and format valid date-strings", () => {
       const isoStr = "2026-05-25T03:43:43Z";
-      expect(shortDate("en", isoStr, "UTC")).toContain("May");
       expect(shortDateTime("en", isoStr, "UTC")).toContain("43");
-      expect(shortDateTimeWithSeconds("en", isoStr, "UTC")).toContain("43");
     });
 
-    it("should format without a timezone override when one is not provided", () => {
-      expect(shortDate("en", "2026-05-25T03:43:43Z")).not.toBe("--");
-      expect(shortDateTime("en", "2026-05-25T03:43:43Z")).not.toBe("--");
+    it("formats in the zone it is given, whatever the machine's", () => {
+      const isoStr = "2026-05-25T03:43:43Z";
+      expect(shortDateTime("en", isoStr, "Asia/Tokyo")).toContain("12:43");
+      expect(shortDateTime("en", isoStr, "America/Los_Angeles")).toContain(
+        "May 24",
+      );
     });
   });
 

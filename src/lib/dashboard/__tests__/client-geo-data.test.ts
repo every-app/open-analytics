@@ -73,16 +73,17 @@ describe("dashboard client geo data helpers", () => {
       "geo-site",
       window,
       dashboardFilterDocumentFromPresentation({ geo: "FR" }),
-      { limit: 25, applyGeoFilter: true },
+      { applyGeoFilter: true },
     );
 
+    // The map reads every point: the request names no limit.
+    expect(paramsFromCall(fetchMock).has("limit")).toBe(false);
     expect(paramsFromCall(fetchMock)).toMatchObject(
       new URLSearchParams({
         siteId: "geo-site",
         from: "1000",
         to: "2000",
         timeZone: "UTC",
-        limit: "25",
         applyGeoFilter: "1",
         "filter[geo.country]": "fr",
       }),
@@ -111,7 +112,7 @@ describe("dashboard client geo data helpers", () => {
     });
   });
 
-  it("falls back to empty geo points when payload sections are not arrays or fetch fails", async () => {
+  it("reads missing payload sections as empty, and fails when the request does", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
@@ -133,13 +134,9 @@ describe("dashboard client geo data helpers", () => {
       regionCounts: [],
       cityCounts: [],
     });
-    await expect(fetchOverviewGeoPoints("geo-fail", window)).resolves.toEqual({
-      ok: true,
-      data: [],
-      countryCounts: [],
-      regionCounts: [],
-      cityCounts: [],
-    });
+    await expect(fetchOverviewGeoPoints("geo-fail", window)).rejects.toThrow(
+      "offline",
+    );
   });
 
   it("normalizes geo dimension labels for generic, region, and city tabs", async () => {
@@ -241,14 +238,12 @@ describe("dashboard client geo data helpers", () => {
     expect(paramsFromCall(fetchMock, 0).get("limit")).toBe("100");
   });
 
-  it("returns an empty dimension list when the endpoint fails", async () => {
+  it("fails when the endpoint fails, so the card can say so", async () => {
     globalThis.fetch = vi.fn().mockRejectedValue(new Error("offline"));
 
     await expect(
-      fetchOverviewGeoDimensionTabPage("geo-fallback", window, "timezone").then(
-        (page) => page.items,
-      ),
-    ).resolves.toEqual([]);
+      fetchOverviewGeoDimensionTabPage("geo-failed", window, "country"),
+    ).rejects.toThrow("offline");
   });
 
   it("reads paginated dimension responses from the overview contract", async () => {

@@ -62,6 +62,9 @@ vi.mock("@/lib/dashboard/query-preferences", () => ({
 vi.mock("@/lib/dashboard/server/query", () => ({
   resolveTeamDashboardRequest: vi.fn(),
 }));
+vi.mock("@/lib/edge/admin/setup/get-started", () => ({
+  readTeamFirstDataAt: vi.fn(),
+}));
 vi.mock("@/lib/edge/analytics/composition/ssr-query-runtime", () => ({
   createTeamDashboardQueryRuntime: vi.fn(() => ({
     execute: teamDashboardExecute,
@@ -85,8 +88,7 @@ import { getRequest } from "@tanstack/react-start/server";
 import { resolveDashboardInitialWindow } from "@/lib/dashboard/query-preferences";
 import {
   loadAccountNotificationPreferences,
-  loadDashboardInitialWindow,
-  loadDashboardTeam,
+  loadDashboardShell,
   loadNotificationCenterInitialData,
   loadRequestOrigin,
   loadRuntimeSetupMode,
@@ -104,6 +106,7 @@ import {
 import { resolveTeamDashboardRequest } from "@/lib/dashboard/server/query";
 import { readShareSite } from "@/lib/dashboard/share-site-server";
 import { normalizeNotificationPreferencesData } from "@/lib/dashboard-api/client/edge";
+import { readTeamFirstDataAt } from "@/lib/edge/admin/setup/get-started";
 import { createTeamDashboardQueryRuntime } from "@/lib/edge/analytics/composition/ssr-query-runtime";
 import { resolveEdgeRuntime } from "@/lib/edge/runtime";
 import { DEFAULT_RETENTION_CONFIG } from "@/lib/retention";
@@ -150,6 +153,7 @@ describe("Dashboard route data loaders", () => {
       meta: { source: "raw", approximateVisitors: false },
     });
     vi.mocked(getDashboardTeamSites).mockResolvedValue([]);
+    vi.mocked(readTeamFirstDataAt).mockResolvedValue(42);
   });
 
   describe("loadRequestOrigin", () => {
@@ -197,14 +201,22 @@ describe("Dashboard route data loaders", () => {
     });
   });
 
-  it("derives the initial dashboard window from the request cookie", () => {
-    const window = loadDashboardInitialWindow();
-    expect(resolveDashboardInitialWindow).toHaveBeenCalledWith(null);
-    expect(window).toMatchObject({
-      preset: "7d",
-      interval: "day",
-      timeZone: "Asia/Tokyo",
+  it("loads the workspace with its first range, All time starting at the organization's first page view", async () => {
+    vi.mocked(getDashboardTeamContext).mockResolvedValue({
+      firstDataAt: 1_700_000_000_000,
+    } as never);
+    await expect(loadDashboardShell()).resolves.toEqual({
+      teamContext: { firstDataAt: 1_700_000_000_000 },
+      initialDashboardWindow: expect.objectContaining({
+        preset: "7d",
+        interval: "day",
+        timeZone: "Asia/Tokyo",
+      }),
     });
+    expect(resolveDashboardInitialWindow).toHaveBeenCalledWith(
+      null,
+      1_700_000_000_000,
+    );
   });
 
   describe("loadShareSite", () => {
@@ -217,6 +229,7 @@ describe("Dashboard route data loaders", () => {
         name: "Site",
         domain: "app.test",
         hasData: true,
+        firstDataAt: 1_700_000_000_000,
       };
       vi.mocked(readShareSite).mockResolvedValueOnce(site);
 
@@ -256,6 +269,9 @@ describe("Dashboard route data loaders", () => {
         env: { DB: {} },
         teamId: "team-requested",
       });
+      // All time starts at the organization's first page view.
+      expect(readTeamFirstDataAt).toHaveBeenCalledWith({ DB: {} }, "team-1");
+      expect(resolveDashboardInitialWindow).toHaveBeenCalledWith(null, 42);
       expect(createTeamDashboardQueryRuntime).toHaveBeenCalledWith({
         env: { DB: {} },
         teamId: "team-1",
@@ -336,13 +352,6 @@ describe("Dashboard route data loaders", () => {
         "team-dashboard",
         expect.objectContaining({ filters: { version: 1, root: null } }),
       );
-    });
-
-    it("loads the workspace context", async () => {
-      vi.mocked(getDashboardTeamContext).mockResolvedValue({
-        team: "t",
-      } as never);
-      await expect(loadDashboardTeam()).resolves.toEqual({ team: "t" });
     });
   });
 

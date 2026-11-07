@@ -101,9 +101,20 @@ describe("private goal summary and timeseries queries", () => {
     expect(summaryCall![1]).toMatchObject({ goalId: "goal-1" });
     expect(timeseriesCall![0]).toBe("goal-timeseries");
     expect(timeseriesCall![1]).toMatchObject({ interval: "hour" });
-    expect(timeseriesCall![2]).toMatchObject({
-      cost: { bucketCount: 7 * 24 },
+  });
+
+  it("answers a goal over many years of data instead of refusing the range", async () => {
+    const years = await query("goal-summary", {
+      to: String(FROM + 12 * 365 * DAY_MS),
     });
+    const monthly = await query("goal-timeseries", {
+      interval: "month",
+      to: String(FROM + 12 * 365 * DAY_MS),
+    });
+
+    expect(years.status).toBe(200);
+    expect(monthly.status).toBe(200);
+    expect(runtime.execute).toHaveBeenCalledTimes(2);
   });
 
   it("maps query errors and empty results", async () => {

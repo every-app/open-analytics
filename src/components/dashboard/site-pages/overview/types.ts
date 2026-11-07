@@ -1,14 +1,5 @@
-import { type MetricAreaPoint } from "@insightflare/product-ui/charts";
-
 import { type TrafficChannelId } from "@/lib/analytics/traffic-channel-rules";
-import {
-  type OverviewTabRows,
-  type UtmDimensionTab,
-} from "@/lib/dashboard/client/data/index";
-import type { TimeWindow } from "@/lib/dashboard/query-state";
-import type { OverviewTabData } from "@/lib/dashboard-api/client/edge";
-import { type FilterScope } from "@/lib/filter-contract/index";
-import { type FilterDocument } from "@/lib/filter-contract/index";
+import { type OverviewTabRows } from "@/lib/dashboard/client/data/index";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 
@@ -17,127 +8,44 @@ export interface OverviewClientPageProps {
   messages: AppMessages;
   siteId: string;
   siteDomain: string;
-  pathname: string;
-  showSourceLinkTab?: boolean;
+  /** The site's Goals page, for the goal card's rows; none on a share page. */
+  goalsPath?: string;
 }
 
-export type PageCardTab =
-  "path" | "query" | "title" | "hostname" | "entry" | "exit";
+export type SourceTab = "channel" | "domain" | "campaigns";
 
-export type OverviewComparisonMetric = "views" | "visitors";
+export type PageTab = "path" | "entry" | "exit";
 
-export type PageCardSortKey =
-  "views" | "visitors" | "current" | "reference" | "change";
+export type LocationTab = "map" | "country" | "region" | "city";
 
-export type PageCardNavigableTab =
-  "path" | "query" | "hostname" | "entry" | "exit";
+export type DeviceTab = "browser" | "osVersion" | "deviceType";
 
-export type PageCardDetailTab = "path" | "entry" | "exit";
+/** What a row can be sorted by: its metrics, or a comparison's columns. */
+export type ReportSortKey =
+  | "visitors"
+  | "sessions"
+  | "views"
+  | "bounceRate"
+  | "avgDurationMs"
+  | "current"
+  | "reference"
+  | "change";
 
-export type SourceCardTab = "domain" | "link" | "channel" | UtmDimensionTab;
-
-export type OverviewPagesSectionCardKind = "page" | "source" | "client" | "geo";
-
-export type ClientDimensionCardTab =
-  "browser" | "osVersion" | "deviceType" | "language" | "screenSize";
-
-export type GeoDimensionCardTab =
-  "country" | "region" | "city" | "continent" | "timezone" | "organization";
-
-export type GeoLocationTab = Extract<
-  GeoDimensionCardTab,
-  "country" | "region" | "city"
->;
-
-export interface OverviewPagesSectionCardData {
-  page: {
-    path: OverviewTabRows;
-    query: OverviewTabRows;
-    title: OverviewTabRows;
-    hostname: OverviewTabRows;
-    entry: OverviewTabRows;
-    exit: OverviewTabRows;
-  };
-  source: {
-    domain: OverviewTabRows;
-    link: OverviewTabRows;
-    channel?: OverviewTabRows;
-  };
-  client: {
-    browser: OverviewTabRows;
-    osVersion: OverviewTabRows;
-    deviceType: OverviewTabRows;
-    language: OverviewTabRows;
-    screenSize: OverviewTabRows;
-  };
-  geo: {
-    country: OverviewTabRows;
-    region: OverviewTabRows;
-    city: OverviewTabRows;
-    continent: OverviewTabRows;
-    timezone: OverviewTabRows;
-    organization: OverviewTabRows;
-  };
-}
-
-export interface PageCardTabMeta {
-  label: string;
-  columnLabel: string;
-  primaryMetricLabel?: string;
-  mono: boolean;
-  showIcon: boolean;
-}
-
-type PageCardTabFetcher = (
-  siteId: string,
-  window: TimeWindow,
-  filters: FilterDocument,
-  resolvedScope?: FilterScope,
-  options?: {
-    limit?: number;
-    cursor?: string | null;
-    search?: string;
-    sort?: "views" | "visitors" | "sessions";
-    direction?: "asc" | "desc";
-    comparisonMetric?: "views" | "visitors";
-    comparisonSortBy?: "current" | "reference" | "change";
-    comparison?: {
-      mode: "same" | "previous";
-      window: TimeWindow;
-      filters: FilterDocument;
-    } | null;
-    signal?: AbortSignal;
-  },
-) => Promise<OverviewTabRows | OverviewTabData["data"]>;
-
-type PageCardTargetUrlResolver = (params: {
-  tab: PageCardTab;
-  value: string;
-  unknownLabel: string;
-  fallbackHostname: string;
-}) => string | null;
-
-type PageCardDetailPathResolver = (params: {
-  tab: PageCardDetailTab;
-  value: string;
-  unknownLabel: string;
-  basePath: string;
-}) => string | null;
-
-export type PageCardDetailClickResolver = (params: {
-  tab: PageCardDetailTab;
-  value: string;
-  unknownLabel: string;
-  basePath: string;
-}) => void;
-
-export interface PageCardRow {
+/** One row of a dashboard card, whichever card. */
+export interface ReportRow {
   key: string;
+  /** Shown, searched and exported. */
   label: string;
+  /** Shown instead of the label, like a decoded URL. */
   displayLabel?: string;
-  rawLabel?: string;
+  /** The value a click filters by. */
+  filterValue: string;
   views: number;
+  sessions: number;
   visitors: number;
+  /** The Pages card's extra metrics. */
+  bounceRate?: number;
+  avgDurationMs?: number;
   reference?: {
     views: number;
     sessions: number;
@@ -150,7 +58,9 @@ export interface PageCardRow {
   };
   mono: boolean;
   iconName?: string | null;
-  filterValue?: string;
+  channelId?: TrafficChannelId;
+  /** Where the row's label links to, like a referring page. */
+  targetUrl?: string | null;
   regionBreadcrumb?: {
     countryLabel: string;
     countryIconName: string | null;
@@ -172,69 +82,10 @@ export interface PageCardRow {
   };
 }
 
-export interface SourceCardRow {
-  key: string;
-  label: string;
-  displayLabel?: string;
-  filterValue: string;
-  targetUrl: string | null;
-  views: number;
-  visitors: number;
-  reference?: PageCardRow["reference"];
-  change?: PageCardRow["change"];
-  mono: boolean;
-  channelId?: TrafficChannelId;
+/** Rows handed to the cards instead of fetched: Realtime's live visits. */
+export interface LocalCardData {
+  source: { domain: OverviewTabRows };
+  page: Record<PageTab, OverviewTabRows>;
+  geo: Record<Exclude<LocationTab, "map">, OverviewTabRows>;
+  client: Record<DeviceTab, OverviewTabRows>;
 }
-
-export interface OverviewPagesSectionProps extends OverviewClientPageProps {
-  filters: FilterDocument;
-  /** The cards follow the page's filters, and some are set. */
-  filtered?: boolean;
-  resolvedScope?: FilterScope;
-  loading?: boolean;
-  cardDataOverride?: OverviewPagesSectionCardData | null;
-  comparisonEnabled?: boolean;
-  tableContentTransitionKey?: string | number;
-  visibleCards?: readonly OverviewPagesSectionCardKind[];
-  pageCardTabs?: readonly PageCardTab[];
-  pageCardTabMetaOverride?: Partial<
-    Record<PageCardTab, Partial<PageCardTabMeta>>
-  >;
-  pageCardFilterEnabledOverride?: Partial<Record<PageCardTab, boolean>>;
-  pageCardNavigableTabs?: readonly PageCardNavigableTab[];
-  pageCardDetailTabs?: readonly PageCardDetailTab[];
-  pageCardFetchers?: Partial<Record<PageCardTab, PageCardTabFetcher>>;
-  pageCardTargetUrlResolvers?: Partial<
-    Record<PageCardTab, PageCardTargetUrlResolver>
-  >;
-  pageCardDetailPathResolvers?: Partial<
-    Record<PageCardDetailTab, PageCardDetailPathResolver>
-  >;
-  pageCardDetailClickResolvers?: Partial<
-    Record<PageCardDetailTab, PageCardDetailClickResolver>
-  >;
-  pageCardShowVisitors?: boolean;
-  primaryMetricLabel?: string;
-  sectionClassName?: string;
-}
-
-export interface OverviewDataSectionProps {
-  locale: Locale;
-  messages: AppMessages;
-  siteId: string;
-  window: TimeWindow;
-  filters: FilterDocument;
-}
-
-type OverviewMetricKey =
-  | "views"
-  | "visitors"
-  | "sessions"
-  | "bounceRate"
-  | "pagesPerSession"
-  | "avgDuration";
-
-export type OverviewMetricSeries = Record<
-  OverviewMetricKey,
-  ReadonlyArray<MetricAreaPoint>
->;

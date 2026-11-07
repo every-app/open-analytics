@@ -1,18 +1,16 @@
 import type { ReactNode } from "react";
 
 import { EmptyState } from "@/components/common/empty-state";
+import { FilterPills } from "@/components/dashboard/filters/filter-pills";
 import { ShareHeader } from "@/components/dashboard/sharing/share-header";
 import { DashboardQueryProvider } from "@/components/dashboard/shell/dashboard-query-provider";
-import { useDashboardNavHref } from "@/components/dashboard/shell/dashboard-shell/navigation";
-import { NavTabs } from "@/components/dashboard/shell/nav-tabs";
 import { PageTransition } from "@/components/page-transition";
 import { publicDashboardSiteId } from "@/lib/dashboard/client/request";
 import { parseFilterDocumentFromSearchParams } from "@/lib/dashboard/query-state";
-import { sharePath } from "@/lib/dashboard/share-path";
 import { parseFilterScopePreference } from "@/lib/filter-contract/index";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
-import { usePathname, useSearchParams } from "@/lib/router";
+import { useSearchParams } from "@/lib/router";
 
 interface ShareDashboardShellProps {
   locale: Locale;
@@ -21,13 +19,9 @@ interface ShareDashboardShellProps {
   siteName: string;
   /** Whether the site has received a page view yet. */
   hasData: boolean;
+  /** When its first page view happened; All time starts there. */
+  firstDataAt: number | null;
   children: ReactNode;
-}
-
-const SHARE_TABS = ["overview", "pages"] as const;
-
-function shareTabHref(locale: Locale, slug: string, key: string): string {
-  return sharePath(slug, key === "overview" ? undefined : key);
 }
 
 export function ShareDashboardShell({
@@ -36,38 +30,24 @@ export function ShareDashboardShell({
   slug,
   siteName,
   hasData,
+  firstDataAt,
   children,
 }: ShareDashboardShellProps) {
   const publicSiteId = publicDashboardSiteId(slug);
-  const pathname = usePathname() || "";
   const routeSearchParams = useSearchParams();
   const initialFilters = parseFilterDocumentFromSearchParams(routeSearchParams);
   const initialScopePreference = parseFilterScopePreference(routeSearchParams);
-  const navHref = useDashboardNavHref();
-  const overviewPath = shareTabHref(locale, slug, "overview");
-  const tabs = SHARE_TABS.map((key) => {
-    const href = shareTabHref(locale, slug, key);
-    return {
-      key,
-      href: navHref(href),
-      label: messages.navigation[key],
-      active:
-        key === "overview"
-          ? pathname === overviewPath
-          : pathname.startsWith(href),
-    };
-  });
 
   return (
     <DashboardQueryProvider
       scopeKey={publicSiteId}
-      maxRangeDays={365}
+      dataStart={firstDataAt}
       initialFilters={initialFilters}
       initialScopePreference={initialScopePreference}
     >
       <div className="flex min-h-svh flex-col bg-background text-foreground">
-        <div className="sticky top-0 z-20 shrink-0 bg-background/90 backdrop-blur">
-          <div className="px-4 pt-3 md:px-6">
+        <div className="sticky top-0 z-20 shrink-0 border-b border-border bg-background/90 backdrop-blur">
+          <div className="px-4 py-3 md:px-6">
             <ShareHeader
               locale={locale}
               messages={messages}
@@ -75,14 +55,14 @@ export function ShareDashboardShell({
               siteName={siteName}
               showControls={hasData}
             />
+            {hasData ? (
+              <FilterPills
+                locale={locale}
+                messages={messages}
+                className="pt-2.5 empty:hidden"
+              />
+            ) : null}
           </div>
-          {hasData ? (
-            <NavTabs
-              label={messages.appNav.sections}
-              items={tabs}
-              className="mt-2 px-2 md:px-4"
-            />
-          ) : null}
         </div>
         <main className="mx-auto flex w-full max-w-8xl flex-1 flex-col px-4 py-4 md:px-6 md:py-6">
           {hasData ? (

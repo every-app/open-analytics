@@ -34,7 +34,6 @@ describe("analytics architecture", () => {
       "application/query-validation.ts",
       "application/planner.ts",
       "application/cache.ts",
-      "application/cost.ts",
       "application/errors.ts",
       "providers/d1/index.ts",
       "providers/realtime/index.ts",

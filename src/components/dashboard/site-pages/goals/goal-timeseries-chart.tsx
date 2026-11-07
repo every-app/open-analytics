@@ -156,9 +156,8 @@ export function normalizeGoalTimeseries(
   }
 
   const normalized: GoalChartPoint[] = [];
-  const hardLimit = 2_000;
   let current = start;
-  for (let index = 0; index < hardLimit && current < safeTo; index += 1) {
+  while (current < safeTo) {
     normalized.push(
       pointByBucket.get(current) ?? createGoalChartPoint(current),
     );

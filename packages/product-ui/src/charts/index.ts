@@ -25,12 +25,6 @@ export type {
   PerformanceTrendMetricThresholds,
 } from "./performance-trend-chart";
 export { PerformanceTrendChart } from "./performance-trend-chart";
-export type {
-  ShareTrendAreaChartProps,
-  ShareTrendAreaPoint,
-  ShareTrendAreaSeries,
-} from "./share-trend-area-chart";
-export { ShareTrendAreaChart } from "./share-trend-area-chart";
 export type { SiteTrafficStackChartProps } from "./site-traffic-stack-chart";
 export { SiteTrafficStackChart } from "./site-traffic-stack-chart";
 export type {

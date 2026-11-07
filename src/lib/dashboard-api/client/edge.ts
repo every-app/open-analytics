@@ -31,6 +31,8 @@ export interface PublicSiteData {
   domain: string;
   /** Whether the site has received a page view yet. */
   hasData: boolean;
+  /** When its first page view happened, for All time; null before one. */
+  firstDataAt: number | null;
 }
 export interface FetchEdgeOptions {
   method?: HttpMethod;

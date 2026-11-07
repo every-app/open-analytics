@@ -11,7 +11,6 @@ export class AnalyticsProviderDomainError extends Error {
 export type AnalyticsServiceError =
   | { readonly kind: "deadline-exceeded" }
   | { readonly kind: "request-cancelled" }
-  | { readonly kind: "query-cost-exceeded"; readonly cost: number }
   | {
       readonly kind: "invalid-input";
       readonly issues: readonly {

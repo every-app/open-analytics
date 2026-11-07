@@ -1,10 +1,13 @@
 import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { LayerManagerProvider } from "@insightflare/ui/layer-manager";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type * as Motion from "motion/react";
+import { MotionGlobalConfig } from "motion/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
+  TabbedDataTableExportConfig,
   TabbedDataTableLoader,
   TabbedDataTableLoaderOptions,
   TabbedDataTablePage,
@@ -142,6 +145,8 @@ function page(
 }
 function renderTable(
   loader: TabbedDataTableLoader<TestTab, TestRow, TestSortKey>,
+  exportConfig:
+    false | TabbedDataTableExportConfig<TestRow, TestTab, TestSortKey> = false,
 ) {
   const client = new QueryClient({
     defaultOptions: { queries: { gcTime: 0, retry: false } },
@@ -152,18 +157,20 @@ function renderTable(
   act(() => {
     root.render(
       <QueryClientProvider client={client}>
-        <TabbedDataTableCard<TestTab, TestRow, TestSortKey>
-          messages={getMessages("en")}
-          tabs={tabs}
-          columns={columns}
-          loader={loader}
-          limit={2}
-          sortActionLabel={(label) => `Sort by ${label}`}
-          loadingLabel="Loading"
-          emptyLabel="Empty"
-          search={false}
-          export={false}
-        />
+        <LayerManagerProvider>
+          <TabbedDataTableCard<TestTab, TestRow, TestSortKey>
+            messages={getMessages("en")}
+            tabs={tabs}
+            columns={columns}
+            loader={loader}
+            limit={2}
+            sortActionLabel={(label) => `Sort by ${label}`}
+            loadingLabel="Loading"
+            emptyLabel="Empty"
+            search={false}
+            export={exportConfig}
+          />
+        </LayerManagerProvider>
       </QueryClientProvider>,
     );
   });
@@ -186,9 +193,11 @@ describe("TabbedDataTableCard loader contract", () => {
 
   beforeEach(() => {
     sentinelState.onReachEnd = undefined;
+    MotionGlobalConfig.skipAnimations = true;
   });
 
   afterEach(() => {
+    MotionGlobalConfig.skipAnimations = false;
     act(() => root?.unmount());
     client?.clear();
     container?.remove();
@@ -277,5 +286,71 @@ describe("TabbedDataTableCard loader contract", () => {
       "page-two-a",
       "page-two-b",
     ]);
+  });
+
+  it("exports every row of the report to CSV, paging past the rows on screen", async () => {
+    const rows = Array.from({ length: 9 }, (_, index) => ({
+      key: `/page-${index + 1}`,
+      value: 9 - index,
+    }));
+    const loader = vi.fn(
+      async ({
+        cursor,
+      }: TabbedDataTableLoaderOptions<TestTab, TestSortKey>) => {
+        const start = Number(cursor ?? 0);
+        const end = start + 2;
+        return page(
+          rows.slice(start, end),
+          end < rows.length ? String(end) : null,
+        );
+      },
+    );
+    ({ client, container, root } = renderTable(loader, {
+      filename: "Pages-Top pages",
+    }));
+    await settle();
+    // The table has loaded only its first pages.
+    const shown = renderedLabels(container!);
+    expect(shown.length).toBeLessThan(rows.length);
+    expect(shown.slice(0, 2)).toEqual(["/page-1", "/page-2"]);
+
+    const blobs: Blob[] = [];
+    const createObjectURL = vi
+      .spyOn(URL, "createObjectURL")
+      .mockImplementation((blob) => {
+        blobs.push(blob as Blob);
+        return "blob:export";
+      });
+    const revokeObjectURL = vi
+      .spyOn(URL, "revokeObjectURL")
+      .mockImplementation(() => undefined);
+    act(() => {
+      container!
+        .querySelector<HTMLButtonElement>('[aria-label="Export"]')
+        ?.click();
+    });
+    await settle();
+    const download = Array.from(
+      document.body.querySelectorAll<HTMLButtonElement>("button"),
+    ).find((button) => button.textContent?.trim() === "Export CSV");
+    act(() => download?.click());
+    await settle();
+
+    // The export picks up after the loaded pages and reads each page once.
+    expect(loader.mock.calls.map(([options]) => options.cursor)).toEqual([
+      null,
+      "2",
+      "4",
+      "6",
+      "8",
+    ]);
+    expect(blobs).toHaveLength(1);
+    const csv = (await blobs[0]!.text()).replace(/^\uFEFF/, "");
+    expect(csv.split("\r\n")).toEqual([
+      "All,Value",
+      ...rows.map((row) => `${row.key},${row.value}`),
+    ]);
+    createObjectURL.mockRestore();
+    revokeObjectURL.mockRestore();
   });
 });

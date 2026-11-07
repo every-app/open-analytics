@@ -18,6 +18,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -47,10 +48,12 @@ import {
   formatDateSpan,
   INTERVAL_ORDER,
   intervalLabel,
-  RANGE_PRESET_OPTIONS,
+  MENU_RANGE_PRESETS,
+  RANGE_SHORTCUTS,
+  rangeForShortcut,
   rangeLabel,
   ROLLING_RANGE_PRESETS,
-  shiftTimeWindow,
+  stepTimeWindow,
   toDateRange,
 } from "./range";
 
@@ -79,7 +82,6 @@ export function DateControl({
     setInterval,
     allowedIntervals,
     timeZone,
-    maxRangeDays,
   } = useDashboardQueryControls();
   const [customDialogOpen, setCustomDialogOpen] = useState(false);
   // Custom range opens its dialog once the menu has closed and let go of focus.
@@ -94,20 +96,13 @@ export function DateControl({
   const [pendingCustomRange, setPendingCustomRange] = useState<
     DateRange | undefined
   >(selectedDateRange);
-  const presets = RANGE_PRESET_OPTIONS.filter(
-    (preset) => !(maxRangeDays && maxRangeDays <= 90 && preset === "12m"),
-  );
   const intervals = INTERVAL_ORDER.filter((value) =>
     allowedIntervals.includes(value),
   );
-  const previousPeriodRange = shiftTimeWindow(
-    window.from,
-    window.to,
-    "previous",
-  );
+  const previousPeriodRange = stepTimeWindow(range, window, "previous");
   const canShiftToNextPeriod = !ROLLING_RANGE_PRESETS.has(range);
   const nextPeriodRange = canShiftToNextPeriod
-    ? (periodForwardStack[0] ?? shiftTimeWindow(window.from, window.to, "next"))
+    ? (periodForwardStack[0] ?? stepTimeWindow(range, window, "next"))
     : null;
   const pendingNormalized = normalizeCustomDateRange(
     pendingCustomRange,
@@ -151,6 +146,16 @@ export function DateControl({
     setPeriodForwardStack([]);
     setRange(value);
   };
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const preset = rangeForShortcut(event);
+      if (!preset) return;
+      setPeriodForwardStack([]);
+      setRange(preset);
+    };
+    globalThis.addEventListener("keydown", onKeyDown);
+    return () => globalThis.removeEventListener("keydown", onKeyDown);
+  }, [setRange]);
   const shiftToPreviousPeriod = () => {
     if (!previousPeriodRange) return;
     setPeriodForwardStack((current) => [
@@ -232,9 +237,14 @@ export function DateControl({
             value={range}
             onValueChange={(value) => selectPreset(value as RangePreset)}
           >
-            {presets.map((preset) => (
+            {MENU_RANGE_PRESETS.map((preset) => (
               <DropdownMenuRadioItem key={preset} value={preset}>
                 {rangeLabel(messages, preset)}
+                {RANGE_SHORTCUTS[preset] ? (
+                  <DropdownMenuShortcut>
+                    {RANGE_SHORTCUTS[preset].toUpperCase()}
+                  </DropdownMenuShortcut>
+                ) : null}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>

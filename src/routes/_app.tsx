@@ -32,6 +32,7 @@ function AppLayout() {
       team={teamContext.activeTeam}
       gatewayUrl={teamContext.gatewayUrl}
       sites={teamContext.sites}
+      firstDataAt={teamContext.firstDataAt}
       unreadAttentionCount={teamContext.unreadAttentionCount}
       initialQueryWindow={initialDashboardWindow}
     >
