@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { RealtimeClientPage } from "@/components/dashboard/site-pages/realtime/realtime-client-page";
-import { buildSitePath } from "@/lib/dashboard/paths";
 import { dashboardPageTitle } from "@/lib/page-title";
 
 export const Route = createFileRoute("/_app/sites/$siteSlug/realtime")({
@@ -25,7 +24,6 @@ function Page() {
       messages={messages}
       siteId={c.activeSite.id}
       siteDomain={c.activeSite.domain}
-      pathname={buildSitePath(c.activeSite.slug, "realtime")}
     />
   );
 }

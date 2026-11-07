@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext } from "react";
 import {
   AnalyticsTooltipProvider as ProductAnalyticsTooltipProvider,
   AnalyticsTooltipTarget as ProductAnalyticsTooltipTarget,
@@ -9,8 +9,6 @@ import { Clickable } from "@insightflare/ui/clickable";
 import { SearchIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { useReportingTimeZone } from "@/components/time-zone-provider";
-import { intlLocale, shortDateTimeWithSeconds } from "@/lib/dashboard/format";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 
@@ -47,87 +45,13 @@ const DEFAULT_MESSAGES: AnalyticsTooltipMessages = {
   copyValue: "Copy value",
 };
 
-const RELATIVE_TIME_UNITS: Record<
-  AnalyticsTooltipLocale,
-  {
-    day: [string, string];
-    hour: [string, string];
-    minute: [string, string];
-    second: [string, string];
-  }
-> = {
-  en: {
-    day: ["day", "days"],
-    hour: ["hour", "hours"],
-    minute: ["minute", "minutes"],
-    second: ["second", "seconds"],
-  },
-};
-
 interface AnalyticsTooltipAppContextValue {
-  browserTimeZone: string;
   messages: AnalyticsTooltipMessages;
   onCopyResult?: (success: boolean) => void;
 }
 
 const AnalyticsTooltipAppContext =
   createContext<AnalyticsTooltipAppContextValue | null>(null);
-
-function formatPreciseRelativeTime(
-  locale: AnalyticsTooltipLocale,
-  timestamp: number,
-  now: number,
-): string {
-  const diffSeconds = Math.round((timestamp - now) / 1000);
-  let remainingSeconds = Math.abs(diffSeconds);
-  const values = {
-    day: Math.floor(remainingSeconds / 86_400),
-    hour: 0,
-    minute: 0,
-    second: 0,
-  };
-  remainingSeconds %= 86_400;
-  values.hour = Math.floor(remainingSeconds / 3_600);
-  remainingSeconds %= 3_600;
-  values.minute = Math.floor(remainingSeconds / 60);
-  values.second = remainingSeconds % 60;
-
-  const units = RELATIVE_TIME_UNITS[locale];
-  const parts = (Object.keys(values) as Array<keyof typeof values>)
-    .filter((unit) => values[unit] > 0)
-    .map((unit) => {
-      const value = values[unit];
-      const [singular, plural] = units[unit];
-      return `${value} ${value === 1 ? singular : plural}`;
-    });
-
-  if (parts.length === 0) {
-    parts.push(`0 ${units.second[1]}`);
-  }
-
-  const value = parts.join(", ");
-  return diffSeconds <= 0 ? `${value} ago` : `in ${value}`;
-}
-
-function formatTimeZoneShortName(
-  locale: AnalyticsTooltipLocale,
-  timestamp: number,
-  timeZone: string,
-): string {
-  try {
-    const value = new Intl.DateTimeFormat(intlLocale(locale), {
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone,
-      timeZoneName: "short",
-    })
-      .formatToParts(new Date(timestamp))
-      .find((part) => part.type === "timeZoneName")?.value;
-    return value?.trim() || timeZone;
-  } catch {
-    return timeZone;
-  }
-}
 
 async function copyAnalyticsValue(
   value: string,
@@ -139,79 +63,6 @@ async function copyAnalyticsValue(
   } catch {
     onCopyResult?.(false);
   }
-}
-
-function AnalyticsTimeTooltipContent({
-  locale,
-  timestamp,
-  appContext,
-}: {
-  locale: AnalyticsTooltipLocale;
-  timestamp: number;
-  appContext: AnalyticsTooltipAppContextValue;
-}) {
-  const [now, setNow] = useState(() => Date.now());
-  const localTimeZone = appContext.browserTimeZone || "UTC";
-  const localTimeZoneLabel = formatTimeZoneShortName(
-    locale,
-    timestamp,
-    localTimeZone,
-  );
-  const utcTime = shortDateTimeWithSeconds(locale, timestamp, "UTC", {
-    year: "numeric",
-  });
-  const localTime = shortDateTimeWithSeconds(locale, timestamp, localTimeZone, {
-    year: "numeric",
-  });
-
-  useEffect(() => {
-    const interval = window.setInterval(() => setNow(Date.now()), 1_000);
-    return () => window.clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="grid grid-cols-[max-content_max-content] items-center gap-x-2 gap-y-1.5 whitespace-nowrap">
-      <div className="col-span-2 text-xs leading-5">
-        {formatPreciseRelativeTime(locale, timestamp, now)}
-      </div>
-      <Badge
-        asChild
-        variant="link"
-        className="w-12 cursor-copy px-1 text-[10px]"
-      >
-        <button
-          type="button"
-          aria-label={`${appContext.messages.copyValue}: ${utcTime}`}
-          onClick={() =>
-            void copyAnalyticsValue(utcTime, appContext.onCopyResult)
-          }
-        >
-          UTC
-        </button>
-      </Badge>
-      <div className="leading-5">
-        <span>{utcTime}</span>
-      </div>
-      <Badge
-        asChild
-        variant="link"
-        className="w-12 cursor-copy px-1 text-[10px]"
-      >
-        <button
-          type="button"
-          aria-label={`${appContext.messages.copyValue}: ${localTime}`}
-          onClick={() =>
-            void copyAnalyticsValue(localTime, appContext.onCopyResult)
-          }
-        >
-          {localTimeZoneLabel}
-        </button>
-      </Badge>
-      <div className="leading-5">
-        <span>{localTime}</span>
-      </div>
-    </div>
-  );
 }
 
 function AnalyticsDetailsTooltipContent({
@@ -277,7 +128,6 @@ export function AnalyticsTimeTooltipProvider({
   messages?: AppMessages;
   retentionMode?: "table-column" | "target";
 }) {
-  const { browserTimeZone } = useReportingTimeZone();
   const tooltipMessages = messages
     ? { copyValue: messages.events.copyValue }
     : DEFAULT_MESSAGES;
@@ -290,43 +140,12 @@ export function AnalyticsTimeTooltipProvider({
 
   return (
     <AnalyticsTooltipAppContext.Provider
-      value={{ browserTimeZone, messages: tooltipMessages, onCopyResult }}
+      value={{ messages: tooltipMessages, onCopyResult }}
     >
       <ProductAnalyticsTooltipProvider retentionMode={retentionMode}>
         {children}
       </ProductAnalyticsTooltipProvider>
     </AnalyticsTooltipAppContext.Provider>
-  );
-}
-
-export function AnalyticsTimeTooltipTarget({
-  children,
-  className,
-  locale,
-  timestamp,
-}: {
-  children: ReactNode;
-  className?: string;
-  locale: AnalyticsTooltipLocale;
-  timestamp: number;
-}) {
-  const appContext = useContext(AnalyticsTooltipAppContext);
-  if (!appContext) return <>{children}</>;
-
-  return (
-    <ProductAnalyticsTooltipTarget
-      className={className}
-      contentKey={`time:${locale}:${timestamp}`}
-      content={
-        <AnalyticsTimeTooltipContent
-          locale={locale}
-          timestamp={timestamp}
-          appContext={appContext}
-        />
-      }
-    >
-      {children}
-    </ProductAnalyticsTooltipTarget>
   );
 }
 

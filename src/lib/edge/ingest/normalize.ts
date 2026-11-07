@@ -1,4 +1,3 @@
-import type { TrackerPerformancePayload } from "@/lib/edge/types";
 import { coerceNumber } from "@/lib/edge/utils";
 import { j as jsonResponse } from "@/lib/response";
 
@@ -37,8 +36,6 @@ export interface RealtimeSnapshotRecord {
   utmTerm?: string;
   utmContent?: string;
   visitorId: string;
-  userId?: string;
-  userName?: string;
   isEU?: boolean | number | null;
   country: string;
   region: string;
@@ -66,8 +63,6 @@ export interface RealtimeSnapshotRecord {
   durationSource?: string;
   exitReason?: string;
   leaveAt?: number | null;
-  performanceVisitId?: string;
-  performance?: TrackerPerformancePayload | null;
   visibilityState?: string;
   screenSize?: string;
   latitude: number | null;
@@ -115,20 +110,12 @@ export interface RealtimeVisitPayloadInput {
   metroCode?: string;
   uaRaw?: string;
   browserVersion?: string;
-  userId?: string;
-  userName?: string;
   hiddenAt?: number | null;
   endedAt?: number | null;
   finalizedAt?: number | null;
   durationMs?: number | null;
   durationSource?: string;
   exitReason?: string;
-  performance?: TrackerPerformancePayload | null;
-  perfTtfbMs?: number | null;
-  perfFcpMs?: number | null;
-  perfLcpMs?: number | null;
-  perfCls?: number | null;
-  perfInpMs?: number | null;
 }
 
 export { jsonResponse };
@@ -148,42 +135,6 @@ export function resolveTrustedClientTimestamp(
   if (value > receivedAt) return receivedAt;
   if (receivedAt - value > MAX_CLIENT_EVENT_LAG_MS) return receivedAt;
   return value;
-}
-
-export function normalizePerformanceMetric(input: unknown): number | null {
-  const value = coerceNumber(input, null);
-  if (!Number.isFinite(value) || value == null || value < 0) return null;
-  return Math.round(value * 1000) / 1000;
-}
-
-export function normalizePerformancePayload(
-  input: unknown,
-): TrackerPerformancePayload | null {
-  if (!input || typeof input !== "object") return null;
-  const source = input as Record<string, unknown>;
-  const ttfb = normalizePerformanceMetric(source.ttfb);
-  const fcp = normalizePerformanceMetric(source.fcp);
-  const lcp = normalizePerformanceMetric(source.lcp);
-  const cls = normalizePerformanceMetric(source.cls);
-  const inp = normalizePerformanceMetric(source.inp);
-
-  if (
-    ttfb === null &&
-    fcp === null &&
-    lcp === null &&
-    cls === null &&
-    inp === null
-  ) {
-    return null;
-  }
-
-  return {
-    ...(ttfb !== null ? { ttfb } : {}),
-    ...(fcp !== null ? { fcp } : {}),
-    ...(lcp !== null ? { lcp } : {}),
-    ...(cls !== null ? { cls } : {}),
-    ...(inp !== null ? { inp } : {}),
-  };
 }
 
 export function toRealtimeScreenSize(
@@ -231,27 +182,6 @@ function parseRealtimeJsonValue(input: unknown): unknown {
   }
 }
 
-function toRealtimePerformance(
-  input: RealtimeVisitPayloadInput,
-): TrackerPerformancePayload | null {
-  const values = {
-    ttfb: input.perfTtfbMs,
-    fcp: input.perfFcpMs,
-    lcp: input.perfLcpMs,
-    cls: input.perfCls,
-    inp: input.perfInpMs,
-  };
-  const hasValue = Object.values(values).some(
-    (value) => typeof value === "number" && Number.isFinite(value),
-  );
-  if (!hasValue) return null;
-  return Object.fromEntries(
-    Object.entries(values).filter(
-      ([, value]) => typeof value === "number" && Number.isFinite(value),
-    ),
-  ) as TrackerPerformancePayload;
-}
-
 export function toRealtimePayload(
   record: RealtimeSnapshotRecord,
 ): Record<string, unknown> {
@@ -288,8 +218,6 @@ export function toRealtimePayload(
     utmTerm: record.utmTerm ?? "",
     utmContent: record.utmContent ?? "",
     visitorId: record.visitorId,
-    userId: record.userId ?? "",
-    userName: record.userName ?? "",
     isEU:
       record.isEU === undefined || record.isEU === null
         ? null
@@ -323,8 +251,6 @@ export function toRealtimePayload(
     durationSource: record.durationSource ?? "",
     exitReason: record.exitReason ?? "",
     leaveAt: record.leaveAt ?? null,
-    performanceVisitId: record.performanceVisitId ?? "",
-    performance: parseRealtimeJsonValue(record.performance),
     visibilityState: record.visibilityState ?? "",
     latitude: record.latitude,
     longitude: record.longitude,
@@ -374,8 +300,6 @@ export function toRealtimeVisitPayload(
     postalCode: visit.postalCode ?? "",
     metroCode: visit.metroCode ?? "",
     uaRaw: visit.uaRaw ?? "",
-    userId: visit.userId ?? "",
-    userName: visit.userName ?? "",
     screenWidth: visit.screenWidth,
     screenHeight: visit.screenHeight,
     screenSize: toRealtimeScreenSize(visit.screenWidth, visit.screenHeight),
@@ -385,7 +309,6 @@ export function toRealtimeVisitPayload(
     durationMs: visit.durationMs ?? null,
     durationSource: visit.durationSource ?? "",
     exitReason: visit.exitReason ?? "",
-    performance: visit.performance ?? toRealtimePerformance(visit),
     latitude: visit.latitude,
     longitude: visit.longitude,
   };

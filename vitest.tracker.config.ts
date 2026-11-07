@@ -10,9 +10,6 @@ export default defineConfig({
   esbuild: {
     jsx: "automatic",
   },
-  define: {
-    BUILD_PERFORMANCE: true,
-  },
   test: {
     environment: "happy-dom",
     environmentOptions: {
@@ -44,7 +41,6 @@ export default defineConfig({
       include: [
         "src/tracker/sdk.ts",
         "src/tracker/auto-track.ts",
-        "src/tracker/performance.ts",
         "src/tracker/ua-client-hints.ts",
       ],
       exclude: ["src/tracker/__tests__/**"],

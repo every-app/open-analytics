@@ -12,11 +12,9 @@ import {
 } from "@/lib/edge/analytics/contract";
 import {
   handleEventFieldValuesContract as handleEventTypeFieldValues,
-  handleEventRecordDetailContract as handleEventRecordDetail,
   handleEventRecordsContract as handleEventsRecords,
   handleEventsSummaryContract as handleEventsSummary,
   handleEventsTrendContract as handleEventsTrend,
-  handleEventTypeContextContract as handleEventTypeContext,
   handleEventTypeDetailContract as handleEventTypeDetail,
   handleEventTypeFieldsContract as handleEventTypeFields,
   handleEventTypesContract as handleEventTypes,
@@ -25,7 +23,6 @@ import type {
   EventRecordRow,
   QueryWindow,
 } from "@/lib/edge/analytics/providers/d1/internal/core";
-import { readCustomEventDetail } from "@/lib/edge/analytics/providers/d1/internal/custom-event-read";
 import {
   decodeDimensionCursor,
   decodeSessionPathDimensionCursor,
@@ -49,12 +46,10 @@ import {
   queryEventFieldValuesPageFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/events-fields";
 import { queryEventTypeOverviewFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-overview";
-import { queryEventRecordDetailFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-records";
 import {
   decodeEventTypeCursor,
   queryEventTypePageFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/events-summary";
-import { queryJourneyTargetExistsFromD1 } from "@/lib/edge/analytics/providers/d1/internal/journey-list-queries";
 import {
   createInvocationLogger,
   runWithInvocationLogger,
@@ -63,16 +58,12 @@ import type { Env } from "@/lib/edge/types";
 
 import { filterFixture } from "./filter-fixtures";
 import { installVisitSiteIdentityFixture } from "./site-identity-fixture";
-vi.mock("@/lib/edge/analytics/providers/d1/internal/custom-event-read", () => ({
-  readCustomEventDetail: vi.fn(),
-}));
 type D1Row = Record<string, unknown> | EventRecordRow;
 type QueryBinding = string | number | null;
 interface QueryCall {
   sql: string;
   bindings: QueryBinding[];
 }
-const readCustomEventDetailMock = vi.mocked(readCustomEventDetail);
 const siteId = "site-lowlevel";
 const baseMs = Date.UTC(2026, 0, 4, 8);
 const window: QueryWindow = {
@@ -733,30 +724,6 @@ describe("edge query dimensions low-level coverage", () => {
     expect(calls[2].sql).toContain("scope_final_visits");
     expect(calls[2].sql).toContain("LOWER(referrer) LIKE");
   });
-
-  it("reports whether a visitor or session exists in the observation universe", async () => {
-    const missing = createD1Env([[]]);
-    await expect(
-      queryJourneyTargetExistsFromD1(
-        missing.env,
-        siteId,
-        { type: "visitor", value: "missing" },
-        window,
-      ),
-    ).resolves.toBe(false);
-
-    const present = createD1Env([[{ present: 1 }]]);
-    await expect(
-      queryJourneyTargetExistsFromD1(
-        present.env,
-        siteId,
-        { type: "session", value: "session-1" },
-        window,
-      ),
-    ).resolves.toBe(true);
-    expect(missing.calls[0].sql).toContain("visitor_id");
-    expect(present.calls[0].sql).toContain("session_id");
-  });
 });
 describe("edge query event fields and records low-level coverage", () => {
   it("queries event fields and skips D1 for unsupported field value types", async () => {
@@ -875,34 +842,6 @@ describe("edge query event fields and records low-level coverage", () => {
       7,
     ]);
   });
-
-  it("returns null when an event detail record is missing", async () => {
-    const { env, prepare } = createD1Env([[]]);
-
-    await expect(
-      queryEventRecordDetailFromD1(env, siteId, "missing-event"),
-    ).resolves.toBeNull();
-
-    expect(prepare).toHaveBeenCalledOnce();
-    expect(readCustomEventDetailMock).not.toHaveBeenCalled();
-  });
-
-  it("defaults missing event detail payloads to an empty object", async () => {
-    readCustomEventDetailMock.mockResolvedValueOnce(null);
-    const { env } = createD1Env([[eventRecord()]]);
-
-    await expect(
-      queryEventRecordDetailFromD1(env, siteId, "evt-1"),
-    ).resolves.toMatchObject({
-      event: { eventId: "evt-1", eventName: "Signup" },
-      context: {
-        visitId: "visit-1",
-        sessionId: "session-1",
-        visitorId: "visitor-1",
-      },
-      eventData: {},
-    });
-  });
 });
 describe("edge query event handlers low-level coverage", () => {
   it("rejects event handler requests with missing identifiers or invalid windows", async () => {
@@ -966,11 +905,6 @@ describe("edge query event handlers low-level coverage", () => {
         to: window.endExclusiveMs,
       }),
     );
-    const missingEventId = await handleEventRecordDetail(
-      env,
-      siteId,
-      new URL("https://edge.test/event-detail"),
-    );
 
     await expect(invalidTypes.json()).resolves.toMatchObject({
       ok: false,
@@ -1014,14 +948,10 @@ describe("edge query event handlers low-level coverage", () => {
       ok: false,
       error: { message: "fieldValueType is required" },
     });
-    await expect(missingEventId.json()).resolves.toMatchObject({
-      ok: false,
-      error: { message: "eventId is required" },
-    });
     expect(prepare).toHaveBeenCalledTimes(1);
   });
 
-  it("returns narrow field and context handler responses", async () => {
+  it("returns narrow field and detail handler responses", async () => {
     const { env, calls } = createD1Env([
       [
         {
@@ -1036,22 +966,12 @@ describe("edge query event handlers low-level coverage", () => {
           booleanValue: null,
         },
       ],
-      [
-        {
-          cardType: "path",
-          value: "/pricing",
-          label: null,
-          views: 2,
-          sessions: 1,
-          visitors: 1,
-        },
-      ],
     ]);
     const logger = createInvocationLogger({
       source: "worker",
       trigger: "request",
     });
-    const { fields, context, detail } = await runWithInvocationLogger(
+    const { fields, detail } = await runWithInvocationLogger(
       logger,
       async () => ({
         fields: await handleEventTypeFields(
@@ -1059,16 +979,6 @@ describe("edge query event handlers low-level coverage", () => {
           siteId,
           url("/event-type-fields", {
             eventName: "Signup",
-            from: window.startMs,
-            to: window.endExclusiveMs,
-          }),
-        ),
-        context: await handleEventTypeContext(
-          env,
-          siteId,
-          url("/event-type-context", {
-            eventName: "Signup",
-            cards: "path",
             from: window.startMs,
             to: window.endExclusiveMs,
           }),
@@ -1104,17 +1014,11 @@ describe("edge query event handlers low-level coverage", () => {
         },
       },
     });
-    await expect(context.json()).resolves.toMatchObject({
-      ok: true,
-      eventName: "Signup",
-      cards: { page: { path: [{ label: "/pricing", views: 2 }] } },
-    });
     await expect(detail.json()).resolves.toMatchObject({
       ok: true,
       cards: { page: { path: [] } },
     });
-    expect(calls).toHaveLength(4);
-    expect(calls[1]?.sql).not.toContain("session_visit_edges");
+    expect(calls).toHaveLength(3);
   });
 
   it("maps event types from D1 rows", async () => {
@@ -1280,19 +1184,7 @@ describe("edge query event handlers low-level coverage", () => {
     });
   });
 
-  it("returns event field values and event detail handler payloads", async () => {
-    readCustomEventDetailMock.mockResolvedValueOnce({
-      siteId,
-      eventId: "evt-1",
-      visitId: "visit-1",
-      eventName: "Signup",
-      occurredAt: baseMs + 100,
-      receivedAt: baseMs + 200,
-      sequence: 1,
-      nodeCount: 3,
-      valueCount: 2,
-      eventData: { plan: "pro" },
-    });
+  it("returns event field values handler payloads", async () => {
     const { env } = createD1Env([
       [
         {
@@ -1306,7 +1198,6 @@ describe("edge query event handlers low-level coverage", () => {
           booleanValue: 1,
         },
       ],
-      [eventRecord()],
     ]);
 
     const valuesResponse = await handleEventTypeFieldValues(
@@ -1319,15 +1210,6 @@ describe("edge query event handlers low-level coverage", () => {
         from: window.startMs,
         to: window.endExclusiveMs,
         limit: 3,
-      }),
-    );
-    const detailResponse = await handleEventRecordDetail(
-      env,
-      siteId,
-      url("/event-detail", {
-        eventId: "evt-1",
-        from: window.startMs,
-        to: window.endExclusiveMs,
       }),
     );
 
@@ -1351,13 +1233,6 @@ describe("edge query event handlers low-level coverage", () => {
           hasMore: false,
           nextCursor: null,
         },
-      },
-    });
-    await expect(detailResponse.json()).resolves.toMatchObject({
-      ok: true,
-      data: {
-        event: { eventId: "evt-1", eventName: "Signup" },
-        eventData: { plan: "pro" },
       },
     });
   });

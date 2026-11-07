@@ -1,12 +1,7 @@
 import { type QueryAudience } from "@/lib/edge/analytics/contract";
 import type { Env } from "@/lib/edge/types";
 
-import type {
-  FilterDocument,
-  QueryWindow,
-  ReferrerRow,
-  ReferrerSummaryRow,
-} from "./core";
+import type { FilterDocument, QueryWindow, ReferrerRow } from "./core";
 import {
   buildVisitFilterSql,
   buildVisitSourceCte,
@@ -87,97 +82,6 @@ export async function queryTopReferrersFromD1(
     diagnostics,
     search,
   );
-}
-/** Explicit aggregate for referrer summary cards. It is intentionally
- * independent from the paginated referrer collection. */
-export async function queryReferrerSummaryFromD1(
-  env: Env,
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
-  topN: number,
-  diagnostics?: D1ReadDiagnostics,
-): Promise<ReferrerSummaryRow> {
-  const scopedDataset = scopedDatasetFor(siteId, window, filters);
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
-  const source = scopedDataset?.visitRelation ?? "visit_source";
-  const ctes = scopedDataset?.ctes ?? buildVisitSourceCte();
-  const bindings = scopedDataset
-    ? scopedDataset.bindings.map((binding) => binding.value)
-    : [...visitSourceBindings(siteId, window), ...(filter?.bindings ?? [])];
-  const rows = await queryD1All<Record<string, unknown>>(
-    env,
-    `
-WITH
-${ctes},
-filtered_visits AS MATERIALIZED (
-  SELECT referrer_host, referrer_url
-  FROM ${source}
-  ${filter?.clause ?? ""}
-),
-summary_row AS (
-  SELECT
-    'summary' AS rowType,
-    '' AS referrer,
-    count(*) AS totalViews,
-    SUM(CASE WHEN TRIM(COALESCE(referrer_host, '')) = '' THEN 1 ELSE 0 END) AS directViews,
-    SUM(CASE WHEN TRIM(COALESCE(referrer_host, '')) != '' THEN 1 ELSE 0 END) AS externalViews,
-    count(DISTINCT NULLIF(TRIM(COALESCE(referrer_host, '')), '')) AS uniqueDomains,
-    count(DISTINCT NULLIF(TRIM(COALESCE(referrer_url, '')), '')) AS uniqueLinks,
-    0 AS views,
-    0 AS rowRank
-  FROM filtered_visits
-),
-top_rollup AS (
-  SELECT
-    TRIM(COALESCE(referrer_host, '')) AS referrer,
-    count(*) AS views
-  FROM filtered_visits
-  WHERE TRIM(COALESCE(referrer_host, '')) != ''
-  GROUP BY referrer
-),
-top_rows AS (
-  SELECT
-    'top' AS rowType,
-    referrer,
-    NULL AS totalViews,
-    NULL AS directViews,
-    NULL AS externalViews,
-    NULL AS uniqueDomains,
-    NULL AS uniqueLinks,
-    views,
-    ROW_NUMBER() OVER (ORDER BY views DESC, referrer ASC) AS rowRank
-  FROM top_rollup
-)
-SELECT rowType, referrer, totalViews, directViews, externalViews,
-  uniqueDomains, uniqueLinks, views, rowRank
-FROM (
-  SELECT * FROM summary_row
-  UNION ALL
-  SELECT * FROM top_rows
-)
-WHERE rowType = 'summary' OR rowRank <= ?
-ORDER BY CASE rowType WHEN 'summary' THEN 0 ELSE 1 END, rowRank ASC
-`,
-    [...bindings, topN + 1],
-    diagnostics,
-  );
-  const summary = rows.find((row) => row.rowType === "summary") ?? {};
-  const topRows = rows.filter((row) => row.rowType === "top");
-  return {
-    totalViews: Number(summary.totalViews ?? 0),
-    directViews: Number(summary.directViews ?? 0),
-    externalViews: Number(summary.externalViews ?? 0),
-    uniqueDomains: Number(summary.uniqueDomains ?? 0),
-    uniqueLinks: Number(summary.uniqueLinks ?? 0),
-    truncated: topRows.length > topN,
-    topSources: topRows.slice(0, topN).map((row) => ({
-      referrer: String(row.referrer ?? ""),
-      views: Number(row.views ?? 0),
-    })),
-  };
 }
 /** Keyset-paginated referrer aggregate. */
 export async function queryReferrersPageFromD1(

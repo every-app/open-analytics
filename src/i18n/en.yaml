@@ -3,15 +3,8 @@ navigation:
   overview: Overview
   realtime: Real-time
   pages: Pages
-  referrers: Referrers
-  events: Events
   funnels: Goals & funnels
-  campaigns: Campaigns
   visitors: Visitors
-  retention: Retention
-  geo: Location
-  devices: Devices
-  performance: Performance
   settings: Site settings
 common:
   deviceLabels:
@@ -536,8 +529,6 @@ realtime:
   receivedAt: Received at
   startedAt: Started at
   previousVisitStartedAt: Previous visit started at
-  userId: User ID
-  userName: User name
   isEU: EU visitor
   queryString: Query string
   utmSource: UTM source
@@ -552,7 +543,6 @@ realtime:
   metroCode: Metro code
   status: Status
   visibilityState: Visibility state
-  endedAt: Ended at
   duration: Duration
   durationSource: Duration source
   exitReason: Exit reason
@@ -620,89 +610,18 @@ pages:
   eventTab: Events
   eventsMetric: Event count
   viewDetails: View details
-referrers:
-  title: Referrers
-  splitTitle: Traffic split
-  breakdownTitle: Source breakdown
-  externalLabel: External
-  longTail: Long tail
-  channelLongTail: Other channels
+referrers: {}
 campaigns:
-  title: Campaigns
   tabSource: UTM source
   tabMedium: Medium
   tabCampaign: Campaign
   tabTerm: Term
   tabContent: Content
   notSet: Not set
-  noTaggedTraffic: No UTM-tagged visits in this period
-  taggedLinkHint: Add UTM tags to your links, for example
-sessions:
-  title: Sessions
-  search: Search sessions...
-  started: Start time
-  sessionId: Session ID
-  visitor: Visitor
-  anonymous: Anonymous
-  entryPage: Entry page
-  exitPage: Exit page
-  duration: Duration
-  referrer: Referrer
-  location: Location
-  os: OS
-  browser: Browser
-  device: Device
-  pageViews: Page views
-  customEvents: Custom events
-  screenSize: Screen size
-  exitTime: Exit time
-  loadError: Couldn't load sessions.
-  empty: No sessions in this time range.
+sessions: {}
 sessionDetail:
-  anonymous: Anonymous
-  userId: User ID
-  userName: User name
-  back: Back to sessions
-  missing: Missing sessionId.
-  notFound: Session not found.
-  loadError: Couldn't load session detail.
-  active: Active
-  inactive: Ended
-  status: Status
-  duration: Duration
-  screenViews: Page views
-  events: Events
-  bounce: Bounced
-  entryPath: Entry path
-  exitPath: Exit path
-  referrerName: Referrer name
-  os: OS
-  browser: Browser
-  device: Device
-  screen: Screen
   yes: Yes
   no: No
-  uniquePages: Unique pages
-  firstEvent: First event
-  lastEvent: Last event
-  sessionStarted: Session started
-  pageview: Page view
-  exitPage: Exit page
-  customEvent: Custom event
-  eventTitleSeparator: ": "
-  visitDetailsTitle: Visit details
-  visitDetailsSubtitle: Session start, page views, exits, and custom events in the
-    order they happened.
-  location: Location
-  visitorId: Visitor ID
-  sessionId: Session ID
-  referrerUrl: Referrer URL
-  emptyEvents: No events recorded.
-  emptyCustomEvents: No custom events.
-  sincePrevious: Since previous
-  geoLocationTitle: Location
-  performanceTitle: Current session performance
-  range: Range
 events:
   title: Events
   detailTitle: Event detail
@@ -840,7 +759,6 @@ funnels:
   updated: Updated
 goals:
   title: Goals
-  conversionRecords: Conversion records
   open: Open goal
   moreActions: More actions
   createTitle: Create goal
@@ -881,222 +799,23 @@ conversions:
   newFunnelDescription: Several steps in order
   empty: No goals or funnels yet
   emptyMemberHint: An admin can create one.
-visitors:
-  title: Visitors
-  search: Search visitors...
-  visitor: Visitor
-  anonymous: Anonymous
-  referrer: Referrer
-  location: Location
-  os: OS
-  browser: Browser
-  device: Device
-  firstSeen: First visit
-  lastSeen: Last visit
-  pageViews: Page views
-  sessions: Sessions
-  customEvents: Custom events
-  screenSize: Screen size
-  loadError: Couldn't load visitors.
-  empty: No visitors in this time range.
-visitorDetail:
-  anonymous: Anonymous
-  userId: User ID
-  userName: User name
-  back: Back to visitors
-  missing: Missing visitorId.
-  notFound: Visitor not found.
-  loadError: Couldn't load visitor detail.
-  totalDuration: Total duration
-  events: Events
-  views: Page views
-  uniquePages: Unique pages
-  avgPagesPerSession: Avg. pages / session
-  avgEventsPerSession: Avg. events / session
-  avgStay: Avg. visit duration
-  firstSeen: First visit
-  lastSeen: Last visit
-  daysActive: Days active
-  avgTimeBetweenSessions: Avg. time between sessions
-  activity: Activity
-  sessionRecords: Session records
-  started: Start time
-  visitor: Visitor
-  duration: Duration
-  referrer: Referrer
-  pageViews: Page views
-  visitDetailsTitle: Visit details
-  visitDetailsSubtitle: Session starts, page views, exits, and custom events for
-    this visitor in the order they happened.
-  customEvents: Custom events
-  emptyEvents: No events recorded.
-  emptyCustomEvents: No custom events.
-  emptySessions: No sessions recorded.
-  visitorId: Visitor ID
-  sessionId: Session ID
-  referrerName: Referrer name
-  referrerUrl: Referrer URL
-  location: Location
-  browser: Browser
-  os: OS
-  device: Device
-  screen: Screen
-  entryPath: Entry path
-  exitPath: Exit path
-  sessionStarted: Session started
-  pageview: Page view
-  exitPage: Exit page
-  customEvent: Custom event
-  eventTitleSeparator: ": "
-  sincePrevious: Since previous
-  geoLocationTitle: Location
-  performanceTitle: Current visitor performance
-  range: Range
-retention:
-  title: Retention
-  cohortBy: "Cohort by: {interval}"
-  cohortDate: Cohort date
-  cohortSize: Cohort size
-  periodLabel: Period {n}
-  matrixTitle: Retention matrix
-  matrixSubtitle: Each row is a first-seen cohort; each column shows the share
-    that returned in a later period.
-  cohortsMetric: Cohorts
-  visitorsMetric: Cohort visitors
-  periodOneMetric: First return
-  averageReturnMetric: Average return
-  strongestCohortMetric: Best cohort
-  eligibleVisitors: Eligible visitors
-  periodsAnalyzed: Periods analyzed
-  noEligibleCohorts: No eligible cohorts
-  overallRetention: Overall retention
-  legendLow: Low
-  legendHigh: High
-  periodZero: Initial
-  empty: Not enough return data in this time range.
-  emptyHint: Pick a longer period, or a coarser interval, in the date menu.
-  loadError: Couldn't load retention data.
-  unavailableCell: This cohort has not reached this period yet.
-  visitorsDetail: Visitors
-  rateDetail: Retention
-  sizeDetail: Cohort size
+visitors: {}
+visitorDetail: {}
+retention: {}
 geo:
-  title: Location
   mapTitle: Visitors by location
   countryLabel: Country / region
   regionLabel: Region
   cityLabel: City
-  back: Back
-  viewOnWikipedia: View on Wikipedia
-  investigationNotice: This data comes from the web and may contain errors.
   timezoneDeltaVsLocal: "Difference from local time: {delta}"
-  visitorCoordinates: Visitor coordinates
-  ipNotice: Estimated location via IP. Coordinates are approximate and do not
-    pinpoint a precise address.
-  multipleNotice: This visitor's journey across different sessions may span multiple cities.
   investigation:
-    countryScopedLabel: "Country's {label}"
-    capital: Capital
-    population: Population
-    gdp: GDP
-    gdpPerCapita: GDP per capita
-    marketPenetration: Market penetration
-    region: Region
-    currency: Currency
-    phonecode: Phone code
-    timezone: Time zone
-    type: Type
-    iso: ISO
-    coordinates: Coordinates
-    unavailable: N/A
-    gdpValue: "{value} million USD"
-    gdpPerCapitaValue: "{value} USD/person"
-    gdpPerCapitaNearAverage: "{value} USD/person (near the world average)"
-    gdpPerCapitaAboveAverage: "{value} USD/person ({percent}% above average)"
-    gdpPerCapitaBelowAverage: "{value} USD/person ({percent}% below average)"
-    marketPenetrationWindow: "{label} ({days} days)"
-    timezoneCount: "{count} time zones"
-    typeLabels:
-      country: Country
-      state: State
-      province: Province
-      prefecture: Prefecture
-      city: City
-      county: County
-      district: District
-      town: Town
-      village: Village
-      municipality: Municipality
-      territory: Territory
-      section: Section
-      adm1: Admin level 1
-      adm2: Admin level 2
-      adm3: Admin level 3
-      adm4: Admin level 4
-      adm5: Admin level 5
+    typeLabels: {}
 devices:
-  title: Devices
-  shareTitle: Visitor share
-  dimensions:
-    device: Device
-    os: OS
-    browser: Browser
-    engine: Engine
-    screenSize: Screen size
-  crossTabTitle: Breakdown
-  crossTabRows: Rows
-  crossTabColumns: Split by
-  otherLabel: Other
+  dimensions: {}
   screenBucketLabels: {}
 browsers:
   otherLabel: Other
-performance:
-  title: Performance
-  empty: No Web Vitals yet
-  chartTitle: Performance trend
-  avgLabel: Average
-  samplesLabel: Samples
-  p50Label: P50
-  p75Label: P75
-  p95Label: P95
-  ttfb: Time to First Byte
-  fcp: First Contentful Paint
-  lcp: Largest Contentful Paint
-  cls: Cumulative Layout Shift
-  inp: Interaction to Next Paint
-  ttfbDescription: Measures how long the browser waits before receiving the first
-    byte from the server. It reflects backend latency, network delay, and cache
-    effectiveness.
-  fcpDescription: Measures when the first text or image is painted. It reflects
-    how quickly visitors see that the page is starting to load.
-  lcpDescription: Measures when the largest visible content element finishes
-    rendering. It is the main loading speed signal for perceived page readiness.
-  clsDescription: Measures unexpected layout movement during the page lifecycle.
-    Lower values mean the page is visually stable.
-  inpDescription: Measures the latency of user interactions before the next paint.
-    It reflects how responsive the page feels after loading.
-  msUnit: ms
-  secondsUnit: s
-  clsUnit: score
-  score: Experience score
-  scoreDescription: Combines P75 loading, stability, and interaction metrics into
-    a 0 to 100 experience score. Higher is better.
-  great: Great
-  needsImprovement: Needs improvement
-  poor: Poor
-  datasetTitle: Thresholds
-  interpretationTitle: Current reading
-  currentReading: "{metric} P75 is {value}, with an experience score of {score}
-    across {samples} samples. Current status: {status}."
-  metricThresholdText: "Great: {good} or lower; needs improvement: {good} to
-    {poor}; poor: above {poor}."
-  scoreThresholdText: "Great: above 90; needs improvement: 50 to 90; poor: below 50."
-  countryHealthTitle: Country and region health
-  countryHealthSubtitle: Boundary fill shows {metric} health by country or region.
-  pathsTitle: Path performance
-  pathsAnalyzedLabel: Paths analyzed
-  metricValueColumn: P75 value
-  statusColumn: Status
+performance: {}
 share:
   noData: No data yet
 siteSettings:
@@ -1178,9 +897,6 @@ siteSettings:
   autoTrackOutboundLinksLabel: Auto-track outbound link clicks
   autoTrackOutboundLinksHint: When enabled, clicking links to external domains
     automatically reports outbound_click events.
-  performanceSampleRateLabel: Web Vitals sample rate
-  performanceSampleRateHint: A sampled visit records TTFB, FCP, LCP, CLS, and INP
-    on leave. Use 0 to disable sampling or 100 for full coverage.
   save: Save
   saving: Saving...
   scriptHint: Paste it before </head> on every page.
@@ -1231,7 +947,9 @@ accountSettings:
   timeZoneLabel: Reporting time zone
   aiClientsTitle: AI clients
   aiClientsLabel: Connect an AI client
-  aiClientsDescription: Add this address to Claude, ChatGPT or Claude Code once. It signs you in through Every App and covers every app you can open, OpenAnalytics included.
+  aiClientsDescription: Add this address to Claude, ChatGPT or Claude Code once.
+    It signs you in through Every App and covers every app you can open,
+    OpenAnalytics included.
   aiClientsDocs: How to connect
 notificationCenter:
   title: Notifications
@@ -1304,9 +1022,11 @@ runtimeConfigError:
   title: Dashboard unavailable
   heading: This dashboard isn't available right now.
   setupSummary: Set up this deployment
-  setupCommand: Set {name} to 32 or more random characters with this command, then reload this page.
+  setupCommand: Set {name} to 32 or more random characters with this command, then
+    reload this page.
   generateHint: Make one with {command}.
-  devSetup: This app is running under {command}. Set {name} in {file}, then reload this page.
+  devSetup: This app is running under {command}. Set {name} in {file}, then reload
+    this page.
   docsLabel: Deployment guide
 login: {}
 accountLinks:
@@ -1451,7 +1171,8 @@ requestObservation:
   normalDetail: {}
 systemSettings:
   notificationEmailTitle: Email notifications
-  emailGatewayNotReady: "Email isn't set up on this gateway. An admin sets the sender with {command} after setting up a sending domain."
+  emailGatewayNotReady: "Email isn't set up on this gateway. An admin sets the
+    sender with {command} after setting up a sending domain."
   emailSenderLabel: "Sender"
   retentionTitle: Data retention
   retentionDescription: Configure how long notification messages and detailed
@@ -1482,9 +1203,6 @@ appNav:
   appearance: Appearance
   mainNavigation: Main navigation
   toggleSidebar: Toggle sidebar
-  sources: Sources
-  audience: Audience
-  goals: Conversions
   sites: Sites
   allSites: All sites
   inbox: Notifications

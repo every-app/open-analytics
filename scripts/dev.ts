@@ -24,14 +24,10 @@ const TSCLI = path.join(ROOT, "node_modules", "tsx", "dist", "cli.mjs");
 const TRACKER_INPUTS = [
   path.join(ROOT, "src/tracker/sdk.ts"),
   path.join(ROOT, "src/tracker/auto-track.ts"),
-  path.join(ROOT, "src/tracker/performance.ts"),
   path.join(ROOT, "src/tracker/ua-client-hints.ts"),
   path.join(ROOT, "scripts/build-tracker-sdk.ts"),
 ];
-const TRACKER_OUTPUTS = [
-  path.join(ROOT, "src/tracker/sdk.min.ts"),
-  path.join(ROOT, "src/tracker/sdk.no-perf.min.ts"),
-];
+const TRACKER_OUTPUTS = [path.join(ROOT, "src/tracker/sdk.min.ts")];
 
 function trackerBuildIsFresh(): boolean {
   try {

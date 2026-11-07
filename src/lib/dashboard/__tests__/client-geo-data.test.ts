@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-  fetchOverviewGeoDimensionTab,
+  fetchOverviewGeoDimensionTabPage,
   fetchOverviewGeoPoints,
 } from "@/lib/dashboard/client/data/geo";
 import { dashboardFilterDocumentFromPresentation } from "@/lib/dashboard/filter-state";
@@ -186,7 +186,9 @@ describe("dashboard client geo data helpers", () => {
     globalThis.fetch = fetchMock;
 
     await expect(
-      fetchOverviewGeoDimensionTab("geo-country", window, "country"),
+      fetchOverviewGeoDimensionTabPage("geo-country", window, "country").then(
+        (page) => page.items,
+      ),
     ).resolves.toEqual([
       {
         value: "United States",
@@ -197,7 +199,9 @@ describe("dashboard client geo data helpers", () => {
       },
     ]);
     await expect(
-      fetchOverviewGeoDimensionTab("geo-region", window, "region"),
+      fetchOverviewGeoDimensionTabPage("geo-region", window, "region").then(
+        (page) => page.items,
+      ),
     ).resolves.toEqual([
       {
         value: "US::CA::California",
@@ -215,7 +219,9 @@ describe("dashboard client geo data helpers", () => {
       },
     ]);
     await expect(
-      fetchOverviewGeoDimensionTab("geo-city", window, "city"),
+      fetchOverviewGeoDimensionTabPage("geo-city", window, "city").then(
+        (page) => page.items,
+      ),
     ).resolves.toEqual([
       {
         value: "US::CA::California::San Francisco",
@@ -239,7 +245,9 @@ describe("dashboard client geo data helpers", () => {
     globalThis.fetch = vi.fn().mockRejectedValue(new Error("offline"));
 
     await expect(
-      fetchOverviewGeoDimensionTab("geo-fallback", window, "timezone"),
+      fetchOverviewGeoDimensionTabPage("geo-fallback", window, "timezone").then(
+        (page) => page.items,
+      ),
     ).resolves.toEqual([]);
   });
 
@@ -268,7 +276,9 @@ describe("dashboard client geo data helpers", () => {
     );
 
     await expect(
-      fetchOverviewGeoDimensionTab("geo-paginated", window, "country"),
+      fetchOverviewGeoDimensionTabPage("geo-paginated", window, "country").then(
+        (page) => page.items,
+      ),
     ).resolves.toEqual([
       {
         value: "US",
@@ -294,7 +304,9 @@ describe("dashboard client geo data helpers", () => {
     );
 
     await expect(
-      fetchOverviewGeoDimensionTab("geo-legacy", window, "country"),
+      fetchOverviewGeoDimensionTabPage("geo-legacy", window, "country").then(
+        (page) => page.items,
+      ),
     ).rejects.toThrow("pagination_contract_violation");
   });
 });

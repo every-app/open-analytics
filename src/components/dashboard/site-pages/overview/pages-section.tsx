@@ -8,6 +8,10 @@ import {
 import { ArrowUpRightIcon, SearchIcon } from "lucide-react";
 
 import {
+  DeviceMeta,
+  InlineMeta,
+} from "@/components/dashboard/common/client-meta";
+import {
   TabbedDataTableCard,
   type TabbedDataTableColumn,
   type TabbedDataTableLoader,
@@ -19,10 +23,6 @@ import {
   LazyGeoCityBreadcrumbLabel,
   LazyGeoRegionBreadcrumbLabel,
 } from "@/components/dashboard/geo/lazy-geo-location-label";
-import {
-  DeviceMeta,
-  InlineMeta,
-} from "@/components/dashboard/journeys/journey-display";
 import { useDashboardQuery } from "@/components/dashboard/shell/dashboard-query-provider";
 import { PageDetailDrawer } from "@/components/dashboard/site-pages/pages/page-detail-drawer";
 import {
@@ -30,6 +30,8 @@ import {
   fetchOverviewGeoDimensionTabPage,
   fetchOverviewPageCardTab,
   fetchOverviewSourceCardTab,
+  fetchUtmDimension,
+  type UtmDimensionTab,
 } from "@/lib/dashboard/client/data/index";
 import {
   replaceUrlWithoutNavigation,
@@ -69,7 +71,6 @@ import {
   overviewTabData,
 } from "./overview-card-data";
 import {
-  buildGeoPagePath,
   buildPagesPagePath,
   canonicalizeGeoFilterValue,
   CLIENT_DIMENSION_CARD_FILTER_CONTROL_BY_TAB,
@@ -83,7 +84,6 @@ import {
   PAGE_CARD_NAVIGABLE_TAB_LIST,
   PAGE_CARD_TABS,
   resolveGeoLocationHighlightValue,
-  resolveGeoLocationQueryValue,
   resolvePageCardDetailPath,
   SOURCE_CARD_FILTER_CONTROL_BY_TAB,
   SOURCE_CARD_TABS,
@@ -110,6 +110,13 @@ import {
   type SourceCardRow,
   type SourceCardTab,
 } from "./types";
+import {
+  buildUtmSourceCardRows,
+  isUtmTab,
+  UTM_TABS,
+  utmTabLabel,
+  withUtmTag,
+} from "./utm-tabs";
 export function OverviewPagesSection({
   locale,
   messages,
@@ -130,15 +137,11 @@ export function OverviewPagesSection({
   pageCardNavigableTabs,
   pageCardDetailTabs,
   pageCardFetchers,
-  sourceCardFetchers,
-  clientCardFetchers,
-  geoCardFetchers,
   pageCardTargetUrlResolvers,
   pageCardDetailPathResolvers,
   pageCardDetailClickResolvers,
   pageCardShowVisitors = true,
   primaryMetricLabel,
-  geoPageBasePathname,
   sectionClassName,
 }: OverviewPagesSectionProps) {
   const router = useRouter();
@@ -188,21 +191,20 @@ export function OverviewPagesSection({
     () => (cardDataOverride ? JSON.stringify(cardDataOverride) : "remote"),
     [cardDataOverride],
   );
-  const resolvedSourceCardTabs = useMemo(() => {
-    const hasChannelData =
-      cardDataOverride?.source.channel !== undefined ||
-      Boolean(sourceCardFetchers?.channel) ||
-      (!hasCardDataOverride && !sourceCardFetchers);
-    const tabs = hasChannelData
-      ? SOURCE_CARD_TABS
-      : SOURCE_CARD_TABS.filter((tab) => tab !== "channel");
-    return showSourceLinkTab ? tabs : tabs.filter((tab) => tab !== "link");
-  }, [
-    cardDataOverride?.source.channel,
-    hasCardDataOverride,
-    showSourceLinkTab,
-    sourceCardFetchers,
-  ]);
+  // Data handed in (Realtime's live visits) has no campaign tabs, and may
+  // have no channel tab.
+  const resolvedSourceCardTabs = useMemo(
+    () =>
+      SOURCE_CARD_TABS.filter(
+        (tab) =>
+          (tab !== "link" || showSourceLinkTab) &&
+          !(cardDataOverride && isUtmTab(tab)) &&
+          (tab !== "channel" ||
+            !cardDataOverride ||
+            cardDataOverride.source.channel !== undefined),
+      ),
+    [cardDataOverride, showSourceLinkTab],
+  );
   const resolvedPageCardNavigableTabs = useMemo(
     () =>
       new Set<PageCardNavigableTab>(
@@ -337,15 +339,22 @@ export function OverviewPagesSection({
         mono: false,
         showIcon: true,
       },
+      ...(Object.fromEntries(
+        UTM_TABS.map((tab) => [
+          tab,
+          {
+            label: utmTabLabel(tab, messages),
+            columnLabel: utmTabLabel(tab, messages),
+            mono: tab === "term" || tab === "content",
+            showIcon: false,
+          },
+        ]),
+      ) as Record<
+        UtmDimensionTab,
+        { label: string; columnLabel: string; mono: boolean; showIcon: boolean }
+      >),
     }),
-    [
-      messages.overview.channelColumn,
-      messages.overview.channelTab,
-      messages.overview.sourceDomainColumn,
-      messages.overview.sourceLinkColumn,
-      messages.overview.sourceLinkTab,
-      messages.overview.sourceTab,
-    ],
+    [messages],
   );
   const sourceCardFilterValue = useCallback(
     (tab: SourceCardTab) =>
@@ -560,13 +569,6 @@ export function OverviewPagesSection({
       detailAction(detailParams);
     },
     [],
-  );
-  const openGeoDimensionLocationTarget = useCallback(
-    (targetUrl: string, event: MouseEvent<HTMLElement>) => {
-      event.stopPropagation();
-      router.push(targetUrl);
-    },
-    [router],
   );
   const [pageComparisonMetric, setPageComparisonMetric] =
     useState<OverviewComparisonMetric>("views");
@@ -840,6 +842,35 @@ export function OverviewPagesSection({
           sort.key === "change")
           ? sort.key
           : undefined;
+      if (isUtmTab(tab)) {
+        const utmPage = await fetchUtmDimension(
+          siteId,
+          window,
+          tab,
+          withUtmTag(filters, tab),
+          {
+            limit,
+            cursor,
+            search,
+            sort: requestMetric,
+            direction: sort.direction,
+            comparison: comparisonQuery,
+            comparisonMetric: comparisonQuery
+              ? sourceComparisonMetric
+              : undefined,
+            comparisonSortBy,
+            signal,
+          },
+        );
+        return {
+          items: buildUtmSourceCardRows(
+            tab,
+            utmPage.items,
+            messages.campaigns.notSet,
+          ),
+          pagination: utmPage.pagination,
+        };
+      }
       const rawPage =
         cardDataOverride && !comparisonQuery
           ? loadLocalOverviewTablePage(
@@ -850,37 +881,7 @@ export function OverviewPagesSection({
               cursor,
               search,
             )
-          : await (
-              sourceCardFetchers?.[tab] ??
-              ((
-                requestedSiteId: string,
-                requestedWindow: TimeWindow,
-                requestedFilters: FilterDocument,
-                scope?: FilterScope,
-                options?: {
-                  limit?: number;
-                  cursor?: string | null;
-                  search?: string;
-                  sort?: "views" | "visitors" | "sessions";
-                  direction?: "asc" | "desc";
-                  comparisonMetric?: "views" | "visitors";
-                  comparisonSortBy?: "current" | "reference" | "change";
-                  comparison?: {
-                    mode: "same" | "previous";
-                    window: TimeWindow;
-                    filters: FilterDocument;
-                  } | null;
-                  signal?: AbortSignal;
-                },
-              ) =>
-                fetchOverviewSourceCardTab(
-                  requestedSiteId,
-                  requestedWindow,
-                  tab,
-                  requestedFilters,
-                  { ...options, resolvedScope: scope },
-                ))
-            )(siteId, window, filters, resolvedScope, {
+          : await fetchOverviewSourceCardTab(siteId, window, tab, filters, {
               limit,
               cursor,
               search,
@@ -892,6 +893,7 @@ export function OverviewPagesSection({
                 : undefined,
               comparisonSortBy,
               signal,
+              resolvedScope,
             });
       const page = overviewTabData(rawPage);
       return {
@@ -907,13 +909,13 @@ export function OverviewPagesSection({
     [
       cardDataOverride,
       filters,
+      messages.campaigns.notSet,
       messages.overview.channelLabels,
       comparisonQuery,
       sourceComparisonMetric,
       resolvedScope,
       siteId,
       sourceCardDirectLabel,
-      sourceCardFetchers,
       window,
     ],
   );
@@ -943,49 +945,26 @@ export function OverviewPagesSection({
               cursor,
               search,
             )
-          : await (
-              clientCardFetchers?.[tab] ??
-              ((
-                requestedSiteId: string,
-                requestedWindow: TimeWindow,
-                requestedFilters: FilterDocument,
-                scope?: FilterScope,
-                options?: {
-                  limit?: number;
-                  cursor?: string | null;
-                  search?: string;
-                  sort?: "views" | "visitors" | "sessions";
-                  direction?: "asc" | "desc";
-                  comparisonMetric?: "views" | "visitors";
-                  comparisonSortBy?: "current" | "reference" | "change";
-                  comparison?: {
-                    mode: "same" | "previous";
-                    window: TimeWindow;
-                    filters: FilterDocument;
-                  } | null;
-                  signal?: AbortSignal;
-                },
-              ) =>
-                fetchOverviewClientDimensionTab(
-                  requestedSiteId,
-                  requestedWindow,
-                  tab,
-                  requestedFilters,
-                  { ...options, resolvedScope: scope },
-                ))
-            )(siteId, window, filters, resolvedScope, {
-              limit,
-              cursor,
-              search,
-              sort: requestMetric,
-              direction: sort.direction,
-              comparison: comparisonQuery,
-              comparisonMetric: comparisonQuery
-                ? clientComparisonMetric
-                : undefined,
-              comparisonSortBy,
-              signal,
-            });
+          : await fetchOverviewClientDimensionTab(
+              siteId,
+              window,
+              tab,
+              filters,
+              {
+                limit,
+                cursor,
+                search,
+                sort: requestMetric,
+                direction: sort.direction,
+                comparison: comparisonQuery,
+                comparisonMetric: comparisonQuery
+                  ? clientComparisonMetric
+                  : undefined,
+                comparisonSortBy,
+                signal,
+                resolvedScope,
+              },
+            );
       const page = overviewTabData(rawPage);
       return {
         items: buildClientDimensionRows(tab, page.items, locale, messages),
@@ -994,7 +973,6 @@ export function OverviewPagesSection({
     },
     [
       cardDataOverride,
-      clientCardFetchers,
       filters,
       locale,
       messages,
@@ -1031,49 +1009,26 @@ export function OverviewPagesSection({
               cursor,
               search,
             )
-          : await (
-              geoCardFetchers?.[tab] ??
-              ((
-                requestedSiteId: string,
-                requestedWindow: TimeWindow,
-                requestedFilters: FilterDocument,
-                scope?: FilterScope,
-                options?: {
-                  limit?: number;
-                  cursor?: string | null;
-                  search?: string;
-                  sort?: "views" | "visitors" | "sessions";
-                  direction?: "asc" | "desc";
-                  comparisonMetric?: "views" | "visitors";
-                  comparisonSortBy?: "current" | "reference" | "change";
-                  comparison?: {
-                    mode: "same" | "previous";
-                    window: TimeWindow;
-                    filters: FilterDocument;
-                  } | null;
-                  signal?: AbortSignal;
-                },
-              ) =>
-                fetchOverviewGeoDimensionTabPage(
-                  requestedSiteId,
-                  requestedWindow,
-                  tab,
-                  requestedFilters,
-                  { ...options, resolvedScope: scope },
-                ))
-            )(siteId, window, filters, resolvedScope, {
-              limit,
-              cursor,
-              search,
-              sort: requestMetric,
-              direction: sort.direction,
-              comparison: comparisonQuery,
-              comparisonMetric: comparisonQuery
-                ? geoComparisonMetric
-                : undefined,
-              comparisonSortBy,
-              signal,
-            });
+          : await fetchOverviewGeoDimensionTabPage(
+              siteId,
+              window,
+              tab,
+              filters,
+              {
+                limit,
+                cursor,
+                search,
+                sort: requestMetric,
+                direction: sort.direction,
+                comparison: comparisonQuery,
+                comparisonMetric: comparisonQuery
+                  ? geoComparisonMetric
+                  : undefined,
+                comparisonSortBy,
+                signal,
+                resolvedScope,
+              },
+            );
       const page = overviewTabData(rawPage);
       return {
         items: buildGeoDimensionRows(
@@ -1091,7 +1046,6 @@ export function OverviewPagesSection({
       comparisonQuery,
       geoComparisonMetric,
       filters,
-      geoCardFetchers,
       locale,
       messages,
       resolvedScope,
@@ -1228,21 +1182,6 @@ export function OverviewPagesSection({
       resolvedPageCardDetailTabs,
       resolvedPageCardNavigableTabs,
     ],
-  );
-  const geoDimensionRowLocationTarget = useCallback(
-    (tab: GeoDimensionCardTab, item: PageCardRow) => {
-      const rowLocationValue = resolveGeoLocationQueryValue(
-        tab,
-        item,
-        messages.common.unknown,
-      );
-      return rowLocationValue
-        ? `${buildGeoPagePath(geoPageBasePathname ?? livePathname)}?${new URLSearchParams(
-            { location: rowLocationValue },
-          ).toString()}`
-        : null;
-    },
-    [geoPageBasePathname, livePathname, messages.common.unknown],
   );
   const filterPageCardRows = useCallback(
     (rows: readonly PageCardRow[], tab: PageCardTab) => {
@@ -1521,8 +1460,6 @@ export function OverviewPagesSection({
   >(
     () => ({
       renderLabel: (row, { tab, source }) => {
-        const rowLocationTarget =
-          source === "search" ? null : geoDimensionRowLocationTarget(tab, row);
         return (
           <span
             className={cn(
@@ -1561,22 +1498,6 @@ export function OverviewPagesSection({
             ) : (
               <LabelWithLeadingIcon label={row.label} iconName={row.iconName} />
             )}
-            {rowLocationTarget ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Clickable
-                    className="inline-flex text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/row:opacity-100 focus-visible:opacity-100 hover:text-foreground"
-                    onClick={(event) =>
-                      openGeoDimensionLocationTarget(rowLocationTarget, event)
-                    }
-                    aria-label={messages.common.search}
-                  >
-                    <SearchIcon size="1.2em" />
-                  </Clickable>
-                </TooltipTrigger>
-                <TooltipContent>{messages.common.search}</TooltipContent>
-              </Tooltip>
-            ) : null}
           </span>
         );
       },
@@ -1598,14 +1519,7 @@ export function OverviewPagesSection({
         );
       },
     }),
-    [
-      geoDimensionRowLocationTarget,
-      geoDimensionCardFilterValue,
-      locale,
-      messages.common.search,
-      openGeoDimensionLocationTarget,
-      setGeoDimensionCardFilter,
-    ],
+    [geoDimensionCardFilterValue, locale, setGeoDimensionCardFilter],
   );
   return (
     <>

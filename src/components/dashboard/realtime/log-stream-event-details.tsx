@@ -2,7 +2,6 @@ import { type ReactNode, useMemo } from "react";
 import { Icon } from "@iconify/react";
 import { AutoResizer } from "@insightflare/ui/auto-resizer";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
-import { Button } from "@insightflare/ui/button";
 import { Clickable } from "@insightflare/ui/clickable";
 import {
   Drawer,
@@ -14,17 +13,17 @@ import {
 } from "@insightflare/ui/drawer";
 import { JsonTreePanel } from "@insightflare/ui/json-tree";
 import { Separator } from "@insightflare/ui/separator";
-import { ActivityIcon, ExternalLinkIcon, GlobeIcon } from "lucide-react";
+import { ActivityIcon, GlobeIcon } from "lucide-react";
 
+import {
+  formatPathWithHash,
+  resolveDeviceTypeMeta,
+} from "@/components/dashboard/common/client-meta";
 import {
   GeoPointsMapIsland,
   type GeoPointsMapPoint,
 } from "@/components/dashboard/geo/geo-points-map-island";
 import { useGeoStateTranslationBundle } from "@/components/dashboard/geo/lazy-geo-location-label";
-import {
-  formatPathWithHash,
-  resolveDeviceTypeMeta,
-} from "@/components/dashboard/journeys/journey-display";
 import { shortDateTime } from "@/lib/dashboard/format";
 import {
   formatLocalizedGeoValue,
@@ -36,7 +35,6 @@ import {
 } from "@/lib/i18n/code-labels";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
-import { formatI18nTemplate } from "@/lib/i18n/template";
 import type { RealtimeEvent } from "@/lib/realtime/types";
 import { cn } from "@/lib/utils";
 
@@ -51,10 +49,8 @@ import {
   formatDetailDuration,
   formatLogTitle,
   formatOptionalDetailDateTime,
-  formatRealtimePerformanceMetric,
   formatRelativeTime,
   formatTimelineTime,
-  getRealtimeEventIntegrationRemainingSeconds,
   hasValidCoordinate,
   LogoIcon,
   OS_APPLE_ICON_KEYS,
@@ -309,8 +305,6 @@ export function RealtimeLogEventDetailsDrawer({
   onOpenChange,
   events,
   onSelect,
-  onOpenVisitor,
-  onOpenSession,
 }: {
   locale: Locale;
   messages: AppMessages;
@@ -320,8 +314,6 @@ export function RealtimeLogEventDetailsDrawer({
   onOpenChange: (open: boolean) => void;
   events: RealtimeEvent[];
   onSelect: (event: RealtimeEvent) => void;
-  onOpenVisitor?: (visitorId: string) => void;
-  onOpenSession?: (sessionId: string) => void;
 }) {
   const now = useRealtimeClock(open && Boolean(event));
   const displayData = event
@@ -342,14 +334,6 @@ export function RealtimeLogEventDetailsDrawer({
   });
 
   if (!event || !displayData) return null;
-
-  const integrationRemainingSeconds =
-    getRealtimeEventIntegrationRemainingSeconds(event, now);
-  const isIntegratingEvent = integrationRemainingSeconds > 0;
-  const integratingEventLabel = formatI18nTemplate(
-    messages.events.integratingEvent,
-    { seconds: integrationRemainingSeconds },
-  );
 
   const {
     browserIconKey,
@@ -532,27 +516,6 @@ export function RealtimeLogEventDetailsDrawer({
       label: messages.realtime.previousVisitStartedAt,
       value: (
         <RealtimeEventDetailValue value={previousVisitStartedLabel} mono />
-      ),
-    },
-    {
-      section: "visitor",
-      priority: 3,
-      label: messages.realtime.userId,
-      value: (
-        <RealtimeEventDetailValue
-          value={event.userId?.trim() || unknownLabel}
-          mono
-        />
-      ),
-    },
-    {
-      section: "visitor",
-      priority: 2,
-      label: messages.realtime.userName,
-      value: (
-        <RealtimeEventDetailValue
-          value={event.userName?.trim() || messages.campaigns.notSet}
-        />
       ),
     },
     {
@@ -993,78 +956,6 @@ export function RealtimeLogEventDetailsDrawer({
       ),
     },
   ];
-  const performanceDetailRows = [
-    {
-      label: messages.performance.ttfb,
-      value: (
-        <RealtimeEventDetailValue
-          value={formatRealtimePerformanceMetric(
-            event.performance,
-            "ttfb",
-            messages,
-            unknownLabel,
-          )}
-          mono
-        />
-      ),
-    },
-    {
-      label: messages.performance.fcp,
-      value: (
-        <RealtimeEventDetailValue
-          value={formatRealtimePerformanceMetric(
-            event.performance,
-            "fcp",
-            messages,
-            unknownLabel,
-          )}
-          mono
-        />
-      ),
-    },
-    {
-      label: messages.performance.lcp,
-      value: (
-        <RealtimeEventDetailValue
-          value={formatRealtimePerformanceMetric(
-            event.performance,
-            "lcp",
-            messages,
-            unknownLabel,
-          )}
-          mono
-        />
-      ),
-    },
-    {
-      label: messages.performance.cls,
-      value: (
-        <RealtimeEventDetailValue
-          value={formatRealtimePerformanceMetric(
-            event.performance,
-            "cls",
-            messages,
-            unknownLabel,
-          )}
-          mono
-        />
-      ),
-    },
-    {
-      label: messages.performance.inp,
-      value: (
-        <RealtimeEventDetailValue
-          value={formatRealtimePerformanceMetric(
-            event.performance,
-            "inp",
-            messages,
-            unknownLabel,
-          )}
-          mono
-        />
-      ),
-    },
-  ];
   const sortDetailRows = (rows: typeof detailRows) =>
     rows.sort((left, right) => {
       const leftPriority = "priority" in left ? left.priority : 0;
@@ -1078,13 +969,7 @@ export function RealtimeLogEventDetailsDrawer({
     detailRows.filter((row) => "section" in row && row.section === "browsing"),
   );
   const visitorDetailRows = sortDetailRows(
-    detailRows
-      .filter((row) => "section" in row && row.section === "visitor")
-      .filter(
-        (row) =>
-          row.label !== messages.realtime.userId ||
-          Boolean(event.userId?.trim()),
-      ),
+    detailRows.filter((row) => "section" in row && row.section === "visitor"),
   );
   const sessionDetailRows = sortDetailRows(
     detailRows.filter((row) => "section" in row && row.section === "session"),
@@ -1170,36 +1055,6 @@ export function RealtimeLogEventDetailsDrawer({
                   />
                 ))}
               </dl>
-              {onOpenVisitor ? (
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    disabled={isIntegratingEvent || !event.visitorId.trim()}
-                    onClick={() => onOpenVisitor(event.visitorId)}
-                  >
-                    <AutoTransition
-                      as="span"
-                      initial={false}
-                      className="inline-flex items-center gap-[var(--button-content-gap)]"
-                      duration={0.16}
-                      transitionKey={
-                        isIntegratingEvent ? "integrating" : "open"
-                      }
-                    >
-                      {isIntegratingEvent ? (
-                        integratingEventLabel
-                      ) : (
-                        <>
-                          <ExternalLinkIcon data-icon="inline-start" />
-                          {messages.events.openVisitor}
-                        </>
-                      )}
-                    </AutoTransition>
-                  </Button>
-                </div>
-              ) : null}
             </section>
 
             <Separator />
@@ -1218,36 +1073,6 @@ export function RealtimeLogEventDetailsDrawer({
                   />
                 ))}
               </dl>
-              {onOpenSession ? (
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    disabled={isIntegratingEvent || !event.sessionId.trim()}
-                    onClick={() => onOpenSession(event.sessionId)}
-                  >
-                    <AutoTransition
-                      as="span"
-                      initial={false}
-                      className="inline-flex items-center gap-[var(--button-content-gap)]"
-                      duration={0.16}
-                      transitionKey={
-                        isIntegratingEvent ? "integrating" : "open"
-                      }
-                    >
-                      {isIntegratingEvent ? (
-                        integratingEventLabel
-                      ) : (
-                        <>
-                          <ExternalLinkIcon data-icon="inline-start" />
-                          {messages.events.openSession}
-                        </>
-                      )}
-                    </AutoTransition>
-                  </Button>
-                </div>
-              ) : null}
             </section>
 
             <Separator />
@@ -1281,23 +1106,6 @@ export function RealtimeLogEventDetailsDrawer({
               </h3>
               <dl className="grid gap-3 sm:grid-cols-2">
                 {sourceDetailRows.map((row, index) => (
-                  <RealtimeDetailItem
-                    key={`${row.label}:${index}`}
-                    label={row.label}
-                    value={row.value}
-                  />
-                ))}
-              </dl>
-            </section>
-
-            <Separator />
-
-            <section className="space-y-3">
-              <h3 className="text-sm font-medium">
-                {messages.sessionDetail.performanceTitle}
-              </h3>
-              <dl className="grid gap-3 sm:grid-cols-2">
-                {performanceDetailRows.map((row, index) => (
                   <RealtimeDetailItem
                     key={`${row.label}:${index}`}
                     label={row.label}

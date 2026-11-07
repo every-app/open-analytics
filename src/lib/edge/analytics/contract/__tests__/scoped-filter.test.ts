@@ -167,27 +167,6 @@ describe("scoped filter contract", () => {
       kind: "scoped",
       autoScope: "event",
     });
-
-    expect(FILTER_SCOPE_CAPABILITIES.sessions).toMatchObject({
-      kind: "scoped",
-      autoScope: "session",
-    });
-    expect(FILTER_SCOPE_CAPABILITIES["session-events"]).toMatchObject({
-      kind: "scoped",
-      autoScope: "session",
-    });
-    expect(FILTER_SCOPE_CAPABILITIES.visitors).toMatchObject({
-      kind: "scoped",
-      autoScope: "visitor",
-    });
-    expect(FILTER_SCOPE_CAPABILITIES["visitor-events"]).toMatchObject({
-      kind: "scoped",
-      autoScope: "visitor",
-    });
-    expect(FILTER_SCOPE_CAPABILITIES["visitor-sessions"]).toMatchObject({
-      kind: "scoped",
-      autoScope: "visitor",
-    });
   });
 
   it("does not provide an implicit Realtime scope fallback", () => {
@@ -912,28 +891,6 @@ describe("scoped filter contract", () => {
     });
     expect(overviewDataset?.ctes).toContain("scope_raw_events AS");
     expect(overviewDataset?.ctes).toContain("WHERE 0");
-
-    const visitorsDataset = scopedDatasetForUnpreparedReader(
-      "visitors",
-      "site-1",
-      window,
-      pageFilter,
-      "visitor",
-    );
-    expect(visitorsDataset?.ctes).toContain("ce.event_pk");
-    expect(visitorsDataset?.ctes).toContain("'{}' AS event_data_json");
-    expect(visitorsDataset?.bindings).toEqual([
-      { value: "site-1" },
-      { value: 1 },
-      { value: 100 },
-      { value: "site-1" },
-      { value: 1 },
-      { value: 100 },
-      { value: "/docs" },
-      { value: 1 },
-      { value: 100 },
-      { value: "/docs" },
-    ]);
 
     const factDataset = scopedDatasetForUnpreparedReader(
       "overview",

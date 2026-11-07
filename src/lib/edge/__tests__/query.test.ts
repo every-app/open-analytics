@@ -1339,7 +1339,7 @@ describe("edge query handlers", () => {
     expect(dimensionStatement?.bindings.at(-1)).toBe(201);
   });
 
-  it("shapes events summary, trend, records, type detail, fields, field values, and record detail", async () => {
+  it("shapes events summary, trend, records, type detail, fields, and field values", async () => {
     const { env } = createEnv({
       matches: [...authMatches(), ...commonQueryMatches()],
     });
@@ -1371,17 +1371,9 @@ describe("edge query handlers", () => {
       privatePath("event-type-fields", "eventName=Signup"),
       env,
     );
-    const recordDetail = await privateQuery(
-      privatePath("event-record-detail", "eventId=evt-1"),
-      env,
-    );
     const pages = await privateQuery(privatePath("pages"), env);
     const referrers = await privateQuery(privatePath("referrers"), env);
     const eventTypes = await privateQuery(privatePath("event-types"), env);
-    const eventContext = await privateQuery(
-      privatePath("event-type-context", "eventName=Signup"),
-      env,
-    );
     const funnels = await privateQuery(privatePath("funnels"), env);
 
     expect(await summary.json()).toMatchObject({
@@ -1472,24 +1464,8 @@ describe("edge query handlers", () => {
         ],
       },
     });
-    expect(await recordDetail.json()).toMatchObject({
-      ok: true,
-      data: {
-        event: {
-          eventId: "evt-1",
-          eventName: "Signup",
-        },
-        context: {
-          visitId: "visit-1",
-          pathname: "/signup",
-        },
-        eventData: {
-          plan: "pro",
-        },
-      },
-    });
     expect(
-      [pages, referrers, eventTypes, eventContext, funnels].every(
+      [pages, referrers, eventTypes, funnels].every(
         (response) => response instanceof Response,
       ),
     ).toBe(true);
@@ -1506,10 +1482,6 @@ describe("edge query handlers", () => {
       privatePath("event-type-field-values", "eventName=Signup"),
       env,
     );
-    const missingRecord = await privateQuery(
-      privatePath("event-record-detail"),
-      env,
-    );
 
     expect(missingEvent.status).toBe(400);
     expect(await missingEvent.json()).toMatchObject({
@@ -1521,12 +1493,7 @@ describe("edge query handlers", () => {
       ok: false,
       error: { message: "fieldPath is required" },
     });
-    expect(missingRecord.status).toBe(400);
-    expect(await missingRecord.json()).toMatchObject({
-      ok: false,
-      error: { message: "eventId is required" },
-    });
-    expect(prepare).toHaveBeenCalledTimes(3);
+    expect(prepare).toHaveBeenCalledTimes(2);
   });
 
   it("maps event field value variants and rejects invalid field value types", async () => {
@@ -1638,83 +1605,16 @@ describe("edge query handlers", () => {
     });
   });
 
-  it("routes visitor, session, retention, and page dashboard handlers", async () => {
+  it("routes page dashboard handlers", async () => {
     const { env } = createEnv({
       matches: [...authMatches(), ...commonQueryMatches()],
     });
 
-    const visitors = await privateQuery(
-      privatePath(
-        "visitors",
-        "limit=1&sortBy=firstSeenAt&sortDir=asc&search=visitor",
-      ),
-      env,
-    );
-    const sessions = await privateQuery(
-      privatePath("sessions", "limit=1&sortBy=durationMs&sortDir=asc"),
-      env,
-    );
-    const retention = await privateQuery(
-      privatePath("retention", "granularity=day"),
-      env,
-    );
     const pageDashboard = await privateQuery(
       privatePath("pages-dashboard", "limit=2&interval=hour"),
       env,
     );
 
-    expect(await visitors.json()).toMatchObject({
-      ok: true,
-      data: {
-        items: [
-          {
-            visitorId: "visitor-1",
-            sessions: 2,
-            referrerHost: "news.example",
-            screenWidth: 1440,
-          },
-        ],
-        pagination: {
-          limit: 1,
-          returned: 1,
-          hasMore: false,
-        },
-      },
-    });
-    expect(await sessions.json()).toMatchObject({
-      ok: true,
-      data: {
-        items: [
-          {
-            sessionId: "session-1",
-            durationMs: 10_000,
-            performance: {
-              ttfb: 12.346,
-              cls: 0.025,
-            },
-          },
-        ],
-        pagination: {
-          limit: 1,
-          returned: 1,
-          hasMore: true,
-          nextCursor: expect.any(String),
-        },
-      },
-    });
-    expect(await retention.json()).toMatchObject({
-      ok: true,
-      granularity: "day",
-      cohorts: [
-        {
-          size: 10,
-          periods: [
-            { index: 0, visitors: 10, rate: 1 },
-            { index: 1, visitors: 4, rate: 0.4 },
-          ],
-        },
-      ],
-    });
     expect(await pageDashboard.json()).toMatchObject({
       ok: true,
       interval: "hour",
@@ -1746,242 +1646,7 @@ describe("edge query handlers", () => {
     });
   });
 
-  it("validates visitor and session detail identifiers", async () => {
-    const { env } = createEnv({ matches: authMatches() });
-
-    const missingVisitor = await privateQuery(
-      privatePath("visitor-detail"),
-      env,
-    );
-    const missingSession = await privateQuery(
-      privatePath("session-detail"),
-      env,
-    );
-    const missingJourneyEvent = await privateQuery(
-      privatePath("journey-event-detail"),
-      env,
-    );
-
-    expect(missingVisitor.status).toBe(400);
-    expect(await missingVisitor.json()).toMatchObject({
-      ok: false,
-      error: { message: "Missing visitorId" },
-    });
-    expect(missingSession.status).toBe(400);
-    expect(await missingSession.json()).toMatchObject({
-      ok: false,
-      error: { message: "Missing sessionId" },
-    });
-    expect(missingJourneyEvent.status).toBe(400);
-    expect(await missingJourneyEvent.json()).toMatchObject({
-      ok: false,
-      error: { message: "Missing eventId" },
-    });
-  });
-
-  it("routes browser, client, UTM, referrer, and performance analytics handlers", async () => {
-    const { env } = createEnv({
-      matches: [...authMatches(), ...commonQueryMatches()],
-    });
-
-    const browserTrend = await privateQuery(
-      privatePath("browser-trend", "interval=hour&limit=1"),
-      env,
-    );
-    const browserVersion = await privateQuery(
-      privatePath("browser-version-breakdown", "browserLimit=1&versionLimit=1"),
-      env,
-    );
-    const browserCross = await privateQuery(
-      privatePath(
-        "browser-cross-breakdown",
-        "browserLimit=1&osLimit=1&deviceTypeLimit=1",
-      ),
-      env,
-    );
-    const browserRadar = await privateQuery(privatePath("browser-radar"), env);
-    const referrerRadar = await privateQuery(
-      privatePath("referrer-radar"),
-      env,
-    );
-    const clientTrend = await privateQuery(
-      privatePath(
-        "client-dimension-trend",
-        "dimension=deviceType&interval=hour",
-      ),
-      env,
-    );
-    const invalidClientTrend = await privateQuery(
-      privatePath("client-dimension-trend", "dimension=bad"),
-      env,
-    );
-    const utmTrend = await privateQuery(
-      privatePath("utm-dimension-trend", "dimension=source&interval=hour"),
-      env,
-    );
-    const invalidUtmTrend = await privateQuery(
-      privatePath("utm-dimension-trend", "dimension=bad"),
-      env,
-    );
-    const referrerTrend = await privateQuery(
-      privatePath("referrer-dimension-trend", "interval=hour"),
-      env,
-    );
-    const clientCross = await privateQuery(
-      privatePath(
-        "client-cross-breakdown",
-        "primaryDimension=client.browser&secondaryDimension=client.deviceType",
-      ),
-      env,
-    );
-    const invalidClientCross = await privateQuery(
-      privatePath(
-        "client-cross-breakdown",
-        "primaryDimension=client.browser&secondaryDimension=client.browser",
-      ),
-      env,
-    );
-    const performance = await privateQuery(
-      privatePath("performance", "interval=hour&limit=1"),
-      env,
-    );
-
-    const browserTrendPayload: any = await browserTrend.json();
-    expect(browserTrendPayload).toMatchObject({
-      ok: true,
-      interval: "hour",
-      series: [
-        { key: "chrome", label: "Chrome", visitors: 6 },
-        { key: "other", label: "Other", isOther: true },
-      ],
-    });
-    expect(browserTrendPayload.data).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          visitorsBySeries: { chrome: 3, other: 1 },
-          totalVisitors: 4,
-        }),
-      ]),
-    );
-    expect(await browserVersion.json()).toMatchObject({
-      ok: true,
-      data: [
-        {
-          browser: "Chrome",
-          versions: [
-            { key: "124", label: "124" },
-            { key: "other", label: "Other", isOther: true },
-          ],
-        },
-      ],
-    });
-    expect(await browserCross.json()).toMatchObject({
-      ok: true,
-      operatingSystem: {
-        columns: [{ key: "windows", label: "Windows" }],
-        rows: [{ key: "chrome", cells: [{ key: "windows", visitors: 5 }] }],
-      },
-    });
-    expect(await browserRadar.json()).toMatchObject({
-      ok: true,
-      data: [
-        {
-          browser: "Chrome",
-          visitors: 6,
-          metrics: {
-            duration: 1250,
-            engagement: 0.75,
-            loyalty: 0.5,
-          },
-        },
-      ],
-    });
-    expect(await referrerRadar.json()).toMatchObject({
-      ok: true,
-      data: [
-        {
-          referrer: "news.example",
-          metrics: {
-            engagement: 0.8,
-            loyalty: 0.25,
-          },
-        },
-      ],
-    });
-    const clientTrendPayload: any = await clientTrend.json();
-    expect(clientTrendPayload).toMatchObject({ ok: true });
-    expect(clientTrendPayload.series).toEqual(
-      expect.arrayContaining([expect.objectContaining({ label: "Chrome" })]),
-    );
-    expect(invalidClientTrend.status).toBe(400);
-    expect(await invalidClientTrend.json()).toMatchObject({
-      ok: false,
-      error: { message: "Invalid client dimension" },
-    });
-    const utmTrendPayload: any = await utmTrend.json();
-    expect(utmTrendPayload).toMatchObject({ ok: true });
-    expect(utmTrendPayload.series).toEqual(
-      expect.arrayContaining([expect.objectContaining({ label: "Chrome" })]),
-    );
-    expect(invalidUtmTrend.status).toBe(400);
-    expect(await invalidUtmTrend.json()).toMatchObject({
-      ok: false,
-      error: { message: "Invalid UTM dimension" },
-    });
-    const referrerTrendPayload: any = await referrerTrend.json();
-    expect(referrerTrendPayload).toMatchObject({ ok: true });
-    expect(referrerTrendPayload.series).toEqual(
-      expect.arrayContaining([expect.objectContaining({ label: "Chrome" })]),
-    );
-    const clientCrossPayload: any = await clientCross.json();
-    expect(clientCrossPayload).toMatchObject({
-      ok: true,
-      data: {
-        columns: expect.any(Array),
-        rows: expect.any(Array),
-        totalVisitors: expect.any(Number),
-      },
-    });
-    expect(invalidClientCross.status).toBe(400);
-    expect(await invalidClientCross.json()).toMatchObject({
-      ok: false,
-      error: { message: "Primary and secondary dimensions must differ" },
-    });
-    const performancePayload: any = await performance.json();
-    expect(performancePayload).toMatchObject({
-      ok: true,
-      interval: "hour",
-      summaries: {
-        lcp: {
-          avg: 123.457,
-          p50: 100,
-          samples: 8,
-        },
-      },
-    });
-    expect(performancePayload.trends.ttfb).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ avg: 50, samples: 4 }),
-      ]),
-    );
-    const pricingRoute = (
-      performancePayload.routes as Array<{
-        pathname: string;
-        metrics: Record<string, { avg: number | null }>;
-      }>
-    ).find((route) => route.pathname === "/pricing");
-    expect(pricingRoute?.metrics.lcp?.avg).toBe(100);
-
-    const usCountry = (
-      performancePayload.countries as Array<{
-        country: string;
-        metrics: Record<string, { avg: number | null }>;
-      }>
-    ).find((country) => country.country === "US");
-    expect(usCountry?.metrics.ttfb?.avg).toBe(30);
-  });
-
-  it("routes additional public/private dimension endpoints and empty share trends", async () => {
+  it("routes additional public/private dimension endpoints", async () => {
     const { env } = createEnv({
       matches: [...authMatches(), ...commonQueryMatches()],
     });
@@ -2037,16 +1702,6 @@ describe("edge query handlers", () => {
         items: expect.any(Array),
         pagination: expect.any(Object),
       },
-    });
-
-    const emptyTrend = await privateQuery(
-      privatePath("browser-engine-trend", "limit=0"),
-      createEnv({ matches: authMatches() }).env,
-    );
-    expect(await emptyTrend.json()).toMatchObject({
-      ok: true,
-      series: [],
-      data: [],
     });
   });
 
@@ -2464,10 +2119,7 @@ describe("edge query handlers", () => {
       "trend",
       "pages",
       "referrers",
-      "referrer-summary",
       "pages-dashboard",
-      "retention",
-      "performance",
       "event-types",
       "filter-values",
       "overview-geo-points",
@@ -2477,17 +2129,6 @@ describe("edge query handlers", () => {
       "utm-campaign",
       "utm-term",
       "utm-content",
-      "browser-trend",
-      "browser-engine-trend",
-      "browser-version-breakdown",
-      "browser-cross-breakdown",
-      "browser-radar",
-      "referrer-radar",
-      "referrer-dimension-trend",
-      "referrer-channel-dimension-trend",
-      "client-dimension-trend",
-      "utm-dimension-trend",
-      "client-cross-breakdown",
       "overview-page-path",
       "overview-page-title",
       "overview-page-hostname",

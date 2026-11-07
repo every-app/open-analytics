@@ -58,7 +58,7 @@ const CURRENT_PERIOD_STYLE = {
 const COMPARISON_PERIOD_STYLE = {
   minHeight: "var(--share-trend-comparison-min-height)",
 } as const;
-export type ShareTrendFetcher = (
+type ShareTrendFetcher = (
   siteId: string,
   window: TimeWindow,
   filters?: FilterDocument,
@@ -300,7 +300,7 @@ function ShareTrendPeriodLabel({ label }: { label: string }) {
     <div className="text-xs font-medium text-muted-foreground">{label}</div>
   );
 }
-export interface ShareTrendChartCardProps {
+interface ShareTrendChartCardProps {
   locale: Locale;
   messages: AppMessages;
   title: string;
@@ -320,7 +320,7 @@ export interface ShareTrendChartCardProps {
     series: BrowserTrendSeries,
   ) => ComponentType<{ className?: string }> | undefined;
 }
-export const ShareTrendChartCard = memo(function ShareTrendChartCard({
+const ShareTrendChartCard = memo(function ShareTrendChartCard({
   locale,
   messages,
   title,

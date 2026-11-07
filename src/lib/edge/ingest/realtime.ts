@@ -77,8 +77,6 @@ export function readRecentRealtimeEvents(
         utmTerm,
         utmContent,
         visitorId,
-        userId,
-        userName,
         isEU,
         country,
         region,
@@ -106,8 +104,6 @@ export function readRecentRealtimeEvents(
         durationSource,
         exitReason,
         leaveAt,
-        performanceVisitId,
-        performance,
         visibilityState,
         latitude,
         longitude
@@ -160,8 +156,6 @@ export function readRecentRealtimeEvents(
           utm_term AS utmTerm,
           utm_content AS utmContent,
           visitor_id AS visitorId,
-          user_id AS userId,
-          user_name AS userName,
           is_eu AS isEU,
           country,
           region,
@@ -189,19 +183,6 @@ export function readRecentRealtimeEvents(
           duration_source AS durationSource,
           exit_reason AS exitReason,
           ended_at AS leaveAt,
-          '' AS performanceVisitId,
-          CASE
-            WHEN perf_ttfb_ms IS NULL AND perf_fcp_ms IS NULL
-              AND perf_lcp_ms IS NULL AND perf_cls IS NULL AND perf_inp_ms IS NULL
-              THEN NULL
-            ELSE json_object(
-              'ttfb', perf_ttfb_ms,
-              'fcp', perf_fcp_ms,
-              'lcp', perf_lcp_ms,
-              'cls', perf_cls,
-              'inp', perf_inp_ms
-            )
-          END AS performance,
           CASE
             WHEN status = 'hidden_pending' THEN 'hidden'
             WHEN status = 'open' THEN 'visible'
@@ -260,8 +241,6 @@ export function readRecentRealtimeEvents(
           COALESCE(v.utm_term, '') AS utmTerm,
           COALESCE(v.utm_content, '') AS utmContent,
           COALESCE(v.visitor_id, '') AS visitorId,
-          COALESCE(NULLIF(e.user_id, ''), v.user_id, '') AS userId,
-          COALESCE(v.user_name, '') AS userName,
           v.is_eu AS isEU,
           COALESCE(v.country, '') AS country,
           COALESCE(v.region, '') AS region,
@@ -289,19 +268,6 @@ export function readRecentRealtimeEvents(
           COALESCE(v.duration_source, '') AS durationSource,
           COALESCE(v.exit_reason, '') AS exitReason,
           v.ended_at AS leaveAt,
-          '' AS performanceVisitId,
-          CASE
-            WHEN v.perf_ttfb_ms IS NULL AND v.perf_fcp_ms IS NULL
-              AND v.perf_lcp_ms IS NULL AND v.perf_cls IS NULL AND v.perf_inp_ms IS NULL
-              THEN NULL
-            ELSE json_object(
-              'ttfb', v.perf_ttfb_ms,
-              'fcp', v.perf_fcp_ms,
-              'lcp', v.perf_lcp_ms,
-              'cls', v.perf_cls,
-              'inp', v.perf_inp_ms
-            )
-          END AS performance,
           CASE
             WHEN v.status = 'hidden_pending' THEN 'hidden'
             WHEN v.status = 'open' THEN 'visible'
@@ -363,8 +329,6 @@ export function readRecentRealtimeEvents(
           utm_term AS utmTerm,
           utm_content AS utmContent,
           visitor_id AS visitorId,
-          user_id AS userId,
-          user_name AS userName,
           is_eu AS isEU,
           country,
           region,
@@ -392,19 +356,6 @@ export function readRecentRealtimeEvents(
           duration_source AS durationSource,
           exit_reason AS exitReason,
           ended_at AS leaveAt,
-          '' AS performanceVisitId,
-          CASE
-            WHEN perf_ttfb_ms IS NULL AND perf_fcp_ms IS NULL
-              AND perf_lcp_ms IS NULL AND perf_cls IS NULL AND perf_inp_ms IS NULL
-              THEN NULL
-            ELSE json_object(
-              'ttfb', perf_ttfb_ms,
-              'fcp', perf_fcp_ms,
-              'lcp', perf_lcp_ms,
-              'cls', perf_cls,
-              'inp', perf_inp_ms
-            )
-          END AS performance,
           '' AS visibilityState,
           latitude,
           longitude
@@ -438,8 +389,6 @@ export function readActiveRealtimeVisits(
         status,
         site_id AS siteId,
         visitor_id AS visitorId,
-        user_id AS userId,
-        user_name AS userName,
         session_id AS sessionId,
         started_at AS startedAt,
         last_activity_at AS lastActivityAt,
@@ -481,12 +430,7 @@ export function readActiveRealtimeVisits(
         finalized_at AS finalizedAt,
         duration_ms AS durationMs,
         duration_source AS durationSource,
-        exit_reason AS exitReason,
-        perf_ttfb_ms AS perfTtfbMs,
-        perf_fcp_ms AS perfFcpMs,
-        perf_lcp_ms AS perfLcpMs,
-        perf_cls AS perfCls,
-        perf_inp_ms AS perfInpMs
+        exit_reason AS exitReason
       FROM buffered_visits
       WHERE status = 'open'
         AND last_activity_at >= ?

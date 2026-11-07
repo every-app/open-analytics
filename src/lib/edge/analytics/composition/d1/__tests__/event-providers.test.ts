@@ -1,0 +1,305 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/edge/analytics/providers/d1/internal/core", () => ({
+  mapEventAnalyticsContextCards: vi.fn((value) => value),
+  mapEventField: vi.fn((value) => value),
+  mapEventFieldValue: vi.fn((value) => value),
+  mapEventRecord: vi.fn((value) => value),
+  mapEventSummaryCards: vi.fn((value) => value),
+  mapTabs: vi.fn((value) => value),
+}));
+vi.mock("@/lib/edge/analytics/providers/d1/internal/events-context", () => ({
+  EVENT_CONTEXT_CARD_KEYS: ["path", "sourceDomain"],
+  queryEventAnalyticsContextCardsFromD1: vi.fn(),
+}));
+vi.mock("@/lib/edge/analytics/providers/d1/internal/events-fields", () => ({
+  decodeEventFieldCursor: vi.fn(),
+  decodeEventFieldValueCursor: vi.fn(),
+  queryEventFieldsFromD1: vi.fn(),
+  queryEventFieldsPageFromD1: vi.fn(),
+  queryEventFieldValuesPageFromD1: vi.fn(),
+}));
+vi.mock("@/lib/edge/analytics/providers/d1/internal/events-overview", () => ({
+  queryEventTypeOverviewFromD1: vi.fn(),
+}));
+vi.mock("@/lib/edge/analytics/providers/d1/internal/events-records", () => ({
+  queryEventRecordPageFromD1: vi.fn(),
+}));
+vi.mock("@/lib/edge/analytics/providers/d1/internal/events-summary", () => ({
+  decodeEventTypeCursor: vi.fn(),
+  queryEventsSummaryFromD1: vi.fn(),
+  queryEventTypePageFromD1: vi.fn(),
+}));
+vi.mock("@/lib/edge/analytics/providers/d1/internal/events-trend", () => ({
+  queryEventsTrendFromD1: vi.fn(),
+  queryEventTypeTrendFromD1: vi.fn(),
+}));
+
+import { AnalyticsProviderRegistry } from "@/lib/edge/analytics/application/provider-registry";
+import { registerEventProviders } from "@/lib/edge/analytics/composition/d1/events";
+import type { D1SiteRuntimeBindings } from "@/lib/edge/analytics/composition/d1/shared";
+import {
+  createQueryTime,
+  EMPTY_FILTER_DOCUMENT,
+  siteQueryContext,
+} from "@/lib/edge/analytics/contract";
+import { queryEventAnalyticsContextCardsFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-context";
+import {
+  decodeEventFieldCursor,
+  decodeEventFieldValueCursor,
+  queryEventFieldsFromD1,
+  queryEventFieldsPageFromD1,
+  queryEventFieldValuesPageFromD1,
+} from "@/lib/edge/analytics/providers/d1/internal/events-fields";
+import { queryEventTypeOverviewFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-overview";
+import { queryEventRecordPageFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-records";
+import {
+  decodeEventTypeCursor,
+  queryEventsSummaryFromD1,
+  queryEventTypePageFromD1,
+} from "@/lib/edge/analytics/providers/d1/internal/events-summary";
+import {
+  queryEventsTrendFromD1,
+  queryEventTypeTrendFromD1,
+} from "@/lib/edge/analytics/providers/d1/internal/events-trend";
+import type { Env } from "@/lib/edge/types";
+
+const env = { MAIN_SECRET: "provider-test-secret" } as Env;
+const siteId = "provider-test";
+const time = createQueryTime(0, 100, "UTC", 100);
+const context = siteQueryContext(siteId, "public-share");
+
+const pagination = {
+  limit: 1,
+  returned: 1,
+  hasMore: true,
+  nextCursor: "next",
+};
+
+function input(fields: Record<string, unknown> = {}) {
+  return {
+    context,
+    time,
+    filters: EMPTY_FILTER_DOCUMENT,
+    ...fields,
+  } as never;
+}
+
+function registry(
+  register: (
+    value: AnalyticsProviderRegistry,
+    options: D1SiteRuntimeBindings,
+  ) => void,
+) {
+  const value = new AnalyticsProviderRegistry();
+  register(value, { env, siteId });
+  return value;
+}
+
+describe("D1 event provider routing", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(decodeEventTypeCursor).mockResolvedValue(null);
+    vi.mocked(decodeEventFieldCursor).mockResolvedValue(null);
+    vi.mocked(decodeEventFieldValueCursor).mockResolvedValue(null);
+    vi.mocked(queryEventTypePageFromD1).mockResolvedValue({
+      items: [{ value: "signup", views: 3, sessions: 2, visitors: 1 }],
+      pagination,
+    });
+    vi.mocked(queryEventsSummaryFromD1).mockResolvedValue({
+      summary: { events: 3, eventTypes: 1, sessions: 2, visitors: 1 },
+      cards: {
+        event: { name: [] },
+        page: { path: [], title: [], hostname: [] },
+      },
+    });
+    vi.mocked(queryEventsTrendFromD1).mockResolvedValue({
+      series: [],
+      data: [],
+    });
+    vi.mocked(queryEventRecordPageFromD1).mockResolvedValue({
+      rows: [{ id: "record-1" }],
+      nextCursor: { id: "record-2" },
+    } as never);
+    vi.mocked(queryEventFieldValuesPageFromD1).mockResolvedValue({
+      items: [{ value: "Chrome", occurrences: 3 }],
+      pagination,
+    } as never);
+    vi.mocked(queryEventFieldsPageFromD1).mockResolvedValue({
+      items: [{ path: "plan", valueType: "string" }],
+      pagination,
+    } as never);
+    vi.mocked(queryEventFieldsFromD1).mockResolvedValue([]);
+    vi.mocked(queryEventAnalyticsContextCardsFromD1).mockResolvedValue({
+      page: {
+        path: [],
+        query: [],
+        title: [],
+        hostname: [],
+        entry: [],
+        exit: [],
+      },
+      source: { domain: [], link: [] },
+      client: {
+        browser: [],
+        osVersion: [],
+        deviceType: [],
+        language: [],
+        screenSize: [],
+      },
+      geo: {
+        country: [],
+        region: [],
+        city: [],
+        continent: [],
+        timezone: [],
+        organization: [],
+      },
+    });
+    vi.mocked(queryEventTypeOverviewFromD1).mockResolvedValue({
+      summary: {},
+      breakdowns: { pages: [], countries: [], devices: [], browsers: [] },
+    } as never);
+    vi.mocked(queryEventTypeTrendFromD1).mockResolvedValue({ data: [] });
+  });
+
+  it("routes event collections and optional event detail work", async () => {
+    const value = registry(registerEventProviders);
+
+    await value.resolve("event-types")!.execute(input({ limit: 1 }));
+    vi.mocked(decodeEventTypeCursor).mockResolvedValue({
+      views: 3,
+      sessions: 2,
+      value: "signup",
+    });
+    await value
+      .resolve("event-types")!
+      .execute(input({ cursor: "valid", search: "sign" }));
+
+    await value.resolve("event-summary")!.execute(input());
+    await value
+      .resolve("event-trend")!
+      .execute(input({ interval: "day", limit: 2, eventName: "signup" }));
+    await value.resolve("event-records")!.execute(
+      input({
+        page: { limit: 1, cursor: null },
+        sort: "occurredAt",
+        search: "one",
+        eventName: "signup",
+        cursor: { id: "record-1" },
+      }),
+    );
+
+    await value.resolve("event-field-values")!.execute(
+      input({
+        eventName: "signup",
+        fieldPath: "plan",
+        fieldValueType: "string",
+        limit: 1,
+        search: "pro",
+      }),
+    );
+    vi.mocked(decodeEventFieldValueCursor).mockResolvedValue({
+      occurrences: 3,
+      events: 2,
+      stringValue: "pro",
+      numberValue: 0,
+      booleanValue: 0,
+    });
+    await value.resolve("event-field-values")!.execute(
+      input({
+        eventName: "signup",
+        fieldPath: "plan",
+        fieldValueType: "string",
+        cursor: "valid",
+      }),
+    );
+
+    await value
+      .resolve("event-fields")!
+      .execute(input({ eventName: "signup", limit: 1 }));
+    vi.mocked(decodeEventFieldCursor).mockResolvedValue({
+      events: 2,
+      occurrences: 3,
+      path: "plan",
+      valueType: 1,
+    });
+    await value
+      .resolve("event-fields")!
+      .execute(input({ eventName: "signup", cursor: "valid" }));
+
+    await value
+      .resolve("event-type-detail")!
+      .execute(input({ eventName: "signup" }));
+    await value.resolve("event-type-detail")!.execute(
+      input({
+        eventName: "signup",
+        includeContext: false,
+        includeBreakdowns: false,
+      }),
+    );
+
+    vi.mocked(queryEventsSummaryFromD1).mockResolvedValueOnce({
+      summary: {
+        events: null,
+        eventTypes: null,
+        sessions: null,
+        visitors: null,
+      },
+      cards: {
+        event: { name: [] },
+        page: { path: [], title: [], hostname: [] },
+      },
+    } as never);
+    await value.resolve("event-types")!.execute(input({ filters: undefined }));
+    await value
+      .resolve("event-summary")!
+      .execute(input({ filters: undefined }));
+    await value.resolve("event-trend")!.execute(input({ filters: undefined }));
+    await value
+      .resolve("event-records")!
+      .execute(input({ filters: undefined }));
+    await value.resolve("event-field-values")!.execute(
+      input({
+        filters: undefined,
+        fieldPath: "plan",
+        fieldValueType: "string",
+      }),
+    );
+    await value.resolve("event-fields")!.execute(input({ filters: undefined }));
+    await value.resolve("event-type-detail")!.execute(
+      input({
+        filters: undefined,
+        includeContext: false,
+        includeBreakdowns: false,
+      }),
+    );
+    await value
+      .resolve("event-type-detail")!
+      .execute(input({ filters: null, eventName: "signup" }));
+
+    expect(queryEventTypePageFromD1).toHaveBeenCalled();
+    expect(queryEventRecordPageFromD1).toHaveBeenCalled();
+    expect(queryEventFieldValuesPageFromD1).toHaveBeenCalled();
+    expect(queryEventFieldsPageFromD1).toHaveBeenCalled();
+    expect(queryEventAnalyticsContextCardsFromD1).toHaveBeenCalled();
+    expect(queryEventTypeOverviewFromD1).toHaveBeenCalled();
+  });
+
+  it("rejects an invalid cursor for every event page provider", async () => {
+    const value = registry(registerEventProviders);
+    await expect(
+      value.resolve("event-types")!.execute(input({ cursor: "bad" })),
+    ).rejects.toThrow("invalid-cursor");
+    await expect(
+      value
+        .resolve("event-field-values")!
+        .execute(
+          input({ fieldPath: "plan", fieldValueType: "string", cursor: "bad" }),
+        ),
+    ).rejects.toThrow("invalid-cursor");
+    await expect(
+      value.resolve("event-fields")!.execute(input({ cursor: "bad" })),
+    ).rejects.toThrow("invalid-cursor");
+  });
+});

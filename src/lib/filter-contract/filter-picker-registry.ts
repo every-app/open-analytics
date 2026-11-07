@@ -123,8 +123,6 @@ export const FILTER_PICKER_GROUP_ORDER = [
   "acquisition",
   "device",
   "geo",
-  "performance",
-  "user",
   "time",
   "aggregation",
   "calculation",

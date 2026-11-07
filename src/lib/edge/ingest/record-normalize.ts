@@ -24,11 +24,7 @@ import {
 import { visitorDailySaltSecret } from "@/lib/secrets";
 
 import { expandCustomEventData } from "./custom-event-json";
-import {
-  clampTimestamp,
-  normalizePerformancePayload,
-  resolveTrustedClientTimestamp,
-} from "./normalize";
+import { clampTimestamp, resolveTrustedClientTimestamp } from "./normalize";
 import type {
   BufferedCustomEventInput,
   NormalizeResult,
@@ -265,21 +261,17 @@ export async function normalizeIngestRecord(
 
   if (kind === "leave") {
     if (!visitId) return { record: null, reason: "missing_visit_id" };
-    const performanceVisitId =
-      clampString(coerceString(client.performanceVisitId), 128) || visitId;
     return {
       record: {
         kind: "leave",
         traceId,
         siteId,
         visitId,
-        performanceVisitId,
         receivedAt,
         leaveAt: eventAt,
         durationMs: coerceNumber(client.durationMs, null),
         exitReason:
           clampString(coerceString(client.exitReason || ""), 40) || "pagehide",
-        performance: normalizePerformancePayload(client.performance),
       } satisfies NormalizedLeave,
     };
   }

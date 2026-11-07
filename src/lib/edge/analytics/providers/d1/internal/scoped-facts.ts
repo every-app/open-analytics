@@ -1,7 +1,4 @@
-import {
-  buildSessionFactsSql,
-  buildVisitorFactsSql,
-} from "./journey-aggregation-sql";
+import { buildSessionFactsSql, buildVisitorFactsSql } from "./scoped-facts-sql";
 
 export type ScopedFactKind = "session" | "visitor";
 

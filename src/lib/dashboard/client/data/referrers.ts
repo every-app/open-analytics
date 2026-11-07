@@ -11,11 +11,8 @@ import {
 } from "@/lib/dashboard/client/utils";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type {
-  BrowserTrendData,
   DimensionData,
-  ReferrerChannelTrendData,
   ReferrersData,
-  ReferrerSummaryData,
 } from "@/lib/dashboard-api/client/edge";
 import type { FilterDocument } from "@/lib/filter-contract";
 const utmPathMap: Record<UtmDimensionTab, string> = {
@@ -47,27 +44,6 @@ export async function fetchReferrers(
         ...(options?.sort ? { sort: options.sort } : {}),
         ...(options?.direction ? { direction: options.direction } : {}),
         fullUrl: options?.fullUrl ? 1 : 0,
-      },
-      filters,
-    ),
-    { signal: options?.signal },
-  );
-}
-export async function fetchReferrerSummary(
-  siteId: string,
-  window: TimeWindow,
-  filters?: FilterDocument,
-  options?: { topN?: number; signal?: AbortSignal },
-): Promise<ReferrerSummaryData> {
-  return fetchPrivateJson<ReferrerSummaryData>(
-    "/api/private/referrer-summary",
-    withFilters(
-      {
-        siteId,
-        from: window.from,
-        to: window.to,
-        timeZone: window.timeZone,
-        topN: options?.topN ?? 5,
       },
       filters,
     ),
@@ -117,81 +93,4 @@ export async function fetchUtmDimension(
         requestParams,
       );
   return response.then((payload) => normalizePaginatedCollection(payload.data));
-}
-export async function fetchUtmTrend(
-  siteId: string,
-  window: TimeWindow,
-  tab: UtmDimensionTab,
-  filters?: FilterDocument,
-  options?: {
-    limit?: number;
-    signal?: AbortSignal;
-  },
-): Promise<BrowserTrendData> {
-  return fetchPrivateJson<BrowserTrendData>(
-    "/api/private/utm-dimension-trend",
-    withFilters(
-      {
-        siteId,
-        from: window.from,
-        to: window.to,
-        timeZone: window.timeZone,
-        interval: window.interval,
-        dimension: tab,
-        limit: options?.limit ?? 5,
-      },
-      filters,
-    ),
-    { signal: options?.signal },
-  );
-}
-export async function fetchReferrerTrend(
-  siteId: string,
-  window: TimeWindow,
-  filters?: FilterDocument,
-  options?: {
-    limit?: number;
-    signal?: AbortSignal;
-  },
-): Promise<BrowserTrendData> {
-  return fetchPrivateJson<BrowserTrendData>(
-    "/api/private/referrer-dimension-trend",
-    withFilters(
-      {
-        siteId,
-        from: window.from,
-        to: window.to,
-        timeZone: window.timeZone,
-        interval: window.interval,
-        limit: options?.limit ?? 5,
-      },
-      filters,
-    ),
-    { signal: options?.signal },
-  );
-}
-export async function fetchReferrerAndChannelTrend(
-  siteId: string,
-  window: TimeWindow,
-  filters?: FilterDocument,
-  options?: {
-    limit?: number;
-    signal?: AbortSignal;
-  },
-): Promise<ReferrerChannelTrendData> {
-  return fetchPrivateJson<ReferrerChannelTrendData>(
-    "/api/private/referrer-channel-dimension-trend",
-    withFilters(
-      {
-        siteId,
-        from: window.from,
-        to: window.to,
-        timeZone: window.timeZone,
-        interval: window.interval,
-        limit: options?.limit ?? 5,
-      },
-      filters,
-    ),
-    { signal: options?.signal },
-  );
 }

@@ -147,13 +147,7 @@ export function scopedDatasetForUnpreparedReader(
   const plan = createScopedFilterPlan(operation, filters, scope);
   if (!plan) return null;
   if (factEntityKindsForFilter(filters.root).size === 0) {
-    return compileUnpreparedCompatibilityDataset(
-      siteId,
-      window,
-      filters,
-      plan,
-      operation === "visitors" || operation === "sessions",
-    );
+    return compileUnpreparedCompatibilityDataset(siteId, window, filters, plan);
   }
   const time = createQueryTime(
     window.startMs,
@@ -203,8 +197,6 @@ scope_raw_events AS MATERIALIZED (
     CAST(NULL AS TEXT) AS utm_term,
     CAST(NULL AS TEXT) AS utm_content,
     CAST(NULL AS INTEGER) AS duration_ms,
-    CAST(NULL AS TEXT) AS user_id,
-    CAST(NULL AS TEXT) AS user_name,
     CAST(NULL AS INTEGER) AS is_eu,
     CAST(NULL AS TEXT) AS country,
     CAST(NULL AS TEXT) AS region,
@@ -220,12 +212,7 @@ scope_raw_events AS MATERIALIZED (
     CAST(NULL AS TEXT) AS timezone,
     CAST(NULL AS TEXT) AS as_organization,
     CAST(NULL AS INTEGER) AS screen_width,
-    CAST(NULL AS INTEGER) AS screen_height,
-    CAST(NULL AS INTEGER) AS perf_ttfb_ms,
-    CAST(NULL AS INTEGER) AS perf_fcp_ms,
-    CAST(NULL AS REAL) AS perf_lcp_ms,
-    CAST(NULL AS REAL) AS perf_cls,
-    CAST(NULL AS INTEGER) AS perf_inp_ms
+    CAST(NULL AS INTEGER) AS screen_height
   WHERE 0
 )`;
 }
@@ -234,7 +221,6 @@ function compileUnpreparedCompatibilityDataset(
   window: QueryWindow,
   filters: FilterDocument,
   plan: ScopedFilterPlan,
-  includeEvents: boolean,
 ): ScopedDatasetSql {
   if (plan.scope === "event") {
     throw new TypeError(
@@ -243,19 +229,13 @@ function compileUnpreparedCompatibilityDataset(
   }
   const entityColumnName = entityColumn(plan.scope);
   const filter = buildVisitFilterSql(filters, "visit_source", { window });
-  const eventCte = includeEvents
-    ? eventSource([siteId], true)
-    : emptyEventSourceCte();
-  const eventBindings = includeEvents
-    ? [siteId, window.startMs, window.endExclusiveMs]
-    : [];
   const ctes = `
 ${buildVisitSourceCte().replace(
   "visit_source AS (",
   "visit_source AS MATERIALIZED (",
 )},
 scope_raw_visits AS (SELECT * FROM visit_source),
-${eventCte},
+${emptyEventSourceCte()},
 scope_filtered_visits AS MATERIALIZED (
   SELECT *
   FROM visit_source
@@ -306,7 +286,6 @@ scope_final_visitors AS (
       siteId,
       window.startMs,
       window.endExclusiveMs,
-      ...eventBindings,
       ...filter.bindings,
     ].map((value) => ({ value })),
     visitRelation: "scope_final_visits",
@@ -363,8 +342,6 @@ function eventSource(
     v.utm_term,
     v.utm_content,
     v.duration_ms,
-    v.user_id,
-    v.user_name,
     v.is_eu,
     v.country,
     v.region,
@@ -380,12 +357,7 @@ function eventSource(
     v.timezone,
     v.as_organization,
     v.screen_width,
-    v.screen_height,
-    v.perf_ttfb_ms,
-    v.perf_fcp_ms,
-    v.perf_lcp_ms,
-    v.perf_cls,
-    v.perf_inp_ms`,
+    v.screen_height`,
         }
       : {}),
   })

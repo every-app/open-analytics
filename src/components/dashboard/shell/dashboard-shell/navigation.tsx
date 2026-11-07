@@ -1,13 +1,10 @@
 import { useCallback } from "react";
 import {
   FileTextIcon,
-  GaugeIcon,
   LayoutDashboardIcon,
-  LogInIcon,
   type LucideIcon,
   SettingsIcon,
   TargetIcon,
-  UserRoundIcon,
 } from "lucide-react";
 
 import { useLiveSearchParams } from "@/lib/dashboard/client/history";
@@ -24,88 +21,44 @@ export interface SidebarSite {
 
 /** A site's report pages, by the key their path ends in ("" for Overview). */
 export type SiteNavKey =
-  | "overview"
-  | "realtime"
-  | "pages"
-  | "referrers"
-  | "campaigns"
-  | "visitors"
-  | "retention"
-  | "geo"
-  | "devices"
-  | "events"
-  | "funnels"
-  | "performance"
-  | "settings";
+  "overview" | "realtime" | "pages" | "funnels" | "settings";
 
 /**
- * The sidebar's entries for a site, in order. An entry with several pages
- * links to its first and shows the rest as tabs above the page. Site
- * settings comes last. Real-time has no entry:
- * the live count in the header opens it.
+ * The sidebar's site pages, in order. Site settings comes last. Real-time has
+ * no entry: the live count in the header opens it.
  */
 export const SITE_NAV_ITEMS = [
-  { key: "overview", sections: ["overview"] },
-  { key: "pages", sections: ["pages"] },
-  { key: "sources", sections: ["referrers", "campaigns"] },
-  { key: "audience", sections: ["visitors", "geo", "devices", "retention"] },
-  { key: "goals", sections: ["funnels", "events"] },
-  { key: "performance", sections: ["performance"] },
-  { key: "settings", sections: ["settings"] },
-] as const satisfies readonly {
-  key: string;
-  sections: readonly SiteNavKey[];
-}[];
+  "overview",
+  "pages",
+  "funnels",
+  "settings",
+] as const satisfies readonly SiteNavKey[];
 
 export type SiteNavItem = (typeof SITE_NAV_ITEMS)[number];
 
-const SITE_NAV_ITEM_ICONS: Record<SiteNavItem["key"], LucideIcon> = {
+const SITE_NAV_ITEM_ICONS: Record<SiteNavItem, LucideIcon> = {
   overview: LayoutDashboardIcon,
   pages: FileTextIcon,
-  sources: LogInIcon,
-  audience: UserRoundIcon,
-  goals: TargetIcon,
-  performance: GaugeIcon,
+  funnels: TargetIcon,
   settings: SettingsIcon,
 };
 
 export function siteNavItemIcon(item: SiteNavItem): LucideIcon {
-  return SITE_NAV_ITEM_ICONS[item.key];
-}
-
-/** A single-page entry is named after its page; a group after the group. */
-export function siteNavItemLabel(
-  item: SiteNavItem,
-  messages: AppMessages,
-): string {
-  if (item.key === "sources") return messages.appNav.sources;
-  if (item.key === "audience") return messages.appNav.audience;
-  if (item.key === "goals") return messages.appNav.goals;
-  return messages.navigation[item.key];
+  return SITE_NAV_ITEM_ICONS[item];
 }
 
 /** The entries a viewer sees: everyone's, plus Site settings for managers. */
 export function siteNavItemsFor(canManage: boolean): readonly SiteNavItem[] {
   return canManage
     ? SITE_NAV_ITEMS
-    : SITE_NAV_ITEMS.filter((item) => item.key !== "settings");
-}
-
-/** The sidebar entry a site page belongs to. */
-export function siteNavItemFor(section: SiteNavKey): SiteNavItem | undefined {
-  return SITE_NAV_ITEMS.find((item) =>
-    (item.sections as readonly SiteNavKey[]).includes(section),
-  );
+    : SITE_NAV_ITEMS.filter((item) => item !== "settings");
 }
 
 export function siteNavLabel(key: SiteNavKey, messages: AppMessages): string {
   return messages.navigation[key];
 }
 
-const SITE_NAV_KEYS = new Set<string>([
-  ...SITE_NAV_ITEMS.flatMap((item) => item.sections),
-  "realtime",
-]);
+const SITE_NAV_KEYS = new Set<string>([...SITE_NAV_ITEMS, "realtime"]);
 
 export function isSiteNavKey(value: string): value is SiteNavKey {
   return SITE_NAV_KEYS.has(value);

@@ -1626,10 +1626,7 @@ function formatTargetExpression(
     case "field":
       if (currentEntity && target.field.startsWith(`${currentEntity}.`))
         return `$.${target.field.slice(currentEntity.length + 1)}`;
-      if (
-        currentEntity &&
-        /^(?:geo|client|referrer|utm|user|performance)\./u.test(target.field)
-      )
+      if (currentEntity && /^(?:geo|client|referrer|utm)\./u.test(target.field))
         return `$.${target.field}`;
       return target.field;
     case "event-payload":

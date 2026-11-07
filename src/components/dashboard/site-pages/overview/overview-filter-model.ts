@@ -4,20 +4,10 @@ import {
   canonicalizeGeoLocationValue,
 } from "@/lib/analytics/geo-location";
 import { type DashboardFilterControlKey } from "@/lib/dashboard/filter-state";
-import {
-  isSameGeoLabel,
-  normalizeGeoTranslationLookupValue,
-} from "@/lib/dashboard/geo-translation";
+import { isSameGeoLabel } from "@/lib/dashboard/geo-translation";
 import { normalizePagePath } from "@/lib/dashboard/page-detail";
-import {
-  attachFilterScopePreference,
-  parseFilterScopePreference,
-} from "@/lib/filter-contract/index";
-import {
-  analyticsFilterRegistry,
-  type FilterDocument,
-  parseFilterParams,
-} from "@/lib/filter-contract/index";
+import { parseFilterDocumentFromSearchParams } from "@/lib/dashboard/query-state";
+import { type FilterDocument } from "@/lib/filter-contract/index";
 import {
   resolveCountryFlagCode,
   resolveCountryLabel,
@@ -31,10 +21,10 @@ import {
   type GeoLocationTab,
   type PageCardDetailTab,
   type PageCardNavigableTab,
-  type PageCardRow,
   type PageCardTab,
   type SourceCardTab,
 } from "./types";
+import { UTM_TABS } from "./utm-tabs";
 export const PAGE_CARD_TABS: PageCardTab[] = [
   "path",
   "title",
@@ -42,7 +32,12 @@ export const PAGE_CARD_TABS: PageCardTab[] = [
   "entry",
   "exit",
 ];
-export const SOURCE_CARD_TABS: SourceCardTab[] = ["domain", "link", "channel"];
+export const SOURCE_CARD_TABS: SourceCardTab[] = [
+  "domain",
+  "link",
+  "channel",
+  ...UTM_TABS,
+];
 export const PAGE_CARD_NAVIGABLE_TAB_LIST: PageCardNavigableTab[] = [
   "path",
   "hostname",
@@ -73,6 +68,11 @@ export const SOURCE_CARD_FILTER_CONTROL_BY_TAB: Record<
   domain: "sourceDomain",
   link: "sourceLink",
   channel: "channel",
+  source: "utmSource",
+  medium: "utmMedium",
+  campaign: "utmCampaign",
+  term: "utmTerm",
+  content: "utmContent",
 };
 export const CLIENT_DIMENSION_CARD_TABS: ClientDimensionCardTab[] = [
   "browser",
@@ -124,10 +124,7 @@ export function extractGeoCountryCodeFromFilterValue(
 export function parseOverviewCardFilters(
   searchParams: URLSearchParams,
 ): FilterDocument {
-  return attachFilterScopePreference(
-    parseFilterParams(searchParams, analyticsFilterRegistry),
-    parseFilterScopePreference(searchParams),
-  );
+  return parseFilterDocumentFromSearchParams(searchParams);
 }
 export function isGeoLocationTab(
   tab: GeoDimensionCardTab,
@@ -370,12 +367,6 @@ export function resolveGeoCityBreadcrumbData(
     },
   };
 }
-export function buildGeoPagePath(pathname: string): string {
-  const normalized = pathname.trim().replace(/\/+$/, "");
-  if (!normalized) return "/geo";
-  if (normalized.endsWith("/geo")) return normalized;
-  return `${normalized}/geo`;
-}
 export function buildPagesPagePath(pathname: string): string {
   const normalized = pathname.trim().replace(/\/+$/, "");
   if (!normalized) return "/pages";
@@ -403,112 +394,6 @@ export function resolvePageCardDetailPath(params: {
   if (!normalizedPath) return null;
 
   return normalizedPath;
-}
-export function resolveGeoLocationQueryValue(
-  tab: GeoDimensionCardTab,
-  row: PageCardRow,
-  unknownLabel: string,
-): string | null {
-  if (tab !== "country" && tab !== "region" && tab !== "city") return null;
-
-  const unknown = normalizeGeoTranslationLookupValue(unknownLabel);
-  const raw = String(row.rawLabel || row.label || "").trim();
-  if (!raw) return null;
-
-  const normalizedRaw = normalizeGeoTranslationLookupValue(raw);
-  if (normalizedRaw === unknown) return null;
-
-  const segments = raw
-    .split(GEO_REGION_VALUE_SEPARATOR)
-    .map((segment) => segment.trim())
-    .filter((segment) => segment.length > 0);
-
-  if (tab === "country") {
-    const country = (segments[0] || raw).trim().toUpperCase();
-    if (!country) return null;
-    if (normalizeGeoTranslationLookupValue(country) === unknown) return null;
-    return country;
-  }
-
-  if (tab === "region") {
-    if (segments.length >= 3) {
-      const regionName = segments
-        .slice(2)
-        .join(GEO_REGION_VALUE_SEPARATOR)
-        .trim();
-      return (
-        buildRegionLocationValue(
-          segments[0] || "",
-          segments[1] || regionName,
-          regionName || segments[1] || "",
-        ) || null
-      );
-    }
-    const breadcrumb = row.regionBreadcrumb;
-    if (!breadcrumb) return null;
-    if (breadcrumb.hideRegion) {
-      const country = breadcrumb.countryCode.trim().toUpperCase();
-      return country || null;
-    }
-    if (
-      normalizeGeoTranslationLookupValue(breadcrumb.regionLabel) === unknown ||
-      normalizeGeoTranslationLookupValue(breadcrumb.countryCode) === unknown
-    ) {
-      return null;
-    }
-    return (
-      buildRegionLocationValue(
-        breadcrumb.countryCode,
-        breadcrumb.stateCode,
-        breadcrumb.regionLabel,
-      ) || null
-    );
-  }
-
-  if (segments.length >= 4) {
-    const cityName = segments.slice(3).join(GEO_REGION_VALUE_SEPARATOR).trim();
-    return (
-      buildLocalityLocationValue(
-        segments[0] || "",
-        segments[1] || segments[2] || "",
-        segments[2] || segments[1] || "",
-        cityName,
-      ) || null
-    );
-  }
-
-  const breadcrumb = row.cityBreadcrumb;
-  if (!breadcrumb) return null;
-  if (breadcrumb.hideRegion) {
-    const country = breadcrumb.countryCode.trim().toUpperCase();
-    if (!country) return null;
-    if (
-      normalizeGeoTranslationLookupValue(breadcrumb.cityNameDefault) === unknown
-    ) {
-      return country;
-    }
-    if (breadcrumb.hideCity) return country;
-    return (
-      buildLocalityLocationValue(country, "", "", breadcrumb.cityNameDefault) ||
-      country
-    );
-  }
-  if (
-    normalizeGeoTranslationLookupValue(breadcrumb.cityNameDefault) ===
-      unknown ||
-    normalizeGeoTranslationLookupValue(breadcrumb.regionLabel) === unknown ||
-    normalizeGeoTranslationLookupValue(breadcrumb.countryCode) === unknown
-  ) {
-    return null;
-  }
-  return (
-    buildLocalityLocationValue(
-      breadcrumb.countryCode,
-      breadcrumb.stateCode,
-      breadcrumb.regionLabel,
-      breadcrumb.cityNameDefault,
-    ) || null
-  );
 }
 export function resolveGeoDimensionRowRawValue(item: {
   label?: string;

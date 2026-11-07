@@ -7,8 +7,8 @@
 ## Features
 
 - No cookies, nothing stored in the browser and no stored IP addresses.
-- A 3 KB tracker with custom events and Web Vitals.
-- Dashboards for pages, referrers, campaigns, sessions, funnels, goals, retention and devices, with a live view.
+- A 3 KB tracker with custom events.
+- An overview of pages, sources and UTM campaigns, locations and devices, a pages report, funnels and goals, and a live view.
 - Read-only public share links for any site.
 - Weekly or monthly reports and traffic spike or drop alerts, in an in-app inbox and by email.
 - Bot filtering.

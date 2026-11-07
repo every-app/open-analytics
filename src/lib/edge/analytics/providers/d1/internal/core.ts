@@ -1,7 +1,6 @@
 export * from "./core-dimensions";
 export * from "./core-filters";
 export * from "./core-mappers";
-export * from "./core-performance";
 export * from "./core-sources";
 export * from "./core-time";
 export * from "./core-types";

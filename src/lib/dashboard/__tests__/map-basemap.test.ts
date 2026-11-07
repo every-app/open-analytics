@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   applyVectorBasemapColorOverrides,
-  getVectorBasemapSky,
   getVectorBasemapStyleUrl,
 } from "@/lib/dashboard/map-basemap";
 
@@ -30,21 +29,6 @@ describe("vector basemap helpers", () => {
     expect(getVectorBasemapStyleUrl("dark")).toBe(
       "/api/public/resources/map/v1/styles/dark/style.json?v=2",
     );
-  });
-
-  it("returns a matching sky for each theme", () => {
-    expect(getVectorBasemapSky("light")).toEqual({
-      "sky-color": "rgb(255, 255, 255)",
-      "horizon-color": "rgb(255, 255, 255)",
-      "fog-color": "rgb(255, 255, 255)",
-      "atmosphere-blend": 0.18,
-    });
-    expect(getVectorBasemapSky("dark")).toEqual({
-      "sky-color": "rgb(10, 10, 10)",
-      "horizon-color": "rgb(10, 10, 10)",
-      "fog-color": "rgb(10, 10, 10)",
-      "atmosphere-blend": 0.18,
-    });
   });
 
   it("applies every dark color override when the style is ready", () => {

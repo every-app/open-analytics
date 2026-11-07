@@ -1,48 +1,15 @@
 import { resolveReportingTimeZone } from "@/lib/analytics/time-zone";
 import type {
   AnalyticsFilterFieldId,
-  ClientDimensionKey,
   EventRecordSortKey,
   Interval,
   ListSort,
   QueryWindow,
-  SessionListSortKey,
   SortDirection,
-  UtmDimensionKey,
-  VisitorListSortKey,
 } from "@/lib/edge/analytics/contract";
-import {
-  DEFAULT_EVENT_RECORD_SORT,
-  DEFAULT_SESSION_LIST_SORT,
-  DEFAULT_VISITOR_LIST_SORT,
-} from "@/lib/edge/analytics/contract";
+import { DEFAULT_EVENT_RECORD_SORT } from "@/lib/edge/analytics/contract";
 import { coerceNumber, ONE_DAY_MS } from "@/lib/edge/utils";
 type FilterOptionKey = Exclude<AnalyticsFilterFieldId, "event.payload">;
-export function parseClientDimensionKey(
-  value: string | null,
-): ClientDimensionKey | null {
-  const normalized = String(value ?? "").trim();
-  return normalized === "browser" ||
-    normalized === "operatingSystem" ||
-    normalized === "osVersion" ||
-    normalized === "deviceType" ||
-    normalized === "language" ||
-    normalized === "screenSize"
-    ? normalized
-    : null;
-}
-export function parseUtmDimensionKey(
-  value: string | null,
-): UtmDimensionKey | null {
-  const normalized = String(value ?? "").trim();
-  return normalized === "source" ||
-    normalized === "medium" ||
-    normalized === "campaign" ||
-    normalized === "term" ||
-    normalized === "content"
-    ? normalized
-    : null;
-}
 export function parseWindow(url: URL): QueryWindow | null {
   const nowMs = Date.now();
   const defaultFrom = nowMs - ONE_DAY_MS;
@@ -109,25 +76,6 @@ export function parseSortDirection(url: URL): SortDirection {
     ? "asc"
     : "desc";
 }
-export function parseVisitorListSort(url: URL): ListSort<VisitorListSortKey> {
-  const key = (url.searchParams.get("sortBy") || "").trim();
-  if (
-    key === "firstSeenAt" ||
-    key === "lastSeenAt" ||
-    key === "sessions" ||
-    key === "views"
-  ) {
-    return { key, direction: parseSortDirection(url) };
-  }
-  return DEFAULT_VISITOR_LIST_SORT;
-}
-export function parseSessionListSort(url: URL): ListSort<SessionListSortKey> {
-  const key = (url.searchParams.get("sortBy") || "").trim();
-  if (key === "startedAt" || key === "durationMs" || key === "views") {
-    return { key, direction: parseSortDirection(url) };
-  }
-  return DEFAULT_SESSION_LIST_SORT;
-}
 export function parseEventRecordSort(url: URL): ListSort<EventRecordSortKey> {
   const key = (url.searchParams.get("sortBy") || "").trim();
   if (key === "occurredAt" || key === "eventName" || key === "pathname") {
@@ -168,12 +116,6 @@ export function parseEventFieldValueType(url: URL): string | undefined {
     return normalized;
   }
   return undefined;
-}
-export function parseEventId(url: URL): string | undefined {
-  const raw = url.searchParams.get("eventId");
-  if (typeof raw !== "string") return undefined;
-  const normalized = raw.trim().slice(0, 128);
-  return normalized.length > 0 ? normalized : undefined;
 }
 export function normalizeFilterValue(value: string | null): string | undefined {
   if (typeof value !== "string") return undefined;

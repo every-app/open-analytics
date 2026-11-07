@@ -49,7 +49,6 @@ describe("edge site settings store", () => {
           trackHash: "1",
           domainWhitelist: ["https://Docs.example.com", "bad*"],
           pathBlacklist: "/admin\nsettings",
-          performanceSampleRate: "12.345",
         }),
       ),
     );
@@ -69,7 +68,6 @@ describe("edge site settings store", () => {
       trackHash: true,
       domainWhitelist: ["docs.example.com"],
       pathBlacklist: ["/admin", "/settings"],
-      performanceSampleRate: 12.35,
     });
   });
 
@@ -108,7 +106,6 @@ describe("edge site settings store", () => {
         JSON.stringify({
           siteDomain: "old.example",
           trackHash: true,
-          performanceSampleRate: 10,
         }),
       ),
       put: vi.fn().mockResolvedValue(undefined),
@@ -120,7 +117,6 @@ describe("edge site settings store", () => {
         trackHash: false,
         domainWhitelist: "https://Docs.example.com\nbad*",
         pathBlacklist: "admin,/checkout?step=1",
-        performanceSampleRate: 25,
       },
     });
 
@@ -130,7 +126,6 @@ describe("edge site settings store", () => {
       trackHash: false,
       domainWhitelist: ["docs.example.com"],
       pathBlacklist: ["/admin", "/checkout"],
-      performanceSampleRate: 25,
     });
     expect(kv.put).toHaveBeenCalledTimes(1);
     const stored = JSON.parse(kv.put.mock.calls[0]![1] as string) as Record<
@@ -141,7 +136,6 @@ describe("edge site settings store", () => {
       siteId: "site-1",
       siteDomain: "new.example",
       trackHash: false,
-      performanceSampleRate: 25,
     });
     expect(stored.allowedHostnames).toBeUndefined();
 

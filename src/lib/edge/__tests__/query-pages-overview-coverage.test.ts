@@ -26,7 +26,6 @@ import {
   mapDimensionRows,
   type QueryWindow,
 } from "@/lib/edge/analytics/providers/d1/internal/core";
-import { queryRetentionFromD1 } from "@/lib/edge/analytics/providers/d1/internal/journey-retention";
 import {
   queryLatestSiteActivity,
   queryOverviewFromD1,
@@ -50,7 +49,6 @@ import {
   decodeReferrersCursor,
   queryReferrerAggregate,
   queryReferrersPageFromD1,
-  queryReferrerSummaryFromD1,
   queryTopReferrersFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/referrers";
 import type { Env } from "@/lib/edge/types";
@@ -1168,53 +1166,6 @@ describe("edge paginated page and referrer readers", () => {
     });
     expect(second.calls[0].sql).toContain("referrer_host");
     expect(second.calls[0].bindings).toContain(10);
-  });
-
-  it("keeps referrer totals independent from the top-N source list", async () => {
-    const { env, calls } = createD1Env([
-      [
-        {
-          rowType: "summary",
-          referrer: "",
-          totalViews: 20,
-          directViews: 5,
-          externalViews: 15,
-          uniqueDomains: 3,
-          uniqueLinks: 4,
-        },
-        { rowType: "top", referrer: "google.com", views: 10, rowRank: 1 },
-        { rowType: "top", referrer: "news.example", views: 8, rowRank: 2 },
-      ],
-    ]);
-
-    await expect(
-      queryReferrerSummaryFromD1(env, siteId, window, EMPTY_FILTER_DOCUMENT, 1),
-    ).resolves.toEqual({
-      totalViews: 20,
-      directViews: 5,
-      externalViews: 15,
-      uniqueDomains: 3,
-      uniqueLinks: 4,
-      truncated: true,
-      topSources: [{ referrer: "google.com", views: 10 }],
-    });
-    expect(calls).toHaveLength(1);
-    expect(calls[0].bindings.at(-1)).toBe(2);
-
-    const empty = createD1Env([[]]);
-    await expect(
-      queryReferrerSummaryFromD1(
-        empty.env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        5,
-      ),
-    ).resolves.toMatchObject({
-      totalViews: 0,
-      topSources: [],
-      truncated: false,
-    });
   });
 
   it("returns an empty dashboard page without loading comparison details", async () => {
@@ -2527,81 +2478,6 @@ describe("edge overview D1 queries and handlers", () => {
         .all(...(calls[0]?.bindings ?? [])) as Array<{ detail: string }>;
       expect(plan.length).toBeGreaterThan(0);
       expect(calls[0]?.sql).toContain("event_filter_source");
-    } finally {
-      database.close();
-    }
-  });
-
-  it("uses filtered visits to select retention visitors, then counts their later visits", async () => {
-    const database = createAnalyticsDatabase();
-    const env = {
-      DB: {
-        prepare: (sql: string) => ({
-          bind: (...bindings: QueryBinding[]) => ({
-            all: async () => ({
-              results: database.prepare(sql).all(...bindings) as D1Row[],
-            }),
-          }),
-        }),
-      } as unknown as D1Database,
-    } as Env;
-    const insert = database.prepare(`
-      INSERT INTO visits (
-        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
-        last_activity_at, pathname, hostname
-      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test')
-    `);
-
-    try {
-      insert.run(
-        "retention-match",
-        siteId,
-        "visitor-match",
-        "retention-session",
-        baseMs + 100,
-        baseMs + 100,
-        "/match",
-      );
-      insert.run(
-        "retention-return",
-        siteId,
-        "visitor-match",
-        "retention-session",
-        baseMs + 60 * 60 * 1000 + 100,
-        baseMs + 60 * 60 * 1000 + 100,
-        "/return",
-      );
-      insert.run(
-        "retention-other",
-        siteId,
-        "visitor-other",
-        "other-session",
-        baseMs + 100,
-        baseMs + 100,
-        "/other",
-      );
-
-      await expect(
-        queryRetentionFromD1(
-          env,
-          siteId,
-          window,
-          filterFixture({ path: "/match" }),
-          "hour",
-        ),
-      ).resolves.toEqual({
-        granularity: "hour",
-        cohorts: [
-          {
-            bucket: baseMs,
-            size: 1,
-            periods: [
-              { index: 0, visitors: 1, rate: 1 },
-              { index: 1, visitors: 1, rate: 1 },
-            ],
-          },
-        ],
-      });
     } finally {
       database.close();
     }

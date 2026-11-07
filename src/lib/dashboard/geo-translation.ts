@@ -27,7 +27,7 @@ export interface LocaleGeoLabelRecord {
   native?: unknown;
 }
 
-export interface GeoTranslationTimezone {
+interface GeoTranslationTimezone {
   zoneName?: string;
   gmtOffset?: number;
   gmtOffsetName?: string;

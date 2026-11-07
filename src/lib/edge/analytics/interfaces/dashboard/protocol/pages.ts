@@ -141,32 +141,6 @@ export async function handleReferrersContract(
     },
   });
 }
-export async function handleReferrerSummaryContract(
-  env: Env,
-  siteId: string,
-  url: URL,
-  ctx?: ResponseContext,
-  queryContext = siteQueryContext(siteId, "private-dashboard"),
-): Promise<Response> {
-  const window = parseWindow(url);
-  if (!window) return badRequest("Invalid time window");
-  const filters = parseFilterUrlForAudience(queryContext.policy.audience, url);
-  const topN = parseQueryLimit(url, "topN", 5, 1, 20);
-  const result = await createEdgeSiteAnalyticsRuntime({
-    env,
-    siteId,
-  }).execute("referrers", {
-    context: queryContext,
-    time: queryWindowToTime(window),
-    filters,
-    limit: topN,
-    includeFullUrl: false,
-    variant: "summary",
-    topN,
-  });
-  if (!result.ok) return queryErrorResponse(result.error);
-  return jsonResponseWith(ctx!, { ok: true, data: result.data });
-}
 export async function handlePagesDashboardContract(
   env: Env,
   siteId: string,

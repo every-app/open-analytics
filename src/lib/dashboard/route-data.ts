@@ -2,6 +2,7 @@ import { createIsomorphicFn, createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 
 import { publicDashboardSiteId } from "@/lib/dashboard/client/request";
+import { EMPTY_DASHBOARD_FILTER_DOCUMENT } from "@/lib/dashboard/filter-state";
 import {
   type AccountNotificationPreferencesInitialData,
   type ManagementJsonObject,
@@ -26,13 +27,26 @@ import type { NotificationMessageData } from "@/lib/dashboard-api/contract/types
 import { createTeamDashboardQueryRuntime } from "@/lib/edge/analytics/composition/ssr-query-runtime";
 import {
   createQueryTime,
+  FilterAdapterError,
   parseFilterUrlForAudience,
   teamQueryContext,
 } from "@/lib/edge/analytics/contract";
 import { resolveEdgeRuntime } from "@/lib/edge/runtime";
+import type { FilterDocument } from "@/lib/filter-contract";
 import type { Locale } from "@/lib/i18n/config";
 import { normalizeSiteScriptSettings } from "@/lib/site-settings";
 import { gatewayHostname } from "@/lib/theme-cookie";
+/** The address's filters, or none when they name a field that no longer exists. */
+function parseDashboardUrlFilters(url: string): FilterDocument {
+  try {
+    return parseFilterUrlForAudience("private-dashboard", url);
+  } catch (error) {
+    if (error instanceof FilterAdapterError) {
+      return EMPTY_DASHBOARD_FILTER_DOCUMENT;
+    }
+    throw error;
+  }
+}
 function serializeManagementJsonObject(
   value: Record<string, unknown>,
 ): ManagementJsonObject {
@@ -81,7 +95,7 @@ export const loadTeamDashboardSnapshot = createServerFn({ method: "GET" })
     const preloadedSites = await getDashboardTeamSites(data.teamId);
 
     const window = resolveDashboardInitialWindow(request.headers.get("cookie"));
-    const filters = parseFilterUrlForAudience("private-dashboard", request.url);
+    const filters = parseDashboardUrlFilters(request.url);
     const teamDashboardRuntime = createTeamDashboardQueryRuntime({
       env: resolved.env,
       teamId: resolved.teamId,

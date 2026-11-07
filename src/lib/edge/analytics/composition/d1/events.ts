@@ -8,10 +8,7 @@ import {
   mapEventSummaryCards,
   mapTabs,
 } from "@/lib/edge/analytics/providers/d1/internal/core";
-import {
-  EVENT_CONTEXT_CARD_KEYS,
-  queryEventAnalyticsContextCardsFromD1,
-} from "@/lib/edge/analytics/providers/d1/internal/events-context";
+import { queryEventAnalyticsContextCardsFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-context";
 import {
   queryEventFieldsPageFromD1,
   queryEventFieldValuesPageFromD1,
@@ -21,7 +18,6 @@ import {
   decodeEventFieldValueCursor,
 } from "@/lib/edge/analytics/providers/d1/internal/events-fields";
 import { queryEventTypeOverviewFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-overview";
-import { queryEventRecordDetailFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-records";
 import {
   decodeEventTypeCursor,
   queryEventsSummaryFromD1,
@@ -35,7 +31,6 @@ import { readSiteEventRecords } from "@/lib/edge/analytics/providers/d1/operatio
 import { InvalidCursorError } from "@/lib/pagination";
 
 import {
-  arrayField,
   type D1SiteRuntimeBindings,
   emptyEventContextCards,
   measured,
@@ -248,38 +243,6 @@ export function registerEventProviders(
       }),
     )
     .register(
-      "event-context",
-      typedQueryProviderFor("event-context", async (input) => {
-        const request = input;
-        const eventName = stringField(request, "eventName");
-        const selectedKeys = arrayField(request, "selectedKeys").filter(
-          (key): key is (typeof EVENT_CONTEXT_CARD_KEYS)[number] =>
-            typeof key === "string" &&
-            EVENT_CONTEXT_CARD_KEYS.includes(
-              key as (typeof EVENT_CONTEXT_CARD_KEYS)[number],
-            ),
-        );
-        return {
-          value: {
-            eventName,
-            cards: mapEventAnalyticsContextCards(
-              await measured("event_type_context", () =>
-                queryEventAnalyticsContextCardsFromD1(
-                  options.env,
-                  options.siteId,
-                  timeWindow(request.time),
-                  request.filters ?? EMPTY_FILTER_DOCUMENT,
-                  numberField(request, "limit", 100),
-                  eventName,
-                  selectedKeys.length > 0 ? selectedKeys : undefined,
-                ),
-              ),
-            ),
-          },
-        };
-      }),
-    )
-    .register(
       "event-type-detail",
       typedQueryProviderFor("event-type-detail", async (input) => {
         const request = input;
@@ -335,20 +298,6 @@ export function registerEventProviders(
               ? mapEventAnalyticsContextCards(cards)
               : emptyEventContextCards(),
           },
-        };
-      }),
-    )
-    .register(
-      "event-record-detail",
-      typedQueryProviderFor("event-record-detail", async (input) => {
-        const request = input;
-        return {
-          value: await queryEventRecordDetailFromD1(
-            options.env,
-            options.siteId,
-            stringField(request, "eventId"),
-            timeWindow(request.time),
-          ),
         };
       }),
     );

@@ -48,12 +48,6 @@ export function randomPublicSlug(): string {
     "",
   );
 }
-export function formatSampleRateValue(value: number): string {
-  const formatted = Number.isInteger(value)
-    ? String(value)
-    : value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
-  return `${formatted}%`;
-}
 export async function postJson<T>(
   route: AdminServiceRoute,
   body: Record<string, unknown>,

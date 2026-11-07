@@ -11,7 +11,6 @@ import {
 } from "@insightflare/ui/alert-dialog";
 import { Input } from "@insightflare/ui/input";
 import { Skeleton } from "@insightflare/ui/skeleton";
-import { Slider } from "@insightflare/ui/slider";
 import { Spinner } from "@insightflare/ui/spinner";
 import { Switch } from "@insightflare/ui/switch";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -43,7 +42,6 @@ import {
 
 import { BlockingRulesList } from "./blocking-rules-list";
 import {
-  formatSampleRateValue,
   postJson,
   randomPublicSlug,
   resolveSiteSlug,
@@ -91,7 +89,6 @@ export function SettingsClientPage({
   const [settings, setSettings] = useState<SiteScriptSettings>(() =>
     normalizeSiteScriptSettings(initialData?.config),
   );
-  const [sampleRate, setSampleRate] = useState(settings.performanceSampleRate);
   const [savingTracker, setSavingTracker] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -148,7 +145,6 @@ export function SettingsClientPage({
     }
     const loaded = normalizeSiteScriptSettings(siteConfigQuery.data);
     setSettings(loaded);
-    setSampleRate(loaded.performanceSampleRate);
     appliedConfigSiteIdRef.current = site.id;
     if (siteConfigQuery.isError) toast.error(copy.toasts.settingsLoadFailed);
   }, [
@@ -273,11 +269,9 @@ export function SettingsClientPage({
       });
       const normalized = normalizeSiteScriptSettings(saved);
       setSettings(normalized);
-      setSampleRate(normalized.performanceSampleRate);
       trackerSaved();
     } catch (error) {
       setSettings(previous);
-      setSampleRate(previous.performanceSampleRate);
       saveFailed(error);
     } finally {
       setSavingTracker(false);
@@ -513,39 +507,7 @@ export function SettingsClientPage({
       </SettingsSection>
 
       <SettingsSection title={copy.sections.tracking.title}>
-        <SettingsCard>
-          {trackingSwitches.map(switchRow)}
-          <SettingsRow
-            label={
-              <LabelWithInfo
-                label={copy.performanceSampleRateLabel}
-                info={copy.performanceSampleRateHint}
-              />
-            }
-            htmlFor="site-settings-performance-sample-rate"
-          >
-            <Slider
-              id="site-settings-performance-sample-rate"
-              className="w-40"
-              min={0}
-              max={100}
-              step={1}
-              value={[sampleRate]}
-              onValueChange={(value) => setSampleRate(value[0] ?? 0)}
-              onValueCommit={(value) => {
-                const next = value[0] ?? 0;
-                if (next !== settings.performanceSampleRate) {
-                  void saveTracker({ performanceSampleRate: next });
-                }
-              }}
-              aria-label={copy.performanceSampleRateLabel}
-              disabled={trackerDisabled}
-            />
-            <span className="w-10 text-right text-sm text-muted-foreground tabular-nums">
-              {formatSampleRateValue(sampleRate)}
-            </span>
-          </SettingsRow>
-        </SettingsCard>
+        <SettingsCard>{trackingSwitches.map(switchRow)}</SettingsCard>
       </SettingsSection>
 
       <SettingsSection title={copy.sections.protection.title}>

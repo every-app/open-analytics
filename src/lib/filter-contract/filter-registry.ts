@@ -29,15 +29,7 @@ export type FilterEvaluation =
 export type FilterNativeEntity = "visit" | "event" | "session" | "visitor";
 export type FilterSuggestionMode = "discrete" | "search" | "boolean" | "none";
 export type FilterFieldGroup =
-  | "page"
-  | "session"
-  | "visitor"
-  | "acquisition"
-  | "device"
-  | "geo"
-  | "event"
-  | "performance"
-  | "user";
+  "page" | "session" | "visitor" | "acquisition" | "device" | "geo" | "event";
 
 /**
  * Strategy keys are intentionally not SQL expressions. The compiler owns the
@@ -68,13 +60,6 @@ export type FilterColumnStrategy =
   | "column.timezone"
   | "column.as_organization"
   | "column.duration_ms"
-  | "column.perf_ttfb_ms"
-  | "column.perf_fcp_ms"
-  | "column.perf_lcp_ms"
-  | "column.perf_cls"
-  | "column.perf_inp_ms"
-  | "column.user_id"
-  | "column.user_name"
   | "column.screen_width"
   | "column.screen_height"
   | "column.is_eu"
@@ -300,8 +285,6 @@ function groupFor(id: string): FilterFieldGroup {
   if (id.startsWith("client.")) return "device";
   if (id.startsWith("geo.")) return "geo";
   if (id.startsWith("event.")) return "event";
-  if (id.startsWith("performance.")) return "performance";
-  if (id.startsWith("user.")) return "user";
   return "page";
 }
 
@@ -689,32 +672,6 @@ const FIELDS = [
     nullable: false,
     number: { min: 0, step: 1 },
   }),
-  numeric("performance.ttfbMs", PUBLIC_AUDIENCES, "column.perf_ttfb_ms", {
-    unit: "ms",
-    number: { min: 0 },
-  }),
-  numeric("performance.fcpMs", PUBLIC_AUDIENCES, "column.perf_fcp_ms", {
-    unit: "ms",
-    number: { min: 0 },
-  }),
-  numeric("performance.lcpMs", PUBLIC_AUDIENCES, "column.perf_lcp_ms", {
-    unit: "ms",
-    number: { min: 0 },
-  }),
-  numeric("performance.cls", PUBLIC_AUDIENCES, "column.perf_cls", {
-    unit: "ratio",
-    number: { min: 0 },
-  }),
-  numeric("performance.inpMs", PUBLIC_AUDIENCES, "column.perf_inp_ms", {
-    unit: "ms",
-    number: { min: 0 },
-  }),
-  text("user.id", PRIVATE_AUDIENCES, "column.user_id", "trimmed-text", {
-    suggestionMode: "search",
-  }),
-  text("user.name", PRIVATE_AUDIENCES, "column.user_name", "trimmed-text", {
-    suggestionMode: "search",
-  }),
   numeric("client.screenWidth", PUBLIC_AUDIENCES, "column.screen_width", {
     unit: "px",
     number: { min: 0, step: 1 },
@@ -784,13 +741,6 @@ export const ANALYTICS_FILTER_FIELD_DISPLAY_ORDER = [
   "geo.timeZone",
   "geo.organization",
   "geo.isEU",
-  "performance.lcpMs",
-  "performance.inpMs",
-  "performance.cls",
-  "performance.ttfbMs",
-  "performance.fcpMs",
-  "user.id",
-  "user.name",
 ] as const satisfies readonly AnalyticsFilterFieldId[];
 
 const displayOrderIds = new Set(ANALYTICS_FILTER_FIELD_DISPLAY_ORDER);

@@ -1,5 +1,4 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DetailDrawer } from "@insightflare/product-ui/detail-drawer";
 import { AutoResizer } from "@insightflare/ui/auto-resizer";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
 import {
@@ -13,8 +12,6 @@ import { ActivityIcon } from "lucide-react";
 import { AnimatePresence, useReducedMotion } from "motion/react";
 
 import { useDashboardQueryControls } from "@/components/dashboard/shell/dashboard-query-provider";
-import { SessionDetailClientPage } from "@/components/dashboard/site-pages/sessions/session-detail-client-page";
-import { VisitorDetailClientPage } from "@/components/dashboard/site-pages/visitors/visitor-detail-client-page";
 import type { RealtimeEvent } from "@/lib/realtime/types";
 
 import {
@@ -28,15 +25,12 @@ import {
   NESTED_DRAWER_EXIT_DURATION_MS,
   type RealtimeLogStreamCardProps,
   type RealtimeNestedEventDetail,
-  type RealtimeNestedJourneyDetail,
 } from "./model";
 export const RealtimeLogStreamCard = memo(function RealtimeLogStreamCard({
   locale,
   messages,
   hasConnected,
   events,
-  siteId,
-  pathname,
 }: RealtimeLogStreamCardProps) {
   const { timeZone } = useDashboardQueryControls();
   const reduceLogItemMotion = useReducedMotion() ?? false;
@@ -48,14 +42,9 @@ export const RealtimeLogStreamCard = memo(function RealtimeLogStreamCard({
   const [nestedEventDetails, setNestedEventDetails] = useState<
     RealtimeNestedEventDetail[]
   >([]);
-  const [nestedJourneyDetails, setNestedJourneyDetails] = useState<
-    RealtimeNestedJourneyDetail[]
-  >([]);
   const nestedEventDetailKeyRef = useRef(0);
-  const nestedJourneyDetailKeyRef = useRef(0);
   const nestedEventDetailCloseTimersRef = useRef(new Map<string, number>());
   const nestedEventDetailsClearTimerRef = useRef<number | null>(null);
-  const nestedJourneyDetailsClearTimerRef = useRef<number | null>(null);
   const selectedEventClearTimerRef = useRef<number | null>(null);
 
   const visibleEvents = useMemo(
@@ -130,37 +119,6 @@ export const RealtimeLogStreamCard = memo(function RealtimeLogStreamCard({
     }, NESTED_DRAWER_EXIT_DURATION_MS);
     nestedEventDetailCloseTimersRef.current.set(stackKey, timerId);
   }, []);
-  const openNestedJourneyDetail = useCallback(
-    (kind: RealtimeNestedJourneyDetail["kind"], id: string) => {
-      const normalizedId = id.trim();
-      if (!normalizedId) return;
-
-      setNestedJourneyDetails((current) => {
-        const topDetail = current.at(-1);
-        if (topDetail?.kind === kind && topDetail.id === normalizedId) {
-          return current;
-        }
-
-        nestedJourneyDetailKeyRef.current += 1;
-        return [
-          ...current,
-          {
-            kind,
-            id: normalizedId,
-            open: true,
-            stackKey: `${kind}:${normalizedId}:${nestedJourneyDetailKeyRef.current}`,
-          },
-        ];
-      });
-    },
-    [],
-  );
-  const closeNestedJourneyDetail = useCallback((stackKey: string) => {
-    setNestedJourneyDetails((current) => {
-      const index = current.findIndex((item) => item.stackKey === stackKey);
-      return index < 0 ? current : current.slice(0, index);
-    });
-  }, []);
   const handleEventDetailsOpenChange = useCallback(
     (open: boolean) => {
       clearSelectedEventTimer();
@@ -180,16 +138,6 @@ export const RealtimeLogStreamCard = memo(function RealtimeLogStreamCard({
           nestedEventDetailsClearTimerRef.current = null;
           setNestedEventDetails([]);
         }, NESTED_DRAWER_EXIT_DURATION_MS);
-        setNestedJourneyDetails((current) =>
-          current.map((item) => ({ ...item, open: false })),
-        );
-        if (nestedJourneyDetailsClearTimerRef.current !== null) {
-          window.clearTimeout(nestedJourneyDetailsClearTimerRef.current);
-        }
-        nestedJourneyDetailsClearTimerRef.current = window.setTimeout(() => {
-          nestedJourneyDetailsClearTimerRef.current = null;
-          setNestedJourneyDetails([]);
-        }, NESTED_DRAWER_EXIT_DURATION_MS);
       }
     },
     [clearSelectedEventTimer],
@@ -205,22 +153,8 @@ export const RealtimeLogStreamCard = memo(function RealtimeLogStreamCard({
       if (nestedEventDetailsClearTimerRef.current !== null) {
         window.clearTimeout(nestedEventDetailsClearTimerRef.current);
       }
-      if (nestedJourneyDetailsClearTimerRef.current !== null) {
-        window.clearTimeout(nestedJourneyDetailsClearTimerRef.current);
-      }
     };
   }, [clearSelectedEventTimer]);
-  const journeyDetailContext =
-    siteId && pathname
-      ? {
-          siteId,
-          visitorsPathname: pathname.replace(
-            /\/realtime(?:\/detail)?$/,
-            "/visitors",
-          ),
-        }
-      : null;
-
   return (
     <>
       <Card>
@@ -285,16 +219,6 @@ export const RealtimeLogStreamCard = memo(function RealtimeLogStreamCard({
         timeZone={timeZone}
         events={events}
         onSelect={openNestedEventDetail}
-        onOpenVisitor={
-          journeyDetailContext
-            ? (visitorId) => openNestedJourneyDetail("visitor", visitorId)
-            : undefined
-        }
-        onOpenSession={
-          journeyDetailContext
-            ? (sessionId) => openNestedJourneyDetail("session", sessionId)
-            : undefined
-        }
         open={isEventDetailsOpen}
         onOpenChange={handleEventDetailsOpenChange}
       />
@@ -307,63 +231,12 @@ export const RealtimeLogStreamCard = memo(function RealtimeLogStreamCard({
           timeZone={timeZone}
           events={events}
           onSelect={openNestedEventDetail}
-          onOpenVisitor={
-            journeyDetailContext
-              ? (visitorId) => openNestedJourneyDetail("visitor", visitorId)
-              : undefined
-          }
-          onOpenSession={
-            journeyDetailContext
-              ? (sessionId) => openNestedJourneyDetail("session", sessionId)
-              : undefined
-          }
           open={nestedDetail.open}
           onOpenChange={(open) => {
             if (!open) closeNestedEventDetail(nestedDetail.stackKey);
           }}
         />
       ))}
-      {journeyDetailContext
-        ? nestedJourneyDetails.map((nestedDetail) => (
-            <DetailDrawer
-              key={nestedDetail.stackKey}
-              ariaLabel={
-                nestedDetail.kind === "visitor"
-                  ? messages.visitors.title
-                  : messages.sessionDetail.visitDetailsTitle
-              }
-              drawerKey={nestedDetail.stackKey}
-              open={nestedDetail.open}
-              onOpenChange={(nextOpen) => {
-                if (!nextOpen) closeNestedJourneyDetail(nestedDetail.stackKey);
-              }}
-            >
-              {nestedDetail.kind === "visitor" ? (
-                <VisitorDetailClientPage
-                  locale={locale}
-                  messages={messages}
-                  siteId={journeyDetailContext.siteId}
-                  pathname={journeyDetailContext.visitorsPathname}
-                  visitorId={nestedDetail.id}
-                  onOpenSession={(sessionId) =>
-                    openNestedJourneyDetail("session", sessionId)
-                  }
-                />
-              ) : (
-                <SessionDetailClientPage
-                  locale={locale}
-                  messages={messages}
-                  siteId={journeyDetailContext.siteId}
-                  pathname={journeyDetailContext.visitorsPathname}
-                  sessionId={nestedDetail.id}
-                  onOpenVisitor={(visitorId) =>
-                    openNestedJourneyDetail("visitor", visitorId)
-                  }
-                />
-              )}
-            </DetailDrawer>
-          ))
-        : null}
     </>
   );
 });

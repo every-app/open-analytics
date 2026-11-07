@@ -435,8 +435,6 @@ function resolveSnapshotEvents(snapshot: RealtimeSnapshot): RealtimeEvent[] {
       utmCampaign: visit.utmCampaign,
       utmTerm: visit.utmTerm,
       utmContent: visit.utmContent,
-      userId: visit.userId,
-      userName: visit.userName,
       isEU: visit.isEU,
       postalCode: visit.postalCode,
       metroCode: visit.metroCode,
@@ -597,8 +595,6 @@ function upsertRecentVisit(
       utmCampaign: event.utmCampaign,
       utmTerm: event.utmTerm,
       utmContent: event.utmContent,
-      userId: event.userId,
-      userName: event.userName,
       isEU: event.isEU,
       postalCode: event.postalCode,
       metroCode: event.metroCode,
@@ -618,7 +614,6 @@ function upsertRecentVisit(
       durationMs: event.durationMs,
       durationSource: event.durationSource,
       exitReason: event.exitReason,
-      performance: event.performance,
       latitude: event.latitude,
       longitude: event.longitude,
     });
@@ -649,8 +644,6 @@ function upsertRecentVisit(
   previous.utmCampaign ||= event.utmCampaign;
   previous.utmTerm ||= event.utmTerm;
   previous.utmContent ||= event.utmContent;
-  previous.userId ||= event.userId;
-  previous.userName ||= event.userName;
   previous.postalCode ||= event.postalCode;
   previous.metroCode ||= event.metroCode;
   previous.browserVersion ||= event.browserVersion;
@@ -781,8 +774,6 @@ function normalizeRealtimeEvent(payload: unknown): RealtimeEvent | null {
     utmTerm: String(record.utmTerm ?? record.utm_term ?? ""),
     utmContent: String(record.utmContent ?? record.utm_content ?? ""),
     visitorId,
-    userId: String(record.userId ?? record.user_id ?? ""),
-    userName: String(record.userName ?? record.user_name ?? ""),
     isEU: normalizeBoolean(record.isEU ?? record.is_eu),
     country: String(record.country ?? ""),
     region: String(record.region ?? ""),
@@ -828,10 +819,6 @@ function normalizeRealtimeEvent(payload: unknown): RealtimeEvent | null {
     ),
     exitReason: String(record.exitReason ?? record.exit_reason ?? ""),
     leaveAt: normalizeNullableNumber(record.leaveAt ?? record.leave_at),
-    performanceVisitId: String(
-      record.performanceVisitId ?? record.performance_visit_id ?? "",
-    ),
-    performance: record.performance ?? null,
     visibilityState: String(
       record.visibilityState ?? record.visibility_state ?? "",
     ),
@@ -1007,8 +994,6 @@ function normalizeRealtimeVisit(payload: unknown): RealtimeVisit | null {
     utmCampaign: String(record.utmCampaign ?? record.utm_campaign ?? ""),
     utmTerm: String(record.utmTerm ?? record.utm_term ?? ""),
     utmContent: String(record.utmContent ?? record.utm_content ?? ""),
-    userId: String(record.userId ?? record.user_id ?? ""),
-    userName: String(record.userName ?? record.user_name ?? ""),
     isEU: normalizeBoolean(record.isEU ?? record.is_eu),
     postalCode: String(record.postalCode ?? record.postal_code ?? ""),
     metroCode: String(record.metroCode ?? record.metro_code ?? ""),
@@ -1041,7 +1026,6 @@ function normalizeRealtimeVisit(payload: unknown): RealtimeVisit | null {
       record.durationSource ?? record.duration_source ?? "",
     ),
     exitReason: String(record.exitReason ?? record.exit_reason ?? ""),
-    performance: record.performance ?? null,
     latitude,
     longitude,
   };

@@ -276,7 +276,6 @@ export function useGoalConversions({
           <GoalDetail
             goal={detailGoal}
             siteId={siteId}
-            pathname={pathname}
             locale={locale}
             labels={labels}
             messages={messages}

@@ -8,8 +8,8 @@ import {
 } from "@insightflare/ui/tooltip";
 import { ChartNoAxesColumnIcon, UserIcon } from "lucide-react";
 
+import { resolveDeviceTypeMeta } from "@/components/dashboard/common/client-meta";
 import { type TabbedDataTableColumn } from "@/components/dashboard/common/tabbed-data-table-card";
-import { resolveDeviceTypeMeta } from "@/components/dashboard/journeys/journey-display";
 import {
   TRAFFIC_CHANNEL_IDS,
   type TrafficChannelId,

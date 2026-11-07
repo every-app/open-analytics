@@ -23,31 +23,6 @@ const SIMPLE_DIMENSIONS: Readonly<Record<string, SimpleDimensionKey>> = {
   "utm-term": "utm.term",
   "utm-content": "utm.content",
 };
-type TechnologyHandlerName =
-  | "handleBrowserTrendContract"
-  | "handleBrowserEngineTrendContract"
-  | "handleBrowserVersionBreakdownContract"
-  | "handleBrowserCrossBreakdownContract"
-  | "handleBrowserRadarContract"
-  | "handleReferrerRadarContract"
-  | "handleReferrerDimensionTrendContract"
-  | "handleReferrerChannelTrendContract"
-  | "handleClientDimensionTrendContract"
-  | "handleUtmDimensionTrendContract"
-  | "handleCrossBreakdownContract";
-const TECHNOLOGY_HANDLERS: Readonly<Record<string, TechnologyHandlerName>> = {
-  "browser-trend": "handleBrowserTrendContract",
-  "browser-engine-trend": "handleBrowserEngineTrendContract",
-  "browser-version-breakdown": "handleBrowserVersionBreakdownContract",
-  "browser-cross-breakdown": "handleBrowserCrossBreakdownContract",
-  "browser-radar": "handleBrowserRadarContract",
-  "referrer-radar": "handleReferrerRadarContract",
-  "referrer-dimension-trend": "handleReferrerDimensionTrendContract",
-  "referrer-channel-dimension-trend": "handleReferrerChannelTrendContract",
-  "client-dimension-trend": "handleClientDimensionTrendContract",
-  "utm-dimension-trend": "handleUtmDimensionTrendContract",
-  "client-cross-breakdown": "handleCrossBreakdownContract",
-};
 const OVERVIEW_TABS: Readonly<Record<string, OverviewTab>> = {
   "overview-page-path": "page.path",
   "overview-page-title": "page.title",
@@ -73,15 +48,11 @@ const PUBLIC_QUERY_PATHS = new Set([
   "trend",
   "pages",
   "referrers",
-  "referrer-summary",
   "pages-dashboard",
-  "retention",
-  "performance",
   "event-types",
   "filter-values",
   "overview-geo-points",
   ...Object.keys(SIMPLE_DIMENSIONS),
-  ...Object.keys(TECHNOLOGY_HANDLERS),
   ...Object.keys(OVERVIEW_TABS),
 ]);
 function responseContext(
@@ -137,37 +108,9 @@ export function executePublicQuery(
       ),
     );
   }
-  if (input.pathname === "referrer-summary") {
-    return import("./protocol/pages").then(
-      ({ handleReferrerSummaryContract }) =>
-        handleReferrerSummaryContract(
-          input.env,
-          input.siteId,
-          url,
-          ctx,
-          queryContext,
-        ),
-    );
-  }
   if (input.pathname === "pages-dashboard") {
     return import("./protocol/pages").then(({ handlePagesDashboardContract }) =>
       handlePagesDashboardContract(
-        input.env,
-        input.siteId,
-        url,
-        ctx,
-        queryContext,
-      ),
-    );
-  }
-  if (input.pathname === "retention") {
-    return import("./protocol/analysis").then(({ handleRetentionContract }) =>
-      handleRetentionContract(input.env, input.siteId, url, ctx, queryContext),
-    );
-  }
-  if (input.pathname === "performance") {
-    return import("./protocol/analysis").then(({ handlePerformanceContract }) =>
-      handlePerformanceContract(
         input.env,
         input.siteId,
         url,
@@ -217,18 +160,6 @@ export function executePublicQuery(
           ctx,
           queryContext,
         ),
-    );
-  }
-  const technologyHandler = TECHNOLOGY_HANDLERS[input.pathname];
-  if (technologyHandler) {
-    return import("./protocol/technology").then((module) =>
-      module[technologyHandler](
-        input.env,
-        input.siteId,
-        url,
-        ctx,
-        queryContext,
-      ),
     );
   }
   const overviewTab = OVERVIEW_TABS[input.pathname];

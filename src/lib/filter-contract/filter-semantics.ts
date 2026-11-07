@@ -238,9 +238,7 @@ function fieldIdForTarget(target: FilterTargetExpression): string | undefined {
     return `${current.entity}.${members.reverse().join(".")}`;
   if (
     current.kind === "context-root" &&
-    ["geo", "client", "referrer", "utm", "user", "performance"].includes(
-      current.context,
-    )
+    ["geo", "client", "referrer", "utm"].includes(current.context)
   )
     return `${current.context}.${members.reverse().join(".")}`;
   return undefined;

@@ -77,13 +77,6 @@ const DATA_COLUMNS = [
   "screen_width",
   "screen_height",
   "language",
-  "user_id",
-  "user_name",
-  "perf_ttfb_ms",
-  "perf_fcp_ms",
-  "perf_lcp_ms",
-  "perf_cls",
-  "perf_inp_ms",
 ] as const;
 
 interface RawEvaluationRow extends Record<string, unknown> {

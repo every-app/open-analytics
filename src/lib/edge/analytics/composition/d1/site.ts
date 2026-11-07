@@ -6,8 +6,6 @@ import type {
   DimensionOverviewTabQuery,
   OverviewTableComparisonQuery,
   OverviewTabResult,
-  PerformanceQuery,
-  QueryInput,
 } from "@/lib/edge/analytics/contract";
 import { EMPTY_FILTER_DOCUMENT } from "@/lib/edge/analytics/contract";
 import { queryChannelAggregate } from "@/lib/edge/analytics/providers/d1/internal/channels";
@@ -38,11 +36,7 @@ import {
 } from "@/lib/edge/analytics/providers/d1/internal/dimensions";
 import { queryEventTypeAggregate } from "@/lib/edge/analytics/providers/d1/internal/events-summary";
 import { queryFilterValuesPageFromD1 } from "@/lib/edge/analytics/providers/d1/internal/filter-values";
-import {
-  parseRetentionGranularity,
-  queryRetentionFromD1,
-} from "@/lib/edge/analytics/providers/d1/internal/journey-retention";
-import { queryGeoPointAggregate } from "@/lib/edge/analytics/providers/d1/internal/journeys";
+import { queryGeoPointsFromD1 } from "@/lib/edge/analytics/providers/d1/internal/geo-points";
 import {
   queryPagesPageFromD1,
   queryPagesWithTabsFromD1,
@@ -50,17 +44,8 @@ import {
 } from "@/lib/edge/analytics/providers/d1/internal/pages";
 import { decodePagesCursor } from "@/lib/edge/analytics/providers/d1/internal/pages";
 import { queryPagesDashboard } from "@/lib/edge/analytics/providers/d1/internal/pages-dashboard";
-import { queryPerformanceDashboardFromD1 } from "@/lib/edge/analytics/providers/d1/internal/performance";
-import {
-  queryReferrersPageFromD1,
-  queryReferrerSummaryFromD1,
-} from "@/lib/edge/analytics/providers/d1/internal/referrers";
+import { queryReferrersPageFromD1 } from "@/lib/edge/analytics/providers/d1/internal/referrers";
 import { decodeReferrersCursor } from "@/lib/edge/analytics/providers/d1/internal/referrers";
-import {
-  readSitePerformanceBreakdown,
-  readSitePerformanceSummary,
-  readSitePerformanceTimeseries,
-} from "@/lib/edge/analytics/providers/d1/operations/site-performance";
 import { InvalidCursorError } from "@/lib/pagination";
 
 import {
@@ -97,25 +82,6 @@ function overviewTabExpression(tab: string): string | null {
   if (tab === "geo.timezone") return "TRIM(COALESCE(timezone, ''))";
   if (tab === "geo.organization") return "TRIM(COALESCE(as_organization, ''))";
   return null;
-}
-function isPerformanceQuery(input: QueryInput): input is PerformanceQuery {
-  if (!("time" in input) || !("mode" in input)) return false;
-  if (input.mode === "summary") return true;
-  if (input.mode === "dashboard" || input.mode === "timeseries") {
-    return (
-      "interval" in input &&
-      ["minute", "hour", "day", "week", "month"].includes(
-        String(input.interval),
-      )
-    );
-  }
-  return (
-    input.mode === "breakdown" &&
-    "dimension" in input &&
-    typeof input.dimension === "string" &&
-    "metric" in input &&
-    ["ttfb", "fcp", "lcp", "cls", "inp"].includes(String(input.metric))
-  );
 }
 export async function overviewTabData(
   options: D1SiteRuntimeBindings,
@@ -677,7 +643,7 @@ export function registerSiteContractProviders(
       "geo-points",
       typedQueryProviderFor("geo-points", async (input) => {
         const request = input;
-        const aggregate = await queryGeoPointAggregate(
+        const aggregate = await queryGeoPointsFromD1(
           options.env,
           options.siteId,
           timeWindow(request.time),
@@ -761,78 +727,6 @@ export function registerSiteContractProviders(
             },
           },
         };
-      }),
-    )
-    .register(
-      "retention",
-      typedQueryProviderFor("retention", async (input) => {
-        const request = input;
-        return {
-          value: await queryRetentionFromD1(
-            options.env,
-            options.siteId,
-            timeWindow(request.time),
-            request.filters ?? EMPTY_FILTER_DOCUMENT,
-            parseRetentionGranularity(
-              stringField(request, "granularity", "week"),
-            ),
-          ),
-        };
-      }),
-    )
-    .register(
-      "performance",
-      typedQueryProviderFor("performance", async (input) => {
-        if (!input || !isPerformanceQuery(input)) {
-          throw new Error("unsupported-performance-query-mode");
-        }
-        const request = input;
-        const window = timeWindow(request.time);
-        const filters = request.filters ?? EMPTY_FILTER_DOCUMENT;
-        switch (request.mode) {
-          case "summary":
-            return {
-              value: await readSitePerformanceSummary({
-                env: options.env,
-                siteId: options.siteId,
-                window,
-                filters,
-              }),
-            };
-          case "timeseries":
-            return {
-              value: await readSitePerformanceTimeseries({
-                env: options.env,
-                siteId: options.siteId,
-                window,
-                filters,
-                interval: request.interval,
-              }),
-            };
-          case "breakdown":
-            return {
-              value: await readSitePerformanceBreakdown({
-                env: options.env,
-                siteId: options.siteId,
-                window,
-                filters,
-                dimension: request.dimension,
-                metric: request.metric,
-                limit: request.limit ?? 20,
-              }),
-            };
-          case "dashboard":
-            return {
-              value: await queryPerformanceDashboardFromD1(
-                options.env,
-                options.siteId,
-                window,
-                request.interval,
-                filters,
-                request.limit ?? 18,
-              ),
-            };
-        }
       }),
     )
     .register(
@@ -931,23 +825,6 @@ export function registerSiteContractProviders(
       "referrers",
       typedQueryProviderFor("referrers", async (input) => {
         const request = input;
-        if (request.variant === "summary") {
-          const topN = numberField(
-            request,
-            "topN",
-            numberField(request, "limit", 5),
-          );
-          return {
-            value: await queryReferrerSummaryFromD1(
-              options.env,
-              options.siteId,
-              timeWindow(request.time),
-              request.filters ?? EMPTY_FILTER_DOCUMENT,
-              topN,
-            ),
-            source: "raw",
-          };
-        }
         const rawPage = request.page;
         const page =
           rawPage && typeof rawPage === "object"

@@ -15,12 +15,10 @@ import type {
   NormalizedLeave,
   NormalizedPageview,
   NormalizedVisibility,
-  TrackerPerformancePayload,
 } from "@/lib/edge/types";
 import { resolveSessionWindowMinutes } from "@/lib/edge/utils";
 
 import {
-  attachPerformanceToVisit as attachPerformanceToVisitInBufferStore,
   findRecentVisitorSession as findRecentVisitorSessionInBufferStore,
   getVisitContext as getVisitContextFromBufferStore,
   insertBufferedCustomEvent as insertBufferedCustomEventInBufferStore,
@@ -651,8 +649,6 @@ export class IngestDurableObject extends DurableObject {
       utmTerm: record.utmTerm,
       utmContent: record.utmContent,
       visitorId: record.visitorId,
-      userId: record.userId,
-      userName: record.userName,
       isEU: record.isEU,
       country: record.country,
       region: record.region,
@@ -733,7 +729,6 @@ export class IngestDurableObject extends DurableObject {
       sequence: number;
       eventName: string;
       eventDataJson: string;
-      userId: string;
     }>(
       `
         SELECT
@@ -742,8 +737,7 @@ export class IngestDurableObject extends DurableObject {
           received_at AS receivedAt,
           sequence,
           event_name AS eventName,
-          event_data_json AS eventDataJson,
-          user_id AS userId
+          event_data_json AS eventDataJson
         FROM buffered_custom_events
         WHERE site_id = ? AND visit_id = ?
         ORDER BY occurred_at ASC, created_at ASC
@@ -782,8 +776,6 @@ export class IngestDurableObject extends DurableObject {
         utmTerm: record.utmTerm,
         utmContent: record.utmContent,
         visitorId: record.visitorId,
-        userId: pending.userId || record.userId,
-        userName: record.userName,
         isEU: record.isEU,
         country: record.country,
         region: record.region,
@@ -833,8 +825,6 @@ export class IngestDurableObject extends DurableObject {
       utmCampaign: string;
       utmTerm: string;
       utmContent: string;
-      userId: string;
-      userName: string;
       isEU: number;
       country: string;
       region: string;
@@ -862,11 +852,6 @@ export class IngestDurableObject extends DurableObject {
       screenSize: string;
       latitude: number | null;
       longitude: number | null;
-      perfTtfbMs: number | null;
-      perfFcpMs: number | null;
-      perfLcpMs: number | null;
-      perfCls: number | null;
-      perfInpMs: number | null;
       status: string;
       hiddenAt: number | null;
     }>(
@@ -878,7 +863,7 @@ export class IngestDurableObject extends DurableObject {
                utm_source AS utmSource, utm_medium AS utmMedium,
                utm_campaign AS utmCampaign, utm_term AS utmTerm,
                utm_content AS utmContent,
-               user_id AS userId, user_name AS userName, is_eu AS isEU,
+               is_eu AS isEU,
                country, region, region_code AS regionCode, city, continent, timezone,
                postal_code AS postalCode, metro_code AS metroCode,
                as_organization AS organization, ua_raw AS uaRaw,
@@ -893,9 +878,6 @@ export class IngestDurableObject extends DurableObject {
                latitude, longitude, ended_at AS endedAt, finalized_at AS finalizedAt,
                duration_ms AS durationMs, duration_source AS durationSource,
                exit_reason AS exitReason,
-               perf_ttfb_ms AS perfTtfbMs, perf_fcp_ms AS perfFcpMs,
-               perf_lcp_ms AS perfLcpMs, perf_cls AS perfCls,
-               perf_inp_ms AS perfInpMs,
                status, hidden_at AS hiddenAt
         FROM buffered_visits
         WHERE site_id = ? AND visit_id = ? AND status IN ('open', 'hidden_pending')
@@ -973,15 +955,6 @@ export class IngestDurableObject extends DurableObject {
       );
     }
 
-    if (record.performance) {
-      await this.attachPerformanceToVisit(
-        record.siteId,
-        record.performanceVisitId,
-        record.performance,
-        record.receivedAt,
-      );
-    }
-
     if (!visit || !closedVisit) {
       logger.info("do.ingest.leave_ignored");
       return;
@@ -1011,8 +984,6 @@ export class IngestDurableObject extends DurableObject {
         utmTerm: visit.utmTerm,
         utmContent: visit.utmContent,
         visitorId: visit.visitorId,
-        userId: visit.userId,
-        userName: visit.userName,
         isEU: visit.isEU,
         country: visit.country,
         region: visit.region,
@@ -1040,8 +1011,6 @@ export class IngestDurableObject extends DurableObject {
         durationSource: closedDurationSource,
         exitReason: closedExitReason,
         leaveAt: closedLeaveAt,
-        performanceVisitId: record.performanceVisitId,
-        performance: record.performance,
         latitude: visit.latitude,
         longitude: visit.longitude,
       });
@@ -1224,8 +1193,6 @@ export class IngestDurableObject extends DurableObject {
       utmTerm: visit.utmTerm,
       utmContent: visit.utmContent,
       visitorId: visit.visitorId,
-      userId: visit.userId,
-      userName: visit.userName,
       isEU: visit.isEU,
       country: visit.country,
       region: visit.region,
@@ -1251,21 +1218,6 @@ export class IngestDurableObject extends DurableObject {
       latitude: visit.latitude,
       longitude: visit.longitude,
     });
-  }
-
-  private async attachPerformanceToVisit(
-    siteId: string,
-    visitId: string,
-    performance: TrackerPerformancePayload,
-    receivedAt: number,
-  ): Promise<void> {
-    return attachPerformanceToVisitInBufferStore(
-      this.bufferStoreContext(),
-      siteId,
-      visitId,
-      performance,
-      receivedAt,
-    );
   }
 
   private async handleCustomEvent(
@@ -1307,8 +1259,6 @@ export class IngestDurableObject extends DurableObject {
       utmTerm: record.utmTerm,
       utmContent: record.utmContent,
       visitorId: record.visitorId,
-      userId: record.userId,
-      userName: record.userName,
       isEU: record.isEU,
       country: record.country,
       region: record.region,

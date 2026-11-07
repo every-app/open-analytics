@@ -584,14 +584,7 @@ function memberValue(value: RuntimeValue, member: string): RuntimeValue {
       const found = entity.fields[direct];
       return found === undefined ? MISSING : found;
     }
-    for (const namespace of [
-      "geo",
-      "client",
-      "referrer",
-      "utm",
-      "user",
-      "performance",
-    ]) {
+    for (const namespace of ["geo", "client", "referrer", "utm"]) {
       if (namespace === member) return { __filterNamespace: namespace, entity };
     }
   }
@@ -1461,9 +1454,7 @@ function conditionSubjectDomain(
       ? target.field
       : target.kind === "member" &&
           target.object.kind === "context-root" &&
-          ["geo", "client", "referrer", "utm", "user", "performance"].includes(
-            target.object.context,
-          )
+          ["geo", "client", "referrer", "utm"].includes(target.object.context)
         ? fieldIdFor(target)
         : undefined;
   const definition = directFieldId
@@ -1759,9 +1750,7 @@ function fieldIdFor(
     paths.unshift(`${current.entity}.${orderedMembers.join(".")}`);
   else if (
     current.kind === "context-root" &&
-    ["geo", "client", "referrer", "utm", "user", "performance"].includes(
-      current.context,
-    )
+    ["geo", "client", "referrer", "utm"].includes(current.context)
   )
     paths.unshift(`${current.context}.${orderedMembers.join(".")}`);
   else return undefined;

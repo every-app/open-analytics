@@ -58,13 +58,6 @@ export interface FunnelSqlPlan {
   readonly steps: readonly FunnelSqlStepLayer[];
   readonly shape: FunnelSqlShape;
 }
-export interface FunnelMembershipSqlPlan {
-  readonly ctes: string;
-  readonly bindings: readonly SqlBinding[];
-  readonly relation: string;
-  readonly identity: "session_id" | "visitor_id";
-  readonly shape: FunnelSqlShape;
-}
 function mergedBudget(
   budget: Partial<FunnelSqlStructuralBudget>,
 ): FunnelSqlStructuralBudget {
@@ -469,78 +462,6 @@ ${resultSql(config.steps, parts.firstFilter)}`;
     sql,
     bindings,
     steps: parts.steps,
-    shape,
-  };
-}
-/**
- * Build the progression CTEs needed to restrict a journey list to one funnel
- * stage.  The caller owns the surrounding dataset CTEs and can then project
- * the reached relation through the normal visitor/session aggregation query.
- */
-export function buildFunnelMembershipSqlPlan(
-  config: FunnelConfigV2,
-  dataset: ScopedDatasetSql,
-  stepIndex: number,
-  options: {
-    readonly allowHistoricalOverLimit?: boolean;
-    readonly outcome?: "converted" | "dropoff";
-  } = {},
-): FunnelMembershipSqlPlan {
-  const parts = buildFunnelCteParts(config, dataset, options);
-  if (
-    !Number.isSafeInteger(stepIndex) ||
-    stepIndex < 0 ||
-    stepIndex >= parts.steps.length
-  ) {
-    throw new Error("funnel_step_not_found");
-  }
-  const reachedRelation = parts.steps[stepIndex]!.reachedRelation;
-  const relation =
-    options.outcome === "dropoff"
-      ? stepIndex === 0
-        ? `(SELECT reached_0.*
-            FROM reached_0
-            WHERE 1 = 0)`
-        : `(SELECT previous.*
-            FROM reached_${stepIndex - 1} previous
-            WHERE NOT EXISTS (
-              SELECT 1
-              FROM ${reachedRelation} current
-              WHERE current.site_pk = previous.site_pk
-                AND current.${parts.identity} = previous.${parts.identity}
-            ))`
-      : reachedRelation;
-  const sql = `${dataset.ctes.trim()},\n${parts.funnelCtes.join(",\n")}`;
-  const shape = measureFunnelSqlShape({
-    sql: `${sql}\nSELECT * FROM ${relation}`,
-    bindings: [
-      ...dataset.bindings,
-      ...(config.progressionScope === "visitor"
-        ? [{ value: config.conversionWindowMs! }]
-        : []),
-      ...parts.filterBindings,
-    ],
-    stepCount: config.steps.length,
-    funnelCteCount:
-      config.steps.length * FUNNEL_SQL_CTES_PER_STEP +
-      (config.progressionScope === "visitor" ? 1 : 0),
-  });
-  assertFunnelSqlShapeWithinBudget(
-    shape,
-    options.allowHistoricalOverLimit
-      ? FUNNEL_SQL_HISTORICAL_STRUCTURAL_BUDGET
-      : FUNNEL_SQL_STRUCTURAL_BUDGET,
-  );
-  return {
-    ctes: parts.funnelCtes.join(",\n"),
-    bindings: [
-      ...(config.progressionScope === "visitor"
-        ? [{ value: config.conversionWindowMs! }]
-        : []),
-      ...parts.filterBindings,
-    ],
-    relation,
-    identity: parts.identity,
     shape,
   };
 }

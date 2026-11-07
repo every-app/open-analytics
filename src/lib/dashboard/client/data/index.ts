@@ -4,23 +4,10 @@ import {
   emptyOverviewGeoPoints,
 } from "@/lib/dashboard/client/data/empty";
 export {
-  type CrossBreakdownDimension,
-  fetchBrowserEngineTrend,
-  fetchBrowserTrend,
-  fetchClientCrossBreakdown,
-  fetchClientDimensionTrend,
-} from "@/lib/dashboard/client/data/browser";
-export {
   createFunnel,
   createGoal,
   deleteFunnel,
   deleteGoal,
-  fetchEventRecordDetail,
-  fetchEventsRecords,
-  fetchEventsSummary,
-  fetchEventsTrend,
-  fetchEventTypeContextCards,
-  fetchEventTypeDetail,
   fetchEventTypeFields,
   fetchEventTypeFieldValues,
   fetchFunnelDetail,
@@ -29,24 +16,13 @@ export {
   fetchGoals,
   fetchGoalSummary,
   fetchGoalTimeseries,
-  fetchJourneyEventDetail,
   fetchOverview,
   fetchPages,
-  fetchPerformance,
-  fetchRetention,
-  fetchSessionDetail,
-  fetchSessionEvents,
-  fetchSessions,
   fetchTrend,
-  fetchVisitorDetail,
-  fetchVisitorEvents,
-  fetchVisitors,
-  fetchVisitorSessions,
   updateFunnel,
   updateGoal,
 } from "@/lib/dashboard/client/data/core";
 export {
-  fetchOverviewGeoDimensionTab,
   fetchOverviewGeoDimensionTabPage,
   fetchOverviewGeoPoints,
 } from "@/lib/dashboard/client/data/geo";
@@ -57,10 +33,7 @@ export {
 } from "@/lib/dashboard/client/data/pages";
 export {
   fetchReferrers,
-  fetchReferrerSummary,
-  fetchReferrerTrend,
   fetchUtmDimension,
-  fetchUtmTrend,
 } from "@/lib/dashboard/client/data/referrers";
 export {
   fetchEventTypesTab,
@@ -75,13 +48,10 @@ export type {
   DashboardFilterOptionData,
   DashboardFilterOptionKey,
   DashboardListRequestOptions,
-  EventRecordSortKey,
   FetchPrivateJsonOptions,
   OverviewClientDimensionTab,
   OverviewClientDimensionTabsData,
-  OverviewGeoDimensionTab,
   OverviewGeoDimensionTabsData,
-  OverviewGeoTabRows,
   OverviewPageCardTab,
   OverviewSourceCardTab,
   OverviewTabCollection,
@@ -90,11 +60,8 @@ export type {
   PagesDashboardRow,
   PagesDashboardRows,
   PrivateRequestParams,
-  RetentionGranularity,
-  SessionListSortKey,
   SortDirection,
   UtmDimensionTab,
-  VisitorListSortKey,
 } from "@/lib/dashboard/client/data/types";
 export {
   decodeHashLabel,

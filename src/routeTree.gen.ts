@@ -21,27 +21,12 @@ import { Route as AppSettingsNotificationsRouteImport } from './routes/_app.sett
 import { Route as AppSettingsSystemRouteImport } from './routes/_app.settings.system'
 import { Route as AppSitesSiteSlugRouteImport } from './routes/_app.sites.$siteSlug'
 import { Route as ShareSlugIndexRouteImport } from './routes/share.$slug.index'
-import { Route as ShareSlugCampaignsRouteImport } from './routes/share.$slug.campaigns'
-import { Route as ShareSlugDevicesRouteImport } from './routes/share.$slug.devices'
-import { Route as ShareSlugGeoRouteImport } from './routes/share.$slug.geo'
 import { Route as ShareSlugPagesRouteImport } from './routes/share.$slug.pages'
-import { Route as ShareSlugPerformanceRouteImport } from './routes/share.$slug.performance'
-import { Route as ShareSlugReferrersRouteImport } from './routes/share.$slug.referrers'
-import { Route as ShareSlugRetentionRouteImport } from './routes/share.$slug.retention'
 import { Route as AppSitesSiteSlugIndexRouteImport } from './routes/_app.sites.$siteSlug.index'
-import { Route as AppSitesSiteSlugCampaignsRouteImport } from './routes/_app.sites.$siteSlug.campaigns'
-import { Route as AppSitesSiteSlugDevicesRouteImport } from './routes/_app.sites.$siteSlug.devices'
-import { Route as AppSitesSiteSlugEventsRouteImport } from './routes/_app.sites.$siteSlug.events'
 import { Route as AppSitesSiteSlugFunnelsRouteImport } from './routes/_app.sites.$siteSlug.funnels'
-import { Route as AppSitesSiteSlugGeoRouteImport } from './routes/_app.sites.$siteSlug.geo'
 import { Route as AppSitesSiteSlugPagesRouteImport } from './routes/_app.sites.$siteSlug.pages'
-import { Route as AppSitesSiteSlugPerformanceRouteImport } from './routes/_app.sites.$siteSlug.performance'
 import { Route as AppSitesSiteSlugRealtimeRouteImport } from './routes/_app.sites.$siteSlug.realtime'
-import { Route as AppSitesSiteSlugReferrersRouteImport } from './routes/_app.sites.$siteSlug.referrers'
-import { Route as AppSitesSiteSlugRetentionRouteImport } from './routes/_app.sites.$siteSlug.retention'
 import { Route as AppSitesSiteSlugSettingsRouteImport } from './routes/_app.sites.$siteSlug.settings'
-import { Route as AppSitesSiteSlugVisitorsRouteImport } from './routes/_app.sites.$siteSlug.visitors'
-import { Route as AppSitesSiteSlugEventsDetailRouteImport } from './routes/_app.sites.$siteSlug.events_.detail'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -103,39 +88,9 @@ const ShareSlugIndexRoute = ShareSlugIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ShareSlugRoute,
 } as any)
-const ShareSlugCampaignsRoute = ShareSlugCampaignsRouteImport.update({
-  id: '/campaigns',
-  path: '/campaigns',
-  getParentRoute: () => ShareSlugRoute,
-} as any)
-const ShareSlugDevicesRoute = ShareSlugDevicesRouteImport.update({
-  id: '/devices',
-  path: '/devices',
-  getParentRoute: () => ShareSlugRoute,
-} as any)
-const ShareSlugGeoRoute = ShareSlugGeoRouteImport.update({
-  id: '/geo',
-  path: '/geo',
-  getParentRoute: () => ShareSlugRoute,
-} as any)
 const ShareSlugPagesRoute = ShareSlugPagesRouteImport.update({
   id: '/pages',
   path: '/pages',
-  getParentRoute: () => ShareSlugRoute,
-} as any)
-const ShareSlugPerformanceRoute = ShareSlugPerformanceRouteImport.update({
-  id: '/performance',
-  path: '/performance',
-  getParentRoute: () => ShareSlugRoute,
-} as any)
-const ShareSlugReferrersRoute = ShareSlugReferrersRouteImport.update({
-  id: '/referrers',
-  path: '/referrers',
-  getParentRoute: () => ShareSlugRoute,
-} as any)
-const ShareSlugRetentionRoute = ShareSlugRetentionRouteImport.update({
-  id: '/retention',
-  path: '/retention',
   getParentRoute: () => ShareSlugRoute,
 } as any)
 const AppSitesSiteSlugIndexRoute = AppSitesSiteSlugIndexRouteImport.update({
@@ -143,30 +98,9 @@ const AppSitesSiteSlugIndexRoute = AppSitesSiteSlugIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppSitesSiteSlugRoute,
 } as any)
-const AppSitesSiteSlugCampaignsRoute =
-  AppSitesSiteSlugCampaignsRouteImport.update({
-    id: '/campaigns',
-    path: '/campaigns',
-    getParentRoute: () => AppSitesSiteSlugRoute,
-  } as any)
-const AppSitesSiteSlugDevicesRoute = AppSitesSiteSlugDevicesRouteImport.update({
-  id: '/devices',
-  path: '/devices',
-  getParentRoute: () => AppSitesSiteSlugRoute,
-} as any)
-const AppSitesSiteSlugEventsRoute = AppSitesSiteSlugEventsRouteImport.update({
-  id: '/events',
-  path: '/events',
-  getParentRoute: () => AppSitesSiteSlugRoute,
-} as any)
 const AppSitesSiteSlugFunnelsRoute = AppSitesSiteSlugFunnelsRouteImport.update({
   id: '/funnels',
   path: '/funnels',
-  getParentRoute: () => AppSitesSiteSlugRoute,
-} as any)
-const AppSitesSiteSlugGeoRoute = AppSitesSiteSlugGeoRouteImport.update({
-  id: '/geo',
-  path: '/geo',
   getParentRoute: () => AppSitesSiteSlugRoute,
 } as any)
 const AppSitesSiteSlugPagesRoute = AppSitesSiteSlugPagesRouteImport.update({
@@ -174,46 +108,16 @@ const AppSitesSiteSlugPagesRoute = AppSitesSiteSlugPagesRouteImport.update({
   path: '/pages',
   getParentRoute: () => AppSitesSiteSlugRoute,
 } as any)
-const AppSitesSiteSlugPerformanceRoute =
-  AppSitesSiteSlugPerformanceRouteImport.update({
-    id: '/performance',
-    path: '/performance',
-    getParentRoute: () => AppSitesSiteSlugRoute,
-  } as any)
 const AppSitesSiteSlugRealtimeRoute =
   AppSitesSiteSlugRealtimeRouteImport.update({
     id: '/realtime',
     path: '/realtime',
     getParentRoute: () => AppSitesSiteSlugRoute,
   } as any)
-const AppSitesSiteSlugReferrersRoute =
-  AppSitesSiteSlugReferrersRouteImport.update({
-    id: '/referrers',
-    path: '/referrers',
-    getParentRoute: () => AppSitesSiteSlugRoute,
-  } as any)
-const AppSitesSiteSlugRetentionRoute =
-  AppSitesSiteSlugRetentionRouteImport.update({
-    id: '/retention',
-    path: '/retention',
-    getParentRoute: () => AppSitesSiteSlugRoute,
-  } as any)
 const AppSitesSiteSlugSettingsRoute =
   AppSitesSiteSlugSettingsRouteImport.update({
     id: '/settings',
     path: '/settings',
-    getParentRoute: () => AppSitesSiteSlugRoute,
-  } as any)
-const AppSitesSiteSlugVisitorsRoute =
-  AppSitesSiteSlugVisitorsRouteImport.update({
-    id: '/visitors',
-    path: '/visitors',
-    getParentRoute: () => AppSitesSiteSlugRoute,
-  } as any)
-const AppSitesSiteSlugEventsDetailRoute =
-  AppSitesSiteSlugEventsDetailRouteImport.update({
-    id: '/events_/detail',
-    path: '/events/detail',
     getParentRoute: () => AppSitesSiteSlugRoute,
   } as any)
 
@@ -227,29 +131,14 @@ export interface FileRoutesByFullPath {
   '/settings/notifications': typeof AppSettingsNotificationsRoute
   '/settings/system': typeof AppSettingsSystemRoute
   '/sites/$siteSlug': typeof AppSitesSiteSlugRouteWithChildren
-  '/share/$slug/campaigns': typeof ShareSlugCampaignsRoute
-  '/share/$slug/devices': typeof ShareSlugDevicesRoute
-  '/share/$slug/geo': typeof ShareSlugGeoRoute
   '/share/$slug/pages': typeof ShareSlugPagesRoute
-  '/share/$slug/performance': typeof ShareSlugPerformanceRoute
-  '/share/$slug/referrers': typeof ShareSlugReferrersRoute
-  '/share/$slug/retention': typeof ShareSlugRetentionRoute
   '/settings/': typeof AppSettingsIndexRoute
   '/share/$slug/': typeof ShareSlugIndexRoute
-  '/sites/$siteSlug/campaigns': typeof AppSitesSiteSlugCampaignsRoute
-  '/sites/$siteSlug/devices': typeof AppSitesSiteSlugDevicesRoute
-  '/sites/$siteSlug/events': typeof AppSitesSiteSlugEventsRoute
   '/sites/$siteSlug/funnels': typeof AppSitesSiteSlugFunnelsRoute
-  '/sites/$siteSlug/geo': typeof AppSitesSiteSlugGeoRoute
   '/sites/$siteSlug/pages': typeof AppSitesSiteSlugPagesRoute
-  '/sites/$siteSlug/performance': typeof AppSitesSiteSlugPerformanceRoute
   '/sites/$siteSlug/realtime': typeof AppSitesSiteSlugRealtimeRoute
-  '/sites/$siteSlug/referrers': typeof AppSitesSiteSlugReferrersRoute
-  '/sites/$siteSlug/retention': typeof AppSitesSiteSlugRetentionRoute
   '/sites/$siteSlug/settings': typeof AppSitesSiteSlugSettingsRoute
-  '/sites/$siteSlug/visitors': typeof AppSitesSiteSlugVisitorsRoute
   '/sites/$siteSlug/': typeof AppSitesSiteSlugIndexRoute
-  '/sites/$siteSlug/events/detail': typeof AppSitesSiteSlugEventsDetailRoute
 }
 export interface FileRoutesByTo {
   '/runtime-config-error': typeof RuntimeConfigErrorRoute
@@ -258,29 +147,14 @@ export interface FileRoutesByTo {
   '/settings/account': typeof AppSettingsAccountRoute
   '/settings/notifications': typeof AppSettingsNotificationsRoute
   '/settings/system': typeof AppSettingsSystemRoute
-  '/share/$slug/campaigns': typeof ShareSlugCampaignsRoute
-  '/share/$slug/devices': typeof ShareSlugDevicesRoute
-  '/share/$slug/geo': typeof ShareSlugGeoRoute
   '/share/$slug/pages': typeof ShareSlugPagesRoute
-  '/share/$slug/performance': typeof ShareSlugPerformanceRoute
-  '/share/$slug/referrers': typeof ShareSlugReferrersRoute
-  '/share/$slug/retention': typeof ShareSlugRetentionRoute
   '/settings': typeof AppSettingsIndexRoute
   '/share/$slug': typeof ShareSlugIndexRoute
-  '/sites/$siteSlug/campaigns': typeof AppSitesSiteSlugCampaignsRoute
-  '/sites/$siteSlug/devices': typeof AppSitesSiteSlugDevicesRoute
-  '/sites/$siteSlug/events': typeof AppSitesSiteSlugEventsRoute
   '/sites/$siteSlug/funnels': typeof AppSitesSiteSlugFunnelsRoute
-  '/sites/$siteSlug/geo': typeof AppSitesSiteSlugGeoRoute
   '/sites/$siteSlug/pages': typeof AppSitesSiteSlugPagesRoute
-  '/sites/$siteSlug/performance': typeof AppSitesSiteSlugPerformanceRoute
   '/sites/$siteSlug/realtime': typeof AppSitesSiteSlugRealtimeRoute
-  '/sites/$siteSlug/referrers': typeof AppSitesSiteSlugReferrersRoute
-  '/sites/$siteSlug/retention': typeof AppSitesSiteSlugRetentionRoute
   '/sites/$siteSlug/settings': typeof AppSitesSiteSlugSettingsRoute
-  '/sites/$siteSlug/visitors': typeof AppSitesSiteSlugVisitorsRoute
   '/sites/$siteSlug': typeof AppSitesSiteSlugIndexRoute
-  '/sites/$siteSlug/events/detail': typeof AppSitesSiteSlugEventsDetailRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -294,29 +168,14 @@ export interface FileRoutesById {
   '/_app/settings/notifications': typeof AppSettingsNotificationsRoute
   '/_app/settings/system': typeof AppSettingsSystemRoute
   '/_app/sites/$siteSlug': typeof AppSitesSiteSlugRouteWithChildren
-  '/share/$slug/campaigns': typeof ShareSlugCampaignsRoute
-  '/share/$slug/devices': typeof ShareSlugDevicesRoute
-  '/share/$slug/geo': typeof ShareSlugGeoRoute
   '/share/$slug/pages': typeof ShareSlugPagesRoute
-  '/share/$slug/performance': typeof ShareSlugPerformanceRoute
-  '/share/$slug/referrers': typeof ShareSlugReferrersRoute
-  '/share/$slug/retention': typeof ShareSlugRetentionRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
   '/share/$slug/': typeof ShareSlugIndexRoute
-  '/_app/sites/$siteSlug/campaigns': typeof AppSitesSiteSlugCampaignsRoute
-  '/_app/sites/$siteSlug/devices': typeof AppSitesSiteSlugDevicesRoute
-  '/_app/sites/$siteSlug/events': typeof AppSitesSiteSlugEventsRoute
   '/_app/sites/$siteSlug/funnels': typeof AppSitesSiteSlugFunnelsRoute
-  '/_app/sites/$siteSlug/geo': typeof AppSitesSiteSlugGeoRoute
   '/_app/sites/$siteSlug/pages': typeof AppSitesSiteSlugPagesRoute
-  '/_app/sites/$siteSlug/performance': typeof AppSitesSiteSlugPerformanceRoute
   '/_app/sites/$siteSlug/realtime': typeof AppSitesSiteSlugRealtimeRoute
-  '/_app/sites/$siteSlug/referrers': typeof AppSitesSiteSlugReferrersRoute
-  '/_app/sites/$siteSlug/retention': typeof AppSitesSiteSlugRetentionRoute
   '/_app/sites/$siteSlug/settings': typeof AppSitesSiteSlugSettingsRoute
-  '/_app/sites/$siteSlug/visitors': typeof AppSitesSiteSlugVisitorsRoute
   '/_app/sites/$siteSlug/': typeof AppSitesSiteSlugIndexRoute
-  '/_app/sites/$siteSlug/events_/detail': typeof AppSitesSiteSlugEventsDetailRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -330,29 +189,14 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/settings/system'
     | '/sites/$siteSlug'
-    | '/share/$slug/campaigns'
-    | '/share/$slug/devices'
-    | '/share/$slug/geo'
     | '/share/$slug/pages'
-    | '/share/$slug/performance'
-    | '/share/$slug/referrers'
-    | '/share/$slug/retention'
     | '/settings/'
     | '/share/$slug/'
-    | '/sites/$siteSlug/campaigns'
-    | '/sites/$siteSlug/devices'
-    | '/sites/$siteSlug/events'
     | '/sites/$siteSlug/funnels'
-    | '/sites/$siteSlug/geo'
     | '/sites/$siteSlug/pages'
-    | '/sites/$siteSlug/performance'
     | '/sites/$siteSlug/realtime'
-    | '/sites/$siteSlug/referrers'
-    | '/sites/$siteSlug/retention'
     | '/sites/$siteSlug/settings'
-    | '/sites/$siteSlug/visitors'
     | '/sites/$siteSlug/'
-    | '/sites/$siteSlug/events/detail'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/runtime-config-error'
@@ -361,29 +205,14 @@ export interface FileRouteTypes {
     | '/settings/account'
     | '/settings/notifications'
     | '/settings/system'
-    | '/share/$slug/campaigns'
-    | '/share/$slug/devices'
-    | '/share/$slug/geo'
     | '/share/$slug/pages'
-    | '/share/$slug/performance'
-    | '/share/$slug/referrers'
-    | '/share/$slug/retention'
     | '/settings'
     | '/share/$slug'
-    | '/sites/$siteSlug/campaigns'
-    | '/sites/$siteSlug/devices'
-    | '/sites/$siteSlug/events'
     | '/sites/$siteSlug/funnels'
-    | '/sites/$siteSlug/geo'
     | '/sites/$siteSlug/pages'
-    | '/sites/$siteSlug/performance'
     | '/sites/$siteSlug/realtime'
-    | '/sites/$siteSlug/referrers'
-    | '/sites/$siteSlug/retention'
     | '/sites/$siteSlug/settings'
-    | '/sites/$siteSlug/visitors'
     | '/sites/$siteSlug'
-    | '/sites/$siteSlug/events/detail'
   id:
     | '__root__'
     | '/_app'
@@ -396,29 +225,14 @@ export interface FileRouteTypes {
     | '/_app/settings/notifications'
     | '/_app/settings/system'
     | '/_app/sites/$siteSlug'
-    | '/share/$slug/campaigns'
-    | '/share/$slug/devices'
-    | '/share/$slug/geo'
     | '/share/$slug/pages'
-    | '/share/$slug/performance'
-    | '/share/$slug/referrers'
-    | '/share/$slug/retention'
     | '/_app/settings/'
     | '/share/$slug/'
-    | '/_app/sites/$siteSlug/campaigns'
-    | '/_app/sites/$siteSlug/devices'
-    | '/_app/sites/$siteSlug/events'
     | '/_app/sites/$siteSlug/funnels'
-    | '/_app/sites/$siteSlug/geo'
     | '/_app/sites/$siteSlug/pages'
-    | '/_app/sites/$siteSlug/performance'
     | '/_app/sites/$siteSlug/realtime'
-    | '/_app/sites/$siteSlug/referrers'
-    | '/_app/sites/$siteSlug/retention'
     | '/_app/sites/$siteSlug/settings'
-    | '/_app/sites/$siteSlug/visitors'
     | '/_app/sites/$siteSlug/'
-    | '/_app/sites/$siteSlug/events_/detail'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -513,53 +327,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShareSlugIndexRouteImport
       parentRoute: typeof ShareSlugRoute
     }
-    '/share/$slug/campaigns': {
-      id: '/share/$slug/campaigns'
-      path: '/campaigns'
-      fullPath: '/share/$slug/campaigns'
-      preLoaderRoute: typeof ShareSlugCampaignsRouteImport
-      parentRoute: typeof ShareSlugRoute
-    }
-    '/share/$slug/devices': {
-      id: '/share/$slug/devices'
-      path: '/devices'
-      fullPath: '/share/$slug/devices'
-      preLoaderRoute: typeof ShareSlugDevicesRouteImport
-      parentRoute: typeof ShareSlugRoute
-    }
-    '/share/$slug/geo': {
-      id: '/share/$slug/geo'
-      path: '/geo'
-      fullPath: '/share/$slug/geo'
-      preLoaderRoute: typeof ShareSlugGeoRouteImport
-      parentRoute: typeof ShareSlugRoute
-    }
     '/share/$slug/pages': {
       id: '/share/$slug/pages'
       path: '/pages'
       fullPath: '/share/$slug/pages'
       preLoaderRoute: typeof ShareSlugPagesRouteImport
-      parentRoute: typeof ShareSlugRoute
-    }
-    '/share/$slug/performance': {
-      id: '/share/$slug/performance'
-      path: '/performance'
-      fullPath: '/share/$slug/performance'
-      preLoaderRoute: typeof ShareSlugPerformanceRouteImport
-      parentRoute: typeof ShareSlugRoute
-    }
-    '/share/$slug/referrers': {
-      id: '/share/$slug/referrers'
-      path: '/referrers'
-      fullPath: '/share/$slug/referrers'
-      preLoaderRoute: typeof ShareSlugReferrersRouteImport
-      parentRoute: typeof ShareSlugRoute
-    }
-    '/share/$slug/retention': {
-      id: '/share/$slug/retention'
-      path: '/retention'
-      fullPath: '/share/$slug/retention'
-      preLoaderRoute: typeof ShareSlugRetentionRouteImport
       parentRoute: typeof ShareSlugRoute
     }
     '/_app/sites/$siteSlug/': {
@@ -569,39 +341,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSitesSiteSlugIndexRouteImport
       parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/_app/sites/$siteSlug/campaigns': {
-      id: '/_app/sites/$siteSlug/campaigns'
-      path: '/campaigns'
-      fullPath: '/sites/$siteSlug/campaigns'
-      preLoaderRoute: typeof AppSitesSiteSlugCampaignsRouteImport
-      parentRoute: typeof AppSitesSiteSlugRoute
-    }
-    '/_app/sites/$siteSlug/devices': {
-      id: '/_app/sites/$siteSlug/devices'
-      path: '/devices'
-      fullPath: '/sites/$siteSlug/devices'
-      preLoaderRoute: typeof AppSitesSiteSlugDevicesRouteImport
-      parentRoute: typeof AppSitesSiteSlugRoute
-    }
-    '/_app/sites/$siteSlug/events': {
-      id: '/_app/sites/$siteSlug/events'
-      path: '/events'
-      fullPath: '/sites/$siteSlug/events'
-      preLoaderRoute: typeof AppSitesSiteSlugEventsRouteImport
-      parentRoute: typeof AppSitesSiteSlugRoute
-    }
     '/_app/sites/$siteSlug/funnels': {
       id: '/_app/sites/$siteSlug/funnels'
       path: '/funnels'
       fullPath: '/sites/$siteSlug/funnels'
       preLoaderRoute: typeof AppSitesSiteSlugFunnelsRouteImport
-      parentRoute: typeof AppSitesSiteSlugRoute
-    }
-    '/_app/sites/$siteSlug/geo': {
-      id: '/_app/sites/$siteSlug/geo'
-      path: '/geo'
-      fullPath: '/sites/$siteSlug/geo'
-      preLoaderRoute: typeof AppSitesSiteSlugGeoRouteImport
       parentRoute: typeof AppSitesSiteSlugRoute
     }
     '/_app/sites/$siteSlug/pages': {
@@ -611,13 +355,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSitesSiteSlugPagesRouteImport
       parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/_app/sites/$siteSlug/performance': {
-      id: '/_app/sites/$siteSlug/performance'
-      path: '/performance'
-      fullPath: '/sites/$siteSlug/performance'
-      preLoaderRoute: typeof AppSitesSiteSlugPerformanceRouteImport
-      parentRoute: typeof AppSitesSiteSlugRoute
-    }
     '/_app/sites/$siteSlug/realtime': {
       id: '/_app/sites/$siteSlug/realtime'
       path: '/realtime'
@@ -625,39 +362,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSitesSiteSlugRealtimeRouteImport
       parentRoute: typeof AppSitesSiteSlugRoute
     }
-    '/_app/sites/$siteSlug/referrers': {
-      id: '/_app/sites/$siteSlug/referrers'
-      path: '/referrers'
-      fullPath: '/sites/$siteSlug/referrers'
-      preLoaderRoute: typeof AppSitesSiteSlugReferrersRouteImport
-      parentRoute: typeof AppSitesSiteSlugRoute
-    }
-    '/_app/sites/$siteSlug/retention': {
-      id: '/_app/sites/$siteSlug/retention'
-      path: '/retention'
-      fullPath: '/sites/$siteSlug/retention'
-      preLoaderRoute: typeof AppSitesSiteSlugRetentionRouteImport
-      parentRoute: typeof AppSitesSiteSlugRoute
-    }
     '/_app/sites/$siteSlug/settings': {
       id: '/_app/sites/$siteSlug/settings'
       path: '/settings'
       fullPath: '/sites/$siteSlug/settings'
       preLoaderRoute: typeof AppSitesSiteSlugSettingsRouteImport
-      parentRoute: typeof AppSitesSiteSlugRoute
-    }
-    '/_app/sites/$siteSlug/visitors': {
-      id: '/_app/sites/$siteSlug/visitors'
-      path: '/visitors'
-      fullPath: '/sites/$siteSlug/visitors'
-      preLoaderRoute: typeof AppSitesSiteSlugVisitorsRouteImport
-      parentRoute: typeof AppSitesSiteSlugRoute
-    }
-    '/_app/sites/$siteSlug/events_/detail': {
-      id: '/_app/sites/$siteSlug/events_/detail'
-      path: '/events/detail'
-      fullPath: '/sites/$siteSlug/events/detail'
-      preLoaderRoute: typeof AppSitesSiteSlugEventsDetailRouteImport
       parentRoute: typeof AppSitesSiteSlugRoute
     }
   }
@@ -682,37 +391,19 @@ const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
 )
 
 interface AppSitesSiteSlugRouteChildren {
-  AppSitesSiteSlugCampaignsRoute: typeof AppSitesSiteSlugCampaignsRoute
-  AppSitesSiteSlugDevicesRoute: typeof AppSitesSiteSlugDevicesRoute
-  AppSitesSiteSlugEventsRoute: typeof AppSitesSiteSlugEventsRoute
   AppSitesSiteSlugFunnelsRoute: typeof AppSitesSiteSlugFunnelsRoute
-  AppSitesSiteSlugGeoRoute: typeof AppSitesSiteSlugGeoRoute
   AppSitesSiteSlugPagesRoute: typeof AppSitesSiteSlugPagesRoute
-  AppSitesSiteSlugPerformanceRoute: typeof AppSitesSiteSlugPerformanceRoute
   AppSitesSiteSlugRealtimeRoute: typeof AppSitesSiteSlugRealtimeRoute
-  AppSitesSiteSlugReferrersRoute: typeof AppSitesSiteSlugReferrersRoute
-  AppSitesSiteSlugRetentionRoute: typeof AppSitesSiteSlugRetentionRoute
   AppSitesSiteSlugSettingsRoute: typeof AppSitesSiteSlugSettingsRoute
-  AppSitesSiteSlugVisitorsRoute: typeof AppSitesSiteSlugVisitorsRoute
   AppSitesSiteSlugIndexRoute: typeof AppSitesSiteSlugIndexRoute
-  AppSitesSiteSlugEventsDetailRoute: typeof AppSitesSiteSlugEventsDetailRoute
 }
 
 const AppSitesSiteSlugRouteChildren: AppSitesSiteSlugRouteChildren = {
-  AppSitesSiteSlugCampaignsRoute: AppSitesSiteSlugCampaignsRoute,
-  AppSitesSiteSlugDevicesRoute: AppSitesSiteSlugDevicesRoute,
-  AppSitesSiteSlugEventsRoute: AppSitesSiteSlugEventsRoute,
   AppSitesSiteSlugFunnelsRoute: AppSitesSiteSlugFunnelsRoute,
-  AppSitesSiteSlugGeoRoute: AppSitesSiteSlugGeoRoute,
   AppSitesSiteSlugPagesRoute: AppSitesSiteSlugPagesRoute,
-  AppSitesSiteSlugPerformanceRoute: AppSitesSiteSlugPerformanceRoute,
   AppSitesSiteSlugRealtimeRoute: AppSitesSiteSlugRealtimeRoute,
-  AppSitesSiteSlugReferrersRoute: AppSitesSiteSlugReferrersRoute,
-  AppSitesSiteSlugRetentionRoute: AppSitesSiteSlugRetentionRoute,
   AppSitesSiteSlugSettingsRoute: AppSitesSiteSlugSettingsRoute,
-  AppSitesSiteSlugVisitorsRoute: AppSitesSiteSlugVisitorsRoute,
   AppSitesSiteSlugIndexRoute: AppSitesSiteSlugIndexRoute,
-  AppSitesSiteSlugEventsDetailRoute: AppSitesSiteSlugEventsDetailRoute,
 }
 
 const AppSitesSiteSlugRouteWithChildren =
@@ -735,24 +426,12 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface ShareSlugRouteChildren {
-  ShareSlugCampaignsRoute: typeof ShareSlugCampaignsRoute
-  ShareSlugDevicesRoute: typeof ShareSlugDevicesRoute
-  ShareSlugGeoRoute: typeof ShareSlugGeoRoute
   ShareSlugPagesRoute: typeof ShareSlugPagesRoute
-  ShareSlugPerformanceRoute: typeof ShareSlugPerformanceRoute
-  ShareSlugReferrersRoute: typeof ShareSlugReferrersRoute
-  ShareSlugRetentionRoute: typeof ShareSlugRetentionRoute
   ShareSlugIndexRoute: typeof ShareSlugIndexRoute
 }
 
 const ShareSlugRouteChildren: ShareSlugRouteChildren = {
-  ShareSlugCampaignsRoute: ShareSlugCampaignsRoute,
-  ShareSlugDevicesRoute: ShareSlugDevicesRoute,
-  ShareSlugGeoRoute: ShareSlugGeoRoute,
   ShareSlugPagesRoute: ShareSlugPagesRoute,
-  ShareSlugPerformanceRoute: ShareSlugPerformanceRoute,
-  ShareSlugReferrersRoute: ShareSlugReferrersRoute,
-  ShareSlugRetentionRoute: ShareSlugRetentionRoute,
   ShareSlugIndexRoute: ShareSlugIndexRoute,
 }
 

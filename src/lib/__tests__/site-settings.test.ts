@@ -98,10 +98,8 @@ describe("site settings helpers", () => {
         trackHash: 0,
         autoTrackOutboundLinks: "yes",
         ignoreDnt: "false",
-        performanceSamplingRate: "12.345",
         tracking: {
           trackHash: "on",
-          performanceTrackingEnabled: false,
           domainWhitelist: "Example.com,docs.example.com",
           pathBlacklist: "admin\n/settings",
         },
@@ -113,16 +111,10 @@ describe("site settings helpers", () => {
       domainWhitelist: ["example.com", "docs.example.com"],
       pathBlacklist: ["/admin", "/settings"],
       ignoreDoNotTrack: false,
-      performanceSampleRate: 0,
       botProtectionEnabled: true,
       hostingProxyBlockingEnabled: true,
     });
 
-    expect(
-      normalizeSiteScriptSettings({
-        trackPerformance: false,
-      }).performanceSampleRate,
-    ).toBe(0);
     expect(
       normalizeSiteScriptSettings({
         trackQueryParams: 1,
@@ -133,27 +125,13 @@ describe("site settings helpers", () => {
       autoTrackOutboundLinks: false,
     });
     expect(
-      normalizeSiteScriptSettings({ performanceSampleRate: 101 })
-        .performanceSampleRate,
-    ).toBe(100);
-    expect(
-      normalizeSiteScriptSettings({ performanceSampleRate: -1 })
-        .performanceSampleRate,
-    ).toBe(0);
-    expect(
-      normalizeSiteScriptSettings({ performanceSampleRate: "bad" })
-        .performanceSampleRate,
-    ).toBe(DEFAULT_SITE_SCRIPT_SETTINGS.performanceSampleRate);
-    expect(
       normalizeSiteScriptSettings({
         ignoreDoNotTrack: " yes ",
         trackHash: "maybe",
-        performanceSampleRate: "12.345",
       }),
     ).toMatchObject({
       ignoreDoNotTrack: true,
       trackHash: DEFAULT_SITE_SCRIPT_SETTINGS.trackHash,
-      performanceSampleRate: 12.35,
     });
   });
 

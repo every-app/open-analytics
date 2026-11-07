@@ -225,23 +225,12 @@ const SITE_REPORTS = {
   "overview-client-device-type": "Visitors by device type",
   "overview-client-language": "Visitors by language",
   "overview-client-screen-size": "Visitors by screen size",
-  retention: "Returning-visitor retention cohorts",
-  performance: "Web Vitals (TTFB, FCP, LCP, CLS, INP)",
   "event-types": "Custom event names and counts",
   "events-summary": "Custom event totals",
   "events-trend": "Custom events per interval",
   "events-records": "Recent custom events (params: eventName, cursor)",
   "event-type-detail": "One custom event's breakdown (params: eventName)",
   "event-type-fields": "Payload fields of a custom event (params: eventName)",
-  sessions:
-    "Sessions list (params: sortBy startedAt|durationMs|views, sortDir, cursor)",
-  "session-detail": "One session (params: sessionId)",
-  "session-events": "A session's pages and events (params: sessionId)",
-  visitors:
-    "Visitors list (params: sortBy firstSeenAt|lastSeenAt|sessions|views, sortDir, cursor)",
-  "visitor-detail": "One visitor (params: visitorId)",
-  "visitor-sessions": "A visitor's sessions (params: visitorId)",
-  "visitor-events": "A visitor's pages and events (params: visitorId)",
   funnels: "Funnels; with params.id, that funnel's conversion analysis",
   goals: "Goals; with params.id, one goal's definition",
   "goal-summary": "A goal's conversions (params: id)",
@@ -322,7 +311,7 @@ export const tools = defineTools(
     get_site_report: {
       title: "Site report",
       description:
-        "Read one analytics report for a site: headline metrics, trends, pages, referrers, campaigns, places, devices, Web Vitals, custom events, sessions, visitors, retention, funnels and goals. The report argument lists each report and the params it takes. Lists accept limit; paged lists return a cursor to pass back in params.cursor.",
+        "Read one analytics report for a site: headline metrics, trends, pages, referrers, campaigns, places, devices, custom events, funnels and goals. The report argument lists each report and the params it takes. Lists accept limit; paged lists return a cursor to pass back in params.cursor.",
       risk: "read",
       input: z.object({
         site_id: z.string().min(1),
@@ -388,7 +377,7 @@ export const tools = defineTools(
     get_site_settings: {
       title: "Site settings",
       description:
-        "A site's tracking settings (query and hash tracking, outbound links, Do Not Track, Web Vitals sampling, bot protection, allowed domains, excluded paths) and its tracking snippet.",
+        "A site's tracking settings (query and hash tracking, outbound links, Do Not Track, bot protection, allowed domains, excluded paths) and its tracking snippet.",
       risk: "read",
       input: z.object({ site_id: z.string().min(1) }),
       handler: async (args, call) => {
@@ -489,13 +478,6 @@ export const tools = defineTools(
         track_hash: z.boolean().optional(),
         auto_track_outbound_links: z.boolean().optional(),
         ignore_do_not_track: z.boolean().optional(),
-        performance_sample_rate: z
-          .number()
-          .int()
-          .min(0)
-          .max(100)
-          .optional()
-          .describe("Percent of page views that report Web Vitals"),
         bot_protection_enabled: z.boolean().optional(),
         hosting_proxy_blocking_enabled: z.boolean().optional(),
         domain_whitelist: z.array(z.string().max(255)).max(200).optional(),
@@ -508,7 +490,6 @@ export const tools = defineTools(
             trackHash: args.track_hash,
             autoTrackOutboundLinks: args.auto_track_outbound_links,
             ignoreDoNotTrack: args.ignore_do_not_track,
-            performanceSampleRate: args.performance_sample_rate,
             botProtectionEnabled: args.bot_protection_enabled,
             hostingProxyBlockingEnabled: args.hosting_proxy_blocking_enabled,
             domainWhitelist: args.domain_whitelist,

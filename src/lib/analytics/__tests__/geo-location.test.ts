@@ -4,20 +4,9 @@ import {
   buildLocalityLocationValue,
   buildRegionLocationValue,
   canonicalizeGeoLocationValue,
-  normalizeGeoNameToken,
-  parentGeoLocationValue,
   parseGeoLocationValue,
 } from "@/lib/analytics/geo-location";
 describe("Geographic Location Parsing and Canonicalization", () => {
-  describe("normalizeGeoNameToken", () => {
-    it("should remove diacritics, lowercase, and trim whitespace", () => {
-      expect(normalizeGeoNameToken("  München  ")).toBe("munchen");
-      expect(normalizeGeoNameToken("São Paulo")).toBe("sao paulo");
-      expect(normalizeGeoNameToken("   ")).toBe("");
-      expect(normalizeGeoNameToken(null)).toBe("");
-    });
-  });
-
   describe("buildRegionLocationValue & buildLocalityLocationValue", () => {
     it("should build correct region values from codes and names", () => {
       expect(buildRegionLocationValue("cn", "gd", "Guangdong")).toBe(
@@ -124,73 +113,6 @@ describe("Geographic Location Parsing and Canonicalization", () => {
         regionName: "Guangdong",
         localityName: "Shenzhen",
       });
-    });
-  });
-
-  describe("parentGeoLocationValue", () => {
-    it("should return null for empty/invalid locations or country levels", () => {
-      expect(parentGeoLocationValue(null)).toBeNull();
-      expect(
-        parentGeoLocationValue({
-          level: "country",
-          countryCode: "CN",
-          canonical: "CN",
-        }),
-      ).toBeNull();
-    });
-
-    it("should return country for region level", () => {
-      expect(
-        parentGeoLocationValue({
-          canonical: "CN::GD::Guangdong",
-          level: "region",
-          countryCode: "CN",
-          regionCode: "GD",
-          regionName: "Guangdong",
-        }),
-      ).toBe("CN");
-    });
-
-    it("should resolve region as parent for locality level if region is present", () => {
-      expect(
-        parentGeoLocationValue({
-          canonical: "CN::GD::Guangdong::Shenzhen",
-          level: "locality",
-          countryCode: "CN",
-          regionCode: "GD",
-          regionName: "Guangdong",
-          localityName: "Shenzhen",
-        }),
-      ).toBe("CN::GD::Guangdong");
-      expect(
-        parentGeoLocationValue({
-          canonical: "CN::GD::Shenzhen",
-          level: "locality",
-          countryCode: "CN",
-          regionCode: "GD",
-          localityName: "Shenzhen",
-        }),
-      ).toBe("CN::GD::GD");
-      expect(
-        parentGeoLocationValue({
-          canonical: "CN::Guangdong::Shenzhen",
-          level: "locality",
-          countryCode: "CN",
-          regionName: "Guangdong",
-          localityName: "Shenzhen",
-        }),
-      ).toBe("CN::GUANGDONG::Guangdong");
-    });
-
-    it("should resolve country as parent for locality level if region is completely absent", () => {
-      expect(
-        parentGeoLocationValue({
-          canonical: "CN::Shenzhen",
-          level: "locality",
-          countryCode: "CN",
-          localityName: "Shenzhen",
-        }),
-      ).toBe("CN");
     });
   });
 });

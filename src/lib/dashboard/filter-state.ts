@@ -5,7 +5,6 @@ import {
 import {
   analyticsFilterRegistry,
   attachFilterScopePreference,
-  type CanonicalJsonPath,
   FILTER_DOCUMENT_VERSION,
   type FilterCondition,
   type FilterDocument,
@@ -31,6 +30,11 @@ export const DASHBOARD_FILTER_CONTROL_KEYS = [
   "sourceDomain",
   "sourceLink",
   "channel",
+  "utmSource",
+  "utmMedium",
+  "utmCampaign",
+  "utmTerm",
+  "utmContent",
   "clientBrowser",
   "clientOsVersion",
   "clientDeviceType",
@@ -61,6 +65,11 @@ const FIELD_BY_CONTROL_KEY: Readonly<
   sourceDomain: "referrer.domain" as FilterFieldId,
   sourceLink: "referrer.url" as FilterFieldId,
   channel: "traffic.channel" as FilterFieldId,
+  utmSource: "utm.source" as FilterFieldId,
+  utmMedium: "utm.medium" as FilterFieldId,
+  utmCampaign: "utm.campaign" as FilterFieldId,
+  utmTerm: "utm.term" as FilterFieldId,
+  utmContent: "utm.content" as FilterFieldId,
   clientBrowser: "client.browser" as FilterFieldId,
   clientOsVersion: "client.osVersion" as FilterFieldId,
   clientDeviceType: "client.deviceType" as FilterFieldId,
@@ -419,29 +428,6 @@ export function serializeDashboardSearchParams(
       return `${readableKey}=${readableValue}`;
     })
     .join("&");
-}
-export function appendEventPayloadFilter(
-  document: FilterDocument,
-  path: string,
-  operator: "eq" | "neq",
-  value: FilterValue,
-): FilterDocument {
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const condition: FilterCondition = {
-    kind: "condition",
-    target: {
-      kind: "event-payload",
-      path: normalizedPath as CanonicalJsonPath,
-    },
-    operator,
-    value,
-  };
-  return normalizedDocument(
-    document.root
-      ? { kind: "and", children: [document.root, condition] }
-      : condition,
-    document,
-  );
 }
 export function dashboardFilterFieldsForControl(
   key: DashboardFilterControlKey,

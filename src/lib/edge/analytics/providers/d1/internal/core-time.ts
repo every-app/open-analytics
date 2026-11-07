@@ -41,13 +41,13 @@ export function intervalBucketMs(interval: Interval): number {
   if (interval === "week") return 7 * ONE_DAY_MS;
   return 30 * ONE_DAY_MS;
 }
-export interface TimeBucket {
+interface TimeBucket {
   index: number;
   timestampMs: number;
   startMs: number;
   endExclusiveMs: number;
 }
-export interface TimeBucketCase {
+interface TimeBucketCase {
   sql: string;
   bindings: number[];
 }

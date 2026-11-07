@@ -35,19 +35,3 @@ export interface ReferrersData {
     sessions: number;
   }>;
 }
-
-export interface ReferrerSummaryData {
-  ok: boolean;
-  data: {
-    totalViews: number;
-    directViews: number;
-    externalViews: number;
-    uniqueDomains: number;
-    uniqueLinks: number;
-    truncated: boolean;
-    topSources: Array<{
-      referrer: string;
-      views: number;
-    }>;
-  };
-}

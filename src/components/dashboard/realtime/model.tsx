@@ -16,7 +16,7 @@ import {
 import { VerticalScrollMask } from "@insightflare/ui/vertical-scroll-mask";
 import type { PartialOptions } from "overlayscrollbars";
 
-import { formatPathWithHash } from "@/components/dashboard/journeys/journey-display";
+import { formatPathWithHash } from "@/components/dashboard/common/client-meta";
 import { parseGeoLocationValue } from "@/lib/analytics/geo-location";
 import { intlLocale } from "@/lib/dashboard/format";
 import {
@@ -33,12 +33,9 @@ export interface RealtimeLogStreamCardProps {
   hasConnected: boolean;
   events: RealtimeEvent[];
   visits: RealtimeVisit[];
-  siteId?: string;
-  pathname?: string;
 }
 const PRESENCE_LEAVE_EVENT = "__presence_leave";
 const RELATIVE_TIME_REFRESH_MS = 1_000;
-const EVENT_INTEGRATION_WINDOW_MS = 60_000;
 export const INITIAL_VISIBLE_EVENTS = 24;
 export const LOAD_MORE_STEP = 24;
 const LOAD_MORE_THRESHOLD_PX = 160;
@@ -84,12 +81,6 @@ type RealtimeEventDisplayData = {
   countryLabel: string;
   countryFlagCode: string | null;
   sourceLabel: string;
-};
-export type RealtimeNestedJourneyDetail = {
-  kind: "visitor" | "session";
-  id: string;
-  stackKey: string;
-  open: boolean;
 };
 export type RealtimeNestedEventDetail = {
   event: RealtimeEvent;
@@ -617,32 +608,6 @@ export function resolveLocalizedDetailValue(
   if (!normalized) return unknownLabel;
   return labels[normalized] || value?.trim() || unknownLabel;
 }
-function readRealtimePerformanceMetric(
-  performance: unknown,
-  key: "ttfb" | "fcp" | "lcp" | "cls" | "inp",
-): number | null {
-  if (
-    !performance ||
-    typeof performance !== "object" ||
-    Array.isArray(performance)
-  ) {
-    return null;
-  }
-  const value = (performance as Record<string, unknown>)[key];
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-export function formatRealtimePerformanceMetric(
-  performance: unknown,
-  key: "ttfb" | "fcp" | "lcp" | "cls" | "inp",
-  messages: AppMessages,
-  unknownLabel: string,
-): string {
-  const value = readRealtimePerformanceMetric(performance, key);
-  if (value === null) return unknownLabel;
-  const unit =
-    key === "cls" ? messages.performance.clsUnit : messages.performance.msUnit;
-  return `${value} ${unit}`;
-}
 export function formatDetailDuration(
   value: number | null | undefined,
   unknownLabel: string,
@@ -650,18 +615,6 @@ export function formatDetailDuration(
   return typeof value === "number" && Number.isFinite(value)
     ? `${value} ms`
     : unknownLabel;
-}
-export function getRealtimeEventIntegrationRemainingSeconds(
-  event: Pick<RealtimeEvent, "eventAt" | "receivedAt">,
-  now: number,
-): number {
-  const sentAt = event.receivedAt ?? event.eventAt;
-  if (!Number.isFinite(sentAt)) return 0;
-
-  const elapsedMs = Math.max(0, now - sentAt);
-  if (elapsedMs >= EVENT_INTEGRATION_WINDOW_MS) return 0;
-
-  return Math.ceil((EVENT_INTEGRATION_WINDOW_MS - elapsedMs) / 1_000);
 }
 function normalizeDetailLabel(value: string, unknownLabel: string): string {
   const normalized = value.trim();

@@ -6,15 +6,6 @@ import {
   emptyOverviewClientDimensionTabsData,
   emptyOverviewGeoDimensionTabsData,
   emptyOverviewGeoPointsData,
-  fetchBrowserEngineTrend,
-  fetchBrowserTrend,
-  fetchClientCrossBreakdown,
-  fetchClientDimensionTrend,
-  fetchEventRecordDetail,
-  fetchEventsRecords,
-  fetchEventsSummary,
-  fetchEventsTrend,
-  fetchEventTypeDetail,
   fetchEventTypeFieldValues,
   fetchEventTypesTab,
   fetchFilterValues,
@@ -22,7 +13,7 @@ import {
   fetchFunnels,
   fetchOverview,
   fetchOverviewClientDimensionTab,
-  fetchOverviewGeoDimensionTab,
+  fetchOverviewGeoDimensionTabPage,
   fetchOverviewGeoPoints,
   fetchOverviewPageCardTab,
   fetchOverviewSourceCardTab,
@@ -31,17 +22,9 @@ import {
   fetchPages,
   fetchPagesDashboard,
   fetchPagesShareTrend,
-  fetchPerformance,
   fetchReferrers,
-  fetchReferrerTrend,
-  fetchRetention,
-  fetchSessionDetail,
-  fetchSessions,
   fetchTrend,
   fetchUtmDimension,
-  fetchUtmTrend,
-  fetchVisitorDetail,
-  fetchVisitors,
   normalizeOverviewRows,
   toQueryString,
   withFilters,
@@ -302,19 +285,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
 
     it("should handle empty parameter fallbacks gracefully", async () => {
       // Test invalid inputs resulting in empty return datasets
-      const emptyVisDetail = await fetchVisitorDetail("site-1", "");
-      expect(emptyVisDetail.data).toBeNull();
-
-      const emptySesDetail = await fetchSessionDetail("site-1", "");
-      expect(emptySesDetail.data).toBeNull();
-
-      const emptyEvtDetail = await fetchEventTypeDetail(
-        "site-1",
-        mockWindow,
-        "",
-      );
-      expect(emptyEvtDetail.summary.events).toBe(0);
-
       const emptyEvtField = await fetchEventTypeFieldValues(
         "site-1",
         mockWindow,
@@ -323,9 +293,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
         "string",
       );
       expect(emptyEvtField.data.items).toHaveLength(0);
-
-      const emptyEvtRecord = await fetchEventRecordDetail("site-1", "");
-      expect(emptyEvtRecord.data).toBeNull();
 
       // Call exported empty objects
       expect(emptyOverviewClientDimensionTabsData()).toBeDefined();
@@ -520,30 +487,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
       const options = { limit: 5, signal: controller.signal };
 
       await Promise.all([
-        fetchClientDimensionTrend(
-          "signal-client-dimension",
-          mockWindow,
-          "browser",
-          undefined,
-          options,
-        ),
-        fetchClientCrossBreakdown(
-          "signal-client-cross",
-          mockWindow,
-          "deviceType",
-          "browser",
-          undefined,
-          options,
-        ),
-        fetchBrowserTrend("signal-browser", mockWindow, undefined, options),
-        fetchBrowserEngineTrend(
-          "signal-browser-engine",
-          mockWindow,
-          undefined,
-          options,
-        ),
-        fetchUtmTrend("signal-utm", mockWindow, "source", undefined, options),
-        fetchReferrerTrend("signal-referrer", mockWindow, undefined, options),
         fetchEventTypesTab("signal-event-types", mockWindow, undefined, {
           limit: 100,
           signal: controller.signal,
@@ -551,7 +494,7 @@ describe("Dashboard Client Data Processing Utilities", () => {
         fetchPagesShareTrend("signal-pages", mockWindow, undefined, options),
       ]);
 
-      expect(fetchMock).toHaveBeenCalledTimes(9);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
       for (const [, init] of fetchMock.mock.calls) {
         expect((init as RequestInit).signal).toBe(controller.signal);
       }
@@ -622,19 +565,11 @@ describe("Dashboard Client Data Processing Utilities", () => {
       expect(calledUrl).toContain("filter%5Bclient.browser%5D=Safari");
     });
 
-    it("should serialize optional request params for overview, lists, events, and details", async () => {
+    it("should serialize optional overview request params", async () => {
       const fetchMock = vi
         .fn()
-        .mockImplementation((url: string) =>
-          Promise.resolve(
-            freshJsonResponse(
-              url.includes("/api/private/events-trend")
-                ? { ok: true, data: { interval: "day", series: [], data: [] } }
-                : url.includes("/api/private/events-records")
-                  ? { ok: true, data: emptyPaginatedCollection }
-                  : { ok: true, data: [] },
-            ),
-          ),
+        .mockImplementation(() =>
+          Promise.resolve(freshJsonResponse({ ok: true, data: [] })),
         );
       globalThis.fetch = fetchMock as any;
 
@@ -642,225 +577,10 @@ describe("Dashboard Client Data Processing Utilities", () => {
         includeChange: true,
         includeDetail: true,
       });
-      let params = paramsFromCall(fetchMock, 0);
+      const params = paramsFromCall(fetchMock, 0);
       expect(params.get("includeChange")).toBe("1");
       expect(params.get("includeDetail")).toBe("1");
       expect(params.get("interval")).toBe("hour");
-
-      await fetchVisitors("option-visitors", mockWindow, undefined, {
-        cursor: "visitor-cursor",
-        limit: 7,
-        sortBy: "lastSeenAt",
-        sortDir: "asc",
-        search: "  alice  ",
-      });
-      params = paramsFromCall(fetchMock, 1);
-      expect(params.get("cursor")).toBe("visitor-cursor");
-      expect(params.get("limit")).toBe("7");
-      expect(params.get("sortBy")).toBe("lastSeenAt");
-      expect(params.get("sortDir")).toBe("asc");
-      expect(params.get("search")).toBe("alice");
-
-      await fetchVisitors("option-visitors-pagesize", mockWindow, undefined, {
-        limit: 25,
-        search: "   ",
-      });
-      params = paramsFromCall(fetchMock, 2);
-      expect(params.get("limit")).toBe("25");
-      expect(params.has("search")).toBe(false);
-
-      await fetchSessions("option-sessions", mockWindow, undefined, {
-        cursor: "session-cursor",
-        limit: 9,
-        sortBy: "durationMs",
-        sortDir: "desc",
-        search: "  session  ",
-      });
-      params = paramsFromCall(fetchMock, 3);
-      expect(params.get("cursor")).toBe("session-cursor");
-      expect(params.get("limit")).toBe("9");
-      expect(params.get("sortBy")).toBe("durationMs");
-      expect(params.get("sortDir")).toBe("desc");
-      expect(params.get("search")).toBe("session");
-
-      await fetchSessions("option-sessions-pagesize", mockWindow, undefined, {
-        limit: 30,
-        search: "   ",
-      });
-      params = paramsFromCall(fetchMock, 4);
-      expect(params.get("limit")).toBe("30");
-      expect(params.has("search")).toBe(false);
-
-      await fetchEventsTrend("option-events-trend", mockWindow, undefined, {
-        limit: 3,
-        eventName: "  Signup  ",
-      });
-      params = paramsFromCall(fetchMock, 5);
-      expect(params.get("limit")).toBe("3");
-      expect(params.get("eventName")).toBe("Signup");
-
-      await fetchEventsRecords("option-events-records", mockWindow, undefined, {
-        cursor: "event-cursor",
-        limit: 15,
-        sortBy: "pathname",
-        sortDir: "desc",
-        search: "  /pricing  ",
-        eventName: "  Purchase  ",
-      });
-      params = paramsFromCall(fetchMock, 6);
-      expect(params.get("cursor")).toBe("event-cursor");
-      expect(params.has("page")).toBe(false);
-      expect(params.get("limit")).toBe("15");
-      expect(params.get("sortBy")).toBe("pathname");
-      expect(params.get("sortDir")).toBe("desc");
-      expect(params.get("search")).toBe("/pricing");
-      expect(params.get("eventName")).toBe("Purchase");
-
-      await fetchVisitorDetail(
-        "option-detail",
-        "  visitor-a  ",
-        "Asia/Tokyo",
-        mockWindow,
-        { signal: new AbortController().signal },
-      );
-      params = paramsFromCall(fetchMock, 7);
-      expect(params.get("visitorId")).toBe("visitor-a");
-      expect(params.get("from")).toBe(String(mockWindow.from));
-      expect(params.get("to")).toBe(String(mockWindow.to));
-      expect(params.get("timeZone")).toBe("Asia/Tokyo");
-
-      await fetchSessionDetail(
-        "option-detail",
-        "  session-a  ",
-        "Europe/Paris",
-        mockWindow,
-        { signal: new AbortController().signal },
-      );
-      params = paramsFromCall(fetchMock, 8);
-      expect(params.get("sessionId")).toBe("session-a");
-      expect(params.get("from")).toBe(String(mockWindow.from));
-      expect(params.get("to")).toBe(String(mockWindow.to));
-      expect(params.get("timeZone")).toBe("Europe/Paris");
-
-      await fetchEventRecordDetail("option-detail", "  event-a  ", mockWindow);
-      params = paramsFromCall(fetchMock, 9);
-      expect(params.get("eventId")).toBe("event-a");
-      expect(params.get("from")).toBe(String(mockWindow.from));
-      expect(params.get("to")).toBe(String(mockWindow.to));
-    });
-
-    it("should apply list and event defaults while omitting blank optional params", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockImplementation((url: string) =>
-          Promise.resolve(
-            freshJsonResponse(
-              url.includes("/api/private/events-trend")
-                ? { ok: true, data: { interval: "day", series: [], data: [] } }
-                : url.includes("/api/private/events-records")
-                  ? { ok: true, data: emptyPaginatedCollection }
-                  : { ok: true, data: [] },
-            ),
-          ),
-        );
-      globalThis.fetch = fetchMock as any;
-
-      await fetchVisitors("default-visitors", mockWindow);
-      let params = paramsFromCall(fetchMock, 0);
-      expect(params.get("limit")).toBe("100");
-      expect(params.has("page")).toBe(false);
-      expect(params.has("pageSize")).toBe(false);
-
-      await fetchSessions("default-sessions", mockWindow);
-      params = paramsFromCall(fetchMock, 1);
-      expect(params.get("limit")).toBe("100");
-      expect(params.has("page")).toBe(false);
-      expect(params.has("pageSize")).toBe(false);
-
-      await fetchEventsTrend("default-events-trend", mockWindow, undefined, {
-        eventName: "   ",
-      });
-      params = paramsFromCall(fetchMock, 2);
-      expect(params.get("limit")).toBe("8");
-      expect(params.has("eventName")).toBe(false);
-
-      await fetchEventsRecords(
-        "default-events-records",
-        mockWindow,
-        undefined,
-        {
-          search: "   ",
-          eventName: "   ",
-        },
-      );
-      params = paramsFromCall(fetchMock, 3);
-      expect(params.get("limit")).toBe("80");
-      expect(params.has("cursor")).toBe(false);
-      expect(params.has("search")).toBe(false);
-      expect(params.has("eventName")).toBe(false);
-    });
-
-    it("should omit optional detail params when not provided", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockImplementation(() =>
-          Promise.resolve(freshJsonResponse({ ok: true, data: null })),
-        );
-      globalThis.fetch = fetchMock as any;
-
-      await fetchVisitorDetail("detail-minimal", "visitor-a");
-      let params = paramsFromCall(fetchMock, 0);
-      expect(params.get("visitorId")).toBe("visitor-a");
-      expect(params.has("from")).toBe(false);
-      expect(params.has("to")).toBe(false);
-      expect(params.has("timeZone")).toBe(false);
-
-      await fetchSessionDetail("detail-minimal", "session-a");
-      params = paramsFromCall(fetchMock, 1);
-      expect(params.get("sessionId")).toBe("session-a");
-      expect(params.has("from")).toBe(false);
-      expect(params.has("to")).toBe(false);
-      expect(params.has("timeZone")).toBe(false);
-
-      await fetchEventRecordDetail("detail-minimal", "event-a");
-      params = paramsFromCall(fetchMock, 2);
-      expect(params.get("eventId")).toBe("event-a");
-      expect(params.has("from")).toBe(false);
-      expect(params.has("to")).toBe(false);
-    });
-
-    it("should not dedupe detail requests that carry abort signals", async () => {
-      const resolveResponses: Array<(response: Response) => void> = [];
-      const fetchMock = vi.fn(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveResponses.push(resolve);
-          }),
-      );
-      globalThis.fetch = fetchMock as any;
-      const signal = new AbortController().signal;
-
-      const first = fetchVisitorDetail(
-        "signal-detail",
-        "visitor-a",
-        "UTC",
-        mockWindow,
-        { signal },
-      );
-      const second = fetchVisitorDetail(
-        "signal-detail",
-        "visitor-a",
-        "UTC",
-        mockWindow,
-        { signal },
-      );
-
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-      resolveResponses.forEach((resolve) =>
-        resolve(freshJsonResponse({ ok: true, data: null })),
-      );
-      await expect(first).resolves.toEqual({ ok: true, data: null });
-      await expect(second).resolves.toEqual({ ok: true, data: null });
     });
 
     it("should serialize option limits for referrer and dimension endpoints", async () => {
@@ -879,60 +599,13 @@ describe("Dashboard Client Data Processing Utilities", () => {
       expect(params.get("fullUrl")).toBe("1");
       expect(params.get("limit")).toBe("12");
 
-      await fetchUtmTrend("option-utm", mockWindow, "campaign", undefined, {
-        limit: 9,
-      });
-      params = paramsFromCall(fetchMock, 1);
-      expect(params.get("dimension")).toBe("campaign");
-      expect(params.get("limit")).toBe("9");
-
       await fetchOverviewGeoPoints("option-geo-points", mockWindow, undefined, {
         limit: 25,
         applyGeoFilter: true,
       });
-      params = paramsFromCall(fetchMock, 2);
+      params = paramsFromCall(fetchMock, 1);
       expect(params.get("limit")).toBe("25");
       expect(params.get("applyGeoFilter")).toBe("1");
-
-      await fetchClientDimensionTrend(
-        "option-client-trend",
-        mockWindow,
-        "screenSize",
-        undefined,
-        { limit: 11 },
-      );
-      params = paramsFromCall(fetchMock, 3);
-      expect(params.get("dimension")).toBe("screenSize");
-      expect(params.get("limit")).toBe("11");
-
-      await fetchClientCrossBreakdown(
-        "option-client-cross",
-        mockWindow,
-        "browser",
-        "language",
-        undefined,
-        { primaryLimit: 4, secondaryLimit: 8 },
-      );
-      params = paramsFromCall(fetchMock, 4);
-      expect(params.get("primaryDimension")).toBe("browser");
-      expect(params.get("secondaryDimension")).toBe("language");
-      expect(params.get("primaryLimit")).toBe("4");
-      expect(params.get("secondaryLimit")).toBe("8");
-
-      await fetchBrowserTrend("option-browser-trend", mockWindow, undefined, {
-        limit: 6,
-      });
-      params = paramsFromCall(fetchMock, 5);
-      expect(params.get("limit")).toBe("6");
-
-      await fetchBrowserEngineTrend(
-        "option-browser-engine",
-        mockWindow,
-        undefined,
-        { limit: 7 },
-      );
-      params = paramsFromCall(fetchMock, 6);
-      expect(params.get("limit")).toBe("7");
 
       await fetchPagesDashboard(
         "option-pages-dashboard",
@@ -943,15 +616,9 @@ describe("Dashboard Client Data Processing Utilities", () => {
           cursor: "pages-cursor",
         },
       );
-      params = paramsFromCall(fetchMock, 7);
+      params = paramsFromCall(fetchMock, 2);
       expect(params.get("limit")).toBe("14");
       expect(params.get("cursor")).toBe("pages-cursor");
-
-      await fetchRetention("option-retention", mockWindow, undefined, {
-        granularity: "day",
-      });
-      params = paramsFromCall(fetchMock, 8);
-      expect(params.get("granularity")).toBe("day");
     });
 
     it("forwards cancellation signals for overview geo point requests", async () => {
@@ -1003,171 +670,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
           "source-tab-aborted",
           mockWindow,
           "domain",
-          undefined,
-          { signal: controller.signal },
-        ),
-      ).rejects.toMatchObject({ name: "AbortError" });
-    });
-
-    it("forwards cancellation signals for session list requests", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(
-          freshJsonResponse({ ok: true, data: emptyPaginatedCollection }),
-        );
-      globalThis.fetch = fetchMock as any;
-      const controller = new AbortController();
-
-      await fetchSessions("sessions-signal", mockWindow, undefined, {
-        signal: controller.signal,
-      });
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({ signal: controller.signal }),
-      );
-    });
-
-    it("preserves aborted session list requests", async () => {
-      const controller = new AbortController();
-      controller.abort();
-
-      await expect(
-        fetchSessions("sessions-aborted", mockWindow, undefined, {
-          signal: controller.signal,
-        }),
-      ).rejects.toMatchObject({ name: "AbortError" });
-    });
-
-    it("forwards cancellation signals for visitor list requests", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(
-          freshJsonResponse({ ok: true, data: emptyPaginatedCollection }),
-        );
-      globalThis.fetch = fetchMock as any;
-      const controller = new AbortController();
-
-      await fetchVisitors("visitors-signal", mockWindow, undefined, {
-        signal: controller.signal,
-      });
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({ signal: controller.signal }),
-      );
-    });
-
-    it("preserves aborted visitor list requests", async () => {
-      const controller = new AbortController();
-      controller.abort();
-
-      await expect(
-        fetchVisitors("visitors-aborted", mockWindow, undefined, {
-          signal: controller.signal,
-        }),
-      ).rejects.toMatchObject({ name: "AbortError" });
-    });
-
-    it("forwards cancellation signals for event overview requests", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(freshJsonResponse({ ok: true, data: [] }));
-      globalThis.fetch = fetchMock as any;
-      const controller = new AbortController();
-
-      await Promise.all([
-        fetchEventsSummary("events-summary-signal", mockWindow, undefined, {
-          signal: controller.signal,
-        }),
-        fetchEventsTrend("events-trend-signal", mockWindow, undefined, {
-          signal: controller.signal,
-        }),
-      ]);
-
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({ signal: controller.signal }),
-      );
-    });
-
-    it("preserves aborted event overview requests", async () => {
-      const controller = new AbortController();
-      controller.abort();
-
-      await expect(
-        fetchEventsSummary("events-summary-aborted", mockWindow, undefined, {
-          signal: controller.signal,
-        }),
-      ).rejects.toMatchObject({ name: "AbortError" });
-      await expect(
-        fetchEventsTrend("events-trend-aborted", mockWindow, undefined, {
-          signal: controller.signal,
-        }),
-      ).rejects.toMatchObject({ name: "AbortError" });
-    });
-
-    it("forwards cancellation signals for event record requests", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(
-          freshJsonResponse({ ok: true, data: emptyPaginatedCollection }),
-        );
-      globalThis.fetch = fetchMock as any;
-      const controller = new AbortController();
-
-      await fetchEventsRecords("event-records-signal", mockWindow, undefined, {
-        signal: controller.signal,
-      });
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({ signal: controller.signal }),
-      );
-    });
-
-    it("preserves aborted event record requests", async () => {
-      const controller = new AbortController();
-      controller.abort();
-
-      await expect(
-        fetchEventsRecords("event-records-aborted", mockWindow, undefined, {
-          signal: controller.signal,
-        }),
-      ).rejects.toMatchObject({ name: "AbortError" });
-    });
-
-    it("forwards cancellation signals for event type detail requests", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(freshJsonResponse({ ok: true, data: {} }));
-      globalThis.fetch = fetchMock as any;
-      const controller = new AbortController();
-
-      await fetchEventTypeDetail(
-        "event-type-detail-signal",
-        mockWindow,
-        "Signup",
-        undefined,
-        { signal: controller.signal },
-      );
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({ signal: controller.signal }),
-      );
-    });
-
-    it("preserves aborted event type detail requests", async () => {
-      const controller = new AbortController();
-      controller.abort();
-
-      await expect(
-        fetchEventTypeDetail(
-          "event-type-detail-aborted",
-          mockWindow,
-          "Signup",
           undefined,
           { signal: controller.signal },
         ),
@@ -1246,34 +748,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
       ).rejects.toMatchObject({ name: "AbortError" });
     });
 
-    it("forwards cancellation signals for retention requests", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(freshJsonResponse({ ok: true, data: [] }));
-      globalThis.fetch = fetchMock as any;
-      const controller = new AbortController();
-
-      await fetchRetention("retention-signal", mockWindow, undefined, {
-        signal: controller.signal,
-      });
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({ signal: controller.signal }),
-      );
-    });
-
-    it("preserves aborted retention requests", async () => {
-      const controller = new AbortController();
-      controller.abort();
-
-      await expect(
-        fetchRetention("retention-aborted", mockWindow, undefined, {
-          signal: controller.signal,
-        }),
-      ).rejects.toMatchObject({ name: "AbortError" });
-    });
-
     it("forwards cancellation signals for funnel requests", async () => {
       const fetchMock = vi
         .fn()
@@ -1316,13 +790,13 @@ describe("Dashboard Client Data Processing Utilities", () => {
       globalThis.fetch = fetchMock as any;
       const controller = new AbortController();
 
-      await fetchOverviewGeoDimensionTab(
+      await fetchOverviewGeoDimensionTabPage(
         "geo-dimension-signal",
         mockWindow,
         "country",
         undefined,
         { signal: controller.signal },
-      );
+      ).then((page) => page.items);
 
       expect(fetchMock).toHaveBeenCalledWith(
         expect.any(String),
@@ -1335,41 +809,13 @@ describe("Dashboard Client Data Processing Utilities", () => {
       controller.abort();
 
       await expect(
-        fetchOverviewGeoDimensionTab(
+        fetchOverviewGeoDimensionTabPage(
           "geo-dimension-aborted",
           mockWindow,
           "country",
           undefined,
           { signal: controller.signal },
-        ),
-      ).rejects.toMatchObject({ name: "AbortError" });
-    });
-
-    it("forwards cancellation signals for performance requests", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(freshJsonResponse({ ok: true, data: [] }));
-      globalThis.fetch = fetchMock as any;
-      const controller = new AbortController();
-
-      await fetchPerformance("performance-signal", mockWindow, undefined, {
-        signal: controller.signal,
-      });
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({ signal: controller.signal }),
-      );
-    });
-
-    it("preserves aborted performance requests", async () => {
-      const controller = new AbortController();
-      controller.abort();
-
-      await expect(
-        fetchPerformance("performance-aborted", mockWindow, undefined, {
-          signal: controller.signal,
-        }),
+        ).then((page) => page.items),
       ).rejects.toMatchObject({ name: "AbortError" });
     });
 
@@ -1426,71 +872,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
       const fetchMock = vi.fn().mockRejectedValue(new Error("offline"));
       globalThis.fetch = fetchMock as any;
 
-      await expect(
-        fetchVisitors("fallback-visitors", mockWindow),
-      ).resolves.toEqual({
-        ok: true,
-        data: {
-          items: [],
-          pagination: {
-            limit: 1,
-            returned: 0,
-            hasMore: false,
-            nextCursor: null,
-          },
-        },
-      });
-      await expect(
-        fetchSessions("fallback-sessions", mockWindow),
-      ).resolves.toEqual({
-        ok: true,
-        data: {
-          items: [],
-          pagination: {
-            limit: 1,
-            returned: 0,
-            hasMore: false,
-            nextCursor: null,
-          },
-        },
-      });
-
-      const eventsSummary = await fetchEventsSummary(
-        "fallback-events-summary",
-        mockWindow,
-      );
-      expect(eventsSummary.summary.events).toBe(0);
-      expect(eventsSummary.cards.event.name).toEqual([]);
-
-      const eventsTrend = await fetchEventsTrend(
-        "fallback-events-trend",
-        mockWindow,
-      );
-      expect(eventsTrend).toMatchObject({
-        ok: true,
-        interval: "hour",
-        series: [],
-        data: [],
-      });
-
-      const eventsRecords = await fetchEventsRecords(
-        "fallback-events-records",
-        mockWindow,
-        undefined,
-        { limit: 33 },
-      );
-      expect(eventsRecords.data.pagination.limit).toBe(33);
-      expect(eventsRecords.data.items).toEqual([]);
-
-      const eventTypeDetail = await fetchEventTypeDetail(
-        "fallback-event-type",
-        mockWindow,
-        "  Signup  ",
-      );
-      expect(eventTypeDetail.eventName).toBe("Signup");
-      expect(eventTypeDetail.summary.eventTypes).toBe(1);
-      expect(eventTypeDetail.cards.page.path).toEqual([]);
-
       const fieldValues = await fetchEventTypeFieldValues(
         "fallback-field-values",
         mockWindow,
@@ -1512,20 +893,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
           },
         },
       });
-
-      const recordDetail = await fetchEventRecordDetail(
-        "fallback-record-detail",
-        "event-1",
-      );
-      expect(recordDetail.data).toBeNull();
-
-      const performance = await fetchPerformance(
-        "fallback-performance",
-        mockWindow,
-      );
-      expect(performance.interval).toBe("hour");
-      expect(performance.summaries.ttfb.samples).toBe(0);
-      expect(performance.trends.lcp).toEqual([]);
 
       const shareTrend = await fetchPagesShareTrend(
         "fallback-share-trend",
@@ -1569,7 +936,11 @@ describe("Dashboard Client Data Processing Utilities", () => {
         ),
       ).resolves.toEqual(emptyPaginatedCollection);
       await expect(
-        fetchOverviewGeoDimensionTab("fallback-geo-tab", mockWindow, "country"),
+        fetchOverviewGeoDimensionTabPage(
+          "fallback-geo-tab",
+          mockWindow,
+          "country",
+        ).then((page) => page.items),
       ).resolves.toEqual([]);
       await expect(
         fetchFilterValues("fallback-filter-options", mockWindow, "geo.country"),
@@ -1734,11 +1105,11 @@ describe("Dashboard Client Data Processing Utilities", () => {
         .mockResolvedValueOnce(freshJsonResponse({ ok: true, data: null }));
       globalThis.fetch = fetchMock as any;
 
-      const regions = await fetchOverviewGeoDimensionTab(
+      const regions = await fetchOverviewGeoDimensionTabPage(
         "geo-region-format",
         mockWindow,
         "region",
-      );
+      ).then((page) => page.items);
       expect(regions.map((row) => row.label)).toEqual([
         "California",
         "Tokyo",
@@ -1751,11 +1122,11 @@ describe("Dashboard Client Data Processing Utilities", () => {
         visitors: 0,
       });
 
-      const cities = await fetchOverviewGeoDimensionTab(
+      const cities = await fetchOverviewGeoDimensionTabPage(
         "geo-city-format",
         mockWindow,
         "city",
-      );
+      ).then((page) => page.items);
       expect(cities.map((row) => row.label)).toEqual([
         "San Francisco",
         "raw-city",
@@ -1766,11 +1137,11 @@ describe("Dashboard Client Data Processing Utilities", () => {
         visitors: 0,
       });
 
-      const countries = await fetchOverviewGeoDimensionTab(
+      const countries = await fetchOverviewGeoDimensionTabPage(
         "geo-country-format",
         mockWindow,
         "country",
-      );
+      ).then((page) => page.items);
       expect(countries[0]).toEqual({
         value: "Canada",
         label: "Canada",
@@ -1780,7 +1151,11 @@ describe("Dashboard Client Data Processing Utilities", () => {
       });
 
       await expect(
-        fetchOverviewGeoDimensionTab("geo-non-array", mockWindow, "country"),
+        fetchOverviewGeoDimensionTabPage(
+          "geo-non-array",
+          mockWindow,
+          "country",
+        ).then((page) => page.items),
       ).rejects.toThrow("pagination_contract_violation");
     });
 
@@ -1880,23 +1255,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
         totalVisitors: 8,
         visitorsBySeries: { page_0: 8 },
       });
-    });
-
-    it("should reject aborted detail requests before fetch", async () => {
-      const fetchMock = vi.fn();
-      globalThis.fetch = fetchMock as any;
-      const controller = new AbortController();
-      controller.abort();
-
-      await expect(
-        fetchVisitorDetail("aborted-detail", "visitor-1", "UTC", mockWindow, {
-          signal: controller.signal,
-        }),
-      ).rejects.toMatchObject({
-        name: "AbortError",
-        message: "Aborted",
-      });
-      expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it("should return empty field values when the field path is nullish", async () => {

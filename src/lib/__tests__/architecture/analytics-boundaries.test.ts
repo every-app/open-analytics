@@ -51,8 +51,6 @@ describe("analytics architecture", () => {
       "composition/d1/overview.ts",
       "composition/d1/site.ts",
       "composition/d1/events.ts",
-      "composition/d1/journeys.ts",
-      "composition/d1/technology.ts",
       "composition/d1/funnels.ts",
       "composition/d1/goals.ts",
       "composition/d1/create-site-runtime.ts",
@@ -392,19 +390,10 @@ describe("analytics architecture", () => {
       "event-records",
       "event-field-values",
       "event-fields",
-      "event-context",
       "event-type-detail",
-      "event-record-detail",
-      "visitors",
-      "sessions",
-      "visitor-detail",
-      "session-detail",
       "funnel-analysis",
       "goal-summary",
       "goal-timeseries",
-      "share-trend",
-      "radar",
-      "cross-dimension",
     ]) {
       expect(runtime).toContain(`"${operation}"`);
     }

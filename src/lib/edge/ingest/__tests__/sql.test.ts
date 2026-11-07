@@ -59,13 +59,6 @@ function visitRow(overrides: Partial<VisitBindingRow> = {}): VisitBindingRow {
     screenWidth: 1440,
     screenHeight: 900,
     language: "en-US",
-    userId: "user-1",
-    userName: "Ada",
-    perfTtfbMs: 12.3,
-    perfFcpMs: 45.6,
-    perfLcpMs: 78.9,
-    perfCls: 0.123,
-    perfInpMs: 111,
     createdAt: 10,
     updatedAt: 20,
     ...overrides,
@@ -90,11 +83,6 @@ describe("ingest visit SQL bindings", () => {
       exit_reason: "leave",
       pathname: "/docs",
       query_string: "ref=home",
-      perf_ttfb_ms: 12.3,
-      perf_fcp_ms: 45.6,
-      perf_lcp_ms: 78.9,
-      perf_cls: 0.123,
-      perf_inp_ms: 111,
       ae_synced_at: null,
       created_at: 10,
       updated_at: 20,
@@ -109,8 +97,6 @@ describe("ingest visit SQL bindings", () => {
           visitRow({
             durationSource: "",
             exitReason: "",
-            userId: "",
-            userName: "",
           }),
         )[index],
       ]),
@@ -118,8 +104,6 @@ describe("ingest visit SQL bindings", () => {
 
     expect(values.duration_source).toBeNull();
     expect(values.exit_reason).toBeNull();
-    expect(values.user_id).toBeNull();
-    expect(values.user_name).toBeNull();
   });
 
   it("keeps visit SQL columns and split upsert assignments in sync", () => {
@@ -142,21 +126,6 @@ describe("ingest visit SQL bindings", () => {
     expect(UPSERT_FINALIZED_VISIT_SQL).toContain(
       "duration_ms = excluded.duration_ms",
     );
-    expect(UPSERT_FINALIZED_VISIT_SQL).toContain(
-      "perf_ttfb_ms = excluded.perf_ttfb_ms",
-    );
-    expect(UPSERT_FINALIZED_VISIT_SQL).toContain(
-      "perf_fcp_ms = excluded.perf_fcp_ms",
-    );
-    expect(UPSERT_FINALIZED_VISIT_SQL).toContain(
-      "perf_lcp_ms = excluded.perf_lcp_ms",
-    );
-    expect(UPSERT_FINALIZED_VISIT_SQL).toContain(
-      "perf_cls = excluded.perf_cls",
-    );
-    expect(UPSERT_FINALIZED_VISIT_SQL).toContain(
-      "perf_inp_ms = excluded.perf_inp_ms",
-    );
     expect(UPSERT_FINALIZED_VISIT_SQL).not.toContain(
       "site_id = excluded.site_id",
     );
@@ -165,7 +134,7 @@ describe("ingest visit SQL bindings", () => {
     );
     expect(UPSERT_FINALIZED_VISIT_SQL).toContain("WHERE");
     expect(UPSERT_FINALIZED_VISIT_SQL).toContain(
-      "visits.perf_lcp_ms IS NOT excluded.perf_lcp_ms",
+      "visits.duration_ms IS NOT excluded.duration_ms",
     );
     expect(visitUpsertSql("open")).toBe(UPSERT_ACTIVE_VISIT_SQL);
     expect(visitUpsertSql("hidden_pending")).toBe(UPSERT_ACTIVE_VISIT_SQL);
@@ -195,7 +164,6 @@ describe("ingest visit SQL bindings", () => {
         durationMs: null,
         durationSource: "",
         exitReason: "",
-        perfLcpMs: null,
         updatedAt: 20,
       });
       expect(activeStatement.run(...visitBindings(initial)).changes).toBe(1);
@@ -217,7 +185,6 @@ describe("ingest visit SQL bindings", () => {
             siteId: "site-should-not-change",
             pathname: "/should-not-change",
             lastActivityAt: initial.lastActivityAt + 1,
-            perfLcpMs: 2500,
             updatedAt: initial.updatedAt + 2,
           }),
         ).changes,
@@ -233,9 +200,6 @@ describe("ingest visit SQL bindings", () => {
             durationMs: 2,
             durationSource: "server",
             exitReason: "pagehide",
-            perfLcpMs: 2500,
-            userId: "user-late",
-            userName: "Ada",
             updatedAt: initial.updatedAt + 3,
           }),
         ).changes,
@@ -243,7 +207,7 @@ describe("ingest visit SQL bindings", () => {
       expect(
         db
           .prepare(
-            "SELECT site_id AS siteId, pathname, status, ended_at AS endedAt, duration_ms AS durationMs, perf_lcp_ms AS perfLcpMs, user_id AS userId, user_name AS userName, ae_synced_at AS aeSyncedAt FROM visits WHERE visit_id = ?",
+            "SELECT site_id AS siteId, pathname, status, ended_at AS endedAt, duration_ms AS durationMs, ae_synced_at AS aeSyncedAt FROM visits WHERE visit_id = ?",
           )
           .get(initial.visitId),
       ).toEqual({
@@ -252,9 +216,6 @@ describe("ingest visit SQL bindings", () => {
         status: "complete",
         endedAt: 3,
         durationMs: 2,
-        perfLcpMs: 2500,
-        userId: "user-late",
-        userName: "Ada",
         aeSyncedAt: 123,
       });
 
@@ -278,9 +239,6 @@ describe("ingest visit SQL bindings", () => {
             durationMs: 2,
             durationSource: "server",
             exitReason: "pagehide",
-            perfLcpMs: 2500,
-            userId: "user-late",
-            userName: "Ada",
             updatedAt: initial.updatedAt + 5,
           }),
         ).changes,

@@ -73,16 +73,16 @@ interface D1Call {
   readonly bindings: readonly unknown[];
 }
 
-interface UserRow {
+interface DimensionRow {
   readonly value: string;
   readonly views: number;
   readonly sessions: number;
   readonly visitors: number;
 }
 
-function envWithUserRows(
+function envWithDimensionRows(
   calls: D1Call[],
-  results: readonly UserRow[] = [
+  results: readonly DimensionRow[] = [
     { value: "user_123", views: 4, sessions: 3, visitors: 2 },
     { value: "user-456", views: 2, sessions: 2, visitors: 1 },
   ],
@@ -233,51 +233,15 @@ describe("canonical filter value reader", () => {
     ).resolves.toEqual([{ value: "organic_search", occurrences: 7 }]);
   });
 
-  it("queries private user identity suggestions through the shared dimension reader", async () => {
-    for (const [field, expression, expectedValue] of [
-      ["user.id", "user_id", "user_123"],
-      ["user.name", "user_name", "user-456"],
-    ] as const) {
-      const calls: D1Call[] = [];
-      const expectedRow = {
-        value: expectedValue,
-        views: expectedValue === "user_123" ? 4 : 2,
-        sessions: expectedValue === "user_123" ? 3 : 2,
-        visitors: expectedValue === "user_123" ? 2 : 1,
-      } as const;
-      await expect(
-        queryFilterValuesPageFromD1(
-          envWithUserRows(calls, [expectedRow]),
-          "site-1",
-          window,
-          EMPTY_FILTER_DOCUMENT,
-          field,
-          10,
-          null,
-          expectedValue === "user_123" ? "123" : "456",
-          "private-dashboard",
-        ),
-      ).resolves.toMatchObject({
-        items: [{ value: expectedValue }],
-        pagination: { returned: 1, hasMore: false, nextCursor: null },
-      });
-      expect(calls).toHaveLength(1);
-      expect(calls[0]?.sql).toContain(
-        `COALESCE(TRIM(COALESCE(${expression}, '')), '') AS value`,
-      );
-      expect(calls[0]?.sql).toContain("LOWER(value) LIKE ? ESCAPE '\\'");
-    }
-  });
-
-  it("denies private user identity suggestions for public audiences before D1", async () => {
+  it("denies private field suggestions for public audiences before D1", async () => {
     const calls: D1Call[] = [];
     await expect(
       queryFilterValuesPageFromD1(
-        envWithUserRows(calls),
+        envWithDimensionRows(calls),
         "site-1",
         window,
         EMPTY_FILTER_DOCUMENT,
-        "user.id",
+        "referrer.url",
         10,
         null,
         undefined,
@@ -290,16 +254,16 @@ describe("canonical filter value reader", () => {
     expect(calls).toHaveLength(0);
   });
 
-  it("keeps user suggestion search bounded and escapes LIKE metacharacters", async () => {
+  it("keeps dimension suggestion search bounded and escapes LIKE metacharacters", async () => {
     const calls: D1Call[] = [];
     const result = await queryFilterValuesPageFromD1(
-      envWithUserRows(calls, [
+      envWithDimensionRows(calls, [
         { value: "user_%", views: 1, sessions: 1, visitors: 1 },
       ]),
       "site-1",
       window,
       EMPTY_FILTER_DOCUMENT,
-      "user.id",
+      "utm.campaign",
       10,
       null,
       "user_%",

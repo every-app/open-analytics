@@ -30,6 +30,18 @@ const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
 
 describe("dashboard query-state helpers", () => {
+  it("opens a link with a filter field that no longer exists unfiltered", () => {
+    const filters = parseFilterDocumentFromSearchParams(
+      new URLSearchParams("filter[user.id]=eq:alice&filterScope=session"),
+    );
+    expect(filters.root).toBeNull();
+    expect(
+      parseFilterDocumentFromSearchParams(
+        new URLSearchParams("filter[geo.country]=eq:DE"),
+      ).root,
+    ).not.toBeNull();
+  });
+
   describe("resolveRangePreset", () => {
     it("accepts known presets and falls back for missing or unknown values", () => {
       expect(resolveRangePreset("today")).toBe("today");

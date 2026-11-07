@@ -1,7 +1,10 @@
 import { type MetricAreaPoint } from "@insightflare/product-ui/charts";
 
 import { type TrafficChannelId } from "@/lib/analytics/traffic-channel-rules";
-import { type OverviewTabRows } from "@/lib/dashboard/client/data/index";
+import {
+  type OverviewTabRows,
+  type UtmDimensionTab,
+} from "@/lib/dashboard/client/data/index";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type { OverviewTabData } from "@/lib/dashboard-api/client/edge";
 import { type FilterScope } from "@/lib/filter-contract/index";
@@ -31,7 +34,7 @@ export type PageCardNavigableTab =
 
 export type PageCardDetailTab = "path" | "entry" | "exit";
 
-export type SourceCardTab = "domain" | "link" | "channel";
+export type SourceCardTab = "domain" | "link" | "channel" | UtmDimensionTab;
 
 export type OverviewPagesSectionCardKind = "page" | "source" | "client" | "geo";
 
@@ -201,11 +204,6 @@ export interface OverviewPagesSectionProps extends OverviewClientPageProps {
   pageCardNavigableTabs?: readonly PageCardNavigableTab[];
   pageCardDetailTabs?: readonly PageCardDetailTab[];
   pageCardFetchers?: Partial<Record<PageCardTab, PageCardTabFetcher>>;
-  sourceCardFetchers?: Partial<Record<SourceCardTab, PageCardTabFetcher>>;
-  clientCardFetchers?: Partial<
-    Record<ClientDimensionCardTab, PageCardTabFetcher>
-  >;
-  geoCardFetchers?: Partial<Record<GeoDimensionCardTab, PageCardTabFetcher>>;
   pageCardTargetUrlResolvers?: Partial<
     Record<PageCardTab, PageCardTargetUrlResolver>
   >;
@@ -217,7 +215,6 @@ export interface OverviewPagesSectionProps extends OverviewClientPageProps {
   >;
   pageCardShowVisitors?: boolean;
   primaryMetricLabel?: string;
-  geoPageBasePathname?: string;
   sectionClassName?: string;
 }
 

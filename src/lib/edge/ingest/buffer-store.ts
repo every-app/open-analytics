@@ -4,7 +4,6 @@ import type {
   Env,
   NormalizedCustomEvent,
   NormalizedPageview,
-  TrackerPerformancePayload,
 } from "@/lib/edge/types";
 
 import {
@@ -46,133 +45,6 @@ function visitLifecycleDeadline(row: {
       ? VISIT_TIMEOUT_MS
       : HIDDEN_LEAVE_GRACE_MS)
   );
-}
-function visitNextDueSql(
-  flushDueExpression: string,
-  lastActivityExpression = "last_activity_at",
-): string {
-  const lifecycleDeadline = `CASE
-    WHEN status = 'open'
-      THEN (${lastActivityExpression}) + ${VISIT_TIMEOUT_MS}
-    WHEN status = 'hidden_pending'
-      THEN COALESCE(hidden_at, (${lastActivityExpression}), 0) +
-        CASE
-          WHEN hidden_at IS NULL THEN ${VISIT_TIMEOUT_MS}
-          ELSE ${HIDDEN_LEAVE_GRACE_MS}
-        END
-    ELSE NULL
-  END`;
-  return `CASE
-    WHEN (${flushDueExpression}) IS NULL THEN ${lifecycleDeadline}
-    WHEN (${lifecycleDeadline}) IS NULL THEN (${flushDueExpression})
-    WHEN (${flushDueExpression}) <= (${lifecycleDeadline})
-      THEN (${flushDueExpression})
-    ELSE (${lifecycleDeadline})
-  END`;
-}
-function updateBufferedVisitPerformance(
-  context: Pick<BufferStoreContext, "sqlRun">,
-  siteId: string,
-  visitId: string,
-  performance: TrackerPerformancePayload,
-  updatedAt: number,
-  flushDueAt: number,
-): number {
-  const flushDueExpression = "CASE WHEN dirty = 0 THEN ? ELSE flush_due_at END";
-  return context.sqlRun(
-    `
-      UPDATE buffered_visits
-      SET perf_ttfb_ms = ?,
-          perf_fcp_ms = ?,
-          perf_lcp_ms = ?,
-          perf_cls = ?,
-          perf_inp_ms = ?,
-          dirty = 1,
-          flush_due_at = ${flushDueExpression},
-          buffer_revision = COALESCE(buffer_revision, 1) + 1,
-          next_due_at = ${visitNextDueSql(flushDueExpression)},
-          updated_at = ?
-      WHERE site_id = ?
-        AND visit_id = ?
-        AND (
-          perf_ttfb_ms IS NOT ? OR
-          perf_fcp_ms IS NOT ? OR
-          perf_lcp_ms IS NOT ? OR
-          perf_cls IS NOT ? OR
-          perf_inp_ms IS NOT ?
-        )
-    `,
-    performance.ttfb ?? null,
-    performance.fcp ?? null,
-    performance.lcp ?? null,
-    performance.cls ?? null,
-    performance.inp ?? null,
-    flushDueAt,
-    flushDueAt,
-    flushDueAt,
-    flushDueAt,
-    flushDueAt,
-    updatedAt,
-    siteId,
-    visitId,
-    performance.ttfb ?? null,
-    performance.fcp ?? null,
-    performance.lcp ?? null,
-    performance.cls ?? null,
-    performance.inp ?? null,
-  );
-}
-export async function attachPerformanceToVisit(
-  context: BufferStoreContext,
-  siteId: string,
-  visitId: string,
-  performance: TrackerPerformancePayload,
-  receivedAt: number,
-): Promise<void> {
-  if (!siteId || !visitId) return;
-  const updatedAt = toUnixSeconds(receivedAt);
-  const flushDueAt = receivedAt + D1_FLUSH_INTERVAL_MS;
-  const rowsWritten = updateBufferedVisitPerformance(
-    context,
-    siteId,
-    visitId,
-    performance,
-    updatedAt,
-    flushDueAt,
-  );
-  if (rowsWritten > 0) return;
-
-  const persistedRow = await readPersistedVisitRow(context, siteId, visitId);
-  if (!persistedRow) return;
-  const inserted = insertBufferedVisitRowIfAbsent(context, {
-    ...persistedRow,
-    perfTtfbMs: performance.ttfb ?? null,
-    perfFcpMs: performance.fcp ?? null,
-    perfLcpMs: performance.lcp ?? null,
-    perfCls: performance.cls ?? null,
-    perfInpMs: performance.inp ?? null,
-    dirty: 1,
-    flushAttempts: 0,
-    flushDueAt,
-    nextDueAt: minDueAt(flushDueAt, visitLifecycleDeadline(persistedRow)),
-    bufferRevision: 1,
-    lastFlushError: null,
-    updatedAt,
-  });
-
-  // The row may have been inserted by another local writer after the first
-  // UPDATE.  INSERT ... DO NOTHING deliberately preserves that winner; retry
-  // the business update so the performance payload is not lost in that race.
-  if (!inserted) {
-    updateBufferedVisitPerformance(
-      context,
-      siteId,
-      visitId,
-      performance,
-      updatedAt,
-      flushDueAt,
-    );
-  }
 }
 export async function getVisitContext(
   context: BufferStoreContext,
@@ -436,14 +308,7 @@ export async function readVisitRow(
         device_type AS deviceType,
         screen_width AS screenWidth,
         screen_height AS screenHeight,
-        language,
-        COALESCE(user_id, '') AS userId,
-        COALESCE(user_name, '') AS userName,
-        perf_ttfb_ms AS perfTtfbMs,
-        perf_fcp_ms AS perfFcpMs,
-        perf_lcp_ms AS perfLcpMs,
-        perf_cls AS perfCls,
-        perf_inp_ms AS perfInpMs
+        language
       FROM buffered_visits
       WHERE site_id = ? AND visit_id = ?
       LIMIT 1
@@ -507,13 +372,6 @@ export async function readPersistedVisitRow(
         screen_width AS screenWidth,
         screen_height AS screenHeight,
         language,
-        COALESCE(user_id, '') AS userId,
-        COALESCE(user_name, '') AS userName,
-        perf_ttfb_ms AS perfTtfbMs,
-        perf_fcp_ms AS perfFcpMs,
-        perf_lcp_ms AS perfLcpMs,
-        perf_cls AS perfCls,
-        perf_inp_ms AS perfInpMs,
         created_at AS createdAt,
         updated_at AS updatedAt
       FROM visits
@@ -596,13 +454,6 @@ function insertBufferedVisitRowIfAbsent(
     row.screenWidth,
     row.screenHeight,
     row.language,
-    row.userId || "",
-    row.userName || "",
-    row.perfTtfbMs,
-    row.perfFcpMs,
-    row.perfLcpMs,
-    row.perfCls,
-    row.perfInpMs,
     row.dirty,
     row.flushAttempts,
     row.lastFlushError ?? null,
@@ -622,8 +473,6 @@ function insertBufferedVisitRowIfAbsent(
         is_eu, country, region, region_code, city, continent, latitude, longitude,
         postal_code, metro_code, timezone, as_organization, ua_raw, browser, browser_version,
         os, os_version, device_type, screen_width, screen_height, language,
-        user_id, user_name,
-        perf_ttfb_ms, perf_fcp_ms, perf_lcp_ms, perf_cls, perf_inp_ms,
         dirty, flush_attempts, last_flush_error, next_due_at, flush_due_at,
         buffer_revision, created_at, updated_at
       ) VALUES (${bindings.map(() => "?").join(", ")})
@@ -687,13 +536,6 @@ export async function insertVisit(
     record.screenWidth,
     record.screenHeight,
     record.language,
-    record.userId || "",
-    record.userName || "",
-    null,
-    null,
-    null,
-    null,
-    null,
     1,
     0,
     null,
@@ -712,8 +554,6 @@ export async function insertVisit(
           is_eu, country, region, region_code, city, continent, latitude, longitude,
           postal_code, metro_code, timezone, as_organization, ua_raw, browser, browser_version,
           os, os_version, device_type, screen_width, screen_height, language,
-          user_id, user_name,
-          perf_ttfb_ms, perf_fcp_ms, perf_lcp_ms, perf_cls, perf_inp_ms,
           dirty, flush_attempts, last_flush_error, next_due_at, flush_due_at,
           buffer_revision, created_at, updated_at
         ) VALUES (${bindings.map(() => "?").join(", ")})

@@ -37,14 +37,6 @@ export interface IngestTracePayload {
 export type TrackerPayloadKind =
   "pageview" | "leave" | "visibility" | "custom_event";
 
-export interface TrackerPerformancePayload {
-  ttfb?: number;
-  fcp?: number;
-  lcp?: number;
-  cls?: number;
-  inp?: number;
-}
-
 export interface TrackerUaBrandVersion {
   brand?: string;
   version?: string;
@@ -65,7 +57,6 @@ export interface TrackerClientPayload {
   kind?: TrackerPayloadKind;
   visitId?: string;
   previousVisitId?: string;
-  performanceVisitId?: string;
   eventId?: string;
   sequence?: number;
   navigation?: string;
@@ -86,7 +77,6 @@ export interface TrackerClientPayload {
   visibilityState?: string;
   eventName?: string;
   eventData?: unknown;
-  performance?: TrackerPerformancePayload;
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
@@ -113,8 +103,6 @@ export interface NormalizedVisitContext {
   siteId: string;
   visitId: string;
   visitorId: string;
-  userId?: string;
-  userName?: string;
   sessionId: string;
   startedAt: number;
   pathname: string;
@@ -164,12 +152,10 @@ export interface NormalizedLeave {
   traceId?: string;
   siteId: string;
   visitId: string;
-  performanceVisitId: string;
   receivedAt: number;
   leaveAt: number;
   durationMs: number | null;
   exitReason: string;
-  performance: TrackerPerformancePayload | null;
 }
 
 export interface NormalizedVisibility {

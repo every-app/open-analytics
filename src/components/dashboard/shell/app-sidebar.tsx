@@ -21,11 +21,10 @@ import Link from "@/lib/router";
 import {
   type ShellRouteState,
   type SidebarSite,
-  siteNavItemFor,
   siteNavItemIcon,
-  siteNavItemLabel,
   siteNavItemsFor,
   type SiteNavKey,
+  siteNavLabel,
   useDashboardNavHref,
 } from "./dashboard-shell/navigation";
 import { SidebarFootLinks } from "./sidebar-foot-links";
@@ -128,14 +127,11 @@ export function AppSidebar({
                   <SidebarMenu>
                     {siteNavItemsFor(canManage).map((item) => (
                       <SidebarNavLink
-                        key={item.key}
-                        href={siteItemHref(item.sections[0])}
+                        key={item}
+                        href={siteItemHref(item)}
                         icon={siteNavItemIcon(item)}
-                        label={siteNavItemLabel(item, messages)}
-                        isActive={
-                          routeState.siteSection !== undefined &&
-                          siteNavItemFor(routeState.siteSection) === item
-                        }
+                        label={siteNavLabel(item, messages)}
+                        isActive={routeState.siteSection === item}
                         onNavigate={closeMobile}
                       />
                     ))}

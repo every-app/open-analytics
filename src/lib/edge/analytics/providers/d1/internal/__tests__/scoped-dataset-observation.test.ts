@@ -2,11 +2,11 @@ import { DatabaseSync } from "node:sqlite";
 
 import { describe, expect, it } from "vitest";
 
+import { executeObservationFilterOnScopedDataset } from "@/lib/edge/analytics/providers/d1/internal/scoped-dataset";
 import {
   buildSessionFactsSql,
   buildVisitorFactsSql,
-} from "@/lib/edge/analytics/providers/d1/internal/journey-aggregation-sql";
-import { executeObservationFilterOnScopedDataset } from "@/lib/edge/analytics/providers/d1/internal/scoped-dataset";
+} from "@/lib/edge/analytics/providers/d1/internal/scoped-facts-sql";
 import { parseFilterDsl } from "@/lib/filter-contract";
 import { analyticsFilterRegistry } from "@/lib/filter-contract/filter-registry";
 

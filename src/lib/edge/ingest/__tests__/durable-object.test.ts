@@ -60,13 +60,6 @@ const VISIT_COLUMNS = [
   "screen_width",
   "screen_height",
   "language",
-  "user_id",
-  "user_name",
-  "perf_ttfb_ms",
-  "perf_fcp_ms",
-  "perf_lcp_ms",
-  "perf_cls",
-  "perf_inp_ms",
   "ae_synced_at",
   "created_at",
   "updated_at",
@@ -484,13 +477,6 @@ function visitRecord(overrides: Partial<VisitRecord> = {}): VisitRecord {
     screen_width: 1440,
     screen_height: 900,
     language: "en-US",
-    user_id: "",
-    user_name: "",
-    perf_ttfb_ms: null,
-    perf_fcp_ms: null,
-    perf_lcp_ms: null,
-    perf_cls: null,
-    perf_inp_ms: null,
     ae_synced_at: null,
     created_at: toSeconds(NOW),
     updated_at: toSeconds(NOW),
@@ -1146,7 +1132,7 @@ describe("IngestDurableObject", () => {
     expect(visit?.visitor_id).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it("closes previous pageviews, handles leave events, and attaches performance metrics", async () => {
+  it("closes previous pageviews and handles leave events", async () => {
     const ctx = createTestDo();
 
     await postIngest(
@@ -1174,16 +1160,8 @@ describe("IngestDurableObject", () => {
       envelope({
         kind: "leave",
         visitId: "visit-2",
-        performanceVisitId: "visit-2",
         timestamp: NOW - 5_000,
         durationMs: 4_567.8,
-        performance: {
-          ttfb: 1.23456,
-          fcp: -1,
-          lcp: 2500,
-          cls: 0.12345,
-          inp: 99.9999,
-        },
       }),
     );
 
@@ -1193,16 +1171,10 @@ describe("IngestDurableObject", () => {
       ended_at: number | null;
       duration_ms: number | null;
       duration_source: string | null;
-      perf_ttfb_ms: number | null;
-      perf_fcp_ms: number | null;
-      perf_lcp_ms: number | null;
-      perf_cls: number | null;
-      perf_inp_ms: number | null;
     }>(
       ctx.sql,
       `
-        SELECT visit_id, status, ended_at, duration_ms, duration_source,
-               perf_ttfb_ms, perf_fcp_ms, perf_lcp_ms, perf_cls, perf_inp_ms
+        SELECT visit_id, status, ended_at, duration_ms, duration_source
         FROM buffered_visits
         ORDER BY visit_id
       `,
@@ -1222,11 +1194,6 @@ describe("IngestDurableObject", () => {
         ended_at: NOW - 5_000,
         duration_ms: 5000,
         duration_source: "server",
-        perf_ttfb_ms: 1.235,
-        perf_fcp_ms: null,
-        perf_lcp_ms: 2500,
-        perf_cls: 0.123,
-        perf_inp_ms: 100,
       },
     ]);
 
@@ -1240,16 +1207,8 @@ describe("IngestDurableObject", () => {
       envelope({
         kind: "leave",
         visitId: "visit-2",
-        performanceVisitId: "visit-2",
         timestamp: NOW - 5_000,
         durationMs: 4_567.8,
-        performance: {
-          ttfb: 1.23456,
-          fcp: -1,
-          lcp: 2500,
-          cls: 0.12345,
-          inp: 99.9999,
-        },
       }),
     );
     expect(
@@ -2313,51 +2272,6 @@ describe("IngestDurableObject", () => {
     ).toBe(1);
   });
 
-  it("hydrates persisted visits when leave performance arrives without a buffered visit", async () => {
-    const ctx = createTestDo();
-    ctx.d1.insertVisit({
-      visit_id: "persisted-perf",
-      status: "complete",
-      ended_at: NOW - 1_000,
-      finalized_at: NOW - 1_000,
-    });
-
-    const response = await postIngest(
-      ctx.object,
-      envelope({
-        kind: "leave",
-        visitId: "missing-open-visit",
-        performanceVisitId: "persisted-perf",
-        performance: {
-          ttfb: 12.3456,
-          lcp: 999.4,
-        },
-      }),
-    );
-
-    expect(response.status).toBe(202);
-    const [visit] = localRows<{
-      visit_id: string;
-      status: string;
-      dirty: number;
-      perf_ttfb_ms: number;
-      perf_lcp_ms: number;
-    }>(
-      ctx.sql,
-      `SELECT visit_id, status, dirty, perf_ttfb_ms, perf_lcp_ms
-       FROM buffered_visits
-       WHERE visit_id = ?`,
-      "persisted-perf",
-    );
-    expect(visit).toEqual({
-      visit_id: "persisted-perf",
-      status: "complete",
-      dirty: 1,
-      perf_ttfb_ms: 12.346,
-      perf_lcp_ms: 999.4,
-    });
-  });
-
   it("pushes snapshots and realtime events to websocket clients and prunes stale sockets", async () => {
     const ctx = createTestDo();
     insertBufferedVisit(ctx.sql, {
@@ -3081,29 +2995,5 @@ describe("IngestDurableObject", () => {
         expect.objectContaining({ eventType: "__presence_leave" }),
       ]),
     });
-  });
-
-  it("does not hydrate performance rows when neither buffered nor persisted visit exists", async () => {
-    const ctx = createTestDo();
-
-    const response = await postIngest(
-      ctx.object,
-      envelope({
-        kind: "leave",
-        visitId: "missing-leave",
-        performanceVisitId: "missing-performance",
-        performance: {
-          ttfb: 10,
-        },
-      }),
-    );
-
-    expect(response.status).toBe(202);
-    expect(
-      localRows<{ visits: number }>(
-        ctx.sql,
-        "SELECT COUNT(*) AS visits FROM buffered_visits",
-      )[0]?.visits,
-    ).toBe(0);
   });
 });

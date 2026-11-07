@@ -8,11 +8,10 @@ import {
   readSiteTrackingConfig,
 } from "@/lib/edge/sites/settings-store";
 import type { Env } from "@/lib/edge/types";
-import { SDK_MIN as SDK_FULL } from "@/tracker/sdk.min";
-import { SDK_MIN as SDK_NO_PERF } from "@/tracker/sdk.no-perf.min";
+import { SDK_MIN } from "@/tracker/sdk.min";
 const SCRIPT_RESPONSE_CACHE_NAME = "insightflare-script-cache";
 const SCRIPT_RESPONSE_CACHE_TTL_SECONDS = 10 * 60;
-const SCRIPT_CACHE_VERSION = "sdk-prebuilt-v2";
+const SCRIPT_CACHE_VERSION = "sdk-prebuilt-v3";
 const MAX_SCRIPT_RESPONSE_CACHE_TTL_SECONDS = 24 * 60 * 60;
 const TRACKER_RUNTIME_CONFIG_KEY = "__openanalytics_tracker_runtime_config__";
 function responseBadRequest(message: string): Response {
@@ -54,7 +53,6 @@ function applyConfigToSdk(
     trackHash: boolean;
     ignoreDoNotTrack: boolean;
     autoTrackOutboundLinks: boolean;
-    performanceSampleRate: number;
     collectToken: string;
   },
 ): string {
@@ -69,7 +67,6 @@ function settingsFingerprint(input: {
   trackHash: boolean;
   ignoreDoNotTrack: boolean;
   autoTrackOutboundLinks: boolean;
-  performanceSampleRate: number;
   siteDomain: string;
   requestIp: string;
 }): string {
@@ -78,7 +75,6 @@ function settingsFingerprint(input: {
     input.trackHash ? "1" : "0",
     input.ignoreDoNotTrack ? "1" : "0",
     input.autoTrackOutboundLinks ? "1" : "0",
-    String(input.performanceSampleRate),
     input.siteDomain,
     input.requestIp,
   ].join("|");
@@ -146,16 +142,11 @@ export async function handleTrackerScriptRequest(
 
   const ttlSeconds = resolveScriptCacheTtlSeconds(env);
   const clientIp = requestIp(request);
-  const performanceSampleRate = Math.max(
-    0,
-    Math.min(100, Number(settings.performanceSampleRate || 0)),
-  );
   const fingerprint = [
     SCRIPT_CACHE_VERSION,
     settingsFingerprint({
       ...settings,
       autoTrackOutboundLinks: settings.autoTrackOutboundLinks,
-      performanceSampleRate,
       requestIp: clientIp,
     }),
   ].join("|");
@@ -181,14 +172,12 @@ export async function handleTrackerScriptRequest(
     return responseInternalServerError("collect_token_unavailable");
   }
 
-  const sdkTemplate = performanceSampleRate > 0 ? SDK_FULL : SDK_NO_PERF;
-  const script = applyConfigToSdk(sdkTemplate, {
+  const script = applyConfigToSdk(SDK_MIN, {
     siteId,
     trackQueryParams: settings.trackQueryParams,
     trackHash: settings.trackHash,
     ignoreDoNotTrack: settings.ignoreDoNotTrack,
     autoTrackOutboundLinks: settings.autoTrackOutboundLinks,
-    performanceSampleRate,
     collectToken,
   });
 

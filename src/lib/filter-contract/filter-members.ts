@@ -5,14 +5,7 @@ import type {
   FilterFieldRegistry,
 } from "./filters";
 
-const ENTITY_NAMESPACES = new Set([
-  "geo",
-  "client",
-  "referrer",
-  "utm",
-  "user",
-  "performance",
-]);
+const ENTITY_NAMESPACES = new Set(["geo", "client", "referrer", "utm"]);
 
 export interface ResolvedEntityMember {
   readonly entity: FilterEntityRoot;

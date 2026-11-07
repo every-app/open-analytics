@@ -50,11 +50,6 @@ export function osVersionExpr(alias = ""): string {
   return `trim(CASE WHEN ${prefix}os != '' AND ${prefix}os_version != '' THEN ${prefix}os || ' ' || ${prefix}os_version WHEN ${prefix}os != '' THEN ${prefix}os WHEN ${prefix}os_version != '' THEN ${prefix}os_version ELSE '' END)`;
 }
 
-export function browserMajorVersionExpr(alias = ""): string {
-  const prefix = alias ? `${alias}.` : "";
-  return `trim(CASE WHEN ${prefix}browser_version = '' THEN '' WHEN instr(${prefix}browser_version, '.') > 0 THEN substr(${prefix}browser_version, 1, instr(${prefix}browser_version, '.') - 1) ELSE ${prefix}browser_version END)`;
-}
-
 export function screenSizeExpr(alias = ""): string {
   const prefix = alias ? `${alias}.` : "";
   return `CASE WHEN ${prefix}screen_width > 0 AND ${prefix}screen_height > 0 THEN CAST(${prefix}screen_width AS TEXT) || 'x' || CAST(${prefix}screen_height AS TEXT) ELSE '' END`;
@@ -252,18 +247,6 @@ export function resolveCrossBreakdownDimension(
     return {
       labelExpr: "TRIM(COALESCE(as_organization, ''))",
       fallbackKeyBase: "organization",
-    };
-
-  // ── user identity (private-only filter suggestions) ──────────────────
-  if (dimension === "user.id")
-    return {
-      labelExpr: "TRIM(COALESCE(user_id, ''))",
-      fallbackKeyBase: "user-id",
-    };
-  if (dimension === "user.name")
-    return {
-      labelExpr: "TRIM(COALESCE(user_name, ''))",
-      fallbackKeyBase: "user-name",
     };
 
   // ── event (requires events table join, not supported) ─────────────────

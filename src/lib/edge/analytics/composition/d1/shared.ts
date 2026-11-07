@@ -43,12 +43,6 @@ export function measured<T>(
     ? logger.measure(operation, () => runWithD1Operation(operation, action))
     : action();
 }
-export function arrayField<Input extends object, Field extends keyof Input>(
-  input: Input,
-  name: Field,
-): readonly unknown[] {
-  return Array.isArray(input[name]) ? input[name] : [];
-}
 export function emptyEventContextCards() {
   return {
     page: { path: [], query: [], title: [], hostname: [], entry: [], exit: [] },

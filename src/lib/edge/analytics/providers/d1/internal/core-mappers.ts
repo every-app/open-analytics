@@ -15,7 +15,6 @@ import {
   type PageRow,
   type ReferrerRow,
   type TrendAggregateRow,
-  type VisitorRow,
 } from "./core-types";
 import { customEventJsonTypeLabel } from "./core-values";
 export function mapOverviewAggregate(
@@ -215,32 +214,6 @@ export function mapReferrers(rows: ReferrerRow[]) {
     referrer: row.referrer,
     views: row.views,
     sessions: row.sessions,
-  }));
-}
-export function mapVisitors(rows: VisitorRow[]) {
-  return rows.map((row) => ({
-    visitorId: row.visitorId,
-    userId: row.userId,
-    userName: row.userName,
-    sessionId: row.sessionId ?? "",
-    firstSeenAt: row.firstSeenAt,
-    lastSeenAt: row.lastSeenAt,
-    views: row.views,
-    sessions: row.sessions,
-    events: row.events ?? 0,
-    country: row.country ?? "",
-    region: row.region ?? "",
-    regionCode: row.regionCode ?? "",
-    city: row.city ?? "",
-    referrerHost: row.referrerHost ?? "",
-    referrerUrl: row.referrerUrl ?? "",
-    browser: row.browser ?? "",
-    browserVersion: row.browserVersion ?? "",
-    os: row.os ?? "",
-    osVersion: row.osVersion ?? "",
-    deviceType: row.deviceType ?? "",
-    screenWidth: row.screenWidth ?? null,
-    screenHeight: row.screenHeight ?? null,
   }));
 }
 export function dedupeFilterOptions(

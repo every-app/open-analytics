@@ -1,18 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/edge/analytics/providers/d1/internal/events-records", () => ({
-  queryEventRecordDetailFromD1: vi.fn(),
   queryEventRecordPageFromD1: vi.fn(),
 }));
 
-import {
-  queryEventRecordDetailFromD1,
-  queryEventRecordPageFromD1,
-} from "@/lib/edge/analytics/providers/d1/internal/events-records";
-import {
-  readSiteEventDetail,
-  readSiteEventRecords,
-} from "@/lib/edge/analytics/providers/d1/operations/site-event-records";
+import { queryEventRecordPageFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-records";
+import { readSiteEventRecords } from "@/lib/edge/analytics/providers/d1/operations/site-event-records";
 
 const base = {
   env: { MAIN_SECRET: "cursor-secret" } as never,
@@ -103,7 +96,7 @@ describe("site event-record runtime", () => {
     );
   });
 
-  it("requires a signing root and makes detail window-scoped", async () => {
+  it("requires a signing root", async () => {
     vi.mocked(queryEventRecordPageFromD1).mockResolvedValue({
       rows: [],
       nextCursor: {
@@ -120,27 +113,9 @@ describe("site event-record runtime", () => {
         page: { limit: 20 },
       }),
     ).rejects.toThrow("data-unavailable");
-    vi.mocked(queryEventRecordDetailFromD1).mockResolvedValue(null);
-    await expect(
-      readSiteEventDetail({ ...base, eventId: "missing" }),
-    ).rejects.toThrow("resource-not-found");
-    expect(queryEventRecordDetailFromD1).toHaveBeenCalledWith(
-      base.env,
-      "site-1",
-      "missing",
-      base.window,
-    );
   });
 
-  it("returns window-scoped detail and maps provider failures", async () => {
-    const detail = { event: { eventId: "evt" }, context: {}, eventData: {} };
-    vi.mocked(queryEventRecordDetailFromD1).mockResolvedValueOnce(
-      detail as never,
-    );
-    await expect(
-      readSiteEventDetail({ ...base, eventId: "evt" }),
-    ).resolves.toEqual(detail);
-
+  it("maps provider failures", async () => {
     vi.mocked(queryEventRecordPageFromD1).mockRejectedValueOnce(
       new Error("down"),
     );

@@ -4,9 +4,9 @@ import { parseShellRouteState } from "./navigation";
 
 describe("parseShellRouteState", () => {
   it("finds a site page and keeps its date controls on", () => {
-    expect(parseShellRouteState("/sites/example-com/visitors")).toEqual({
+    expect(parseShellRouteState("/sites/example-com/pages")).toEqual({
       siteSlug: "example-com",
-      siteSection: "visitors",
+      siteSection: "pages",
       usesDateRange: true,
     });
   });

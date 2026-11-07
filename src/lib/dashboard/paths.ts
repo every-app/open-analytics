@@ -1,16 +1,4 @@
-export type SiteSection =
-  | "realtime"
-  | "pages"
-  | "referrers"
-  | "campaigns"
-  | "events"
-  | "funnels"
-  | "visitors"
-  | "retention"
-  | "geo"
-  | "devices"
-  | "performance"
-  | "settings";
+export type SiteSection = "realtime" | "pages" | "funnels" | "settings";
 
 export function buildSitePath(siteSlug: string, section?: SiteSection): string {
   const base = `/sites/${siteSlug}`;

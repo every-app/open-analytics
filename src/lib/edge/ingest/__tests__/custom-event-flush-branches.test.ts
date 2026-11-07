@@ -28,7 +28,6 @@ function bufferedCustomEvent(
     sequence: 7,
     eventName: "Signup",
     eventDataJson: '{"plan":"pro"}',
-    userId: "",
     dirty: 1,
     flushAttempts: 0,
     flushDueAt: NOW,
@@ -156,7 +155,6 @@ describe("custom event individual flush branch coverage", () => {
     const context = createFlushContext({});
     const row = bufferedCustomEvent({
       occurredAt: NOW - FLUSHED_BUFFER_RETENTION_MS - 1,
-      userId: "user-1",
     });
 
     await expect(flushCustomEventRowIndividually(context, row)).resolves.toBe(
@@ -189,7 +187,6 @@ describe("custom event individual flush branch coverage", () => {
         7,
         2,
         1,
-        "user-1",
         createdAt,
         1,
         "visit-1",

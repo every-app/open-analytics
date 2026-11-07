@@ -7,8 +7,6 @@ export const PUBLIC_QUERY_PATHS = [
   "pages",
   "pages-dashboard",
   "referrers",
-  "retention",
-  "performance",
   "countries",
   "filter-values",
   "event-types",
@@ -31,17 +29,6 @@ export const PUBLIC_QUERY_PATHS = [
   "overview-geo-timezone",
   "overview-geo-organization",
   "overview-geo-points",
-  "browser-trend",
-  "browser-engine-trend",
-  "browser-version-breakdown",
-  "browser-cross-breakdown",
-  "client-cross-breakdown",
-  "browser-radar",
-  "referrer-radar",
-  "referrer-dimension-trend",
-  "referrer-channel-dimension-trend",
-  "client-dimension-trend",
-  "utm-dimension-trend",
   "utm-source",
   "utm-medium",
   "utm-campaign",
@@ -56,17 +43,7 @@ export const DASHBOARD_QUERY_PATHS = [
   "events-records",
   "event-type-fields",
   "event-type-field-values",
-  "event-type-context",
   "event-type-detail",
-  "event-record-detail",
-  "journey-event-detail",
-  "visitor-events",
-  "visitor-sessions",
-  "session-events",
-  "sessions",
-  "session-detail",
-  "visitor-detail",
-  "visitors",
   "funnels",
   "goal-summary",
   "goal-timeseries",
@@ -75,14 +52,6 @@ export const DASHBOARD_QUERY_PATHS = [
 
 const PUBLIC_HIDDEN_FILTER_PARAMS = new Set(["query", "sourceLink"]);
 const PUBLIC_HIDDEN_FILTER_OPTION_KEYS = new Set(["sourceLink"]);
-const PUBLIC_HIDDEN_CROSS_DIMENSIONS = new Set([
-  "page.query",
-  "page.hash",
-  "referrer.url",
-  "query_string",
-  "hash_fragment",
-  "referrer_url",
-]);
 
 export interface PublicQueryPolicyDecision {
   readonly allowed: boolean;
@@ -95,23 +64,12 @@ export interface PublicQueryPolicyDecision {
  */
 export function applyPublicQueryPolicy(url: URL): PublicQueryPolicyDecision {
   const filterKey = url.searchParams.get("filterKey")?.trim();
-  const dimensions = [
-    url.searchParams.get("primaryDimension"),
-    url.searchParams.get("secondaryDimension"),
-  ];
   const requestsHiddenFilter = [...PUBLIC_HIDDEN_FILTER_PARAMS].some((key) =>
     url.searchParams.has(key),
   );
-  const requestsHiddenDimension = dimensions.some(
-    (dimension) =>
-      dimension !== null &&
-      PUBLIC_HIDDEN_CROSS_DIMENSIONS.has(dimension.trim().toLowerCase()),
-  );
   if (
     requestsHiddenFilter ||
-    (filterKey !== undefined &&
-      PUBLIC_HIDDEN_FILTER_OPTION_KEYS.has(filterKey)) ||
-    requestsHiddenDimension
+    (filterKey !== undefined && PUBLIC_HIDDEN_FILTER_OPTION_KEYS.has(filterKey))
   ) {
     return { allowed: false, url };
   }
@@ -130,11 +88,8 @@ export function operationForQueryRoute(pathname: string): QueryOperation {
   if (pathname === "pages") return "pages";
   if (pathname === "pages-dashboard") return "pages-dashboard";
   if (pathname === "referrers") return "referrers";
-  if (pathname === "referrer-summary") return "referrers";
   if (pathname === "filter-values") return "filter-values";
   if (pathname === "overview-geo-points") return "geo-points";
-  if (pathname === "retention") return "retention";
-  if (pathname === "performance") return "performance";
   if (pathname === "funnels") return "funnel-analysis";
   if (pathname === "goal-summary") return "goal-summary";
   if (pathname === "goal-timeseries") return "goal-timeseries";
@@ -145,21 +100,7 @@ export function operationForQueryRoute(pathname: string): QueryOperation {
   if (pathname === "event-type-detail") return "event-type-detail";
   if (pathname === "event-type-fields") return "event-fields";
   if (pathname === "event-type-field-values") return "event-field-values";
-  if (pathname === "event-type-context") return "event-context";
   if (pathname === "events-records") return "event-records";
-  if (pathname === "event-record-detail") return "event-record-detail";
-  if (pathname === "journey-event-detail") return "journey-event-detail";
-  if (pathname === "visitor-events") return "visitor-events";
-  if (pathname === "visitor-sessions") return "visitor-sessions";
-  if (pathname === "session-events") return "session-events";
-  if (pathname === "visitors") return "visitors";
-  if (pathname === "visitor-detail") return "visitor-detail";
-  if (pathname === "sessions") return "sessions";
-  if (pathname === "session-detail") return "session-detail";
-  if (pathname.includes("radar") || pathname === "browser-version-breakdown")
-    return "radar";
-  if (pathname.includes("cross-breakdown")) return "cross-dimension";
-  if (pathname.includes("trend")) return "share-trend";
   if (pathname === "overview-source-channel") return "channels";
   if (pathname.startsWith("overview-source-")) return "referrers";
   return "dimension";

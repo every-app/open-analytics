@@ -125,29 +125,6 @@ export async function fetchOverviewGeoPoints(
     }))
     .catch(emptyGeoPointsUnlessAborted);
 }
-export async function fetchOverviewGeoDimensionTab(
-  siteId: string,
-  window: TimeWindow,
-  tab: OverviewGeoDimensionTab,
-  filters?: FilterDocument,
-  options?: {
-    limit?: number;
-    signal?: AbortSignal;
-    resolvedScope?: FilterScope;
-    comparison?: DashboardListRequestOptions["comparison"];
-    comparisonMetric?: DashboardListRequestOptions["comparisonMetric"];
-    comparisonSortBy?: DashboardListRequestOptions["comparisonSortBy"];
-  },
-): Promise<OverviewGeoTabRows> {
-  const page = await fetchOverviewGeoDimensionTabPage(
-    siteId,
-    window,
-    tab,
-    filters,
-    options,
-  );
-  return page.items as unknown as OverviewGeoTabRows;
-}
 /** Paginated form used by TabbedDataTableCard loaders. */
 export async function fetchOverviewGeoDimensionTabPage(
   siteId: string,

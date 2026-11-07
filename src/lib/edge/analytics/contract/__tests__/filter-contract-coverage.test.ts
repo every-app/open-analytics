@@ -29,8 +29,6 @@ import {
   siteQueryContext,
 } from "@/lib/edge/analytics/contract";
 import {
-  buildCustomEventSourceCte,
-  buildDetailCustomEventSourceCte,
   buildEventAnalyticsSourceCte,
   VISIT_SOURCE_COLUMNS,
 } from "@/lib/edge/analytics/providers/d1/internal/core-sources";
@@ -77,7 +75,7 @@ describe("query contract boundary coverage", () => {
   });
 
   it("exposes the v4 field inventory and typed metadata", () => {
-    expect(analyticsFilterRegistry.size).toBe(49);
+    expect(analyticsFilterRegistry.size).toBe(42);
     expect(ANALYTICS_FILTER_REGISTRY_REVISION).toBe("analytics-filter-v5");
     expect([...ANALYTICS_FILTER_FIELD_IDS].slice(31)).toEqual([
       "page.durationMs",
@@ -88,13 +86,6 @@ describe("query contract boundary coverage", () => {
       "visitor.sessions",
       "visitor.views",
       "visitor.events",
-      "performance.ttfbMs",
-      "performance.fcpMs",
-      "performance.lcpMs",
-      "performance.cls",
-      "performance.inpMs",
-      "user.id",
-      "user.name",
       "client.screenWidth",
       "client.screenHeight",
       "geo.isEU",
@@ -102,14 +93,6 @@ describe("query contract boundary coverage", () => {
     for (const field of ANALYTICS_FILTER_FIELD_IDS.slice(31)) {
       expect(analyticsFilterRegistry.has(field)).toBe(true);
     }
-    expect(analyticsFilterRegistry.get("performance.lcpMs")).toMatchObject({
-      valueKind: "number",
-      nullable: true,
-      unit: "ms",
-      evaluation: "observation",
-      nativeEntity: "visit",
-      compilerStrategy: "column.perf_lcp_ms",
-    });
     expect(analyticsFilterRegistry.get("page.durationMs")).toMatchObject({
       valueKind: "number",
       nullable: true,
@@ -122,19 +105,19 @@ describe("query contract boundary coverage", () => {
       nativeEntity: "session",
     });
     expect(
-      analyticsFilterRegistry.get("user.id")?.audiences.has("public-share"),
+      analyticsFilterRegistry.get("page.query")?.audiences.has("public-share"),
     ).toBe(false);
-    const privateUser = document(field("user.id", "eq", "user-1"));
+    const privateQuery = document(field("page.query", "eq", "a=1"));
     expect(() =>
       assertFilterAudience(
-        privateUser,
+        privateQuery,
         analyticsFilterRegistry,
         "public-share",
       ),
     ).toThrow(/not allowed/);
     expect(() =>
       assertFilterAudience(
-        privateUser,
+        privateQuery,
         analyticsFilterRegistry,
         "private-dashboard",
       ),
@@ -144,31 +127,16 @@ describe("query contract boundary coverage", () => {
   it("keeps new visit fields available through every event visit context", () => {
     const visitColumns = [
       "duration_ms",
-      "user_id",
-      "user_name",
       "is_eu",
       "screen_width",
       "screen_height",
-      "perf_ttfb_ms",
-      "perf_fcp_ms",
-      "perf_lcp_ms",
-      "perf_cls",
-      "perf_inp_ms",
     ];
     for (const column of visitColumns) {
       expect(VISIT_SOURCE_COLUMNS).toMatch(new RegExp(`\\b${column}\\b`));
     }
-    for (const source of [
-      buildCustomEventSourceCte(),
-      buildEventAnalyticsSourceCte(),
-    ]) {
-      for (const column of visitColumns) {
-        expect(source).toContain(`v.${column}`);
-      }
-    }
-    const detailSource = buildDetailCustomEventSourceCte();
+    const eventSource = buildEventAnalyticsSourceCte();
     for (const column of visitColumns) {
-      expect(detailSource).toContain(`fv.${column}`);
+      expect(eventSource).toContain(`v.${column}`);
     }
   });
 

@@ -31,19 +31,6 @@ import {
   registryFieldGroups,
 } from "@/components/dashboard/filters/filter-editor/field-catalog";
 import {
-  formatEventDetailBoolean,
-  formatEventDetailCity,
-  formatEventDetailDateTime,
-  formatEventDetailDateTimeOrAbsent,
-  formatEventDetailPath,
-  formatEventDetailPerformance,
-  formatEventDetailScreen,
-  formatEventDetailStatus,
-  formatEventDetailText,
-  hasValidEventCoordinate,
-  isInsideDetailDrawer,
-} from "@/components/dashboard/site-pages/events/event-detail-utils";
-import {
   leadingLabelLetter,
   resolveFaviconUrlForLabel,
   sanitizeHostname,
@@ -52,7 +39,6 @@ import {
 import {
   blockingRuleRows,
   blockingRulesPatch,
-  formatSampleRateValue,
   invalidBlockingRules,
   postJson,
   randomPublicSlug,
@@ -93,70 +79,6 @@ afterEach(() => {
 });
 
 describe("recently split dashboard helpers", () => {
-  it("formats event detail values and validates coordinates and drawer targets", () => {
-    expect(formatEventDetailDateTime("en", null, "Unknown", "Missing")).toBe(
-      "Missing",
-    );
-    expect(formatEventDetailDateTime("en", 0, "Unknown")).toBe("Unknown");
-    expect(
-      formatEventDetailDateTime("en", 1_704_067_200_000, "Unknown"),
-    ).not.toBe("Unknown");
-    expect(
-      formatEventDetailDateTimeOrAbsent("en", null, false, "Unknown", "Absent"),
-    ).toBe("Absent");
-    expect(
-      formatEventDetailDateTimeOrAbsent("en", null, true, "Unknown", "Absent"),
-    ).toBe("Unknown");
-
-    expect(formatEventDetailBoolean(undefined, messages)).toBe("No data");
-    expect(formatEventDetailBoolean(true, messages)).toBe("Yes");
-    expect(formatEventDetailBoolean(false, messages)).toBe("No");
-    expect(formatEventDetailStatus(" connected ", messages)).toBe("Connected");
-    expect(formatEventDetailStatus("mystery", messages)).toBe("Unknown");
-    expect(formatEventDetailStatus("  ", messages)).toBe("No data");
-    expect(formatEventDetailText("  ok  ", "Missing")).toBe("ok");
-    expect(formatEventDetailText(" NULL ", "Missing", "Unknown")).toBe(
-      "Unknown",
-    );
-    expect(formatEventDetailText("  ", "Missing")).toBe("Missing");
-    expect(formatEventDetailPath("/pricing", "Missing", "Unknown")).toBe(
-      "/pricing",
-    );
-    expect(formatEventDetailPath("undefined", "Missing", "Unknown")).toBe(
-      "Unknown",
-    );
-    expect(formatEventDetailPath("", "Missing", "Unknown")).toBe("Missing");
-    expect(formatEventDetailCity(" New York, NY ", "Missing", "Unknown")).toBe(
-      "New York, NY",
-    );
-    expect(formatEventDetailScreen(null, null, "Unknown", "Missing")).toBe(
-      "Missing",
-    );
-    expect(formatEventDetailScreen(1920, null, "Unknown")).toBe("Unknown");
-    expect(formatEventDetailScreen(1920, 1080, "Unknown")).not.toBe("Unknown");
-    expect(
-      formatEventDetailPerformance("en", null, "ttfb", "Unknown", "Missing"),
-    ).toBe("Missing");
-    expect(
-      formatEventDetailPerformance("en", Number.NaN, "ttfb", "Unknown"),
-    ).toBe("Unknown");
-    expect(
-      formatEventDetailPerformance("en", 0.125, "cls", "Unknown"),
-    ).not.toContain("ms");
-    expect(
-      formatEventDetailPerformance("en", 125, "ttfb", "Unknown"),
-    ).toContain("ms");
-
-    expect(hasValidEventCoordinate(90, 180)).toBe(true);
-    expect(hasValidEventCoordinate(-91, 0)).toBe(false);
-    expect(hasValidEventCoordinate(0, Number.NaN)).toBe(false);
-    const inside = document.createElement("div");
-    inside.innerHTML = "<span data-detail-drawer-root><button></button></span>";
-    expect(isInsideDetailDrawer(inside.querySelector("button"))).toBe(true);
-    expect(isInsideDetailDrawer(inside)).toBe(false);
-    expect(isInsideDetailDrawer(null)).toBe(false);
-  });
-
   it("normalizes host and favicon URLs and labels", () => {
     expect(sanitizeHostname(" HTTPS://Example.com/path?q=1 ")).toBe(
       "Example.com",
@@ -197,9 +119,6 @@ describe("recently split dashboard helpers", () => {
     expect(resolveSiteSlug(site)).toBe("www-example-com");
     expect(resolveSiteSlug({ ...site, domain: "!!!" })).toBe("12345678");
     expect(randomPublicSlug()).toMatch(/^[a-z0-9]{8}$/);
-    expect(formatSampleRateValue(25)).toBe("25%");
-    expect(formatSampleRateValue(12.5)).toBe("12.5%");
-    expect(formatSampleRateValue(12.3)).toBe("12.3%");
     let id = 0;
     const rows = blockingRuleRows(
       {

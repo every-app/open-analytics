@@ -11,7 +11,6 @@ import type { QueryWindow } from "@/lib/edge/analytics/providers/d1/internal/cor
 import { mapEventRecord } from "@/lib/edge/analytics/providers/d1/internal/core-mappers";
 import {
   type EventRecordCursor,
-  queryEventRecordDetailFromD1,
   queryEventRecordPageFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/events-records";
 import type { Env } from "@/lib/edge/types";
@@ -140,20 +139,4 @@ export async function readSiteEventRecords(input: ReadSiteEventRecordsInput) {
       returned: page.rows.length,
     },
   } satisfies PageResult<ReturnType<typeof mapEventRecord>>;
-}
-
-export async function readSiteEventDetail(input: {
-  readonly env: Env;
-  readonly siteId: string;
-  readonly window: QueryWindow;
-  readonly eventId: string;
-}) {
-  const result = await queryEventRecordDetailFromD1(
-    input.env,
-    input.siteId,
-    input.eventId,
-    input.window,
-  );
-  if (!result) throw new Error("resource-not-found");
-  return result;
 }

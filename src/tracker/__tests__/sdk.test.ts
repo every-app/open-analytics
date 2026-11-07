@@ -4,8 +4,7 @@ import path from "node:path";
 import * as esbuild from "esbuild";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { SDK_MIN as fullSdk } from "../sdk.min";
-import { SDK_MIN as noPerfSdk } from "../sdk.no-perf.min";
+import { SDK_MIN as prebuiltSdk } from "../sdk.min";
 
 const installKey = "__openanalytics_tracker_v6__";
 const runtimeConfigKey = "__openanalytics_tracker_runtime_config__";
@@ -18,8 +17,6 @@ interface ConfiguredSdkOptions {
   trackHash?: boolean;
   ignoreDoNotTrack?: boolean;
   autoTrackOutboundLinks?: boolean;
-  performanceSampleRate?: number;
-  buildPerformance?: boolean;
 }
 
 function setRuntimeConfig(options: ConfiguredSdkOptions = {}) {
@@ -29,7 +26,6 @@ function setRuntimeConfig(options: ConfiguredSdkOptions = {}) {
     trackHash: options.trackHash !== false,
     ignoreDoNotTrack: options.ignoreDoNotTrack !== false,
     autoTrackOutboundLinks: options.autoTrackOutboundLinks !== false,
-    performanceSampleRate: options.performanceSampleRate ?? 0,
     collectToken: "test-collect-token",
   };
 }
@@ -37,18 +33,12 @@ function setRuntimeConfig(options: ConfiguredSdkOptions = {}) {
 async function importConfiguredSdk(options: ConfiguredSdkOptions = {}) {
   setRuntimeConfig(options);
   const source = await readFile(sdkSourcePath, "utf8");
-  const rewritten = source.replace(
-    "declare var BUILD_PERFORMANCE: boolean;",
-    `const BUILD_PERFORMANCE = ${
-      options.buildPerformance === false ? "false" : "true"
-    };`,
-  );
 
   const output = await esbuild.build({
     bundle: true,
     format: "esm",
     stdin: {
-      contents: rewritten,
+      contents: source,
       loader: "ts",
       resolveDir: path.dirname(sdkSourcePath),
       sourcefile: sdkSourcePath,
@@ -108,7 +98,6 @@ describe("Tracker Browser SDK Integration Suite", () => {
   let originalPushState: any;
   let originalDocAddEventListener: any;
   let originalWinAddEventListener: any;
-  let originalPerformanceObserver: any;
   let registeredDocListeners: Array<
     [string, EventListenerOrEventListenerObject, any]
   > = [];
@@ -145,7 +134,6 @@ describe("Tracker Browser SDK Integration Suite", () => {
     // would otherwise leak across tests and cause stale closures to fire on later cases.
     originalDocAddEventListener = document.addEventListener;
     originalWinAddEventListener = window.addEventListener;
-    originalPerformanceObserver = (globalThis as any).PerformanceObserver;
     registeredDocListeners = [];
     registeredWinListeners = [];
     (document as any).addEventListener = function (
@@ -199,7 +187,6 @@ describe("Tracker Browser SDK Integration Suite", () => {
         "mocked-uuid-1111-2222-3333-44445555";
     }
 
-    (globalThis as any).BUILD_PERFORMANCE = true;
     setRuntimeConfig();
 
     vi.resetModules();
@@ -228,7 +215,6 @@ describe("Tracker Browser SDK Integration Suite", () => {
 
     // Restore pushState (the SDK wraps it)
     history.pushState = originalPushState;
-    (globalThis as any).PerformanceObserver = originalPerformanceObserver;
 
     document.body.innerHTML = "";
     delete (globalThis as Record<string, unknown>)[runtimeConfigKey];
@@ -249,40 +235,30 @@ describe("Tracker Browser SDK Integration Suite", () => {
     );
   });
 
-  it("stores nothing in the browser in generated SDK variants", async () => {
+  it("stores nothing in the browser in the prebuilt SDK", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockImplementation(() =>
         Promise.resolve(new Response(JSON.stringify({ ok: true }))),
       );
 
-    for (const sdk of [fullSdk, noPerfSdk]) {
-      delete (window as any).__openanalytics_tracker_v6__;
-      delete (window as any).openAnalytics;
-      fetchSpy.mockClear();
-
-      await executeGeneratedSdk(sdk, { siteId: "generated-site" });
-      const body = decodeFetchBody(fetchSpy);
-      expect(body.kind).toBe("pageview");
-      expect(body).not.toHaveProperty("visitorId");
-      expect(window.localStorage.length).toBe(0);
-    }
+    await executeGeneratedSdk(prebuiltSdk, { siteId: "generated-site" });
+    const body = decodeFetchBody(fetchSpy);
+    expect(body.kind).toBe("pageview");
+    expect(body).not.toHaveProperty("visitorId");
+    expect(window.localStorage.length).toBe(0);
   });
-  it("honors Do Not Track in generated SDK variants", () => {
+  it("honors Do Not Track in the prebuilt SDK", () => {
     Object.defineProperty(navigator, "doNotTrack", {
       value: "1",
       writable: true,
       configurable: true,
     });
 
-    for (const sdk of [fullSdk, noPerfSdk]) {
-      delete (window as any).__openanalytics_tracker_v6__;
-      delete (window as any).openAnalytics;
-      setRuntimeConfig({ ignoreDoNotTrack: false });
-      expect(() => new Function(sdk)()).toThrow(
-        "OpenAnalytics: Do Not Track enabled",
-      );
-    }
+    setRuntimeConfig({ ignoreDoNotTrack: false });
+    expect(() => new Function(prebuiltSdk)()).toThrow(
+      "OpenAnalytics: Do Not Track enabled",
+    );
   });
 
   it("should throw an entry error if loaded without a valid currentScript", async () => {
@@ -1852,133 +1828,6 @@ describe("Tracker Browser SDK Integration Suite", () => {
     const body = decodeFetchBody(fetchSpy);
     expect(body.kind).toBe("pageview");
     expect(body.uaClientHints).toBeUndefined();
-  });
-
-  it("should include sampled performance metrics on leave events", async () => {
-    const callbacks = new Map<string, (entries: any[]) => void>();
-    const disconnectSpies: Array<ReturnType<typeof vi.fn>> = [];
-    vi.spyOn(Math, "random").mockReturnValue(0);
-    vi.spyOn(performance, "getEntriesByType").mockImplementation((type) =>
-      type === "navigation"
-        ? ([{ responseStart: 123.4567 }] as PerformanceEntryList)
-        : ([] as unknown as PerformanceEntryList),
-    );
-    (globalThis as any).PerformanceObserver = class {
-      static supportedEntryTypes = [
-        "paint",
-        "largest-contentful-paint",
-        "layout-shift",
-        "event",
-      ];
-      private readonly typeDisconnect = vi.fn();
-      constructor(private readonly cb: (list: any) => void) {
-        disconnectSpies.push(this.typeDisconnect);
-      }
-      observe(options: PerformanceObserverInit) {
-        callbacks.set(String(options.type), (entries: any[]) =>
-          this.cb({ getEntries: () => entries }),
-        );
-      }
-      disconnect() {
-        this.typeDisconnect();
-      }
-    };
-    const sendBeaconSpy = vi.fn().mockReturnValue(true);
-    (navigator as any).sendBeacon = sendBeaconSpy;
-
-    await importConfiguredSdk({ performanceSampleRate: 100 });
-    callbacks.get("paint")?.([
-      { name: "first-paint", startTime: 10 },
-      { name: "first-contentful-paint", startTime: 45.6789 },
-    ]);
-    callbacks.get("largest-contentful-paint")?.([
-      { startTime: 80 },
-      { startTime: 90.1234 },
-    ]);
-    callbacks.get("layout-shift")?.([
-      { hadRecentInput: true, value: 1 },
-      { hadRecentInput: false, value: 0.1234 },
-      { hadRecentInput: false, value: 0.1111 },
-    ]);
-    callbacks.get("event")?.([
-      { duration: -1 },
-      { duration: 70 },
-      { interactionId: 42, duration: 40 },
-      { interactionId: 42, duration: 95.4321 },
-    ]);
-
-    window.dispatchEvent(new Event("pagehide"));
-
-    expect(sendBeaconSpy).toHaveBeenCalledTimes(1);
-    const [, blob] = sendBeaconSpy.mock.calls[0] as [string, Blob];
-    const body = await decodeBeaconBody(blob);
-    expect(body.kind).toBe("leave");
-    expect(body.performanceVisitId).toBe(body.visitId);
-    expect(body.performance).toEqual({
-      ttfb: 123.457,
-      fcp: 45.679,
-      lcp: 90.123,
-      cls: 0.234,
-      inp: 95.432,
-    });
-    expect(disconnectSpies).toHaveLength(4);
-    for (const disconnectSpy of disconnectSpies) {
-      expect(disconnectSpy).toHaveBeenCalledTimes(1);
-    }
-  });
-
-  it("should skip unsupported performance entry observers and omit performance when unsampled", async () => {
-    vi.spyOn(Math, "random").mockReturnValue(1);
-    (globalThis as any).PerformanceObserver = class {
-      static supportedEntryTypes = ["paint"];
-      constructor() {
-        throw new Error("unsupported");
-      }
-      observe() {}
-      disconnect() {}
-    };
-    const sendBeaconSpy = vi.fn().mockReturnValue(true);
-    (navigator as any).sendBeacon = sendBeaconSpy;
-
-    await importConfiguredSdk({ performanceSampleRate: 50 });
-    window.dispatchEvent(new Event("pagehide"));
-
-    const [, blob] = sendBeaconSpy.mock.calls[0] as [string, Blob];
-    const body = await decodeBeaconBody(blob);
-    expect(body.performance).toBeUndefined();
-    expect(body.performanceVisitId).toBeUndefined();
-  });
-
-  it("should not collect or attach performance data when built without performance support", async () => {
-    const observerConstructorSpy = vi.fn();
-    (globalThis as any).PerformanceObserver = class {
-      static supportedEntryTypes = [
-        "paint",
-        "largest-contentful-paint",
-        "layout-shift",
-        "event",
-      ];
-      constructor() {
-        observerConstructorSpy();
-      }
-      observe() {}
-      disconnect() {}
-    };
-    const sendBeaconSpy = vi.fn().mockReturnValue(true);
-    (navigator as any).sendBeacon = sendBeaconSpy;
-
-    await importConfiguredSdk({
-      buildPerformance: false,
-      performanceSampleRate: 100,
-    });
-    window.dispatchEvent(new Event("pagehide"));
-
-    expect(observerConstructorSpy).not.toHaveBeenCalled();
-    const [, blob] = sendBeaconSpy.mock.calls[0] as [string, Blob];
-    const body = await decodeBeaconBody(blob);
-    expect(body.kind).toBe("leave");
-    expect(body.performance).toBeUndefined();
-    expect(body.performanceVisitId).toBeUndefined();
   });
 
   it("should send only a visible event, not a new pageview, after a long hidden period", async () => {

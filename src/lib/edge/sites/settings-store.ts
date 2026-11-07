@@ -107,12 +107,6 @@ function serializeSiteTrackingConfig(
   }
 
   if (
-    settings.performanceSampleRate !==
-    DEFAULT_SITE_SCRIPT_SETTINGS.performanceSampleRate
-  ) {
-    payload.performanceSampleRate = settings.performanceSampleRate;
-  }
-  if (
     settings.botProtectionEnabled !==
     DEFAULT_SITE_SCRIPT_SETTINGS.botProtectionEnabled
   ) {

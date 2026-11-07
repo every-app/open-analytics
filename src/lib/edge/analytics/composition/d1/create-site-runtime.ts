@@ -7,11 +7,9 @@ import { createOverviewReader } from "@/lib/edge/analytics/providers/d1/operatio
 import { registerEventProviders } from "./events";
 import { registerFunnelProvider } from "./funnels";
 import { registerGoalProviders } from "./goals";
-import { registerJourneyProviders } from "./journeys";
 import { overviewProvider, trendProvider } from "./overview";
 import type { D1SiteRuntimeBindings } from "./shared";
 import { registerSiteContractProviders } from "./site";
-import { registerTechnologyProviders } from "./technology";
 
 export type { D1ReadDiagnostics } from "@/lib/edge/analytics/providers/d1/internal/diagnostics";
 
@@ -28,8 +26,6 @@ export function createD1SiteProviderRegistry(options: D1SiteRuntimeBindings) {
     .register("trend", trendProvider(reader));
   registerSiteContractProviders(registry, options);
   registerEventProviders(registry, options);
-  registerJourneyProviders(registry, options);
-  registerTechnologyProviders(registry, options);
   registerFunnelProvider(registry, options);
   registerGoalProviders(registry, options);
   registry.useMiddleware(d1AdvancedFilterMiddleware(options.env, diagnostics));

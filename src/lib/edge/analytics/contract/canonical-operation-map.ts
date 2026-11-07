@@ -1,11 +1,8 @@
 import type { PageRequest, PaginationMeta } from "@/lib/pagination";
 
-import type { JourneyAnalysisContext } from "./journey-analysis";
 import type {
-  CanonicalEventContextResult,
   CanonicalEventFieldsResult,
   CanonicalEventFieldValuesResult,
-  CanonicalEventRecordDetailResult,
   CanonicalEventRecordPageResult,
   CanonicalEventSummaryResult,
   CanonicalEventTrendResult,
@@ -13,12 +10,6 @@ import type {
   CanonicalEventTypeResult,
   CanonicalGoalSummaryResult,
   CanonicalGoalTimeseriesResult,
-  CanonicalJourneyEventDetailResult,
-  CanonicalJourneyEventPage,
-  CanonicalJourneySessionPage,
-  CanonicalJourneyVisitorPage,
-  CanonicalSessionDetailResult,
-  CanonicalVisitorDetailResult,
 } from "./operation-results";
 import type { PagesDashboardResult } from "./pages-dashboard";
 import type { TeamSitesQueryResult } from "./team-results";
@@ -28,7 +19,6 @@ import type {
   BreakdownResult,
   CalendarGranularity,
   ChannelsResult,
-  ClientDimensionKey,
   ComparisonBreakdownQuery,
   ComparisonBreakdownResult,
   ComparisonDatasetQuery,
@@ -37,8 +27,6 @@ import type {
   ComparisonResult,
   ComparisonTrendQuery,
   ComparisonTrendResult,
-  CrossBreakdownQuery,
-  CrossBreakdownResult,
   EventRecordSortKey,
   FilterValuesQuery,
   FilterValuesResult,
@@ -55,21 +43,14 @@ import type {
   PagesDashboardQuery,
   PagesQuery,
   PagesResult,
-  PerformanceQuery,
-  PerformanceQueryResult,
   QueryOperation,
   RealtimeQuery,
   RealtimeQueryResult,
   ReferrersQuery,
   ReferrersResult,
-  ReferrerSummaryResult,
-  RetentionResult,
-  SessionListSortKey,
   Sort,
   TrendQuery,
   TrendResult,
-  UtmDimensionKey,
-  VisitorListSortKey,
 } from "./types";
 
 /**
@@ -192,11 +173,6 @@ export interface CanonicalPagesDashboardResult {
 export type CanonicalReferrersQuery = ReferrersQuery & {
   readonly mode?: "list" | "summary";
 };
-export type CanonicalReferrersResult = ReferrersResult | ReferrerSummaryResult;
-
-export interface RetentionQuery extends BaseQuery {
-  readonly granularity?: Interval;
-}
 
 export type LegacyEventQuery = BaseQuery & {
   readonly page?: PageRequest;
@@ -204,13 +180,9 @@ export type LegacyEventQuery = BaseQuery & {
   readonly eventName?: string;
   readonly fieldPath?: string;
   readonly fieldValueType?: string;
-  readonly eventKind?: "pageview" | "session_start" | "leave";
-  readonly visitorId?: string;
-  readonly sessionId?: string;
   readonly siteId?: string;
   readonly search?: string;
   readonly cursor?: string;
-  readonly selectedKeys?: readonly string[];
   readonly includeContext?: boolean;
   readonly includeBreakdowns?: boolean;
   readonly timeZone?: string;
@@ -223,20 +195,6 @@ export type LegacyEventQuery = BaseQuery & {
   readonly current?: object;
   readonly reference?: object;
 };
-export type LegacyJourneyQuery = BaseQuery & {
-  readonly page?: PageRequest;
-  readonly visitorId?: string;
-  readonly sessionId?: string;
-  readonly goalId?: string;
-  readonly funnelId?: string;
-  readonly analysis?: object;
-  readonly analysisContext?: JourneyAnalysisContext;
-  readonly limit?: number;
-  readonly cursor?: string;
-  readonly search?: string;
-  readonly timeZone?: string;
-  readonly sort?: ListSort<VisitorListSortKey | SessionListSortKey>;
-};
 export type LegacyAnalysisQuery = BaseQuery & {
   readonly goalId?: string;
   readonly funnelId?: string;
@@ -248,106 +206,6 @@ export type LegacyTeamDashboardQuery = BaseQuery & {
   readonly allowedSiteIds?: readonly string[];
   readonly interval?: Interval;
 };
-export type CanonicalShareTrendQuery =
-  | (BaseQuery & {
-      readonly variant:
-        "browser" | "browser-engine" | "referrer" | "referrer-channel";
-      readonly interval: Interval;
-      readonly limit?: number;
-    })
-  | (BaseQuery & {
-      readonly variant: "client";
-      readonly interval: Interval;
-      readonly dimension: ClientDimensionKey;
-      readonly limit?: number;
-    })
-  | (BaseQuery & {
-      readonly variant: "utm";
-      readonly interval: Interval;
-      readonly dimension: UtmDimensionKey;
-      readonly limit?: number;
-    });
-export type CanonicalRadarQuery =
-  | (BaseQuery & { readonly variant?: "browser" })
-  | (BaseQuery & { readonly variant: "referrer"; readonly limit?: number })
-  | (BaseQuery & {
-      readonly variant: "version";
-      readonly browserLimit?: number;
-      readonly versionLimit?: number;
-    });
-export type CanonicalRadarResult =
-  | readonly {
-      readonly browser: string;
-      readonly sessions: number;
-      readonly bounces: number;
-      readonly avgDurationMs: number;
-      readonly avgDepth: number;
-      readonly visitors: number;
-      readonly returningVisitors: number;
-      readonly avgFrequency: number;
-      readonly trafficShare: number;
-    }[]
-  | readonly {
-      readonly referrer: string;
-      readonly sessions: number;
-      readonly bounces: number;
-      readonly avgDurationMs: number;
-      readonly avgDepth: number;
-      readonly visitors: number;
-      readonly returningVisitors: number;
-      readonly avgFrequency: number;
-      readonly trafficShare: number;
-    }[]
-  | readonly {
-      readonly browser: string;
-      readonly versions: readonly {
-        readonly key: string;
-        readonly label: string;
-        readonly views: number;
-        readonly visitors: number;
-        readonly sessions: number;
-        readonly isOther?: boolean;
-        readonly isUnknown?: boolean;
-      }[];
-      readonly views: number;
-      readonly visitors: number;
-      readonly sessions: number;
-    }[];
-export interface CanonicalShareTrendSeriesItem {
-  readonly key: string;
-  readonly label: string;
-  readonly views: number;
-  readonly visitors: number;
-  readonly sessions: number;
-  readonly isOther?: boolean;
-}
-export interface CanonicalShareTrendPoint {
-  readonly bucket: number;
-  readonly timestampMs: number;
-  readonly totalVisitors: number;
-  readonly visitorsBySeries: Readonly<Record<string, number>>;
-}
-export interface CanonicalShareTrendResult {
-  readonly series: readonly CanonicalShareTrendSeriesItem[];
-  readonly data: readonly CanonicalShareTrendPoint[];
-}
-export interface CanonicalReferrerAndChannelTrendResult {
-  readonly source: CanonicalShareTrendResult;
-  readonly channel: CanonicalShareTrendResult;
-}
-export interface CanonicalCrossBreakdownQuery extends CrossBreakdownQuery {
-  readonly variant?: "generic";
-}
-export interface CanonicalBrowserCrossBreakdownQuery extends BaseQuery {
-  readonly variant: "browser";
-  readonly browserLimit?: number;
-  readonly osLimit?: number;
-  readonly deviceTypeLimit?: number;
-}
-export interface CanonicalBrowserCrossBreakdownResult {
-  readonly operatingSystem: CrossBreakdownResult;
-  readonly deviceType: CrossBreakdownResult;
-}
 export type CanonicalOverviewQuery = OverviewQuery & {
   readonly teamId?: string;
   readonly allowedSiteIds?: readonly string[];
@@ -395,21 +253,6 @@ export interface CanonicalOperationMap {
     readonly query: CanonicalDimensionQuery;
     readonly result: CanonicalDimensionResult;
   };
-  readonly "cross-dimension": {
-    readonly query:
-      CanonicalCrossBreakdownQuery | CanonicalBrowserCrossBreakdownQuery;
-    readonly result:
-      CrossBreakdownResult | CanonicalBrowserCrossBreakdownResult;
-  };
-  readonly "share-trend": {
-    readonly query: CanonicalShareTrendQuery;
-    readonly result:
-      CanonicalShareTrendResult | CanonicalReferrerAndChannelTrendResult;
-  };
-  readonly radar: {
-    readonly query: CanonicalRadarQuery;
-    readonly result: CanonicalRadarResult;
-  };
   readonly pages: {
     readonly query: CanonicalPagesQuery;
     readonly result: CanonicalPagesResult;
@@ -420,7 +263,7 @@ export interface CanonicalOperationMap {
   };
   readonly referrers: {
     readonly query: CanonicalReferrersQuery;
-    readonly result: CanonicalReferrersResult;
+    readonly result: ReferrersResult;
   };
   readonly channels: {
     readonly query: CanonicalChannelsQuery;
@@ -430,17 +273,9 @@ export interface CanonicalOperationMap {
     readonly query: FilterValuesQuery;
     readonly result: FilterValuesResult;
   };
-  readonly retention: {
-    readonly query: RetentionQuery;
-    readonly result: RetentionResult;
-  };
   readonly "geo-points": {
     readonly query: BaseQuery & { readonly limit?: number };
     readonly result: GeoPointsResult;
-  };
-  readonly performance: {
-    readonly query: PerformanceQuery;
-    readonly result: PerformanceQueryResult;
   };
   readonly realtime: {
     readonly query: RealtimeQuery;
@@ -470,49 +305,9 @@ export interface CanonicalOperationMap {
     readonly query: LegacyEventQuery;
     readonly result: CanonicalEventFieldValuesResult;
   };
-  readonly "event-context": {
-    readonly query: LegacyEventQuery;
-    readonly result: CanonicalEventContextResult;
-  };
   readonly "event-records": {
     readonly query: LegacyEventQuery;
     readonly result: CanonicalEventRecordPageResult;
-  };
-  readonly "visitor-events": {
-    readonly query: LegacyEventQuery;
-    readonly result: CanonicalJourneyEventPage;
-  };
-  readonly "visitor-sessions": {
-    readonly query: LegacyJourneyQuery;
-    readonly result: CanonicalJourneySessionPage;
-  };
-  readonly "session-events": {
-    readonly query: LegacyEventQuery;
-    readonly result: CanonicalJourneyEventPage;
-  };
-  readonly "event-record-detail": {
-    readonly query: LegacyEventQuery;
-    readonly result: CanonicalEventRecordDetailResult;
-  };
-  readonly "journey-event-detail": {
-    readonly query: LegacyEventQuery;
-    readonly result: CanonicalJourneyEventDetailResult;
-  };
-  readonly visitors: {
-    readonly query: LegacyJourneyQuery;
-    readonly result: CanonicalJourneyVisitorPage;
-  };
-  readonly "visitor-detail": {
-    readonly query: LegacyEventQuery;
-    readonly result: CanonicalVisitorDetailResult | null;
-  };
-  readonly sessions: {
-    readonly query: LegacyJourneyQuery;
-    readonly result: CanonicalJourneySessionPage;
-  };
-  readonly "session-detail": {
-    readonly query: LegacyEventQuery;
-    readonly result: CanonicalSessionDetailResult | null;
   };
   readonly "funnel-analysis": {
     readonly query: LegacyAnalysisQuery;

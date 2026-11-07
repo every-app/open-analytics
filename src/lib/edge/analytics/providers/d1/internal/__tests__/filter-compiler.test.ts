@@ -17,15 +17,15 @@ describe("filter SQL compiler", () => {
     const numeric = compileFilterDocument(
       document({
         kind: "condition",
-        target: { kind: "field", field: "performance.lcpMs" },
+        target: { kind: "field", field: "client.screenWidth" },
         operator: "gte",
-        value: 2500,
+        value: 1024,
       }),
       { alias: "vs" },
     );
-    expect(numeric.clause).toContain("vs.perf_lcp_ms >= ?");
+    expect(numeric.clause).toContain("vs.screen_width >= ?");
     expect(numeric.clause).not.toContain("TRIM(COALESCE");
-    expect(numeric.bindings).toEqual([2500]);
+    expect(numeric.bindings).toEqual([1024]);
 
     const boolean = compileFilterDocument(
       document({
@@ -47,20 +47,20 @@ describe("filter SQL compiler", () => {
         children: [
           {
             kind: "condition",
-            target: { kind: "field", field: "performance.lcpMs" },
+            target: { kind: "field", field: "page.durationMs" },
             operator: "isNull",
           },
           {
             kind: "condition",
-            target: { kind: "field", field: "performance.cls" },
+            target: { kind: "field", field: "client.screenWidth" },
             operator: "notNull",
           },
         ],
       }),
       { alias: "vs" },
     );
-    expect(result.clause).toContain("vs.perf_lcp_ms IS NULL");
-    expect(result.clause).toContain("vs.perf_cls IS NOT NULL");
+    expect(result.clause).toContain("vs.duration_ms IS NULL");
+    expect(result.clause).toContain("vs.screen_width IS NOT NULL");
   });
 
   it("compiles traffic channel filters from the shared attribution expression", () => {

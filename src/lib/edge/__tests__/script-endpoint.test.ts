@@ -6,12 +6,12 @@ import { readSiteTrackingConfig } from "@/lib/edge/sites/settings-store";
 import type { Env } from "@/lib/edge/types";
 import type { SiteTrackingConfig } from "@/lib/site-settings";
 
-vi.mock("@/tracker/sdk.min", () => ({
-  SDK_MIN: '"use strict";full-sdk',
-}));
+const trackerSdk = vi.hoisted(() => ({ source: '"use strict";tracker-sdk' }));
 
-vi.mock("@/tracker/sdk.no-perf.min", () => ({
-  SDK_MIN: "no-perf-sdk",
+vi.mock("@/tracker/sdk.min", () => ({
+  get SDK_MIN() {
+    return trackerSdk.source;
+  },
 }));
 
 vi.mock("@/lib/edge/sites/settings-store", async () => {
@@ -43,7 +43,6 @@ function makeSettings(
     domainWhitelist: [],
     pathBlacklist: [],
     ignoreDoNotTrack: true,
-    performanceSampleRate: 50,
     ...overrides,
   };
 }
@@ -70,6 +69,7 @@ function cacheStorageWith(cache: Partial<Cache>) {
 describe("edge script endpoint", () => {
   beforeEach(() => {
     vi.unstubAllGlobals();
+    trackerSdk.source = '"use strict";tracker-sdk';
     readSiteTrackingConfigMock.mockReset();
     readSiteTrackingConfigMock.mockResolvedValue(makeSettings());
   });
@@ -122,7 +122,7 @@ describe("edge script endpoint", () => {
     expect(notFoundResponse.status).toBe(404);
   });
 
-  it("injects site settings into the full SDK and writes cache entries", async () => {
+  it("injects site settings into the SDK and writes cache entries", async () => {
     const cache = {
       match: vi.fn().mockResolvedValue(null),
       put: vi.fn().mockResolvedValue(undefined),
@@ -135,7 +135,6 @@ describe("edge script endpoint", () => {
         trackHash: true,
         ignoreDoNotTrack: false,
         autoTrackOutboundLinks: true,
-        performanceSampleRate: 125,
       }),
     );
 
@@ -158,9 +157,9 @@ describe("edge script endpoint", () => {
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(script).toMatch(
-      /^"use strict";globalThis\["__openanalytics_tracker_runtime_config__"\] = \{"siteId":"site-1","trackQueryParams":false,"trackHash":true,"ignoreDoNotTrack":false,"autoTrackOutboundLinks":true,"performanceSampleRate":100,"collectToken":"eyJ/,
+      /^"use strict";globalThis\["__openanalytics_tracker_runtime_config__"\] = \{"siteId":"site-1","trackQueryParams":false,"trackHash":true,"ignoreDoNotTrack":false,"autoTrackOutboundLinks":true,"collectToken":"eyJ/,
     );
-    expect(script).toMatch(/\nfull-sdk$/);
+    expect(script).toMatch(/\ntracker-sdk$/);
     expect(storage.open).toHaveBeenCalledWith("insightflare-script-cache");
     expect(cache.match).toHaveBeenCalledTimes(1);
     expect(cache.put).toHaveBeenCalledTimes(1);
@@ -197,12 +196,12 @@ describe("edge script endpoint", () => {
     expect(cache.put).not.toHaveBeenCalled();
   });
 
-  it("serves no-perf scripts when performance sampling is off", async () => {
+  it("prepends the config to an SDK without a strict directive", async () => {
+    trackerSdk.source = "tracker-sdk";
     readSiteTrackingConfigMock.mockResolvedValueOnce(
       makeSettings({
         trackQueryParams: true,
         trackHash: false,
-        performanceSampleRate: -10,
       }),
     );
 
@@ -215,7 +214,7 @@ describe("edge script endpoint", () => {
     );
 
     await expect(response.text()).resolves.toMatch(
-      /^globalThis\["__openanalytics_tracker_runtime_config__"\] = \{"siteId":"site-1","trackQueryParams":true,"trackHash":false,"ignoreDoNotTrack":true,"autoTrackOutboundLinks":false,"performanceSampleRate":0,"collectToken":"eyJ/,
+      /^globalThis\["__openanalytics_tracker_runtime_config__"\] = \{"siteId":"site-1","trackQueryParams":true,"trackHash":false,"ignoreDoNotTrack":true,"autoTrackOutboundLinks":false,"collectToken":"eyJ/,
     );
     expect(response.headers.get("cache-control")).toBe("private, no-store");
   });
@@ -224,9 +223,7 @@ describe("edge script endpoint", () => {
     vi.stubGlobal("caches", {
       open: vi.fn().mockRejectedValue(new Error("cache unavailable")),
     });
-    readSiteTrackingConfigMock.mockResolvedValueOnce(
-      makeSettings({ performanceSampleRate: 1 }),
-    );
+    readSiteTrackingConfigMock.mockResolvedValueOnce(makeSettings());
 
     const response = await handleTrackerScriptRequest(
       makeRequest({}),
@@ -236,9 +233,7 @@ describe("edge script endpoint", () => {
       }),
     );
 
-    await expect(response.text()).resolves.toContain(
-      '"performanceSampleRate":1,',
-    );
+    await expect(response.text()).resolves.toContain('"siteId":"site-1",');
     expect(response.headers.get("cache-control")).toBe("private, no-store");
   });
 

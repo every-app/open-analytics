@@ -167,8 +167,8 @@ function insertVisit(
       `
         INSERT INTO visits (
           visit_id, site_id, site_pk, visitor_id, session_id, status, started_at,
-          last_activity_at, duration_ms, perf_ttfb_ms
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          last_activity_at, duration_ms
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
     )
     .run(
@@ -181,7 +181,6 @@ function insertVisit(
       row.startedAt,
       row.lastActivityAt ?? row.startedAt,
       row.durationMs ?? null,
-      100,
     );
 }
 describe("hourly visit rollups", () => {
@@ -503,7 +502,7 @@ describe("hourly visit rollups", () => {
     d1.close();
   });
 
-  it("aggregates all performance metric columns (fcp, lcp, cls, inp)", async () => {
+  it("handles visits without a duration", async () => {
     const { env, d1 } = createEnv();
     const scheduledTime = Date.UTC(2026, 4, 25, 12);
     const oldHour = Math.floor(Date.UTC(2026, 4, 24, 20) / (60 * 60 * 1000));
@@ -512,23 +511,18 @@ describe("hourly visit rollups", () => {
         `
           INSERT INTO visits (
             visit_id, site_id, visitor_id, session_id, status, started_at,
-            duration_ms, perf_ttfb_ms, perf_fcp_ms, perf_lcp_ms, perf_cls, perf_inp_ms
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            duration_ms
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)
         `,
       )
       .run(
-        "perf-visit",
+        "no-duration",
         "site-1",
         "v1",
         "s1",
         "closed",
         oldHour * 60 * 60 * 1000 + 5000,
-        1500,
-        100,
-        200,
-        500,
-        0.05,
-        80,
+        null,
       );
 
     await runHourlyAggregation(env, scheduledTime);
@@ -538,58 +532,7 @@ describe("hourly visit rollups", () => {
       .get(oldHour) as Row;
     expect(rollup).toBeDefined();
     expect(rollup.views).toBe(1);
-    expect(rollup.perf_ttfb_sum).toBe(100);
-    expect(rollup.perf_ttfb_count).toBe(1);
-    expect(rollup.perf_fcp_sum).toBe(200);
-    expect(rollup.perf_fcp_count).toBe(1);
-    expect(rollup.perf_lcp_sum).toBe(500);
-    expect(rollup.perf_lcp_count).toBe(1);
-    expect(rollup.perf_cls_sum).toBe(0.05);
-    expect(rollup.perf_cls_count).toBe(1);
-    expect(rollup.perf_inp_sum).toBe(80);
-    expect(rollup.perf_inp_count).toBe(1);
-    d1.close();
-  });
-
-  it("handles visits with null performance metrics", async () => {
-    const { env, d1 } = createEnv();
-    const scheduledTime = Date.UTC(2026, 4, 25, 12);
-    const oldHour = Math.floor(Date.UTC(2026, 4, 24, 20) / (60 * 60 * 1000));
-    d1.db
-      .prepare(
-        `
-          INSERT INTO visits (
-            visit_id, site_id, visitor_id, session_id, status, started_at,
-            duration_ms, perf_ttfb_ms, perf_fcp_ms, perf_lcp_ms, perf_cls, perf_inp_ms
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
-      )
-      .run(
-        "null-perf",
-        "site-1",
-        "v1",
-        "s1",
-        "closed",
-        oldHour * 60 * 60 * 1000 + 5000,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-      );
-
-    await runHourlyAggregation(env, scheduledTime);
-
-    const rollup = d1.db
-      .prepare("SELECT * FROM visit_hourly_rollups WHERE hour_bucket = ?")
-      .get(oldHour) as Row;
-    expect(rollup).toBeDefined();
-    expect(rollup.perf_ttfb_count).toBe(0);
-    expect(rollup.perf_fcp_count).toBe(0);
-    expect(rollup.perf_lcp_count).toBe(0);
-    expect(rollup.perf_cls_count).toBe(0);
-    expect(rollup.perf_inp_count).toBe(0);
+    expect(rollup.duration_ms_count).toBe(0);
     d1.close();
   });
 

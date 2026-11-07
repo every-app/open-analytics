@@ -18,13 +18,9 @@ describe("query route policy", () => {
     expect(PUBLIC_QUERY_PATHS).not.toContain("page-hash");
     expect(PUBLIC_QUERY_PATHS).not.toContain("overview-source-link");
     expect(PUBLIC_QUERY_PATHS).toContain("overview-source-channel");
-    expect(PUBLIC_QUERY_PATHS).toContain("referrer-channel-dimension-trend");
-    expect(PUBLIC_QUERY_PATHS).not.toContain("visitors");
-    expect(PUBLIC_QUERY_PATHS).not.toContain("sessions");
-    expect(PUBLIC_QUERY_PATHS).not.toContain("visitor-detail");
-    expect(PUBLIC_QUERY_PATHS).not.toContain("session-detail");
-    expect(PUBLIC_QUERY_PATHS).not.toContain("event-record-detail");
-    expect(DASHBOARD_QUERY_PATHS).toContain("event-record-detail");
+    expect(PUBLIC_QUERY_PATHS).toContain("utm-source");
+    expect(PUBLIC_QUERY_PATHS).not.toContain("events-records");
+    expect(DASHBOARD_QUERY_PATHS).toContain("events-records");
     expect(DASHBOARD_QUERY_PATHS).toContain("funnels");
     expect(DASHBOARD_QUERY_PATHS).toContain("overview-source-channel");
   });
@@ -35,21 +31,16 @@ describe("query route policy", () => {
     expect(operationForQueryRoute("event-type-field-values")).toBe(
       "event-field-values",
     );
-    expect(operationForQueryRoute("session-detail")).toBe("session-detail");
+    expect(operationForQueryRoute("events-records")).toBe("event-records");
     expect(operationForQueryRoute("funnels")).toBe("funnel-analysis");
-    expect(operationForQueryRoute("browser-radar")).toBe("radar");
-    expect(operationForQueryRoute("client-cross-breakdown")).toBe(
-      "cross-dimension",
-    );
+    expect(operationForQueryRoute("utm-source")).toBe("dimension");
   });
 
-  it("denies public sensitive filters and dimensions before source selection", () => {
+  it("denies public sensitive filters before source selection", () => {
     for (const query of [
       "?query=secret",
       "?sourceLink=https%3A%2F%2Fexample.com%2Fsecret",
       "?filterKey=sourceLink",
-      "?primaryDimension=page.query",
-      "?secondaryDimension=referrer.url",
     ]) {
       expect(
         applyPublicQueryPolicy(new URL(`https://edge.test/share${query}`))
@@ -72,10 +63,8 @@ describe("query route policy", () => {
   it("does not grant private-only operations to public contexts", () => {
     const publicContext = siteQueryContext("site-1", "public-share");
     expect(
-      assertOperationAllowed(publicContext, "event-record-detail"),
-    ).toMatchObject({
-      kind: "capability-denied",
-    });
+      assertOperationAllowed(publicContext, "event-records"),
+    ).toMatchObject({ kind: "capability-denied" });
     expect(assertOperationAllowed(publicContext, "event-fields")).toMatchObject(
       { kind: "capability-denied" },
     );

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@insightflare/ui/button";
 import {
   Card,
@@ -8,16 +7,9 @@ import {
 } from "@insightflare/ui/card";
 import { MetricSummaryGrid } from "@insightflare/ui/metric-summary-grid";
 import { Skeleton } from "@insightflare/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@insightflare/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ChartLineIcon,
-  FileTextIcon,
-  PencilIcon,
-  Trash2Icon,
-} from "lucide-react";
+import { ChartLineIcon, PencilIcon, Trash2Icon } from "lucide-react";
 
-import { AnalysisJourneyTable } from "@/components/dashboard/site-pages/journeys/analysis-journey-table";
 import {
   fetchGoalSummary,
   fetchGoalTimeseries,
@@ -172,7 +164,6 @@ function GoalDetailSkeleton({
 export function GoalDetail({
   goal,
   siteId,
-  pathname = "",
   locale,
   labels,
   messages,
@@ -190,7 +181,6 @@ export function GoalDetail({
 }: {
   readonly goal?: GoalDefinition;
   readonly siteId: string;
-  readonly pathname?: string;
   readonly locale: Locale;
   readonly labels: AppMessages["goals"];
   readonly messages?: Pick<
@@ -210,9 +200,6 @@ export function GoalDetail({
   readonly loadError?: boolean;
 }) {
   const goalId = goal?.id ?? "";
-  const [journeyEntity, setJourneyEntity] = useState<"visitors" | "sessions">(
-    "visitors",
-  );
   const comparisonFilterKey = comparisonQuery
     ? filterQueryKey(comparisonQuery.filters)
     : "none";
@@ -329,7 +316,6 @@ export function GoalDetail({
   const comparisonGoalSummary = comparisonSummary.data?.data.summary;
   const comparisonLoading = Boolean(comparisonQuery) && !comparisonSummary.data;
   const filterDescriptionMessages = messages ?? getMessages(locale);
-  const fullMessages = getMessages(locale);
   const metricLoading = !summary.data;
   const comparisonDetail = (value: string) =>
     comparisonGoalSummary ? `${comparisonLabel}: ${value}` : undefined;
@@ -471,40 +457,6 @@ export function GoalDetail({
           )}
         </CardContent>
       </Card>
-
-      <section className="min-w-0 space-y-3">
-        <div className="space-y-1">
-          <h3 className="inline-flex items-center gap-2 text-sm font-medium">
-            <FileTextIcon className="size-4 shrink-0" />
-            {labels.conversionRecords}
-          </h3>
-        </div>
-        <Tabs
-          value={journeyEntity}
-          onValueChange={(value) => {
-            if (value === "visitors" || value === "sessions") {
-              setJourneyEntity(value);
-            }
-          }}
-        >
-          <AnalysisJourneyTable
-            entity={journeyEntity === "visitors" ? "visitor" : "session"}
-            siteId={siteId}
-            pathname={pathname}
-            locale={locale}
-            messages={fullMessages}
-            window={window}
-            filters={filters}
-            analysisContext={{ type: "goal", goalId: goal.id }}
-            toolbarLeading={
-              <TabsList aria-label={`${labels.visitors} / ${labels.sessions}`}>
-                <TabsTrigger value="visitors">{labels.visitors}</TabsTrigger>
-                <TabsTrigger value="sessions">{labels.sessions}</TabsTrigger>
-              </TabsList>
-            }
-          />
-        </Tabs>
-      </section>
     </div>
   );
 }

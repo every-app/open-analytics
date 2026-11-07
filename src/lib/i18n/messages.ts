@@ -7,15 +7,8 @@ export interface AppMessages {
     overview: string;
     realtime: string;
     pages: string;
-    referrers: string;
-    events: string;
     funnels: string;
-    campaigns: string;
     visitors: string;
-    retention: string;
-    geo: string;
-    devices: string;
-    performance: string;
     settings: string;
   };
   common: {
@@ -445,8 +438,6 @@ export interface AppMessages {
     receivedAt: string;
     startedAt: string;
     previousVisitStartedAt: string;
-    userId: string;
-    userName: string;
     isEU: string;
     queryString: string;
     utmSource: string;
@@ -461,7 +452,6 @@ export interface AppMessages {
     metroCode: string;
     status: string;
     visibilityState: string;
-    endedAt: string;
     duration: string;
     durationSource: string;
     exitReason: string;
@@ -534,91 +524,19 @@ export interface AppMessages {
     eventsMetric: string;
     viewDetails: string;
   };
-  referrers: {
-    title: string;
-    splitTitle: string;
-    breakdownTitle: string;
-    externalLabel: string;
-    longTail: string;
-    channelLongTail: string;
-  };
+  referrers: Record<string, never>;
   campaigns: {
-    title: string;
     tabSource: string;
     tabMedium: string;
     tabCampaign: string;
     tabTerm: string;
     tabContent: string;
     notSet: string;
-    noTaggedTraffic: string;
-    taggedLinkHint: string;
   };
-  sessions: {
-    title: string;
-    search: string;
-    started: string;
-    sessionId: string;
-    visitor: string;
-    anonymous: string;
-    entryPage: string;
-    exitPage: string;
-    duration: string;
-    referrer: string;
-    location: string;
-    os: string;
-    browser: string;
-    device: string;
-    pageViews: string;
-    customEvents: string;
-    screenSize: string;
-    exitTime: string;
-    loadError: string;
-    empty: string;
-  };
+  sessions: Record<string, never>;
   sessionDetail: {
-    anonymous: string;
-    userId: string;
-    userName: string;
-    back: string;
-    missing: string;
-    notFound: string;
-    loadError: string;
-    active: string;
-    inactive: string;
-    status: string;
-    duration: string;
-    screenViews: string;
-    events: string;
-    bounce: string;
-    entryPath: string;
-    exitPath: string;
-    referrerName: string;
-    os: string;
-    browser: string;
-    device: string;
-    screen: string;
     yes: string;
     no: string;
-    uniquePages: string;
-    firstEvent: string;
-    lastEvent: string;
-    sessionStarted: string;
-    pageview: string;
-    exitPage: string;
-    customEvent: string;
-    eventTitleSeparator: string;
-    visitDetailsTitle: string;
-    visitDetailsSubtitle: string;
-    location: string;
-    visitorId: string;
-    sessionId: string;
-    referrerUrl: string;
-    emptyEvents: string;
-    emptyCustomEvents: string;
-    sincePrevious: string;
-    geoLocationTitle: string;
-    performanceTitle: string;
-    range: string;
   };
   events: {
     title: string;
@@ -755,7 +673,6 @@ export interface AppMessages {
   };
   goals: {
     title: string;
-    conversionRecords: string;
     open: string;
     moreActions: string;
     createTitle: string;
@@ -797,202 +714,27 @@ export interface AppMessages {
     empty: string;
     emptyMemberHint: string;
   };
-  visitors: {
-    title: string;
-    search: string;
-    visitor: string;
-    anonymous: string;
-    referrer: string;
-    location: string;
-    os: string;
-    browser: string;
-    device: string;
-    firstSeen: string;
-    lastSeen: string;
-    pageViews: string;
-    sessions: string;
-    customEvents: string;
-    screenSize: string;
-    loadError: string;
-    empty: string;
-  };
-  visitorDetail: {
-    anonymous: string;
-    userId: string;
-    userName: string;
-    back: string;
-    missing: string;
-    notFound: string;
-    loadError: string;
-    totalDuration: string;
-    events: string;
-    views: string;
-    uniquePages: string;
-    avgPagesPerSession: string;
-    avgEventsPerSession: string;
-    avgStay: string;
-    firstSeen: string;
-    lastSeen: string;
-    daysActive: string;
-    avgTimeBetweenSessions: string;
-    activity: string;
-    sessionRecords: string;
-    started: string;
-    visitor: string;
-    duration: string;
-    referrer: string;
-    pageViews: string;
-    visitDetailsTitle: string;
-    visitDetailsSubtitle: string;
-    customEvents: string;
-    emptyEvents: string;
-    emptyCustomEvents: string;
-    emptySessions: string;
-    visitorId: string;
-    sessionId: string;
-    referrerName: string;
-    referrerUrl: string;
-    location: string;
-    browser: string;
-    os: string;
-    device: string;
-    screen: string;
-    entryPath: string;
-    exitPath: string;
-    sessionStarted: string;
-    pageview: string;
-    exitPage: string;
-    customEvent: string;
-    eventTitleSeparator: string;
-    sincePrevious: string;
-    geoLocationTitle: string;
-    performanceTitle: string;
-    range: string;
-  };
-  retention: {
-    title: string;
-    cohortBy: string;
-    cohortDate: string;
-    cohortSize: string;
-    periodLabel: string;
-    matrixTitle: string;
-    matrixSubtitle: string;
-    cohortsMetric: string;
-    visitorsMetric: string;
-    periodOneMetric: string;
-    averageReturnMetric: string;
-    strongestCohortMetric: string;
-    eligibleVisitors: string;
-    periodsAnalyzed: string;
-    noEligibleCohorts: string;
-    overallRetention: string;
-    legendLow: string;
-    legendHigh: string;
-    periodZero: string;
-    empty: string;
-    emptyHint: string;
-    loadError: string;
-    unavailableCell: string;
-    visitorsDetail: string;
-    rateDetail: string;
-    sizeDetail: string;
-  };
+  visitors: Record<string, never>;
+  visitorDetail: Record<string, never>;
+  retention: Record<string, never>;
   geo: {
-    title: string;
     mapTitle: string;
     countryLabel: string;
     regionLabel: string;
     cityLabel: string;
-    back: string;
-    viewOnWikipedia: string;
-    investigationNotice: string;
     timezoneDeltaVsLocal: string;
-    visitorCoordinates: string;
-    ipNotice: string;
-    multipleNotice: string;
     investigation: {
-      countryScopedLabel: string;
-      capital: string;
-      population: string;
-      gdp: string;
-      gdpPerCapita: string;
-      marketPenetration: string;
-      region: string;
-      currency: string;
-      phonecode: string;
-      timezone: string;
-      type: string;
-      iso: string;
-      coordinates: string;
-      unavailable: string;
-      gdpValue: string;
-      gdpPerCapitaValue: string;
-      gdpPerCapitaNearAverage: string;
-      gdpPerCapitaAboveAverage: string;
-      gdpPerCapitaBelowAverage: string;
-      marketPenetrationWindow: string;
-      timezoneCount: string;
       typeLabels: Record<string, string>;
     };
   };
   devices: {
-    title: string;
-    shareTitle: string;
-    dimensions: {
-      device: string;
-      os: string;
-      browser: string;
-      engine: string;
-      screenSize: string;
-    };
-    crossTabTitle: string;
-    crossTabRows: string;
-    crossTabColumns: string;
-    otherLabel: string;
+    dimensions: Record<string, never>;
     screenBucketLabels: Record<string, never>;
   };
   browsers: {
     otherLabel: string;
   };
-  performance: {
-    title: string;
-    empty: string;
-    chartTitle: string;
-    avgLabel: string;
-    samplesLabel: string;
-    p50Label: string;
-    p75Label: string;
-    p95Label: string;
-    ttfb: string;
-    fcp: string;
-    lcp: string;
-    cls: string;
-    inp: string;
-    ttfbDescription: string;
-    fcpDescription: string;
-    lcpDescription: string;
-    clsDescription: string;
-    inpDescription: string;
-    msUnit: string;
-    secondsUnit: string;
-    clsUnit: string;
-    score: string;
-    scoreDescription: string;
-    great: string;
-    needsImprovement: string;
-    poor: string;
-    datasetTitle: string;
-    interpretationTitle: string;
-    currentReading: string;
-    metricThresholdText: string;
-    scoreThresholdText: string;
-    countryHealthTitle: string;
-    countryHealthSubtitle: string;
-    pathsTitle: string;
-    pathsAnalyzedLabel: string;
-    metricValueColumn: string;
-    statusColumn: string;
-  };
+  performance: Record<string, never>;
   share: {
     noData: string;
   };
@@ -1092,8 +834,6 @@ export interface AppMessages {
     ignoreDoNotTrackLabel: string;
     autoTrackOutboundLinksLabel: string;
     autoTrackOutboundLinksHint: string;
-    performanceSampleRateLabel: string;
-    performanceSampleRateHint: string;
     save: string;
     saving: string;
     scriptHint: string;
@@ -1421,9 +1161,6 @@ export interface AppMessages {
     appearance: string;
     mainNavigation: string;
     toggleSidebar: string;
-    sources: string;
-    audience: string;
-    goals: string;
     sites: string;
     allSites: string;
     inbox: string;
@@ -1470,15 +1207,8 @@ const enMessages = {
     overview: "Overview",
     realtime: "Real-time",
     pages: "Pages",
-    referrers: "Referrers",
-    events: "Events",
     funnels: "Goals & funnels",
-    campaigns: "Campaigns",
     visitors: "Visitors",
-    retention: "Retention",
-    geo: "Location",
-    devices: "Devices",
-    performance: "Performance",
     settings: "Site settings",
   },
   common: {
@@ -2033,8 +1763,6 @@ const enMessages = {
     receivedAt: "Received at",
     startedAt: "Started at",
     previousVisitStartedAt: "Previous visit started at",
-    userId: "User ID",
-    userName: "User name",
     isEU: "EU visitor",
     queryString: "Query string",
     utmSource: "UTM source",
@@ -2049,7 +1777,6 @@ const enMessages = {
     metroCode: "Metro code",
     status: "Status",
     visibilityState: "Visibility state",
-    endedAt: "Ended at",
     duration: "Duration",
     durationSource: "Duration source",
     exitReason: "Exit reason",
@@ -2124,92 +1851,19 @@ const enMessages = {
     eventsMetric: "Event count",
     viewDetails: "View details",
   },
-  referrers: {
-    title: "Referrers",
-    splitTitle: "Traffic split",
-    breakdownTitle: "Source breakdown",
-    externalLabel: "External",
-    longTail: "Long tail",
-    channelLongTail: "Other channels",
-  },
+  referrers: {},
   campaigns: {
-    title: "Campaigns",
     tabSource: "UTM source",
     tabMedium: "Medium",
     tabCampaign: "Campaign",
     tabTerm: "Term",
     tabContent: "Content",
     notSet: "Not set",
-    noTaggedTraffic: "No UTM-tagged visits in this period",
-    taggedLinkHint: "Add UTM tags to your links, for example",
   },
-  sessions: {
-    title: "Sessions",
-    search: "Search sessions...",
-    started: "Start time",
-    sessionId: "Session ID",
-    visitor: "Visitor",
-    anonymous: "Anonymous",
-    entryPage: "Entry page",
-    exitPage: "Exit page",
-    duration: "Duration",
-    referrer: "Referrer",
-    location: "Location",
-    os: "OS",
-    browser: "Browser",
-    device: "Device",
-    pageViews: "Page views",
-    customEvents: "Custom events",
-    screenSize: "Screen size",
-    exitTime: "Exit time",
-    loadError: "Couldn't load sessions.",
-    empty: "No sessions in this time range.",
-  },
+  sessions: {},
   sessionDetail: {
-    anonymous: "Anonymous",
-    userId: "User ID",
-    userName: "User name",
-    back: "Back to sessions",
-    missing: "Missing sessionId.",
-    notFound: "Session not found.",
-    loadError: "Couldn't load session detail.",
-    active: "Active",
-    inactive: "Ended",
-    status: "Status",
-    duration: "Duration",
-    screenViews: "Page views",
-    events: "Events",
-    bounce: "Bounced",
-    entryPath: "Entry path",
-    exitPath: "Exit path",
-    referrerName: "Referrer name",
-    os: "OS",
-    browser: "Browser",
-    device: "Device",
-    screen: "Screen",
     yes: "Yes",
     no: "No",
-    uniquePages: "Unique pages",
-    firstEvent: "First event",
-    lastEvent: "Last event",
-    sessionStarted: "Session started",
-    pageview: "Page view",
-    exitPage: "Exit page",
-    customEvent: "Custom event",
-    eventTitleSeparator: ": ",
-    visitDetailsTitle: "Visit details",
-    visitDetailsSubtitle:
-      "Session start, page views, exits, and custom events in the order they happened.",
-    location: "Location",
-    visitorId: "Visitor ID",
-    sessionId: "Session ID",
-    referrerUrl: "Referrer URL",
-    emptyEvents: "No events recorded.",
-    emptyCustomEvents: "No custom events.",
-    sincePrevious: "Since previous",
-    geoLocationTitle: "Location",
-    performanceTitle: "Current session performance",
-    range: "Range",
   },
   events: {
     title: "Events",
@@ -2350,7 +2004,6 @@ const enMessages = {
   },
   goals: {
     title: "Goals",
-    conversionRecords: "Conversion records",
     open: "Open goal",
     moreActions: "More actions",
     createTitle: "Create goal",
@@ -2393,234 +2046,27 @@ const enMessages = {
     empty: "No goals or funnels yet",
     emptyMemberHint: "An admin can create one.",
   },
-  visitors: {
-    title: "Visitors",
-    search: "Search visitors...",
-    visitor: "Visitor",
-    anonymous: "Anonymous",
-    referrer: "Referrer",
-    location: "Location",
-    os: "OS",
-    browser: "Browser",
-    device: "Device",
-    firstSeen: "First visit",
-    lastSeen: "Last visit",
-    pageViews: "Page views",
-    sessions: "Sessions",
-    customEvents: "Custom events",
-    screenSize: "Screen size",
-    loadError: "Couldn't load visitors.",
-    empty: "No visitors in this time range.",
-  },
-  visitorDetail: {
-    anonymous: "Anonymous",
-    userId: "User ID",
-    userName: "User name",
-    back: "Back to visitors",
-    missing: "Missing visitorId.",
-    notFound: "Visitor not found.",
-    loadError: "Couldn't load visitor detail.",
-    totalDuration: "Total duration",
-    events: "Events",
-    views: "Page views",
-    uniquePages: "Unique pages",
-    avgPagesPerSession: "Avg. pages / session",
-    avgEventsPerSession: "Avg. events / session",
-    avgStay: "Avg. visit duration",
-    firstSeen: "First visit",
-    lastSeen: "Last visit",
-    daysActive: "Days active",
-    avgTimeBetweenSessions: "Avg. time between sessions",
-    activity: "Activity",
-    sessionRecords: "Session records",
-    started: "Start time",
-    visitor: "Visitor",
-    duration: "Duration",
-    referrer: "Referrer",
-    pageViews: "Page views",
-    visitDetailsTitle: "Visit details",
-    visitDetailsSubtitle:
-      "Session starts, page views, exits, and custom events for this visitor in the order they happened.",
-    customEvents: "Custom events",
-    emptyEvents: "No events recorded.",
-    emptyCustomEvents: "No custom events.",
-    emptySessions: "No sessions recorded.",
-    visitorId: "Visitor ID",
-    sessionId: "Session ID",
-    referrerName: "Referrer name",
-    referrerUrl: "Referrer URL",
-    location: "Location",
-    browser: "Browser",
-    os: "OS",
-    device: "Device",
-    screen: "Screen",
-    entryPath: "Entry path",
-    exitPath: "Exit path",
-    sessionStarted: "Session started",
-    pageview: "Page view",
-    exitPage: "Exit page",
-    customEvent: "Custom event",
-    eventTitleSeparator: ": ",
-    sincePrevious: "Since previous",
-    geoLocationTitle: "Location",
-    performanceTitle: "Current visitor performance",
-    range: "Range",
-  },
-  retention: {
-    title: "Retention",
-    cohortBy: "Cohort by: {interval}",
-    cohortDate: "Cohort date",
-    cohortSize: "Cohort size",
-    periodLabel: "Period {n}",
-    matrixTitle: "Retention matrix",
-    matrixSubtitle:
-      "Each row is a first-seen cohort; each column shows the share that returned in a later period.",
-    cohortsMetric: "Cohorts",
-    visitorsMetric: "Cohort visitors",
-    periodOneMetric: "First return",
-    averageReturnMetric: "Average return",
-    strongestCohortMetric: "Best cohort",
-    eligibleVisitors: "Eligible visitors",
-    periodsAnalyzed: "Periods analyzed",
-    noEligibleCohorts: "No eligible cohorts",
-    overallRetention: "Overall retention",
-    legendLow: "Low",
-    legendHigh: "High",
-    periodZero: "Initial",
-    empty: "Not enough return data in this time range.",
-    emptyHint: "Pick a longer period, or a coarser interval, in the date menu.",
-    loadError: "Couldn't load retention data.",
-    unavailableCell: "This cohort has not reached this period yet.",
-    visitorsDetail: "Visitors",
-    rateDetail: "Retention",
-    sizeDetail: "Cohort size",
-  },
+  visitors: {},
+  visitorDetail: {},
+  retention: {},
   geo: {
-    title: "Location",
     mapTitle: "Visitors by location",
     countryLabel: "Country / region",
     regionLabel: "Region",
     cityLabel: "City",
-    back: "Back",
-    viewOnWikipedia: "View on Wikipedia",
-    investigationNotice: "This data comes from the web and may contain errors.",
     timezoneDeltaVsLocal: "Difference from local time: {delta}",
-    visitorCoordinates: "Visitor coordinates",
-    ipNotice:
-      "Estimated location via IP. Coordinates are approximate and do not pinpoint a precise address.",
-    multipleNotice:
-      "This visitor's journey across different sessions may span multiple cities.",
     investigation: {
-      countryScopedLabel: "Country's {label}",
-      capital: "Capital",
-      population: "Population",
-      gdp: "GDP",
-      gdpPerCapita: "GDP per capita",
-      marketPenetration: "Market penetration",
-      region: "Region",
-      currency: "Currency",
-      phonecode: "Phone code",
-      timezone: "Time zone",
-      type: "Type",
-      iso: "ISO",
-      coordinates: "Coordinates",
-      unavailable: "N/A",
-      gdpValue: "{value} million USD",
-      gdpPerCapitaValue: "{value} USD/person",
-      gdpPerCapitaNearAverage: "{value} USD/person (near the world average)",
-      gdpPerCapitaAboveAverage: "{value} USD/person ({percent}% above average)",
-      gdpPerCapitaBelowAverage: "{value} USD/person ({percent}% below average)",
-      marketPenetrationWindow: "{label} ({days} days)",
-      timezoneCount: "{count} time zones",
-      typeLabels: {
-        country: "Country",
-        state: "State",
-        province: "Province",
-        prefecture: "Prefecture",
-        city: "City",
-        county: "County",
-        district: "District",
-        town: "Town",
-        village: "Village",
-        municipality: "Municipality",
-        territory: "Territory",
-        section: "Section",
-        adm1: "Admin level 1",
-        adm2: "Admin level 2",
-        adm3: "Admin level 3",
-        adm4: "Admin level 4",
-        adm5: "Admin level 5",
-      },
+      typeLabels: {},
     },
   },
   devices: {
-    title: "Devices",
-    shareTitle: "Visitor share",
-    dimensions: {
-      device: "Device",
-      os: "OS",
-      browser: "Browser",
-      engine: "Engine",
-      screenSize: "Screen size",
-    },
-    crossTabTitle: "Breakdown",
-    crossTabRows: "Rows",
-    crossTabColumns: "Split by",
-    otherLabel: "Other",
+    dimensions: {},
     screenBucketLabels: {},
   },
   browsers: {
     otherLabel: "Other",
   },
-  performance: {
-    title: "Performance",
-    empty: "No Web Vitals yet",
-    chartTitle: "Performance trend",
-    avgLabel: "Average",
-    samplesLabel: "Samples",
-    p50Label: "P50",
-    p75Label: "P75",
-    p95Label: "P95",
-    ttfb: "Time to First Byte",
-    fcp: "First Contentful Paint",
-    lcp: "Largest Contentful Paint",
-    cls: "Cumulative Layout Shift",
-    inp: "Interaction to Next Paint",
-    ttfbDescription:
-      "Measures how long the browser waits before receiving the first byte from the server. It reflects backend latency, network delay, and cache effectiveness.",
-    fcpDescription:
-      "Measures when the first text or image is painted. It reflects how quickly visitors see that the page is starting to load.",
-    lcpDescription:
-      "Measures when the largest visible content element finishes rendering. It is the main loading speed signal for perceived page readiness.",
-    clsDescription:
-      "Measures unexpected layout movement during the page lifecycle. Lower values mean the page is visually stable.",
-    inpDescription:
-      "Measures the latency of user interactions before the next paint. It reflects how responsive the page feels after loading.",
-    msUnit: "ms",
-    secondsUnit: "s",
-    clsUnit: "score",
-    score: "Experience score",
-    scoreDescription:
-      "Combines P75 loading, stability, and interaction metrics into a 0 to 100 experience score. Higher is better.",
-    great: "Great",
-    needsImprovement: "Needs improvement",
-    poor: "Poor",
-    datasetTitle: "Thresholds",
-    interpretationTitle: "Current reading",
-    currentReading:
-      "{metric} P75 is {value}, with an experience score of {score} across {samples} samples. Current status: {status}.",
-    metricThresholdText:
-      "Great: {good} or lower; needs improvement: {good} to {poor}; poor: above {poor}.",
-    scoreThresholdText:
-      "Great: above 90; needs improvement: 50 to 90; poor: below 50.",
-    countryHealthTitle: "Country and region health",
-    countryHealthSubtitle:
-      "Boundary fill shows {metric} health by country or region.",
-    pathsTitle: "Path performance",
-    pathsAnalyzedLabel: "Paths analyzed",
-    metricValueColumn: "P75 value",
-    statusColumn: "Status",
-  },
+  performance: {},
   share: {
     noData: "No data yet",
   },
@@ -2723,9 +2169,6 @@ const enMessages = {
     autoTrackOutboundLinksLabel: "Auto-track outbound link clicks",
     autoTrackOutboundLinksHint:
       "When enabled, clicking links to external domains automatically reports outbound_click events.",
-    performanceSampleRateLabel: "Web Vitals sample rate",
-    performanceSampleRateHint:
-      "A sampled visit records TTFB, FCP, LCP, CLS, and INP on leave. Use 0 to disable sampling or 100 for full coverage.",
     save: "Save",
     saving: "Saving...",
     scriptHint: "Paste it before </head> on every page.",
@@ -3064,9 +2507,6 @@ const enMessages = {
     appearance: "Appearance",
     mainNavigation: "Main navigation",
     toggleSidebar: "Toggle sidebar",
-    sources: "Sources",
-    audience: "Audience",
-    goals: "Conversions",
     sites: "Sites",
     allSites: "All sites",
     inbox: "Notifications",

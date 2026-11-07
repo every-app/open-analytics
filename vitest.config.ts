@@ -30,9 +30,6 @@ export default defineConfig({
   esbuild: {
     jsx: "automatic",
   },
-  define: {
-    BUILD_PERFORMANCE: true,
-  },
   test: {
     environment: "happy-dom",
     environmentOptions: {
@@ -104,7 +101,6 @@ export default defineConfig({
         "src/**/management.ts",
         "src/lib/i18n/messages.ts",
         "src/tracker/*.min.ts",
-        "src/tracker/sdk.no-perf.min.ts",
         "src/lib/dashboard-api/contract/types/**",
         "src/lib/edge/ingest/flush-types.ts",
         "src/lib/edge/ingest/types.ts",

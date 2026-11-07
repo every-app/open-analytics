@@ -1,27 +1,12 @@
 export type { FilterDocument } from "@/lib/edge/analytics/contract";
-import type { PerformanceMetricKey } from "@/lib/edge/analytics/contract";
 export type {
   EventRecordSortKey,
   Interval,
   ListSort,
-  PerformanceCountryRow,
-  PerformanceDashboardResult,
-  PerformanceMetricKey,
-  PerformanceRouteMetricRow,
-  PerformanceRouteRow,
-  PerformanceSummaryRow,
-  PerformanceTrendPointRow,
   QueryWindow,
-  SessionListSortKey,
-  SortDirection,
-  VisitorListSortKey,
 } from "@/lib/edge/analytics/contract";
 export type { TeamSiteRow } from "@/lib/edge/analytics/contract";
-export {
-  DEFAULT_EVENT_RECORD_SORT,
-  DEFAULT_SESSION_LIST_SORT,
-  DEFAULT_VISITOR_LIST_SORT,
-} from "@/lib/edge/analytics/contract";
+export { DEFAULT_EVENT_RECORD_SORT } from "@/lib/edge/analytics/contract";
 export interface OverviewAggregateRow {
   views: number;
   sessions: number;
@@ -33,99 +18,6 @@ export interface OverviewAggregateRow {
 export interface TrendAggregateRow extends OverviewAggregateRow {
   bucket: number;
   timestampMs: number;
-}
-export interface BrowserTrendSeriesRow {
-  key: string;
-  label: string;
-  views: number;
-  visitors: number;
-  sessions: number;
-  isOther?: boolean;
-}
-export interface BrowserTrendBucketRow {
-  bucket: number;
-  label: string;
-  views: number;
-  visitors: number;
-  sessions: number;
-}
-export interface BrowserTrendPointRow {
-  bucket: number;
-  timestampMs: number;
-  totalVisitors: number;
-  visitorsBySeries: Record<string, number>;
-}
-export interface VisitPerformanceMetricsRow {
-  ttfb: number | null;
-  fcp: number | null;
-  lcp: number | null;
-  cls: number | null;
-  inp: number | null;
-}
-export interface JourneyPerformanceMetricSummaryRow {
-  avg: number | null;
-  p75: number | null;
-  min: number | null;
-  max: number | null;
-  samples: number;
-}
-export type JourneyPerformanceSummaryRow = Record<
-  PerformanceMetricKey,
-  JourneyPerformanceMetricSummaryRow
->;
-export interface BrowserVersionAggregateRow {
-  browser: string;
-  version: string;
-  views: number;
-  visitors: number;
-  sessions: number;
-}
-export interface BrowserVersionSliceRow {
-  key: string;
-  label: string;
-  views: number;
-  visitors: number;
-  sessions: number;
-  isOther?: boolean;
-  isUnknown?: boolean;
-}
-export interface BrowserVersionBreakdownRow {
-  browser: string;
-  views: number;
-  visitors: number;
-  sessions: number;
-  versions: BrowserVersionSliceRow[];
-}
-export interface BrowserCrossBreakdownItemRow {
-  key: string;
-  label: string;
-  views: number;
-  visitors: number;
-  sessions: number;
-  isOther?: boolean;
-  isUnknown?: boolean;
-}
-export interface BrowserCrossBreakdownDimensionRow extends BrowserCrossBreakdownItemRow {
-  cells: BrowserCrossBreakdownItemRow[];
-}
-export interface BrowserCrossBreakdownDimensionDataRow {
-  columns: BrowserCrossBreakdownItemRow[];
-  rows: BrowserCrossBreakdownDimensionRow[];
-  totalVisitors: number;
-}
-export interface BrowserCrossAggregateRow {
-  browser: string;
-  dimension: string;
-  views: number;
-  visitors: number;
-  sessions: number;
-}
-export interface ClientCrossAggregateRow {
-  primary: string;
-  secondary: string;
-  views: number;
-  visitors: number;
-  sessions: number;
 }
 export interface DimensionRow {
   value: string;
@@ -194,116 +86,6 @@ export interface ReferrerRow {
   sessions: number;
   visitors: number;
 }
-export interface ReferrerSummaryRow {
-  totalViews: number;
-  directViews: number;
-  externalViews: number;
-  uniqueDomains: number;
-  uniqueLinks: number;
-  truncated: boolean;
-  topSources: Array<Pick<ReferrerRow, "referrer" | "views">>;
-}
-export interface ReferrerRadarRow {
-  referrer: string;
-  sessions: number;
-  bounces: number;
-  avgDurationMs: number;
-  avgDepth: number;
-  visitors: number;
-  returningVisitors: number;
-  avgFrequency: number;
-  trafficShare: number;
-}
-export interface VisitorRow {
-  visitorId: string;
-  sessionId?: string;
-  userId: string;
-  userName: string;
-  firstSeenAt: number;
-  lastSeenAt: number;
-  views: number;
-  sessions: number;
-  events?: number;
-  country?: string;
-  region?: string;
-  regionCode?: string;
-  city?: string;
-  referrerHost?: string;
-  referrerUrl?: string;
-  browser?: string;
-  browserVersion?: string;
-  os?: string;
-  osVersion?: string;
-  deviceType?: string;
-  screenWidth?: number | null;
-  screenHeight?: number | null;
-}
-export interface SessionRow {
-  sessionId: string;
-  visitorId: string;
-  userId: string;
-  userName: string;
-  startedAt: number;
-  endedAt: number;
-  durationMs: number;
-  active: boolean;
-  views: number;
-  events: number;
-  bounce: boolean;
-  entryPath: string;
-  exitPath: string;
-  referrerHost: string;
-  referrerUrl: string;
-  country: string;
-  region: string;
-  regionCode: string;
-  city: string;
-  latitude: number | null;
-  longitude: number | null;
-  browser: string;
-  browserVersion: string;
-  os: string;
-  osVersion: string;
-  deviceType: string;
-  screenWidth: number | null;
-  screenHeight: number | null;
-  performance: VisitPerformanceMetricsRow;
-}
-export interface JourneyEventRow {
-  id: string;
-  kind: "session_start" | "pageview" | "leave" | "custom";
-  eventType: string;
-  occurredAt: number;
-  visitId: string;
-  sessionId: string;
-  visitorId: string;
-  pathname: string;
-  hash: string;
-  title: string;
-  hostname: string;
-  referrerHost: string;
-  referrerUrl: string;
-  country: string;
-  region: string;
-  city: string;
-  browser: string;
-  browserVersion: string;
-  os: string;
-  osVersion: string;
-  deviceType: string;
-  screenWidth: number | null;
-  screenHeight: number | null;
-  durationMs: number;
-  performance: VisitPerformanceMetricsRow;
-}
-export interface JourneyPageCountRow {
-  pathname: string;
-  views: number;
-}
-export interface JourneyEventCountRow {
-  eventType: string;
-  count: number;
-}
 export interface EventSummaryRow {
   events: number;
   eventTypes: number;
@@ -370,10 +152,6 @@ export interface EventFieldValueRow {
   stringValue: string | null;
   numberValue: number | null;
   booleanValue: number | null;
-}
-export interface VisitorActivityRow {
-  date: string;
-  count: number;
 }
 export interface GeoPointRow {
   latitude: number;
@@ -444,26 +222,4 @@ export interface DashboardFilterOption {
 export const SHARE_TREND_OTHER_KEY = "other";
 export const SHARE_TREND_OTHER_LABEL = "Other";
 export const SHARE_TREND_OTHER_TOKEN = "__share_trend_other__";
-export const BROWSER_VERSION_UNKNOWN_TOKEN = "__browser_version_unknown__";
-export const BROWSER_CROSS_UNKNOWN_TOKEN = "__browser_cross_unknown__";
-export const BROWSER_CROSS_OTHER_BROWSER_TOKEN =
-  "__browser_cross_other_browser__";
-export const BROWSER_CROSS_OTHER_DIMENSION_TOKEN =
-  "__browser_cross_other_dimension__";
-export const CLIENT_CROSS_UNKNOWN_TOKEN = "__client_cross_unknown__";
-export const CLIENT_CROSS_OTHER_PRIMARY_TOKEN =
-  "__client_cross_other_primary__";
-export const CLIENT_CROSS_OTHER_SECONDARY_TOKEN =
-  "__client_cross_other_secondary__";
 export const DIRECT_REFERRER_FILTER_VALUE = "__direct__";
-export const PERFORMANCE_METRIC_COLUMNS: Record<PerformanceMetricKey, string> =
-  {
-    ttfb: "perf_ttfb_ms",
-    fcp: "perf_fcp_ms",
-    lcp: "perf_lcp_ms",
-    cls: "perf_cls",
-    inp: "perf_inp_ms",
-  };
-export const PERFORMANCE_METRIC_KEYS = Object.keys(
-  PERFORMANCE_METRIC_COLUMNS,
-) as PerformanceMetricKey[];

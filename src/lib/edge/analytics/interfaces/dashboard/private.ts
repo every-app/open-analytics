@@ -62,31 +62,6 @@ const SIMPLE_DIMENSIONS: Readonly<Record<string, SimpleDimensionKey>> = {
   "utm-term": "utm.term",
   "utm-content": "utm.content",
 };
-type TechnologyHandlerName =
-  | "handleBrowserTrendContract"
-  | "handleBrowserEngineTrendContract"
-  | "handleBrowserVersionBreakdownContract"
-  | "handleBrowserCrossBreakdownContract"
-  | "handleBrowserRadarContract"
-  | "handleReferrerRadarContract"
-  | "handleReferrerDimensionTrendContract"
-  | "handleReferrerChannelTrendContract"
-  | "handleClientDimensionTrendContract"
-  | "handleUtmDimensionTrendContract"
-  | "handleCrossBreakdownContract";
-const TECHNOLOGY_HANDLERS: Readonly<Record<string, TechnologyHandlerName>> = {
-  "browser-trend": "handleBrowserTrendContract",
-  "browser-engine-trend": "handleBrowserEngineTrendContract",
-  "browser-version-breakdown": "handleBrowserVersionBreakdownContract",
-  "browser-cross-breakdown": "handleBrowserCrossBreakdownContract",
-  "browser-radar": "handleBrowserRadarContract",
-  "referrer-radar": "handleReferrerRadarContract",
-  "referrer-dimension-trend": "handleReferrerDimensionTrendContract",
-  "referrer-channel-dimension-trend": "handleReferrerChannelTrendContract",
-  "client-dimension-trend": "handleClientDimensionTrendContract",
-  "utm-dimension-trend": "handleUtmDimensionTrendContract",
-  "client-cross-breakdown": "handleCrossBreakdownContract",
-};
 const OVERVIEW_TABS: Readonly<Record<string, OverviewTab>> = {
   "page-query": "page.query",
   "overview-page-path": "page.path",
@@ -173,43 +148,9 @@ export function executePrivateQuery(
       ),
     );
   }
-  if (input.pathname === "referrer-summary") {
-    return import("./protocol/pages").then(
-      ({ handleReferrerSummaryContract }) =>
-        handleReferrerSummaryContract(
-          input.env,
-          input.siteId,
-          input.url,
-          ctx,
-          queryContext,
-        ),
-    );
-  }
   if (input.pathname === "pages-dashboard") {
     return import("./protocol/pages").then(({ handlePagesDashboardContract }) =>
       handlePagesDashboardContract(
-        input.env,
-        input.siteId,
-        input.url,
-        ctx,
-        queryContext,
-      ),
-    );
-  }
-  if (input.pathname === "retention") {
-    return import("./protocol/analysis").then(({ handleRetentionContract }) =>
-      handleRetentionContract(
-        input.env,
-        input.siteId,
-        input.url,
-        ctx,
-        queryContext,
-      ),
-    );
-  }
-  if (input.pathname === "performance") {
-    return import("./protocol/analysis").then(({ handlePerformanceContract }) =>
-      handlePerformanceContract(
         input.env,
         input.siteId,
         input.url,
@@ -286,18 +227,6 @@ export function executePrivateQuery(
         ),
     );
   }
-  if (input.pathname === "event-type-context") {
-    return import("./protocol/events").then(
-      ({ handleEventTypeContextContract }) =>
-        handleEventTypeContextContract(
-          input.env,
-          input.siteId,
-          input.url,
-          ctx,
-          queryContext,
-        ),
-    );
-  }
   if (input.pathname === "event-type-detail") {
     return import("./protocol/events").then(
       ({ handleEventTypeDetailContract }) =>
@@ -315,94 +244,6 @@ export function executePrivateQuery(
                   input.url.searchParams.get("includeBreakdowns") !== "false",
               }
             : undefined,
-        ),
-    );
-  }
-  if (input.pathname === "event-record-detail") {
-    return import("./protocol/events").then(
-      ({ handleEventRecordDetailContract }) =>
-        handleEventRecordDetailContract(
-          input.env,
-          input.siteId,
-          input.url,
-          ctx,
-          queryContext,
-        ),
-    );
-  }
-  if (input.pathname === "journey-event-detail") {
-    return import("./protocol/journeys").then(
-      ({ handleJourneyEventDetailContract }) =>
-        handleJourneyEventDetailContract(
-          input.env,
-          input.siteId,
-          input.url,
-          ctx,
-          queryContext,
-        ),
-    );
-  }
-  if (input.pathname === "visitors") {
-    return import("./protocol/journeys").then(({ handleVisitorsContract }) =>
-      handleVisitorsContract(
-        input.env,
-        input.siteId,
-        input.url,
-        ctx,
-        queryContext,
-      ),
-    );
-  }
-  if (input.pathname === "sessions") {
-    return import("./protocol/journeys").then(({ handleSessionsContract }) =>
-      handleSessionsContract(
-        input.env,
-        input.siteId,
-        input.url,
-        ctx,
-        queryContext,
-      ),
-    );
-  }
-  if (input.pathname === "visitor-detail") {
-    return import("./protocol/journeys").then(
-      ({ handleVisitorDetailContract }) =>
-        handleVisitorDetailContract(
-          input.env,
-          input.siteId,
-          input.url,
-          ctx,
-          queryContext,
-        ),
-    );
-  }
-  if (input.pathname === "session-detail") {
-    return import("./protocol/journeys").then(
-      ({ handleSessionDetailContract }) =>
-        handleSessionDetailContract(
-          input.env,
-          input.siteId,
-          input.url,
-          ctx,
-          queryContext,
-        ),
-    );
-  }
-  if (
-    input.pathname === "visitor-events" ||
-    input.pathname === "visitor-sessions" ||
-    input.pathname === "session-events"
-  ) {
-    return import("./protocol/journeys").then(
-      ({ handleJourneyCollectionContract }) =>
-        handleJourneyCollectionContract(
-          input.env,
-          input.siteId,
-          input.url,
-          input.pathname as
-            "visitor-events" | "visitor-sessions" | "session-events",
-          ctx,
-          queryContext,
         ),
     );
   }
@@ -526,18 +367,6 @@ export function executePrivateQuery(
           ctx,
           queryContext,
         ),
-    );
-  }
-  const technologyHandler = TECHNOLOGY_HANDLERS[input.pathname];
-  if (technologyHandler) {
-    return import("./protocol/technology").then((module) =>
-      module[technologyHandler](
-        input.env,
-        input.siteId,
-        input.url,
-        ctx,
-        queryContext,
-      ),
     );
   }
   const overviewTab = OVERVIEW_TABS[input.pathname];

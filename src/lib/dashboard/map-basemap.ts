@@ -1,4 +1,4 @@
-import type { Map as MaplibreMap, SkySpecification } from "maplibre-gl";
+import type { Map as MaplibreMap } from "maplibre-gl";
 
 export type DashboardMapTheme = "light" | "dark";
 
@@ -10,20 +10,6 @@ const VECTOR_BASEMAP_STYLE_PATHS: Record<DashboardMapTheme, string> = {
 export function getVectorBasemapStyleUrl(theme: DashboardMapTheme): string {
   // Bypass styles cached before the OpenFreeMap sprite reference correction.
   return `${VECTOR_BASEMAP_STYLE_PATHS[theme]}?v=2`;
-}
-
-export function getVectorBasemapSky(
-  theme: DashboardMapTheme,
-): SkySpecification {
-  const backgroundColor =
-    theme === "dark" ? "rgb(10, 10, 10)" : "rgb(255, 255, 255)";
-
-  return {
-    "sky-color": backgroundColor,
-    "horizon-color": backgroundColor,
-    "fog-color": backgroundColor,
-    "atmosphere-blend": 0.18,
-  };
 }
 
 const DARK_VECTOR_BASEMAP_PAINT_OVERRIDES = [

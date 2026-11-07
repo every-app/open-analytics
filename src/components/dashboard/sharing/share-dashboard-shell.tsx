@@ -24,16 +24,7 @@ interface ShareDashboardShellProps {
   children: ReactNode;
 }
 
-const SHARE_TABS = [
-  "overview",
-  "pages",
-  "referrers",
-  "campaigns",
-  "retention",
-  "geo",
-  "devices",
-  "performance",
-] as const;
+const SHARE_TABS = ["overview", "pages"] as const;
 
 function shareTabHref(locale: Locale, slug: string, key: string): string {
   return sharePath(slug, key === "overview" ? undefined : key);
@@ -52,7 +43,6 @@ export function ShareDashboardShell({
   const routeSearchParams = useSearchParams();
   const initialFilters = parseFilterDocumentFromSearchParams(routeSearchParams);
   const initialScopePreference = parseFilterScopePreference(routeSearchParams);
-  const isGeoRoute = hasData && pathname.endsWith("/geo");
   const navHref = useDashboardNavHref();
   const overviewPath = shareTabHref(locale, slug, "overview");
   const tabs = SHARE_TABS.map((key) => {
@@ -67,12 +57,6 @@ export function ShareDashboardShell({
           : pathname.startsWith(href),
     };
   });
-  const rootClassName = isGeoRoute
-    ? "flex h-svh min-h-0 flex-col bg-background text-foreground"
-    : "flex min-h-svh flex-col bg-background text-foreground";
-  const contentClassName = isGeoRoute
-    ? "flex min-h-0 w-full min-w-0 flex-1 flex-col md:overflow-hidden [&>[data-page-transition]]:flex [&>[data-page-transition]]:h-full [&>[data-page-transition]]:min-h-0 [&>[data-page-transition]]:flex-1 [&>[data-page-transition]]:flex-col"
-    : "mx-auto flex w-full max-w-8xl flex-1 flex-col px-4 py-4 md:px-6 md:py-6";
 
   return (
     <DashboardQueryProvider
@@ -81,7 +65,7 @@ export function ShareDashboardShell({
       initialFilters={initialFilters}
       initialScopePreference={initialScopePreference}
     >
-      <div className={rootClassName}>
+      <div className="flex min-h-svh flex-col bg-background text-foreground">
         <div className="sticky top-0 z-20 shrink-0 bg-background/90 backdrop-blur">
           <div className="px-4 pt-3 md:px-6">
             <ShareHeader
@@ -100,7 +84,7 @@ export function ShareDashboardShell({
             />
           ) : null}
         </div>
-        <main className={contentClassName}>
+        <main className="mx-auto flex w-full max-w-8xl flex-1 flex-col px-4 py-4 md:px-6 md:py-6">
           {hasData ? (
             <PageTransition>{children}</PageTransition>
           ) : (

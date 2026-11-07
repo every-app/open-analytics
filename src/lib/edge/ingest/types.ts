@@ -48,13 +48,6 @@ export interface VisitRow {
   screenWidth: number | null;
   screenHeight: number | null;
   language: string;
-  userId: string;
-  userName: string;
-  perfTtfbMs: number | null;
-  perfFcpMs: number | null;
-  perfLcpMs: number | null;
-  perfCls: number | null;
-  perfInpMs: number | null;
 }
 export interface BufferedVisitRow extends VisitRow, VisitBindingRow {
   hiddenAt?: number | null;
@@ -81,7 +74,6 @@ export interface BufferedCustomEventRow {
   sequence: number;
   eventName: string;
   eventDataJson: string;
-  userId: string;
   dirty: number;
   flushAttempts: number;
   lastFlushError?: string | null;

@@ -10,6 +10,7 @@ import {
 import {
   analyticsFilterRegistry,
   FILTER_DOCUMENT_VERSION,
+  FilterCodecError,
   type FilterDocument,
   filterScopePreferenceFromDocument,
   parseFilterParams,
@@ -22,7 +23,10 @@ import {
   serializeFilterScopePreference,
 } from "@/lib/filter-contract";
 
-import { serializeDashboardSearchParams } from "./filter-state";
+import {
+  EMPTY_DASHBOARD_FILTER_DOCUMENT,
+  serializeDashboardSearchParams,
+} from "./filter-state";
 export type RangePreset =
   "today" | "yesterday" | "7d" | "30d" | "90d" | "12m" | "custom";
 export type DashboardInterval = "minute" | "hour" | "day" | "week" | "month";
@@ -213,9 +217,26 @@ export function parseFilterDocumentFromSearchParams(
   searchParams: URLSearchParams,
 ): FilterDocument {
   return attachFilterScopePreference(
-    parseFilterParams(searchParams, analyticsFilterRegistry),
+    parseDashboardFilterParams(searchParams),
     parseFilterScopePreference(searchParams),
   );
+}
+/**
+ * The filters in a dashboard address, or none when they don't parse: a link
+ * saved before a filter field was removed (user.*, performance.*) opens the
+ * dashboard unfiltered instead of breaking it.
+ */
+export function parseDashboardFilterParams(
+  searchParams: URLSearchParams,
+): FilterDocument {
+  try {
+    return parseFilterParams(searchParams, analyticsFilterRegistry);
+  } catch (error) {
+    if (error instanceof FilterCodecError) {
+      return EMPTY_DASHBOARD_FILTER_DOCUMENT;
+    }
+    throw error;
+  }
 }
 export function parseFilterScopeFromSearchParams(
   searchParams: URLSearchParams,

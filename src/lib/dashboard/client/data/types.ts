@@ -8,7 +8,6 @@ import type {
   PagesData,
 } from "@/lib/dashboard-api/client/edge";
 import type { PagesDashboardMetric } from "@/lib/dashboard-api/contract/types/pages";
-import type { JourneyAnalysisContext } from "@/lib/edge/analytics/contract";
 import type {
   AnalyticsFilterFieldId,
   FilterDocument,
@@ -42,12 +41,6 @@ export type OverviewGeoTabRows = Array<{
 export type PagesDashboardRows = PagesDashboardData["data"]["items"];
 export type PagesDashboardRow = PagesDashboardRows[number];
 export type SortDirection = "asc" | "desc";
-export type VisitorListSortKey =
-  "firstSeenAt" | "lastSeenAt" | "sessions" | "views";
-export type SessionListSortKey = "startedAt" | "durationMs" | "views";
-export type { JourneyAnalysisContext };
-export type EventRecordSortKey = "occurredAt" | "eventName" | "pathname";
-export type RetentionGranularity = TimeWindow["interval"];
 export type PrivateRequestParams = Record<string, string | number>;
 export type DashboardListRequestOptions = {
   limit?: number;

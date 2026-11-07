@@ -1,13 +1,21 @@
 import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MotionGlobalConfig } from "motion/react";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 vi.mock("@/lib/dashboard/client/data", () => ({
   fetchGoalDefinition: vi.fn(),
   fetchGoalSummary: vi.fn(),
   fetchGoalTimeseries: vi.fn(),
-  fetchSessions: vi.fn(),
-  fetchVisitors: vi.fn(),
 }));
 vi.mock("@/components/dashboard/filters/filter-editor", () => ({
   FilterEditor: (props: {
@@ -35,20 +43,6 @@ vi.mock("@/components/dashboard/filters/filter-editor", () => ({
       ),
     ),
 }));
-vi.mock(
-  "@/components/dashboard/site-pages/journeys/analysis-journey-table",
-  () => ({
-    AnalysisJourneyTable: (props: {
-      entity: string;
-      toolbarLeading?: ReactNode;
-    }) =>
-      createElement(
-        "div",
-        { "data-analysis-entity": props.entity },
-        props.toolbarLeading,
-      ),
-  }),
-);
 import { LayerManagerProvider } from "@insightflare/ui/layer-manager";
 
 import { FunnelStepFilterDialog } from "@/components/dashboard/site-pages/funnels/funnel-step-filter-dialog";
@@ -66,8 +60,6 @@ import { TimeZoneProvider } from "@/components/time-zone-provider";
 import {
   fetchGoalSummary,
   fetchGoalTimeseries,
-  fetchSessions,
-  fetchVisitors,
 } from "@/lib/dashboard/client/data";
 import type {
   GoalDefinition,
@@ -154,34 +146,19 @@ describe("Goal dashboard components", () => {
   let intersectionCallback:
     ((entries: IntersectionObserverEntry[]) => void) | undefined;
 
+  // A chart animation still running when a test unmounts would be canceled
+  // after the test ends; finish animations at once instead.
+  beforeAll(() => {
+    MotionGlobalConfig.skipAnimations = true;
+  });
+  afterAll(() => {
+    MotionGlobalConfig.skipAnimations = false;
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(fetchGoalSummary).mockResolvedValue(summary);
     vi.mocked(fetchGoalTimeseries).mockResolvedValue(timeseries);
-    vi.mocked(fetchVisitors).mockResolvedValue({
-      ok: true,
-      data: {
-        items: [],
-        pagination: {
-          limit: 50,
-          returned: 0,
-          hasMore: false,
-          nextCursor: null,
-        },
-      },
-    });
-    vi.mocked(fetchSessions).mockResolvedValue({
-      ok: true,
-      data: {
-        items: [],
-        pagination: {
-          limit: 50,
-          returned: 0,
-          hasMore: false,
-          nextCursor: null,
-        },
-      },
-    });
     vi.stubGlobal(
       "IntersectionObserver",
       class {
@@ -386,7 +363,7 @@ describe("Goal dashboard components", () => {
     ).not.toEqual(timeseriesKey);
   });
 
-  it("renders both visitor and session series with journey tabs", async () => {
+  it("renders both visitor and session series", async () => {
     const { container, root } = renderWithQueryClient(
       createElement(GoalDetail, {
         goal,
@@ -415,7 +392,6 @@ describe("Goal dashboard components", () => {
     expect(
       container.querySelector('[data-goal-series="visitors,sessions"]'),
     ).not.toBeNull();
-    expect(container.querySelector('[role="tablist"]')).not.toBeNull();
     act(() => root.unmount());
     container.remove();
   });

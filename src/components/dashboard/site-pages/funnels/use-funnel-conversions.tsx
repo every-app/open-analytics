@@ -67,7 +67,6 @@ function FunnelDetailDrawer({
   labels,
   descriptionMessages,
   siteId,
-  pathname,
   funnel,
   funnelId,
   window,
@@ -83,7 +82,6 @@ function FunnelDetailDrawer({
   readonly labels: AppMessages["funnels"];
   readonly descriptionMessages: AppMessages;
   readonly siteId: string;
-  readonly pathname: string;
   readonly funnel?: FunnelDefinition;
   readonly funnelId: string;
   readonly window: TimeWindow;
@@ -163,10 +161,6 @@ function FunnelDetailDrawer({
       canManage={canManage}
       onEdit={onEdit}
       onDelete={onDelete}
-      siteId={siteId}
-      pathname={pathname}
-      window={window}
-      filters={filters}
     />
   );
 }
@@ -380,7 +374,6 @@ export function useFunnelConversions({
             labels={labels}
             descriptionMessages={messages}
             siteId={siteId}
-            pathname={pathname}
             funnel={selected}
             funnelId={detailId}
             window={timeWindow}

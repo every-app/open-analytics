@@ -5,8 +5,6 @@ import {
   clampTimestamp,
   formatRealtimeOsLabel,
   jsonResponse,
-  normalizePerformanceMetric,
-  normalizePerformancePayload,
   resolveTrustedClientTimestamp,
   toRealtimePayload,
   toRealtimeScreenSize,
@@ -36,32 +34,6 @@ describe("ingest normalization timestamp helpers", () => {
     expect(
       resolveTrustedClientTimestamp("bad", receivedAt, receivedAt - 1),
     ).toBe(receivedAt - 1);
-  });
-});
-describe("ingest normalization performance helpers", () => {
-  it("rounds finite non-negative metrics and drops invalid values", () => {
-    expect(normalizePerformanceMetric(123.4567)).toBe(123.457);
-    expect(normalizePerformanceMetric("1.2345")).toBe(1.235);
-    expect(normalizePerformanceMetric(-1)).toBeNull();
-    expect(normalizePerformanceMetric("bad")).toBeNull();
-    expect(normalizePerformanceMetric(Number.POSITIVE_INFINITY)).toBeNull();
-  });
-
-  it("normalizes sparse performance payloads", () => {
-    expect(
-      normalizePerformancePayload({
-        ttfb: "12.3456",
-        fcp: -1,
-        lcp: null,
-        cls: 0.12345,
-        inp: "bad",
-      }),
-    ).toEqual({
-      ttfb: 12.346,
-      cls: 0.123,
-    });
-    expect(normalizePerformancePayload({ ttfb: -1, cls: "bad" })).toBeNull();
-    expect(normalizePerformancePayload(null)).toBeNull();
   });
 });
 describe("ingest normalization realtime payload helpers", () => {

@@ -1,11 +1,7 @@
 import type { PageResult, PaginationMeta } from "@/lib/pagination";
 
 import type { GoalDefinition } from "./goal";
-import type {
-  CalendarGranularity,
-  Interval,
-  PerformanceMetricKey,
-} from "./types";
+import type { CalendarGranularity, Interval } from "./types";
 
 export interface CanonicalAnalyticsTab {
   readonly label: string;
@@ -71,62 +67,6 @@ export interface CanonicalEventRecord {
   readonly deviceType: string;
   readonly nodeCount: number;
   readonly valueCount: number;
-}
-
-export interface CanonicalEventRecordDetail extends CanonicalEventRecord {
-  readonly eventKind: "custom_event";
-}
-
-export interface CanonicalEventRecordContext {
-  readonly visitId: string;
-  readonly sessionId: string;
-  readonly visitorId: string;
-  readonly userId: string;
-  readonly userName: string;
-  readonly pathname: string;
-  readonly queryString: string;
-  readonly hash: string;
-  readonly title: string;
-  readonly hostname: string;
-  readonly referrerUrl: string;
-  readonly referrerHost: string;
-  readonly utmSource: string;
-  readonly utmMedium: string;
-  readonly utmCampaign: string;
-  readonly utmTerm: string;
-  readonly utmContent: string;
-  readonly isEU: boolean;
-  readonly country: string;
-  readonly region: string;
-  readonly regionCode: string;
-  readonly city: string;
-  readonly continent: string;
-  readonly latitude: number | null;
-  readonly longitude: number | null;
-  readonly postalCode: string;
-  readonly metroCode: string;
-  readonly timezone: string;
-  readonly organization: string;
-  readonly browser: string;
-  readonly browserVersion: string;
-  readonly os: string;
-  readonly osVersion: string;
-  readonly deviceType: string;
-  readonly userAgent: string;
-  readonly language: string;
-  readonly screenWidth: number | null;
-  readonly screenHeight: number | null;
-  readonly status: string;
-  readonly startedAt: number;
-  readonly previousVisitId: string;
-  readonly previousVisitStartedAt: number | null;
-  readonly lastActivityAt: number;
-  readonly endedAt: number | null;
-  readonly finalizedAt: number | null;
-  readonly durationMs: number | null;
-  readonly durationSource: string;
-  readonly exitReason: string;
-  readonly performance: Readonly<Record<PerformanceMetricKey, number | null>>;
 }
 
 export interface CanonicalEventSummaryResult {
@@ -216,151 +156,6 @@ export interface CanonicalEventFieldValue {
   readonly lastSeenAt: number;
 }
 
-export interface CanonicalJourneyPerformanceMetric {
-  readonly avg: number | null;
-  readonly p75: number | null;
-  readonly min: number | null;
-  readonly max: number | null;
-  readonly samples: number;
-}
-export type CanonicalJourneyPerformance = Readonly<
-  Record<PerformanceMetricKey, CanonicalJourneyPerformanceMetric>
->;
-export interface CanonicalJourneyEvent {
-  readonly id: string;
-  readonly kind: "session_start" | "pageview" | "leave" | "custom";
-  readonly eventType: string;
-  readonly occurredAt: number;
-  readonly visitId: string;
-  readonly sessionId: string;
-  readonly visitorId: string;
-  readonly pathname: string;
-  readonly hash: string;
-  readonly title: string;
-  readonly hostname: string;
-  readonly referrerHost: string;
-  readonly referrerUrl: string;
-  readonly country: string;
-  readonly region: string;
-  readonly city: string;
-  readonly browser: string;
-  readonly browserVersion: string;
-  readonly os: string;
-  readonly osVersion: string;
-  readonly deviceType: string;
-  readonly screenWidth: number | null;
-  readonly screenHeight: number | null;
-  readonly durationMs: number;
-  readonly performance: Readonly<Record<PerformanceMetricKey, number | null>>;
-}
-export interface CanonicalVisitor {
-  readonly visitorId: string;
-  readonly userId: string;
-  readonly userName: string;
-  readonly sessionId?: string;
-  readonly firstSeenAt: number;
-  readonly lastSeenAt: number;
-  readonly views: number;
-  readonly sessions: number;
-  readonly events?: number;
-  readonly country?: string;
-  readonly region?: string;
-  readonly regionCode?: string;
-  readonly city?: string;
-  readonly referrerHost?: string;
-  readonly referrerUrl?: string;
-  readonly browser?: string;
-  readonly browserVersion?: string;
-  readonly os?: string;
-  readonly osVersion?: string;
-  readonly deviceType?: string;
-  readonly screenWidth?: number | null;
-  readonly screenHeight?: number | null;
-}
-export interface CanonicalSession {
-  readonly sessionId: string;
-  readonly visitorId: string;
-  readonly userId: string;
-  readonly userName: string;
-  readonly startedAt: number;
-  readonly endedAt: number;
-  readonly durationMs: number;
-  readonly active: boolean;
-  readonly views: number;
-  readonly events: number;
-  readonly bounce: boolean;
-  readonly entryPath: string;
-  readonly exitPath: string;
-  readonly referrerHost: string;
-  readonly referrerUrl: string;
-  readonly country: string;
-  readonly region: string;
-  readonly regionCode: string;
-  readonly city: string;
-  readonly latitude: number | null;
-  readonly longitude: number | null;
-  readonly browser: string;
-  readonly browserVersion: string;
-  readonly os: string;
-  readonly osVersion: string;
-  readonly deviceType: string;
-  readonly screenWidth: number | null;
-  readonly screenHeight: number | null;
-  readonly performance: Readonly<Record<PerformanceMetricKey, number | null>>;
-}
-export interface CanonicalVisitorDetailResult {
-  readonly visitor: CanonicalVisitor;
-  readonly metrics: {
-    readonly totalEvents: number;
-    readonly sessions: number;
-    readonly views: number;
-    readonly avgEventsPerSession: number;
-    readonly bounceRate: number;
-    readonly avgDurationMs: number;
-    readonly p90DurationMs: number | null;
-    readonly firstSeenAt: number;
-    readonly lastSeenAt: number;
-    readonly daysActive: number;
-    readonly conversionEvents: number;
-    readonly avgTimeBetweenSessionsMs: number;
-  };
-  readonly visitedPages: readonly {
-    readonly pathname: string;
-    readonly views: number;
-  }[];
-  readonly eventDistribution: readonly {
-    readonly eventType: string;
-    readonly count: number;
-  }[];
-  readonly activity: readonly {
-    readonly date: string;
-    readonly count: number;
-  }[];
-  readonly performance: CanonicalJourneyPerformance;
-}
-export interface CanonicalSessionDetailResult {
-  readonly session: CanonicalSession;
-  readonly locationPoints: readonly {
-    readonly latitude: number;
-    readonly longitude: number;
-    readonly timestampMs: number;
-    readonly country: string;
-    readonly region: string;
-    readonly regionCode: string;
-    readonly city: string;
-    readonly pointCount: number;
-  }[];
-  readonly visitedPages: readonly {
-    readonly pathname: string;
-    readonly views: number;
-  }[];
-  readonly eventDistribution: readonly {
-    readonly eventType: string;
-    readonly count: number;
-  }[];
-  readonly performance: CanonicalJourneyPerformance;
-}
-
 export interface CanonicalGoalMetricSummary {
   readonly total: number;
   readonly converted: number;
@@ -384,43 +179,8 @@ export interface CanonicalGoalTimeseriesResult {
 }
 
 export type CanonicalEventRecordPage = PageResult<CanonicalEventRecord>;
-export type CanonicalJourneyEventPage = PageResult<CanonicalJourneyEvent>;
-export type CanonicalJourneySessionPage = PageResult<CanonicalSession>;
-export type CanonicalJourneyVisitorPage = PageResult<CanonicalVisitor>;
 export type CanonicalEventFieldPage = PageResult<CanonicalEventField>;
 export type CanonicalEventFieldValuePage = PageResult<CanonicalEventFieldValue>;
-export type CanonicalEventRecordDetailResult = {
-  readonly event: CanonicalEventRecordDetail;
-  readonly context: CanonicalEventRecordContext;
-  readonly eventData: unknown;
-} | null;
-export type CanonicalJourneyEventDetailResult = {
-  readonly event: {
-    readonly eventId: string;
-    readonly eventName: string;
-    readonly eventKind: "pageview" | "session_start" | "leave" | "custom";
-    readonly occurredAt: number;
-    readonly receivedAt: number;
-    readonly sequence: number;
-    readonly visitId: string;
-    readonly sessionId: string;
-    readonly visitorId: string;
-    readonly pathname: string;
-    readonly title: string;
-    readonly hostname: string;
-    readonly referrerHost: string;
-    readonly country: string;
-    readonly region: string;
-    readonly browser: string;
-    readonly browserVersion: string;
-    readonly os: string;
-    readonly osVersion: string;
-    readonly deviceType: string;
-    readonly nodeCount: number;
-    readonly valueCount: number;
-  };
-  readonly context: CanonicalEventRecordContext;
-} | null;
 export type CanonicalEventTypesPage = CanonicalEventTypeResult;
 export type CanonicalEventRecordPageResult = CanonicalEventRecordPage;
 export type CanonicalEventFieldValuesResult = {
@@ -432,8 +192,4 @@ export type CanonicalEventFieldValuesResult = {
 export type CanonicalEventFieldsResult = {
   readonly eventName: string | undefined;
   readonly data: CanonicalEventFieldPage;
-};
-export type CanonicalEventContextResult = {
-  readonly eventName: string;
-  readonly cards: CanonicalEventContextCards;
 };

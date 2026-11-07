@@ -16,8 +16,8 @@ vi.mock("@/lib/edge/analytics/providers/d1/internal/journey-retention", () => ({
   parseRetentionGranularity: vi.fn((value) => value),
   queryRetentionFromD1: vi.fn(),
 }));
-vi.mock("@/lib/edge/analytics/providers/d1/internal/journeys", () => ({
-  queryGeoPointAggregate: vi.fn(),
+vi.mock("@/lib/edge/analytics/providers/d1/internal/geo-points", () => ({
+  queryGeoPointsFromD1: vi.fn(),
 }));
 vi.mock("@/lib/edge/analytics/providers/d1/internal/pages", () => ({
   decodePagesCursor: vi.fn(),
@@ -30,23 +30,12 @@ vi.mock("@/lib/edge/analytics/providers/d1/internal/pages", () => ({
 vi.mock("@/lib/edge/analytics/providers/d1/internal/referrers", () => ({
   decodeReferrersCursor: vi.fn(),
   queryReferrerAggregate: vi.fn(),
-  queryReferrerSummaryFromD1: vi.fn(),
   queryReferrersPageFromD1: vi.fn(),
 }));
 vi.mock("@/lib/edge/analytics/providers/d1/internal/pages-dashboard", () => ({
   queryPagesDashboard: vi.fn(),
 }));
-vi.mock("@/lib/edge/analytics/providers/d1/internal/performance", () => ({
-  queryPerformanceDashboardFromD1: vi.fn(),
-}));
-vi.mock(
-  "@/lib/edge/analytics/providers/d1/operations/site-performance",
-  () => ({
-    readSitePerformanceBreakdown: vi.fn(),
-    readSitePerformanceSummary: vi.fn(),
-    readSitePerformanceTimeseries: vi.fn(),
-  }),
-);
+
 import { AnalyticsProviderRegistry } from "@/lib/edge/analytics/application/provider-registry";
 import {
   dimensionExpression,
@@ -68,7 +57,7 @@ import {
   queryFilterValuesFromD1,
   queryFilterValuesPageFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/filter-values";
-import { queryGeoPointAggregate } from "@/lib/edge/analytics/providers/d1/internal/journeys";
+import { queryGeoPointsFromD1 } from "@/lib/edge/analytics/providers/d1/internal/geo-points";
 import {
   decodePagesCursor,
   queryDimensionAggregate,
@@ -77,18 +66,11 @@ import {
   queryPageTabsAggregate,
 } from "@/lib/edge/analytics/providers/d1/internal/pages";
 import { queryPagesDashboard } from "@/lib/edge/analytics/providers/d1/internal/pages-dashboard";
-import { queryPerformanceDashboardFromD1 } from "@/lib/edge/analytics/providers/d1/internal/performance";
 import {
   decodeReferrersCursor,
   queryReferrerAggregate,
   queryReferrersPageFromD1,
-  queryReferrerSummaryFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/referrers";
-import {
-  readSitePerformanceBreakdown,
-  readSitePerformanceSummary,
-  readSitePerformanceTimeseries,
-} from "@/lib/edge/analytics/providers/d1/operations/site-performance";
 import type { Env } from "@/lib/edge/types";
 const env = {} as Env;
 const siteId = "site-provider";
@@ -176,15 +158,6 @@ describe("D1 site contract provider pagination routing", () => {
     vi.mocked(queryReferrerAggregate).mockResolvedValue([
       { referrer: "google.com", views: 4, sessions: 3, visitors: 2 },
     ]);
-    vi.mocked(queryReferrerSummaryFromD1).mockResolvedValue({
-      totalViews: 5,
-      directViews: 1,
-      externalViews: 4,
-      uniqueDomains: 2,
-      uniqueLinks: 2,
-      truncated: false,
-      topSources: [],
-    });
     vi.mocked(queryPagesDashboard).mockResolvedValue({
       interval: "day",
       items: [],
@@ -195,16 +168,12 @@ describe("D1 site contract provider pagination routing", () => {
         nextCursor: null,
       },
     });
-    vi.mocked(queryGeoPointAggregate).mockResolvedValue({
+    vi.mocked(queryGeoPointsFromD1).mockResolvedValue({
       points: [],
       countryCounts: [],
       regionCounts: [],
       cityCounts: [],
     });
-    vi.mocked(queryPerformanceDashboardFromD1).mockResolvedValue({} as never);
-    vi.mocked(readSitePerformanceSummary).mockResolvedValue({} as never);
-    vi.mocked(readSitePerformanceTimeseries).mockResolvedValue({} as never);
-    vi.mocked(readSitePerformanceBreakdown).mockResolvedValue({} as never);
   });
 
   it("routes overview tabs to the matching paginated reader", async () => {
@@ -223,32 +192,6 @@ describe("D1 site contract provider pagination routing", () => {
     expect(queryDimensionPageFromD1).toHaveBeenCalled();
     expect(querySessionPathDimensionPageFromD1).toHaveBeenCalled();
     expect(queryReferrersPageFromD1).toHaveBeenCalled();
-  });
-
-  it("dispatches typed performance modes through one canonical provider", async () => {
-    const provider = providers().resolve("performance")!;
-    await provider.execute(input({ mode: "summary" }));
-    await provider.execute(input({ mode: "timeseries", interval: "day" }));
-    await provider.execute(
-      input({
-        mode: "breakdown",
-        dimension: "page.path",
-        metric: "lcp",
-        limit: 10,
-      }),
-    );
-    await provider.execute(input({ mode: "dashboard", interval: "day" }));
-
-    expect(readSitePerformanceSummary).toHaveBeenCalledWith(
-      expect.objectContaining({ env, siteId }),
-    );
-    expect(readSitePerformanceTimeseries).toHaveBeenCalledWith(
-      expect.objectContaining({ interval: "day" }),
-    );
-    expect(readSitePerformanceBreakdown).toHaveBeenCalledWith(
-      expect.objectContaining({ dimension: "page.path", metric: "lcp" }),
-    );
-    expect(queryPerformanceDashboardFromD1).toHaveBeenCalled();
   });
 
   it("keeps bounded list and summary requests on their explicit paths", async () => {
@@ -276,9 +219,6 @@ describe("D1 site contract provider pagination routing", () => {
       .execute(input({ includeDetails: true, page: { limit: 1 } }));
     await registry
       .resolve("referrers")!
-      .execute(input({ variant: "summary", topN: 2 }));
-    await registry
-      .resolve("referrers")!
       .execute(input({ includeFullUrl: true }));
     await registry.resolve("referrers")!.execute(
       input({
@@ -297,13 +237,6 @@ describe("D1 site contract provider pagination routing", () => {
     expect(queryFilterValuesPageFromD1).toHaveBeenCalled();
     expect(queryPageTabsAggregate).toHaveBeenCalled();
     expect(queryPagesPageFromD1).toHaveBeenCalled();
-    expect(queryReferrerSummaryFromD1).toHaveBeenCalledWith(
-      env,
-      siteId,
-      expect.anything(),
-      EMPTY_FILTER_DOCUMENT,
-      2,
-    );
     expect(queryReferrersPageFromD1).toHaveBeenCalled();
     expect(queryPagesDashboard).toHaveBeenCalled();
   });

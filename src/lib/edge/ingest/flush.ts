@@ -22,12 +22,7 @@ import {
   deleteAnalyticsSession,
   readDueAnalyticsSessions,
 } from "./session-state";
-import {
-  visitBindings,
-  visitDetailBindings,
-  visitDetailsUpdateSql,
-  visitStateUpsertSql,
-} from "./sql";
+import { visitBindings, visitUpsertSql } from "./sql";
 import { toUnixSeconds } from "./time";
 import type { BufferedCustomEventRow, BufferedVisitRow } from "./types";
 interface FlushBufferFields {
@@ -87,8 +82,6 @@ interface TimedOutVisitCandidate {
   utmCampaign: string;
   utmTerm: string;
   utmContent: string;
-  userId: string;
-  userName: string;
   isEU: number;
   country: string;
   region: string;
@@ -111,11 +104,6 @@ interface TimedOutVisitCandidate {
   screenSize: string;
   latitude: number | null;
   longitude: number | null;
-  perfTtfbMs: number | null;
-  perfFcpMs: number | null;
-  perfLcpMs: number | null;
-  perfCls: number | null;
-  perfInpMs: number | null;
 }
 async function pushFinalizedVisitRealtimeEvent(
   context: IngestFlushContext,
@@ -147,8 +135,6 @@ async function pushFinalizedVisitRealtimeEvent(
     utmTerm: visit.utmTerm,
     utmContent: visit.utmContent,
     visitorId: visit.visitorId,
-    userId: visit.userId,
-    userName: visit.userName,
     isEU: visit.isEU,
     country: visit.country,
     region: visit.region,
@@ -236,13 +222,6 @@ export async function flushPendingToD1(
           screen_width AS screenWidth,
           screen_height AS screenHeight,
           language,
-          user_id AS userId,
-          user_name AS userName,
-          perf_ttfb_ms AS perfTtfbMs,
-          perf_fcp_ms AS perfFcpMs,
-          perf_lcp_ms AS perfLcpMs,
-          perf_cls AS perfCls,
-          perf_inp_ms AS perfInpMs,
           dirty,
           flush_attempts AS flushAttempts,
           buffer_revision AS bufferRevision,
@@ -271,7 +250,6 @@ export async function flushPendingToD1(
           sequence,
           event_name AS eventName,
           event_data_json AS eventDataJson,
-          user_id AS userId,
           dirty,
           flush_attempts AS flushAttempts,
           last_flush_error AS lastFlushError,
@@ -534,8 +512,6 @@ export async function flushTimeouts(
         utm_campaign AS utmCampaign,
         utm_term AS utmTerm,
         utm_content AS utmContent,
-        user_id AS userId,
-        user_name AS userName,
         is_eu AS isEU,
         country,
         region,
@@ -561,12 +537,7 @@ export async function flushTimeouts(
           ELSE ''
         END AS screenSize,
         latitude,
-        longitude,
-        perf_ttfb_ms AS perfTtfbMs,
-        perf_fcp_ms AS perfFcpMs,
-        perf_lcp_ms AS perfLcpMs,
-        perf_cls AS perfCls,
-        perf_inp_ms AS perfInpMs
+        longitude
       FROM buffered_visits
       WHERE (
           status = 'open'
@@ -659,8 +630,6 @@ async function flushHiddenFallbacks(
         utm_campaign AS utmCampaign,
         utm_term AS utmTerm,
         utm_content AS utmContent,
-        user_id AS userId,
-        user_name AS userName,
         is_eu AS isEU,
         country,
         region,
@@ -686,12 +655,7 @@ async function flushHiddenFallbacks(
           ELSE ''
         END AS screenSize,
         latitude,
-        longitude,
-        perf_ttfb_ms AS perfTtfbMs,
-        perf_fcp_ms AS perfFcpMs,
-        perf_lcp_ms AS perfLcpMs,
-        perf_cls AS perfCls,
-        perf_inp_ms AS perfInpMs
+        longitude
       FROM buffered_visits
       WHERE status = 'hidden_pending'
         AND hidden_at IS NOT NULL
@@ -887,14 +851,9 @@ function prepareVisitStatements(
 ): DatabaseStatement[] {
   return [
     {
-      sql: visitStateUpsertSql(row.status),
+      sql: visitUpsertSql(row.status),
       bindings: visitBindings(row, sitePk),
-      tag: "ingest.visits.upsert_state",
-    },
-    {
-      sql: visitDetailsUpdateSql(row.status),
-      bindings: visitDetailBindings(row),
-      tag: "ingest.visits.update_details",
+      tag: "ingest.visits.upsert",
     },
   ];
 }

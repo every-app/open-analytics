@@ -33,7 +33,6 @@ const baseSettings: SiteTrackingConfig = {
   domainWhitelist: [],
   pathBlacklist: [],
   ignoreDoNotTrack: true,
-  performanceSampleRate: 100,
 };
 const recordStatement = { bind: () => ({ run: async () => ({}) }) };
 const env = {

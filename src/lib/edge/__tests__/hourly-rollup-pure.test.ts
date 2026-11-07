@@ -322,11 +322,6 @@ describe("queryOverviewAndTrendForSitesFromHourlyRollupsPartial", () => {
             visitorId: "prefix-visitor",
             sessionId: "prefix-session",
             durationMs: 20,
-            perfTtfbMs: null,
-            perfFcpMs: null,
-            perfLcpMs: null,
-            perfCls: null,
-            perfInpMs: null,
           },
         ],
       })
@@ -338,11 +333,6 @@ describe("queryOverviewAndTrendForSitesFromHourlyRollupsPartial", () => {
             visitorId: "suffix-visitor",
             sessionId: "suffix-session",
             durationMs: 30,
-            perfTtfbMs: null,
-            perfFcpMs: null,
-            perfLcpMs: null,
-            perfCls: null,
-            perfInpMs: null,
           },
         ],
       });

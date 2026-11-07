@@ -7,16 +7,6 @@ export interface BasicRollupRow {
   views: number;
   durationMsSum: number;
   durationMsCount: number;
-  perfTtfbSum: number;
-  perfTtfbCount: number;
-  perfFcpSum: number;
-  perfFcpCount: number;
-  perfLcpSum: number;
-  perfLcpCount: number;
-  perfClsSum: number;
-  perfClsCount: number;
-  perfInpSum: number;
-  perfInpCount: number;
 }
 
 export interface AggregateSiteHourMetricRow {
@@ -26,16 +16,6 @@ export interface AggregateSiteHourMetricRow {
   views: number | null;
   durationMsSum: number | null;
   durationMsCount: number | null;
-  perfTtfbSum: number | null;
-  perfTtfbCount: number | null;
-  perfFcpSum: number | null;
-  perfFcpCount: number | null;
-  perfLcpSum: number | null;
-  perfLcpCount: number | null;
-  perfClsSum: number | null;
-  perfClsCount: number | null;
-  perfInpSum: number | null;
-  perfInpCount: number | null;
   visitorId: string | null;
   sessionId: string | null;
   visitCount: number | null;

@@ -5,15 +5,10 @@ import { AppShellLayout } from "@/components/app-shell-layout";
 import { SiteBrandIcon } from "@/components/dashboard/common/site-brand-icon";
 import { DashboardHeaderControls } from "@/components/dashboard/shell/dashboard-header-controls";
 import { DashboardQueryProvider } from "@/components/dashboard/shell/dashboard-query-provider";
-import {
-  parsePeopleView,
-  PeopleView,
-} from "@/components/dashboard/site-pages/common/detail-query-param";
 import { useSiteHasData } from "@/components/dashboard/site-pages/common/use-site-has-data";
 import { FirstViewsBanner } from "@/components/dashboard/site-pages/install/first-views-banner";
 import { InstallScriptPage } from "@/components/dashboard/site-pages/install/install-script-page";
 import { useAccountTimeZonePreference } from "@/components/time-zone-provider";
-import { useLiveSearchParams } from "@/lib/dashboard/client/history";
 import { buildSettingsPath, buildSitePath } from "@/lib/dashboard/paths";
 import { canManageTeam } from "@/lib/dashboard/permissions";
 import {
@@ -34,13 +29,9 @@ import {
   parseShellRouteState,
   type ShellRouteState,
   type SidebarSite,
-  siteNavItemFor,
-  siteNavItemLabel,
   siteNavLabel,
-  useDashboardNavHref,
 } from "./dashboard-shell/navigation";
 import { AppSidebar } from "./app-sidebar";
-import { NavTabs } from "./nav-tabs";
 
 interface DashboardShellProps {
   locale: Locale;
@@ -61,23 +52,10 @@ interface DashboardShellProps {
   children: ReactNode;
 }
 
-function filterScopeFor(
-  routeState: ShellRouteState,
-  peopleView: PeopleView,
-): FilterScope | undefined {
+function filterScopeFor(routeState: ShellRouteState): FilterScope | undefined {
   if (!routeState.siteSlug) return undefined;
-  if (routeState.siteSection === "visitors") {
-    return peopleView === PeopleView.Sessions ? "session" : "visitor";
-  }
   if (routeState.siteSection === "realtime") return undefined;
   return "event";
-}
-
-// Pages that fill the panel edge to edge: the map and the live view.
-function isFullBleed(routeState: ShellRouteState): boolean {
-  return (
-    routeState.siteSection === "realtime" || routeState.siteSection === "geo"
-  );
 }
 
 export function DashboardShell({
@@ -95,7 +73,6 @@ export function DashboardShell({
   useAccountTimeZonePreference(user.timeZone);
   const livePathname = usePathname() || pathname;
   const routeSearchParams = useSearchParams();
-  const liveSearchParams = useLiveSearchParams();
   const initialFilters = parseFilterDocumentFromSearchParams(routeSearchParams);
   const initialScopePreference = parseFilterScopePreference(routeSearchParams);
   const canManage = canManageTeam(team.membershipRole, user.systemRole);
@@ -136,34 +113,16 @@ export function DashboardShell({
     }
     previousAwaiting.current = { siteId: activeSite?.id, awaitingFirstView };
   }, [activeSite?.id, awaitingFirstView, siteHasData]);
-  const navHref = useDashboardNavHref();
-  const navItem = section ? siteNavItemFor(section) : undefined;
-  // A sidebar entry with several pages shows them as tabs.
-  const tabs =
-    navItem && navItem.sections.length > 1 && routeState.siteSlug
-      ? navItem.sections.map((key) => ({
-          key,
-          label: siteNavLabel(key, messages),
-          href: navHref(
-            buildSitePath(
-              routeState.siteSlug!,
-              key === "overview" ? undefined : key,
-            ),
-          ),
-          active: key === section,
-        }))
-      : null;
   const contentClassName = awaitingFirstView
     ? // The install view sits in the middle of the page.
       "flex min-w-0 w-full flex-1 flex-col px-4 py-4 md:px-6 md:py-6 [&>[data-page-transition]]:flex [&>[data-page-transition]]:flex-1 [&>[data-page-transition]]:flex-col [&>[data-page-transition]]:justify-center"
-    : section === "geo"
-      ? "flex min-h-0 flex-1 min-w-0 w-full flex-col md:overflow-hidden [&>[data-page-transition]]:flex [&>[data-page-transition]]:h-full [&>[data-page-transition]]:min-h-0 [&>[data-page-transition]]:flex-1 [&>[data-page-transition]]:flex-col"
-      : routeState.orgPage === "settings"
-        ? // Settings brings its own navigation column and page padding.
-          "flex min-w-0 w-full flex-1 flex-col [&>[data-page-transition]]:flex [&>[data-page-transition]]:flex-1 [&>[data-page-transition]]:flex-col"
-        : isFullBleed(routeState)
-          ? "min-w-0 w-full"
-          : "mx-auto min-w-0 w-full max-w-8xl px-4 py-4 md:px-6 md:py-6";
+    : routeState.orgPage === "settings"
+      ? // Settings brings its own navigation column and page padding.
+        "flex min-w-0 w-full flex-1 flex-col [&>[data-page-transition]]:flex [&>[data-page-transition]]:flex-1 [&>[data-page-transition]]:flex-col"
+      : section === "realtime"
+        ? // The live view fills the panel edge to edge.
+          "min-w-0 w-full"
+        : "mx-auto min-w-0 w-full max-w-8xl px-4 py-4 md:px-6 md:py-6";
 
   const pageTitle = routeState.siteSlug ? (
     <>
@@ -180,10 +139,7 @@ export function DashboardShell({
       </span>
       {section ? (
         <span className="hidden truncate text-muted-foreground sm:inline">
-          ·{" "}
-          {navItem
-            ? siteNavItemLabel(navItem, messages)
-            : siteNavLabel(section, messages)}
+          · {siteNavLabel(section, messages)}
         </span>
       ) : null}
     </>
@@ -234,15 +190,10 @@ export function DashboardShell({
                       locale={locale}
                       messages={messages}
                       siteId={activeSite?.id ?? ""}
-                      resolvedScope={filterScopeFor(
-                        routeState,
-                        parsePeopleView(liveSearchParams),
-                      )}
+                      resolvedScope={filterScopeFor(routeState)}
                       showDateControls={section !== "realtime"}
                       showComparison={
-                        Boolean(routeState.siteSlug) &&
-                        section !== "realtime" &&
-                        section !== "visitors"
+                        Boolean(routeState.siteSlug) && section !== "realtime"
                       }
                       showFilter={
                         Boolean(routeState.siteSlug) && section !== "realtime"
@@ -256,13 +207,6 @@ export function DashboardShell({
                   )}
                 </div>
               </div>
-              {tabs ? (
-                <NavTabs
-                  label={messages.appNav.sections}
-                  items={tabs}
-                  className="border-b-0 px-4 md:px-6"
-                />
-              ) : null}
             </>
           ) : undefined
         }

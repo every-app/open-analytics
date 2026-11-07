@@ -19,12 +19,9 @@ import {
 } from "@insightflare/ui/select";
 import { useLocation } from "@tanstack/react-router";
 
-import { EventDetailDrawer } from "@/components/dashboard/site-pages/events/event-detail-drawer";
-import { getMessages } from "@/lib/i18n/messages";
 const FIXTURE_QUERY = "__layerFixture";
 const DETAIL_COUNT = 5;
 const SYNTHETIC_COUNT = 20;
-const STRESS_MESSAGES = getMessages("en");
 type FixtureMode = "stress" | "synthetic" | null;
 function fixtureMode(search: string): FixtureMode {
   if (!import.meta.env.DEV) return null;
@@ -49,17 +46,13 @@ function SyntheticFrames() {
 }
 function StressControls({
   dialogOpen,
-  eventDrawerOpen,
   filterOpen,
   onDialogOpenChange,
-  onEventDrawerOpenChange,
   onFilterOpenChange,
 }: {
   readonly dialogOpen: boolean;
-  readonly eventDrawerOpen: boolean;
   readonly filterOpen: boolean;
   readonly onDialogOpenChange: (open: boolean) => void;
-  readonly onEventDrawerOpenChange: (open: boolean) => void;
   readonly onFilterOpenChange: (open: boolean) => void;
 }) {
   return (
@@ -74,13 +67,6 @@ function StressControls({
         aria-label="Open stress dialog"
       >
         Open stress dialog
-      </Button>
-      <Button
-        type="button"
-        onClick={() => onEventDrawerOpenChange(true)}
-        aria-label="Open stress event drawer"
-      >
-        Open stress event drawer
       </Button>
       <Dialog open={dialogOpen} onOpenChange={onDialogOpenChange}>
         <DialogContent>
@@ -115,25 +101,11 @@ function StressControls({
           </Dialog>
         </DialogContent>
       </Dialog>
-      <EventDetailDrawer
-        locale="en"
-        messages={STRESS_MESSAGES}
-        labels={STRESS_MESSAGES.events}
-        siteId="e2e-layer-fixture"
-        pathname="/sites/e2e-layer-fixture/goals"
-        open={eventDrawerOpen}
-        onOpenChange={onEventDrawerOpenChange}
-        detail={null}
-        loading
-        error={false}
-        eventKind="pageview"
-      />
     </div>
   );
 }
 function StressFrames() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [eventDrawerOpen, setEventDrawerOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [openFrames, setOpenFrames] = useState(() =>
     Array.from({ length: DETAIL_COUNT }, () => true),
@@ -164,10 +136,8 @@ function StressFrames() {
           {isLeaf ? (
             <StressControls
               dialogOpen={dialogOpen}
-              eventDrawerOpen={eventDrawerOpen}
               filterOpen={filterOpen}
               onDialogOpenChange={setDialogOpen}
-              onEventDrawerOpenChange={setEventDrawerOpen}
               onFilterOpenChange={setFilterOpen}
             />
           ) : null}

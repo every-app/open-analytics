@@ -6,9 +6,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   AnalyticsTimeTooltipProvider,
-  AnalyticsTimeTooltipTarget,
+  AnalyticsTooltipTarget,
 } from "@/components/dashboard/analytics-time-tooltip";
-import { TimeZoneProvider } from "@/components/time-zone-provider";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -37,15 +36,15 @@ describe("AnalyticsTimeTooltipProvider", () => {
   it("mounts its fixed anchor in the page floating host", async () => {
     await render(
       <LayerManagerProvider>
-        <TimeZoneProvider>
-          <TooltipProvider>
-            <AnalyticsTimeTooltipProvider>
-              <AnalyticsTimeTooltipTarget locale="en" timestamp={0}>
-                <span>Timestamp</span>
-              </AnalyticsTimeTooltipTarget>
-            </AnalyticsTimeTooltipProvider>
-          </TooltipProvider>
-        </TimeZoneProvider>
+        <TooltipProvider>
+          <AnalyticsTimeTooltipProvider>
+            <AnalyticsTooltipTarget
+              request={{ key: "timestamp", content: "Timestamp" }}
+            >
+              <span>Timestamp</span>
+            </AnalyticsTooltipTarget>
+          </AnalyticsTimeTooltipProvider>
+        </TooltipProvider>
       </LayerManagerProvider>,
     );
 

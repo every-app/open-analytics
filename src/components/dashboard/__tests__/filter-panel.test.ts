@@ -102,13 +102,6 @@ describe("registry-driven editor metadata", () => {
         "geo.timeZone",
         "geo.organization",
         "geo.isEU",
-        "performance.lcpMs",
-        "performance.inpMs",
-        "performance.cls",
-        "performance.ttfbMs",
-        "performance.fcpMs",
-        "user.id",
-        "user.name",
       ],
     );
   });
@@ -133,11 +126,11 @@ describe("registry-driven editor metadata", () => {
 
   it("exposes number fields with registry group and no-suggestion metadata", () => {
     const field = allowedFields("public-share").find(
-      (field) => field.id === "performance.cls",
+      (field) => field.id === "client.screenWidth",
     );
-    expect(field?.group).toBe("performance");
+    expect(field?.group).toBe("device");
     expect(field?.suggestionMode).toBe("none");
-    expect(field?.unit).toBe("ratio");
-    expect(field?.number).toEqual({ min: 0 });
+    expect(field?.unit).toBe("px");
+    expect(field?.number).toEqual({ min: 0, step: 1 });
   });
 });

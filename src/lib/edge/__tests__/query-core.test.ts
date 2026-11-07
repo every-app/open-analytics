@@ -15,7 +15,6 @@ import {
   parseBooleanFlag,
   parseEventFieldPath,
   parseEventFieldValueType,
-  parseEventId,
   parseEventName,
   parseEventRecordSort,
   parseFilterOptionKey,
@@ -23,8 +22,6 @@ import {
   parseLimit,
   parseListSearch,
   parseQueryLimit,
-  parseSessionListSort,
-  parseVisitorListSort,
   parseWindow,
 } from "@/lib/edge/analytics/interfaces/dashboard/protocol/parsers";
 import {
@@ -42,7 +39,6 @@ import {
   dedupeFilterOptions,
   DIRECT_REFERRER_FILTER_VALUE,
   emptyOverviewAggregateRow,
-  emptyPerformanceRouteMetrics,
   eventRecordOrderBy,
   finalizeDimensionBuckets,
   finalizeGeoDimensionBuckets,
@@ -61,9 +57,6 @@ import {
   mapReferrers,
   mapTabs,
   mapTrendRows,
-  mapVisitors,
-  mapVisitPerformanceMetrics,
-  performanceMetricColumn,
   scopedDatasetFor,
   shareTrendSeriesKey,
   sourceLabel,
@@ -152,26 +145,7 @@ describe("edge query core parsers", () => {
     );
   });
 
-  it("parses list sort keys and falls back to defaults", () => {
-    expect(
-      parseVisitorListSort(url("?sortBy=firstSeenAt&sortDir=asc")),
-    ).toEqual({ key: "firstSeenAt", direction: "asc" });
-    expect(parseVisitorListSort(url("?sortBy=unknown&sortDir=asc"))).toEqual({
-      key: "lastSeenAt",
-      direction: "desc",
-    });
-
-    expect(parseSessionListSort(url("?sortBy=durationMs"))).toEqual({
-      key: "durationMs",
-      direction: "desc",
-    });
-    expect(parseSessionListSort(url("?sortBy=lastSeenAt&sortDir=asc"))).toEqual(
-      {
-        key: "startedAt",
-        direction: "desc",
-      },
-    );
-
+  it("parses event record sort keys and falls back to defaults", () => {
     expect(parseEventRecordSort(url("?sortBy=pathname&sortDir=asc"))).toEqual({
       key: "pathname",
       direction: "asc",
@@ -199,8 +173,6 @@ describe("edge query core parsers", () => {
     expect(parseEventFieldValueType(url("?fieldValueType=unsupported"))).toBe(
       undefined,
     );
-    expect(parseEventId(url("?eventId=%20evt_123%20"))).toBe("evt_123");
-    expect(parseEventId(url("?eventId=%20%20"))).toBeUndefined();
     expect(parseFilterOptionKey(url("?filterKey=geo.timeZone"))).toBe(
       "geo.timeZone",
     );
@@ -610,45 +582,6 @@ describe("edge query core mappers", () => {
         { referrer: "news.example", views: 4, sessions: 2, visitors: 2 },
       ]),
     ).toEqual([{ referrer: "news.example", views: 4, sessions: 2 }]);
-    expect(
-      mapVisitors([
-        {
-          visitorId: "visitor-1",
-          userId: "",
-          userName: "",
-          firstSeenAt: 1,
-          lastSeenAt: 2,
-          views: 3,
-          sessions: 1,
-        },
-      ]),
-    ).toEqual([
-      {
-        visitorId: "visitor-1",
-        userId: "",
-        userName: "",
-        sessionId: "",
-        firstSeenAt: 1,
-        lastSeenAt: 2,
-        views: 3,
-        sessions: 1,
-        events: 0,
-        country: "",
-        region: "",
-        regionCode: "",
-        city: "",
-        referrerHost: "",
-        referrerUrl: "",
-        browser: "",
-        browserVersion: "",
-        os: "",
-        osVersion: "",
-        deviceType: "",
-        screenWidth: null,
-        screenHeight: null,
-      },
-    ]);
-
     expect(
       dedupeFilterOptions([
         { value: "", label: "skip" },
@@ -1286,35 +1219,5 @@ describe("edge query core SQL helpers", () => {
     expect(eventRecordOrderBy({ key: "occurredAt", direction: "asc" })).toBe(
       "occurredAt ASC, eventId ASC, eventPk ASC",
     );
-  });
-});
-describe("edge query core performance helpers", () => {
-  it("maps visit performance metrics with nullable and rounded values", () => {
-    expect(
-      mapVisitPerformanceMetrics({
-        perfTtfbMs: "125.1234",
-        perfFcpMs: "",
-        perfLcpMs: "-1",
-        perfCls: 0.12345,
-        perfInpMs: Number.NaN,
-      }),
-    ).toEqual({
-      ttfb: 125.123,
-      fcp: null,
-      lcp: null,
-      cls: 0.123,
-      inp: null,
-    });
-  });
-
-  it("returns known performance metric columns and empty route metrics", () => {
-    expect(performanceMetricColumn("lcp")).toBe("perf_lcp_ms");
-    expect(emptyPerformanceRouteMetrics()).toEqual({
-      ttfb: { avg: null, p50: null, p75: null, p95: null, samples: 0 },
-      fcp: { avg: null, p50: null, p75: null, p95: null, samples: 0 },
-      lcp: { avg: null, p50: null, p75: null, p95: null, samples: 0 },
-      cls: { avg: null, p50: null, p75: null, p95: null, samples: 0 },
-      inp: { avg: null, p50: null, p75: null, p95: null, samples: 0 },
-    });
   });
 });

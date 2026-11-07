@@ -50,14 +50,7 @@ describe("entity member registry", () => {
   });
 
   it("identifies only the namespaces that are legal in entity member paths", () => {
-    for (const namespace of [
-      "geo",
-      "client",
-      "referrer",
-      "utm",
-      "user",
-      "performance",
-    ]) {
+    for (const namespace of ["geo", "client", "referrer", "utm"]) {
       expect(isEntityMemberNamespace(namespace)).toBe(true);
     }
     expect(isEntityMemberNamespace("page")).toBe(false);

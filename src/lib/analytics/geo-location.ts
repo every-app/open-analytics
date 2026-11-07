@@ -1,9 +1,9 @@
 export const GEO_LOCATION_SEPARATOR = "::";
 const GEO_COUNTRY_CODE_PATTERN = /^[A-Z]{2}$/;
 
-export type GeoLocationLevel = "country" | "region" | "locality";
+type GeoLocationLevel = "country" | "region" | "locality";
 
-export interface ParsedGeoLocation {
+interface ParsedGeoLocation {
   canonical: string;
   level: GeoLocationLevel;
   countryCode: string;
@@ -18,16 +18,6 @@ function cleanSegment(value: string | null | undefined): string {
 
 function upperSegment(value: string | null | undefined): string {
   return cleanSegment(value).toUpperCase();
-}
-
-export function normalizeGeoNameToken(
-  value: string | null | undefined,
-): string {
-  return cleanSegment(value)
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ")
-    .toLowerCase();
 }
 
 export function buildRegionLocationValue(
@@ -149,20 +139,4 @@ export function parseGeoLocationValue(
     regionName: cleanSegment(segments[2]),
     localityName: cleanSegment(segments.slice(3).join(GEO_LOCATION_SEPARATOR)),
   };
-}
-
-export function parentGeoLocationValue(
-  location: ParsedGeoLocation | null | undefined,
-): string | null {
-  if (!location) return null;
-  if (location.level === "country") return null;
-  if (location.level === "region") return location.countryCode;
-  if (location.regionCode || location.regionName) {
-    return buildRegionLocationValue(
-      location.countryCode,
-      location.regionCode ?? location.regionName ?? "",
-      location.regionName ?? location.regionCode ?? "",
-    );
-  }
-  return location.countryCode;
 }

@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { AutoResizer } from "@insightflare/ui/auto-resizer";
 import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Button } from "@insightflare/ui/button";
@@ -11,31 +10,21 @@ import {
 import type { MetricSummaryItem } from "@insightflare/ui/metric-summary-grid";
 import { MetricSummaryGrid } from "@insightflare/ui/metric-summary-grid";
 import { Skeleton } from "@insightflare/ui/skeleton";
-import { Slider } from "@insightflare/ui/slider";
-import { Switch } from "@insightflare/ui/switch";
-import {
-  ArrowRightIcon,
-  FileTextIcon,
-  PencilIcon,
-  Trash2Icon,
-} from "lucide-react";
+import { ArrowRightIcon, PencilIcon, Trash2Icon } from "lucide-react";
 
-import { AnalysisJourneyTable } from "@/components/dashboard/site-pages/journeys/analysis-journey-table";
 import {
   intlLocale,
   numberFormat,
   percentFormat,
 } from "@/lib/dashboard/format";
-import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type {
   FunnelAnalysis,
   FunnelAnalysisStep,
   FunnelDefinition,
   FunnelDetailData,
 } from "@/lib/dashboard-api/client/edge";
-import type { FilterDocument } from "@/lib/filter-contract/index";
 import type { Locale } from "@/lib/i18n/config";
-import { type AppMessages, getMessages } from "@/lib/i18n/messages";
+import type { AppMessages } from "@/lib/i18n/messages";
 
 import {
   FunnelChangeRateInline,
@@ -137,7 +126,6 @@ function FunnelStepRow({
   metric,
   loading = false,
   comparisonLoading = false,
-  selected = false,
 }: {
   readonly locale: Locale;
   readonly labels: AppMessages["funnels"];
@@ -149,7 +137,6 @@ function FunnelStepRow({
   readonly metric: "sessions" | "visitors";
   readonly loading?: boolean;
   readonly comparisonLoading?: boolean;
-  readonly selected?: boolean;
 }) {
   const stepRate = analysisStep?.progression.stepConversionRate ?? 0;
   const conversionRate = analysisStep?.progression.conversionRate ?? 0;
@@ -182,10 +169,7 @@ function FunnelStepRow({
   const hasComparison = comparisonLoading || Boolean(comparisonAnalysisStep);
 
   return (
-    <div
-      className={`block w-full min-w-0 border-b last:border-b-0 ${selected ? "bg-muted/50" : ""}`}
-      aria-current={selected ? "step" : undefined}
-    >
+    <div className="block w-full min-w-0 border-b last:border-b-0">
       <div className="flex min-w-0 gap-3 p-4">
         <div className="flex aspect-square min-h-8 shrink-0 self-stretch items-center justify-center border bg-muted/40 font-mono text-xs text-muted-foreground">
           {numberFormat(locale, index + 1)}
@@ -350,10 +334,6 @@ function FunnelDetailContent({
   canManage,
   onEdit,
   onDelete,
-  siteId,
-  pathname,
-  window,
-  filters,
 }: {
   readonly locale: Locale;
   readonly labels: AppMessages["funnels"];
@@ -366,10 +346,6 @@ function FunnelDetailContent({
   readonly canManage: boolean;
   readonly onEdit: (funnel: FunnelDefinition) => void;
   readonly onDelete: (funnel: FunnelDefinition) => void;
-  readonly siteId: string;
-  readonly pathname: string;
-  readonly window: TimeWindow;
-  readonly filters: FilterDocument;
 }) {
   const { funnel, analysis } = payload.data;
   const firstStep =
@@ -378,26 +354,6 @@ function FunnelDetailContent({
   const lastStep =
     analysis.steps.find((step) => step.stepId === funnel.steps.at(-1)?.id) ??
     analysis.steps.at(-1);
-  const defaultStepId = lastStep?.stepId ?? funnel.steps.at(-1)?.id ?? "";
-  const [selectedStepId, setSelectedStepId] = useState(defaultStepId);
-  const [recordOutcome, setRecordOutcome] = useState<"converted" | "dropoff">(
-    "converted",
-  );
-  useEffect(() => {
-    setSelectedStepId(defaultStepId);
-  }, [defaultStepId, funnel.id]);
-  useEffect(() => {
-    setRecordOutcome("converted");
-  }, [funnel.id]);
-  const matchedStepIndex = funnel.steps.findIndex(
-    (step) => step.id === selectedStepId,
-  );
-  const selectedStepIndex =
-    matchedStepIndex >= 0
-      ? matchedStepIndex
-      : Math.max(0, funnel.steps.length - 1);
-  const selectedFunnelStep = funnel.steps[selectedStepIndex];
-  const selectedAnalysisStep = analysis.steps[selectedStepIndex];
   const metric = funnelMetricKey(analysis.progressionScope);
   const secondaryMetric = metric === "sessions" ? "visitors" : "sessions";
   const startingCount = firstStep?.progression.count ?? 0;
@@ -621,99 +577,10 @@ function FunnelDetailContent({
               metric={metric}
               loading={loading}
               comparisonLoading={comparisonLoading}
-              selected={step.id === selectedStepId}
             />
           ))}
         </CardContent>
       </Card>
-
-      {selectedFunnelStep ? (
-        <section className="min-w-0 space-y-3">
-          <div>
-            <h3 className="inline-flex items-center gap-2 text-sm font-medium">
-              <FileTextIcon className="size-4 shrink-0" />
-              {labels.conversionRecords}
-            </h3>
-          </div>
-          <AnalysisJourneyTable
-            entity={metric === "visitors" ? "visitor" : "session"}
-            siteId={siteId}
-            pathname={pathname}
-            locale={locale}
-            messages={getMessages(locale)}
-            window={window}
-            filters={filters}
-            analysisContext={{
-              type: "funnel",
-              funnelId: funnel.id,
-              stepId: selectedFunnelStep.id,
-              outcome: recordOutcome,
-            }}
-            toolbarLeading={
-              <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {labels.step}
-                </span>
-                <Slider
-                  min={0}
-                  max={Math.max(0, funnel.steps.length - 1)}
-                  step={1}
-                  value={[selectedStepIndex]}
-                  onValueChange={(value) => {
-                    const nextIndex = Math.round(value[0] ?? selectedStepIndex);
-                    const nextStep = funnel.steps[nextIndex];
-                    if (nextStep) setSelectedStepId(nextStep.id);
-                  }}
-                  aria-label={labels.step}
-                  disabled={loading || funnel.steps.length < 2}
-                  className="w-20 sm:w-28"
-                />
-                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                  {numberFormat(locale, selectedStepIndex + 1)}/
-                  {numberFormat(locale, funnel.steps.length)}
-                </span>
-                <div
-                  className="inline-flex shrink-0 items-center gap-1.5"
-                  aria-label={labels.conversionRecords}
-                >
-                  <span
-                    className={
-                      recordOutcome === "dropoff"
-                        ? "text-xs text-foreground"
-                        : "text-xs text-muted-foreground"
-                    }
-                  >
-                    {labels.dropped}
-                  </span>
-                  <Switch
-                    checked={recordOutcome === "converted"}
-                    onCheckedChange={(checked) =>
-                      setRecordOutcome(checked ? "converted" : "dropoff")
-                    }
-                    aria-label={`${labels.converted} / ${labels.dropped}`}
-                  />
-                  <span
-                    className={
-                      recordOutcome === "converted"
-                        ? "text-xs text-foreground"
-                        : "text-xs text-muted-foreground"
-                    }
-                  >
-                    {labels.converted}
-                  </span>
-                </div>
-              </div>
-            }
-            enabled={!loading && Boolean(selectedFunnelStep.id)}
-          />
-          {selectedAnalysisStep ? (
-            <p className="text-xs text-muted-foreground">
-              {numberFormat(locale, selectedAnalysisStep.progression.count)}{" "}
-              {funnelMetricLabel(labels, metric)}
-            </p>
-          ) : null}
-        </section>
-      ) : null}
     </div>
   );
 }
@@ -819,10 +686,6 @@ export function FunnelDetail({
   canManage,
   onEdit,
   onDelete,
-  siteId,
-  pathname,
-  window,
-  filters,
 }: {
   readonly locale: Locale;
   readonly labels: AppMessages["funnels"];
@@ -837,10 +700,6 @@ export function FunnelDetail({
   readonly canManage: boolean;
   readonly onEdit: (funnel: FunnelDefinition) => void;
   readonly onDelete: (funnel: FunnelDefinition) => void;
-  readonly siteId: string;
-  readonly pathname: string;
-  readonly window: TimeWindow;
-  readonly filters: FilterDocument;
 }) {
   if (!payload && error) {
     return (
@@ -874,10 +733,6 @@ export function FunnelDetail({
           canManage={canManage}
           onEdit={onEdit}
           onDelete={onDelete}
-          siteId={siteId}
-          pathname={pathname}
-          window={window}
-          filters={filters}
         />
       ) : (
         <FunnelDetailSkeleton labels={labels} funnel={funnel} />

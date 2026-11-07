@@ -96,8 +96,6 @@ function makeVisit(overrides: Partial<StoredOpenVisit> = {}): StoredOpenVisit {
     screenWidth: 1440,
     screenHeight: 900,
     language: "en-US",
-    userId: "visit-user",
-    userName: "Visit User",
     ...overrides,
   };
 }
@@ -607,7 +605,7 @@ describe("normalizeIngestRecord leave and visibility records", () => {
     ).resolves.toMatchObject({ record: null, reason: "missing_visit_id" });
   });
 
-  it("normalizes leave duration, performance visit lookup, and sparse performance data", async () => {
+  it("drops an invalid leave duration", async () => {
     const { context } = makeContext();
 
     const result = await normalizeIngestRecord(
@@ -615,11 +613,6 @@ describe("normalizeIngestRecord leave and visibility records", () => {
         kind: "leave",
         visitId: "visit-1",
         durationMs: "bad",
-        performance: {
-          ttfb: 10.1234,
-          fcp: -1,
-          cls: "bad",
-        },
       }),
       context,
     );
@@ -629,18 +622,14 @@ describe("normalizeIngestRecord leave and visibility records", () => {
       traceId: "trace-1",
       siteId: "site-1",
       visitId: "visit-1",
-      performanceVisitId: "visit-1",
       receivedAt,
       leaveAt: receivedAt - 1_000,
       durationMs: null,
       exitReason: "pagehide",
-      performance: {
-        ttfb: 10.123,
-      },
     });
   });
 
-  it("uses explicit leave performance visit ids and nulls empty performance objects", async () => {
+  it("keeps a numeric leave duration", async () => {
     const { context } = makeContext();
 
     await expect(
@@ -648,12 +637,7 @@ describe("normalizeIngestRecord leave and visibility records", () => {
         makeEnvelope({
           kind: "leave",
           visitId: "visit-1",
-          performanceVisitId: "perf-1",
           durationMs: 1234.5,
-          performance: {
-            ttfb: -1,
-            fcp: Number.POSITIVE_INFINITY,
-          },
         }),
         context,
       ),
@@ -663,12 +647,10 @@ describe("normalizeIngestRecord leave and visibility records", () => {
         traceId: "trace-1",
         siteId: "site-1",
         visitId: "visit-1",
-        performanceVisitId: "perf-1",
         receivedAt,
         leaveAt: receivedAt - 1_000,
         durationMs: 1234.5,
         exitReason: "pagehide",
-        performance: null,
       },
     });
   });

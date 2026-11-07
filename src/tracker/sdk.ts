@@ -5,7 +5,6 @@
 // minifiers may constant-fold privacy branches before injection happens.
 
 import { initAutoTrack } from "./auto-track";
-import { createPerformanceTracker } from "./performance";
 import type { UaClientHintsResult } from "./ua-client-hints";
 import { readUaClientHints, withUaClientHints } from "./ua-client-hints";
 
@@ -17,7 +16,6 @@ interface TrackerRuntimeConfig {
   trackHash: boolean;
   ignoreDoNotTrack: boolean;
   autoTrackOutboundLinks: boolean;
-  performanceSampleRate: number;
   collectToken: string;
 }
 
@@ -37,7 +35,6 @@ function takeRuntimeConfig(): TrackerRuntimeConfig {
     typeof config.trackHash !== "boolean" ||
     typeof config.ignoreDoNotTrack !== "boolean" ||
     typeof config.autoTrackOutboundLinks !== "boolean" ||
-    typeof config.performanceSampleRate !== "number" ||
     typeof config.collectToken !== "string"
   ) {
     throw new Error("OpenAnalytics: runtime configuration is invalid");
@@ -57,9 +54,6 @@ const UTM_FIELDS = [
   ["utm_term", "utmTerm"],
   ["utm_content", "utmContent"],
 ] as const;
-
-// ── Build-time flags (replaced by esbuild define) ──
-declare var BUILD_PERFORMANCE: boolean;
 
 // ── State variables ──
 let currentVisit: {
@@ -100,7 +94,6 @@ const TRACK_QUERY_PARAMS = runtimeConfig.trackQueryParams;
 const TRACK_HASH = runtimeConfig.trackHash;
 const IGNORE_DO_NOT_TRACK = runtimeConfig.ignoreDoNotTrack;
 const AUTO_TRACK_OUTBOUND_LINKS = runtimeConfig.autoTrackOutboundLinks;
-const PERFORMANCE_SAMPLE_RATE = runtimeConfig.performanceSampleRate;
 const COLLECT_TOKEN = runtimeConfig.collectToken;
 // Visits from a local copy of the site are never sent.
 const IS_LOCAL =
@@ -118,10 +111,6 @@ if (!IGNORE_DO_NOT_TRACK) {
 
 const scriptUrl = new URL(scriptEl.src);
 const collectUrl = new URL("/collect", scriptUrl.origin).toString();
-const performanceTracker = createPerformanceTracker({
-  enabled: BUILD_PERFORMANCE,
-  sampleRate: PERFORMANCE_SAMPLE_RATE,
-});
 
 const uaClientHintsReady: Promise<UaClientHintsResult | null> =
   readUaClientHints()
@@ -251,10 +240,6 @@ function startVisit(
     referrerUrl,
   };
 
-  if (BUILD_PERFORMANCE && !performanceTracker.hasVisit()) {
-    performanceTracker.start(currentVisit.id);
-  }
-
   if (debugEnabled) {
     console.log(
       "[OpenAnalytics]",
@@ -283,9 +268,6 @@ function endCurrentVisit(exitReason: string, useBeacon: boolean): void {
   pendingHiddenAt = 0;
   const eventAt = Date.now();
   const url = new URL(currentVisit.href, window.location.href);
-  const performancePayload = BUILD_PERFORMANCE
-    ? performanceTracker.buildPayload()
-    : null;
   send(
     {
       kind: "leave",
@@ -296,11 +278,9 @@ function endCurrentVisit(exitReason: string, useBeacon: boolean): void {
       pathname: url.pathname || "/",
       hostname: url.hostname || "",
       exitReason,
-      ...(performancePayload || {}),
     },
     useBeacon,
   );
-  if (BUILD_PERFORMANCE) performanceTracker.stop();
 }
 
 function sendLeave(): void {

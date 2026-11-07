@@ -109,9 +109,7 @@ function registryFieldId(
   const direct = `${entity}.${suffix}`;
   if (registry.has(direct)) return direct;
   if (
-    ["geo", "client", "referrer", "utm", "user", "performance"].includes(
-      members[0] ?? "",
-    ) &&
+    ["geo", "client", "referrer", "utm"].includes(members[0] ?? "") &&
     registry.has(suffix)
   )
     return suffix;

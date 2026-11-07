@@ -588,7 +588,6 @@ export const PageDetailClientPage = memo(function PageDetailClientPage({
             showIcon: false,
           },
         }}
-        geoPageBasePathname={pathname}
       />
 
       <AsyncDimensionBreakdownCard
