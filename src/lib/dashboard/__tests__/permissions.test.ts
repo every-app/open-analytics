@@ -22,18 +22,16 @@ describe("Dashboard Permissions Authorization", () => {
   });
 
   describe("canManageTeam", () => {
-    it("should always grant manage permission to system-level admins", () => {
-      expect(canManageTeam("member", "admin")).toBe(true);
-      expect(canManageTeam("guest", "admin")).toBe(true);
-      expect(canManageTeam(null, "admin")).toBe(true);
+    it("lets the organization's owners and admins manage", () => {
+      expect(canManageTeam("owner")).toBe(true);
+      expect(canManageTeam("ADMIN")).toBe(true);
     });
 
-    it("should grant manage permission only to owners and admins if not system admin", () => {
-      expect(canManageTeam("owner", "user")).toBe(true);
-      expect(canManageTeam("admin", "user")).toBe(true);
-      expect(canManageTeam("member", "user")).toBe(false);
-      expect(canManageTeam("guest", "user")).toBe(false);
-      expect(canManageTeam(null, "user")).toBe(false);
+    it("keeps members, unknown roles and a missing role read-only", () => {
+      expect(canManageTeam("member")).toBe(false);
+      expect(canManageTeam("guest")).toBe(false);
+      expect(canManageTeam(null)).toBe(false);
+      expect(canManageTeam(undefined)).toBe(false);
     });
   });
 });

@@ -79,9 +79,14 @@ export function TeamNotificationsClient({
   locale,
   messages,
   teamId,
+  canManage,
   initialData = null,
 }: TeamNotificationsClientProps) {
   const copy = messages.teamManagement.notifications;
+  // Without a site there is nothing to report on; only managers can add one.
+  const noSitesHint = canManage
+    ? copy.addSiteFirst
+    : messages.getStarted.memberNoSitesDescription;
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -243,7 +248,7 @@ export function TeamNotificationsClient({
                 </Button>
               </span>
             </TooltipTrigger>
-            <TooltipContent>{copy.addSiteFirst}</TooltipContent>
+            <TooltipContent>{noSitesHint}</TooltipContent>
           </Tooltip>
         )
       }
@@ -280,7 +285,7 @@ export function TeamNotificationsClient({
               media="rows"
               icon={BellIcon}
               title={copy.empty}
-              description={canCreateRule ? undefined : copy.addSiteFirst}
+              description={canCreateRule ? undefined : noSitesHint}
             />
           ) : (
             <Table>

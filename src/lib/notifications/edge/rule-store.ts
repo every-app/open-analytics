@@ -21,7 +21,7 @@ import {
   sort,
   update,
 } from "@/lib/db";
-import { canManageSite, canManageTeam } from "@/lib/edge/admin/access";
+import { canReadSite, canReadTeam } from "@/lib/edge/admin/access";
 import type { Actor } from "@/lib/edge/admin/auth";
 import type { Env } from "@/lib/edge/types";
 import { clampString } from "@/lib/edge/utils";
@@ -120,14 +120,29 @@ export async function getNotificationRule(
   );
   return row ? mapNotificationRule(row) : null;
 }
-async function canManageRuleScope(
+/** A rule may watch any site of the person's organization they can read. */
+async function canWatchSite(
   env: Env,
   actor: Actor,
   input: { teamId: string; siteId: string },
 ): Promise<boolean> {
   return (
-    canManageTeam(actor, input.teamId) &&
-    (await canManageSite(env, actor, input.siteId))
+    canReadTeam(actor, input.teamId) &&
+    (await canReadSite(env, actor, input.siteId))
+  );
+}
+/**
+ * A rule goes to the person who created it, so everyone manages their own;
+ * the organization's owners and admins manage everyone's (viewer.ts).
+ */
+async function canManageRule(
+  env: Env,
+  actor: Actor,
+  rule: NotificationRule,
+): Promise<boolean> {
+  return (
+    (actor.isAdmin || rule.createdByUserId === actor.user.id) &&
+    (await canWatchSite(env, actor, rule))
   );
 }
 export async function createNotificationRule(
@@ -135,7 +150,7 @@ export async function createNotificationRule(
   actor: Actor,
   input: CreateNotificationRuleInput,
 ): Promise<NotificationRule> {
-  if (!(await canManageRuleScope(env, actor, input))) {
+  if (!(await canWatchSite(env, actor, input))) {
     throw new Error("Forbidden");
   }
   const now = Math.floor(Date.now() / 1000);
@@ -168,16 +183,20 @@ export async function listNotificationRules(
 ): Promise<NotificationRule[]> {
   const rules = notificationRuleRows();
   const teamId = filters.teamId ?? actor.teamId;
-  // Everyone in the organization manages its rules (isAdmin, viewer.ts).
-  if (filters.teamId ? !canManageTeam(actor, teamId) : !actor.isAdmin) {
-    throw new Error("Forbidden");
-  }
+  if (!canReadTeam(actor, teamId)) throw new Error("Forbidden");
   const byTeam = eq(rules.columns.teamId, param(teamId));
+  const narrowing = [
+    ...(filters.siteId
+      ? [eq(rules.columns.siteId, param(filters.siteId))]
+      : []),
+    // Owners and admins list everyone's rules; members list their own.
+    ...(actor.isAdmin
+      ? []
+      : [eq(rules.columns.createdByUserId, param(actor.user.id))]),
+  ];
   const matching = filter(
     rules,
-    filters.siteId
-      ? and(byTeam, eq(rules.columns.siteId, param(filters.siteId)))
-      : byTeam,
+    narrowing.length > 0 ? and(byTeam, ...narrowing) : byTeam,
   );
   const ordered = sort(matching, [
     { expression: matching.columns.updatedAt, direction: "DESC" },
@@ -197,16 +216,15 @@ export async function updateNotificationRule(
   const current = await getNotificationRule(env, input.ruleId);
   if (!current) throw new Error("Not Found");
   const siteId = input.siteId ?? current.siteId;
-  // Moving a rule to another site needs both sites.
-  for (const id of new Set([current.siteId, siteId])) {
-    if (
-      !(await canManageRuleScope(env, actor, {
-        teamId: current.teamId,
-        siteId: id,
-      }))
-    ) {
-      throw new Error("Forbidden");
-    }
+  if (!(await canManageRule(env, actor, current))) {
+    throw new Error("Forbidden");
+  }
+  // Moving a rule to another site needs that site too.
+  if (
+    siteId !== current.siteId &&
+    !(await canWatchSite(env, actor, { teamId: current.teamId, siteId }))
+  ) {
+    throw new Error("Forbidden");
   }
   const now = Math.floor(Date.now() / 1000);
   const config = input.config ?? current;
@@ -243,9 +261,7 @@ export async function deleteNotificationRule(
 ): Promise<boolean> {
   const rule = await getNotificationRule(env, ruleId);
   if (!rule) return false;
-  if (!(await canManageRuleScope(env, actor, rule))) {
-    throw new Error("Forbidden");
-  }
+  if (!(await canManageRule(env, actor, rule))) throw new Error("Forbidden");
   await notificationRuleDatabase(env).run(
     compileD1Mutation(
       deleteFrom(schema.notification_rules, (columns) =>

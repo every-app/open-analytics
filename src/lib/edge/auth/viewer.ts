@@ -1,5 +1,6 @@
 import { getEveryAppUser } from "@every-app/sdk/server";
 
+import { canManageTeam } from "@/lib/dashboard/permissions";
 import {
   compileD1Mutation,
   createD1DatabaseClient,
@@ -25,7 +26,11 @@ export interface Viewer {
   email: string;
   teamId: string;
   role: OrgRole;
-  /** Manages sites, notifications and settings: for now, everyone. */
+  /**
+   * Manages sites, goals, funnels, public sharing and System settings: the
+   * organization's owners and admins. Members read every dashboard and keep
+   * their own account, saved filters, inbox and notification rules.
+   */
   isAdmin: boolean;
 }
 
@@ -104,14 +109,13 @@ async function loadViewer(request: Request, env: Env): Promise<Viewer | null> {
   // A deployment pinned to one organization serves no other (`everyapp dev`
   // pins none).
   if (env.EVERY_APP_ORG_ID && user.orgId !== env.EVERY_APP_ORG_ID) return null;
+  const role = toOrgRole(user.orgRole);
   const viewer: Viewer = {
     userId: user.id,
     email: user.email,
     teamId: user.orgId,
-    role: toOrgRole(user.orgRole),
-    // For now every member of the organization manages the app; there is no
-    // view-only role. The gateway role is still recorded.
-    isAdmin: true,
+    role,
+    isAdmin: canManageTeam(role),
   };
   await mirror(env, viewer);
   return viewer;

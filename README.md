@@ -12,7 +12,8 @@
 - Read-only public share links for any site.
 - Weekly or monthly reports and traffic spike or drop alerts, in an in-app inbox and by email.
 - Bot filtering.
-- MCP tools so your agents can query reports and manage sites.
+- Roles from your Every App organization: owners and admins manage sites, goals, funnels, sharing and settings; members read every dashboard and set up their own reports and alerts.
+- MCP tools so your agents can query reports and, as an owner or admin, manage sites.
 
 ## Install on EveryApp
 

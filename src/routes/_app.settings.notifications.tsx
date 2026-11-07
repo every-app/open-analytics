@@ -1,4 +1,4 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
 import { TeamNotificationsClient } from "@/components/dashboard/admin/team-notifications/client";
 import { canManageTeam } from "@/lib/dashboard/permissions";
@@ -6,11 +6,10 @@ import { loadTeamNotificationsInitialData } from "@/lib/dashboard/route-data";
 import { dashboardPageTitle } from "@/lib/page-title";
 
 export const Route = createFileRoute("/_app/settings/notifications")({
+  // Everyone sets up their own reports and alerts; owners and admins see and
+  // manage everyone's (src/lib/notifications/edge/rule-store.ts).
   beforeLoad: async ({ context }) => {
     const c = context.teamContext;
-    if (!canManageTeam(c.activeTeam.membershipRole, c.user.systemRole)) {
-      throw notFound();
-    }
     return {
       teamNotificationsInitialData: await loadTeamNotificationsInitialData({
         data: { teamId: c.activeTeam.id },
@@ -41,6 +40,7 @@ function Page() {
       locale={locale}
       messages={messages}
       teamId={c.activeTeam.id}
+      canManage={canManageTeam(c.activeTeam.membershipRole)}
       initialData={teamNotificationsInitialData}
     />
   );

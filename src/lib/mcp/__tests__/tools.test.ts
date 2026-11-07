@@ -9,6 +9,7 @@ import {
 } from "@every-app/sdk/internal";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ManagerOnly } from "@/lib/edge/admin/access";
 import { resolveViewer } from "@/lib/edge/auth/viewer";
 import { apiApp } from "@/lib/hono/app";
 import worker from "@/server";
@@ -188,7 +189,27 @@ describe("MCP tools", () => {
     expect(apiApp.fetch).not.toHaveBeenCalled();
   });
 
-  it("explains a refused change", async () => {
+  it("passes a member the API's refusal of a change", async () => {
+    vi.mocked(apiApp.fetch).mockResolvedValue(
+      Response.json(
+        {
+          ok: false,
+          error: {
+            code: "owner_or_admin_required",
+            message: ManagerOnly.Sites,
+          },
+        },
+        { status: 403 },
+      ),
+    );
+
+    expect(await callTool("delete_site", { site_id: "site-1" })).toEqual({
+      isError: true,
+      text: ManagerOnly.Sites,
+    });
+  });
+
+  it("explains a refused change the API didn't explain", async () => {
     vi.mocked(apiApp.fetch).mockResolvedValue(
       Response.json({ ok: false }, { status: 403 }),
     );
@@ -197,7 +218,7 @@ describe("MCP tools", () => {
       await callTool("update_site", { site_id: "site-1", name: "New" }),
     ).toEqual({
       isError: true,
-      text: "Only members of the organization can change sites and settings.",
+      text: "Only the organization's owners and admins can change sites, goals, funnels and settings.",
     });
   });
 

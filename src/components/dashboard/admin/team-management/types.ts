@@ -16,6 +16,5 @@ export interface TeamManagementClientProps {
   locale: Locale;
   messages: AppMessages;
   activeTeam: TeamData;
-  systemRole: "admin" | "user";
   teamDashboardSnapshot?: TeamDashboardSnapshot | null;
 }

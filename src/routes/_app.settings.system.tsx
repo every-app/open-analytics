@@ -3,12 +3,15 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { DataRetentionSettings } from "@/components/dashboard/system-settings/data-retention-settings";
 import { EmailSenderStatus } from "@/components/dashboard/system-settings/email-sender-status";
 import { SettingsPage } from "@/components/settings/settings-section";
+import { canManageTeam } from "@/lib/dashboard/permissions";
 import { loadSystemSettingsInitialData } from "@/lib/dashboard/route-data";
 import { dashboardPageTitle } from "@/lib/page-title";
 
 export const Route = createFileRoute("/_app/settings/system")({
   beforeLoad: ({ context }) => {
-    if (context.teamContext.user.systemRole !== "admin") throw notFound();
+    if (!canManageTeam(context.teamContext.activeTeam.membershipRole)) {
+      throw notFound();
+    }
   },
   loader: () => loadSystemSettingsInitialData(),
   head: ({ match }) => ({

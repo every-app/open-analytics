@@ -38,7 +38,6 @@ function TeamIndexPage() {
       locale={locale}
       messages={messages}
       activeTeam={teamContext.activeTeam}
-      systemRole={teamContext.user.systemRole}
       teamDashboardSnapshot={teamDashboardSnapshot}
     />
   );

@@ -26,7 +26,7 @@ function Page() {
       messages={messages}
       siteId={c.activeSite.id}
       pathname={buildSitePath(c.activeSite.slug, "funnels")}
-      canManage={canManageTeam(c.activeTeam.membershipRole, c.user.systemRole)}
+      canManage={canManageTeam(c.activeTeam.membershipRole)}
     />
   );
 }

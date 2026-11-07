@@ -12,7 +12,7 @@ export function buildSitePath(siteSlug: string, section?: SiteSection): string {
  */
 export const SETTINGS_SECTIONS = [
   { key: "account", access: "member" },
-  { key: "notifications", access: "admin" },
+  { key: "notifications", access: "member" },
   { key: "system", access: "admin" },
 ] as const;
 

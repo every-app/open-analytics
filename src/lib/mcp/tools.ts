@@ -5,8 +5,10 @@
  *
  * Each tool acts as the calling member: it calls the same private API the
  * dashboard uses, in-process, with the gateway identity the call arrived
- * with, so permissions (everyone in the organization reads and manages
- * sites and settings) and validation live in one place.
+ * with, so permissions and validation live in one place. Everyone in the
+ * organization reads every site; only its owners and admins create, change,
+ * share or delete sites, goals and funnels, and the API refuses (403) a
+ * member's write with a message the tool returns as is.
  */
 import {
   defineTools,
@@ -168,7 +170,7 @@ async function privateApi<T>(
     if (response.status === 403) {
       throw new ToolError(
         message ??
-          "Only members of the organization can change sites and settings.",
+          "Only the organization's owners and admins can change sites, goals, funnels and settings.",
       );
     }
     if (response.status === 404) {
@@ -413,7 +415,7 @@ export const tools = defineTools(
     create_site: {
       title: "Create site",
       description:
-        "Start tracking a website. Returns the new site and the script tag to add to its pages.",
+        "Start tracking a website. Returns the new site and the script tag to add to its pages. Owners and admins only.",
       risk: "write",
       input: z.object({
         name: z.string().min(2).max(120),
@@ -448,7 +450,7 @@ export const tools = defineTools(
 
     update_site: {
       title: "Rename site",
-      description: "Change a site's name or domain.",
+      description: "Change a site's name or domain. Owners and admins only.",
       risk: "write",
       input: z.object({
         site_id: z.string().min(1),
@@ -470,7 +472,7 @@ export const tools = defineTools(
     update_tracking_settings: {
       title: "Update tracking settings",
       description:
-        "Change how a site's tracker collects data. Only the settings you pass change.",
+        "Change how a site's tracker collects data. Only the settings you pass change. Owners and admins only.",
       risk: "write",
       input: z.object({
         site_id: z.string().min(1),
@@ -515,7 +517,7 @@ export const tools = defineTools(
     save_funnel: {
       title: "Save funnel",
       description:
-        "Create a funnel, or replace one when id is given. Steps are filter expressions matched in order; read conversions with get_site_report report=funnels params.id.",
+        "Create a funnel, or replace one when id is given. Steps are filter expressions matched in order; read conversions with get_site_report report=funnels params.id. Owners and admins only.",
       risk: "write",
       input: z.object({
         site_id: z.string().min(1),
@@ -569,7 +571,7 @@ export const tools = defineTools(
     save_goal: {
       title: "Save goal",
       description:
-        'Create a goal, or replace one when id is given: a filter expression that counts a conversion, e.g. event.name eq "signup". Read it with get_site_report report=goal-summary params.id.',
+        'Create a goal, or replace one when id is given: a filter expression that counts a conversion, e.g. event.name eq "signup". Read it with get_site_report report=goal-summary params.id. Owners and admins only.',
       risk: "write",
       input: z.object({
         site_id: z.string().min(1),
@@ -591,7 +593,7 @@ export const tools = defineTools(
     set_public_sharing: {
       title: "Share a site publicly",
       description:
-        "Turn a site's public share link on or off. While on, anyone with the link can read the site's dashboards.",
+        "Turn a site's public share link on or off. While on, anyone with the link can read the site's dashboards. Owners and admins only.",
       risk: "write",
       destructive: true,
       input: z.object({
@@ -620,7 +622,7 @@ export const tools = defineTools(
     delete_site: {
       title: "Delete site",
       description:
-        "Delete a site and all of its analytics data. This can't be undone.",
+        "Delete a site and all of its analytics data. This can't be undone. Owners and admins only.",
       risk: "write",
       destructive: true,
       input: z.object({ site_id: z.string().min(1) }),
@@ -632,7 +634,7 @@ export const tools = defineTools(
 
     delete_funnel: {
       title: "Delete funnel",
-      description: "Delete a funnel.",
+      description: "Delete a funnel. Owners and admins only.",
       risk: "write",
       destructive: true,
       input: z.object({ site_id: z.string().min(1), id: z.string().min(1) }),
@@ -646,7 +648,7 @@ export const tools = defineTools(
 
     delete_goal: {
       title: "Delete goal",
-      description: "Delete a goal.",
+      description: "Delete a goal. Owners and admins only.",
       risk: "write",
       destructive: true,
       input: z.object({ site_id: z.string().min(1), id: z.string().min(1) }),
@@ -660,6 +662,6 @@ export const tools = defineTools(
   },
   {
     instructions:
-      "OpenAnalytics: privacy-friendly web analytics for the organization's sites. Call list_sites first; every site tool takes its site_id. Times default to the last 7 days. Filters use the filter expression language described on the filter argument. Deleting a site, funnel or goal can't be undone, and public sharing opens a site's dashboards to anyone with the link: confirm with the person before calling those tools.",
+      "OpenAnalytics: privacy-friendly web analytics for the organization's sites. Call list_sites first; every site tool takes its site_id. Times default to the last 7 days. Filters use the filter expression language described on the filter argument. Every member reads every site; only the organization's owners and admins can create, change, share or delete sites, goals and funnels, and a member's call to those tools is refused. Deleting a site, funnel or goal can't be undone, and public sharing opens a site's dashboards to anyone with the link: confirm with the person before calling those tools.",
   },
 );

@@ -49,6 +49,14 @@ function actor(input: Partial<Actor> = {}): Actor {
   } as Actor;
 }
 
+/** Cy, a member: reads every site, manages only their own rules. */
+const member = () =>
+  actor({
+    user: { id: "cy" } as Actor["user"],
+    role: "member",
+    isAdmin: false,
+  });
+
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(NOW * 1000);
@@ -56,6 +64,7 @@ beforeEach(() => {
   database.exec(`
     INSERT INTO users (id, email, notification_preferences_json, preferred_locale)
       VALUES ('ana', 'ana@old.test', '{"email":false}', 'ja');
+    INSERT INTO users (id, email) VALUES ('cy', 'cy@example.test');
     INSERT INTO teams (id, name, slug) VALUES ('team-1', 'One', 'one'),
       ('team-2', 'Two', 'two');
     INSERT INTO sites (id, team_id, name, domain) VALUES
@@ -131,25 +140,81 @@ describe("notification rule store", () => {
     });
   });
 
-  it("refuses sites and organizations the actor doesn't manage", async () => {
-    for (const input of [
-      { teamId: "team-1", siteId: "other-site" },
-      { teamId: "team-2", siteId: "other-site" },
-    ]) {
+  it("refuses sites and organizations the actor can't read", async () => {
+    for (const who of [actor(), member()]) {
+      for (const input of [
+        { teamId: "team-1", siteId: "other-site" },
+        { teamId: "team-2", siteId: "other-site" },
+      ]) {
+        await expect(
+          createNotificationRule(env, who, {
+            ...input,
+            name: "x",
+            config: weeklyReport,
+          }),
+        ).rejects.toThrow("Forbidden");
+      }
       await expect(
-        createNotificationRule(env, actor(), {
-          ...input,
-          name: "x",
-          config: weeklyReport,
-        }),
+        listNotificationRules(env, who, { teamId: "team-2" }),
       ).rejects.toThrow("Forbidden");
     }
+  });
+
+  it("lets a member manage only their own rules, and owners and admins everyone's", async () => {
+    const owners = await createNotificationRule(env, actor(), {
+      teamId: "team-1",
+      siteId: "site-1",
+      name: "owner's",
+      config: weeklyReport,
+    });
+    vi.setSystemTime((NOW + 10) * 1000);
+    const mine = await createNotificationRule(env, member(), {
+      teamId: "team-1",
+      siteId: "site-2",
+      name: "mine",
+      config: dropAlert,
+    });
+    expect(mine).toMatchObject({ createdByUserId: "cy", siteId: "site-2" });
+
+    // A member lists their own; owners and admins list everyone's.
+    expect(
+      (await listNotificationRules(env, member())).map((rule) => rule.id),
+    ).toEqual([mine.id]);
+    expect(
+      (await listNotificationRules(env, actor())).map((rule) => rule.id),
+    ).toEqual([mine.id, owners.id]);
+
+    // Someone else's rule is not a member's to change or delete.
     await expect(
-      listNotificationRules(env, actor(), { teamId: "team-2" }),
+      updateNotificationRule(env, member(), { ruleId: owners.id, name: "x" }),
     ).rejects.toThrow("Forbidden");
     await expect(
-      listNotificationRules(env, actor({ isAdmin: false })),
+      deleteNotificationRule(env, member(), owners.id),
     ).rejects.toThrow("Forbidden");
+
+    // Their own they change, move to any site they read, and delete.
+    await expect(
+      updateNotificationRule(env, member(), {
+        ruleId: mine.id,
+        siteId: "site-1",
+        enabled: false,
+      }),
+    ).resolves.toMatchObject({ siteId: "site-1", enabled: false });
+    await expect(
+      updateNotificationRule(env, member(), {
+        ruleId: mine.id,
+        siteId: "other-site",
+      }),
+    ).rejects.toThrow("Forbidden");
+
+    // An admin manages a member's rule.
+    const admin = actor({ user: { id: "bo" } as Actor["user"], role: "admin" });
+    await expect(
+      updateNotificationRule(env, admin, { ruleId: mine.id, name: "checked" }),
+    ).resolves.toMatchObject({ name: "checked", createdByUserId: "cy" });
+    await expect(deleteNotificationRule(env, member(), mine.id)).resolves.toBe(
+      true,
+    );
   });
 
   it("lists the organization's rules, newest change first, by site", async () => {
@@ -228,7 +293,7 @@ describe("notification rule store", () => {
     ).rejects.toThrow("Not Found");
   });
 
-  it("deletes a rule once and only for a manager", async () => {
+  it("deletes a rule once, and only for its creator or a manager", async () => {
     const rule = await createNotificationRule(env, actor(), {
       teamId: "team-1",
       siteId: "site-1",
@@ -237,7 +302,7 @@ describe("notification rule store", () => {
     });
 
     await expect(
-      deleteNotificationRule(env, actor({ isAdmin: false }), rule.id),
+      deleteNotificationRule(env, member(), rule.id),
     ).rejects.toThrow("Forbidden");
     await expect(deleteNotificationRule(env, actor(), rule.id)).resolves.toBe(
       true,

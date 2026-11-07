@@ -1,11 +1,6 @@
+import { ManagerOnly, managerOnly } from "@/lib/edge/admin/access";
 import { requireActor } from "@/lib/edge/admin/auth";
-import {
-  bad,
-  forb,
-  jsonResponseFor,
-  na,
-  parseJson,
-} from "@/lib/edge/admin/response";
+import { bad, jsonResponseFor, na, parseJson } from "@/lib/edge/admin/response";
 import {
   readRetentionConfig,
   writeRetentionConfig,
@@ -21,7 +16,7 @@ export async function handleRetentionAdmin(
   const actor = await requireActor(env, req);
   if (actor instanceof Response) return actor;
   if (!actor.isAdmin) {
-    return forb("Only admins can change data retention", undefined, req);
+    return managerOnly(ManagerOnly.Retention, req);
   }
   if (req.method === "GET") {
     return jsonResponseFor(req, {

@@ -11,6 +11,7 @@ import {
 } from "@/lib/db";
 import type { Actor } from "@/lib/edge/admin/auth";
 import type { Env } from "@/lib/edge/types";
+import { forb } from "@/lib/response";
 
 function database(env: Pick<Env, "DB">) {
   return createD1DatabaseClient(env.DB);
@@ -35,8 +36,24 @@ async function siteTeam(env: Env, siteId: string): Promise<string | null> {
   return row?.team_id ?? null;
 }
 
-// Everyone in the organization reads and manages its workspace (viewer.ts
-// marks every member as managing). There is one workspace per organization.
+// Everyone in the organization reads its workspace, the one per
+// organization; its owners and admins manage it (`isAdmin`, viewer.ts).
+
+/** What the API answers (403) someone who reads but doesn't manage. */
+export enum ManagerOnly {
+  Sites = "Only the organization's owners and admins can add, change, share or delete sites.",
+  TrackingSettings = "Only the organization's owners and admins can change a site's tracking settings.",
+  Goals = "Only the organization's owners and admins can create, change or delete goals.",
+  Funnels = "Only the organization's owners and admins can create, change or delete funnels.",
+  Retention = "Only the organization's owners and admins can see or change data retention.",
+  GetStarted = "Only the organization's owners and admins set up sites.",
+  Members = "Only the organization's owners and admins can list members.",
+}
+
+/** The 403 for a change only owners and admins make. */
+export function managerOnly(message: ManagerOnly, req: Request): Response {
+  return forb(message, "owner_or_admin_required", req);
+}
 
 export function canReadTeam(a: Actor, teamId: string): boolean {
   return a.teamId === teamId;

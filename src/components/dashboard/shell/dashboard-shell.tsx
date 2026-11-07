@@ -40,7 +40,6 @@ interface DashboardShellProps {
   user: {
     name: string;
     email: string;
-    systemRole: "admin" | "user";
     timeZone?: string;
   };
   /** The organization's workspace. */
@@ -75,7 +74,7 @@ export function DashboardShell({
   const routeSearchParams = useSearchParams();
   const initialFilters = parseFilterDocumentFromSearchParams(routeSearchParams);
   const initialScopePreference = parseFilterScopePreference(routeSearchParams);
-  const canManage = canManageTeam(team.membershipRole, user.systemRole);
+  const canManage = canManageTeam(team.membershipRole);
   const routeState = useMemo(
     () => parseShellRouteState(livePathname),
     [livePathname],
@@ -222,9 +221,7 @@ export function DashboardShell({
             firstViewsSiteId === activeSite.id ? (
               <FirstViewsBanner
                 messages={messages}
-                reportsHref={
-                  canManage ? buildSettingsPath("notifications") : undefined
-                }
+                reportsHref={buildSettingsPath("notifications")}
                 inviteHref={
                   canManage
                     ? `${gatewayUrl.replace(/\/$/, "")}/admin/users`

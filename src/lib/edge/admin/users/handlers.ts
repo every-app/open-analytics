@@ -8,6 +8,7 @@ import {
   unixepoch,
   update,
 } from "@/lib/db";
+import { ManagerOnly, managerOnly } from "@/lib/edge/admin/access";
 import {
   byId,
   listMembers,
@@ -15,13 +16,7 @@ import {
   toPublicUser,
   workspaceFor,
 } from "@/lib/edge/admin/auth";
-import {
-  bad,
-  forb,
-  jsonResponseFor,
-  na,
-  parseJson,
-} from "@/lib/edge/admin/response";
+import { bad, jsonResponseFor, na, parseJson } from "@/lib/edge/admin/response";
 import type { Env } from "@/lib/edge/types";
 import { clampString } from "@/lib/edge/utils";
 
@@ -59,11 +54,7 @@ export async function handleMembersAdmin(
   const a = await requireActor(env, req);
   if (a instanceof Response) return a;
   if (!a.isAdmin) {
-    return forb(
-      "Only members of the organization can list members",
-      undefined,
-      req,
-    );
+    return managerOnly(ManagerOnly.Members, req);
   }
   const members = await listMembers(env, a.teamId);
   return jsonResponseFor(req, {

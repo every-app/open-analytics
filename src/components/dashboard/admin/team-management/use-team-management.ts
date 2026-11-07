@@ -23,7 +23,6 @@ import type { TeamManagementClientProps } from "./types";
 export function useTeamManagement({
   locale,
   activeTeam,
-  systemRole,
   teamDashboardSnapshot = null,
 }: TeamManagementClientProps) {
   const { window: selectedWindow } = useDashboardQuery();
@@ -46,7 +45,7 @@ export function useTeamManagement({
 
   const [createSiteDialogOpen, setCreateSiteDialogOpen] = useState(false);
 
-  const canManage = canManageTeam(activeTeam.membershipRole, systemRole);
+  const canManage = canManageTeam(activeTeam.membershipRole);
   const canManageSites = canManage;
 
   const dashboardQuery = useQuery(

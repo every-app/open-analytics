@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import { Hono } from "hono";
 
+import { ManagerOnly, managerOnly } from "@/lib/edge/admin/access";
 import { withDashboardCache } from "@/lib/edge/analytics/composition/dashboard-cache";
 import {
   readTeamSitesRevision,
@@ -20,7 +21,6 @@ import {
 import { resolvePrivateSiteMiddleware } from "@/lib/hono/middleware/site";
 import type { AppEnv } from "@/lib/hono/types";
 import { executionContext, requestUrl } from "@/lib/hono/utils/context";
-import { forb } from "@/lib/response";
 const FUNNEL_PATH = "funnels";
 const GOAL_PATH = "goals";
 const TEAM_DASHBOARD_PATH = "team-dashboard";
@@ -91,11 +91,7 @@ privateQueryRoutes.all(
     const method = c.req.raw.method;
     const site = c.get("privateSite");
     if (method !== "GET" && !site?.canManage) {
-      return forb(
-        "Funnel mutations require team owner or admin access",
-        undefined,
-        c.req.raw,
-      );
+      return managerOnly(ManagerOnly.Funnels, c.req.raw);
     }
     return privateQuery(FUNNEL_PATH)(c);
   },
@@ -111,11 +107,7 @@ privateQueryRoutes.all(
     const method = c.req.raw.method;
     const site = c.get("privateSite");
     if (method !== "GET" && !site?.canManage) {
-      return forb(
-        "Goal mutations require team owner or admin access",
-        undefined,
-        c.req.raw,
-      );
+      return managerOnly(ManagerOnly.Goals, c.req.raw);
     }
     return privateQuery(GOAL_PATH)(c);
   },

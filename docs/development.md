@@ -8,7 +8,14 @@ pnpm install
 pnpm run dev
 ```
 
-`pnpm run dev` runs the app behind a local Every App gateway at `http://analytics.localhost:8787`, signed in as a development user.
+`pnpm run dev` runs the app behind a local Every App gateway at `http://analytics.localhost:8787`, signed in as a development user who owns the dev organization.
+
+To use the app as a member (read-only dashboards, their own rules), call the app port the ready block prints (`App port`) with a member identity; the local gateway always signs in its owner. In a browser, send the same header on every request (Playwright's `extraHTTPHeaders`, for one).
+
+```bash
+curl -H "x-everyapp-identity: $(pnpm everyapp dev token --role member)" \
+  http://127.0.0.1:<app port>/api/private/session
+```
 
 | Command                 | Purpose                                                     |
 | ----------------------- | ----------------------------------------------------------- |

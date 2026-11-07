@@ -12,7 +12,7 @@ vi.mock("@every-app/sdk/server", () => ({ getEveryAppUser: vi.fn() }));
 
 // resolveViewer skips re-mirroring a person it has already written in this
 // isolate, so each test signs in a different user.
-function gatewayUser(id: string, orgRole: string, orgId = "org-1") {
+function gatewayUser(id: string, orgRole: string | undefined, orgId = "org-1") {
   return { id, email: `${id}@example.test`, orgId, orgRole } as EveryAppUser;
 }
 
@@ -34,12 +34,13 @@ describe("resolveViewer", () => {
     database.close();
   });
 
-  it("records the gateway role and lets every member manage", async () => {
-    for (const [orgRole, role] of [
-      ["owner", "owner"],
-      ["ADMIN", "admin"],
-      ["member", "member"],
-      ["billing", "member"],
+  it("lets owners and admins manage and keeps members read-only", async () => {
+    for (const [orgRole, role, isAdmin] of [
+      ["owner", "owner", true],
+      ["ADMIN", "admin", true],
+      ["member", "member", false],
+      ["billing", "member", false],
+      [undefined, "member", false],
     ] as const) {
       vi.mocked(getEveryAppUser).mockResolvedValueOnce(
         gatewayUser(`role-${orgRole}`, orgRole),
@@ -47,7 +48,7 @@ describe("resolveViewer", () => {
       await expect(resolveViewer(request(), env)).resolves.toMatchObject({
         teamId: "org-1",
         role,
-        isAdmin: true,
+        isAdmin,
       });
     }
   });

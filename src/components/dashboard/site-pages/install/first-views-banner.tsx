@@ -15,8 +15,8 @@ export function FirstViewsBanner({
   onDismiss,
 }: {
   messages: AppMessages;
-  /** Notifications, for those who can set up reports. */
-  reportsHref?: string;
+  /** Notifications, where anyone sets up their own reports. */
+  reportsHref: string;
   /** The gateway's members page, for those who can invite. */
   inviteHref?: string;
   onDismiss: () => void;
@@ -29,14 +29,12 @@ export function FirstViewsBanner({
     >
       <CircleCheckIcon className="size-5 shrink-0 text-emerald-600" />
       <p className="flex-1 font-medium">{copy.firstViewsTitle}</p>
-      {reportsHref ? (
-        <Button variant="outline" size="sm" asChild>
-          <Link href={reportsHref}>
-            <MailIcon data-icon="inline-start" />
-            {copy.nextReports}
-          </Link>
-        </Button>
-      ) : null}
+      <Button variant="outline" size="sm" asChild>
+        <Link href={reportsHref}>
+          <MailIcon data-icon="inline-start" />
+          {copy.nextReports}
+        </Link>
+      </Button>
       {inviteHref ? (
         <Button variant="outline" size="sm" asChild>
           <a href={inviteHref} target="_blank" rel="noreferrer">

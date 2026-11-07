@@ -1,0 +1,49 @@
+name: CI
+# Runs `pnpm run check:verify`, the checks the pre-push hook runs: format,
+# lint, translations, typecheck, the tests with the coverage floor in
+# vitest.config.ts, the schema spec and a development build.
+#
+#   pull_request   every pull request; a newer push cancels the older run
+#   push to main   every commit that lands
+#
+# The checks need no Cloudflare account and no secret.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: check:verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Vite's SSR build of a large app wants more than Node's default heap.
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        # The version is package.json's packageManager.
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          # The tests fail on Node 26.
+          node-version: "24"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check
+        run: pnpm run check:verify

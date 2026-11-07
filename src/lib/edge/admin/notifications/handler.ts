@@ -134,9 +134,8 @@ export async function handleNotifications(
     Number.isFinite(beforeRaw) && beforeRaw > 0 ? beforeRaw : undefined;
   const limit = parseLimit(url);
 
-  // The inbox is personal: each member reads their own, never another's,
-  // and only within their organization (everyone manages the organization,
-  // so a manager check would not separate the two).
+  // The inbox is personal: everyone reads their own, never another's, and
+  // only within their organization; owners and admins included.
   if (teamId && !canReadTeam(actor, teamId)) {
     return forb("Forbidden", undefined, req);
   }

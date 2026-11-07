@@ -21,6 +21,11 @@ export interface TeamNotificationsClientProps {
   locale: Locale;
   messages: AppMessages;
   teamId: string;
+  /**
+   * Owners and admins see and manage every rule and add sites; members see
+   * and manage their own rules.
+   */
+  canManage: boolean;
   initialData?: TeamNotificationsInitialData | null;
 }
 /** The rule dialog's fields, as the inputs hold them. */

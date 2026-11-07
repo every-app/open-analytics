@@ -2,7 +2,12 @@
 
 ## How it fits the gateway
 
-Each deployment belongs to one Every App organization. Everyone in the organization opens the dashboards and manages sites, notification rules and system settings; there is no view-only role. The gateway signs people in, so the app has no login page or user management of its own.
+Each deployment belongs to one Every App organization. The gateway signs people in and tells the app each person's organization role, so the app has no login page or user management of its own. Roles are managed on the gateway (`everyapp workspace role`, or its members page):
+
+- **Owners and admins** do everything a member can, and add, rename and delete sites; change tracking and blocking settings; turn public sharing on or off; create, edit and delete goals and funnels; manage everyone's report and alert rules; and change System settings.
+- **Members** read every site's dashboards (all sites, Overview, Pages, Realtime, Goals & funnels) and keep their own Account settings, saved filters and inbox. Reports and alerts go to the person who creates them, so members create, edit and delete their own.
+
+The app checks the role on every request, so a member's change through the API or an MCP tool is refused (`403`, code `owner_or_admin_required`) as it is in the dashboard.
 
 Only what visitors and share-link viewers need is public:
 

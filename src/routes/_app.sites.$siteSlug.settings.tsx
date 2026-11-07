@@ -8,7 +8,7 @@ import { dashboardPageTitle } from "@/lib/page-title";
 export const Route = createFileRoute("/_app/sites/$siteSlug/settings")({
   beforeLoad: async ({ context }) => {
     const c = context.siteContext;
-    if (!canManageTeam(c.activeTeam.membershipRole, c.user.systemRole)) {
+    if (!canManageTeam(c.activeTeam.membershipRole)) {
       throw notFound();
     }
     return {

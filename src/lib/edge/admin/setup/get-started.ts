@@ -1,5 +1,5 @@
 import { createDatabaseRuntime } from "@/lib/db";
-import { canReadSite } from "@/lib/edge/admin/access";
+import { canReadSite, ManagerOnly, managerOnly } from "@/lib/edge/admin/access";
 import { requireActor } from "@/lib/edge/admin/auth";
 import { bad, forb, jsonResponseFor, na } from "@/lib/edge/admin/response";
 import type { Env } from "@/lib/edge/types";
@@ -96,7 +96,7 @@ export async function readSiteHasData(
   return Boolean(row?.hasData);
 }
 
-/** The organization's Get started progress, for every member. */
+/** The organization's Get started progress, for its owners and admins. */
 export async function handleGetStartedAdmin(
   req: Request,
   env: Env,
@@ -105,7 +105,7 @@ export async function handleGetStartedAdmin(
   const actor = await requireActor(env, req);
   if (actor instanceof Response) return actor;
   if (!actor.isAdmin) {
-    return forb("Only members of the organization can set up", undefined, req);
+    return managerOnly(ManagerOnly.GetStarted, req);
   }
   return jsonResponseFor(req, {
     ok: true,

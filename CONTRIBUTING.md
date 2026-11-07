@@ -6,7 +6,7 @@ This project is still early, so the most useful contributions are focused bug fi
 
 ## Development Setup
 
-OpenAnalytics uses Node.js 22.18 or newer and pnpm 10. The Every App SDK and CLI are published packages pinned in `package.json`, so a clone of this repository installs on its own (see the README's [Development](README.md#development) section).
+OpenAnalytics uses Node.js 22.18 or newer and pnpm 10; run the checks below on Node 24, as CI does. The Every App SDK and CLI are published packages pinned in `package.json`, so a clone of this repository installs on its own (see the README's [Development](README.md#development) section).
 
 ```bash
 pnpm install --frozen-lockfile
@@ -29,19 +29,17 @@ Before opening a pull request, run:
 pnpm run check
 ```
 
-This runs the core checks:
+This formats and lint-fixes what it can, then runs the rest of the checks:
 
-- TypeScript type checking
-- ESLint
-- Prettier format check
+- The layer and architecture contracts
+- Prettier and ESLint
 - i18n key validation
-- Vitest tests
+- TypeScript type checking
+- Vitest tests, with the coverage floor in `vitest.config.ts`
+- The schema spec (`docs/schema.sql`)
+- A development build of the bundle
 
-For build-related changes, also build the bundle:
-
-```bash
-pnpm exec vite build --mode development
-```
+`pnpm run check:verify` runs the same checks without fixing anything. The pre-push hook runs it, and so does the [CI workflow](.github/workflows/ci.yml) on every pull request and every push to `main`, on Node 24 (the tests fail on Node 26).
 
 ## Pull Requests
 

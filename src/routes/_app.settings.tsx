@@ -31,10 +31,7 @@ const SECTION_ROUTES = {
 function SettingsLayout() {
   const { messages, teamContext } = Route.useRouteContext();
   const copy = messages.settingsNav;
-  const canManage = canManageTeam(
-    teamContext.activeTeam.membershipRole,
-    teamContext.user.systemRole,
-  );
+  const canManage = canManageTeam(teamContext.activeTeam.membershipRole);
   const visible = SETTINGS_SECTIONS.filter(
     (section) => section.access === "member" || canManage,
   );

@@ -1,18 +1,10 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { buildSettingsPath } from "@/lib/dashboard/paths";
-import { canManageTeam } from "@/lib/dashboard/permissions";
 
-// Settings opens on Notifications for anyone who manages (everyone), Account otherwise.
+// Settings opens on Notifications, where everyone sets up their own reports.
 export const Route = createFileRoute("/_app/settings/")({
-  beforeLoad: ({ context }) => {
-    const c = context.teamContext;
-    const canManage = canManageTeam(
-      c.activeTeam.membershipRole,
-      c.user.systemRole,
-    );
-    throw redirect({
-      href: buildSettingsPath(canManage ? "notifications" : "account"),
-    });
+  beforeLoad: () => {
+    throw redirect({ href: buildSettingsPath("notifications") });
   },
 });

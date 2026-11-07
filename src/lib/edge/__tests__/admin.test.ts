@@ -5,6 +5,7 @@ import {
   canManageTeam,
   canReadSite,
   canReadTeam,
+  ManagerOnly,
 } from "@/lib/edge/admin/access";
 import { type Actor, requireActor, type UserRow } from "@/lib/edge/admin/auth";
 import type * as ViewerModule from "@/lib/edge/auth/viewer";
@@ -587,7 +588,10 @@ describe("private admin edge handler", () => {
       expect(forbidden.status).toBe(403);
       expect(await forbidden.json()).toMatchObject({
         ok: false,
-        error: { message: "Only members of the organization can create sites" },
+        error: {
+          code: "owner_or_admin_required",
+          message: ManagerOnly.Sites,
+        },
       });
     });
 
@@ -840,7 +844,7 @@ describe("private admin edge handler", () => {
       expect(otherOrgUpdate.status).toBe(403);
       expect(await otherOrgUpdate.json()).toMatchObject({
         ok: false,
-        error: { message: "Only members of the organization can update sites" },
+        error: { message: ManagerOnly.Sites },
       });
       expect(unsupported.status).toBe(405);
     });
@@ -1093,9 +1097,7 @@ describe("private admin edge handler", () => {
       expect(response.status).toBe(403);
       expect(await response.json()).toMatchObject({
         ok: false,
-        error: {
-          message: "Only members of the organization can update site config",
-        },
+        error: { message: ManagerOnly.TrackingSettings },
       });
       expect(upsertSiteScriptSettingsMock).not.toHaveBeenCalled();
     });

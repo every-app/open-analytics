@@ -23,6 +23,8 @@ import {
   canManageTeam,
   canReadSite,
   canReadTeam,
+  ManagerOnly,
+  managerOnly,
   toSlug,
 } from "@/lib/edge/admin/access";
 import { requireActor } from "@/lib/edge/admin/auth";
@@ -185,12 +187,7 @@ export async function handleSitesAdmin(
     const name = clampString(String(body.name || "").trim(), 120) || domain;
     if (!teamId) return bad("teamId is required", undefined, req);
     if (!domain) return bad(INVALID_DOMAIN_MESSAGE, undefined, req);
-    if (!canManageTeam(a, teamId))
-      return forb(
-        "Only members of the organization can create sites",
-        undefined,
-        req,
-      );
+    if (!canManageTeam(a, teamId)) return managerOnly(ManagerOnly.Sites, req);
     const siteId = await createSiteWithDefaultSettings(env, {
       teamId,
       name,
@@ -227,12 +224,7 @@ export async function handleSitesAdmin(
       publicEnabled: existingRow.publicEnabled ?? 0,
       publicSlug: existingRow.publicSlug,
     };
-    if (!canManageTeam(a, e.teamId))
-      return forb(
-        "Only members of the organization can update sites",
-        undefined,
-        req,
-      );
+    if (!canManageTeam(a, e.teamId)) return managerOnly(ManagerOnly.Sites, req);
     if (intent === "remove") {
       await deleteSiteData(env, siteId);
       return jsonResponseFor(req, {
@@ -323,11 +315,7 @@ export async function handleSiteConfigAdmin(
     const siteId = clampString(String(body.siteId || ""), 120);
     if (!siteId) return bad("siteId is required", undefined, req);
     if (!(await canManageSite(env, a, siteId)))
-      return forb(
-        "Only members of the organization can update site config",
-        undefined,
-        req,
-      );
+      return managerOnly(ManagerOnly.TrackingSettings, req);
     const cfg = (
       body.config && typeof body.config === "object" ? body.config : {}
     ) as JsonRecord;

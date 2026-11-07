@@ -55,7 +55,10 @@ export async function resolvePrivateSite(
   return resolvePrivateSiteForSession(request, env, url, session);
 }
 
-/** A site of the viewer's organization; every member manages it. */
+/**
+ * A site of the viewer's organization: everyone reads it; owners and admins
+ * (`systemRole: "admin"`) manage it.
+ */
 export async function resolvePrivateSiteForSession(
   request: Request,
   env: Env,
