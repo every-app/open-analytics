@@ -58,7 +58,6 @@ export type FilterColumnStrategy =
   | "column.city"
   | "column.continent"
   | "column.timezone"
-  | "column.as_organization"
   | "column.duration_ms"
   | "column.scroll_depth"
   | "column.screen_width"
@@ -592,7 +591,6 @@ const FIELDS = [
   text("geo.timeZone", PUBLIC_AUDIENCES, "column.timezone", "trimmed-text", {
     suggestionMode: "discrete",
   }),
-  text("geo.organization", PRIVATE_AUDIENCES, "column.as_organization"),
   text("event.name", PRIVATE_AUDIENCES, "event.name", "trimmed-text", {
     source: "event",
     observationKinds: EVENT_OBSERVATIONS,
@@ -748,7 +746,6 @@ export const ANALYTICS_FILTER_FIELD_DISPLAY_ORDER = [
   "geo.city",
   "geo.continent",
   "geo.timeZone",
-  "geo.organization",
   "geo.isEU",
 ] as const satisfies readonly AnalyticsFilterFieldId[];
 
@@ -771,7 +768,7 @@ export const analyticsFilterFieldDisplayOrder: ReadonlyMap<string, number> =
   );
 
 /** Bump when canonical IDs, value kinds, or operator semantics change. */
-export const ANALYTICS_FILTER_REGISTRY_REVISION = "analytics-filter-v6";
+export const ANALYTICS_FILTER_REGISTRY_REVISION = "analytics-filter-v7";
 
 const REGISTERED_FIELDS: readonly RegisteredFilterField[] = FIELDS.map(
   (field) => Object.freeze(field),

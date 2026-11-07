@@ -155,7 +155,6 @@ export function parseFilterOptionKey(url: URL): FilterOptionKey | null {
     "geo.city",
     "geo.continent",
     "geo.timeZone",
-    "geo.organization",
     "event.name",
   ];
   return keys.includes(raw as FilterOptionKey)

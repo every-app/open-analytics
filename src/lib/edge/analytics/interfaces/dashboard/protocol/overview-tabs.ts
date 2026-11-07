@@ -43,8 +43,7 @@ export type OverviewTab =
   | "geo.region"
   | "geo.city"
   | "geo.continent"
-  | "geo.timezone"
-  | "geo.organization";
+  | "geo.timezone";
 export async function handleOverviewTabContract(
   env: Env,
   siteId: string,

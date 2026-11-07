@@ -171,7 +171,6 @@ describe("realtime client", () => {
       city: "",
       continent: "",
       timezone: "",
-      organization: "",
       browser: "",
       osVersion: "",
       deviceType: "",
@@ -369,7 +368,6 @@ describe("realtime client", () => {
         city: "New York",
         continent: "NA",
         timezone: "America/New_York",
-        as_organization: "Example ISP",
         browser: "Chrome",
         os_version: "macOS 15",
         device_type: "desktop",
@@ -419,7 +417,6 @@ describe("realtime client", () => {
         city: "New York",
         continent: "NA",
         timezone: "America/New_York",
-        organization: "Example ISP",
         browser: "Chrome",
         osVersion: "macOS 15",
         deviceType: "desktop",
@@ -804,7 +801,6 @@ describe("realtime client", () => {
             startedAt: "bad-start",
             lastActivityAt: "bad-last",
             hash: "#from-hash",
-            asOrganization: "Fallback ISP",
           },
         ],
       }),
@@ -819,7 +815,6 @@ describe("realtime client", () => {
       visitorId: "visitor-fallback",
       pathname: "/",
       hash: "#from-hash",
-      organization: "Fallback ISP",
       latitude: null,
       longitude: null,
     });
@@ -830,7 +825,6 @@ describe("realtime client", () => {
         lastActivityAt: Date.now(),
         pathname: "/",
         hash: "#from-hash",
-        organization: "Fallback ISP",
       },
     ]);
     expect(state.points).toEqual([]);

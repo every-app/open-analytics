@@ -101,7 +101,6 @@ describe("registry-driven editor metadata", () => {
         "geo.city",
         "geo.continent",
         "geo.timeZone",
-        "geo.organization",
         "geo.isEU",
       ],
     );

@@ -101,11 +101,7 @@ interface TimedOutVisitCandidate {
   regionCode: string;
   city: string;
   continent: string;
-  postalCode: string;
-  metroCode: string;
   timezone: string;
-  organization: string;
-  uaRaw: string;
   browser: string;
   browserVersion: string;
   os: string;
@@ -154,11 +150,7 @@ async function pushFinalizedVisitRealtimeEvent(
     regionCode: visit.regionCode,
     city: visit.city,
     continent: visit.continent,
-    postalCode: visit.postalCode,
-    metroCode: visit.metroCode,
     timezone: visit.timezone,
-    organization: visit.organization,
-    uaRaw: visit.uaRaw,
     browser: visit.browser,
     browserVersion: visit.browserVersion,
     os: visit.os,
@@ -223,11 +215,7 @@ export async function flushPendingToD1(
           continent,
           latitude,
           longitude,
-          postal_code AS postalCode,
-          metro_code AS metroCode,
           timezone,
-          as_organization AS asOrganization,
-          ua_raw AS uaRaw,
           browser,
           browser_version AS browserVersion,
           os,
@@ -537,11 +525,7 @@ export async function flushTimeouts(
         region_code AS regionCode,
         city,
         continent,
-        postal_code AS postalCode,
-        metro_code AS metroCode,
         timezone,
-        as_organization AS organization,
-        ua_raw AS uaRaw,
         browser,
         browser_version AS browserVersion,
         os,
@@ -656,11 +640,7 @@ async function flushHiddenFallbacks(
         region_code AS regionCode,
         city,
         continent,
-        postal_code AS postalCode,
-        metro_code AS metroCode,
         timezone,
-        as_organization AS organization,
-        ua_raw AS uaRaw,
         browser,
         browser_version AS browserVersion,
         os,

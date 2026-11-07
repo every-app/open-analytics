@@ -27,9 +27,11 @@ import {
 } from "./rollup-breakdowns";
 import { RollupDimension } from "./rollup-dimensions";
 import { scopedDatasetFor } from "./scoped-dataset";
+// Ingest rounds coordinates to 1 decimal (about 11 km), so the page views of
+// a city share one point and group on their stored coordinates.
 const RAW_POINT_COLUMNS = `
-    ROUND(latitude, 3) AS lat_bucket,
-    ROUND(longitude, 3) AS lon_bucket,
+    latitude AS lat_bucket,
+    longitude AS lon_bucket,
     country,
     region,
     region_code AS regionCode,

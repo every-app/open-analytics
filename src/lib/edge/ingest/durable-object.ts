@@ -662,11 +662,7 @@ export class IngestDurableObject extends DurableObject {
       regionCode: record.regionCode,
       city: record.city,
       continent: record.continent,
-      postalCode: record.postalCode,
-      metroCode: record.metroCode,
       timezone: record.timezone,
-      organization: record.asOrganization,
-      uaRaw: record.uaRaw,
       browser: record.browser,
       browserVersion: record.browserVersion,
       os: record.os,
@@ -789,11 +785,7 @@ export class IngestDurableObject extends DurableObject {
         regionCode: record.regionCode,
         city: record.city,
         continent: record.continent,
-        postalCode: record.postalCode,
-        metroCode: record.metroCode,
         timezone: record.timezone,
-        organization: record.asOrganization,
-        uaRaw: record.uaRaw,
         browser: record.browser,
         browserVersion: record.browserVersion,
         os: record.os,
@@ -838,11 +830,7 @@ export class IngestDurableObject extends DurableObject {
       regionCode: string;
       city: string;
       continent: string;
-      postalCode: string;
-      metroCode: string;
       timezone: string;
-      organization: string;
-      uaRaw: string;
       browser: string;
       browserVersion: string;
       os: string;
@@ -873,8 +861,6 @@ export class IngestDurableObject extends DurableObject {
                utm_content AS utmContent,
                is_eu AS isEU,
                country, region, region_code AS regionCode, city, continent, timezone,
-               postal_code AS postalCode, metro_code AS metroCode,
-               as_organization AS organization, ua_raw AS uaRaw,
                browser, browser_version AS browserVersion, os, os_version AS osVersion,
                device_type AS deviceType, language,
                screen_width AS screenWidth, screen_height AS screenHeight,
@@ -1006,11 +992,7 @@ export class IngestDurableObject extends DurableObject {
         regionCode: visit.regionCode,
         city: visit.city,
         continent: visit.continent,
-        postalCode: visit.postalCode,
-        metroCode: visit.metroCode,
         timezone: visit.timezone,
-        organization: visit.organization,
-        uaRaw: visit.uaRaw,
         browser: visit.browser,
         browserVersion: visit.browserVersion,
         os: visit.os,
@@ -1226,11 +1208,7 @@ export class IngestDurableObject extends DurableObject {
       regionCode: visit.regionCode,
       city: visit.city,
       continent: visit.continent,
-      postalCode: visit.postalCode,
-      metroCode: visit.metroCode,
       timezone: visit.timezone,
-      organization: visit.asOrganization,
-      uaRaw: visit.uaRaw,
       browser: visit.browser,
       browserVersion: visit.browserVersion,
       os: visit.os,
@@ -1292,11 +1270,7 @@ export class IngestDurableObject extends DurableObject {
       regionCode: record.regionCode,
       city: record.city,
       continent: record.continent,
-      postalCode: record.postalCode,
-      metroCode: record.metroCode,
       timezone: record.timezone,
-      organization: record.asOrganization,
-      uaRaw: record.uaRaw,
       browser: record.browser,
       browserVersion: record.browserVersion,
       os: record.os,

@@ -256,13 +256,11 @@ describe("edge query dimensions low-level coverage", () => {
         is_eu INTEGER NOT NULL DEFAULT 0, country TEXT NOT NULL DEFAULT '',
         region TEXT NOT NULL DEFAULT '', region_code TEXT NOT NULL DEFAULT '',
         city TEXT NOT NULL DEFAULT '', continent TEXT NOT NULL DEFAULT '', latitude REAL,
-        longitude REAL, postal_code TEXT NOT NULL DEFAULT '', metro_code TEXT NOT NULL DEFAULT '',
-        timezone TEXT NOT NULL DEFAULT '', as_organization TEXT NOT NULL DEFAULT '',
-        ua_raw TEXT NOT NULL DEFAULT '', browser TEXT NOT NULL DEFAULT '',
+        longitude REAL, timezone TEXT NOT NULL DEFAULT '',
+        browser TEXT NOT NULL DEFAULT '',
         browser_version TEXT NOT NULL DEFAULT '', os TEXT NOT NULL DEFAULT '',
         os_version TEXT NOT NULL DEFAULT '', device_type TEXT NOT NULL DEFAULT '',
         screen_width INTEGER, screen_height INTEGER, language TEXT NOT NULL DEFAULT '',
-        user_id TEXT, user_name TEXT,
         perf_ttfb_ms REAL, perf_fcp_ms REAL, perf_lcp_ms REAL, perf_cls REAL,
         perf_inp_ms REAL, ae_synced_at INTEGER
       );
@@ -574,15 +572,6 @@ describe("edge query dimensions low-level coverage", () => {
           visitors: 1,
         },
       ],
-      [
-        {
-          cardType: "organization",
-          value: "Example ISP",
-          views: 1,
-          sessions: 1,
-          visitors: 1,
-        },
-      ],
     ]);
 
     await expect(
@@ -612,25 +601,21 @@ describe("edge query dimensions low-level coverage", () => {
     ).resolves.toMatchObject({
       country: [],
       continent: [{ value: "NA", label: "NA" }],
-      organization: [{ value: "Example ISP", label: "Example ISP" }],
+      timezone: [],
     });
-    expect(calls[0].bindings).toEqual([...visitBindings(), 10]);
-    expect(calls[1].bindings).toEqual([...visitBindings(), 10]);
-    expect(calls[2].bindings).toEqual([...visitBindings(), 10]);
-    expect(calls[0].sql).toContain("filtered_visits AS MATERIALIZED");
-    expect(calls[1].sql).toContain("filtered_visits AS MATERIALIZED");
-    expect(calls[2].sql).toContain("filtered_visits AS MATERIALIZED");
-    expect(calls[0].sql).toContain("ranked_cards AS");
-    expect(calls[1].sql).toContain("ranked_cards AS");
-    expect(calls[2].sql).toContain("ranked_cards AS");
-    expect(calls.slice(1)).toHaveLength(2);
-    for (const call of calls.slice(1)) {
-      expect((call.sql.match(/UNION ALL/g) ?? []).length).toBeLessThan(5);
+    expect(calls).toHaveLength(2);
+    for (const call of calls) {
+      expect(call.bindings).toEqual([...visitBindings(), 10]);
+      expect(call.sql).toContain("filtered_visits AS MATERIALIZED");
+      expect(call.sql).toContain("ranked_cards AS");
     }
+    // D1 rejects compound SELECTs of more than five terms: one query's five
+    // geo cards are four UNION ALLs.
+    expect((calls[1].sql.match(/UNION ALL/g) ?? []).length).toBe(4);
   });
 
   it("uses final scoped dataset bindings for client and geo dimensions", async () => {
-    const { env, calls } = createD1Env([[], [], []]);
+    const { env, calls } = createD1Env([[], []]);
     const prepared = prepareScopedQuery("overview", {
       context: siteQueryContext(siteId, "private-dashboard"),
       time: createQueryTime(
@@ -658,7 +643,7 @@ describe("edge query dimensions low-level coverage", () => {
       10,
     );
 
-    expect(calls).toHaveLength(3);
+    expect(calls).toHaveLength(2);
     expect(calls.every((call) => call.sql.includes("scope_final_visits"))).toBe(
       true,
     );

@@ -75,9 +75,9 @@ describe("query contract boundary coverage", () => {
   });
 
   it("exposes the v4 field inventory and typed metadata", () => {
-    expect(analyticsFilterRegistry.size).toBe(43);
-    expect(ANALYTICS_FILTER_REGISTRY_REVISION).toBe("analytics-filter-v6");
-    expect([...ANALYTICS_FILTER_FIELD_IDS].slice(31)).toEqual([
+    expect(analyticsFilterRegistry.size).toBe(42);
+    expect(ANALYTICS_FILTER_REGISTRY_REVISION).toBe("analytics-filter-v7");
+    expect([...ANALYTICS_FILTER_FIELD_IDS].slice(30)).toEqual([
       "page.durationMs",
       "page.scrollDepth",
       "session.durationMs",
@@ -91,7 +91,7 @@ describe("query contract boundary coverage", () => {
       "client.screenHeight",
       "geo.isEU",
     ]);
-    for (const field of ANALYTICS_FILTER_FIELD_IDS.slice(31)) {
+    for (const field of ANALYTICS_FILTER_FIELD_IDS.slice(30)) {
       expect(analyticsFilterRegistry.has(field)).toBe(true);
     }
     expect(analyticsFilterRegistry.get("page.durationMs")).toMatchObject({
@@ -181,6 +181,31 @@ describe("query contract boundary coverage", () => {
         parseFilterUrlForAudience(audience, "filter[page.path]=/docs"),
       ).toMatchObject({ version: 1 });
     }
+  });
+
+  it("no longer knows the network organization field", () => {
+    expect(analyticsFilterRegistry.has("geo.organization")).toBe(false);
+    expect(() =>
+      parseFilterParams(
+        "filter[geo.organization]=Example ISP",
+        analyticsFilterRegistry,
+      ),
+    ).toThrow(
+      expect.objectContaining({
+        code: "invalid_complex_filter",
+        path: "filter[geo.organization]",
+      }),
+    );
+    expect(() =>
+      parseFilterUrlForAudience(
+        "private-dashboard",
+        "filter[geo.organization]=Example ISP",
+      ),
+    ).toThrow(FilterAdapterError);
+    expect(VISIT_SOURCE_COLUMNS).not.toMatch(
+      /as_organization|ua_raw|postal_code|metro_code/,
+    );
+    expect(buildEventAnalyticsSourceCte()).not.toContain("as_organization");
   });
 
   it("rejects malformed codec values and logic paths", () => {

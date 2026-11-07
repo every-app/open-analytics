@@ -47,11 +47,7 @@ function visitRow(overrides: Partial<VisitBindingRow> = {}): VisitBindingRow {
     continent: "NA",
     latitude: 37.7,
     longitude: -122.4,
-    postalCode: "94105",
-    metroCode: "807",
     timezone: "America/Los_Angeles",
-    asOrganization: "Example ISP",
-    uaRaw: "Mozilla/5.0",
     browser: "Chrome",
     browserVersion: "120",
     os: "macOS",
@@ -258,7 +254,7 @@ describe("ingest visit SQL bindings", () => {
   });
 
   it("defines buffered custom event schema fields used by flush bookkeeping", () => {
-    expect(CREATE_BUFFERED_CUSTOM_EVENTS_SQL).toContain("user_id TEXT");
+    expect(CREATE_BUFFERED_CUSTOM_EVENTS_SQL).not.toContain("user_id");
     expect(CREATE_BUFFERED_CUSTOM_EVENTS_SQL).toContain("dirty INTEGER");
     expect(CREATE_BUFFERED_CUSTOM_EVENTS_SQL).toContain(
       "flush_attempts INTEGER",

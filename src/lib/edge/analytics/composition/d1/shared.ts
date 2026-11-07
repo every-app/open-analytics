@@ -60,7 +60,6 @@ export function emptyEventContextCards() {
       city: [],
       continent: [],
       timezone: [],
-      organization: [],
     },
   };
 }

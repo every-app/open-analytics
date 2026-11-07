@@ -42,11 +42,7 @@ export interface RealtimeSnapshotRecord {
   regionCode: string;
   city: string;
   continent: string;
-  postalCode?: string;
-  metroCode?: string;
   timezone: string;
-  organization: string;
-  uaRaw?: string;
   browser: string;
   browserVersion?: string;
   os: string;
@@ -87,7 +83,6 @@ export interface RealtimeVisitPayloadInput {
   city: string;
   continent: string;
   timezone: string;
-  asOrganization: string;
   browser: string;
   os: string;
   osVersion: string;
@@ -106,9 +101,6 @@ export interface RealtimeVisitPayloadInput {
   utmTerm?: string;
   utmContent?: string;
   isEU?: boolean | number | null;
-  postalCode?: string;
-  metroCode?: string;
-  uaRaw?: string;
   browserVersion?: string;
   hiddenAt?: number | null;
   endedAt?: number | null;
@@ -227,11 +219,7 @@ export function toRealtimePayload(
     regionCode: record.regionCode,
     city: record.city,
     continent: record.continent,
-    postalCode: record.postalCode ?? "",
-    metroCode: record.metroCode ?? "",
     timezone: record.timezone,
-    organization: record.organization,
-    uaRaw: record.uaRaw ?? "",
     browser: record.browser,
     browserVersion: record.browserVersion ?? "",
     os: record.os,
@@ -278,7 +266,6 @@ export function toRealtimeVisitPayload(
     city: visit.city,
     continent: visit.continent,
     timezone: visit.timezone,
-    organization: visit.asOrganization,
     browser: visit.browser,
     browserVersion: visit.browserVersion ?? "",
     os: visit.os,
@@ -297,9 +284,6 @@ export function toRealtimeVisitPayload(
       visit.isEU === undefined || visit.isEU === null
         ? null
         : Boolean(visit.isEU),
-    postalCode: visit.postalCode ?? "",
-    metroCode: visit.metroCode ?? "",
-    uaRaw: visit.uaRaw ?? "",
     screenWidth: visit.screenWidth,
     screenHeight: visit.screenHeight,
     screenSize: toRealtimeScreenSize(visit.screenWidth, visit.screenHeight),

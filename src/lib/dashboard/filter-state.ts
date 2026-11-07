@@ -45,7 +45,6 @@ export const DASHBOARD_FILTER_CONTROL_KEYS = [
   "geo",
   "geoContinent",
   "geoTimezone",
-  "geoOrganization",
 ] as const;
 export type DashboardFilterControlKey =
   (typeof DASHBOARD_FILTER_CONTROL_KEYS)[number];
@@ -79,7 +78,6 @@ const FIELD_BY_CONTROL_KEY: Readonly<
   clientScreenSize: "client.screenSize" as FilterFieldId,
   geoContinent: "geo.continent" as FilterFieldId,
   geoTimezone: "geo.timeZone" as FilterFieldId,
-  geoOrganization: "geo.organization" as FilterFieldId,
 };
 export const EMPTY_DASHBOARD_FILTER_DOCUMENT: FilterDocument = Object.freeze({
   version: FILTER_DOCUMENT_VERSION,

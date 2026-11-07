@@ -131,11 +131,7 @@ export interface NormalizedVisitContext {
   continent: string;
   latitude: number | null;
   longitude: number | null;
-  postalCode: string;
-  metroCode: string;
   timezone: string;
-  asOrganization: string;
-  uaRaw: string;
   browser: string;
   browserVersion: string;
   os: string;

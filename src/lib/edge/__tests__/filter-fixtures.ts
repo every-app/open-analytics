@@ -23,7 +23,6 @@ const fields: Readonly<Record<string, string>> = {
   clientScreenSize: "client.screenSize",
   geoContinent: "geo.continent",
   geoTimezone: "geo.timeZone",
-  geoOrganization: "geo.organization",
 };
 
 /** Test-only migration aid. Production accepts only FilterDocument inputs. */

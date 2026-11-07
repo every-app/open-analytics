@@ -427,7 +427,6 @@ function resolveSnapshotEvents(snapshot: RealtimeSnapshot): RealtimeEvent[] {
       city: visit.city,
       continent: visit.continent,
       timezone: visit.timezone,
-      organization: visit.organization,
       siteId: visit.siteId,
       queryString: visit.queryString,
       utmSource: visit.utmSource,
@@ -436,8 +435,6 @@ function resolveSnapshotEvents(snapshot: RealtimeSnapshot): RealtimeEvent[] {
       utmTerm: visit.utmTerm,
       utmContent: visit.utmContent,
       isEU: visit.isEU,
-      postalCode: visit.postalCode,
-      metroCode: visit.metroCode,
       browserVersion: visit.browserVersion,
       os: visit.os,
       browser: visit.browser,
@@ -472,7 +469,6 @@ function resolveSnapshotEvents(snapshot: RealtimeSnapshot): RealtimeEvent[] {
     city: "",
     continent: "",
     timezone: "",
-    organization: "",
     browser: "",
     osVersion: "",
     deviceType: "",
@@ -587,7 +583,6 @@ function upsertRecentVisit(
       city: event.city,
       continent: event.continent,
       timezone: event.timezone,
-      organization: event.organization,
       siteId: event.siteId,
       queryString: event.queryString,
       utmSource: event.utmSource,
@@ -596,8 +591,6 @@ function upsertRecentVisit(
       utmTerm: event.utmTerm,
       utmContent: event.utmContent,
       isEU: event.isEU,
-      postalCode: event.postalCode,
-      metroCode: event.metroCode,
       browserVersion: event.browserVersion,
       os: event.os,
       browser: event.browser,
@@ -636,7 +629,6 @@ function upsertRecentVisit(
   previous.city ||= event.city;
   previous.continent ||= event.continent;
   previous.timezone ||= event.timezone;
-  previous.organization ||= event.organization;
   previous.siteId ||= event.siteId;
   previous.queryString ||= event.queryString;
   previous.utmSource ||= event.utmSource;
@@ -644,8 +636,6 @@ function upsertRecentVisit(
   previous.utmCampaign ||= event.utmCampaign;
   previous.utmTerm ||= event.utmTerm;
   previous.utmContent ||= event.utmContent;
-  previous.postalCode ||= event.postalCode;
-  previous.metroCode ||= event.metroCode;
   previous.browserVersion ||= event.browserVersion;
   previous.os ||= event.os;
   previous.browser ||= event.browser;
@@ -780,16 +770,7 @@ function normalizeRealtimeEvent(payload: unknown): RealtimeEvent | null {
     regionCode: String(record.regionCode ?? record.region_code ?? ""),
     city: String(record.city ?? ""),
     continent: String(record.continent ?? ""),
-    postalCode: String(record.postalCode ?? record.postal_code ?? ""),
-    metroCode: String(record.metroCode ?? record.metro_code ?? ""),
     timezone: String(record.timezone ?? ""),
-    organization: String(
-      record.organization ??
-        record.asOrganization ??
-        record.as_organization ??
-        "",
-    ),
-    uaRaw: String(record.uaRaw ?? record.ua_raw ?? ""),
     browser: String(record.browser ?? ""),
     browserVersion: String(
       record.browserVersion ?? record.browser_version ?? "",
@@ -981,12 +962,6 @@ function normalizeRealtimeVisit(payload: unknown): RealtimeVisit | null {
     city: String(record.city ?? ""),
     continent: String(record.continent ?? ""),
     timezone: String(record.timezone ?? ""),
-    organization: String(
-      record.organization ??
-        record.asOrganization ??
-        record.as_organization ??
-        "",
-    ),
     siteId: String(record.siteId ?? record.site_id ?? ""),
     queryString: String(record.queryString ?? record.query_string ?? ""),
     utmSource: String(record.utmSource ?? record.utm_source ?? ""),
@@ -995,9 +970,6 @@ function normalizeRealtimeVisit(payload: unknown): RealtimeVisit | null {
     utmTerm: String(record.utmTerm ?? record.utm_term ?? ""),
     utmContent: String(record.utmContent ?? record.utm_content ?? ""),
     isEU: normalizeBoolean(record.isEU ?? record.is_eu),
-    postalCode: String(record.postalCode ?? record.postal_code ?? ""),
-    metroCode: String(record.metroCode ?? record.metro_code ?? ""),
-    uaRaw: String(record.uaRaw ?? record.ua_raw ?? ""),
     browser: String(record.browser ?? ""),
     browserVersion: String(
       record.browserVersion ?? record.browser_version ?? "",

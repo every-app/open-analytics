@@ -153,7 +153,6 @@ describe("D1 event provider routing", () => {
         city: [],
         continent: [],
         timezone: [],
-        organization: [],
       },
     });
     vi.mocked(queryEventTypeOverviewFromD1).mockResolvedValue({

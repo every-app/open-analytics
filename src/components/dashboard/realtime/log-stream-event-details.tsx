@@ -646,18 +646,6 @@ export function RealtimeLogEventDetailsDrawer({
       ),
     },
     {
-      section: "visitor",
-      priority: 9,
-      wide: true,
-      label: messages.realtime.userAgent,
-      value: (
-        <RealtimeEventDetailValue
-          value={event.uaRaw?.trim() || unknownLabel}
-          mono
-        />
-      ),
-    },
-    {
       section: "geography",
       priority: 1,
       label: messages.common.country,
@@ -703,28 +691,6 @@ export function RealtimeLogEventDetailsDrawer({
       value: (
         <RealtimeEventDetailValue
           value={event.regionCode.trim() || messages.common.unknown}
-          mono
-        />
-      ),
-    },
-    {
-      section: "geography",
-      priority: 7,
-      label: messages.realtime.postalCode,
-      value: (
-        <RealtimeEventDetailValue
-          value={event.postalCode?.trim() || unknownLabel}
-          mono
-        />
-      ),
-    },
-    {
-      section: "geography",
-      priority: 8,
-      label: messages.realtime.metroCode,
-      value: (
-        <RealtimeEventDetailValue
-          value={event.metroCode?.trim() || unknownLabel}
           mono
         />
       ),
@@ -862,17 +828,6 @@ export function RealtimeLogEventDetailsDrawer({
       priority: 12,
       label: messages.common.language,
       value: <RealtimeEventDetailValue value={languageLabel} mono />,
-    },
-    {
-      section: "visitor",
-      priority: 13,
-      wide: true,
-      label: messages.common.organization,
-      value: (
-        <RealtimeEventDetailValue
-          value={event.organization.trim() || messages.common.unknown}
-        />
-      ),
     },
     {
       section: "session",

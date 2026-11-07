@@ -71,7 +71,6 @@ const EVENT_RECORD_FILTER_SOURCE_COLUMNS: Readonly<
   "geo.city": ["v.city"],
   "geo.continent": ["v.continent"],
   "geo.timeZone": ["v.timezone"],
-  "geo.organization": ["v.as_organization"],
 };
 function eventRecordSourceColumns(filters: FilterDocument): string {
   const columns = new Set<string>(EVENT_RECORD_BASE_SOURCE_COLUMNS);

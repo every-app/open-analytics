@@ -112,6 +112,31 @@ function ensureColumn(
   sql.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnType}`);
 }
 
+function dropColumnIfExists(
+  sql: DurableObjectSqlStorage,
+  tableName: string,
+  columnName: string,
+): void {
+  if (!tableColumnNames(sql, tableName).has(columnName)) return;
+  sql.exec(`ALTER TABLE ${tableName} DROP COLUMN ${columnName}`);
+}
+
+/**
+ * Columns a page view no longer stores: the raw user agent, postal and metro
+ * code and the network organization, as Plausible keeps none of them, and
+ * the deleted identify() API's user. Dropped from existing Durable Objects so
+ * buffered values don't linger.
+ */
+const DROPPED_BUFFERED_VISIT_COLUMNS = [
+  "ua_raw",
+  "postal_code",
+  "metro_code",
+  "as_organization",
+  "user_id",
+  "user_name",
+] as const;
+const DROPPED_BUFFERED_CUSTOM_EVENT_COLUMNS = ["user_id"] as const;
+
 const LEGACY_EVENT_CONTEXT_COLUMNS = [
   "visitor_id",
   "session_id",
@@ -152,7 +177,6 @@ function migrateLegacyBufferedCustomEvents(
           sequence INTEGER NOT NULL DEFAULT 0,
           event_name TEXT NOT NULL,
           event_data_json TEXT NOT NULL DEFAULT '{}',
-          user_id TEXT NOT NULL DEFAULT '',
           dirty INTEGER NOT NULL DEFAULT 1,
           flush_attempts INTEGER NOT NULL DEFAULT 0,
           last_flush_error TEXT,
@@ -169,7 +193,7 @@ function migrateLegacyBufferedCustomEvents(
     sql.exec(`
         INSERT INTO buffered_custom_events_migration (
           event_id, site_id, visit_id, occurred_at, received_at, sequence,
-          event_name, event_data_json, user_id, dirty, flush_attempts,
+          event_name, event_data_json, dirty, flush_attempts,
           last_flush_error, next_due_at, flush_due_at, buffer_revision,
           created_at, visitor_id, session_id, pathname, hostname
         )
@@ -182,7 +206,6 @@ function migrateLegacyBufferedCustomEvents(
           ${coalesce("sequence", "0")},
           event_name,
           event_data_json,
-          ${coalesce("user_id", "''")},
           dirty,
           flush_attempts,
           last_flush_error,
@@ -405,11 +428,7 @@ export function initializeIngestSqlSchema(
         continent TEXT NOT NULL DEFAULT '',
         latitude REAL,
         longitude REAL,
-        postal_code TEXT NOT NULL DEFAULT '',
-        metro_code TEXT NOT NULL DEFAULT '',
         timezone TEXT NOT NULL DEFAULT '',
-        as_organization TEXT NOT NULL DEFAULT '',
-        ua_raw TEXT NOT NULL DEFAULT '',
         browser TEXT NOT NULL DEFAULT '',
         browser_version TEXT NOT NULL DEFAULT '',
         os TEXT NOT NULL DEFAULT '',
@@ -418,8 +437,6 @@ export function initializeIngestSqlSchema(
         screen_width INTEGER,
         screen_height INTEGER,
         language TEXT NOT NULL DEFAULT '',
-        user_id TEXT NOT NULL DEFAULT '',
-        user_name TEXT NOT NULL DEFAULT '',
         perf_ttfb_ms REAL,
         perf_fcp_ms REAL,
         perf_lcp_ms REAL,
@@ -441,8 +458,6 @@ export function initializeIngestSqlSchema(
   ensureColumn(sql, "buffered_visits", "perf_lcp_ms", "REAL");
   ensureColumn(sql, "buffered_visits", "perf_cls", "REAL");
   ensureColumn(sql, "buffered_visits", "perf_inp_ms", "REAL");
-  ensureColumn(sql, "buffered_visits", "user_id", "TEXT NOT NULL DEFAULT ''");
-  ensureColumn(sql, "buffered_visits", "user_name", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(sql, "buffered_visits", "hidden_at", "INTEGER");
   ensureColumn(sql, "buffered_visits", "properties_json", "TEXT");
   ensureColumn(
@@ -460,6 +475,16 @@ export function initializeIngestSqlSchema(
     "buffer_revision",
     "INTEGER NOT NULL DEFAULT 1",
   );
+  for (const columnName of DROPPED_BUFFERED_VISIT_COLUMNS) {
+    dropColumnIfExists(sql, "buffered_visits", columnName);
+  }
+  // Page views buffered before ingest rounded coordinates round here, so
+  // neither the realtime view nor a later flush carries finer ones.
+  sql.exec(`
+      UPDATE buffered_visits
+      SET latitude = ROUND(latitude, 1), longitude = ROUND(longitude, 1)
+      WHERE latitude <> ROUND(latitude, 1) OR longitude <> ROUND(longitude, 1)
+    `);
   // Rows created before due-time scheduling have NULL due columns.  Make
   // legacy dirty rows immediately eligible and restore lifecycle deadlines
   // for clean open/hidden visits without touching already-scheduled rows.
@@ -533,12 +558,6 @@ export function initializeIngestSqlSchema(
     "sequence",
     "INTEGER NOT NULL DEFAULT 0",
   );
-  ensureColumn(
-    sql,
-    "buffered_custom_events",
-    "user_id",
-    "TEXT NOT NULL DEFAULT ''",
-  );
   ensureColumn(sql, "buffered_custom_events", "revenue_amount", "REAL");
   ensureColumn(sql, "buffered_custom_events", "revenue_currency", "TEXT");
   ensureColumn(sql, "buffered_custom_events", "next_due_at", "INTEGER");
@@ -549,6 +568,9 @@ export function initializeIngestSqlSchema(
     "buffer_revision",
     "INTEGER NOT NULL DEFAULT 1",
   );
+  for (const columnName of DROPPED_BUFFERED_CUSTOM_EVENT_COLUMNS) {
+    dropColumnIfExists(sql, "buffered_custom_events", columnName);
+  }
   sql.exec(`
       UPDATE buffered_custom_events
       SET

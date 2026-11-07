@@ -34,11 +34,7 @@ export interface VisitBindingRow {
   continent: string;
   latitude: number | null;
   longitude: number | null;
-  postalCode: string;
-  metroCode: string;
   timezone: string;
-  asOrganization: string;
-  uaRaw: string;
   browser: string;
   browserVersion: string;
   os: string;
@@ -86,11 +82,7 @@ export const VISIT_D1_COLUMNS = [
   "continent",
   "latitude",
   "longitude",
-  "postal_code",
-  "metro_code",
   "timezone",
-  "as_organization",
-  "ua_raw",
   "browser",
   "browser_version",
   "os",
@@ -214,7 +206,6 @@ export const CREATE_BUFFERED_CUSTOM_EVENTS_SQL = `
     event_data_json TEXT NOT NULL DEFAULT '{}',
     revenue_amount REAL,
     revenue_currency TEXT,
-    user_id TEXT NOT NULL DEFAULT '',
     dirty INTEGER NOT NULL DEFAULT 1,
     flush_attempts INTEGER NOT NULL DEFAULT 0,
     last_flush_error TEXT,
@@ -264,11 +255,7 @@ export function visitBindings(
     row.continent,
     row.latitude,
     row.longitude,
-    row.postalCode,
-    row.metroCode,
     row.timezone,
-    row.asOrganization,
-    row.uaRaw,
     row.browser,
     row.browserVersion,
     row.os,

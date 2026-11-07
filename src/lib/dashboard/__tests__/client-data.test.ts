@@ -277,7 +277,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
         geo: "JP::13::Tokyo",
         geoContinent: "AS",
         geoTimezone: "Asia/Tokyo",
-        geoOrganization: "AS12345",
       });
       const out = withFilters(baseParams, filters);
       expect(out.siteId).toBe("abc");
@@ -289,7 +288,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
       expect(out["filter[referrer.domain]"]).toBe("google.com");
       expect(out["filter[geo.continent]"]).toBe("as");
       expect(out["filter[geo.timeZone]"]).toBe("Asia/Tokyo");
-      expect(out["filter[geo.organization]"]).toBe("AS12345");
     });
 
     it("should skip empty eventPayloadFilters and not serialize them", () => {

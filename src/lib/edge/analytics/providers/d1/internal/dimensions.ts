@@ -1223,21 +1223,12 @@ export async function queryOverviewGeoDimensionsFromD1(
     COUNT(DISTINCT CASE WHEN session_id != '' THEN session_id END),
     COUNT(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id END)
   FROM filtered_visits WHERE timezone != '' GROUP BY timezone`,
-    `SELECT 'organization', organization, COUNT(*),
-    COUNT(DISTINCT CASE WHEN session_id != '' THEN session_id END),
-    COUNT(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id END)
-  FROM filtered_visits WHERE organization != '' GROUP BY organization`,
   ];
-  // D1 currently rejects compound SELECT statements with more than five terms.
-  const maxCompoundTerms = 5;
-  const rows = (
-    await Promise.all(
-      Array.from(
-        { length: Math.ceil(cardSources.length / maxCompoundTerms) },
-        (_, index) =>
-          queryD1All<Record<string, unknown>>(
-            env,
-            `
+  // D1 rejects compound SELECT statements with more than five terms: the five
+  // cards fit in one.
+  const rows = await queryD1All<Record<string, unknown>>(
+    env,
+    `
 WITH
 ${scopedDataset?.ctes ?? buildVisitSourceCte()},
 filtered_visits AS MATERIALIZED (
@@ -1248,15 +1239,12 @@ filtered_visits AS MATERIALIZED (
     ${regionValueExpr()} AS region,
     ${cityValueExpr()} AS city,
     TRIM(COALESCE(continent, '')) AS continent,
-    TRIM(COALESCE(timezone, '')) AS timezone,
-    TRIM(COALESCE(as_organization, '')) AS organization
+    TRIM(COALESCE(timezone, '')) AS timezone
   FROM ${scopedDataset?.visitRelation ?? "visit_source"}
   ${filter?.clause ?? ""}
 ),
 card_rows AS (
-${cardSources
-  .slice(index * maxCompoundTerms, (index + 1) * maxCompoundTerms)
-  .join("\n  UNION ALL\n")}
+${cardSources.join("\n  UNION ALL\n")}
 ),
 ranked_cards AS (
   SELECT *, ROW_NUMBER() OVER (
@@ -1270,19 +1258,16 @@ FROM ranked_cards
 WHERE card_rank <= ?
 ORDER BY card_type ASC, card_rank ASC
 `,
-            [
-              ...(scopedDataset
-                ? scopedDataset.bindings.map((binding) => binding.value)
-                : [
-                    ...visitSourceBindings(siteId, window),
-                    ...(filter?.bindings ?? []),
-                  ]),
-              limit,
-            ],
-          ),
-      ),
-    )
-  ).flat();
+    [
+      ...(scopedDataset
+        ? scopedDataset.bindings.map((binding) => binding.value)
+        : [
+            ...visitSourceBindings(siteId, window),
+            ...(filter?.bindings ?? []),
+          ]),
+      limit,
+    ],
+  );
   const byCard = new Map<string, GeoTabRow[]>();
   for (const row of rows) {
     const card = String(row.cardType ?? "");
@@ -1303,6 +1288,5 @@ ORDER BY card_type ASC, card_rank ASC
     city: byCard.get("city") ?? [],
     continent: byCard.get("continent") ?? [],
     timezone: byCard.get("timezone") ?? [],
-    organization: byCard.get("organization") ?? [],
   };
 }

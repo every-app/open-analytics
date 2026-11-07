@@ -27,7 +27,6 @@ export const PUBLIC_QUERY_PATHS = [
   "overview-geo-city",
   "overview-geo-continent",
   "overview-geo-timezone",
-  "overview-geo-organization",
   "overview-geo-points",
   "utm-source",
   "utm-medium",

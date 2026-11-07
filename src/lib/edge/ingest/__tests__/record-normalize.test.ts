@@ -82,11 +82,7 @@ function makeVisit(overrides: Partial<StoredOpenVisit> = {}): StoredOpenVisit {
     continent: "NA",
     latitude: 37.7,
     longitude: -122.4,
-    postalCode: "94105",
-    metroCode: "807",
     timezone: "America/Los_Angeles",
-    asOrganization: "Example ISP",
-    uaRaw: "UA",
     browser: "Chrome",
     browserVersion: "120",
     os: "Windows",
@@ -475,12 +471,9 @@ describe("normalizeIngestRecord pageview records", () => {
       regionCode: "IDF",
       city: "Paris",
       continent: "EU",
-      latitude: 48.8566,
-      longitude: 2.3522,
-      postalCode: "75001",
-      metroCode: "",
+      latitude: 48.9,
+      longitude: 2.4,
       timezone: "Europe/Paris",
-      asOrganization: "Transit ISP",
       screenWidth: 1440,
       screenHeight: 900,
       browser: "Chromium",
@@ -490,6 +483,60 @@ describe("normalizeIngestRecord pageview records", () => {
       throw new Error("Expected a pageview record");
     }
     expect(result.record.sessionId).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("keeps a city-level location and no raw user agent, postal or metro code or network organization", async () => {
+    const { context } = makeContext();
+    const pageview = (latitude: unknown, longitude: unknown) =>
+      normalizeIngestRecord(
+        makeEnvelope(
+          { kind: "pageview", visitId: "visit-1", hostname: "example.com" },
+          {
+            cf: {
+              country: "US",
+              city: "New York",
+              latitude,
+              longitude,
+              postalCode: "10001",
+              metroCode: "501",
+              asOrganization: "Example ISP",
+            },
+          },
+        ),
+        context,
+      );
+
+    const result = await pageview("40.71427", "-73.95");
+    if (result.record?.kind !== "pageview") {
+      throw new Error("Expected a pageview record");
+    }
+    expect(result.record).toMatchObject({
+      latitude: 40.7,
+      longitude: -74,
+      browser: "Chrome",
+      os: "Windows",
+      deviceType: "desktop",
+    });
+    for (const key of [
+      "uaRaw",
+      "postalCode",
+      "metroCode",
+      "asOrganization",
+      "organization",
+    ]) {
+      expect(result.record).not.toHaveProperty(key);
+    }
+    expect(JSON.stringify(result.record)).not.toMatch(
+      /Mozilla|10001|501|Example ISP/,
+    );
+
+    // Rounded half away from zero, as SQLite's ROUND rounds migrated rows.
+    await expect(pageview(-33.25, 151.25)).resolves.toMatchObject({
+      record: { latitude: -33.3, longitude: 151.3 },
+    });
+    await expect(pageview(null, undefined)).resolves.toMatchObject({
+      record: { latitude: null, longitude: null },
+    });
   });
 
   it("reuses a recent server-side visitor session", async () => {
@@ -636,7 +683,6 @@ describe("normalizeIngestRecord pageview records", () => {
       country: "",
       region: "",
       timezone: "",
-      uaRaw: "TestAgent/1.0",
     });
     if (result.record?.kind !== "pageview") {
       throw new Error("Expected a pageview record");

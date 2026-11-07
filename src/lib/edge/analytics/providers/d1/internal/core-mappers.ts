@@ -131,7 +131,6 @@ export function mapEventAnalyticsContextCards(
       city: mapGeoTabs(cards.geo.city),
       continent: mapGeoTabs(cards.geo.continent),
       timezone: mapGeoTabs(cards.geo.timezone),
-      organization: mapGeoTabs(cards.geo.organization),
     },
   };
 }

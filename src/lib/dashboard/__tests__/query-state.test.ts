@@ -345,7 +345,6 @@ describe("dashboard query-state helpers", () => {
         geo: "US::CA::California",
         geoContinent: "NA",
         geoTimezone: "America/Los_Angeles",
-        geoOrganization: "Example ISP",
       });
 
       const href = withRangeAndFilters("/dashboard", "7d", filters);
@@ -355,9 +354,6 @@ describe("dashboard query-state helpers", () => {
       expect(url.searchParams.get("filter[geo.country]")).toBe("us");
       expect(url.searchParams.get("filter[client.screenSize]")).toBe(
         "1920x1080",
-      );
-      expect(url.searchParams.get("filter[geo.organization]")).toBe(
-        "Example ISP",
       );
       expect(url.searchParams.get("filter[traffic.channel]")).toBe(
         "organic_search",

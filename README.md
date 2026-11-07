@@ -2,21 +2,26 @@
 
 > **Web analytics on your own Cloudflare account. No cookies.**
 >
-> Add a 3 KB tag to a site and see its pages, referrers, campaigns, funnels and goals, with a live view. It stores no IP addresses; Cloudflare resolves location at the edge.
+> Add a 3 KB tag to a site and see its pages, sources, campaigns, goals and funnels, with a live view. It stores no IP addresses or user agents, and location only down to the city.
 
 ## Features
 
-- No cookies, nothing stored in the browser and no stored IP addresses.
-- A 3 KB tracker with custom events.
-- One dashboard per site, as in Plausible: unique visitors, visits, pageviews, views per visit, bounce rate and visit duration, with a graph of whichever you pick; Sources (channels, referrers and UTM campaigns), Pages (top, entry and exit), Locations (a map, countries, regions and cities) and Devices (browser, operating system and device type); and each goal's conversions.
+- No cookies and nothing stored in the browser. Visitors are counted with a hash that uses a random salt per site, deleted every day, so a visitor can't be followed across days or sites.
+- No stored IP addresses or raw user agents. Location is the country, region and city, resolved by Cloudflare at the edge.
+- A 3 KB tracker with custom events, revenue, and custom properties on page views. Outbound link clicks, file downloads and 404 pages can be tracked automatically.
+- One dashboard per site, as in Plausible:
+  - Unique visitors, visits, pageviews, views per visit, bounce rate and visit duration, with a graph of whichever you pick. Visit duration counts only the time the page is visible.
+  - Sources (channels, including AI assistants, grouped referrers and UTM campaigns), Pages (top, entry and exit), Locations (a map, countries, regions and cities) and Devices (browser, operating system and device type).
+  - Scroll depth for each page, and as a top stat when you filter by a page.
+  - Each goal's conversions and revenue, and a Properties breakdown.
 - Click any row to filter the whole dashboard by it; active filters show as pills you can remove. Each card's Details view lists every row with search, sorting and CSV export.
 - Ranges from the last 24 hours to all time, with keyboard shortcuts, and comparison with the previous period or the same dates a year earlier.
-- Funnels and goals, and a live view.
+- Goals on pages, custom events or scroll depth, with revenue in the goal's currency. Funnels and a live view.
 - Read-only public share links for any site.
 - Weekly or monthly reports and traffic spike or drop alerts, in an in-app inbox and by email.
 - Bot filtering.
 - Roles from your Every App organization: owners and admins manage sites, goals, funnels, sharing and settings; members read every dashboard and set up their own reports and alerts.
-- MCP tools so your agents can query reports and, as an owner or admin, manage sites.
+- MCP tools so your agents can query reports and, as an owner or admin, manage sites and goals.
 
 ## Install on EveryApp
 

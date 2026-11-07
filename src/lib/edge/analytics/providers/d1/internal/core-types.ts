@@ -194,7 +194,7 @@ export type {
   UtmDimensionKey,
 } from "@/lib/edge/analytics/contract";
 export type OverviewGeoTabKey =
-  "country" | "region" | "city" | "continent" | "timezone" | "organization";
+  "country" | "region" | "city" | "continent" | "timezone";
 export interface ClientDimensionTabs {
   browser: DimensionRow[];
   osVersion: DimensionRow[];
@@ -208,7 +208,6 @@ export interface GeoDimensionTabs {
   city: GeoTabRow[];
   continent: GeoTabRow[];
   timezone: GeoTabRow[];
-  organization: GeoTabRow[];
 }
 export interface PublicSiteEnvelope {
   slug: string;

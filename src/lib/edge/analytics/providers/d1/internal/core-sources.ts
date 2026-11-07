@@ -20,7 +20,7 @@ export const VISIT_SOURCE_COLUMNS = `
     pathname, query_string, hash_fragment, hostname, title, referrer_url, referrer_host,
     utm_source, utm_medium, utm_campaign, utm_term, utm_content,
     is_eu, country, region, region_code, city, continent, latitude, longitude,
-    postal_code, metro_code, timezone, as_organization, ua_raw, browser, browser_version,
+    timezone, browser, browser_version,
     os, os_version, device_type, screen_width, screen_height, language,
     ae_synced_at
   `;
@@ -85,8 +85,7 @@ export function buildEventAnalyticsSourceCte(options?: {
     v.language,
     v.timezone,
     v.screen_width,
-    v.screen_height,
-    v.as_organization`;
+    v.screen_height`;
   const eventNameSource = options?.eventName
     ? `
 target_event_name AS MATERIALIZED (

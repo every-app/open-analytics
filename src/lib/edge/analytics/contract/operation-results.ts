@@ -40,7 +40,6 @@ export interface CanonicalEventContextCards {
     readonly city: readonly CanonicalGeoAnalyticsTab[];
     readonly continent: readonly CanonicalGeoAnalyticsTab[];
     readonly timezone: readonly CanonicalGeoAnalyticsTab[];
-    readonly organization: readonly CanonicalGeoAnalyticsTab[];
   };
 }
 

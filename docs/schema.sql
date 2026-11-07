@@ -127,7 +127,6 @@ CREATE TABLE custom_events (
   value_count INTEGER NOT NULL,
   ae_synced_at INTEGER,
   created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  user_id TEXT,
   site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
   revenue_amount REAL,
   revenue_currency TEXT,
@@ -423,11 +422,7 @@ CREATE TABLE visits (
   continent TEXT NOT NULL DEFAULT '',
   latitude REAL,
   longitude REAL,
-  postal_code TEXT NOT NULL DEFAULT '',
-  metro_code TEXT NOT NULL DEFAULT '',
   timezone TEXT NOT NULL DEFAULT '',
-  as_organization TEXT NOT NULL DEFAULT '',
-  ua_raw TEXT NOT NULL DEFAULT '',
   browser TEXT NOT NULL DEFAULT '',
   browser_version TEXT NOT NULL DEFAULT '',
   os TEXT NOT NULL DEFAULT '',
@@ -444,8 +439,6 @@ CREATE TABLE visits (
   perf_lcp_ms REAL,
   perf_cls REAL,
   perf_inp_ms REAL,
-  user_id TEXT,
-  user_name TEXT,
   site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
   scroll_depth INTEGER
 );

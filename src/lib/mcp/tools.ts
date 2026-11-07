@@ -262,7 +262,6 @@ const SITE_REPORTS = {
   "overview-geo-region": "Visitors by region",
   "overview-geo-city": "Visitors by city",
   "overview-geo-continent": "Visitors by continent",
-  "overview-geo-organization": "Visitors by network organization (ASN)",
   "overview-client-browser": "Visitors by browser",
   "overview-client-os-version": "Visitors by operating system",
   "overview-client-device-type": "Visitors by device type",

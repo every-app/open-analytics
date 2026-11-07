@@ -74,6 +74,8 @@ function createPreSchedulingSchema(sql: SqliteSqlStorage): void {
       exit_reason TEXT,
       pathname TEXT NOT NULL,
       hostname TEXT NOT NULL,
+      latitude REAL,
+      longitude REAL,
       dirty INTEGER NOT NULL DEFAULT 1,
       flush_attempts INTEGER NOT NULL DEFAULT 0,
       last_flush_error TEXT,
@@ -306,8 +308,9 @@ describe("initializeIngestSqlSchema", () => {
       { eventId: "dirty-event", flushDueAt: NOW, nextDueAt: NOW },
     ]);
 
+    // The first update rounds buffered coordinates; none needs it here.
     const firstMigrationWrites = sql.updateCalls.map((call) => call.changes);
-    expect(firstMigrationWrites).toEqual([2, 1]);
+    expect(firstMigrationWrites).toEqual([0, 2, 1]);
 
     // Simulate an incorrectly ordered index with the same column count.
     // Initialization must compare the full shape before repairing it.
@@ -319,7 +322,7 @@ describe("initializeIngestSqlSchema", () => {
     sql.updateCalls.length = 0;
     initializeIngestSqlSchema(sql);
 
-    expect(sql.updateCalls.map((call) => call.changes)).toEqual([0]);
+    expect(sql.updateCalls.map((call) => call.changes)).toEqual([0, 0]);
     expect(
       rows<{ name: string; seqno: number }>(
         sql,
@@ -328,6 +331,101 @@ describe("initializeIngestSqlSchema", () => {
         .sort((left, right) => left.seqno - right.seqno)
         .map((row) => row.name),
     ).toEqual(["dirty", "flush_due_at", "flush_attempts"]);
+    sql.close();
+  });
+
+  it("drops the columns page views no longer store and keeps the buffered rows", () => {
+    const sql = new SqliteSqlStorage();
+    sql.db.exec(`
+      CREATE TABLE buffered_visits (
+        visit_id TEXT PRIMARY KEY,
+        site_id TEXT NOT NULL,
+        visitor_id TEXT NOT NULL,
+        session_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        started_at INTEGER NOT NULL,
+        last_activity_at INTEGER NOT NULL,
+        pathname TEXT NOT NULL,
+        hostname TEXT NOT NULL,
+        latitude REAL,
+        longitude REAL,
+        postal_code TEXT NOT NULL DEFAULT '',
+        metro_code TEXT NOT NULL DEFAULT '',
+        as_organization TEXT NOT NULL DEFAULT '',
+        ua_raw TEXT NOT NULL DEFAULT '',
+        user_id TEXT NOT NULL DEFAULT '',
+        user_name TEXT NOT NULL DEFAULT '',
+        dirty INTEGER NOT NULL DEFAULT 1,
+        flush_attempts INTEGER NOT NULL DEFAULT 0,
+        last_flush_error TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+      INSERT INTO buffered_visits (
+        visit_id, site_id, visitor_id, session_id, status, started_at,
+        last_activity_at, pathname, hostname, latitude, longitude, postal_code,
+        metro_code, as_organization, ua_raw, user_id, user_name, created_at,
+        updated_at
+      ) VALUES (
+        'visit-1', 'site-1', 'visitor-1', 'session-1', 'open', ${NOW},
+        ${NOW}, '/', 'example.com', 37.48522, -122.23635, '94105',
+        '807', 'Example ISP', 'Mozilla/5.0', 'user-1', 'Ada', ${NOW}, ${NOW}
+      );
+      CREATE TABLE buffered_custom_events (
+        event_id TEXT PRIMARY KEY,
+        site_id TEXT NOT NULL,
+        visit_id TEXT NOT NULL,
+        occurred_at INTEGER NOT NULL,
+        received_at INTEGER NOT NULL,
+        sequence INTEGER NOT NULL DEFAULT 0,
+        event_name TEXT NOT NULL,
+        event_data_json TEXT NOT NULL DEFAULT '{}',
+        user_id TEXT NOT NULL DEFAULT '',
+        dirty INTEGER NOT NULL DEFAULT 1,
+        flush_attempts INTEGER NOT NULL DEFAULT 0,
+        last_flush_error TEXT,
+        created_at INTEGER NOT NULL
+      );
+      INSERT INTO buffered_custom_events (
+        event_id, site_id, visit_id, occurred_at, received_at, event_name,
+        user_id, created_at
+      ) VALUES (
+        'event-1', 'site-1', 'visit-1', ${NOW}, ${NOW}, 'Signup',
+        'user-1', ${NOW}
+      );
+    `);
+    const columnsOf = (table: string) =>
+      rows<{ name: string }>(sql, `PRAGMA table_info(${table})`).map(
+        (column) => column.name,
+      );
+
+    initializeIngestSqlSchema(sql);
+    initializeIngestSqlSchema(sql);
+
+    for (const column of [
+      "ua_raw",
+      "postal_code",
+      "metro_code",
+      "as_organization",
+      "user_id",
+      "user_name",
+    ]) {
+      expect(columnsOf("buffered_visits")).not.toContain(column);
+    }
+    expect(columnsOf("buffered_custom_events")).not.toContain("user_id");
+    // Its coordinates round as ingest now stores them, before anything reads
+    // or flushes the row.
+    expect(
+      rows(
+        sql,
+        "SELECT visit_id, pathname, latitude, longitude FROM buffered_visits",
+      ),
+    ).toEqual([
+      { visit_id: "visit-1", pathname: "/", latitude: 37.5, longitude: -122.2 },
+    ]);
+    expect(
+      rows(sql, "SELECT event_id, event_name FROM buffered_custom_events"),
+    ).toEqual([{ event_id: "event-1", event_name: "Signup" }]);
     sql.close();
   });
 

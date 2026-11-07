@@ -56,11 +56,7 @@ function pageview(overrides: Partial<NormalizedPageview> = {}) {
     continent: "NA",
     latitude: 37.77,
     longitude: -122.42,
-    postalCode: "94105",
-    metroCode: "807",
     timezone: "America/Los_Angeles",
-    asOrganization: "Example ISP",
-    uaRaw: "Mozilla/5.0",
     browser: "Chrome",
     browserVersion: "120",
     os: "Windows",
@@ -111,11 +107,7 @@ function bufferedVisit(
     continent: "",
     latitude: null,
     longitude: null,
-    postalCode: "",
-    metroCode: "",
     timezone: "UTC",
-    asOrganization: "",
-    uaRaw: "",
     browser: "",
     browserVersion: "",
     os: "",
@@ -392,6 +384,6 @@ describe("edge query parser and mapper edge coverage", () => {
         "city",
       ),
     ).toEqual([{ value: "::::", label: "::::", group: "city" }]);
-    expect(geoTabLabel("unknown", "organization")).toBe("unknown");
+    expect(geoTabLabel("unknown", "timezone")).toBe("unknown");
   });
 });

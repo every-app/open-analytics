@@ -212,7 +212,6 @@ scope_raw_events AS MATERIALIZED (
     CAST(NULL AS TEXT) AS device_type,
     CAST(NULL AS TEXT) AS language,
     CAST(NULL AS TEXT) AS timezone,
-    CAST(NULL AS TEXT) AS as_organization,
     CAST(NULL AS INTEGER) AS screen_width,
     CAST(NULL AS INTEGER) AS screen_height
   WHERE 0
@@ -358,7 +357,6 @@ function eventSource(
     v.device_type,
     v.language,
     v.timezone,
-    v.as_organization,
     v.screen_width,
     v.screen_height`,
         }

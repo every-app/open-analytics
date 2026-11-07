@@ -41,7 +41,6 @@ const OVERVIEW_TABS: Readonly<Record<string, OverviewTab>> = {
   "overview-geo-city": "geo.city",
   "overview-geo-continent": "geo.continent",
   "overview-geo-timezone": "geo.timezone",
-  "overview-geo-organization": "geo.organization",
 };
 const PUBLIC_QUERY_PATHS = new Set([
   "overview",

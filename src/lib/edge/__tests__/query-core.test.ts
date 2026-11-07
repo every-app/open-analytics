@@ -865,7 +865,6 @@ describe("edge query core mappers", () => {
           city: [],
           continent: [],
           timezone: [],
-          organization: [],
         },
       }),
     ).toMatchObject({

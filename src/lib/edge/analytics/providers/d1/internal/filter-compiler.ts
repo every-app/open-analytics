@@ -78,7 +78,6 @@ const COLUMN_STRATEGY_COLUMNS: Readonly<Record<FilterColumnStrategy, string>> =
     "column.city": "city",
     "column.continent": "continent",
     "column.timezone": "timezone",
-    "column.as_organization": "as_organization",
     "column.duration_ms": "duration_ms",
     "column.scroll_depth": "scroll_depth",
     "column.screen_width": "screen_width",

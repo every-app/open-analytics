@@ -83,7 +83,6 @@ function overviewTabExpression(tab: string): string | null {
   if (tab === "geo.city") return cityValueExpr();
   if (tab === "geo.continent") return "TRIM(COALESCE(continent, ''))";
   if (tab === "geo.timezone") return "TRIM(COALESCE(timezone, ''))";
-  if (tab === "geo.organization") return "TRIM(COALESCE(as_organization, ''))";
   return null;
 }
 export async function overviewTabData(
@@ -481,14 +480,13 @@ export async function overviewTabData(
     };
   }
   const geoTab = tab.slice("geo.".length) as
-    "country" | "region" | "city" | "continent" | "timezone" | "organization";
+    "country" | "region" | "city" | "continent" | "timezone";
   const expression = {
     country: "country",
     region: regionValueExpr(),
     city: cityValueExpr(),
     continent: "continent",
     timezone: "timezone",
-    organization: "as_organization",
   }[geoTab];
   const cursor = await decodeDimensionCursor(
     options.env,

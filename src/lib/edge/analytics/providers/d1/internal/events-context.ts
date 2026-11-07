@@ -36,7 +36,6 @@ export const EVENT_CONTEXT_CARD_KEYS = [
   "city",
   "continent",
   "timezone",
-  "organization",
 ] as const;
 export type EventContextCardKey = (typeof EVENT_CONTEXT_CARD_KEYS)[number];
 export async function queryEventDimensionRowsFromFilteredEvents(
@@ -186,11 +185,6 @@ export async function queryEventAnalyticsContextCardsFromD1(
     { key: "city", valueExpr: cityValueExpr(), labelExpr: cityValueExpr() },
     { key: "continent", valueExpr: "continent", labelExpr: "continent" },
     { key: "timezone", valueExpr: "timezone", labelExpr: "timezone" },
-    {
-      key: "organization",
-      valueExpr: "as_organization",
-      labelExpr: "as_organization",
-    },
   ];
   const selectedKeySet = new Set(selectedKeys);
   const cardSources: Array<{ key: EventContextCardKey; sql: string }> = [
@@ -382,7 +376,6 @@ ORDER BY cardType ASC, card_rank ASC
   const city = geoRows("city");
   const continent = geoRows("continent");
   const timezone = geoRows("timezone");
-  const organization = geoRows("organization");
 
   return {
     page: {
@@ -410,7 +403,6 @@ ORDER BY cardType ASC, card_rank ASC
       city,
       continent,
       timezone,
-      organization,
     },
   };
 }

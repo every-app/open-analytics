@@ -56,6 +56,18 @@ interface NormalizeRecordContext {
   }): Promise<RecentVisitorSession | null>;
   insertBufferedCustomEvent(record: BufferedCustomEventInput): boolean;
 }
+/** Decimal places a page view's coordinates keep: 1 is about 11 km, a city. */
+const COORDINATE_DECIMALS = 1;
+/**
+ * A Cloudflare coordinate rounded to city level, the way SQLite's ROUND does
+ * (half away from zero), so migrated and new rows land on the same point.
+ */
+function cityLevelCoordinate(value: unknown): number | null {
+  const coordinate = coerceNumber(value, null);
+  return coordinate === null
+    ? null
+    : Number(coordinate.toFixed(COORDINATE_DECIMALS));
+}
 function utmField(value: unknown): string {
   return clampString(coerceString(value || ""), 255);
 }
@@ -93,7 +105,8 @@ export async function normalizeIngestRecord(
   const visitId = clampString(coerceString(client.visitId), 128);
 
   const cf = envelope.request.cf ?? {};
-  const uaRaw = clampString(
+  // Hashed into the visitor id and parsed below; never stored.
+  const userAgent = clampString(
     coerceString(requestHeaders["user-agent"] ?? ""),
     1024,
   );
@@ -119,7 +132,7 @@ export async function normalizeIngestRecord(
       ),
       80,
     ),
-    ua: uaRaw,
+    ua: userAgent,
   });
 
   const contextGeoBase = {
@@ -129,16 +142,12 @@ export async function normalizeIngestRecord(
     regionCode: clampString(coerceString(cf.regionCode ?? ""), 32),
     city: clampString(coerceString(cf.city ?? ""), 128),
     continent: clampString(coerceString(cf.continent ?? ""), 32),
-    latitude: coerceNumber(cf.latitude, null),
-    longitude: coerceNumber(cf.longitude, null),
-    postalCode: clampString(coerceString(cf.postalCode ?? ""), 32),
-    metroCode: clampString(coerceString(cf.metroCode ?? ""), 32),
+    latitude: cityLevelCoordinate(cf.latitude),
+    longitude: cityLevelCoordinate(cf.longitude),
     timezone: clampString(
       coerceString(client.timezone || cf.timezone || ""),
       120,
     ),
-    asOrganization: clampString(coerceString(cf.asOrganization ?? ""), 255),
-    uaRaw,
     browser: clampString(coerceString(ua.browser.name ?? ""), 80),
     browserVersion: clampString(coerceString(ua.browser.version ?? ""), 80),
     os: clampString(coerceString(ua.os.name ?? ""), 80),
@@ -380,11 +389,7 @@ export async function normalizeIngestRecord(
         continent: visit.continent,
         latitude: visit.latitude,
         longitude: visit.longitude,
-        postalCode: visit.postalCode,
-        metroCode: visit.metroCode,
         timezone: visit.timezone,
-        asOrganization: visit.asOrganization,
-        uaRaw: visit.uaRaw,
         browser: visit.browser,
         browserVersion: visit.browserVersion,
         os: visit.os,

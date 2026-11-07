@@ -54,7 +54,6 @@ export const ANALYTICS_DIMENSIONS = [
   "geo.city",
   "geo.continent",
   "geo.timeZone",
-  "geo.organization",
   "event.name",
 ] as const;
 

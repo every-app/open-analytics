@@ -40,7 +40,6 @@ export interface AppMessages {
     longitude: string;
     continentLabels: Record<string, string>;
     timezone: string;
-    organization: string;
     screenSize: string;
     loading: string;
     noData: string;
@@ -440,9 +439,6 @@ export interface AppMessages {
     utmContent: string;
     browserVersion: string;
     osVersion: string;
-    userAgent: string;
-    postalCode: string;
-    metroCode: string;
     status: string;
     visibilityState: string;
     duration: string;
@@ -1312,7 +1308,6 @@ const enMessages = {
       "SOUTH AMERICA": "South America",
     },
     timezone: "Time zone",
-    organization: "Network organization",
     screenSize: "Screen size",
     loading: "Loading",
     noData: "No data",
@@ -1476,7 +1471,6 @@ const enMessages = {
       "geo.city": "City",
       "geo.continent": "Continent",
       "geo.timeZone": "Time zone",
-      "geo.organization": "Network organization",
       "event.collection": "Event collection",
       "event.name": "Event name",
       "event.payload": "Properties",
@@ -1824,9 +1818,6 @@ const enMessages = {
     utmContent: "UTM content",
     browserVersion: "Browser version",
     osVersion: "OS version",
-    userAgent: "User agent",
-    postalCode: "Postal code",
-    metroCode: "Metro code",
     status: "Status",
     visibilityState: "Visibility state",
     duration: "Duration",

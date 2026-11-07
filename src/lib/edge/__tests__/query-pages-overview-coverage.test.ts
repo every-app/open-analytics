@@ -3031,7 +3031,6 @@ describe("edge overview D1 queries and handlers", () => {
       "geo.city",
       "geo.continent",
       "geo.timezone",
-      "geo.organization",
     ] as const;
     const { env, calls } = createD1Env(
       comparisonTabs.map((tab) => [
@@ -3167,17 +3166,6 @@ describe("edge overview D1 queries and handlers", () => {
           visitors: 1,
         },
       ],
-      [],
-      [],
-      [
-        {
-          cardType: "organization",
-          value: "Example ISP",
-          views: 1,
-          sessions: 1,
-          visitors: 1,
-        },
-      ],
     ]);
 
     const scalar = await handleFilterValuesContract(
@@ -3237,17 +3225,6 @@ describe("edge overview D1 queries and handlers", () => {
         limit: 4,
       }),
     );
-    const geoOrganization = await handleFilterValuesContract(
-      env,
-      siteId,
-      url("/filter-values", {
-        filterKey: "geo.organization",
-        "filter[geo.organization]": "Example ISP",
-        from: window.startMs,
-        to: window.endExclusiveMs,
-        limit: 4,
-      }),
-    );
 
     const responses = [
       [scalar, "geo.country"],
@@ -3255,7 +3232,6 @@ describe("edge overview D1 queries and handlers", () => {
       [source, "referrer.domain"],
       [client, "client.screenSize"],
       [geo, "geo.region"],
-      [geoOrganization, "geo.organization"],
     ] as const;
     for (const [response, field] of responses) {
       await expect(response.json()).resolves.toMatchObject({

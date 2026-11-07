@@ -77,7 +77,6 @@ const cards = {
     city: [],
     continent: [],
     timezone: [],
-    organization: [],
   },
 };
 

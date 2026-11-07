@@ -396,7 +396,7 @@ function commonQueryMatches(): SqlMatch[] {
       ],
     ),
     allMatch(
-      ["card_rows AS", "organization", "card_type"],
+      ["card_rows AS", "'timezone'", "card_type"],
       [
         {
           cardType: "country",
@@ -415,13 +415,6 @@ function commonQueryMatches(): SqlMatch[] {
         {
           cardType: "city",
           value: "US::CA::California::San Francisco",
-          views: 2,
-          sessions: 2,
-          visitors: 2,
-        },
-        {
-          cardType: "organization",
-          value: "Example ISP",
           views: 2,
           sessions: 2,
           visitors: 2,
@@ -1078,7 +1071,6 @@ function commonQueryMatches(): SqlMatch[] {
           city: "US::CA::California::San Francisco",
           continent: "NA",
           timezone: "America/Los_Angeles",
-          asOrganization: "Example ISP",
         },
       ],
     ),
@@ -1683,7 +1675,6 @@ describe("edge query handlers", () => {
       "overview-geo-city",
       "overview-geo-continent",
       "overview-geo-timezone",
-      "overview-geo-organization",
     ];
     for (const route of tabRoutes) {
       const response = await privateQuery(privatePath(route), env);
@@ -2146,7 +2137,6 @@ describe("edge query handlers", () => {
       "overview-geo-city",
       "overview-geo-continent",
       "overview-geo-timezone",
-      "overview-geo-organization",
     ];
     for (const pathname of paths) {
       const url = new URL(

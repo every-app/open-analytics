@@ -70,7 +70,6 @@ describe("ingest normalization realtime payload helpers", () => {
       city: "San Francisco",
       continent: "NA",
       timezone: "America/Los_Angeles",
-      organization: "Example ISP",
       browser: "Chrome",
       os: "macOS",
       osVersion: "14",
@@ -114,7 +113,6 @@ describe("ingest normalization realtime payload helpers", () => {
         city: "San Francisco",
         continent: "NA",
         timezone: "America/Los_Angeles",
-        asOrganization: "Example ISP",
         browser: "Chrome",
         os: "Windows",
         osVersion: "11",
@@ -128,7 +126,6 @@ describe("ingest normalization realtime payload helpers", () => {
     ).toMatchObject({
       visitId: "visit-1",
       hash: "#plans",
-      organization: "Example ISP",
       os: "Windows",
       osVersion: "11",
       screenWidth: 1440.2,

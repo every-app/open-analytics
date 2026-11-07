@@ -547,4 +547,4 @@ export type OverviewClientTabKey = Exclude<
   "operatingSystem"
 >;
 export type OverviewGeoTabKey =
-  "country" | "region" | "city" | "continent" | "timezone" | "organization";
+  "country" | "region" | "city" | "continent" | "timezone";

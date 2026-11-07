@@ -436,6 +436,11 @@ describe("filter DSL v1", () => {
     expect(unknownField.offset).toBe(0);
     expect(unknownField.cause).toBeInstanceOf(FilterValidationError);
 
+    // Page views no longer store the network organization (the ASN's name).
+    expect(parseError('geo.organization eq "Example ISP"').code).toBe(
+      "unknown_field",
+    );
+
     const disallowedOperator = parseError('session.entryPath contains "/docs"');
     expect(disallowedOperator.code).toBe("operator_not_allowed");
     expect(disallowedOperator.offset).toBe(

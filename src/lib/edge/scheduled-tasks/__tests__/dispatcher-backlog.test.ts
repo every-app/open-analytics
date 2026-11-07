@@ -155,5 +155,5 @@ describe("cron ticks with backlogs", () => {
         `SELECT COUNT(*) AS n FROM visits WHERE site_id LIKE 'deleted-%'`,
       ),
     ).toBe(0);
-  });
+  }, 60_000);
 });

@@ -52,11 +52,7 @@ const VISIT_COLUMNS = [
   "continent",
   "latitude",
   "longitude",
-  "postal_code",
-  "metro_code",
   "timezone",
-  "as_organization",
-  "ua_raw",
   "browser",
   "browser_version",
   "os",
@@ -232,11 +228,7 @@ class FakeD1Database {
         continent TEXT NOT NULL DEFAULT '',
         latitude REAL,
         longitude REAL,
-        postal_code TEXT NOT NULL DEFAULT '',
-        metro_code TEXT NOT NULL DEFAULT '',
         timezone TEXT NOT NULL DEFAULT '',
-        as_organization TEXT NOT NULL DEFAULT '',
-        ua_raw TEXT NOT NULL DEFAULT '',
         browser TEXT NOT NULL DEFAULT '',
         browser_version TEXT NOT NULL DEFAULT '',
         os TEXT NOT NULL DEFAULT '',
@@ -245,8 +237,6 @@ class FakeD1Database {
         screen_width INTEGER,
         screen_height INTEGER,
         language TEXT NOT NULL DEFAULT '',
-        user_id TEXT,
-        user_name TEXT,
         perf_ttfb_ms REAL,
         perf_fcp_ms REAL,
         perf_lcp_ms REAL,
@@ -297,7 +287,6 @@ class FakeD1Database {
         value_count INTEGER NOT NULL,
         revenue_amount REAL,
         revenue_currency TEXT,
-        user_id TEXT,
         ae_synced_at INTEGER,
         created_at INTEGER NOT NULL
       );
@@ -483,11 +472,7 @@ function visitRecord(overrides: Partial<VisitRecord> = {}): VisitRecord {
     continent: "NA",
     latitude: 37.77,
     longitude: -122.42,
-    postal_code: "94105",
-    metro_code: "807",
     timezone: "America/Los_Angeles",
-    as_organization: "Example ISP",
-    ua_raw: "Mozilla/5.0",
     browser: "Chrome",
     browser_version: "120",
     os: "Windows",
@@ -570,7 +555,6 @@ function insertBufferedCustomEvent(
     sequence: 0,
     event_name: "Test Event",
     event_data_json: "{}",
-    user_id: "",
     dirty: 1,
     flush_attempts: 0,
     last_flush_error: null,
@@ -2142,9 +2126,9 @@ describe("IngestDurableObject", () => {
       `
         INSERT INTO buffered_custom_events (
           event_id, site_id, visit_id, occurred_at, received_at, sequence,
-          event_name, event_data_json, user_id, dirty, flush_attempts,
+          event_name, event_data_json, dirty, flush_attempts,
           last_flush_error, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       "old-event",
       "site-1",
@@ -2154,7 +2138,6 @@ describe("IngestDurableObject", () => {
       0,
       "Old Event",
       "{}",
-      "",
       0,
       0,
       null,
@@ -2741,15 +2724,14 @@ describe("IngestDurableObject", () => {
       expect.arrayContaining([
         "received_at",
         "sequence",
-        "user_id",
         "next_due_at",
         "flush_due_at",
         "buffer_revision",
       ]),
     );
 
-    const missingUserSql = new SqliteSqlStorage();
-    missingUserSql.exec(`
+    const preSchedulingSql = new SqliteSqlStorage();
+    preSchedulingSql.exec(`
       CREATE TABLE buffered_custom_events (
         event_id TEXT PRIMARY KEY,
         site_id TEXT NOT NULL,
@@ -2766,16 +2748,15 @@ describe("IngestDurableObject", () => {
       )
     `);
 
-    createTestDo({}, missingUserSql);
+    createTestDo({}, preSchedulingSql);
 
     expect(
       localRows<{ name: string }>(
-        missingUserSql,
+        preSchedulingSql,
         "PRAGMA table_info(buffered_custom_events)",
       ).map((column) => column.name),
     ).toEqual(
       expect.arrayContaining([
-        "user_id",
         "next_due_at",
         "flush_due_at",
         "buffer_revision",

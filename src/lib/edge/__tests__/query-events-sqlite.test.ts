@@ -121,13 +121,11 @@ function createSqliteEventEnv(): { env: Env; d1: SqliteD1Database } {
       is_eu INTEGER NOT NULL DEFAULT 0, country TEXT NOT NULL DEFAULT '',
       region TEXT NOT NULL DEFAULT '', region_code TEXT NOT NULL DEFAULT '',
       city TEXT NOT NULL DEFAULT '', continent TEXT NOT NULL DEFAULT '', latitude REAL,
-      longitude REAL, postal_code TEXT NOT NULL DEFAULT '', metro_code TEXT NOT NULL DEFAULT '',
-      timezone TEXT NOT NULL DEFAULT '', as_organization TEXT NOT NULL DEFAULT '',
-      ua_raw TEXT NOT NULL DEFAULT '', browser TEXT NOT NULL DEFAULT '',
+      longitude REAL, timezone TEXT NOT NULL DEFAULT '',
+      browser TEXT NOT NULL DEFAULT '',
       browser_version TEXT NOT NULL DEFAULT '', os TEXT NOT NULL DEFAULT '',
       os_version TEXT NOT NULL DEFAULT '', device_type TEXT NOT NULL DEFAULT '',
       screen_width INTEGER, screen_height INTEGER, language TEXT NOT NULL DEFAULT '',
-      user_id TEXT, user_name TEXT,
       perf_ttfb_ms REAL, perf_fcp_ms REAL, perf_lcp_ms REAL, perf_cls REAL,
       perf_inp_ms REAL, ae_synced_at INTEGER
     );
@@ -169,9 +167,9 @@ function createSqliteEventEnv(): { env: Env; d1: SqliteD1Database } {
       `INSERT INTO visits (
       visit_id, site_id, visitor_id, session_id, started_at, pathname, hostname,
       title, referrer_url, referrer_host, country, region, city, continent, timezone,
-      as_organization, browser, browser_version, os, os_version, device_type,
+      browser, browser_version, os, os_version, device_type,
       screen_width, screen_height, language
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       "visit-1",
@@ -189,7 +187,6 @@ function createSqliteEventEnv(): { env: Env; d1: SqliteD1Database } {
       "Hangzhou",
       "Asia",
       "Asia/Shanghai",
-      "Example Networks",
       "Edge",
       "140",
       "Windows",
@@ -830,7 +827,6 @@ describe("event detail D1 SQL", () => {
           clientScreenSize: "1920x1080",
           geoContinent: "Asia",
           geoTimezone: "Asia/Shanghai",
-          geoOrganization: "Example Networks",
         }),
         {
           limit: 25,
@@ -851,7 +847,7 @@ describe("event detail D1 SQL", () => {
       expect(query?.sql).toContain("v.query_string");
       expect(query?.sql).toContain("v.referrer_url");
       expect(query?.sql).toContain("v.screen_width");
-      expect(query?.sql).toContain("v.as_organization");
+      expect(query?.sql).toContain("v.timezone");
     } finally {
       d1.close();
     }

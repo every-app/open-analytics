@@ -345,8 +345,8 @@ INSERT INTO visit_daily_geo_points (
 )
 SELECT
   ?1, ?2,
-  ROUND(latitude, 3) AS lat_bucket,
-  ROUND(longitude, 3) AS lon_bucket,
+  latitude AS lat_bucket,
+  longitude AS lon_bucket,
   country, region, region_code, city,
   COUNT(*),
   MAX(started_at)

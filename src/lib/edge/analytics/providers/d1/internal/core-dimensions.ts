@@ -243,11 +243,6 @@ export function resolveCrossBreakdownDimension(
       labelExpr: "TRIM(COALESCE(timezone, ''))",
       fallbackKeyBase: "timezone",
     };
-  if (dimension === "geo.organization")
-    return {
-      labelExpr: "TRIM(COALESCE(as_organization, ''))",
-      fallbackKeyBase: "organization",
-    };
 
   // ── event (requires events table join, not supported) ─────────────────
   return null;

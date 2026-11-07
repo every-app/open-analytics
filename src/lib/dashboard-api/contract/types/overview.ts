@@ -97,7 +97,6 @@ export interface OverviewGeoDimensionTabsData {
     city: Array<{ label: string; views: number; sessions: number }>;
     continent: Array<{ label: string; views: number; sessions: number }>;
     timezone: Array<{ label: string; views: number; sessions: number }>;
-    organization: Array<{ label: string; views: number; sessions: number }>;
   };
 }
 
