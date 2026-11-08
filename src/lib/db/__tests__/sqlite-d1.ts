@@ -1,15 +1,25 @@
 import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 
+import { D1_MAX_COMPOUND_SELECT_TERMS } from "@/lib/db";
+
 export interface SqliteD1Trace {
   readonly preparedSql: string[];
   readonly bindings: SQLInputValue[][];
   readonly batchStatements?: string[][];
 }
 
+/** D1's own limits, which SQLite's defaults would let a test pass. */
+export function applyD1Limits(database: DatabaseSync): DatabaseSync {
+  database.limits.compoundSelect = D1_MAX_COMPOUND_SELECT_TERMS;
+  return database;
+}
+
+/** `database` as a D1 binding, with D1's limits. */
 export function createSqliteD1Database(
   database: DatabaseSync,
   trace?: SqliteD1Trace,
 ): D1Database {
+  applyD1Limits(database);
   const statementSql = new WeakMap<object, string>();
   return {
     prepare(sql: string) {

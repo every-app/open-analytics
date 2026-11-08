@@ -1,3 +1,4 @@
+import { CompoundOperator, compoundSelectSql } from "@/lib/db";
 import {
   analyticsFilterRegistry,
   effectiveScopeForPagination,
@@ -1224,8 +1225,6 @@ export async function queryOverviewGeoDimensionsFromD1(
     COUNT(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id END)
   FROM filtered_visits WHERE timezone != '' GROUP BY timezone`,
   ];
-  // D1 rejects compound SELECT statements with more than five terms: the five
-  // cards fit in one.
   const rows = await queryD1All<Record<string, unknown>>(
     env,
     `
@@ -1244,7 +1243,7 @@ filtered_visits AS MATERIALIZED (
   ${filter?.clause ?? ""}
 ),
 card_rows AS (
-${cardSources.join("\n  UNION ALL\n")}
+${compoundSelectSql(cardSources, CompoundOperator.UnionAll)}
 ),
 ranked_cards AS (
   SELECT *, ROW_NUMBER() OVER (

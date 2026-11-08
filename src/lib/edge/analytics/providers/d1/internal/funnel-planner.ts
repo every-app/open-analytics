@@ -1,3 +1,4 @@
+import { CompoundOperator, compoundSelectSql } from "@/lib/db";
 import {
   type FunnelConfigV2,
   type FunnelStepV2,
@@ -290,9 +291,8 @@ function resultSql(
   steps: readonly FunnelStepV2[],
   firstFilter: ScopedObservationFilterSql,
 ): string {
-  return steps
-    .map(
-      (_step, index) => `
+  const rows = steps.map(
+    (_step, index) => `
 SELECT
   ${index} AS stepIndex,
   ? AS stepId,
@@ -304,9 +304,9 @@ SELECT
     index === 0 ? firstFilter.visitorRelation : `reached_${index}`,
     "visitor_id",
   )} AS visitors`,
-    )
-    .join("\nUNION ALL\n")
-    .concat("\nORDER BY stepIndex ASC");
+  );
+  return `${compoundSelectSql(rows, CompoundOperator.UnionAll)}
+ORDER BY stepIndex ASC`;
 }
 interface FunnelCteParts {
   readonly funnelCtes: readonly string[];

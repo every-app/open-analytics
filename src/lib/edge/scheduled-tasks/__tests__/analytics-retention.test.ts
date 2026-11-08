@@ -189,6 +189,29 @@ function recordRowsChanged(
   } as D1Database;
 }
 
+/** `d1` with each query taking a second of D1's time. */
+function secondPerQuery(d1: D1Database): D1Database {
+  const takeASecond = () => vi.setSystemTime(Date.now() + 1_000);
+  return {
+    ...d1,
+    prepare(sql: string) {
+      const statement = d1.prepare(sql);
+      const timed = {
+        bind(...values: unknown[]) {
+          statement.bind(...values);
+          return timed;
+        },
+        first: () => statement.first().finally(takeASecond),
+        all: () => statement.all().finally(takeASecond),
+        run: () => statement.run().finally(takeASecond),
+      };
+      return timed as unknown as D1PreparedStatement;
+    },
+    batch: (statements: D1PreparedStatement[]) =>
+      d1.batch(statements).finally(takeASecond),
+  } as D1Database;
+}
+
 function run(
   database: DatabaseSync,
   analyticsDetailDays: number | null = 30,
@@ -535,6 +558,48 @@ describe("analytics retention", () => {
     ).toBe(0);
     // Seeds a large backlog: slow under coverage on a small CI runner.
   }, 60_000);
+
+  it("leaves expired data for the next run once a purge has kept D1 busy for the run's time", async () => {
+    vi.useFakeTimers({ now: NOW, toFake: ["Date"] });
+    database = createMigratedDatabase();
+    for (const sitePk of [1, 2]) {
+      seedSite(database, sitePk, {
+        firstDay: TODAY - 400,
+        lastDay: TODAY - 1,
+        backfilled: true,
+      });
+    }
+    seedDay(database, 1, TODAY - 40, 3);
+    insertPageViews(database, 2, 10 * RETENTION_BATCH_ROWS);
+    database.exec("DELETE FROM sites WHERE id = 's2'");
+    database
+      .prepare(
+        "INSERT OR REPLACE INTO configs (config_key, value_json) VALUES ('scheduled-task-retention', ?)",
+      )
+      .run(JSON.stringify({ analyticsDetailDays: 30 }));
+    const trace: Required<SqliteD1Trace> = {
+      preparedSql: [],
+      bindings: [],
+      batchStatements: [],
+    };
+
+    const result = await runAnalyticsRetention(
+      {
+        env: { DB: secondPerQuery(createSqliteD1Database(database, trace)) },
+        logger: { info: vi.fn() },
+      } as unknown as ScheduledTaskContext,
+      RUN_QUERIES,
+    );
+
+    expect(result.workRemains).toBe(true);
+    expect(result.summary).toMatchObject({ purgeComplete: false });
+    expect(
+      trace.preparedSql.some((sql) => sql.includes("WITH backfilled AS")),
+    ).toBe(false);
+    expect(
+      count(database, "SELECT COUNT(*) AS n FROM visits WHERE site_pk = 1"),
+    ).toBe(3);
+  });
 
   it("finishes deleting the data of removed sites", async () => {
     vi.useFakeTimers({ now: NOW, toFake: ["Date"] });

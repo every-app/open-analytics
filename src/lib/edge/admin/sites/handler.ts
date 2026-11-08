@@ -39,6 +39,7 @@ import {
   nf,
   parseJson,
 } from "@/lib/edge/admin/response";
+import { BudgetedDatabase } from "@/lib/edge/scheduled-tasks/d1-query-budget";
 import { runOnNextTick } from "@/lib/edge/scheduled-tasks/schedule-state";
 import {
   deleteSiteScriptSettings,
@@ -157,9 +158,11 @@ export async function deleteSiteData(env: Env, siteId: string): Promise<void> {
   }
   if (!identity) return;
   const purge = await purgeSiteData(
-    createDatabaseRuntime(env.DB),
+    new BudgetedDatabase(
+      createDatabaseRuntime(env.DB),
+      SITE_REMOVAL_PURGE_BATCHES,
+    ),
     Number(identity.sitePk),
-    SITE_REMOVAL_PURGE_BATCHES,
   );
   if (!purge.done) {
     await runOnNextTick(

@@ -216,7 +216,7 @@ async function deleteExpired(
 ): Promise<{ events: number; visits: number; done: boolean }> {
   const deleted = { events: 0, visits: 0, done: false };
   const bindings = [site.sitePk, site.limitDay];
-  while (!deleted.done && db.queries < until) {
+  while (!deleted.done && db.queries < until && db.queriesLeft > 0) {
     const results = await db.batch(
       EXPIRED_ROUND.map((statement) => ({ ...statement, bindings })),
     );
@@ -290,16 +290,14 @@ export async function deleteExpiredData(
 async function purgeDeletedSites(
   db: BudgetedDatabase,
 ): Promise<{ purged: number; complete: boolean }> {
-  const until = db.maxQueries - EXPIRED_DATA_MIN_QUERIES;
   const result = { purged: 0, complete: true };
   for (const sitePk of await deletedSitesWithData(db)) {
-    if (db.queries >= until) {
+    const purge = await purgeSiteData(db, sitePk, EXPIRED_DATA_MIN_QUERIES);
+    if (!purge.done) {
       result.complete = false;
       break;
     }
-    const purge = await purgeSiteData(db, sitePk, until - db.queries);
-    if (purge.done) result.purged += 1;
-    else result.complete = false;
+    result.purged += 1;
   }
   return result;
 }
@@ -329,9 +327,16 @@ export async function runAnalyticsRetention(
       : Math.floor(
           (Date.now() - analyticsDetailDays * ONE_DAY_MS) / ONE_DAY_MS,
         );
+  // A purge that kept D1 busy for the run's time leaves expired data, the
+  // backlog read included, to the next run.
+  const expiredDeferred =
+    cutoffDay !== null && db.queriesLeft < EXPIRED_DATA_MIN_QUERIES;
   const expired =
-    cutoffDay === null ? null : await deleteExpiredData(db, cutoffDay);
-  const workRemains = !purge.complete || expired?.complete === false;
+    cutoffDay === null || expiredDeferred
+      ? null
+      : await deleteExpiredData(db, cutoffDay);
+  const workRemains =
+    !purge.complete || expiredDeferred || expired?.complete === false;
   const summary = {
     deletedSitesPurged: purge.purged,
     purgeComplete: purge.complete,

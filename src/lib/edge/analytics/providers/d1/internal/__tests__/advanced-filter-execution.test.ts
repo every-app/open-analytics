@@ -2,6 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 
 import { describe, expect, it } from "vitest";
 
+import { applyD1Limits } from "@/lib/db/__tests__/sqlite-d1";
 import {
   attachScopedFilterMetadata,
   createQueryTime,
@@ -155,7 +156,7 @@ function sqliteEnv(activities: readonly SharedActivity[] = SHARED_ACTIVITIES): {
   readonly database: DatabaseSync;
   readonly queries: string[];
 } {
-  const database = new DatabaseSync(":memory:");
+  const database = applyD1Limits(new DatabaseSync(":memory:"));
   const queries: string[] = [];
   database.exec(`
     CREATE TABLE sites (id TEXT PRIMARY KEY, created_at INTEGER NOT NULL);

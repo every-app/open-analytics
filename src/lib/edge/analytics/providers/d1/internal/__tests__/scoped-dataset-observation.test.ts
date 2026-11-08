@@ -2,6 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 
 import { describe, expect, it } from "vitest";
 
+import { applyD1Limits } from "@/lib/db/__tests__/sqlite-d1";
 import { executeObservationFilterOnScopedDataset } from "@/lib/edge/analytics/providers/d1/internal/scoped-dataset";
 import {
   buildSessionFactsSql,
@@ -71,7 +72,7 @@ describe("scoped dataset Observation Filter primitive", () => {
 
 describe("scoped dataset facts", () => {
   it("keeps fact counts isolated by site and uses the raw observation window", () => {
-    const database = new DatabaseSync(":memory:");
+    const database = applyD1Limits(new DatabaseSync(":memory:"));
     try {
       const sql = `
 WITH raw_visits(site_pk, site_id, session_id, visitor_id, duration_ms) AS (
@@ -161,7 +162,7 @@ ORDER BY sf.site_pk, sf.session_id`;
   });
 
   it("returns no fact entities for an empty scoped dataset", () => {
-    const database = new DatabaseSync(":memory:");
+    const database = applyD1Limits(new DatabaseSync(":memory:"));
     try {
       const sql = `
 WITH raw_visits(site_pk, site_id, session_id, visitor_id, duration_ms) AS (

@@ -2,6 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 
 import { describe, expect, it } from "vitest";
 
+import { applyD1Limits } from "@/lib/db/__tests__/sqlite-d1";
 import {
   analyticsFilterRegistry,
   type FunnelConfigV2,
@@ -59,7 +60,7 @@ function config(
 }
 
 function runPlan(plan: ReturnType<typeof buildFunnelSqlPlan>) {
-  const database = new DatabaseSync(":memory:");
+  const database = applyD1Limits(new DatabaseSync(":memory:"));
   try {
     return database
       .prepare(plan.sql)
@@ -371,6 +372,9 @@ scope_final_events(event_pk, event_id, site_pk, session_id, visitor_id, occurred
       10 * FUNNEL_SQL_CTES_PER_STEP,
     );
     expect(tenStepPlan.sql.match(/\breached_\d+\s+AS/giu)).toHaveLength(10);
+    expect(runPlan(tenStepPlan).map((row) => row.stepId)).toEqual(
+      Array.from({ length: 10 }, (_, index) => `step-${index}`),
+    );
     expect(tenStepPlan.shape.sqlLength).toBe(tenStepPlan.sql.length);
     expect(tenStepPlan.shape.bindingCount).toBe(30);
     expect(FUNNEL_SQL_STRUCTURAL_BUDGET.maxSteps).toBe(10);

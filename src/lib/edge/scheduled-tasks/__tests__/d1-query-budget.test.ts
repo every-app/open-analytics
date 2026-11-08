@@ -40,6 +40,35 @@ describe("a task's D1 query budget", () => {
     );
     sqlite.close();
   });
+
+  it("has no queries left once its queries have kept D1 busy for its time", async () => {
+    vi.useFakeTimers();
+    try {
+      const slowQuery = async () => {
+        vi.setSystemTime(Date.now() + 2_000);
+        return { success: true, results: [], meta: {} } as unknown as D1Result;
+      };
+      const db = new BudgetedDatabase(
+        {
+          all: slowQuery,
+          first: async () => null,
+          run: slowQuery,
+          batch: async () => [await slowQuery()],
+          exec: async () => ({ count: 0, duration: 0 }),
+        } as never,
+        100,
+        3_000,
+      );
+
+      await db.run({ sql: "SELECT 1" });
+      expect(db.queriesLeft).toBe(99);
+      await db.batch([{ sql: "SELECT 1" }, { sql: "SELECT 2" }]);
+      expect(db.queries).toBe(2);
+      expect(db.queriesLeft).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("an invocation's D1 queries", () => {

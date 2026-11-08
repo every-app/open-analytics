@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createMigratedDatabase } from "@/../scripts/schema/database";
 import { createDatabaseRuntime } from "@/lib/db";
 import { createSqliteD1Database } from "@/lib/db/__tests__/sqlite-d1";
+import { BudgetedDatabase } from "@/lib/edge/scheduled-tasks/d1-query-budget";
 import { runVisitRollups } from "@/lib/edge/scheduled-tasks/visit-rollups";
 import {
   deletedSitesWithData,
@@ -119,10 +120,10 @@ describe("site deletion", () => {
     expect(await deletedSitesWithData(db)).toEqual([1]);
 
     // A small budget stops partway and the next call carries on.
-    const partial = await purgeSiteData(db, 1, 5);
+    const partial = await purgeSiteData(new BudgetedDatabase(db, 5), 1);
     expect(partial).toEqual({ batches: 5, done: false });
     expect(siteRows(1)[0]).toBeGreaterThan(0);
-    const rest = await purgeSiteData(db, 1, 1000);
+    const rest = await purgeSiteData(new BudgetedDatabase(db, 1000), 1);
 
     expect(rest.done).toBe(true);
     expect(siteRows(1).every((rows) => rows === 0)).toBe(true);
@@ -204,7 +205,7 @@ describe("site deletion", () => {
     } as D1Database;
     const db = createDatabaseRuntime(d1);
 
-    const first = await purgeSiteData(db, 1, 1000);
+    const first = await purgeSiteData(new BudgetedDatabase(db, 1000), 1);
 
     expect(first.done).toBe(true);
     expect(Math.max(...rowsChanged)).toBeLessThanOrEqual(SITE_PURGE_BATCH_ROWS);
@@ -214,9 +215,11 @@ describe("site deletion", () => {
     expect(await deletedSitesWithData(db)).toEqual([1]);
 
     const second = await purgeSiteData(
-      createDatabaseRuntime(createSqliteD1Database(database)),
+      new BudgetedDatabase(
+        createDatabaseRuntime(createSqliteD1Database(database)),
+        1000,
+      ),
       1,
-      1000,
     );
 
     expect(second.done).toBe(true);

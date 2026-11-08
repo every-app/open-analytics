@@ -1,3 +1,4 @@
+import { CompoundOperator, compoundSelectSql } from "@/lib/db";
 import { scopedFilterMetadata } from "@/lib/edge/analytics/contract";
 import { SITE_PK_FROM_SITE_ID_SQL } from "@/lib/edge/sites/identity-sql";
 import type { Env } from "@/lib/edge/types";
@@ -232,18 +233,6 @@ export async function queryEventAnalyticsContextCardsFromD1(
       GROUP BY value`,
     })),
   ].filter(({ key }) => selectedKeySet.has(key));
-  const cardSourceChunks: Array<Array<{ sql: string }>> = [];
-  // D1 currently rejects compound SELECT statements with more than five terms.
-  const maxCompoundTerms = 5;
-  for (let index = 0; index < cardSources.length; index += maxCompoundTerms) {
-    cardSourceChunks.push(cardSources.slice(index, index + maxCompoundTerms));
-  }
-  const cardGroupCtes = cardSourceChunks.map(
-    (sources, index) => `
-card_group_${index} AS (
-${sources.map(({ sql }) => sql).join("\nUNION ALL")}
-)`,
-  );
   const needsSessionEdges =
     selectedKeySet.has("entry") || selectedKeySet.has("exit");
   const sessionEdgeCte = needsSessionEdges
@@ -296,11 +285,11 @@ session_edges AS (
   }>(
     env,
     `${source.cte}${sessionEdgeCte},
-${cardGroupCtes.join(",")},
 card_rows AS (
-${cardSourceChunks
-  .map((_, index) => `SELECT * FROM card_group_${index}`)
-  .join("\nUNION ALL\n")}
+${compoundSelectSql(
+  cardSources.map(({ sql }) => sql),
+  CompoundOperator.UnionAll,
+)}
 ),
 ranked_cards AS (
   SELECT

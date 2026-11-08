@@ -1,3 +1,4 @@
+import { CompoundOperator, compoundSelectSql } from "@/lib/db";
 import {
   type AdvancedFilterMatches,
   analyticsFilterDefinition,
@@ -80,7 +81,7 @@ function advancedIdentityRelation(
       "SELECT si.site_pk, ? AS entity_id FROM site_identities si WHERE si.site_id = ?",
   );
   return {
-    ctes: `${name} AS (${branches.join(" UNION ")})`,
+    ctes: `${name} AS (${compoundSelectSql(branches, CompoundOperator.Union)})`,
     bindings: identities.flatMap(({ siteId, id }) => [id, siteId]),
   };
 }
@@ -840,7 +841,10 @@ ${name} AS (
     if (node.kind === "or") {
       ctes.push(`
 ${name} AS (
-  ${children.map((child) => `SELECT site_pk, entity_id FROM ${child}`).join("\n  UNION\n  ")}
+  ${compoundSelectSql(
+    children.map((child) => `SELECT site_pk, entity_id FROM ${child}`),
+    CompoundOperator.Union,
+  )}
 )`);
     } else {
       ctes.push(`

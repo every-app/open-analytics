@@ -7,7 +7,9 @@ function createQueryClient(): QueryClient {
       queries: {
         gcTime: 5 * 60 * 1000,
         staleTime: 15 * 1000,
-        retry: 1,
+        // A failed card offers Retry. Retrying on its own would send the
+        // same heavy query again while D1 is overloaded.
+        retry: false,
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
       },

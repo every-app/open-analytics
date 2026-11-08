@@ -234,8 +234,7 @@ describe("edge query events summary coverage", () => {
     expect(queryD1AllMock).toHaveBeenCalledOnce();
     const [, sql] = queryD1AllMock.mock.calls[0];
     expect(sql).toContain("ranked_cards AS");
-    expect((sql.match(/card_group_\d+ AS \(/g) ?? []).length).toBe(4);
-    expect((sql.match(/SELECT \* FROM card_group_\d+/g) ?? []).length).toBe(4);
+    expect((sql.match(/SELECT \* FROM \(/g) ?? []).length).toBe(4);
   });
 
   it("maps empty combined summary results without a synthetic row", async () => {

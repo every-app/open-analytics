@@ -4,6 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
 
 import { D1_MAX_BOUND_PARAMETERS, D1_MAX_SQL_UTF8_BYTES } from "@/lib/db";
+import { applyD1Limits } from "@/lib/db/__tests__/sqlite-d1";
 import { GOAL_TIMESERIES_MAX_BUCKETS } from "@/lib/edge/analytics/application/goal-buckets";
 import {
   analyticsFilterRegistry,
@@ -18,7 +19,7 @@ import { parseFilterDsl } from "@/lib/filter-contract";
 type Binding = string | number | null;
 
 class ExplainableSqliteD1 {
-  readonly database = new DatabaseSync(":memory:");
+  readonly database = applyD1Limits(new DatabaseSync(":memory:"));
   readonly calls: Array<{ sql: string; bindings: Binding[] }> = [];
 
   prepare(sql: string) {

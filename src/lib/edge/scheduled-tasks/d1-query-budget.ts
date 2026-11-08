@@ -3,12 +3,21 @@ import type { Env } from "@/lib/edge/types";
 
 /**
  * Cloudflare D1 lets one Worker invocation make 1,000 queries on Workers
- * Paid, and a `batch()` counts as one. It is the platform's limit, the only
- * one on how much a cron tick does: a task with work left when its queries
- * run out says so, and the dispatcher runs it again on the next tick, a
- * minute later.
+ * Paid, and a `batch()` counts as one. A task with work left when its
+ * queries run out says so, and the dispatcher runs it again on the next
+ * tick, a minute later.
  */
 export const D1_QUERIES_PER_INVOCATION = 1000;
+
+/**
+ * How long one task run may keep D1 busy. A D1 database runs one query at a
+ * time, and it rate limits a database that stays busy for about ten seconds
+ * ("Too many resources consumed within a 10 second window"), which fails
+ * ingest flushes and dashboards along with the task. A run that has kept D1
+ * busy this long has no queries left, so it stops and goes on at the next
+ * tick.
+ */
+export const D1_BUSY_MS_PER_RUN = 3_000;
 
 export class D1QueryBudgetExceededError extends Error {
   constructor(readonly limit: number) {
@@ -129,14 +138,17 @@ export function withD1QueryBudget(env: Env, budget: D1QueryBudget): Env {
 /**
  * A task's database: it counts the D1 queries it makes (a batch is one
  * query) and refuses a query past `maxQueries`, the queries the task was
- * given. Tasks plan their work with `queriesLeft`.
+ * given. It also times them: once they have kept D1 busy for `maxBusyMs`,
+ * `queriesLeft` is 0. Tasks plan their work with `queriesLeft`.
  */
 export class BudgetedDatabase implements DatabaseRuntime {
   readonly #budget: D1QueryBudget;
+  #busyMs = 0;
 
   constructor(
     private readonly db: DatabaseRuntime,
     readonly maxQueries: number,
+    readonly maxBusyMs = D1_BUSY_MS_PER_RUN,
   ) {
     this.#budget = new D1QueryBudget(maxQueries);
   }
@@ -146,38 +158,41 @@ export class BudgetedDatabase implements DatabaseRuntime {
   }
 
   get queriesLeft(): number {
-    return this.#budget.left;
+    return this.#busyMs >= this.maxBusyMs ? 0 : this.#budget.left;
+  }
+
+  #query<T>(send: () => Promise<T>): Promise<T> {
+    this.#budget.spend();
+    const startedAt = Date.now();
+    return send().finally(() => {
+      this.#busyMs += Date.now() - startedAt;
+    });
   }
 
   all<T extends object = Record<string, unknown>>(
     statement: DatabaseStatement,
   ): Promise<D1Result<T>> {
-    this.#budget.spend();
-    return this.db.all<T>(statement);
+    return this.#query(() => this.db.all<T>(statement));
   }
 
   first<T = Record<string, unknown>>(
     statement: DatabaseStatement,
     columnName?: string,
   ): Promise<T | null> {
-    this.#budget.spend();
-    return this.db.first<T>(statement, columnName);
+    return this.#query(() => this.db.first<T>(statement, columnName));
   }
 
   run(statement: DatabaseStatement): Promise<D1Result> {
-    this.#budget.spend();
-    return this.db.run(statement);
+    return this.#query(() => this.db.run(statement));
   }
 
   batch(
     statements: readonly DatabaseStatement[],
   ): Promise<readonly D1Result[]> {
-    this.#budget.spend();
-    return this.db.batch(statements);
+    return this.#query(() => this.db.batch(statements));
   }
 
   exec(sql: string): Promise<D1ExecResult> {
-    this.#budget.spend();
-    return this.db.exec(sql);
+    return this.#query(() => this.db.exec(sql));
   }
 }

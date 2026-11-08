@@ -3,6 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it, vi } from "vitest";
 
 import { createMigratedDatabase } from "@/../scripts/schema/database";
+import { applyD1Limits } from "@/lib/db/__tests__/sqlite-d1";
 import {
   createQueryTime,
   EMPTY_FILTER_DOCUMENT,
@@ -239,7 +240,7 @@ describe("edge query dimensions low-level coverage", () => {
   });
 
   it("keeps entry and exit tab results while using one indexed visit source", async () => {
-    const database = new DatabaseSync(":memory:");
+    const database = applyD1Limits(new DatabaseSync(":memory:"));
     database.exec(`
       CREATE TABLE visits (
         visit_id TEXT PRIMARY KEY, site_id TEXT NOT NULL,

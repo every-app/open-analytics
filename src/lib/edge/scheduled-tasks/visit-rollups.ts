@@ -1,4 +1,6 @@
 import {
+  CompoundOperator,
+  compoundSelectSql,
   createDatabaseRuntime,
   type DatabaseRuntime,
   type DatabaseStatement,
@@ -224,7 +226,7 @@ WITH day_views AS MATERIALIZED (
   FROM visits
   WHERE site_pk = ?1 AND started_at >= ?3 AND started_at < ?4
 )
-${selects.join("\nUNION ALL\n")}`;
+${compoundSelectSql(selects, CompoundOperator.UnionAll)}`;
 }
 
 const PAGE_VIEW_DIMENSIONS_SQL = pageViewDimensionsSql();

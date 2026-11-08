@@ -2,6 +2,11 @@ import type { DatabaseStatement } from "./types";
 
 export const D1_MAX_SQL_UTF8_BYTES = 100_000;
 export const D1_MAX_BOUND_PARAMETERS = 100;
+/**
+ * D1 rejects a compound SELECT of more terms ("too many terms in compound
+ * SELECT"); SQLite's own default is 500, so only D1 shows it.
+ */
+export const D1_MAX_COMPOUND_SELECT_TERMS = 5;
 
 export type D1StatementBudgetItem = "sql_bytes" | "bindings";
 

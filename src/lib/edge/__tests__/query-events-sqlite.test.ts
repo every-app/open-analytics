@@ -2,6 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 
 import { describe, expect, it } from "vitest";
 
+import { applyD1Limits } from "@/lib/db/__tests__/sqlite-d1";
 import {
   analyticsFilterRegistry,
   EMPTY_FILTER_DOCUMENT,
@@ -55,7 +56,7 @@ class SqliteStatement {
 }
 
 class SqliteD1Database {
-  readonly database = new DatabaseSync(":memory:");
+  readonly database = applyD1Limits(new DatabaseSync(":memory:"));
   readonly calls: Array<{ sql: string; bindings: Binding[] }> = [];
 
   prepare(sql: string) {
@@ -667,12 +668,8 @@ describe("event detail D1 SQL", () => {
       );
       expect(cardQueries).toHaveLength(1);
       const cardQuery = cardQueries[0];
-      expect((cardQuery.sql.match(/card_group_\d+ AS \(/g) ?? []).length).toBe(
-        4,
-      );
-      expect(
-        (cardQuery.sql.match(/SELECT \* FROM card_group_\d+/g) ?? []).length,
-      ).toBe(4);
+      // The cards' compound is grouped into four subqueries, as D1 needs.
+      expect((cardQuery.sql.match(/SELECT \* FROM \(/g) ?? []).length).toBe(4);
       const cardPlan = d1.database
         .prepare(`EXPLAIN QUERY PLAN ${cardQuery.sql}`)
         .all(...cardQuery.bindings) as Array<{ detail: string }>;

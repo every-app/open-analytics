@@ -3,6 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
 
 import { createMigratedDatabase } from "@/../scripts/schema/database";
+import { applyD1Limits } from "@/lib/db/__tests__/sqlite-d1";
 import { compileFilterDocument } from "@/lib/edge/analytics/providers/d1/internal/filter-compiler";
 import {
   analyticsFilterRegistry,
@@ -82,7 +83,7 @@ describe("filter SQL compiler", () => {
   });
 
   it("matches strict root-or-subdomain predicates with generic JSON-bound OR sets", () => {
-    const database = new DatabaseSync(":memory:");
+    const database = applyD1Limits(new DatabaseSync(":memory:"));
     try {
       database.exec(`
         CREATE TABLE visits (id TEXT PRIMARY KEY, referrer_host TEXT);
@@ -210,7 +211,7 @@ describe("filter SQL compiler", () => {
   });
 
   it("preserves SQLite results when finite-set logic is normalized", () => {
-    const database = new DatabaseSync(":memory:");
+    const database = applyD1Limits(new DatabaseSync(":memory:"));
     try {
       database.exec("CREATE TABLE visits (id TEXT PRIMARY KEY, pathname TEXT)");
       const insert = database.prepare(
@@ -435,7 +436,7 @@ describe("filter SQL compiler", () => {
   });
 
   it("executes string operators with registry case rules and literal wildcards", () => {
-    const database = new DatabaseSync(":memory:");
+    const database = applyD1Limits(new DatabaseSync(":memory:"));
     try {
       database.exec("CREATE TABLE visits (id TEXT, pathname TEXT)");
       const insert = database.prepare(

@@ -7,6 +7,7 @@ import {
   param,
   schema,
 } from "@/lib/db";
+import type { BudgetedDatabase } from "@/lib/edge/scheduled-tasks/d1-query-budget";
 
 /** Rows per delete statement, as retention deletes them. */
 export const SITE_PURGE_BATCH_ROWS = 1000;
@@ -196,20 +197,21 @@ const PURGE_STEPS: readonly PurgeStep[] = [
 ];
 
 /**
- * Deletes a removed site's stored data in batches, up to `maxBatches`
- * statements. Returns how many it ran and whether it finished every step;
- * `deletedSitesWithData` still lists a site the ingest buffer wrote to
- * meanwhile, and a later run deletes what is left.
+ * Deletes a removed site's stored data in batches, a statement each, while
+ * `db` has more than `keepQueries` queries left. Returns how many it ran and
+ * whether it finished every step; `deletedSitesWithData` still lists a site
+ * the ingest buffer wrote to meanwhile, and a later run deletes what is
+ * left.
  */
 export async function purgeSiteData(
-  db: DatabaseRuntime,
+  db: BudgetedDatabase,
   sitePk: number,
-  maxBatches: number,
+  keepQueries = 0,
 ): Promise<{ batches: number; done: boolean }> {
   let batches = 0;
   for (const step of PURGE_STEPS) {
     while (true) {
-      if (batches >= maxBatches) return { batches, done: false };
+      if (db.queriesLeft <= keepQueries) return { batches, done: false };
       batches += 1;
       const result = await db.run({
         sql: step.sql,

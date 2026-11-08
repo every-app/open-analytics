@@ -3,6 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { loadMigrations } from "@/../scripts/schema/database";
+import { applyD1Limits } from "@/lib/db/__tests__/sqlite-d1";
 
 const runScheduledTask = vi.hoisted(() => vi.fn());
 const runVisitRollups = vi.hoisted(() => vi.fn());
@@ -30,7 +31,7 @@ const { dispatchInternalScheduledTasks } =
   await import("@/lib/edge/scheduled-tasks/dispatcher");
 
 class FakeD1Database {
-  readonly db = new DatabaseSync(":memory:");
+  readonly db = applyD1Limits(new DatabaseSync(":memory:"));
   readonly calls: Array<{ method: "all" | "run"; sql: string }> = [];
   failNextUpdate = false;
 
