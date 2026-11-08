@@ -46,24 +46,15 @@ export function validateMutationPlan(plan: MutationNode): void {
   if (plan.table.kind !== "table")
     fail("Mutations require a generated table reference");
   if (plan.kind === "insert") {
-    if (plan.rows && plan.source)
-      fail("INSERT cannot have both VALUES and a query source");
-    if (!plan.rows && !plan.source)
-      fail("INSERT requires values or a query source");
     const insertColumns = new Set(plan.columns);
     if (
       insertColumns.size !== plan.columns.length ||
       plan.columns.some((name) => !columns.includes(name))
     )
       fail("INSERT columns must belong to the target table and be unique");
-    if (
-      plan.rows &&
-      plan.rows.some((row) => row.length !== plan.columns.length)
-    )
+    if (plan.rows.some((row) => row.length !== plan.columns.length))
       fail("INSERT row width must match its columns");
-    if (plan.source && plan.source.fields.length !== plan.columns.length)
-      fail("INSERT source width must match target columns");
-    for (const row of plan.rows ?? []) {
+    for (const row of plan.rows) {
       for (const value of row) {
         if (value.kind === "parameter") {
           if (!isBinding(value.value))

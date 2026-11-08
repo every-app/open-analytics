@@ -13,8 +13,8 @@ import {
 } from "./core-time";
 import type { Interval, QueryWindow } from "./core-types";
 import {
+  applyObservationFilterToScopedDataset,
   compileScopedDatasetSql,
-  executeObservationFilterOnScopedDataset,
   scopedDatasetFor,
   type ScopedDatasetSql,
 } from "./scoped-dataset";
@@ -82,7 +82,7 @@ export async function queryGoalTimeseriesFromD1(
     globalFilters,
     preparedDataset,
   );
-  const goal = executeObservationFilterOnScopedDataset(
+  const goal = applyObservationFilterToScopedDataset(
     dataset,
     goalFilter,
     "goal",
@@ -246,6 +246,3 @@ export function withGoalTimeseriesTimestamps(
     timestampMs: timeBucketTimestamp(buckets, row.bucket),
   }));
 }
-
-/** Short alias for callers that use the operation name without the D1 suffix. */
-export const queryGoalTimeseries = queryGoalTimeseriesFromD1;

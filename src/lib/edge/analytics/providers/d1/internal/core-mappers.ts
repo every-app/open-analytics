@@ -1,9 +1,7 @@
 import { parseGeoFilterValue } from "./core-filters";
 import { avgDuration, bounceRate } from "./core-time";
 import {
-  type DashboardFilterOption,
   type DimensionRow,
-  DIRECT_REFERRER_FILTER_VALUE,
   type EventAnalyticsContextCards,
   type EventFieldRow,
   type EventFieldValueRow,
@@ -14,7 +12,6 @@ import {
   type OverviewGeoTabKey,
   type PageRow,
   type ReferrerRow,
-  type TrendAggregateRow,
 } from "./core-types";
 import { customEventJsonTypeLabel } from "./core-values";
 export function mapOverviewAggregate(
@@ -53,19 +50,6 @@ export function mapPageCardMetrics(row: OverviewAggregateRow) {
       overview.sessions > 0 ? overview.views / overview.sessions : 0,
     avgDurationMs: overview.avgDurationMs,
   };
-}
-export function mapTrendRows(rows: TrendAggregateRow[], source: "detail") {
-  return rows.map((row) => ({
-    bucket: row.bucket,
-    timestampMs: row.timestampMs,
-    views: row.views,
-    visitors: row.visitors,
-    sessions: row.sessions,
-    bounces: row.bounces,
-    totalDurationMs: row.totalDuration,
-    avgDurationMs: avgDuration(row.totalDuration, row.sessions),
-    source,
-  }));
 }
 export function mapPages(rows: PageRow[]) {
   return rows.map((row) => ({
@@ -214,186 +198,6 @@ export function mapReferrers(rows: ReferrerRow[]) {
     views: row.views,
     sessions: row.sessions,
   }));
-}
-export function dedupeFilterOptions(
-  options: DashboardFilterOption[],
-): DashboardFilterOption[] {
-  const seen = new Set<string>();
-  const deduped: DashboardFilterOption[] = [];
-  for (const option of options) {
-    const value = String(option.value ?? "").trim();
-    if (!value || seen.has(value)) continue;
-    seen.add(value);
-    deduped.push({
-      value,
-      label: String(option.label ?? value).trim() || value,
-      ...(option.group ? { group: option.group } : {}),
-    });
-  }
-  return deduped;
-}
-export function mapDimensionRowsToFilterOptions(
-  rows: DimensionRow[],
-): DashboardFilterOption[] {
-  return dedupeFilterOptions(
-    rows.map((row) => {
-      const value = String(row.value ?? "").trim();
-      return {
-        value,
-        label: value,
-      };
-    }),
-  );
-}
-export function mapReferrerRowsToFilterOptions(
-  rows: ReferrerRow[],
-): DashboardFilterOption[] {
-  return dedupeFilterOptions(
-    rows.map((row) => {
-      const value = String(row.referrer ?? "").trim();
-      if (!value) {
-        return {
-          value: DIRECT_REFERRER_FILTER_VALUE,
-          label: DIRECT_REFERRER_FILTER_VALUE,
-        };
-      }
-      return {
-        value,
-        label: value,
-      };
-    }),
-  );
-}
-export function mapGeoRowsToFilterOptions(
-  rows: DimensionRow[],
-  group: "country" | "region" | "city",
-): DashboardFilterOption[] {
-  return dedupeFilterOptions(
-    rows.map((row) => {
-      const value = String(row.value ?? "").trim();
-      if (!value) {
-        return {
-          value: "",
-          label: "",
-          group,
-        };
-      }
-      const parsed = parseGeoFilterValue(value);
-      if (group === "country") {
-        return {
-          value,
-          label: parsed?.country || value,
-          group,
-        };
-      }
-      if (group === "region") {
-        return {
-          value,
-          label:
-            parsed?.regionName ||
-            parsed?.regionCode ||
-            parsed?.country ||
-            value,
-          group,
-        };
-      }
-      return {
-        value,
-        label:
-          parsed?.city ||
-          parsed?.regionName ||
-          parsed?.regionCode ||
-          parsed?.country ||
-          value,
-        group,
-      };
-    }),
-  );
-}
-export interface DimensionAccumulator {
-  views: number;
-  sessions: Set<string>;
-  visitors: Set<string>;
-}
-export interface GeoDimensionAccumulator extends DimensionAccumulator {
-  visitors: Set<string>;
-}
-export function addDimensionValue(
-  buckets: Map<string, DimensionAccumulator>,
-  rawValue: string,
-  sessionId: string,
-  visitorId?: string,
-): void {
-  const value = rawValue.trim();
-  if (!value) return;
-  const bucket = buckets.get(value) ?? {
-    views: 0,
-    sessions: new Set<string>(),
-    visitors: new Set<string>(),
-  };
-  bucket.views += 1;
-  if (sessionId) bucket.sessions.add(sessionId);
-  if (visitorId) bucket.visitors.add(visitorId);
-  buckets.set(value, bucket);
-}
-export function finalizeDimensionBuckets(
-  buckets: Map<string, DimensionAccumulator>,
-  limit: number,
-): DimensionRow[] {
-  return [...buckets.entries()]
-    .map(([value, bucket]) => ({
-      value,
-      views: bucket.views,
-      sessions: bucket.sessions.size,
-      visitors: bucket.visitors.size,
-    }))
-    .sort(
-      (left, right) =>
-        right.views - left.views ||
-        right.sessions - left.sessions ||
-        left.value.localeCompare(right.value),
-    )
-    .slice(0, limit);
-}
-export function addGeoDimensionValue(
-  buckets: Map<string, GeoDimensionAccumulator>,
-  rawValue: string,
-  sessionId: string,
-  visitorId: string,
-): void {
-  const value = rawValue.trim();
-  if (!value) return;
-  const bucket = buckets.get(value) ?? {
-    views: 0,
-    sessions: new Set<string>(),
-    visitors: new Set<string>(),
-  };
-  bucket.views += 1;
-  if (sessionId) bucket.sessions.add(sessionId);
-  if (visitorId) bucket.visitors.add(visitorId);
-  buckets.set(value, bucket);
-}
-export function finalizeGeoDimensionBuckets(
-  buckets: Map<string, GeoDimensionAccumulator>,
-  limit: number,
-  labelResolver?: (value: string) => string,
-): GeoTabRow[] {
-  return [...buckets.entries()]
-    .map(([value, bucket]) => ({
-      value,
-      label: labelResolver ? labelResolver(value) : value,
-      views: bucket.views,
-      sessions: bucket.sessions.size,
-      visitors: bucket.visitors.size,
-    }))
-    .sort(
-      (left, right) =>
-        right.views - left.views ||
-        right.sessions - left.sessions ||
-        right.visitors - left.visitors ||
-        left.label.localeCompare(right.label),
-    )
-    .slice(0, limit);
 }
 export function geoTabLabel(value: string, tab: OverviewGeoTabKey): string {
   const parsed = parseGeoFilterValue(value);

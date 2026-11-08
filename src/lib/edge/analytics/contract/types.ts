@@ -118,8 +118,7 @@ export type QueryOperation =
   | "goal-timeseries"
   | "property-keys"
   | "property-values"
-  | "team-dashboard"
-  | "explore";
+  | "team-dashboard";
 export type AnalyticsDimension = string;
 export type DetailCapability =
   | "page.query"

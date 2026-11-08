@@ -35,10 +35,3 @@ export function join(
 export function parenthesize(part: SqlFragment): SqlFragment {
   return concat(text("("), part, text(")"));
 }
-
-export function unsafeRawSql(
-  sql: string,
-  bindings: readonly DatabaseBinding[] = [],
-): SqlFragment {
-  return { text: sql, bindings: [...bindings] };
-}

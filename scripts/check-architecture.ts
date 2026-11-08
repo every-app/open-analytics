@@ -28,12 +28,6 @@ interface LegacyAllowlistEntry {
   readonly todo: string;
 }
 
-interface UnsafeDatabaseImportEntry {
-  readonly source: string;
-  readonly specifier: string;
-  readonly reason: string;
-}
-
 // Keep this list exact: each exception identifies one existing import and has
 // a removal task. New imports cannot inherit an exception from the same file.
 const LEGACY_ALLOWLIST: readonly LegacyAllowlistEntry[] = [
@@ -63,11 +57,6 @@ const LEGACY_ALLOWLIST: readonly LegacyAllowlistEntry[] = [
   },
 ];
 
-// Add only exact operational adapters here. Application services and request
-// handlers must use the typed database client instead of the raw escape hatch.
-const UNSAFE_DATABASE_IMPORT_ALLOWLIST: readonly UnsafeDatabaseImportEntry[] =
-  [];
-
 const FORBIDDEN_TOP_LEVEL_FILE_PREFIXES = [
   "admin-",
   "ingest-",
@@ -85,11 +74,6 @@ const RUNTIME_BOUNDARY_PACKAGES = [
   "@tanstack/react-router",
   "@tanstack/router-core",
 ] as const;
-const ANALYTICS_PHYSICAL_PACKAGES = [
-  "cloudflare:workers",
-  "@cloudflare/workers-types",
-  "@cloudflare/workers-types/experimental",
-] as const;
 
 function slash(value: string): string {
   return value.replaceAll("\\", "/");
@@ -100,11 +84,6 @@ function isWithin(file: string, directory: string): boolean {
 }
 
 function runtimeBoundaryPackageTarget(specifier: string): string | null {
-  const physicalPackage = ANALYTICS_PHYSICAL_PACKAGES.find(
-    (candidate) =>
-      specifier === candidate || specifier.startsWith(`${candidate}/`),
-  );
-  if (physicalPackage) return `__package__:${physicalPackage}`;
   const packageName = RUNTIME_BOUNDARY_PACKAGES.find(
     (candidate) =>
       specifier === candidate || specifier.startsWith(`${candidate}/`),
@@ -635,20 +614,6 @@ function ruleViolations(
     "src/lib/db/mutation",
     "src/lib/db/sql",
   ].some((directory) => isWithin(source, directory));
-  const analyticsEngine = isWithin(source, `${analytics}/engine`);
-  const analyticsPhysicalDependency =
-    isWithin(target, "src/lib/db") ||
-    isWithin(target, `${analytics}/providers/d1`) ||
-    ANALYTICS_PHYSICAL_PACKAGES.some(
-      (packageName) => target === `__package__:${packageName}`,
-    );
-
-  if (analyticsEngine && analyticsPhysicalDependency)
-    findings.push({
-      rule: "analytics-engine-physical-isolation",
-      message:
-        "Analytics engine must remain independent of database, D1 provider, and Cloudflare D1 implementations.",
-    });
 
   if (
     databaseFoundation &&
@@ -808,23 +773,6 @@ function isAllowlisted(violation: ArchitectureViolation): boolean {
       entry.specifier === violation.specifier &&
       entry.reason.trim().length > 0 &&
       entry.todo.trim().length > 0,
-  );
-}
-
-function isAllowedUnsafeDatabaseImport(
-  source: string,
-  specifier: string,
-): boolean {
-  if (
-    isWithin(source, "src/lib/db") ||
-    isWithin(source, "src/lib/edge/analytics")
-  )
-    return true;
-  return UNSAFE_DATABASE_IMPORT_ALLOWLIST.some(
-    (entry) =>
-      entry.source === source &&
-      entry.specifier === specifier &&
-      entry.reason.trim().length > 0,
   );
 }
 
@@ -995,20 +943,6 @@ export function collectArchitectureViolations(
           message: "Project alias does not resolve to a source module.",
         });
         continue;
-      }
-      if (
-        resolved === "src/lib/db/unsafe.ts" &&
-        !isAllowedUnsafeDatabaseImport(relative, imported.specifier)
-      ) {
-        violations.push({
-          rule: "unsafe-database-import-boundary",
-          source: relative,
-          specifier: imported.specifier,
-          target: resolved,
-          line: imported.line,
-          message:
-            "Raw SQL helpers are limited to database internals, Analytics SQL adapters, and explicitly registered infrastructure adapters.",
-        });
       }
       if (
         isWithin(relative, "src/lib/edge/analytics/interfaces/dashboard") &&

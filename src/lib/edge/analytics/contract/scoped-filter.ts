@@ -138,7 +138,6 @@ export const FILTER_SCOPE_CAPABILITIES: Readonly<
   "property-keys": scoped("event"),
   "property-values": scoped("event"),
   "team-dashboard": scoped("event"),
-  explore: scoped("event"),
 };
 
 function entityExpression(

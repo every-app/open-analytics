@@ -13,17 +13,17 @@ import {
   funnelSemanticFingerprint,
 } from "@/lib/edge/analytics/contract/funnel-config";
 import type { Env } from "@/lib/edge/types";
-
-import { queryD1All } from "./core";
-import { encodeD1FunnelConfig } from "./funnel-config-validation";
-import { buildFunnelSqlPlan } from "./funnel-planner";
 import {
   decodePageCursor,
   encodePageCursor,
   hasExactKeys,
   pageResult,
   paginationBinding,
-} from "./pagination";
+} from "@/lib/pagination";
+
+import { queryD1All } from "./core";
+import { encodeD1FunnelConfig } from "./funnel-config-validation";
+import { buildFunnelSqlPlan } from "./funnel-planner";
 import { compileScopedDatasetSql, scopedDatasetFor } from "./scoped-dataset";
 const FUNNEL_ANALYSIS_KIND = "funnel";
 export type {

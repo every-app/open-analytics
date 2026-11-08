@@ -1764,48 +1764,6 @@ export function hasEffectiveFilters(document: FilterDocument): boolean {
   return document.root !== null;
 }
 
-function filterDocumentWithRoot(
-  document: FilterDocument,
-  root: FilterExpression | null,
-): FilterDocument {
-  const result = { version: document.version, root } as FilterDocument;
-  for (const key of Reflect.ownKeys(document)) {
-    if (typeof key !== "symbol") continue;
-    const descriptor = Object.getOwnPropertyDescriptor(document, key);
-    if (descriptor) Object.defineProperty(result, key, descriptor);
-  }
-  return result;
-}
-
-/**
- * Removes only the target field's atomic conditions at the top facet level.
- * Nested OR/NOT (and compound AND) expressions are deliberately preserved.
- */
-export function stripTopLevelFacet(
-  document: FilterDocument,
-  field: string,
-): FilterDocument {
-  const root = document.root;
-  if (!root) return document;
-  const targetsField = (expression: FilterExpression): boolean =>
-    expression.kind === "condition" &&
-    expression.target.kind === "field" &&
-    expression.target.field === field;
-
-  if (targetsField(root)) {
-    return filterDocumentWithRoot(document, null);
-  }
-  if (root.kind !== "and") return document;
-
-  const children = root.children.filter((child) => !targetsField(child));
-  if (children.length === root.children.length) return document;
-  if (children.length === 0) return filterDocumentWithRoot(document, null);
-  if (children.length === 1) {
-    return filterDocumentWithRoot(document, children[0]!);
-  }
-  return filterDocumentWithRoot(document, { kind: "and", children });
-}
-
 /**
  * Whether the document filters by page path, with any operator and anywhere
  * in its AND, OR and NOT tree: Plausible's page filter, which adds the

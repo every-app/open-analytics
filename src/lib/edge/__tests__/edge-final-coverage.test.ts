@@ -4,7 +4,6 @@ import { withDashboardCache } from "@/lib/edge/analytics/composition/dashboard-c
 import {
   geoTabLabel,
   mapEventField,
-  mapGeoRowsToFilterOptions,
 } from "@/lib/edge/analytics/providers/d1/internal/core-mappers";
 import { insertVisit } from "@/lib/edge/ingest/buffer-store";
 import { flushCustomEventRowIndividually } from "@/lib/edge/ingest/custom-event-flush";
@@ -375,15 +374,6 @@ describe("edge query parser and mapper edge coverage", () => {
         booleanValue: null,
       }),
     ).toMatchObject({ valueType: "number", exampleValue: 12.5 });
-    expect(
-      mapGeoRowsToFilterOptions(
-        [
-          { value: "", views: 1, sessions: 1, visitors: 1 },
-          { value: "::::", views: 1, sessions: 1, visitors: 1 },
-        ],
-        "city",
-      ),
-    ).toEqual([{ value: "::::", label: "::::", group: "city" }]);
     expect(geoTabLabel("unknown", "timezone")).toBe("unknown");
   });
 });

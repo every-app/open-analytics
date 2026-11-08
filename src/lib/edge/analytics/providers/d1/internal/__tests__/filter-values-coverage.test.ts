@@ -2,15 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   decodeDimensionCursor: vi.fn(),
   decodeSessionPathDimensionCursor: vi.fn(),
-  queryDimensionFromD1: vi.fn(),
   queryDimensionPageFromD1: vi.fn(),
-  querySessionBoundaryDimensionFromD1: vi.fn(),
   querySessionPathDimensionPageFromD1: vi.fn(),
   decodeEventTypeCursor: vi.fn(),
-  queryEventTypeAggregate: vi.fn(),
   queryEventTypePageFromD1: vi.fn(),
   decodeReferrersCursor: vi.fn(),
-  queryReferrerAggregate: vi.fn(),
   queryReferrersPageFromD1: vi.fn(),
   resolveCrossBreakdownDimension: vi.fn(),
 }));
@@ -23,10 +19,7 @@ vi.mock("../core-dimensions", () => ({
 }));
 import { EMPTY_FILTER_DOCUMENT } from "@/lib/edge/analytics/contract";
 import type { QueryWindow } from "@/lib/edge/analytics/providers/d1/internal/core";
-import {
-  queryFilterValuesFromD1,
-  queryFilterValuesPageFromD1,
-} from "@/lib/edge/analytics/providers/d1/internal/filter-values";
+import { queryFilterValuesPageFromD1 } from "@/lib/edge/analytics/providers/d1/internal/filter-values";
 import type { Env } from "@/lib/edge/types";
 const window: QueryWindow = {
   startMs: 1,
@@ -47,18 +40,7 @@ function page(items: Array<Record<string, unknown>>) {
   };
 }
 describe("filter-values dispatch coverage", () => {
-  it("handles boolean, unsupported, unknown, and search-only candidates", async () => {
-    await expect(
-      queryFilterValuesFromD1(
-        env,
-        "site",
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        "geo.isEU",
-        10,
-        "TRUE",
-      ),
-    ).resolves.toEqual([{ value: "true", occurrences: 0 }]);
+  it("handles boolean and unsupported candidates", async () => {
     await expect(
       queryFilterValuesPageFromD1(
         env,
@@ -73,16 +55,6 @@ describe("filter-values dispatch coverage", () => {
       pagination: { returned: 1, hasMore: false },
     });
     await expect(
-      queryFilterValuesFromD1(
-        env,
-        "site",
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        "page.durationMs",
-        10,
-      ),
-    ).resolves.toEqual([]);
-    await expect(
       queryFilterValuesPageFromD1(
         env,
         "site",
@@ -95,86 +67,6 @@ describe("filter-values dispatch coverage", () => {
       items: [],
       pagination: { limit: 10, returned: 0, hasMore: false, nextCursor: null },
     });
-  });
-
-  it("dispatches unpaginated readers for all canonical source families", async () => {
-    mocks.queryEventTypeAggregate.mockResolvedValue([
-      { value: "Signup", views: 4 },
-    ]);
-    mocks.queryReferrerAggregate.mockResolvedValue([
-      { referrer: "", views: 2, sessions: 1, visitors: 1 },
-    ]);
-    mocks.querySessionBoundaryDimensionFromD1.mockResolvedValue([
-      { value: " /entry ", views: 3 },
-    ]);
-    mocks.resolveCrossBreakdownDimension.mockReturnValue({
-      labelExpr: "v.country",
-    });
-    mocks.queryDimensionFromD1.mockResolvedValue([
-      { value: " US ", views: 5 },
-      { value: null, views: 8 },
-    ]);
-
-    await expect(
-      queryFilterValuesFromD1(
-        env,
-        "site",
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        "event.name",
-        10,
-      ),
-    ).resolves.toEqual([{ value: "Signup", occurrences: 4 }]);
-    await expect(
-      queryFilterValuesFromD1(
-        env,
-        "site",
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        "referrer.domain",
-        10,
-      ),
-    ).resolves.toEqual([{ value: "__direct__", occurrences: 2 }]);
-    await expect(
-      queryFilterValuesFromD1(
-        env,
-        "site",
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        "session.entryPath",
-        10,
-      ),
-    ).resolves.toEqual([{ value: "/entry", occurrences: 3 }]);
-    await expect(
-      queryFilterValuesFromD1(
-        env,
-        "site",
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        "geo.country",
-        1,
-        "us",
-      ),
-    ).resolves.toEqual([{ value: "US", occurrences: 5 }]);
-    expect(mocks.queryDimensionFromD1).toHaveBeenCalledWith(
-      env,
-      "site",
-      window,
-      EMPTY_FILTER_DOCUMENT,
-      1,
-      "v.country",
-      { excludeEmpty: true, search: "us" },
-    );
-    await expect(
-      queryFilterValuesFromD1(
-        env,
-        "site",
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        "missing.field",
-        10,
-      ),
-    ).resolves.toEqual([]);
   });
 
   it("dispatches paginated readers and validates cursors", async () => {

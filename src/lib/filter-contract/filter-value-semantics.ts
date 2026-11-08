@@ -2,7 +2,7 @@ import {
   analyticsFilterRegistry,
   type RegisteredFilterField,
 } from "./filter-registry";
-import type { FilterOperator, FilterValue } from "./filters";
+import type { FilterOperator } from "./filters";
 
 const DIRECT_REFERRER_VALUE = "__direct__";
 const DIRECT_REFERRER_OPERATORS = new Set<FilterOperator>([
@@ -39,18 +39,6 @@ function canonicalString(
     definition.profile === "session-boundary"
     ? candidate.trim()
     : candidate;
-}
-
-/** Canonicalize a scalar with the registered field's storage profile. */
-export function canonicalizeFilterValue(
-  value: FilterValue,
-  fieldId?: string,
-  operator?: FilterOperator,
-): FilterValue {
-  const definition = definitionFor(fieldId);
-  if (typeof value === "string")
-    return canonicalString(value, definition, operator);
-  return definition?.canonicalize?.(value) ?? value;
 }
 
 export function filterValuesEqual(

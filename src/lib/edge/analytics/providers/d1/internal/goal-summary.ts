@@ -8,8 +8,8 @@ import type { Env } from "@/lib/edge/types";
 import { queryD1All } from "./core-sources";
 import type { QueryWindow } from "./core-types";
 import {
+  applyObservationFilterToScopedDataset,
   compileScopedDatasetSql,
-  executeObservationFilterOnScopedDataset,
   scopedDatasetFor,
   type ScopedDatasetSql,
 } from "./scoped-dataset";
@@ -113,7 +113,7 @@ export async function queryGoalSummaryFromD1(
     globalFilters,
     preparedDataset,
   );
-  const goal = executeObservationFilterOnScopedDataset(
+  const goal = applyObservationFilterToScopedDataset(
     dataset,
     goalFilter,
     "goal",
@@ -154,6 +154,3 @@ SELECT
           },
   };
 }
-
-/** Short alias for callers that use the operation name without the D1 suffix. */
-export const queryGoalSummary = queryGoalSummaryFromD1;

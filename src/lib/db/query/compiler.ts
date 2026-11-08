@@ -1,7 +1,4 @@
-import {
-  assertD1StatementBudget,
-  D1_MAX_BOUND_PARAMETERS,
-} from "@/lib/db/d1-budget";
+import { assertD1StatementBudget } from "@/lib/db/d1-budget";
 import {
   concat,
   join,
@@ -15,22 +12,18 @@ import type { DatabaseStatement } from "@/lib/db/types";
 
 import type { CompiledQuery } from "./compiled";
 import { DatabaseCompilerError } from "./errors";
-import type {
-  AnyExpression,
-  AnyInListExpression,
-  RelationScope,
-  SqlExpression,
-} from "./expression";
+import type { AnyExpression, RelationScope, SqlExpression } from "./expression";
 import {
-  hasSamePhysicalMembershipOptimization,
-  lowerLogicalPlan,
-  optimizePhysicalMembershipBudget,
-  type PhysicalMembershipUsage,
-  type PhysicalQueryPlan,
-  validatePhysicalQueryPlan,
+  type DirectScanProjectionChoice,
+  directScanProjectionChoices,
 } from "./physical-plan";
-import type { LogicalQueryNode, QuerySource, Relation } from "./plan";
-import type { ProjectNode } from "./plan";
+import type {
+  LogicalQueryNode,
+  ProjectNode,
+  QuerySource,
+  Relation,
+} from "./plan";
+import { validateLogicalQueryPlan } from "./validator";
 
 export interface ScopeBinding {
   readonly alias: string;
@@ -42,17 +35,10 @@ interface RenderContext {
   queryAlias: number;
   leftAlias: number;
   rightAlias: number;
-  readonly sharedRelations: ReadonlyMap<LogicalQueryNode, string>;
   readonly directScanProjections: ReadonlyMap<
     ProjectNode,
-    PhysicalQueryPlan<object>["directScanProjections"][number]
+    DirectScanProjectionChoice
   >;
-  readonly membershipStrategies?: ReadonlyMap<
-    AnyInListExpression,
-    { readonly strategy: "native" | "json-text"; readonly jsonText?: string }
-  >;
-  readonly membershipUsage?: Map<AnyInListExpression, number>;
-  bypassSharedNode?: LogicalQueryNode;
 }
 
 function nextAlias(
@@ -140,79 +126,10 @@ export function compileD1Expression(
           text(` ${expression.operator} `),
         ),
       );
-    case "not":
-      return concat(
-        text("NOT "),
-        parenthesize(
-          compileD1Expression(expression.expression, scopes, context),
-        ),
-      );
     case "null-check":
       return concat(
         compileD1Expression(expression.expression, scopes, context),
         text(expression.not ? " IS NOT NULL" : " IS NULL"),
-      );
-    case "in-list": {
-      if (expression.values.length === 0) return text("(0)");
-      const operand = compileD1Expression(
-        expression.expression,
-        scopes,
-        context,
-      );
-      if (context.membershipUsage)
-        context.membershipUsage.set(
-          expression,
-          (context.membershipUsage.get(expression) ?? 0) + 1,
-        );
-      const strategy = context.membershipStrategies?.get(expression);
-      if (strategy?.strategy === "json-text") {
-        if (typeof strategy.jsonText !== "string")
-          throw new DatabaseCompilerError(
-            "invalid_plan",
-            "JSON membership strategy is missing its encoded values",
-          );
-        return concat(
-          operand,
-          text(" IN (SELECT value FROM json_each("),
-          parameter(strategy.jsonText),
-          text("))"),
-        );
-      }
-      return concat(
-        operand,
-        text(" IN ("),
-        join(expression.values.map((value) => parameter(value))),
-        text(")"),
-      );
-    }
-    case "in-subquery":
-      return concat(
-        compileD1Expression(expression.expression, scopes, context),
-        text(" IN ("),
-        compileQuerySource(expression.query, context, scopes),
-        text(")"),
-      );
-    case "function":
-      if (expression.name === "trim") {
-        // Match ECMAScript String.prototype.trim(), used by Filter v1's
-        // trimmed-text fields. SQLite's default TRIM() only removes U+0020.
-        return concat(
-          text("TRIM("),
-          compileD1Expression(expression.arguments[0]!, scopes, context),
-          text(
-            ", char(9, 10, 11, 12, 13, 32, 160, 5760, 8192, 8193, 8194, 8195, 8196, 8197, 8198, 8199, 8200, 8201, 8202, 8232, 8233, 8239, 8287, 12288, 65279))",
-          ),
-        );
-      }
-      return concat(
-        text(expression.name.toUpperCase()),
-        text("("),
-        join(
-          expression.arguments.map((item) =>
-            compileD1Expression(item, scopes, context),
-          ),
-        ),
-        text(")"),
       );
     case "aggregate":
       return concat(
@@ -276,18 +193,6 @@ function compileNode(
   context: RenderContext,
   outerScopes: ReadonlyMap<RelationScope, ScopeBinding>,
 ): SqlFragment {
-  const sharedName = context.sharedRelations.get(node);
-  if (sharedName && context.bypassSharedNode !== node) {
-    const alias = nextAlias(context, "q");
-    return concat(
-      text("SELECT "),
-      join(outputList(node.fields.length, alias)),
-      text(" FROM "),
-      identifier(sharedName),
-      text(" AS "),
-      identifier(alias),
-    );
-  }
   switch (node.kind) {
     case "scan": {
       const alias = nextAlias(context, "t");
@@ -396,36 +301,6 @@ function compileNode(
         compileD1Expression(node.condition, scopes, context),
       );
     }
-    case "semi-join":
-    case "anti-join": {
-      const leftSql = compileNode(node.left.node, context, outerScopes);
-      const rightSql = compileNode(node.right.node, context, outerScopes);
-      const leftAlias = nextAlias(context, "l");
-      const rightAlias = nextAlias(context, "r");
-      const scopes = extendScopes(outerScopes, [
-        [node.left.scope, { alias: leftAlias }],
-        [node.right.scope, { alias: rightAlias }],
-      ]);
-      return concat(
-        text("SELECT "),
-        join(outputList(node.fields.length, leftAlias)),
-        text(" FROM "),
-        parenthesize(leftSql),
-        text(" AS "),
-        identifier(leftAlias),
-        text(
-          node.kind === "semi-join"
-            ? " WHERE EXISTS (SELECT 1 FROM "
-            : " WHERE NOT EXISTS (SELECT 1 FROM ",
-        ),
-        parenthesize(rightSql),
-        text(" AS "),
-        identifier(rightAlias),
-        text(" WHERE "),
-        compileD1Expression(node.condition, scopes, context),
-        text(")"),
-      );
-    }
     case "aggregate": {
       const source = compileNode(node.input.node, context, outerScopes);
       const alias = nextAlias(context, "q");
@@ -454,18 +329,6 @@ function compileNode(
                 ),
               ),
             ]),
-      );
-    }
-    case "distinct": {
-      const source = compileNode(node.input.node, context, outerScopes);
-      const alias = nextAlias(context, "q");
-      return concat(
-        text("SELECT DISTINCT "),
-        join(outputList(node.fields.length, alias)),
-        text(" FROM "),
-        parenthesize(source),
-        text(" AS "),
-        identifier(alias),
       );
     }
     case "sort": {
@@ -510,27 +373,6 @@ function compileNode(
           : []),
       );
     }
-    case "union": {
-      const leftSql = compileNode(node.left.node, context, outerScopes);
-      const rightSql = compileNode(node.right.node, context, outerScopes);
-      const leftAlias = nextAlias(context, "l");
-      const rightAlias = nextAlias(context, "r");
-      return concat(
-        text("SELECT "),
-        join(outputList(node.fields.length, leftAlias)),
-        text(" FROM "),
-        parenthesize(leftSql),
-        text(" AS "),
-        identifier(leftAlias),
-        text(node.all ? " UNION ALL " : " UNION "),
-        text("SELECT "),
-        join(outputList(node.fields.length, rightAlias)),
-        text(" FROM "),
-        parenthesize(rightSql),
-        text(" AS "),
-        identifier(rightAlias),
-      );
-    }
   }
 }
 
@@ -555,20 +397,14 @@ function compileQuerySource(
 }
 
 function renderContext(
-  sharedRelations: ReadonlyMap<LogicalQueryNode, string>,
-  membershipStrategies?: RenderContext["membershipStrategies"],
-  membershipUsage?: RenderContext["membershipUsage"],
-  directScanProjections: RenderContext["directScanProjections"] = new Map(),
+  directScanProjections: RenderContext["directScanProjections"],
 ): RenderContext {
   return {
     scanAlias: 0,
     queryAlias: 0,
     leftAlias: 0,
     rightAlias: 0,
-    sharedRelations,
     directScanProjections,
-    ...(membershipStrategies ? { membershipStrategies } : {}),
-    ...(membershipUsage ? { membershipUsage } : {}),
   };
 }
 
@@ -581,206 +417,14 @@ export function compileD1Query<
   Columns extends Readonly<Record<string, AnyExpression>>,
 >(
   relation: Relation<Row, Columns>,
-  options?: D1CompileOptions,
-): CompiledQuery<Row>;
-export function compileD1Query<Row extends object>(
-  plan: PhysicalQueryPlan<Row>,
-  options?: D1CompileOptions,
-): CompiledQuery<Row>;
-export function compileD1Query(
-  plan:
-    | Relation<object, Readonly<Record<string, AnyExpression>>>
-    | PhysicalQueryPlan<object>,
   options: D1CompileOptions = {},
-): CompiledQuery<object> {
-  return compileD1QueryInternal(plan, options, true);
-}
-
-/** Internal, budget-checked expansion path for compiler differential tests. */
-export function compileD1QueryUnoptimizedForTest(
-  plan:
-    | Relation<object, Readonly<Record<string, AnyExpression>>>
-    | PhysicalQueryPlan<object>,
-  options: D1CompileOptions = {},
-): CompiledQuery<object> {
-  return compileD1QueryInternal(plan, options, false);
-}
-
-function compileD1QueryInternal(
-  plan:
-    | Relation<object, Readonly<Record<string, AnyExpression>>>
-    | PhysicalQueryPlan<object>,
-  options: D1CompileOptions,
-  includeSharedRelations: boolean,
-): CompiledQuery<object> {
-  const physical: PhysicalQueryPlan<object> =
-    "kind" in plan && plan.kind === "physical-query"
-      ? plan
-      : lowerLogicalPlan(plan);
-  validatePhysicalQueryPlan(physical);
-  const { physical: canonicalPhysical, nativeQuery } =
-    optimizeForFinalShape(physical);
-  if (
-    physical.membershipOptimization !== undefined &&
-    !hasSamePhysicalMembershipOptimization(
-      physical.membershipOptimization,
-      canonicalPhysical.membershipOptimization!,
-    )
-  )
-    throw new DatabaseCompilerError(
-      "invalid_plan",
-      "Physical query membership strategy does not match its measured budget",
-    );
-
-  if (includeSharedRelations) {
-    const membershipOptimization = canonicalPhysical.membershipOptimization!;
-    const hasJsonStrategy = membershipOptimization.strategies.some(
-      (strategy) => strategy.strategy === "json-text",
-    );
-    if (!hasJsonStrategy) return compileAndBudget(nativeQuery, options);
-    return renderAndBudget(
-      canonicalPhysical,
-      options,
-      true,
-      membershipOptimization.strategies,
-      membershipOptimization.selectedBindingCount,
-    );
-  }
-
-  return renderAndBudget(physical, options, false);
-}
-
-function optimizeForFinalShape(physical: PhysicalQueryPlan<object>): {
-  readonly physical: PhysicalQueryPlan<object>;
-  readonly nativeQuery: SqlFragment;
-} {
-  const source: QuerySource = {
-    node: physical.root,
-    scope: physical.scope,
-    fields: physical.fields,
-  };
-  const sharedRelations = physical.sharedRelations;
-  const sharedNames = new Map(
-    sharedRelations.map(({ node, name }) => [node, name] as const),
+): CompiledQuery<Row> {
+  validateLogicalQueryPlan(relation);
+  const query = compileQuerySource(
+    relation,
+    renderContext(directScanProjectionChoices(relation.node)),
+    new Map(),
   );
-  const directScanProjections = new Map(
-    physical.directScanProjections.map(
-      (choice) => [choice.project, choice] as const,
-    ),
-  );
-  const membershipUsage = new Map<AnyInListExpression, number>();
-  const context = renderContext(
-    sharedNames,
-    undefined,
-    membershipUsage,
-    directScanProjections,
-  );
-  const definitions = sharedRelations.map((shared) => {
-    context.bypassSharedNode = shared.node;
-    const body = compileNode(shared.node, context, new Map());
-    context.bypassSharedNode = undefined;
-    return concat(identifier(shared.name), text(" AS ("), body, text(")"));
-  });
-  const main = compileQuerySource(source, context, new Map());
-  const query =
-    definitions.length === 0
-      ? main
-      : concat(text("WITH "), join(definitions, text(", ")), text(" "), main);
-  return {
-    physical: optimizePhysicalMembershipBudget(
-      physical,
-      {
-        nativeBindingCount: query.bindings.length,
-        usage: [...membershipUsage].map(
-          ([expression, occurrences]) =>
-            ({
-              expression,
-              occurrences,
-            }) satisfies PhysicalMembershipUsage,
-        ),
-      },
-      D1_MAX_BOUND_PARAMETERS,
-    ),
-    nativeQuery: query,
-  };
-}
-
-function renderAndBudget(
-  physical: PhysicalQueryPlan<object>,
-  options: D1CompileOptions,
-  includeSharedRelations: boolean,
-  strategies?: NonNullable<
-    PhysicalQueryPlan<object>["membershipOptimization"]
-  >["strategies"],
-  expectedBindingCount?: number,
-): CompiledQuery<object> {
-  const source: QuerySource = {
-    node: physical.root,
-    scope: physical.scope,
-    fields: physical.fields,
-  };
-  const sharedRelations = includeSharedRelations
-    ? physical.sharedRelations
-    : [];
-  const sharedNames = new Map(
-    sharedRelations.map(({ node, name }) => [node, name] as const),
-  );
-  const directScanProjections = new Map(
-    physical.directScanProjections.map(
-      (choice) => [choice.project, choice] as const,
-    ),
-  );
-  const membershipStrategies = strategies
-    ? new Map(
-        strategies.map(
-          (item) =>
-            [
-              item.expression,
-              {
-                strategy: item.strategy,
-                ...(item.jsonText === undefined
-                  ? {}
-                  : { jsonText: item.jsonText }),
-              },
-            ] as const,
-        ),
-      )
-    : undefined;
-  const context = includeSharedRelations
-    ? renderContext(
-        sharedNames,
-        membershipStrategies,
-        undefined,
-        directScanProjections,
-      )
-    : renderContext(sharedNames, membershipStrategies);
-  const definitions = sharedRelations.map((shared) => {
-    context.bypassSharedNode = shared.node;
-    const body = compileNode(shared.node, context, new Map());
-    context.bypassSharedNode = undefined;
-    return concat(identifier(shared.name), text(" AS ("), body, text(")"));
-  });
-  const main = compileQuerySource(source, context, new Map());
-  const query =
-    definitions.length === 0
-      ? main
-      : concat(text("WITH "), join(definitions, text(", ")), text(" "), main);
-  return compileAndBudget(query, options, expectedBindingCount);
-}
-
-function compileAndBudget(
-  query: SqlFragment,
-  options: D1CompileOptions,
-  expectedBindingCount?: number,
-): CompiledQuery<object> {
-  if (
-    expectedBindingCount !== undefined &&
-    query.bindings.length !== expectedBindingCount
-  )
-    throw new DatabaseCompilerError(
-      "invalid_plan",
-      "Physical membership strategy binding cost does not match its SQL",
-    );
   const statement: DatabaseStatement = {
     sql: query.text,
     bindings: query.bindings,

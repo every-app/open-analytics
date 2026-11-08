@@ -1,20 +1,16 @@
 import {
-  callFunction,
   caseWhen,
   coalesce,
   compileD1Query,
   eq,
   insert,
-  inSubquery,
   join,
   param,
   project,
   scan,
-  union,
   unixepoch,
   update,
 } from "@/lib/db";
-import * as databaseFacade from "@/lib/db";
 import type { CompiledQuery } from "@/lib/db/query/compiled";
 import type {
   ExpressionResultOf,
@@ -30,11 +26,6 @@ type Equal<A, B> =
 type Assert<T extends true> = T;
 
 export function compileTimeDatabaseTypeAssertions(): void {
-  // @ts-expect-error Raw SQL helpers are only exported from @/lib/db/unsafe.
-  void databaseFacade.unsafeRawSql;
-  // @ts-expect-error Raw mutation helpers are only exported from @/lib/db/unsafe.
-  void databaseFacade.unsafeRawMutation;
-
   const users = scan(schema.users);
   eq(users.columns.id, param("user-1"));
   // @ts-expect-error A TEXT id cannot be compared with a number.
@@ -80,51 +71,6 @@ export function compileTimeDatabaseTypeAssertions(): void {
   void leftJoinChecks;
 
   const sites = scan(schema.sites);
-  const identities = scan(schema.site_identities);
-  const selectedIdentity = project(identities, {
-    site_id: identities.columns.site_id,
-  });
-  const membership = inSubquery(identities.columns.site_id, selectedIdentity);
-  type MembershipResultIsNonNullableInteger = Assert<
-    Equal<
-      ExpressionResultOf<typeof membership>,
-      ExpressionResultType<"integer", false>
-    >
-  >;
-  type MembershipValueIsBoolean = Assert<
-    Equal<ExpressionValue<typeof membership>, boolean>
-  >;
-  const membershipChecks: [
-    MembershipResultIsNonNullableInteger,
-    MembershipValueIsBoolean,
-  ] = [true, true];
-  void membershipChecks;
-  const nullableSlugRelation = project(sites, {
-    slug: sites.columns.public_slug,
-  });
-  const nullableMembership = inSubquery(
-    sites.columns.public_slug,
-    nullableSlugRelation,
-  );
-  type MembershipNullabilityIncludesEitherOperand = Assert<
-    Equal<
-      ExpressionResultOf<typeof nullableMembership>,
-      ExpressionResultType<"integer", true>
-    >
-  >;
-  type NullableMembershipValueIncludesNull = Assert<
-    Equal<ExpressionValue<typeof nullableMembership>, boolean | null>
-  >;
-  const nullableMembershipChecks: [
-    MembershipNullabilityIncludesEitherOperand,
-    NullableMembershipValueIncludesNull,
-  ] = [true, true];
-  void nullableMembershipChecks;
-  const selectedSiteId = project(identities, {
-    site_id: identities.columns.site_id,
-  });
-  // @ts-expect-error Integer site_pk cannot be compared with a TEXT site_id.
-  inSubquery(identities.columns.site_pk, selectedSiteId);
   const mixedFallback = coalesce(param("text"), param(1), param("again"));
   type MixedFallbackAffinityStaysUnknown = Assert<
     Equal<
@@ -199,30 +145,6 @@ export function compileTimeDatabaseTypeAssertions(): void {
   });
   // @ts-expect-error A TEXT id cannot be compared with a number.
   eq(sites.columns.id, param(42));
-  // @ts-expect-error lower() accepts text expressions.
-  callFunction("lower", sites.columns.created_at);
-  // @ts-expect-error length() accepts text or blob expressions.
-  callFunction("length", sites.columns.created_at);
-  // @ts-expect-error abs() accepts numeric expressions.
-  callFunction("abs", sites.columns.name);
-
-  const nullableSlug = project(sites, { slug: sites.columns.public_slug });
-  const requiredSlug = project(sites, { slug: sites.columns.name });
-  const combined = union(nullableSlug, requiredSlug, true);
-  type UnionMetadataWidensNullability = Assert<
-    Equal<
-      ExpressionResultOf<typeof combined.columns.slug>,
-      ExpressionResultType<"text", true>
-    >
-  >;
-  type UnionValueWidensNullability = Assert<
-    Equal<ExpressionValue<typeof combined.columns.slug>, string | null>
-  >;
-  const unionChecks: [
-    UnionMetadataWidensNullability,
-    UnionValueWidensNullability,
-  ] = [true, true];
-  void unionChecks;
 
   // @ts-expect-error The non-null email column is required by the generated catalog.
   insert(schema.users, { name: "No email" });

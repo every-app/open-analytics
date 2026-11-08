@@ -1,12 +1,10 @@
 import { assertD1StatementBudget } from "@/lib/db/d1-budget";
 import {
   compileD1Expression,
-  compileD1Query,
   type ScopeBinding,
 } from "@/lib/db/query/compiler";
 import { DatabaseCompilerError } from "@/lib/db/query/errors";
 import type { RelationScope } from "@/lib/db/query/expression";
-import { lowerLogicalQuerySource } from "@/lib/db/query/physical-plan";
 import { concat, join, type SqlFragment, text } from "@/lib/db/sql/fragment";
 import { identifier } from "@/lib/db/sql/identifier";
 import type { DatabaseBinding } from "@/lib/db/types";
@@ -20,42 +18,15 @@ export interface MutationCompileOptions {
 
 function insertValues(
   plan: Extract<MutationNode, { kind: "insert" }>,
-  options: MutationCompileOptions,
 ): SqlFragment {
-  if (plan.source) {
-    const query = compileD1Query(lowerLogicalQuerySource(plan.source), {
-      ...(options.tag === undefined ? {} : { tag: options.tag }),
-    });
-    const alias = "q0";
-    return concat(
-      text("SELECT "),
-      join(
-        plan.source.fields.map((field) =>
-          concat(
-            identifier(alias),
-            text("."),
-            identifier(field.name),
-            text(" AS "),
-            identifier(field.name),
-          ),
-        ),
-      ),
-      text(" FROM ("),
-      { text: query.sql, bindings: query.bindings ?? [] },
-      text(") AS "),
-      identifier(alias),
-      text(" WHERE 1"),
-    );
-  }
-  const rows = plan.rows ?? [];
-  if (plan.columns.length === 0 && rows.length === 1)
+  if (plan.columns.length === 0 && plan.rows.length === 1)
     return text("DEFAULT VALUES");
   if (plan.columns.length === 0)
     throw new DatabaseCompilerError(
       "unsupported_mutation",
       "Multi-row DEFAULT VALUES is not supported",
     );
-  const rowFragments = rows.map((row) =>
+  const rowFragments = plan.rows.map((row) =>
     concat(
       text("("),
       join(row.map((value) => compileD1Expression(value, new Map()))),
@@ -80,7 +51,6 @@ function fieldSqlName(
 
 function compileInsert(
   plan: Extract<MutationNode, { kind: "insert" }>,
-  options: MutationCompileOptions,
 ): SqlFragment {
   const prefix = plan.orIgnore ? "INSERT OR IGNORE INTO " : "INSERT INTO ";
   const columns = plan.columns.map((name) =>
@@ -89,13 +59,13 @@ function compileInsert(
   const target = concat(text(prefix), identifier(plan.table.name));
   const statement =
     plan.columns.length === 0
-      ? concat(target, text(" "), insertValues(plan, options))
+      ? concat(target, text(" "), insertValues(plan))
       : concat(
           target,
           text(" ("),
           join(columns),
           text(") "),
-          insertValues(plan, options),
+          insertValues(plan),
         );
   if (!plan.conflict) return statement;
   const conflictTarget = join(
@@ -178,7 +148,7 @@ export function compileD1Mutation(
   validateMutationPlan(plan);
   const fragment =
     plan.kind === "insert"
-      ? compileInsert(plan, options)
+      ? compileInsert(plan)
       : plan.kind === "update"
         ? compileUpdate(plan)
         : compileDelete(plan);

@@ -7,6 +7,14 @@ import {
   type SortDirection,
 } from "@/lib/edge/analytics/contract";
 import type { Env } from "@/lib/edge/types";
+import {
+  decodePageCursor,
+  encodePageCursor,
+  hasExactKeys,
+  type PageResult,
+  pageResult,
+  paginationBindingForWindow,
+} from "@/lib/pagination";
 
 import type {
   DimensionRow,
@@ -28,17 +36,8 @@ import {
   timeBucketTimestamp,
   visitSourceBindings,
 } from "./core";
-import type { D1ReadDiagnostics } from "./diagnostics";
-import { queryPageTabsFromD1, queryVisitDimensionFromD1 } from "./dimensions";
+import { queryPageTabsFromD1 } from "./dimensions";
 import { type PageDashboardCursor } from "./pages-dashboard";
-import {
-  decodePageCursor,
-  encodePageCursor,
-  hasExactKeys,
-  type PageResult,
-  pageResult,
-  paginationBindingForWindow,
-} from "./pagination";
 import {
   scopedDatasetFor,
   scopedDatasetForUnpreparedReader,
@@ -145,33 +144,6 @@ LIMIT ?
     views: Number(row.views ?? 0),
     sessions: Number(row.sessions ?? 0),
   }));
-}
-export async function queryPagesFromD1(
-  env: Env,
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
-  limit: number,
-  includeDetails: boolean,
-): Promise<PageRow[]> {
-  return queryTopPagesFromD1(
-    env,
-    siteId,
-    window,
-    limit,
-    includeDetails,
-    filters,
-  );
-}
-export async function queryPagesAggregate(
-  env: Env,
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
-  limit: number,
-  includeDetails: boolean,
-): Promise<PageRow[]> {
-  return queryPagesFromD1(env, siteId, window, filters, limit, includeDetails);
 }
 /** Keyset-paginated page aggregate. The legacy aggregate reader above remains
  * intentionally bounded for cards, reports, and other Top-N consumers. */
@@ -822,145 +794,6 @@ ${hasLimit ? "LIMIT ?" : ""}
     scrollDepth: scrollDepthOf(row.scrollDepth),
   }));
 }
-export async function queryPageCardTitlesFromD1(
-  env: Env,
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
-  pathnames: string[],
-  titleLimit: number,
-): Promise<PageCardTitleRow[]> {
-  const requestedPathnames = Array.from(
-    new Set(
-      pathnames
-        .map((pathname) => String(pathname ?? "").trim())
-        .filter((pathname) => pathname.length > 0),
-    ),
-  );
-  if (requestedPathnames.length === 0) return [];
-
-  const scopedDataset = scopedDatasetFor(siteId, window, filters);
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
-  const filteredClause = appendSqlConditions(filter?.clause ?? "", [
-    `TRIM(COALESCE(pathname, '')) IN (${requestedPathnames.map(() => "?").join(", ")})`,
-  ]);
-  const sql = `
-WITH
-${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS (
-  SELECT pathname, title
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filteredClause}
-),
-title_rollup AS (
-  SELECT
-    pathname,
-    TRIM(COALESCE(title, '')) AS title,
-    count(*) AS views
-  FROM filtered_visits
-  WHERE TRIM(COALESCE(title, '')) != ''
-  GROUP BY pathname, TRIM(COALESCE(title, ''))
-),
-ranked_titles AS (
-  SELECT
-    pathname,
-    title,
-    views,
-    ROW_NUMBER() OVER (PARTITION BY pathname ORDER BY views DESC, title ASC) AS titleRank
-  FROM title_rollup
-)
-SELECT
-  pathname,
-  title,
-  views
-FROM ranked_titles
-WHERE titleRank <= ?
-ORDER BY pathname ASC, titleRank ASC
-`;
-  return (
-    await queryD1All<Record<string, unknown>>(env, sql, [
-      ...(scopedDataset
-        ? scopedDataset.bindings.map((binding) => binding.value)
-        : [
-            ...visitSourceBindings(siteId, window),
-            ...(filter?.bindings ?? []),
-          ]),
-      ...requestedPathnames,
-      titleLimit,
-    ])
-  ).map((row) => ({
-    pathname: String(row.pathname ?? ""),
-    title: String(row.title ?? ""),
-    views: Number(row.views ?? 0),
-  }));
-}
-export async function queryPageCardTrendFromD1(
-  env: Env,
-  siteId: string,
-  window: QueryWindow,
-  interval: Interval,
-  filters: FilterDocument,
-  pathnames: string[],
-): Promise<PageCardTrendRow[]> {
-  const requestedPathnames = Array.from(
-    new Set(
-      pathnames
-        .map((pathname) => String(pathname ?? "").trim())
-        .filter((pathname) => pathname.length > 0),
-    ),
-  );
-  if (requestedPathnames.length === 0) return [];
-
-  const scopedDataset = scopedDatasetFor(siteId, window, filters);
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
-  const buckets = buildTimeBuckets(window, interval);
-  const bucket = timeBucketCase(buckets, "startedAt");
-  const filteredClause = appendSqlConditions(filter?.clause ?? "", [
-    `TRIM(COALESCE(pathname, '')) IN (${requestedPathnames.map(() => "?").join(", ")})`,
-  ]);
-  const sql = `
-WITH
-${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS (
-  SELECT
-    pathname,
-    started_at AS startedAt,
-    visitor_id AS visitorId
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filteredClause}
-)
-SELECT
-  pathname,
-  ${bucket.sql} AS bucket,
-  count(*) AS views,
-  count(DISTINCT CASE WHEN visitorId != '' THEN visitorId ELSE NULL END) AS visitors
-FROM filtered_visits
-GROUP BY pathname, bucket
-ORDER BY pathname ASC, bucket ASC
-`;
-  return (
-    await queryD1All<Record<string, unknown>>(env, sql, [
-      ...(scopedDataset
-        ? scopedDataset.bindings.map((binding) => binding.value)
-        : [
-            ...visitSourceBindings(siteId, window),
-            ...(filter?.bindings ?? []),
-          ]),
-      ...requestedPathnames,
-      ...bucket.bindings,
-    ])
-  ).map((row) => ({
-    pathname: String(row.pathname ?? ""),
-    bucket: Number(row.bucket ?? 0),
-    timestampMs: timeBucketTimestamp(buckets, Number(row.bucket ?? 0)),
-    views: Number(row.views ?? 0),
-    visitors: Number(row.visitors ?? 0),
-  }));
-}
 export async function queryPageCardDetailsFromD1(
   env: Env,
   siteId: string,
@@ -1079,25 +912,4 @@ ORDER BY rowKind ASC, pathname ASC, rowOrder ASC
     }
   }
   return { titles, trend };
-}
-export async function queryDimensionAggregate(
-  env: Env,
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
-  limit: number,
-  d1Expr: string,
-  options?: { excludeEmpty?: boolean },
-  diagnostics?: D1ReadDiagnostics,
-): Promise<DimensionRow[]> {
-  return queryVisitDimensionFromD1(
-    env,
-    siteId,
-    window,
-    filters,
-    limit,
-    d1Expr,
-    options,
-    diagnostics,
-  );
 }

@@ -2,7 +2,6 @@ import { isGeneratedSchemaObject } from "@/lib/db/schema";
 
 import { DatabaseCompilerError } from "./errors";
 import {
-  type AnyExpression,
   coalesceResultAffinity,
   commonAffinity,
   parameterResultType,
@@ -15,9 +14,7 @@ import type {
   LogicalQueryNode,
   OutputField,
   QuerySource,
-  Relation,
   SortNode,
-  UnionNode,
 } from "./plan";
 
 export type ExpressionScopeMetadata = ReadonlyMap<
@@ -110,7 +107,7 @@ function validateExpression(
       return;
     case "binary":
       if (
-        !["=", "<>", ">", ">=", "<", "<=", "+", "-", "*", "/"].includes(
+        !["=", "<>", ">", "<", "<=", "+", "-", "*", "/"].includes(
           expression.operator,
         )
       ) {
@@ -123,7 +120,7 @@ function validateExpression(
         activeSources,
         allowExcluded,
       );
-      if (["=", "<>", ">", ">=", "<", "<="].includes(expression.operator)) {
+      if (["=", "<>", ">", "<", "<="].includes(expression.operator)) {
         if (
           !comparableAffinities(
             expression.left.resultType.affinity,
@@ -166,19 +163,6 @@ function validateExpression(
         expression.expressions.some((child) => child.resultType.nullable),
       );
       return;
-    case "not":
-      validateExpression(
-        expression.expression,
-        scopes,
-        activeSources,
-        allowExcluded,
-      );
-      validateResultType(
-        expression,
-        "integer",
-        expression.expression.resultType.nullable,
-      );
-      return;
     case "null-check":
       validateExpression(
         expression.expression,
@@ -187,96 +171,6 @@ function validateExpression(
         allowExcluded,
       );
       validateResultType(expression, "integer", false);
-      return;
-    case "in-list":
-      validateExpression(
-        expression.expression,
-        scopes,
-        activeSources,
-        allowExcluded,
-      );
-      validateResultType(
-        expression,
-        "integer",
-        expression.values.length > 0 &&
-          (expression.expression.resultType.nullable ||
-            expression.values.includes(null)),
-      );
-      return;
-    case "in-subquery": {
-      validateExpression(
-        expression.expression,
-        scopes,
-        activeSources,
-        allowExcluded,
-      );
-      if (expression.query.fields.length !== 1)
-        invalid("inSubquery() requires a query with exactly one output field");
-      validateSource(expression.query, activeSources, scopes);
-      const field = expression.query.fields[0]!;
-      if (
-        !comparableAffinities(
-          expression.expression.resultType.affinity,
-          field.affinity,
-        )
-      )
-        invalid("IN operands have incompatible SQL affinities");
-      validateResultType(
-        expression,
-        "integer",
-        expression.expression.resultType.nullable || field.nullable,
-      );
-      return;
-    }
-    case "function":
-      if (
-        !["lower", "upper", "trim", "length", "abs", "round"].includes(
-          expression.name,
-        )
-      ) {
-        throw new DatabaseCompilerError(
-          "unsupported_expression",
-          `Unsupported SQL function: ${String(expression.name)}`,
-        );
-      }
-      if (expression.arguments.length !== 1)
-        invalid(`${expression.name}() requires exactly one argument`);
-      expression.arguments.forEach((child) =>
-        validateExpression(child, scopes, activeSources, allowExcluded),
-      );
-      {
-        const argument = expression.arguments[0]!;
-        const affinity = argument.resultType.affinity;
-        if (
-          ((expression.name === "lower" ||
-            expression.name === "upper" ||
-            expression.name === "trim") &&
-            affinity !== "text" &&
-            affinity !== "unknown") ||
-          (expression.name === "length" &&
-            affinity !== "text" &&
-            affinity !== "blob" &&
-            affinity !== "unknown") ||
-          ((expression.name === "abs" || expression.name === "round") &&
-            !isNumeric(affinity))
-        )
-          invalid(
-            `${expression.name}() received an incompatible argument affinity`,
-          );
-        const resultAffinity =
-          expression.name === "lower" ||
-          expression.name === "upper" ||
-          expression.name === "trim"
-            ? "text"
-            : expression.name === "length"
-              ? "integer"
-              : "numeric";
-        validateResultType(
-          expression,
-          resultAffinity,
-          argument.resultType.nullable,
-        );
-      }
       return;
     case "aggregate":
       if (!["COUNT", "SUM", "AVG", "MIN", "MAX"].includes(expression.name)) {
@@ -393,10 +287,6 @@ function validateExpression(
       return;
     }
   }
-}
-
-function sourceOf(node: LogicalQueryNode): QuerySource {
-  return { node, scope: node.scope, fields: node.fields };
 }
 
 function sameFieldMetadata(
@@ -539,25 +429,6 @@ function validateSource(
           invalid("Join output does not match its input row shapes");
         return;
       }
-      case "semi-join":
-      case "anti-join": {
-        validateChild(node.left);
-        validateChild(node.right);
-        validateExpression(
-          node.condition,
-          visibleScopes(node.left, node.right),
-          activeSources,
-        );
-        if (
-          node.fields.length !== node.left.fields.length ||
-          node.fields.some(
-            (field, index) =>
-              !sameFieldMetadata(field, node.left.fields[index]!),
-          )
-        )
-          invalid(`${node.kind} must preserve the left row shape`);
-        return;
-      }
       case "aggregate": {
         const aggregate = node as AggregateNode;
         validateChild(aggregate.input);
@@ -589,17 +460,6 @@ function validateSource(
           invalid("Aggregate outputs must be aggregate expressions");
         return;
       }
-      case "distinct":
-        validateChild(node.input);
-        if (
-          node.fields.length !== node.input.fields.length ||
-          node.fields.some(
-            (field, index) =>
-              !sameFieldMetadata(field, node.input.fields[index]!),
-          )
-        )
-          invalid("Distinct must preserve its input row shape");
-        return;
       case "sort": {
         const sort = node as SortNode;
         validateChild(sort.input);
@@ -650,47 +510,14 @@ function validateSource(
         )
           invalid("Limit must preserve its input row shape");
         return;
-      case "union": {
-        const union = node as UnionNode;
-        validateChild(union.left);
-        validateChild(union.right);
-        if (
-          union.left.fields.length !== union.right.fields.length ||
-          union.left.fields.length !== node.fields.length
-        )
-          invalid("UNION inputs must have compatible row shapes");
-        for (let index = 0; index < union.left.fields.length; index++) {
-          const left = union.left.fields[index]!;
-          const right = union.right.fields[index]!;
-          const result = node.fields[index]!;
-          const affinity = commonAffinity(left.affinity, right.affinity);
-          if (!affinity)
-            invalid(
-              `UNION field "${left.name}" has incompatible affinities ${left.affinity} and ${right.affinity}`,
-            );
-          if (
-            left.name !== right.name ||
-            result.name !== left.name ||
-            result.affinity !== affinity ||
-            result.nullable !== (left.nullable || right.nullable)
-          )
-            invalid("UNION output metadata is not compatible with its inputs");
-        }
-        return;
-      }
     }
   } finally {
     activeSources.delete(source.node);
   }
 }
 
-export function validateLogicalQueryPlan(
-  plan:
-    | Relation<object, Readonly<Record<string, AnyExpression>>>
-    | LogicalQueryNode,
-): void {
-  const root = "node" in plan ? plan.node : plan;
-  validateSource(sourceOf(root), new Set(), new Map());
+export function validateLogicalQueryPlan(source: QuerySource): void {
+  validateSource(source, new Set(), new Map());
 }
 
 export function validatePredicate(

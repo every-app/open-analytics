@@ -8,15 +8,15 @@ import {
   validateGoalConfigForWrite,
 } from "@/lib/edge/analytics/contract/goal-config";
 import type { Env } from "@/lib/edge/types";
-
-import { queryD1All } from "./core";
 import {
   decodePageCursor,
   encodePageCursor,
   hasExactKeys,
   pageResult,
   paginationBinding,
-} from "./pagination";
+} from "@/lib/pagination";
+
+import { queryD1All } from "./core";
 const GOAL_ANALYSIS_KIND = "goal";
 export type {
   GoalConfigV1,

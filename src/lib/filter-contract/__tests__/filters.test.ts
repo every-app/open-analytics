@@ -5,17 +5,14 @@ import {
   analyticsFilterDefinition,
   analyticsFilterRegistry,
   assertFilterAudience,
-  attachFilterScopePreference,
   filterConditionCount,
   filterConditionEntity,
   type FilterFieldDefinition,
   type FilterFieldRegistry,
   filterFingerprint,
-  filterScopePreferenceFromDocument,
   hasEffectiveFilters,
   normalizeFilterDocument,
   queryPolicyForAudience,
-  stripTopLevelFacet,
 } from "@/lib/edge/analytics/contract";
 import { parseFilterDsl } from "@/lib/filter-contract";
 
@@ -221,73 +218,6 @@ describe("typed filter contract", () => {
       },
     });
     expect(hasEffectiveFilters(document)).toBe(true);
-  });
-
-  it("strips only top-level facet conditions after canonical normalization", () => {
-    const target = fieldCondition("page.path", "eq", "/pricing");
-    const other = fieldCondition("geo.country", "eq", "US");
-    const root = normalizeFilterDocument(
-      { version: 1, root: target },
-      registry,
-    );
-    expect(stripTopLevelFacet(root, "page.path").root).toBeNull();
-
-    const conjunction = normalizeFilterDocument(
-      { version: 1, root: { kind: "and", children: [target, other] } },
-      registry,
-    );
-    const scopedConjunction = attachFilterScopePreference(
-      conjunction,
-      "visitor",
-    );
-    const strippedConjunction = stripTopLevelFacet(
-      scopedConjunction,
-      "page.path",
-    );
-    expect(strippedConjunction.root).toEqual(other);
-    expect(filterScopePreferenceFromDocument(strippedConjunction)).toBe(
-      "visitor",
-    );
-
-    const nestedOr = normalizeFilterDocument(
-      {
-        version: 1,
-        root: { kind: "or", children: [target, other] },
-      },
-      registry,
-    );
-    expect(stripTopLevelFacet(nestedOr, "page.path")).toEqual(nestedOr);
-
-    const nestedNot = normalizeFilterDocument(
-      { version: 1, root: { kind: "not", child: target } },
-      registry,
-    );
-    expect(stripTopLevelFacet(nestedNot, "page.path")).toEqual(nestedNot);
-
-    const threeChildren = normalizeFilterDocument(
-      {
-        version: 1,
-        root: {
-          kind: "and",
-          children: [target, other, fieldCondition("event.score", "eq", 10)],
-        },
-      },
-      registry,
-    );
-    expect(stripTopLevelFacet(threeChildren, "page.path").root).toMatchObject({
-      kind: "and",
-      children: [
-        expect.objectContaining({
-          target: expect.objectContaining({ field: "event.score" }),
-        }),
-        expect.objectContaining({
-          target: expect.objectContaining({ field: "geo.country" }),
-        }),
-      ],
-    });
-    expect(
-      stripTopLevelFacet({ version: 1, root: null }, "page.path").root,
-    ).toBeNull();
   });
 
   it("converts one-item set predicates only after canonicalization", () => {

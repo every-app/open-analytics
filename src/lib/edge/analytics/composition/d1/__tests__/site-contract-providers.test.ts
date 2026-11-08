@@ -9,7 +9,6 @@ vi.mock("@/lib/edge/analytics/providers/d1/internal/dimensions", () => ({
   querySessionPathDimensionPageFromD1: vi.fn(),
 }));
 vi.mock("@/lib/edge/analytics/providers/d1/internal/filter-values", () => ({
-  queryFilterValuesFromD1: vi.fn(),
   queryFilterValuesPageFromD1: vi.fn(),
 }));
 vi.mock("@/lib/edge/analytics/providers/d1/internal/journey-retention", () => ({
@@ -21,15 +20,12 @@ vi.mock("@/lib/edge/analytics/providers/d1/internal/geo-points", () => ({
 }));
 vi.mock("@/lib/edge/analytics/providers/d1/internal/pages", () => ({
   decodePagesCursor: vi.fn(),
-  queryDimensionAggregate: vi.fn(),
   queryPageCardMetricsFromD1: vi.fn(),
   queryPageTabsAggregate: vi.fn(),
-  queryPagesAggregate: vi.fn(),
   queryPagesPageFromD1: vi.fn(),
 }));
 vi.mock("@/lib/edge/analytics/providers/d1/internal/referrers", () => ({
   decodeReferrersCursor: vi.fn(),
-  queryReferrerAggregate: vi.fn(),
   queryReferrersPageFromD1: vi.fn(),
 }));
 vi.mock("@/lib/edge/analytics/providers/d1/internal/pages-dashboard", () => ({
@@ -53,22 +49,16 @@ import {
   queryDimensionPageFromD1,
   querySessionPathDimensionPageFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/dimensions";
-import {
-  queryFilterValuesFromD1,
-  queryFilterValuesPageFromD1,
-} from "@/lib/edge/analytics/providers/d1/internal/filter-values";
+import { queryFilterValuesPageFromD1 } from "@/lib/edge/analytics/providers/d1/internal/filter-values";
 import { queryGeoPointsFromD1 } from "@/lib/edge/analytics/providers/d1/internal/geo-points";
 import {
   decodePagesCursor,
-  queryDimensionAggregate,
-  queryPagesAggregate,
   queryPagesPageFromD1,
   queryPageTabsAggregate,
 } from "@/lib/edge/analytics/providers/d1/internal/pages";
 import { queryPagesDashboard } from "@/lib/edge/analytics/providers/d1/internal/pages-dashboard";
 import {
   decodeReferrersCursor,
-  queryReferrerAggregate,
   queryReferrersPageFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/referrers";
 import type { Env } from "@/lib/edge/types";
@@ -139,12 +129,6 @@ describe("D1 site contract provider pagination routing", () => {
     vi.mocked(queryChannelAggregate).mockResolvedValue([
       { channel: "organic_search", views: 5, sessions: 3, visitors: 2 },
     ]);
-    vi.mocked(queryFilterValuesFromD1).mockResolvedValue([
-      { value: "US", occurrences: 4 },
-    ]);
-    vi.mocked(queryDimensionAggregate).mockResolvedValue([
-      { value: "Chrome", views: 5, sessions: 3, visitors: 2 },
-    ]);
     vi.mocked(queryPageTabsAggregate).mockResolvedValue({
       path: [],
       title: [],
@@ -152,12 +136,6 @@ describe("D1 site contract provider pagination routing", () => {
       entry: [],
       exit: [],
     });
-    vi.mocked(queryPagesAggregate).mockResolvedValue([
-      { pathname: "/docs", query: "", hash: "", views: 4, sessions: 3 },
-    ]);
-    vi.mocked(queryReferrerAggregate).mockResolvedValue([
-      { referrer: "google.com", views: 4, sessions: 3, visitors: 2 },
-    ]);
     vi.mocked(queryPagesDashboard).mockResolvedValue({
       interval: "day",
       items: [],

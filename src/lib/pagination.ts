@@ -225,19 +225,3 @@ export function pageResult<T>(
   const pageRows = hasMore ? rows.slice(0, limit) : rows;
   return { rows: pageRows, hasMore, last: pageRows.at(-1) };
 }
-
-export function pageResponse<T>(
-  rows: readonly T[],
-  limit: number,
-  nextCursor: string | null,
-): PageResult<T> {
-  return {
-    items: rows,
-    pagination: {
-      limit,
-      returned: rows.length,
-      hasMore: nextCursor !== null,
-      nextCursor,
-    },
-  };
-}

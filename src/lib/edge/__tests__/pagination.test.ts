@@ -1,16 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 
+import type { Env } from "@/lib/edge/types";
 import {
   decodePageCursor,
   encodePageCursor,
   InvalidCursorError,
   MAX_CURSOR_LENGTH,
-  pageResponse,
   pageResult,
   paginationBinding,
   paginationBindingForWindow,
-} from "@/lib/edge/analytics/providers/d1/internal/pagination";
-import type { Env } from "@/lib/edge/types";
+} from "@/lib/pagination";
 
 const secret = "pagination-test-secret";
 const env = { MAIN_SECRET: secret } as Env;
@@ -149,11 +148,6 @@ describe("D1 pagination cursor helpers", () => {
     } finally {
       signSpy.mockRestore();
     }
-
-    expect(pageResponse([1, 2], 2, null)).toEqual({
-      items: [1, 2],
-      pagination: { limit: 2, returned: 2, hasMore: false, nextCursor: null },
-    });
   });
 
   it("uses an API request binding override without changing semantic bindings", async () => {

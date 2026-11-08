@@ -744,16 +744,6 @@ ${visitorRelation} AS (
     matchedEventsRelation: matchedEventRelation,
   };
 }
-/**
- * Canonical name for the shared Funnel/analysis primitive. Keep the longer
- * `apply...` export above for callers that describe this operation as a
- * compiler step, but expose the execution-oriented name in the contract.
- */
-export const executeObservationFilterOnScopedDataset =
-  applyObservationFilterToScopedDataset;
-/** Concise alias for callers that already operate on a scoped dataset. */
-export const compileScopedObservationFilterSql =
-  applyObservationFilterToScopedDataset;
 function compileObservationRelation(
   name: string,
   source: string,

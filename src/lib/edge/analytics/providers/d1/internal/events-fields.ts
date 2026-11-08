@@ -5,13 +5,6 @@ import {
   type QueryAudience,
 } from "@/lib/edge/analytics/contract";
 import type { Env } from "@/lib/edge/types";
-
-import type {
-  EventFieldRow,
-  EventFieldValueRow,
-  FilterDocument,
-  QueryWindow,
-} from "./core";
 import {
   decodePageCursor,
   encodePageCursor,
@@ -19,7 +12,14 @@ import {
   type PageResult,
   pageResult,
   paginationBindingForWindow,
-} from "./pagination";
+} from "@/lib/pagination";
+
+import type {
+  EventFieldRow,
+  EventFieldValueRow,
+  FilterDocument,
+  QueryWindow,
+} from "./core";
 
 export interface EventFieldCursor {
   readonly events: number;

@@ -1,4 +1,8 @@
 import {
+  FUNNEL_SQL_BASE_DATASET_BINDINGS,
+  FUNNEL_SQL_MAX_BINDINGS,
+} from "@/lib/edge/analytics/contract/funnel-budget";
+import {
   encodeFunnelConfig,
   type FunnelConfigV2,
   FunnelConfigValidationError,
@@ -10,10 +14,6 @@ import type { FilterObservationKind } from "@/lib/filter-contract/filter-registr
 import type { FilterDocument } from "@/lib/filter-contract/filters";
 
 import { compileFilterDocument } from "./filter-compiler";
-import {
-  FUNNEL_SQL_BASE_DATASET_BINDINGS,
-  FUNNEL_SQL_MAX_BINDINGS,
-} from "./funnel-budget";
 
 function predicateBindingCount(
   predicate: ReturnType<typeof planObservationFilter>["visit"],

@@ -5,7 +5,6 @@ import {
   eq,
   excluded,
   insert,
-  insertFromQuery,
   onConflictDoUpdate,
   param,
   scan,
@@ -17,43 +16,14 @@ import { DatabaseCompilerError } from "@/lib/db/query/errors";
 import { parameterExpression } from "@/lib/db/query/expression";
 import { schema } from "@/lib/db/schema";
 import type { SqlBinding } from "@/lib/db/types";
-import { mutationResultContract, unsafeRawMutation } from "@/lib/db/unsafe";
-
-describe("mutation result contracts", () => {
-  it("describes results for explicitly supplied raw mutations", () => {
-    const contract = mutationResultContract("Rows changed by the update");
-    expect(contract).toEqual({
-      kind: "mutation-result",
-      description: "Rows changed by the update",
-    });
-
-    expect(
-      unsafeRawMutation("UPDATE users SET active = ?", [1], contract),
-    ).toEqual({
-      sql: "UPDATE users SET active = ?",
-      bindings: [1],
-      kind: "mutation",
-      resultContract: contract,
-    });
-  });
-});
 
 function expectInvalid(plan: MutationNode): void {
   expect(() => validateMutationPlan(plan)).toThrowError(DatabaseCompilerError);
 }
 
 describe("mutation plan validation", () => {
-  it("rejects invalid insert sources, columns, and value shapes", () => {
+  it("rejects invalid insert columns and value shapes", () => {
     const valid = insert(schema.site_identities, { site_id: "site-a" });
-    expectInvalid({
-      ...valid,
-      source: { ...scan(schema.users) },
-    } as unknown as MutationNode);
-    expectInvalid({
-      ...valid,
-      rows: undefined,
-      source: undefined,
-    } as unknown as MutationNode);
     expectInvalid({
       ...valid,
       columns: ["site_id", "site_id"],
@@ -74,14 +44,6 @@ describe("mutation plan validation", () => {
       ...valid,
       rows: [[parameterExpression({} as SqlBinding)]],
     } as unknown as MutationNode);
-
-    const query = scan(schema.users);
-    const fromQuery = insertFromQuery(
-      schema.site_identities,
-      ["site_id"],
-      query,
-    );
-    expectInvalid(fromQuery);
     expectInvalid({
       ...valid,
       table: { ...schema.site_identities },

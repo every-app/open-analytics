@@ -49,7 +49,6 @@ const ALL_OPERATIONS: readonly QueryOperation[] = [
   "property-keys",
   "property-values",
   "team-dashboard",
-  "explore",
 ];
 
 const PUBLIC_OPERATIONS: readonly QueryOperation[] = [

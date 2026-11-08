@@ -65,8 +65,7 @@ export interface BinaryExpression<
   Result extends ExpressionResultType = ExpressionResultType,
 > extends ExpressionNode<T, Result> {
   readonly kind: "binary";
-  readonly operator:
-    "=" | "<>" | ">" | ">=" | "<" | "<=" | "+" | "-" | "*" | "/";
+  readonly operator: "=" | "<>" | ">" | "<" | "<=" | "+" | "-" | "*" | "/";
   readonly left: SqlExpression;
   readonly right: SqlExpression;
 }
@@ -83,17 +82,6 @@ export interface BooleanExpression<
   readonly expressions: readonly Predicate[];
 }
 
-export interface NotExpression<
-  T = boolean | null,
-  Result extends ExpressionResultType = ExpressionResultType<
-    "integer",
-    boolean
-  >,
-> extends ExpressionNode<T, Result> {
-  readonly kind: "not";
-  readonly expression: Predicate;
-}
-
 export interface NullCheckExpression<
   T = boolean,
   Result extends ExpressionResultType = ExpressionResultType<"integer", false>,
@@ -101,30 +89,6 @@ export interface NullCheckExpression<
   readonly kind: "null-check";
   readonly expression: SqlExpression;
   readonly not: boolean;
-}
-
-export interface InListExpression<
-  T = boolean | null,
-  Result extends ExpressionResultType = ExpressionResultType<
-    "integer",
-    boolean
-  >,
-> extends ExpressionNode<T, Result> {
-  readonly kind: "in-list";
-  readonly expression: SqlExpression;
-  readonly values: readonly SqlBinding[];
-}
-
-export type SqlFunctionName =
-  "lower" | "upper" | "trim" | "length" | "abs" | "round";
-
-export interface FunctionExpression<
-  T = unknown,
-  Result extends ExpressionResultType = ExpressionResultType,
-> extends ExpressionNode<T, Result> {
-  readonly kind: "function";
-  readonly name: SqlFunctionName;
-  readonly arguments: readonly SqlExpression[];
 }
 
 export interface AggregateExpression<
@@ -181,18 +145,6 @@ export interface ScalarSubqueryExpression<
   readonly query: QuerySource;
 }
 
-export interface InSubqueryExpression<
-  T = boolean | null,
-  Result extends ExpressionResultType = ExpressionResultType<
-    "integer",
-    boolean
-  >,
-> extends ExpressionNode<T, Result> {
-  readonly kind: "in-subquery";
-  readonly expression: SqlExpression;
-  readonly query: QuerySource;
-}
-
 export type SqlExpression<
   T = unknown,
   Result extends ExpressionResultType = ExpressionResultType,
@@ -202,19 +154,14 @@ export type SqlExpression<
   | ExcludedExpression<T, Result>
   | BinaryExpression<T, Result>
   | BooleanExpression<T, Result>
-  | NotExpression<T, Result>
   | NullCheckExpression<T, Result>
-  | InListExpression<T, Result>
-  | FunctionExpression<T, Result>
   | AggregateExpression<T, Result>
   | CoalesceExpression<T, Result>
   | CaseExpression<T, Result>
   | UnixepochExpression<T, Result>
-  | ScalarSubqueryExpression<T, Result>
-  | InSubqueryExpression<T, Result>;
+  | ScalarSubqueryExpression<T, Result>;
 
 export type AnyExpression = SqlExpression<unknown, ExpressionResultType>;
-export type AnyInListExpression = Extract<AnyExpression, { kind: "in-list" }>;
 export type Predicate<Nullable extends boolean = boolean> = SqlExpression<
   Nullable extends true ? boolean | null : boolean,
   ExpressionResultType<"integer", Nullable>
@@ -467,7 +414,7 @@ export function rebindColumn<T, Result extends ExpressionResultType>(
 }
 
 function comparison<Left extends AnyExpression, Right extends AnyExpression>(
-  operator: "=" | "<>" | ">" | ">=" | "<" | "<=",
+  operator: "=" | "<>" | ">" | "<" | "<=",
   left: Left,
   right: Right,
 ): Predicate<ComparisonNullable<Left, Right>> {
@@ -498,7 +445,7 @@ function orderedComparison<
   Left extends AnyExpression,
   Right extends AnyExpression,
 >(
-  operator: ">" | ">=" | "<" | "<=",
+  operator: ">" | "<" | "<=",
   left: Left,
   right: Right & RequireComparable<Left, Right>,
 ): Predicate<ComparisonNullable<Left, Right>> {
@@ -509,10 +456,6 @@ export const gt = <Left extends AnyExpression, Right extends AnyExpression>(
   left: Left,
   right: Right & RequireComparable<Left, Right>,
 ) => orderedComparison(">", left, right);
-export const gte = <Left extends AnyExpression, Right extends AnyExpression>(
-  left: Left,
-  right: Right & RequireComparable<Left, Right>,
-) => orderedComparison(">=", left, right);
 export const lt = <Left extends AnyExpression, Right extends AnyExpression>(
   left: Left,
   right: Right & RequireComparable<Left, Right>,
@@ -560,19 +503,6 @@ export function or<First extends Predicate, Rest extends readonly Predicate[]>(
   };
 }
 
-export function not<E extends Predicate>(
-  expression: E,
-): Predicate<NullableOf<E>> {
-  return {
-    kind: "not",
-    expression,
-    resultType: {
-      affinity: "integer",
-      nullable: expression.resultType.nullable,
-    } as ExpressionResultType<"integer", NullableOf<E>>,
-  };
-}
-
 export function isNull(expression: SqlExpression): Predicate<false> {
   return {
     kind: "null-check",
@@ -588,77 +518,6 @@ export function isNotNull(expression: SqlExpression): Predicate<false> {
     expression,
     not: true,
     resultType: { affinity: "integer", nullable: false },
-  };
-}
-
-export function inList<
-  E extends SqlExpression,
-  Values extends readonly Exclude<ExpressionValue<E>, null>[],
->(
-  expression: E,
-  values: Values,
-): Predicate<Values extends readonly [] ? false : NullableOf<E>> {
-  const nullable =
-    expression.resultType.nullable || values.includes(null as never);
-  return {
-    kind: "in-list",
-    expression,
-    values: values as readonly SqlBinding[],
-    resultType: {
-      affinity: "integer",
-      nullable: values.length === 0 ? false : nullable,
-    } as ExpressionResultType<
-      "integer",
-      Values extends readonly [] ? false : NullableOf<E>
-    >,
-  } as Predicate<Values extends readonly [] ? false : NullableOf<E>>;
-}
-
-type MembershipNullable<
-  Left extends AnyExpression,
-  Right extends AnyExpression,
-> = OrNullable<NullableOf<Left>, NullableOf<Right>>;
-type MembershipValue<Nullable extends boolean> = Nullable extends true
-  ? boolean | null
-  : boolean;
-
-export function inSubquery<
-  Left extends AnyExpression,
-  Row extends object,
-  Columns extends Readonly<Record<string, AnyExpression>>,
->(
-  expression: Left,
-  relation: Relation<Row, Columns> &
-    RequireComparable<Left, Columns[keyof Columns]>,
-): InSubqueryExpression<
-  MembershipValue<MembershipNullable<Left, Columns[keyof Columns]>>,
-  ExpressionResultType<
-    "integer",
-    MembershipNullable<Left, Columns[keyof Columns]>
-  >
-> {
-  if (relation.fields.length !== 1) {
-    throw new DatabaseCompilerError(
-      "invalid_plan",
-      "inSubquery() requires a query with exactly one output field",
-    );
-  }
-  const field = relation.fields[0]!;
-  return {
-    kind: "in-subquery",
-    expression,
-    query: {
-      node: relation.node,
-      scope: relation.scope,
-      fields: relation.fields,
-    },
-    resultType: {
-      affinity: "integer",
-      nullable: expression.resultType.nullable || field.nullable,
-    } as ExpressionResultType<
-      "integer",
-      MembershipNullable<Left, Columns[keyof Columns]>
-    >,
   };
 }
 
@@ -742,69 +601,6 @@ export const div = <
   left: SqlExpression<A, L>,
   right: SqlExpression<B, R>,
 ) => arithmetic("/", left, right);
-
-type NullableValue<E extends AnyExpression, Value> =
-  NullableOf<E> extends true ? Value | null : Value;
-
-export function callFunction<
-  E extends SqlExpression<string | null>,
-  Result extends ExpressionResultType,
->(
-  name: "lower" | "upper" | "trim",
-  expression: SqlExpression<ExpressionValue<E>, Result> & E,
-): FunctionExpression<
-  NullableValue<E, string>,
-  ExpressionResultType<"text", NullableOf<E>>
->;
-export function callFunction<
-  E extends SqlExpression<string | ArrayBuffer | ArrayBufferView | null>,
-  Result extends ExpressionResultType,
->(
-  name: "length",
-  expression: SqlExpression<ExpressionValue<E>, Result> & E,
-): FunctionExpression<
-  NullableValue<E, number>,
-  ExpressionResultType<"integer", NullableOf<E>>
->;
-export function callFunction<
-  E extends SqlExpression<number | null>,
-  Result extends ExpressionResultType,
->(
-  name: "abs" | "round",
-  expression: SqlExpression<ExpressionValue<E>, Result> & E,
-): FunctionExpression<
-  NullableValue<E, number>,
-  ExpressionResultType<"numeric", NullableOf<E>>
->;
-export function callFunction(
-  name: SqlFunctionName,
-  expression: SqlExpression,
-): FunctionExpression {
-  let affinity: ExpressionAffinity;
-  switch (name) {
-    case "lower":
-    case "upper":
-    case "trim":
-      affinity = "text";
-      break;
-    case "length":
-      affinity = "integer";
-      break;
-    case "abs":
-    case "round":
-      affinity = "numeric";
-      break;
-  }
-  return {
-    kind: "function",
-    name,
-    arguments: [expression],
-    resultType: {
-      affinity,
-      nullable: expression.resultType.nullable,
-    },
-  };
-}
 
 type AllNullable<Expressions extends readonly SqlExpression[]> =
   Expressions extends readonly [

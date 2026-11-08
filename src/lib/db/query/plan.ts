@@ -11,8 +11,6 @@ import { DatabaseCompilerError } from "./errors";
 import {
   type AnyExpression,
   type ColumnExpression,
-  commonAffinity,
-  type CommonExpressionAffinity,
   createColumnExpression,
   createRelationScope,
   type ExpressionAffinity,
@@ -95,13 +93,6 @@ export interface JoinNode extends QuerySourceBase {
   readonly condition: Predicate;
 }
 
-export interface SemiJoinNode extends QuerySourceBase {
-  readonly kind: "semi-join" | "anti-join";
-  readonly left: QuerySource;
-  readonly right: QuerySource;
-  readonly condition: Predicate;
-}
-
 export interface AggregateNode extends QuerySourceBase {
   readonly kind: "aggregate";
   readonly input: QuerySource;
@@ -113,11 +104,6 @@ export interface AggregateNode extends QuerySourceBase {
     readonly name: string;
     readonly expression: SqlExpression;
   }[];
-}
-
-export interface DistinctNode extends QuerySourceBase {
-  readonly kind: "distinct";
-  readonly input: QuerySource;
 }
 
 export interface SortNode extends QuerySourceBase {
@@ -136,24 +122,14 @@ export interface LimitNode extends QuerySourceBase {
   readonly offset?: SqlExpression<number>;
 }
 
-export interface UnionNode extends QuerySourceBase {
-  readonly kind: "union";
-  readonly all: boolean;
-  readonly left: QuerySource;
-  readonly right: QuerySource;
-}
-
 export type LogicalQueryNode =
   | ScanNode
   | FilterNode
   | ProjectNode
   | JoinNode
-  | SemiJoinNode
   | AggregateNode
-  | DistinctNode
   | SortNode
-  | LimitNode
-  | UnionNode;
+  | LimitNode;
 
 function outputField(
   name: string,
@@ -371,60 +347,6 @@ export function join<
   return relation(node, scope, fields, columns);
 }
 
-export function semiJoin<
-  LR extends object,
-  LC extends Readonly<Record<string, AnyExpression>>,
-  RR extends object,
-  RC extends Readonly<Record<string, AnyExpression>>,
->(
-  left: Relation<LR, LC>,
-  right: Relation<RR, RC>,
-  condition: Predicate,
-): Relation<LR, LC> {
-  return membershipJoin("semi-join", left, right, condition);
-}
-
-export function antiJoin<
-  LR extends object,
-  LC extends Readonly<Record<string, AnyExpression>>,
-  RR extends object,
-  RC extends Readonly<Record<string, AnyExpression>>,
->(
-  left: Relation<LR, LC>,
-  right: Relation<RR, RC>,
-  condition: Predicate,
-): Relation<LR, LC> {
-  return membershipJoin("anti-join", left, right, condition);
-}
-
-function membershipJoin<
-  LR extends object,
-  LC extends Readonly<Record<string, AnyExpression>>,
-  RR extends object,
-  RC extends Readonly<Record<string, AnyExpression>>,
->(
-  kind: "semi-join" | "anti-join",
-  left: Relation<LR, LC>,
-  right: Relation<RR, RC>,
-  condition: Predicate,
-): Relation<LR, LC> {
-  const scope = createRelationScope();
-  const node: SemiJoinNode = {
-    kind,
-    left: sourceOf(left),
-    right: sourceOf(right),
-    condition,
-    scope,
-    fields: left.fields,
-  };
-  return relation(
-    node,
-    scope,
-    left.fields,
-    outputColumns(left.fields, scope) as unknown as LC,
-  );
-}
-
 type ExprMap = Readonly<Record<string, AnyExpression>>;
 type ExprMapRow<T extends ExprMap> = {
   readonly [K in keyof T]: ExpressionValue<T[K]>;
@@ -479,25 +401,6 @@ export function aggregate<
   const columns = outputColumns(fields, scope) as ExprMapColumns<G> &
     ExprMapColumns<A>;
   return relation(node, scope, fields, columns);
-}
-
-export function distinct<
-  Row extends object,
-  Columns extends Readonly<Record<string, AnyExpression>>,
->(input: Relation<Row, Columns>): Relation<Row, Columns> {
-  const scope = createRelationScope();
-  const node: DistinctNode = {
-    kind: "distinct",
-    input: sourceOf(input),
-    scope,
-    fields: input.fields,
-  };
-  return relation(
-    node,
-    scope,
-    input.fields,
-    outputColumns(input.fields, scope) as unknown as Columns,
-  );
 }
 
 export function sort<
@@ -563,89 +466,6 @@ export function limit<
     scope,
     input.fields,
     outputColumns(input.fields, scope) as unknown as Columns,
-  );
-}
-
-type UnionResultNullable<Left, Right> = true extends
-  ExpressionResultOf<Left>["nullable"] | ExpressionResultOf<Right>["nullable"]
-  ? true
-  : false;
-type UnionResultAffinity<Left, Right> = CommonExpressionAffinity<
-  ExpressionResultOf<Left>["affinity"],
-  ExpressionResultOf<Right>["affinity"]
->;
-type UnionRow<
-  LeftColumns extends Readonly<Record<string, AnyExpression>>,
-  RightColumns extends Readonly<Record<keyof LeftColumns, AnyExpression>>,
-> = {
-  readonly [K in keyof LeftColumns]:
-    ExpressionValue<LeftColumns[K]> | ExpressionValue<RightColumns[K]>;
-};
-type UnionColumns<
-  LeftColumns extends Readonly<Record<string, AnyExpression>>,
-  RightColumns extends Readonly<Record<keyof LeftColumns, AnyExpression>>,
-> = {
-  readonly [K in keyof LeftColumns]: ColumnExpression<
-    ExpressionValue<LeftColumns[K]> | ExpressionValue<RightColumns[K]>,
-    ExpressionResultType<
-      UnionResultAffinity<LeftColumns[K], RightColumns[K]>,
-      UnionResultNullable<LeftColumns[K], RightColumns[K]>
-    >
-  >;
-};
-
-export function union<
-  LeftRow extends object,
-  LeftColumns extends Readonly<Record<string, AnyExpression>>,
-  RightRow extends object,
-  RightColumns extends Readonly<Record<string, AnyExpression>> &
-    Readonly<Record<keyof LeftColumns, AnyExpression>>,
->(
-  left: Relation<LeftRow, LeftColumns>,
-  right: Relation<RightRow, RightColumns>,
-  all = false,
-): Relation<
-  UnionRow<LeftColumns, RightColumns>,
-  UnionColumns<LeftColumns, RightColumns>
-> {
-  if (
-    left.fields.length !== right.fields.length ||
-    left.fields.some((field, index) => field.name !== right.fields[index]?.name)
-  ) {
-    throw new DatabaseCompilerError(
-      "invalid_plan",
-      "UNION inputs must have matching output fields",
-    );
-  }
-  const fields = left.fields.map((field, index) => {
-    const rightField = right.fields[index]!;
-    const affinity = commonAffinity(field.affinity, rightField.affinity);
-    if (!affinity) {
-      throw new DatabaseCompilerError(
-        "invalid_plan",
-        `UNION field "${field.name}" has incompatible affinities ${field.affinity} and ${rightField.affinity}`,
-      );
-    }
-    return outputField(
-      field.name,
-      affinity,
-      field.nullable || rightField.nullable,
-    );
-  });
-  const scope = createRelationScope();
-  const node: UnionNode = {
-    kind: "union",
-    all,
-    left: sourceOf(left),
-    right: sourceOf(right),
-    scope,
-    fields,
-  };
-  return relation(
-    node,
-    scope,
-    fields,
-    outputColumns(fields, scope) as UnionColumns<LeftColumns, RightColumns>,
   );
 }
 

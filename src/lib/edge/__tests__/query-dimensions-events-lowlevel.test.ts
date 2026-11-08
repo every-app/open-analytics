@@ -29,14 +29,11 @@ import {
   decodeSessionPathDimensionCursor,
   queryDimensionFromD1,
   queryDimensionPageFromD1,
-  queryOverviewClientDimensionsFromD1,
-  queryOverviewGeoDimensionsFromD1,
   queryPageTabsFromD1,
   queryReferrersFromD1,
   querySessionBoundaryDimensionFromD1,
   querySessionPathDimensionFromD1,
   querySessionPathDimensionPageFromD1,
-  queryVisitDimensionFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/dimensions";
 import {
   decodeEventFieldCursor,
@@ -166,7 +163,7 @@ describe("edge query dimensions low-level coverage", () => {
     ]);
 
     await expect(
-      queryVisitDimensionFromD1(
+      queryDimensionFromD1(
         env,
         siteId,
         window,
@@ -532,123 +529,6 @@ describe("edge query dimensions low-level coverage", () => {
     } finally {
       database.close();
     }
-  });
-
-  it("normalizes client and geo dimensions with missing row values", async () => {
-    const { env, calls } = createD1Env([
-      [
-        {},
-        {
-          cardType: "browser",
-          value: "Safari",
-          views: 1,
-          sessions: 1,
-        },
-        {
-          cardType: "osVersion",
-          value: "15",
-          views: 1,
-          sessions: 1,
-        },
-        {
-          cardType: "osVersion",
-          value: "iOS",
-          views: 1,
-          sessions: 1,
-        },
-        {
-          cardType: "screenSize",
-          value: "390x844",
-          views: 1,
-          sessions: 1,
-        },
-      ],
-      [
-        {},
-        {
-          cardType: "continent",
-          value: "NA",
-          views: 1,
-          sessions: 1,
-          visitors: 1,
-        },
-      ],
-    ]);
-
-    await expect(
-      queryOverviewClientDimensionsFromD1(
-        env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        10,
-      ),
-    ).resolves.toMatchObject({
-      browser: [{ value: "Safari", views: 1, sessions: 1, visitors: 0 }],
-      osVersion: [
-        { value: "15", views: 1, sessions: 1, visitors: 0 },
-        { value: "iOS", views: 1, sessions: 1, visitors: 0 },
-      ],
-      screenSize: [{ value: "390x844", views: 1, sessions: 1, visitors: 0 }],
-    });
-    await expect(
-      queryOverviewGeoDimensionsFromD1(
-        env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        10,
-      ),
-    ).resolves.toMatchObject({
-      country: [],
-      continent: [{ value: "NA", label: "NA" }],
-      timezone: [],
-    });
-    expect(calls).toHaveLength(2);
-    for (const call of calls) {
-      expect(call.bindings).toEqual([...visitBindings(), 10]);
-      expect(call.sql).toContain("filtered_visits AS MATERIALIZED");
-      expect(call.sql).toContain("ranked_cards AS");
-    }
-    // D1 rejects compound SELECTs of more than five terms: one query's five
-    // geo cards are four UNION ALLs.
-    expect((calls[1].sql.match(/UNION ALL/g) ?? []).length).toBe(4);
-  });
-
-  it("uses final scoped dataset bindings for client and geo dimensions", async () => {
-    const { env, calls } = createD1Env([[], []]);
-    const prepared = prepareScopedQuery("overview", {
-      context: siteQueryContext(siteId, "private-dashboard"),
-      time: createQueryTime(
-        window.startMs,
-        window.endExclusiveMs,
-        "UTC",
-        window.nowMs,
-      ),
-      filters: filterFixture({ path: "/pricing" }),
-      scopePreference: "visitor",
-    } as never);
-
-    await queryOverviewClientDimensionsFromD1(
-      env,
-      siteId,
-      window,
-      prepared.filters!,
-      10,
-    );
-    await queryOverviewGeoDimensionsFromD1(
-      env,
-      siteId,
-      window,
-      prepared.filters!,
-      10,
-    );
-
-    expect(calls).toHaveLength(2);
-    expect(calls.every((call) => call.sql.includes("scope_final_visits"))).toBe(
-      true,
-    );
-    expect(calls.every((call) => call.bindings.length > 3)).toBe(true);
   });
 
   it("covers scoped, searched, unlimited, and empty legacy dimension readers", async () => {

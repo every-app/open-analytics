@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  canonicalizeFilterValue,
   compareFilterValues,
   filterPresenceMatches,
   filterValueInSet,
@@ -11,13 +10,12 @@ import {
 
 describe("shared filter value semantics", () => {
   it("uses the field registry for canonical text and direct-referrer values", () => {
-    expect(canonicalizeFilterValue("__direct__", "referrer.domain", "eq")).toBe(
-      "",
+    expect(filterValuesEqual("__direct__", "", "referrer.domain", "eq")).toBe(
+      true,
     );
     expect(
-      canonicalizeFilterValue("__direct__", "referrer.domain", "contains"),
-    ).toBe("__direct__");
-    expect(canonicalizeFilterValue(42, "client.screenWidth")).toBe(42);
+      filterValuesEqual("__direct__", "", "referrer.domain", "contains"),
+    ).toBe(false);
     expect(
       filterValuesEqual("Google.COM", "google.com", "referrer.domain"),
     ).toBe(true);

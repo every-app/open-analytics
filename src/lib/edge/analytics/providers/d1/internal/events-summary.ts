@@ -5,6 +5,14 @@ import {
   type QueryAudience,
 } from "@/lib/edge/analytics/contract";
 import type { Env } from "@/lib/edge/types";
+import {
+  decodePageCursor,
+  encodePageCursor,
+  hasExactKeys,
+  type PageResult,
+  pageResult,
+  paginationBindingForWindow,
+} from "@/lib/pagination";
 
 import type {
   DimensionRow,
@@ -14,14 +22,6 @@ import type {
   QueryWindow,
 } from "./core";
 import { buildEventFilteredSourceCte, queryD1All } from "./core";
-import {
-  decodePageCursor,
-  encodePageCursor,
-  hasExactKeys,
-  type PageResult,
-  pageResult,
-  paginationBindingForWindow,
-} from "./pagination";
 
 export interface EventTypeAggregateCursor {
   readonly views: number;

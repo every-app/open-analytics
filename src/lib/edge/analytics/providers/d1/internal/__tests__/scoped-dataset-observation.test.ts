@@ -3,7 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
 
 import { applyD1Limits } from "@/lib/db/__tests__/sqlite-d1";
-import { executeObservationFilterOnScopedDataset } from "@/lib/edge/analytics/providers/d1/internal/scoped-dataset";
+import { applyObservationFilterToScopedDataset } from "@/lib/edge/analytics/providers/d1/internal/scoped-dataset";
 import {
   buildSessionFactsSql,
   buildVisitorFactsSql,
@@ -23,7 +23,7 @@ const dataset = {
 
 describe("scoped dataset Observation Filter primitive", () => {
   it("projects a step onto the existing final relations and derives identities", () => {
-    const result = executeObservationFilterOnScopedDataset(
+    const result = applyObservationFilterToScopedDataset(
       dataset,
       parseFilterDsl('page.path eq "/pricing"', analyticsFilterRegistry),
       "funnel_step_0",
@@ -51,12 +51,12 @@ describe("scoped dataset Observation Filter primitive", () => {
       'event.name eq "signup"',
       analyticsFilterRegistry,
     );
-    const first = executeObservationFilterOnScopedDataset(
+    const first = applyObservationFilterToScopedDataset(
       dataset,
       filter,
       "step_a",
     );
-    const second = executeObservationFilterOnScopedDataset(
+    const second = applyObservationFilterToScopedDataset(
       dataset,
       filter,
       "step_b",
@@ -65,7 +65,7 @@ describe("scoped dataset Observation Filter primitive", () => {
     expect(first.ctes).not.toContain("step_b_");
     expect(second.ctes).not.toContain("step_a_");
     expect(() =>
-      executeObservationFilterOnScopedDataset(dataset, filter, "step;drop"),
+      applyObservationFilterToScopedDataset(dataset, filter, "step;drop"),
     ).toThrow("internal SQL identifier");
   });
 });

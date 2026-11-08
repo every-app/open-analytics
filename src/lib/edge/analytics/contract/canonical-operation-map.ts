@@ -339,7 +339,6 @@ export interface CanonicalOperationMap {
     readonly query: LegacyTeamDashboardQuery;
     readonly result: TeamDashboardData;
   };
-  readonly explore: { readonly query: BaseQuery; readonly result: never };
 }
 
 type MissingCanonicalOperations = Exclude<

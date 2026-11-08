@@ -4,15 +4,11 @@ import { EMPTY_FILTER_DOCUMENT } from "@/lib/edge/analytics/contract";
 import { siteQueryResponse } from "@/lib/edge/analytics/interfaces/dashboard/protocol/responses";
 import type * as QueryCore from "@/lib/edge/analytics/providers/d1/internal/core";
 import {
-  addDimensionValue,
-  finalizeDimensionBuckets,
   geoTabLabel,
   mapEventField,
   mapEventFieldValue,
   mapEventSummaryCards,
-  mapGeoRowsToFilterOptions,
   mapPageCardMetrics,
-  mapReferrerRowsToFilterOptions,
   percentChange,
   type QueryWindow,
   SHARE_TREND_OTHER_KEY,
@@ -20,12 +16,7 @@ import {
   SHARE_TREND_OTHER_TOKEN,
   sqlIntegerLiteral,
 } from "@/lib/edge/analytics/providers/d1/internal/core";
-import {
-  queryEventAnalyticsContextCardsFromD1,
-  queryEventDimensionRowsFromFilteredEvents,
-  queryEventGeoRowsFromFilteredEvents,
-  queryEventSessionBoundaryRowsFromFilteredEvents,
-} from "@/lib/edge/analytics/providers/d1/internal/events-context";
+import { queryEventAnalyticsContextCardsFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-context";
 import { queryEventTypeOverviewFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-overview";
 import {
   queryEventsSummaryFromD1,
@@ -246,80 +237,6 @@ describe("edge query events summary coverage", () => {
       summary: { events: 0, eventTypes: 0, sessions: 0, visitors: 0 },
       cards: { event: { name: [] } },
     });
-  });
-
-  it("keeps low-level context helpers compatible for targeted callers", async () => {
-    queryD1AllMock
-      .mockResolvedValueOnce([
-        { value: "", views: 1, sessions: 1, visitors: 1 },
-      ])
-      .mockResolvedValueOnce([
-        { value: "Chrome", views: 2, sessions: 1, visitors: 1 },
-      ])
-      .mockResolvedValueOnce([
-        {
-          value: "US::CA::California",
-          label: "California",
-          views: 2,
-          sessions: 1,
-          visitors: 1,
-        },
-      ])
-      .mockResolvedValueOnce([
-        { value: "/", views: 2, sessions: 1, visitors: 1 },
-      ])
-      .mockResolvedValueOnce([
-        { value: "/pricing", views: 2, sessions: 1, visitors: 1 },
-      ]);
-    const baseCte = "WITH filtered_events AS (SELECT * FROM source)";
-
-    await expect(
-      queryEventDimensionRowsFromFilteredEvents(
-        env,
-        baseCte,
-        [siteId],
-        "browser",
-        5,
-        { includeEmpty: true },
-      ),
-    ).resolves.toHaveLength(1);
-    await expect(
-      queryEventDimensionRowsFromFilteredEvents(
-        env,
-        baseCte,
-        [siteId],
-        "browser",
-        5,
-      ),
-    ).resolves.toMatchObject([{ value: "Chrome" }]);
-    await expect(
-      queryEventGeoRowsFromFilteredEvents(
-        env,
-        baseCte,
-        [siteId],
-        "country",
-        "region",
-        5,
-      ),
-    ).resolves.toMatchObject([{ label: "California" }]);
-    await expect(
-      queryEventSessionBoundaryRowsFromFilteredEvents(
-        env,
-        baseCte,
-        [siteId],
-        "entry",
-        5,
-      ),
-    ).resolves.toMatchObject([{ value: "/" }]);
-    await expect(
-      queryEventSessionBoundaryRowsFromFilteredEvents(
-        env,
-        baseCte,
-        [siteId],
-        "exit",
-        5,
-      ),
-    ).resolves.toMatchObject([{ value: "/pricing" }]);
   });
 
   it("queries custom event type aggregates with visit context filters", async () => {
@@ -661,16 +578,7 @@ describe("edge query core event helper coverage", () => {
     });
   });
 
-  it("finalizes dimension buckets and maps event summary cards", () => {
-    const buckets = new Map();
-    addDimensionValue(buckets, " signup ", "session-a", "visitor-a");
-    addDimensionValue(buckets, "signup", "session-a", "visitor-b");
-    addDimensionValue(buckets, "checkout", "session-b", "visitor-c");
-    addDimensionValue(buckets, "   ", "session-c", "visitor-d");
-
-    expect(finalizeDimensionBuckets(buckets, 1)).toEqual([
-      { value: "signup", views: 2, sessions: 1, visitors: 2 },
-    ]);
+  it("maps event summary cards", () => {
     expect(
       mapEventSummaryCards({
         event: {
@@ -698,29 +606,7 @@ describe("edge query core event helper coverage", () => {
     });
   });
 
-  it("maps filter options, page card math, geo labels, and response headers", async () => {
-    expect(
-      mapReferrerRowsToFilterOptions([
-        { referrer: "", views: 1, sessions: 1, visitors: 1 },
-        { referrer: " news.example ", views: 1, sessions: 1, visitors: 1 },
-        { referrer: "news.example", views: 1, sessions: 1, visitors: 1 },
-      ]),
-    ).toEqual([
-      { value: "__direct__", label: "__direct__" },
-      { value: "news.example", label: "news.example" },
-    ]);
-    expect(
-      mapGeoRowsToFilterOptions(
-        [{ value: "US::CA::California::", views: 1, sessions: 1, visitors: 1 }],
-        "region",
-      ),
-    ).toEqual([
-      {
-        value: "US::CA::California::",
-        label: "California",
-        group: "region",
-      },
-    ]);
+  it("maps page card math, geo labels, and response headers", async () => {
     expect(geoTabLabel("US::::::", "city")).toBe("US");
     expect(
       mapPageCardMetrics({

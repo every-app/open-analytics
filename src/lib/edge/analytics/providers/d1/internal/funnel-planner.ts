@@ -5,19 +5,19 @@ import {
   MAX_FUNNEL_STEPS,
   parseFunnelStepFilter,
 } from "@/lib/edge/analytics/contract";
-
 import {
   FUNNEL_SQL_CTES_PER_STEP,
   FUNNEL_SQL_MAX_BINDINGS as FUNNEL_CONFIG_MAX_SQL_BINDINGS,
   FUNNEL_SQL_MAX_LENGTH as FUNNEL_CONFIG_MAX_SQL_LENGTH,
   FUNNEL_SQL_STRUCTURAL_BUDGET,
   type FunnelSqlStructuralBudget,
-} from "./funnel-budget";
+} from "@/lib/edge/analytics/contract/funnel-budget";
+
 import type { ScopedDatasetSql, SqlBinding } from "./scoped-dataset";
 export { FUNNEL_SQL_CTES_PER_STEP, FUNNEL_SQL_STRUCTURAL_BUDGET };
 export type { FunnelSqlStructuralBudget };
 import {
-  executeObservationFilterOnScopedDataset,
+  applyObservationFilterToScopedDataset,
   type ScopedObservationFilterSql,
 } from "./scoped-dataset";
 /** D1's existing provider code treats one hundred parameters as the safe cap. */
@@ -337,7 +337,7 @@ function buildFunnelCteParts(
   }
 
   config.steps.forEach((step, stepIndex) => {
-    const filter = executeObservationFilterOnScopedDataset(
+    const filter = applyObservationFilterToScopedDataset(
       dataset,
       parseFunnelStepFilter(step),
       `funnel_step_${stepIndex}`,
@@ -465,5 +465,3 @@ ${resultSql(config.steps, parts.firstFilter)}`;
     shape,
   };
 }
-/** Alias kept concise for callers that use planner terminology. */
-export const planFunnelSql = buildFunnelSqlPlan;

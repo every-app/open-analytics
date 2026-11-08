@@ -26,19 +26,15 @@ import {
   mapDimensionRows,
   type QueryWindow,
 } from "@/lib/edge/analytics/providers/d1/internal/core";
+import { queryDimensionFromD1 } from "@/lib/edge/analytics/providers/d1/internal/dimensions";
 import {
   queryLatestSiteActivity,
   queryOverviewFromD1,
-  queryTrendFromD1,
+  queryTrendAggregate,
 } from "@/lib/edge/analytics/providers/d1/internal/overview";
 import {
   decodePagesCursor,
-  queryDimensionAggregate,
   queryPageCardMetricsFromD1,
-  queryPageCardTitlesFromD1,
-  queryPageCardTrendFromD1,
-  queryPagesAggregate,
-  queryPagesFromD1,
   queryPagesPageFromD1,
   queryPagesWithTabsFromD1,
   queryPageTabsAggregate,
@@ -47,7 +43,6 @@ import {
 import { queryPagesDashboard } from "@/lib/edge/analytics/providers/d1/internal/pages-dashboard";
 import {
   decodeReferrersCursor,
-  queryReferrerAggregate,
   queryReferrersPageFromD1,
   queryTopReferrersFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/referrers";
@@ -748,194 +743,6 @@ describe("edge pages D1 queries", () => {
     }
   });
 
-  it("returns empty title and trend queries without touching D1 when pathnames are empty", async () => {
-    const { env, prepare } = createD1Env([]);
-
-    await expect(
-      queryPageCardTitlesFromD1(
-        env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        ["", "  "],
-        3,
-      ),
-    ).resolves.toEqual([]);
-    await expect(
-      queryPageCardTrendFromD1(
-        env,
-        siteId,
-        window,
-        "hour",
-        EMPTY_FILTER_DOCUMENT,
-        [],
-      ),
-    ).resolves.toEqual([]);
-
-    expect(prepare).not.toHaveBeenCalled();
-  });
-
-  it("maps page card titles and hourly trend buckets with path filters", async () => {
-    const { env, calls } = createD1Env([
-      [
-        { pathname: "/pricing", title: "Pricing", views: "6" },
-        { pathname: "/pricing", title: "Plans", views: 2 },
-      ],
-      [
-        { pathname: "/pricing", bucket: "0", views: "3", visitors: "2" },
-        { pathname: "/pricing", bucket: 1, views: 5, visitors: 4 },
-      ],
-    ]);
-
-    await expect(
-      queryPageCardTitlesFromD1(
-        env,
-        siteId,
-        window,
-        filterFixture({ clientDeviceType: "desktop" }),
-        ["/pricing"],
-        2,
-      ),
-    ).resolves.toEqual([
-      { pathname: "/pricing", title: "Pricing", views: 6 },
-      { pathname: "/pricing", title: "Plans", views: 2 },
-    ]);
-    await expect(
-      queryPageCardTrendFromD1(
-        env,
-        siteId,
-        window,
-        "hour",
-        filterFixture({ clientDeviceType: "desktop" }),
-        ["/pricing"],
-      ),
-    ).resolves.toEqual([
-      {
-        pathname: "/pricing",
-        bucket: 0,
-        timestampMs: Date.UTC(2026, 0, 2, 1),
-        views: 3,
-        visitors: 2,
-      },
-      {
-        pathname: "/pricing",
-        bucket: 1,
-        timestampMs: Date.UTC(2026, 0, 2, 2),
-        views: 5,
-        visitors: 4,
-      },
-    ]);
-
-    expect(calls[0].bindings).toEqual([
-      ...visitBindings(),
-      "desktop",
-      window.startMs,
-      window.endExclusiveMs,
-      "desktop",
-      "/pricing",
-      2,
-    ]);
-    expect(calls[1].sql).toContain("CASE WHEN startedAt >=");
-    expect(calls[1].bindings).toEqual([
-      ...visitBindings(),
-      "desktop",
-      window.startMs,
-      window.endExclusiveMs,
-      "desktop",
-      "/pricing",
-    ]);
-  });
-
-  it("normalizes sparse page card title and trend rows", async () => {
-    const { env } = createD1Env([
-      [
-        {
-          pathname: null,
-          title: undefined,
-          views: null,
-        },
-      ],
-      [
-        {
-          pathname: null,
-          bucket: null,
-          views: undefined,
-          visitors: null,
-        },
-      ],
-    ]);
-
-    await expect(
-      queryPageCardTitlesFromD1(
-        env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        ["/pricing"],
-        3,
-      ),
-    ).resolves.toEqual([{ pathname: "", title: "", views: 0 }]);
-    await expect(
-      queryPageCardTrendFromD1(
-        env,
-        siteId,
-        window,
-        "hour",
-        EMPTY_FILTER_DOCUMENT,
-        ["/pricing"],
-      ),
-    ).resolves.toEqual([
-      {
-        pathname: "",
-        bucket: 0,
-        timestampMs: Date.UTC(2026, 0, 2, 1),
-        views: 0,
-        visitors: 0,
-      },
-    ]);
-  });
-
-  it("uses final scoped dataset bindings for page card queries", async () => {
-    const { env, calls } = createD1Env([
-      [{ pathname: "/pricing", title: "Pricing", views: 3 }],
-      [{ pathname: "/pricing", bucket: 0, views: 2, visitors: 1 }],
-    ]);
-    const prepared = prepareScopedQuery("pages", {
-      context: siteQueryContext("site-pages", "private-dashboard"),
-      time: createQueryTime(
-        window.startMs,
-        window.endExclusiveMs,
-        "UTC",
-        window.nowMs,
-      ),
-      filters: filterFixture({ path: "/pricing" }),
-      scopePreference: "visitor",
-    } as never);
-
-    await queryPageCardTitlesFromD1(
-      env,
-      siteId,
-      window,
-      prepared.filters!,
-      ["/pricing"],
-      3,
-    );
-    await queryPageCardTrendFromD1(
-      env,
-      siteId,
-      window,
-      "hour",
-      prepared.filters!,
-      ["/pricing"],
-    );
-
-    expect(calls).toHaveLength(2);
-    expect(calls[0]?.bindings.length).toBeGreaterThan(3);
-    expect(calls[1]?.bindings.length).toBeGreaterThan(3);
-    expect(calls[0]?.sql).toContain("scope_final_visits");
-    expect(calls[1]?.sql).toContain("scope_final_visits");
-  });
-
   it("uses prepared scoped datasets for top pages and dashboard comparisons", async () => {
     const prepared = prepareScopedQuery("pages", {
       context: siteQueryContext("site-pages", "private-dashboard"),
@@ -1192,35 +999,6 @@ describe("edge paginated page and referrer readers", () => {
   });
 
   it("keeps the legacy aggregate wrappers and enriches non-empty dashboard pages", async () => {
-    const pageRow = {
-      pathname: "/docs",
-      queryValue: "",
-      hashValue: "",
-      views: 4,
-      sessions: 3,
-    };
-    await expect(
-      queryPagesFromD1(
-        createD1Env([[pageRow]]).env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        10,
-        false,
-      ),
-    ).resolves.toEqual([
-      { pathname: "/docs", query: "", hash: "", views: 4, sessions: 3 },
-    ]);
-    await expect(
-      queryPagesAggregate(
-        createD1Env([[pageRow]]).env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        10,
-        false,
-      ),
-    ).resolves.toHaveLength(1);
     await expect(
       queryPageTabsAggregate(
         createD1Env([
@@ -1234,18 +1012,6 @@ describe("edge paginated page and referrer readers", () => {
     ).resolves.toMatchObject({
       path: [{ value: "/docs", views: 4, sessions: 2 }],
     });
-    await expect(
-      queryReferrerAggregate(
-        createD1Env([[{ referrer: "google.com", views: 4, sessions: 2 }]]).env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        10,
-        false,
-      ),
-    ).resolves.toEqual([
-      { referrer: "google.com", views: 4, sessions: 2, visitors: 0 },
-    ]);
     await expect(
       queryTopReferrersFromD1(
         createD1Env([[{ referrer: "news.example", views: 3, sessions: 2 }]])
@@ -1806,7 +1572,7 @@ describe("edge pages handlers", () => {
       ],
     ]);
 
-    const rows = await queryDimensionAggregate(
+    const rows = await queryDimensionFromD1(
       env,
       siteId,
       window,
@@ -2380,7 +2146,9 @@ describe("edge overview D1 queries and handlers", () => {
         visitors: 1,
       });
       await expect(
-        queryTrendFromD1(sqlite.env, siteId, window, "hour", filters),
+        queryTrendAggregate(sqlite.env, siteId, window, "hour", filters).then(
+          ({ value }) => value,
+        ),
       ).resolves.toEqual([
         expect.objectContaining({
           bucket: 0,
@@ -2521,7 +2289,9 @@ describe("edge overview D1 queries and handlers", () => {
     ]);
 
     await expect(
-      queryTrendFromD1(env, siteId, window, "hour", filters),
+      queryTrendAggregate(env, siteId, window, "hour", filters).then(
+        ({ value }) => value,
+      ),
     ).resolves.toEqual([
       {
         bucket: 0,
@@ -2631,13 +2401,13 @@ describe("edge overview D1 queries and handlers", () => {
       );
 
       await expect(
-        queryTrendFromD1(
+        queryTrendAggregate(
           env,
           siteId,
           window,
           "hour",
           filterFixture({ path: "/docs" }),
-        ),
+        ).then(({ value }) => value),
       ).resolves.toEqual([
         {
           bucket: 1,

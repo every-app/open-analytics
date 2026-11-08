@@ -1,5 +1,12 @@
 import { type QueryAudience } from "@/lib/edge/analytics/contract";
 import type { Env } from "@/lib/edge/types";
+import {
+  decodePageCursor,
+  encodePageCursor,
+  hasExactKeys,
+  type PageResult,
+  pageResult,
+} from "@/lib/pagination";
 
 import type { FilterDocument, QueryWindow, ReferrerRow } from "./core";
 import {
@@ -11,13 +18,6 @@ import {
 import type { D1ReadDiagnostics } from "./diagnostics";
 import { queryReferrersFromD1 } from "./dimensions";
 import { pageCursorBinding } from "./pages";
-import {
-  decodePageCursor,
-  encodePageCursor,
-  hasExactKeys,
-  type PageResult,
-  pageResult,
-} from "./pagination";
 import {
   type BoundSql,
   dailyDimensionRows,
@@ -45,27 +45,6 @@ function referrerAggregateCursor(
     typeof candidate.referrer === "string"
     ? (candidate as unknown as ReferrerAggregateCursor)
     : null;
-}
-export async function queryReferrerAggregate(
-  env: Env,
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
-  limit: number,
-  includeFullUrl: boolean,
-  diagnostics?: D1ReadDiagnostics,
-  search?: string,
-): Promise<ReferrerRow[]> {
-  return queryReferrersFromD1(
-    env,
-    siteId,
-    window,
-    filters,
-    limit,
-    includeFullUrl,
-    diagnostics,
-    search,
-  );
 }
 /** Explicit Top-N reader for reports/cards. It intentionally has no cursor. */
 export async function queryTopReferrersFromD1(

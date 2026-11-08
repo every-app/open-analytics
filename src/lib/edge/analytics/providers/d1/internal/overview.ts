@@ -3,7 +3,6 @@ import type { Env } from "@/lib/edge/types";
 import { hasPagePathFilter } from "@/lib/filter-contract/filters";
 
 import type {
-  ClientDimensionKey,
   FilterDocument,
   Interval,
   OverviewAggregateRow,
@@ -24,10 +23,6 @@ import {
   type D1ReadDiagnostics,
   recordScopedFilterDiagnostics,
 } from "./diagnostics";
-import {
-  queryOverviewClientDimensionsFromD1,
-  queryOverviewGeoDimensionsFromD1,
-} from "./dimensions";
 import {
   queryOverviewForSitesFromRollups,
   queryTrendForSitesFromRollups,
@@ -133,23 +128,6 @@ FROM ${metricSource}
     durationViews: Number(row.durationViews ?? 0),
     ...(withScrollDepth ? { scrollDepth: scrollDepthOf(row.scrollDepth) } : {}),
   };
-}
-export async function queryTrendFromD1(
-  env: Env,
-  siteId: string,
-  window: QueryWindow,
-  interval: Interval,
-  filters: FilterDocument,
-  diagnostics?: D1ReadDiagnostics,
-): Promise<TrendAggregateRow[]> {
-  return queryTrendBucketsFromD1(
-    env,
-    siteId,
-    window,
-    buildTimeBuckets(window, interval),
-    filters,
-    diagnostics,
-  );
 }
 /**
  * Trend rows for the page views in `window`, counted into `buckets`, which
@@ -515,36 +493,3 @@ export async function queryTrendAggregate(
     diagnosticSource: "raw",
   };
 }
-export async function buildOverviewClientDimensionTabs(
-  env: Env,
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
-  limit: number,
-) {
-  return queryOverviewClientDimensionsFromD1(
-    env,
-    siteId,
-    window,
-    filters,
-    limit,
-  );
-}
-export async function buildOverviewGeoDimensionTabs(
-  env: Env,
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
-  limit: number,
-) {
-  return queryOverviewGeoDimensionsFromD1(env, siteId, window, filters, limit);
-}
-export type OverviewPageTabKey =
-  "path" | "title" | "hostname" | "entry" | "exit";
-export type OverviewSourceTabKey = "domain" | "link";
-export type OverviewClientTabKey = Exclude<
-  ClientDimensionKey,
-  "operatingSystem"
->;
-export type OverviewGeoTabKey =
-  "country" | "region" | "city" | "continent" | "timezone";

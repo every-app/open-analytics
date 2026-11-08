@@ -25,8 +25,6 @@ import {
   parseWindow,
 } from "@/lib/edge/analytics/interfaces/dashboard/protocol/parsers";
 import {
-  addDimensionValue,
-  addGeoDimensionValue,
   appendSqlConditions,
   buildEventFilterSql,
   buildTimeBuckets,
@@ -36,27 +34,20 @@ import {
   compileScopedDatasetSql,
   customEventJsonTypeCode,
   customEventJsonTypeLabel,
-  dedupeFilterOptions,
   DIRECT_REFERRER_FILTER_VALUE,
   emptyOverviewAggregateRow,
   eventRecordOrderBy,
-  finalizeDimensionBuckets,
-  finalizeGeoDimensionBuckets,
   formatPageLabel,
   geoTabLabel,
   intervalBucketMs,
-  mapDimensionRowsToFilterOptions,
   mapEventAnalyticsContextCards,
   mapEventFieldValue,
   mapEventRecord,
-  mapGeoRowsToFilterOptions,
   mapGeoTabs,
   mapOverviewAggregate,
   mapPages,
-  mapReferrerRowsToFilterOptions,
   mapReferrers,
   mapTabs,
-  mapTrendRows,
   scopedDatasetFor,
   shareTrendSeriesKey,
   sourceLabel,
@@ -500,37 +491,7 @@ describe("edge query core mappers", () => {
     });
   });
 
-  it("maps trend rows and tab rows", () => {
-    expect(
-      mapTrendRows(
-        [
-          {
-            bucket: 2,
-            timestampMs: 123,
-            views: 8,
-            visitors: 5,
-            sessions: 2,
-            bounces: 1,
-            totalDuration: 999,
-            durationViews: 0,
-          },
-        ],
-        "detail",
-      ),
-    ).toEqual([
-      {
-        bucket: 2,
-        timestampMs: 123,
-        views: 8,
-        visitors: 5,
-        sessions: 2,
-        bounces: 1,
-        totalDurationMs: 999,
-        avgDurationMs: 500,
-        source: "detail",
-      },
-    ]);
-
+  it("maps tab rows", () => {
     expect(
       mapTabs([
         { value: "/docs", views: 7, sessions: 4, visitors: 3 },
@@ -542,7 +503,7 @@ describe("edge query core mappers", () => {
     ]);
   });
 
-  it("maps core rows, filter options, and geo dimension buckets", () => {
+  it("maps core rows", () => {
     expect(emptyOverviewAggregateRow()).toEqual({
       views: 0,
       sessions: 0,
@@ -582,38 +543,9 @@ describe("edge query core mappers", () => {
         { referrer: "news.example", views: 4, sessions: 2, visitors: 2 },
       ]),
     ).toEqual([{ referrer: "news.example", views: 4, sessions: 2 }]);
-    expect(
-      dedupeFilterOptions([
-        { value: "", label: "skip" },
-        { value: " alpha ", label: " " },
-        { value: "alpha", label: "duplicate" },
-        { value: "beta", label: "Beta", group: "country" },
-      ]),
-    ).toEqual([
-      { value: "alpha", label: "alpha" },
-      { value: "beta", label: "Beta", group: "country" },
-    ]);
-    expect(
-      mapDimensionRowsToFilterOptions([
-        { value: " Chrome ", views: 2, sessions: 1, visitors: 1 },
-        { value: "Chrome", views: 1, sessions: 1, visitors: 1 },
-      ]),
-    ).toEqual([{ value: "Chrome", label: "Chrome" }]);
-
-    const geoBuckets = new Map();
-    addGeoDimensionValue(geoBuckets, " US ", "session-a", "visitor-a");
-    addGeoDimensionValue(geoBuckets, "US", "session-b", "visitor-b");
-    addGeoDimensionValue(geoBuckets, "CA", "session-c", "visitor-c");
-    addGeoDimensionValue(geoBuckets, " ", "session-d", "visitor-d");
-    expect(
-      finalizeGeoDimensionBuckets(geoBuckets, 2, (value) => `Label ${value}`),
-    ).toEqual([
-      { value: "US", label: "Label US", views: 2, sessions: 2, visitors: 2 },
-      { value: "CA", label: "Label CA", views: 1, sessions: 1, visitors: 1 },
-    ]);
   });
 
-  it("maps defensive event values, filter options, geo labels, and tab ordering", () => {
+  it("maps defensive event values and geo labels", () => {
     expect([
       mapEventFieldValue({
         valueType: 1,
@@ -686,98 +618,9 @@ describe("edge query core mappers", () => {
       },
     ]);
 
-    expect(
-      dedupeFilterOptions([
-        { value: null as unknown as string, label: "empty" },
-        { value: " alpha ", label: undefined as unknown as string },
-        { value: "alpha", label: "duplicate" },
-        { value: " beta ", label: " " },
-      ]),
-    ).toEqual([
-      { value: "alpha", label: "alpha" },
-      { value: "beta", label: "beta" },
-    ]);
-    expect(
-      mapReferrerRowsToFilterOptions([
-        { referrer: "", views: 1, sessions: 1, visitors: 1 },
-        { referrer: "   ", views: 1, sessions: 1, visitors: 1 },
-        { referrer: " news.example ", views: 1, sessions: 1, visitors: 1 },
-        { referrer: "news.example", views: 1, sessions: 1, visitors: 1 },
-      ]),
-    ).toEqual([
-      {
-        value: DIRECT_REFERRER_FILTER_VALUE,
-        label: DIRECT_REFERRER_FILTER_VALUE,
-      },
-      { value: "news.example", label: "news.example" },
-    ]);
-
-    expect(
-      mapGeoRowsToFilterOptions(
-        [
-          { value: "US", views: 1, sessions: 1, visitors: 1 },
-          { value: "::::", views: 1, sessions: 1, visitors: 1 },
-        ],
-        "country",
-      ),
-    ).toEqual([
-      { value: "US", label: "US", group: "country" },
-      { value: "::::", label: "::::", group: "country" },
-    ]);
-    expect(
-      mapGeoRowsToFilterOptions(
-        [
-          { value: "US::CA", views: 1, sessions: 1, visitors: 1 },
-          { value: "US::CA::California", views: 1, sessions: 1, visitors: 1 },
-        ],
-        "region",
-      ),
-    ).toEqual([
-      { value: "US::CA", label: "US", group: "region" },
-      {
-        value: "US::CA::California",
-        label: "California",
-        group: "region",
-      },
-    ]);
-    expect(
-      mapGeoRowsToFilterOptions(
-        [
-          { value: "US::Austin", views: 1, sessions: 1, visitors: 1 },
-          {
-            value: "US::CA::California::San Francisco",
-            views: 1,
-            sessions: 1,
-            visitors: 1,
-          },
-        ],
-        "city",
-      ),
-    ).toEqual([
-      { value: "US::Austin", label: "Austin", group: "city" },
-      {
-        value: "US::CA::California::San Francisco",
-        label: "San Francisco",
-        group: "city",
-      },
-    ]);
     expect(geoTabLabel("US::CA", "region")).toBe("US");
     expect(geoTabLabel("US::Austin", "city")).toBe("Austin");
     expect(geoTabLabel("unknown", "timezone")).toBe("unknown");
-
-    const buckets = new Map();
-    addDimensionValue(buckets, "beta", "session-a", "visitor-a");
-    addDimensionValue(buckets, "alpha", "session-b", "visitor-b");
-    addDimensionValue(buckets, "gamma", "session-c", "visitor-c");
-    addDimensionValue(buckets, "gamma", "session-c", "visitor-c");
-    addDimensionValue(buckets, "gamma", "session-d", "visitor-c");
-    addDimensionValue(buckets, "   ", "session-e", "visitor-e");
-
-    expect(finalizeDimensionBuckets(buckets, 10)).toEqual([
-      { value: "gamma", views: 3, sessions: 2, visitors: 1 },
-      { value: "alpha", views: 1, sessions: 1, visitors: 1 },
-      { value: "beta", views: 1, sessions: 1, visitors: 1 },
-    ]);
   });
 
   it("maps event records and analytics context cards", () => {

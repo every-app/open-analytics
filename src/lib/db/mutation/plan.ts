@@ -9,7 +9,7 @@ import {
   type ScopedColumns,
   type SqlExpression,
 } from "@/lib/db/query/expression";
-import type { InsertRow, QuerySource } from "@/lib/db/query/plan";
+import type { InsertRow } from "@/lib/db/query/plan";
 import type { GeneratedSchemaTable } from "@/lib/db/schema";
 import type {
   SchemaColumnReference,
@@ -20,11 +20,6 @@ import type { DatabaseBinding } from "@/lib/db/types";
 import type { SqlBinding } from "@/lib/db/types";
 
 export type MutationValue<T> = T | SqlExpression<T>;
-
-export interface MutationResultContract {
-  readonly kind: "mutation-result";
-  readonly description: string;
-}
 
 export interface InsertConflict {
   readonly target: readonly string[];
@@ -40,9 +35,8 @@ export interface InsertMutation<
 > {
   readonly kind: "insert";
   readonly table: T;
-  readonly rows?: readonly (readonly SqlExpression[])[];
+  readonly rows: readonly (readonly SqlExpression[])[];
   readonly columns: readonly string[];
-  readonly source?: QuerySource;
   readonly orIgnore: boolean;
   readonly conflict?: InsertConflict;
 }
@@ -176,14 +170,6 @@ export function onConflictDoUpdate<T extends GeneratedSchemaTable>(
   };
 }
 
-export function insertFromQuery<T extends GeneratedSchemaTable>(
-  table: T,
-  columns: readonly (keyof T["columns"] & string)[],
-  query: QuerySource,
-): InsertMutation<T> {
-  return { kind: "insert", table, columns, source: query, orIgnore: false };
-}
-
 export type UpdateSet<T extends SchemaTableReference> = Partial<{
   readonly [K in keyof T["columns"]]: MutationValue<
     SchemaColumnValue<T["columns"][K]>
@@ -267,22 +253,4 @@ export interface CompiledMutation {
   readonly bindings?: readonly DatabaseBinding[];
   readonly tag?: string;
   readonly kind: "mutation";
-}
-
-export type UnsafeRawMutation = CompiledMutation & {
-  readonly resultContract: MutationResultContract;
-};
-
-export function mutationResultContract(
-  description: string,
-): MutationResultContract {
-  return { kind: "mutation-result", description };
-}
-
-export function unsafeRawMutation(
-  sql: string,
-  bindings: readonly DatabaseBinding[],
-  resultContract: MutationResultContract,
-): UnsafeRawMutation {
-  return { sql, bindings: [...bindings], kind: "mutation", resultContract };
 }

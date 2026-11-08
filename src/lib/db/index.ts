@@ -13,7 +13,6 @@ export type { CompiledMutation, MutationNode } from "./mutation/plan";
 export {
   deleteFrom,
   insert,
-  insertFromQuery,
   insertOrIgnore,
   onConflictDoNothing,
   onConflictDoUpdate,
@@ -33,7 +32,6 @@ export {
   add,
   and,
   avg,
-  callFunction,
   caseWhen,
   coalesce,
   count,
@@ -42,9 +40,6 @@ export {
   eq,
   excluded,
   gt,
-  gte,
-  inList,
-  inSubquery,
   isNotNull,
   isNull,
   lt,
@@ -53,7 +48,6 @@ export {
   min,
   mul,
   neq,
-  not,
   or,
   param,
   scalar,
@@ -61,19 +55,14 @@ export {
   sum,
   unixepoch,
 } from "./query/expression";
-export { lowerLogicalPlan } from "./query/physical-plan";
 export {
   aggregate,
-  antiJoin,
-  distinct,
   filter,
   join,
   limit,
   project,
   scan,
-  semiJoin,
   sort,
-  union,
 } from "./query/plan";
 export type { GeneratedSchemaObject, GeneratedSchemaTable } from "./schema";
 export { schema } from "./schema";
