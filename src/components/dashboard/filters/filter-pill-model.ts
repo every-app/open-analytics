@@ -10,6 +10,7 @@ import {
   type FilterDocument,
   FilterOperator,
   type FilterValue,
+  PROPERTY_FIELD,
 } from "@/lib/filter-contract";
 import { resolveCountryLabel } from "@/lib/i18n/code-labels";
 import type { Locale } from "@/lib/i18n/config";
@@ -185,7 +186,7 @@ export function filterPills(
       return;
     }
     pills.push({
-      key: `${index}:${field ?? "event.payload"}`,
+      key: `${index}:${field ?? PROPERTY_FIELD}`,
       label: field
         ? conditionText(condition, field, messages, locale)
         : describeFilterCondition(condition, analyticsFilterRegistry, messages),

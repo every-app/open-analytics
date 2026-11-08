@@ -50,8 +50,8 @@ scoped_summary AS (
   SELECT
     count(*) AS events,
     0 AS eventTypes,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors,
+    count(DISTINCT session_id) AS sessions,
+    count(DISTINCT visitor_id) AS visitors,
     'page' AS cardType,
     pathname AS value
   FROM filtered_events
@@ -61,8 +61,8 @@ scoped_summary AS (
   SELECT
     count(*) AS events,
     0 AS eventTypes,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors,
+    count(DISTINCT session_id) AS sessions,
+    count(DISTINCT visitor_id) AS visitors,
     'country' AS cardType,
     country AS value
   FROM filtered_events
@@ -72,8 +72,8 @@ scoped_summary AS (
   SELECT
     count(*) AS events,
     0 AS eventTypes,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors,
+    count(DISTINCT session_id) AS sessions,
+    count(DISTINCT visitor_id) AS visitors,
     'device' AS cardType,
     device_type AS value
   FROM filtered_events
@@ -83,8 +83,8 @@ scoped_summary AS (
   SELECT
     count(*) AS events,
     0 AS eventTypes,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors,
+    count(DISTINCT session_id) AS sessions,
+    count(DISTINCT visitor_id) AS visitors,
     'browser' AS cardType,
     browser AS value
   FROM filtered_events
@@ -98,8 +98,8 @@ overview_card_rows AS (
   SELECT
     count(*) AS events,
     count(DISTINCT event_name) AS eventTypes,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors,
+    count(DISTINCT session_id) AS sessions,
+    count(DISTINCT visitor_id) AS visitors,
     'summary' AS cardType,
     NULL AS value
   FROM filtered_events

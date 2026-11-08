@@ -56,7 +56,7 @@ export async function queryFilterValuesPageFromD1(
   const definition = analyticsFilterDefinition(field);
   if (
     !definition ||
-    definition.source === FilterFieldSource.Payload ||
+    definition.source === FilterFieldSource.Property ||
     !definition.audiences.has(audience) ||
     definition.suggestionMode === "none"
   ) {

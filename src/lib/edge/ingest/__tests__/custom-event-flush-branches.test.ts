@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createDatabaseRuntime } from "@/lib/db";
 import { flushCustomEventRow } from "@/lib/edge/ingest/custom-event-flush";
-import { hashCustomEventStringValue } from "@/lib/edge/ingest/custom-event-json";
 import type { IngestFlushContext } from "@/lib/edge/ingest/flush-types";
 import type { BufferedCustomEventRow } from "@/lib/edge/ingest/types";
 import type { InvocationPerformanceCounter } from "@/lib/edge/observability/logger";
@@ -28,7 +27,7 @@ function bufferedCustomEvent(
     receivedAt: NOW,
     sequence: 7,
     eventName: "Signup",
-    eventDataJson: '{"plan":"pro"}',
+    propertiesJson: '{"plan":"pro"}',
     revenueAmount: null,
     revenueCurrency: null,
     dirty: 1,
@@ -40,7 +39,7 @@ function bufferedCustomEvent(
 
 function createFlushContext(options: {
   eventExists?: boolean;
-  dictionaryIds?: Record<string, number>;
+  eventNameIds?: Record<string, number>;
   maxQueries?: number;
 }): IngestFlushContext & {
   calls: D1Call[];
@@ -56,10 +55,7 @@ function createFlushContext(options: {
   const calls: D1Call[] = [];
   const sqlRun = vi.fn(() => 1);
   const batch = vi.fn(async () => []);
-  const dictionaryIds = new Map<string, number>();
-  for (const [key, value] of Object.entries(options.dictionaryIds ?? {})) {
-    dictionaryIds.set(key, value);
-  }
+  const eventNameIds = new Map(Object.entries(options.eventNameIds ?? {}));
 
   const prepare = vi.fn((sql: string) => ({
     bind: vi.fn((...bindings: Binding[]) => {
@@ -71,11 +67,6 @@ function createFlushContext(options: {
             return options.eventExists === false ? null : { ok: 1 };
           }
           if (sql.includes("FROM custom_event_names")) return { id: 10 };
-          if (sql.includes("FROM custom_event_json_keys")) return { id: 20 };
-          if (sql.includes("FROM custom_event_json_paths")) {
-            const path = String(bindings[1] ?? "");
-            return { id: path === "/" ? 30 : 31 };
-          }
           return null;
         }),
       };
@@ -87,7 +78,7 @@ function createFlushContext(options: {
       createDatabaseRuntime({ prepare, batch } as unknown as D1Database),
       options.maxQueries ?? 1000,
     ),
-    dictionaryIds,
+    eventNameIds,
     sqlAll: vi.fn(() => []),
     // The site's key, stored by an earlier flush.
     sqlOne: vi.fn(() => ({ sitePk: 1 })) as IngestFlushContext["sqlOne"],
@@ -123,90 +114,46 @@ describe("custom event flush", () => {
     vi.restoreAllMocks();
   });
 
-  it("flushes custom events and resolves dictionaries", async () => {
+  it("writes the event and its flat properties in one batch, once its name has an id", async () => {
     const context = createFlushContext({});
     const row = bufferedCustomEvent({
+      propertiesJson: '{"plan":"pro","seats":"3"}',
       revenueAmount: 15.99,
       revenueCurrency: "USD",
     });
 
     await expect(flushCustomEventRow(context, row)).resolves.toBe(true);
 
+    const createdAt = Math.floor(NOW / 1000);
+    expect(context.calls[0]).toMatchObject({
+      sql: expect.stringContaining("INSERT INTO custom_event_names"),
+      bindings: [1, "Signup", createdAt, createdAt],
+    });
     expect(context.batch).toHaveBeenCalledTimes(1);
-    expect(context.batch.mock.calls[0]![0]).toHaveLength(4);
-    const batchCalls = context.calls.slice(-5, -1);
+    const batchCalls = context.calls.slice(-3, -1);
     expect(
       batchCalls.map(
         (call) => call.sql.match(/INSERT OR IGNORE INTO ([a-z_]+)/u)?.[1],
       ),
-    ).toEqual([
-      "custom_events",
-      "custom_event_json_nodes",
-      "custom_event_json_nodes",
-      "custom_event_json_values",
-    ]);
-    const createdAt = Math.floor(NOW / 1000);
+    ).toEqual(["custom_events", "custom_event_properties"]);
     expect(batchCalls.map((call) => call.bindings)).toEqual([
       [
         "event-1",
-        "site-1",
         1,
         "visit-1",
         10,
         row.occurredAt,
         NOW,
         7,
-        2,
-        1,
         15.99,
         "USD",
         createdAt,
         1,
         "visit-1",
       ],
-      [1, null, null, 30, 4, null, null, 0, "event-1"],
-      [2, 1, 20, 31, 1, 0, null, 1, "event-1"],
-      [
-        2,
-        "site-1",
-        1,
-        10,
-        31,
-        row.occurredAt,
-        null,
-        1,
-        "pro",
-        hashCustomEventStringValue("pro"),
-        null,
-        null,
-        "event-1",
-      ],
+      ["event-1", '{"plan":"pro","seats":"3"}'],
     ]);
-    expect(context.dictionaryIds).toEqual(
-      new Map([
-        ["name:site-1:Signup", 10],
-        ["key:site-1:plan", 20],
-        ["path:site-1:/", 30],
-        ["path:site-1:/plan", 31],
-      ]),
-    );
-    expect(
-      context.calls.some((call) => call.sql.includes("event_name_id")),
-    ).toBe(true);
-    expect(context.calls).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          bindings: ["site-1", 1, "Signup", createdAt, createdAt],
-        }),
-        expect.objectContaining({
-          bindings: ["site-1", 1, "plan", createdAt, createdAt],
-        }),
-        expect.objectContaining({
-          bindings: ["site-1", 1, "/", createdAt, createdAt],
-        }),
-        expect.objectContaining({ bindings: ["event-1"] }),
-      ]),
-    );
+    expect(context.eventNameIds).toEqual(new Map([["1:Signup", 10]]));
     expect(context.sqlRun).toHaveBeenCalledTimes(1);
     expect(context.sqlRun).toHaveBeenCalledWith(
       expect.stringContaining("SET dirty = 0, flush_attempts = 0"),
@@ -216,6 +163,19 @@ describe("custom event flush", () => {
       "flushedCustomEvents",
       1,
     );
+  });
+
+  it("writes an event without properties alone", async () => {
+    const context = createFlushContext({});
+
+    await expect(
+      flushCustomEventRow(
+        context,
+        bufferedCustomEvent({ propertiesJson: null }),
+      ),
+    ).resolves.toBe(true);
+
+    expect(context.batch.mock.calls[0]![0]).toHaveLength(1);
   });
 
   it("keeps an event dirty, its failure counted, when the batch does not create it", async () => {
@@ -261,22 +221,15 @@ describe("custom event flush", () => {
     expect(context.sqlRun).not.toHaveBeenCalled();
   });
 
-  it("uses cached dictionary ids without re-querying dictionary tables", async () => {
-    const context = createFlushContext({
-      dictionaryIds: {
-        "name:site-1:Signup": 10,
-        "key:site-1:plan": 20,
-        "path:site-1:/": 30,
-        "path:site-1:/plan": 31,
-      },
-    });
+  it("uses a cached event name id without asking D1 for it", async () => {
+    const context = createFlushContext({ eventNameIds: { "1:Signup": 10 } });
 
     await expect(
       flushCustomEventRow(context, bufferedCustomEvent()),
     ).resolves.toBe(true);
 
     expect(
-      context.calls.some((call) => call.sql.includes("custom_event_json_keys")),
+      context.calls.some((call) => call.sql.includes("custom_event_names")),
     ).toBe(false);
     expect(context.batch).toHaveBeenCalledTimes(1);
   });

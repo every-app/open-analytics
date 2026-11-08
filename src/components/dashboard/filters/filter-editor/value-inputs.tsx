@@ -21,7 +21,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@insightflare/ui/tooltip";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { ChevronDownIcon } from "lucide-react";
 
 import {
@@ -34,27 +34,23 @@ import {
 } from "@/components/dashboard/filters/filter-number-units";
 import type { DashboardFilterOptionKey } from "@/lib/dashboard/client/data/index";
 import {
-  fetchEventTypeFields,
-  fetchEventTypeFieldValues,
   fetchFilterValues,
+  fetchPropertyKeys,
+  fetchPropertyValues,
 } from "@/lib/dashboard/client/data/index";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
-import type { EventField } from "@/lib/dashboard-api/client/edge";
 import {
   analyticsFilterRegistry,
   type FilterDocument,
   type FilterValue,
   type FilterValueKind,
+  PROPERTY_FIELD,
   type RegisteredFilterField,
 } from "@/lib/filter-contract/index";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { formatI18nTemplate } from "@/lib/i18n/template";
 import { cn } from "@/lib/utils";
 
-import {
-  isSelectablePayloadFieldType,
-  payloadFieldTypeLabel,
-} from "./field-catalog";
 import type { EditorCondition, ValueSuggestionPage } from "./model";
 import {
   filterValueKey,
@@ -63,25 +59,14 @@ import {
   stripSuggestionFacet,
 } from "./model";
 /**
- * What the event field picker shows. A failed page (the first or a later
- * one) is an error with a retry, never a shorter list that looks complete.
+ * The custom property keys seen in the period under the other conditions,
+ * the most visitors first; the search keeps those that contain it. A key
+ * can be typed too, for one the period hasn't seen.
  */
-export function fieldPickerMenuState(query: {
-  isError: boolean;
-  isFetching: boolean;
-  hasMorePages: boolean;
-  suggestionCount: number;
-}): "error" | "loading" | "suggestions" | "empty" {
-  if (query.isError) return "error";
-  if (query.isFetching || query.hasMorePages) return "loading";
-  return query.suggestionCount > 0 ? "suggestions" : "empty";
-}
-export function SearchablePayloadPathInput({
+export function SearchablePropertyKeyInput({
   condition,
   document,
-  eventName,
   messages,
-  needsValue,
   onChange,
   onSelect,
   siteId,
@@ -89,81 +74,51 @@ export function SearchablePayloadPathInput({
 }: {
   condition: EditorCondition;
   document: FilterDocument;
-  eventName: string | undefined;
   messages: AppMessages;
-  needsValue: boolean;
-  onChange: (payloadPath: string) => void;
-  onSelect: (field: EventField) => void;
+  onChange: (propertyKey: string) => void;
+  onSelect: (propertyKey: string) => void;
   siteId: string | undefined;
   window: TimeWindow | undefined;
 }) {
   const [open, setOpen] = useState(false);
   const [searchToken, setSearchToken] = useState("");
   const deferredSearchToken = useDeferredValue(searchToken);
-  const canSearch = Boolean(siteId && window);
   const suggestionFilters = useMemo(
     () =>
-      stripSuggestionFacet(document, condition.field, condition.payloadPath),
-    [condition.field, condition.payloadPath, document],
+      stripSuggestionFacet(document, condition.field, condition.propertyKey),
+    [condition.field, condition.propertyKey, document],
   );
-  const fieldsQuery = useInfiniteQuery({
+  const keysQuery = useQuery({
     queryKey: [
       "dashboard",
-      "event-field-paths",
+      "property-keys",
       siteId,
       window?.from,
       window?.to,
       window?.timeZone,
-      eventName,
       suggestionFilters,
-      needsValue,
     ],
-    initialPageParam: null as string | null,
-    queryFn: ({ signal, pageParam }) =>
-      fetchEventTypeFields(siteId!, window!, eventName, suggestionFilters, {
-        limit: 100,
-        cursor: pageParam,
-        signal,
-      }),
-    enabled: open && canSearch,
-    getNextPageParam: (lastPage) =>
-      lastPage.data?.pagination?.hasMore
-        ? lastPage.data.pagination.nextCursor
-        : undefined,
+    queryFn: ({ signal }) =>
+      fetchPropertyKeys(siteId!, window!, suggestionFilters, { signal }),
+    enabled: open && Boolean(siteId && window),
   });
-  // The search runs over every field, so the picker reads all of their pages.
-  const {
-    fetchNextPage: fetchNextFields,
-    isFetchingNextPage: fetchingMoreFields,
-  } = fieldsQuery;
-  const hasMoreFields =
-    fieldsQuery.hasNextPage && !fieldsQuery.isFetchNextPageError;
-  useEffect(() => {
-    if (open && hasMoreFields && !fetchingMoreFields) void fetchNextFields();
-  }, [fetchNextFields, fetchingMoreFields, hasMoreFields, open]);
-  const fields = useMemo(
-    () => fieldsQuery.data?.pages.flatMap((page) => page.data.items) ?? [],
-    [fieldsQuery.data],
-  );
   const suggestions = useMemo(() => {
     const search = deferredSearchToken.trim().toLocaleLowerCase();
-    return fields.filter(
-      (field) =>
-        field.path &&
-        (!needsValue || isSelectablePayloadFieldType(field.valueType)) &&
-        (!search || field.path.toLocaleLowerCase().includes(search)),
+    return (keysQuery.data?.data.items ?? []).filter(
+      (item) => !search || item.key.toLocaleLowerCase().includes(search),
     );
-  }, [deferredSearchToken, fields, needsValue]);
-  const menuState = fieldPickerMenuState({
-    isError: fieldsQuery.isError,
-    isFetching: fieldsQuery.isFetching,
-    hasMorePages: hasMoreFields,
-    suggestionCount: suggestions.length,
-  });
+  }, [deferredSearchToken, keysQuery.data]);
+  const menuState = keysQuery.isError
+    ? "error"
+    : keysQuery.isFetching
+      ? "loading"
+      : suggestions.length > 0
+        ? "suggestions"
+        : "empty";
 
   useEffect(() => {
     if (open) setSearchToken("");
-  }, [condition.field, condition.id, eventName, open]);
+  }, [condition.field, condition.id, open]);
 
   return (
     <SearchablePopover open={open} onOpenChange={setOpen}>
@@ -174,7 +129,7 @@ export function SearchablePayloadPathInput({
           className="h-8 w-full justify-between pr-2 text-xs font-normal"
         >
           <span className="min-w-0 truncate text-left">
-            {condition.payloadPath || messages.filterBuilder.valueUnset}
+            {condition.propertyKey || messages.filterBuilder.valueUnset}
           </span>
           <ChevronDownIcon
             data-icon="inline-end"
@@ -186,13 +141,13 @@ export function SearchablePayloadPathInput({
         align="start"
         sideOffset={4}
         searchValue={searchToken}
-        searchPlaceholder={messages.filterBuilder.jsonPointerPlaceholder}
+        searchPlaceholder={messages.filterBuilder.propertyKeyPlaceholder}
         searchInputProps={{ autoFocus: true, className: "font-mono" }}
         resultsMaxHeight="14rem"
         syncKey={suggestions.length}
         onSearchValueChange={(next) => {
           setSearchToken(next);
-          onChange(next);
+          onChange(next.trim());
         }}
       >
         <AutoResizer className="min-h-0 flex-1" initial duration={0.18}>
@@ -205,11 +160,7 @@ export function SearchablePayloadPathInput({
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs"
-                  onClick={() =>
-                    void (fieldsQuery.isFetchNextPageError
-                      ? fetchNextFields()
-                      : fieldsQuery.refetch())
-                  }
+                  onClick={() => void keysQuery.refetch()}
                 >
                   {messages.common.retry}
                 </Button>
@@ -220,25 +171,22 @@ export function SearchablePayloadPathInput({
               </div>
             ) : menuState === "suggestions" ? (
               <div className="pt-1">
-                {suggestions.map((field) => (
+                {suggestions.map((item) => (
                   <button
-                    key={`${field.valueType}:${field.path}`}
+                    key={item.key}
                     type="button"
                     data-selected-item={
-                      condition.payloadPath === field.path ? "true" : undefined
+                      condition.propertyKey === item.key ? "true" : undefined
                     }
                     className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs transition-colors hover:bg-accent"
                     onClick={() => {
-                      onSelect(field);
+                      onSelect(item.key);
                       setSearchToken("");
                       setOpen(false);
                     }}
                   >
                     <span className="min-w-0 truncate font-mono">
-                      {field.path}
-                    </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {payloadFieldTypeLabel(field.valueType, messages)}
+                      {item.key}
                     </span>
                   </button>
                 ))}
@@ -332,7 +280,6 @@ export function SearchableValueInput({
   condition,
   disabled = false,
   document,
-  eventName,
   messages,
   onChange,
   onListChange,
@@ -343,7 +290,6 @@ export function SearchableValueInput({
   condition: EditorCondition;
   disabled?: boolean;
   document: FilterDocument;
-  eventName: string | undefined;
   messages: AppMessages;
   onChange: (valueText: string) => void;
   onListChange: (values: readonly FilterValue[]) => void;
@@ -354,17 +300,14 @@ export function SearchableValueInput({
   const [open, setOpen] = useState(false);
   const [searchToken, setSearchToken] = useState("");
   const deferredSearchToken = useDeferredValue(searchToken);
-  const isPayload = condition.field === "event.payload";
-  const definition = isPayload
-    ? undefined
-    : (analyticsFilterRegistry.get(condition.field) as
-        RegisteredFilterField | undefined);
-  const suggestionMode =
-    definition?.suggestionMode ?? (isPayload ? "discrete" : "none");
+  const isProperty = condition.field === PROPERTY_FIELD;
+  const definition = analyticsFilterRegistry.get(condition.field) as
+    RegisteredFilterField | undefined;
+  const suggestionMode = definition?.suggestionMode ?? "none";
   const suggestionFilters = useMemo(
     () =>
-      stripSuggestionFacet(document, condition.field, condition.payloadPath),
-    [condition.field, condition.payloadPath, document],
+      stripSuggestionFacet(document, condition.field, condition.propertyKey),
+    [condition.field, condition.propertyKey, document],
   );
   const isList = LIST_OPERATORS.has(condition.operator);
   const selectedValues = isList
@@ -372,50 +315,49 @@ export function SearchableValueInput({
       (Array.isArray(condition.value) ? condition.value : []))
     : [];
   const canSearch = Boolean(
-    siteId &&
-    window &&
-    (isPayload
-      ? condition.payloadPath.trim()
-      : condition.field !== "event.payload"),
+    siteId && window && (!isProperty || condition.propertyKey.trim()),
   );
   const suggestionsQuery = useInfiniteQuery<ValueSuggestionPage>({
     queryKey: [
       "dashboard",
-      isPayload ? "event-field-values" : "filter-values",
+      isProperty ? "property-values" : "filter-values",
       siteId,
       window?.from,
       window?.to,
       window?.timeZone,
-      ...(isPayload
-        ? [eventName, condition.payloadPath, condition.scalarKind]
-        : [condition.field]),
+      isProperty ? condition.propertyKey : condition.field,
       suggestionMode,
       deferredSearchToken,
       suggestionFilters,
     ],
     initialPageParam: null as string | null,
     queryFn: ({ signal, pageParam }) => {
-      if (isPayload) {
-        return fetchEventTypeFieldValues(
+      // A property's values come in one page, the most visitors first.
+      if (isProperty) {
+        return fetchPropertyValues(
           siteId!,
           window!,
-          eventName,
-          condition.payloadPath,
-          condition.scalarKind,
+          condition.propertyKey,
           suggestionFilters,
           {
             limit: 12,
-            cursor: pageParam as string | null,
             search: deferredSearchToken,
+            sort: "visitors",
+            direction: "desc",
             signal,
           },
         ).then((result) => ({
           items: result.data.items.map((item) => ({
             value: item.value,
-            occurrences: item.occurrences,
-            label: String(item.value ?? ""),
+            occurrences: item.visitors,
+            label: item.value,
           })),
-          pagination: result.data.pagination,
+          pagination: {
+            limit: 12,
+            returned: result.data.items.length,
+            hasMore: false,
+            nextCursor: null,
+          },
         }));
       }
       return fetchFilterValues(
@@ -443,14 +385,8 @@ export function SearchableValueInput({
   // A further page loads below the values already listed.
   const loadingSuggestions =
     suggestionsQuery.isFetching && !suggestionsQuery.isFetchingNextPage;
-  const inputMode =
-    valueKind === "number" || condition.scalarKind === "number"
-      ? "decimal"
-      : undefined;
-  const inputType =
-    valueKind === "number" || condition.scalarKind === "number"
-      ? "number"
-      : "text";
+  const inputMode = valueKind === "number" ? "decimal" : undefined;
+  const inputType = valueKind === "number" ? "number" : "text";
   const numberMetadata = definition?.number;
   const numberUnit = valueKind === "number" ? definition?.unit : undefined;
   const [selectedDisplayUnit, setSelectedDisplayUnit] = useState<
@@ -495,7 +431,7 @@ export function SearchableValueInput({
     if (open) setSearchToken("");
   }, [condition.id, condition.field, condition.operator, open]);
 
-  if (!isPayload && suggestionMode === "none" && !isList) {
+  if (suggestionMode === "none" && !isList) {
     return (
       <div
         className={cn(

@@ -2,6 +2,7 @@ export type * from "./canonical-operation-map";
 export * from "./channels";
 export * from "./comparison";
 export * from "./comparison-metrics";
+export * from "./dashboard";
 export * from "./filter-adapters";
 export * from "./filter-transformations";
 export * from "./filter-validation";

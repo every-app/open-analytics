@@ -383,8 +383,6 @@ describe("analytics architecture", () => {
       "event-summary",
       "event-trend",
       "event-records",
-      "event-field-values",
-      "event-fields",
       "event-type-detail",
       "funnel-analysis",
       "goal-summary",

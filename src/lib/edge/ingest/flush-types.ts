@@ -9,13 +9,14 @@ import type { BufferedVisitRow, SqlWriter } from "./types";
 export interface IngestFlushContext extends SqlWriter {
   /** D1, counting the invocation's queries: it refuses one past the limit. */
   db: DatabaseRuntime;
-  dictionaryIds: Map<string, number>;
+  /** Custom event names' ids in D1, by site and name. */
+  eventNameIds: Map<string, number>;
   readPersistedVisitRow(
     siteId: string,
     visitId: string,
   ): Promise<BufferedVisitRow | null>;
   insertBufferedVisitRow(row: BufferedVisitRow): void;
-  hasOpenVisitsForVisitor(siteId: string, visitorId: string): boolean;
+  hasOpenVisitsForVisitor(siteId: string, visitorId: number): boolean;
   pushRealtimeRecord(record: RealtimeSnapshotRecord): Promise<void>;
   /**
    * Owned by the DO invocation boundary.  Flush helpers only report stable

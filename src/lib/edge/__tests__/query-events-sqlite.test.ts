@@ -12,7 +12,6 @@ import {
 } from "@/lib/edge/analytics/contract";
 import type { QueryWindow } from "@/lib/edge/analytics/providers/d1/internal/core";
 import { queryEventAnalyticsContextCardsFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-context";
-import { queryEventFieldsFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-fields";
 import { queryEventTypeOverviewFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-overview";
 import {
   type EventRecordCursor,
@@ -108,7 +107,7 @@ function createSqliteEventEnv(): { env: Env; d1: SqliteD1Database } {
       VALUES (1, '${siteId}');
 
     CREATE TABLE visits (
-      visit_id TEXT PRIMARY KEY, site_id TEXT NOT NULL,
+      visit_id TEXT PRIMARY KEY,
       site_pk INTEGER GENERATED ALWAYS AS (1) STORED,
       visitor_id TEXT NOT NULL DEFAULT '', session_id TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'closed', started_at INTEGER NOT NULL,
@@ -139,26 +138,20 @@ function createSqliteEventEnv(): { env: Env; d1: SqliteD1Database } {
       UNIQUE(site_id, name)
     );
     CREATE TABLE custom_events (
-      event_pk INTEGER PRIMARY KEY, event_id TEXT NOT NULL, site_id TEXT NOT NULL,
+      event_pk INTEGER PRIMARY KEY, event_id TEXT NOT NULL,
       site_pk INTEGER GENERATED ALWAYS AS (1) STORED,
       visit_id TEXT NOT NULL, event_name_id INTEGER NOT NULL, occurred_at INTEGER NOT NULL,
-      received_at INTEGER NOT NULL, sequence INTEGER NOT NULL, node_count INTEGER NOT NULL,
-      value_count INTEGER NOT NULL, ae_synced_at INTEGER
-    );
-    CREATE TABLE custom_event_json_paths (
-      id INTEGER PRIMARY KEY,
-      path TEXT NOT NULL,
-      site_pk INTEGER GENERATED ALWAYS AS (1) STORED
+      received_at INTEGER NOT NULL, sequence INTEGER NOT NULL
     );
     CREATE TABLE visit_properties (
       visit_id TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL,
       site_pk INTEGER NOT NULL, started_at INTEGER NOT NULL,
       PRIMARY KEY (visit_id, key)
     );
-    CREATE TABLE custom_event_json_values (
-      event_pk INTEGER NOT NULL, path_id INTEGER NOT NULL, value_type INTEGER NOT NULL,
-      occurred_at INTEGER NOT NULL, string_value TEXT, number_value REAL, boolean_value INTEGER,
-      site_pk INTEGER GENERATED ALWAYS AS (1) STORED
+    CREATE TABLE custom_event_properties (
+      event_pk INTEGER NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL,
+      site_pk INTEGER NOT NULL, occurred_at INTEGER NOT NULL,
+      PRIMARY KEY (event_pk, key)
     );
     CREATE INDEX idx_custom_events_site_pk_name_time
       ON custom_events(site_pk, event_name_id, occurred_at, event_pk);
@@ -172,15 +165,14 @@ function createSqliteEventEnv(): { env: Env; d1: SqliteD1Database } {
   d1.database
     .prepare(
       `INSERT INTO visits (
-      visit_id, site_id, visitor_id, session_id, started_at, pathname, hostname,
+      visit_id, visitor_id, session_id, started_at, pathname, hostname,
       title, referrer_url, referrer_host, country, region, city, continent, timezone,
       browser, browser_version, os, os_version, device_type,
       screen_width, screen_height, language
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       "visit-1",
-      siteId,
       "visitor-1",
       "session-1",
       eventTime - 1,
@@ -211,78 +203,31 @@ function createSqliteEventEnv(): { env: Env; d1: SqliteD1Database } {
   d1.database
     .prepare(
       `INSERT INTO visits (
-        visit_id, site_id, visitor_id, session_id, started_at, pathname
-      ) VALUES (?, ?, ?, ?, ?, ?)`,
+        visit_id, visitor_id, session_id, started_at, pathname
+      ) VALUES (?, ?, ?, ?, ?)`,
     )
-    .run(
-      "visit-entry",
-      siteId,
-      "visitor-1",
-      "session-1",
-      eventTime - 2,
-      "/entry",
-    );
+    .run("visit-entry", "visitor-1", "session-1", eventTime - 2, "/entry");
   d1.database
     .prepare(
       `INSERT INTO visits (
-        visit_id, site_id, visitor_id, session_id, started_at, pathname
-      ) VALUES (?, ?, ?, ?, ?, ?)`,
+        visit_id, visitor_id, session_id, started_at, pathname
+      ) VALUES (?, ?, ?, ?, ?)`,
     )
-    .run(
-      "visit-exit",
-      siteId,
-      "visitor-1",
-      "session-1",
-      eventTime + 1,
-      "/exit",
-    );
+    .run("visit-exit", "visitor-1", "session-1", eventTime + 1, "/exit");
   d1.database
-    .prepare(
-      "INSERT INTO custom_events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    )
-    .run(
-      1,
-      "event-1",
-      siteId,
-      "visit-1",
-      1,
-      eventTime,
-      eventTime,
-      1,
-      1,
-      1,
-      null,
-    );
+    .prepare("INSERT INTO custom_events VALUES (?, ?, ?, ?, ?, ?, ?)")
+    .run(1, "event-1", "visit-1", 1, eventTime, eventTime, 1);
   d1.database
     .prepare(
       "INSERT INTO custom_event_names (id, site_id, name) VALUES (?, ?, ?)",
     )
     .run(99, siteId, "purchase");
   d1.database
-    .prepare(
-      "INSERT INTO custom_events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    )
-    .run(
-      99,
-      "event-other-name",
-      siteId,
-      "visit-1",
-      99,
-      eventTime,
-      eventTime,
-      2,
-      1,
-      1,
-      null,
-    );
+    .prepare("INSERT INTO custom_events VALUES (?, ?, ?, ?, ?, ?, ?)")
+    .run(99, "event-other-name", "visit-1", 99, eventTime, eventTime, 2);
   d1.database
-    .prepare("INSERT INTO custom_event_json_paths VALUES (?, ?)")
-    .run(1, "/href");
-  d1.database
-    .prepare(
-      "INSERT INTO custom_event_json_values VALUES (?, ?, ?, ?, ?, ?, ?)",
-    )
-    .run(1, 1, 1, eventTime, "https://example.test/next", null, null);
+    .prepare("INSERT INTO custom_event_properties VALUES (?, ?, ?, 1, ?)")
+    .run(1, "href", "https://example.test/next", eventTime);
   return {
     env: {
       DB: d1 as unknown as D1Database,
@@ -307,7 +252,7 @@ function truthCondition(
 
 function truthPayload(value: string): FilterCondition {
   return {
-    target: { kind: "event-payload", path: "/plan" as never },
+    target: { kind: "property", key: "plan" },
     operator: FilterOperator.Eq,
     value,
   };
@@ -317,9 +262,8 @@ function seedFilterSemanticsTruthFixture(d1: SqliteD1Database): void {
   // Remove the event-detail seed so every expected relation ID belongs to
   // this fixture and the four final relations can be asserted directly.
   d1.database.exec(`
-    DELETE FROM custom_event_json_values;
+    DELETE FROM custom_event_properties;
     DELETE FROM custom_events;
-    DELETE FROM custom_event_json_paths;
     DELETE FROM custom_event_names;
     DELETE FROM visits;
   `);
@@ -398,18 +342,11 @@ function seedFilterSemanticsTruthFixture(d1: SqliteD1Database): void {
   ] as const;
   const visitStatement = d1.database.prepare(
     `INSERT INTO visits (
-      visit_id, site_id, visitor_id, session_id, started_at, pathname
-    ) VALUES (?, ?, ?, ?, ?, ?)`,
+      visit_id, visitor_id, session_id, started_at, pathname
+    ) VALUES (?, ?, ?, ?, ?)`,
   );
   for (const [visitId, visitorId, sessionId, pathname, startedAt] of visits) {
-    visitStatement.run(
-      visitId,
-      siteId,
-      visitorId,
-      sessionId,
-      startedAt,
-      pathname,
-    );
+    visitStatement.run(visitId, visitorId, sessionId, startedAt, pathname);
   }
 
   d1.database
@@ -432,36 +369,24 @@ function seedFilterSemanticsTruthFixture(d1: SqliteD1Database): void {
     [115, "truth-purchase-visitor", "truth-visitor-event", 110, 6],
   ] as const;
   const eventStatement = d1.database.prepare(
-    "INSERT INTO custom_events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO custom_events VALUES (?, ?, ?, ?, ?, ?, ?)",
   );
   for (const [eventPk, eventId, visitId, eventNameId, sequence] of events) {
     eventStatement.run(
       eventPk,
       eventId,
-      siteId,
       visitId,
       eventNameId,
       eventTime,
       eventTime,
       sequence,
-      1,
-      1,
-      null,
     );
   }
-  d1.database
-    .prepare("INSERT INTO custom_event_json_paths VALUES (?, ?)")
-    .run(1, "/plan");
-  d1.database
-    .prepare(
-      "INSERT INTO custom_event_json_values VALUES (?, ?, ?, ?, ?, ?, ?)",
-    )
-    .run(111, 1, 1, eventTime, "free", null, null);
-  d1.database
-    .prepare(
-      "INSERT INTO custom_event_json_values VALUES (?, ?, ?, ?, ?, ?, ?)",
-    )
-    .run(112, 1, 1, eventTime, "pro", null, null);
+  const propertyStatement = d1.database.prepare(
+    "INSERT INTO custom_event_properties VALUES (?, 'plan', ?, 1, ?)",
+  );
+  propertyStatement.run(111, "free", eventTime);
+  propertyStatement.run(112, "pro", eventTime);
 }
 
 /** The page views and custom events in the window that a filter matches. */
@@ -581,11 +506,11 @@ describe("event detail D1 SQL", () => {
     }
   });
 
-  it("returns the same event context and payload data as the event records query", async () => {
+  it("returns the same event context and properties as the event records query", async () => {
     const { env, d1 } = createSqliteEventEnv();
 
     try {
-      const [records, overview, trend, fields, cards] = await Promise.all([
+      const [records, overview, trend, cards] = await Promise.all([
         queryEventRecordPageFromD1(env, siteId, window, EMPTY_FILTER_DOCUMENT, {
           limit: 25,
           sort: { key: "occurredAt", direction: "desc" },
@@ -606,14 +531,6 @@ describe("event detail D1 SQL", () => {
           EMPTY_FILTER_DOCUMENT,
           eventName,
         ),
-        queryEventFieldsFromD1(
-          env,
-          siteId,
-          window,
-          EMPTY_FILTER_DOCUMENT,
-          eventName,
-          100,
-        ),
         queryEventAnalyticsContextCardsFromD1(
           env,
           siteId,
@@ -628,7 +545,9 @@ describe("event detail D1 SQL", () => {
       expect(overview.summary.events).toBe(1);
       expect(overview.summary.shareOfAllEvents).toBe(0.5);
       expect(trend.data.some((point) => point.events === 1)).toBe(true);
-      expect(fields).toMatchObject([{ path: "/href", events: 1 }]);
+      expect(JSON.parse(records.rows[0]!.propertiesJson)).toEqual({
+        href: "https://example.test/next",
+      });
       expect(cards.page.path).toMatchObject([
         { value: "/posts/minecraft-meteor-guide", views: 1 },
       ]);
@@ -690,17 +609,10 @@ describe("event detail D1 SQL", () => {
       d1.database
         .prepare(
           `INSERT INTO visits (
-            visit_id, site_id, visitor_id, session_id, started_at, pathname
-          ) VALUES (?, ?, ?, ?, ?, ?)`,
+            visit_id, visitor_id, session_id, started_at, pathname
+          ) VALUES (?, ?, ?, ?, ?)`,
         )
-        .run(
-          "visit-2",
-          siteId,
-          "visitor-2",
-          "session-2",
-          eventTime,
-          "/pricing",
-        );
+        .run("visit-2", "visitor-2", "session-2", eventTime, "/pricing");
       d1.database
         .prepare(
           "INSERT INTO custom_event_names (id, site_id, name) VALUES (?, ?, ?)",
@@ -712,21 +624,15 @@ describe("event detail D1 SQL", () => {
         [4, "event-4", "visit-2", 2, eventTime],
       ]) {
         d1.database
-          .prepare(
-            "INSERT INTO custom_events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-          )
+          .prepare("INSERT INTO custom_events VALUES (?, ?, ?, ?, ?, ?, ?)")
           .run(
             eventPk,
             eventId,
-            siteId,
             visitId,
             eventNameId,
             occurredAt,
             occurredAt,
             eventPk,
-            1,
-            1,
-            null,
           );
       }
 
@@ -1014,9 +920,7 @@ describe("event detail D1 SQL", () => {
 
       const query = d1.calls.at(-1);
       expect(query?.sql).toContain("scoped_events AS");
-      expect(
-        query?.sql.match(/TRIM\(COALESCE\(v\.pathname, ''\)\) = \?/g),
-      ).toHaveLength(2);
+      expect(query?.sql.match(/v\.pathname = \?/g)).toHaveLength(2);
     } finally {
       d1.close();
     }

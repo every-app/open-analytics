@@ -76,7 +76,7 @@ describe("funnel v2 config contract", () => {
       steps: [
         step("page", 'page.path eq "/pricing"'),
         step("event", 'event.name eq "purchase"'),
-        step("payload", 'event.payload("/plan") eq "pro"'),
+        step("payload", 'property("plan") eq "pro"'),
       ],
     });
 

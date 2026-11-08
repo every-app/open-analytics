@@ -1,12 +1,9 @@
 import { DatabaseSync } from "node:sqlite";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { loadMigrations } from "@/../scripts/schema/database";
-import { createSqliteD1Database } from "@/lib/db/__tests__/sqlite-d1";
 import { DAY_MS, seedSites } from "@/lib/edge/__tests__/rollup-fixtures";
-import { runVisitRollups } from "@/lib/edge/scheduled-tasks/visit-rollups";
-import type { Env } from "@/lib/edge/types";
 
 const MIGRATION = "0010_privacy_fields.sql";
 const NOW = Date.UTC(2026, 10, 6, 13);
@@ -21,22 +18,13 @@ const DROPPED_VISIT_COLUMNS = [
   "user_name",
 ];
 
-/**
- * A database as every migration before this one left it, with the page
- * views' channel a later migration adds, which the rollup task reads.
- */
+/** A database as every migration before this one left it. */
 function databaseBeforeMigration(): DatabaseSync {
   const database = new DatabaseSync(":memory:");
-  const migrations = loadMigrations();
-  for (const migration of migrations) {
+  for (const migration of loadMigrations()) {
     if (migration.file >= MIGRATION) break;
     database.exec(migration.sql);
   }
-  database.exec(
-    migrations.find((migration) =>
-      migration.file.endsWith("_visit_channel.sql"),
-    )!.sql,
-  );
   return database;
 }
 
@@ -85,6 +73,23 @@ function insertPageView(
     );
 }
 
+/** A map point the rollup task kept at 3 decimals before this migration. */
+function insertGeoPoint(
+  database: DatabaseSync,
+  day: number,
+  latitude: number,
+  longitude: number,
+): void {
+  database
+    .prepare(
+      `INSERT INTO visit_daily_geo_points (
+        site_pk, day, latitude, longitude, country, region, region_code,
+        city, views, latest_at
+      ) VALUES (1, ?, ?, ?, 'US', 'California', 'CA', 'San Francisco', 1, ?)`,
+    )
+    .run(day, latitude, longitude, day * DAY_MS + 1);
+}
+
 function geoPoints(database: DatabaseSync) {
   return database
     .prepare(
@@ -100,16 +105,10 @@ describe(MIGRATION, () => {
   afterEach(() => {
     database?.close();
     database = undefined;
-    vi.useRealTimers();
   });
 
-  it("drops the fields Plausible doesn't store, rounds coordinates to a city and rebuilds the map", async () => {
-    vi.useFakeTimers({ now: NOW, toFake: ["Date"] });
+  it("drops the fields Plausible doesn't store, rounds coordinates to a city and marks the map for rebuild", () => {
     database = databaseBeforeMigration();
-    const env = {
-      DB: createSqliteD1Database(database),
-      MAIN_SECRET: "migration-test-secret",
-    } as unknown as Env;
     seedSites(database, [{ siteId: "site-1", sitePk: 1 }]);
     for (const day of [REACHED, OPEN]) {
       insertPageView(database, `a-${day}`, day, 37.7749, -122.4194);
@@ -130,14 +129,19 @@ describe(MIGRATION, () => {
         ) VALUES ('event-1', 'site-1', 1, ?, 1, ?, ?, 0, 0, 'user-1')`,
       )
       .run(`a-${OPEN}`, OPEN * DAY_MS + 2, OPEN * DAY_MS + 2);
-    await runVisitRollups(env, NOW);
-    // Both days rolled up at 3 decimals; retention has reached the first.
-    expect(geoPoints(database)).toHaveLength(4);
+    // Both days were rolled up at 3 decimals; retention has reached the
+    // first.
+    for (const day of [REACHED, OPEN]) {
+      insertGeoPoint(database, day, 37.775, -122.419);
+      insertGeoPoint(database, day, 37.785, -122.409);
+    }
     database
       .prepare(
-        "UPDATE visit_rollup_state SET retention_reached_day = ? WHERE site_pk = 1",
+        `INSERT INTO visit_rollup_state (
+          site_pk, first_day, last_day, backfilled, retention_reached_day
+        ) VALUES (1, ?, ?, 1, ?)`,
       )
-      .run(REACHED);
+      .run(REACHED, OPEN, REACHED);
 
     database.exec(migrationSql());
 
@@ -170,17 +174,5 @@ describe(MIGRATION, () => {
         .prepare("SELECT site_pk, day FROM visit_rollup_dirty_days")
         .all(),
     ).toEqual([{ site_pk: 1, day: OPEN }]);
-
-    await runVisitRollups(env, NOW);
-
-    expect(geoPoints(database)).toEqual([
-      { day: REACHED, latitude: 37.8, longitude: -122.4, views: 2 },
-      { day: OPEN, latitude: 37.8, longitude: -122.4, views: 2 },
-    ]);
-    expect(
-      database
-        .prepare("SELECT COUNT(*) AS n FROM visit_rollup_dirty_days")
-        .get(),
-    ).toEqual({ n: 0 });
   });
 });

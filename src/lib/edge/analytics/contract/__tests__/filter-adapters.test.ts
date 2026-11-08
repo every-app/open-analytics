@@ -9,7 +9,7 @@ describe("filter protocol adapters", () => {
   it("fails public-sensitive fields before a reader can run", () => {
     for (const input of [
       "filter[page.query]=campaign=spring",
-      "filter[event.payload][/plan]=pro",
+      "filter[property][plan]=pro",
       "filter[geo.region]=Ontario",
     ]) {
       expect(() => parseFilterUrlForAudience("public-share", input)).toThrow(

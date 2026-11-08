@@ -113,9 +113,9 @@ function countValue(value: unknown): number {
 }
 
 const DISTINCT_SESSION = (flag: string) =>
-  `count(DISTINCT CASE WHEN ${flag} AND session_id != '' THEN session_id END)`;
+  `count(DISTINCT CASE WHEN ${flag} THEN session_id END)`;
 const DISTINCT_VISITOR = (flag: string) =>
-  `count(DISTINCT CASE WHEN ${flag} AND visitor_id != '' THEN visitor_id END)`;
+  `count(DISTINCT CASE WHEN ${flag} THEN visitor_id END)`;
 
 /**
  * One statement for `goals`: one pass over the filtered page views and

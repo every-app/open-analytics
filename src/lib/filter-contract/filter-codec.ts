@@ -1,6 +1,4 @@
 import {
-  type CanonicalJsonPath,
-  EVENT_PAYLOAD_FIELD,
   type FilterCondition,
   type FilterDocument,
   type FilterFieldId,
@@ -10,6 +8,7 @@ import {
   type FilterValue,
   LIST_FILTER_OPERATORS,
   normalizeFilterDocument,
+  PROPERTY_FIELD,
   VALUELESS_FILTER_OPERATORS,
 } from "./filters";
 
@@ -58,9 +57,6 @@ const OPERATORS_BY_ALIAS = new Map<string, FilterOperator>(
   ]),
 );
 
-/** Marks a custom property value that isn't a string. */
-const JSON_VALUE_PREFIX = "json:";
-
 function fail(code: string, path: string, message: string): never {
   throw new FilterCodecError(code, path, message);
 }
@@ -100,7 +96,7 @@ function escapeListValue(value: string): string {
   return value.replaceAll("\\", "\\\\").replaceAll(",", "\\,");
 }
 
-/** `filter[<field>]` or `filter[event.payload][<json pointer>]`. */
+/** `filter[<field>]` or `filter[property][<key>]`. */
 function parseKey(key: string): FilterTarget | null {
   const match = /^filter\[([^\]]+)\](?:\[([^\]]+)\])?$/.exec(key);
   if (!match) {
@@ -108,13 +104,13 @@ function parseKey(key: string): FilterTarget | null {
       fail("invalid_filter_key", key, "Malformed filter key.");
     return null;
   }
-  const [, field, path] = match;
-  if (field === EVENT_PAYLOAD_FIELD) {
-    if (!path)
-      fail("invalid_filter_key", key, "A custom property needs its path.");
-    return { kind: "event-payload", path: path as CanonicalJsonPath };
+  const [, field, propertyKey] = match;
+  if (field === PROPERTY_FIELD) {
+    if (!propertyKey)
+      fail("invalid_filter_key", key, "A custom property needs its key.");
+    return { kind: "property", key: propertyKey };
   }
-  if (path) fail("invalid_filter_key", key, "Malformed filter key.");
+  if (propertyKey) fail("invalid_filter_key", key, "Malformed filter key.");
   return { kind: "field", field: field as FilterFieldId };
 }
 
@@ -124,18 +120,7 @@ function parseValue(
   registry: FilterFieldRegistry,
   path: string,
 ): FilterValue {
-  if (target.kind === "event-payload") {
-    if (!raw.startsWith(JSON_VALUE_PREFIX)) return raw;
-    try {
-      return JSON.parse(raw.slice(JSON_VALUE_PREFIX.length)) as FilterValue;
-    } catch {
-      return fail(
-        "invalid_json_scalar",
-        path,
-        "Custom property values must be JSON scalars.",
-      );
-    }
-  }
+  if (target.kind === "property") return raw;
   const definition = registry.get(target.field);
   if (definition?.valueKind === "number") {
     const value = raw.trim() === "" ? Number.NaN : Number(raw);
@@ -197,17 +182,8 @@ export function parseFilterParams(
   return normalizeFilterDocument({ conditions }, registry);
 }
 
-function encodeValue(
-  value: FilterValue,
-  target: FilterTarget,
-  inList: boolean,
-): string {
-  const wire =
-    target.kind === "event-payload"
-      ? typeof value === "string" && !value.startsWith(JSON_VALUE_PREFIX)
-        ? value
-        : `${JSON_VALUE_PREFIX}${JSON.stringify(value)}`
-      : String(value);
+function encodeValue(value: FilterValue, inList: boolean): string {
+  const wire = String(value);
   return inList ? escapeListValue(wire) : wire;
 }
 
@@ -215,22 +191,18 @@ function serializeCondition(condition: FilterCondition): [string, string] {
   const key =
     condition.target.kind === "field"
       ? `filter[${condition.target.field}]`
-      : `filter[${EVENT_PAYLOAD_FIELD}][${condition.target.path}]`;
+      : `filter[${PROPERTY_FIELD}][${condition.target.key}]`;
   const alias = OPERATOR_ALIASES[condition.operator];
   if (VALUELESS_FILTER_OPERATORS.has(condition.operator)) return [key, alias];
   if (Array.isArray(condition.value)) {
     return [
       key,
       `${alias}:${condition.value
-        .map((value) => encodeValue(value, condition.target, true))
+        .map((value) => encodeValue(value, true))
         .join(",")}`,
     ];
   }
-  const encoded = encodeValue(
-    condition.value as FilterValue,
-    condition.target,
-    false,
-  );
+  const encoded = encodeValue(condition.value as FilterValue, false);
   if (condition.operator !== FilterOperator.Eq)
     return [key, `${alias}:${encoded}`];
   const colon = encoded.indexOf(":");

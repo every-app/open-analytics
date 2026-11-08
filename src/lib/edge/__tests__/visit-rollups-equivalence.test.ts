@@ -8,7 +8,6 @@ import {
   handleOverviewContract,
   handleTrendContract,
 } from "@/lib/edge/analytics/interfaces/dashboard/protocol/overview";
-import { handleOverviewGeoPointsContract } from "@/lib/edge/analytics/interfaces/dashboard/protocol/overview-extras";
 import {
   handleOverviewTabContract,
   type OverviewTab,
@@ -60,7 +59,6 @@ const ROLLUP_TABLES = [
   "visit_daily_rollups",
   "visit_hourly_rollups",
   "visit_daily_dimension_rollups",
-  "visit_daily_geo_points",
 ];
 const UTM_DIMENSIONS = [
   "utm.source",
@@ -267,13 +265,6 @@ async function readOverview(env: Env, read: ReadCase) {
         url({ ...window, interval: read.interval }),
       ),
     ),
-    geoPoints: await body(
-      await handleOverviewGeoPointsContract(
-        env,
-        read.siteId,
-        url({ ...window, limit: 5000 }),
-      ),
-    ),
   };
   for (const tab of CARD_TABS) {
     result[tab] = await body(
@@ -388,12 +379,9 @@ describe("Overview from daily rollups", () => {
       .prepare("SELECT COUNT(*) AS n FROM visit_daily_rollups")
       .get() as { n: number };
     expect(state.n).toBe(SITES.length * 17);
-    // Cards, map, totals and trends each read their rollups.
+    // Cards, totals and trends each read their rollups.
     expect(rollupReads.visit_daily_dimension_rollups).toBeGreaterThan(
       cases.length * CARD_TABS.length,
-    );
-    expect(rollupReads.visit_daily_geo_points).toBeGreaterThanOrEqual(
-      cases.length,
     );
     expect(rollupReads.visit_daily_rollups).toBeGreaterThanOrEqual(
       cases.length,

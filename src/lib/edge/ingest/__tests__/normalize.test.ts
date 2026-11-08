@@ -56,14 +56,14 @@ describe("ingest normalization realtime payload helpers", () => {
       eventType: "pageview",
       eventAt: 1_700_000_000_000,
       visitId: "visit-1",
-      sessionId: "session-1",
+      sessionId: 21,
       pathname: "/docs",
       hash: "#intro",
       title: "Docs",
       hostname: "example.com",
       referrerUrl: "https://ref.example/start",
       referrerHost: "ref.example",
-      visitorId: "visitor-1",
+      visitorId: 11,
       country: "US",
       region: "CA",
       regionCode: "CA",
@@ -84,6 +84,9 @@ describe("ingest normalization realtime payload helpers", () => {
     expect(toRealtimePayload(record)).toMatchObject({
       id: "event-1",
       eventType: "pageview",
+      // The realtime view reads ids as strings.
+      visitorId: "11",
+      sessionId: "21",
       os: "macOS",
       osVersion: "14",
       deviceType: "desktop",
@@ -97,8 +100,8 @@ describe("ingest normalization realtime payload helpers", () => {
     expect(
       toRealtimeVisitPayload({
         visitId: "visit-1",
-        visitorId: "visitor-1",
-        sessionId: "session-1",
+        visitorId: 11,
+        sessionId: 21,
         startedAt: 1_700_000_000_000,
         lastActivityAt: 1_700_000_010_000,
         pathname: "/pricing",
@@ -125,6 +128,8 @@ describe("ingest normalization realtime payload helpers", () => {
       }),
     ).toMatchObject({
       visitId: "visit-1",
+      visitorId: "11",
+      sessionId: "21",
       hash: "#plans",
       os: "Windows",
       osVersion: "11",

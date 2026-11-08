@@ -15,7 +15,6 @@ import type {
 } from "./core";
 import {
   buildTimeBuckets,
-  buildVisitSourceCteForSites,
   mapOverviewAggregate,
   percentChange,
   queryD1All,
@@ -42,13 +41,18 @@ function siteIdChunks(siteIds: string[]): string[][] {
   }
   return chunks;
 }
-function buildTeamOverviewSourceCte(siteCount: number): string {
+/**
+ * The sites' page views in the window with `columns`, as `visit_source`,
+ * each with its site's id, which page views don't repeat.
+ */
+function teamVisitSourceCte(siteCount: number, columns: string): string {
   return `
 visit_source AS MATERIALIZED (
-  SELECT site_id, visitor_id, session_id, duration_ms
-  FROM visits
-  WHERE site_pk IN ${sitePksFromSiteIdsSql(siteCount)}
-    AND started_at >= ? AND started_at < ?
+  SELECT si.site_id, ${columns}
+  FROM visits v
+  INNER JOIN site_identities si ON si.site_pk = v.site_pk
+  WHERE v.site_pk IN ${sitePksFromSiteIdsSql(siteCount)}
+    AND v.started_at >= ? AND v.started_at < ?
 )`;
 }
 export async function queryTeamOverviewFromD1(
@@ -62,19 +66,18 @@ export async function queryTeamOverviewFromD1(
   for (const chunk of siteIdChunks(siteIds)) {
     const sql = `
 WITH
-${buildTeamOverviewSourceCte(chunk.length)},
+${teamVisitSourceCte(chunk.length, "v.visitor_id, v.session_id, v.duration_ms")},
 session_rollup AS (
   SELECT site_id AS siteId, session_id, count(*) AS visit_count
   FROM visit_source
-  WHERE session_id != ''
   GROUP BY siteId, session_id
 ),
 combined AS (
   SELECT
     site_id AS siteId,
     count(*) AS views,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors,
+    count(DISTINCT session_id) AS sessions,
+    count(DISTINCT visitor_id) AS visitors,
     0 AS bounces,
     COALESCE(sum(CASE WHEN duration_ms IS NOT NULL AND duration_ms >= 0 THEN duration_ms ELSE 0 END), 0) AS totalDuration,
     COALESCE(sum(CASE WHEN duration_ms IS NOT NULL AND duration_ms >= 0 THEN 1 ELSE 0 END), 0) AS durationViews
@@ -174,12 +177,12 @@ export async function queryTeamTrendFromD1(
   for (const chunk of siteIdChunks(siteIds)) {
     const sql = `
 WITH
-${buildVisitSourceCteForSites(chunk.length)}
+${teamVisitSourceCte(chunk.length, "v.visitor_id, v.started_at")}
 SELECT
   site_id AS siteId,
   ${bucket.sql} AS bucket,
   count(*) AS views,
-  count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+  count(DISTINCT visitor_id) AS visitors
 FROM visit_source
 GROUP BY siteId, bucket
 ORDER BY bucket ASC, siteId ASC

@@ -1,10 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-  fetchOverviewGeoDimensionTabPage,
-  fetchOverviewGeoPoints,
-} from "@/lib/dashboard/client/data/geo";
-import { dashboardFilterDocumentFromPresentation } from "@/lib/dashboard/filter-state";
+import { fetchOverviewGeoDimensionTabPage } from "@/lib/dashboard/client/data/geo";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 describe("dashboard client geo data helpers", () => {
   const realFetch = globalThis.fetch;
@@ -46,98 +42,6 @@ describe("dashboard client geo data helpers", () => {
     const url = String(fetchMock.mock.calls[index][0]);
     return new URLSearchParams(url.split("?")[1] ?? "");
   }
-
-  it("normalizes geo point payload sections and serializes geo options", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      jsonResponse({
-        ok: true,
-        data: [
-          {
-            latitude: "42.5",
-            longitude: undefined,
-            timestampMs: "12345",
-            country: 99,
-            region: null,
-            regionCode: "IDF",
-            city: "Paris",
-          },
-        ],
-        countryCounts: [{ country: null, views: "8", sessions: "4" }],
-        regionCounts: [{ value: 12, label: undefined, visitors: "2" }],
-        cityCounts: [{ value: undefined, label: "Paris", views: "7" }],
-      }),
-    );
-    globalThis.fetch = fetchMock;
-
-    const out = await fetchOverviewGeoPoints(
-      "geo-site",
-      window,
-      dashboardFilterDocumentFromPresentation({ geo: "FR" }),
-      { applyGeoFilter: true },
-    );
-
-    // The map reads every point: the request names no limit.
-    expect(paramsFromCall(fetchMock).has("limit")).toBe(false);
-    expect(paramsFromCall(fetchMock)).toMatchObject(
-      new URLSearchParams({
-        siteId: "geo-site",
-        from: "1000",
-        to: "2000",
-        timeZone: "UTC",
-        applyGeoFilter: "1",
-        "filter[geo.country]": "fr",
-      }),
-    );
-    expect(out).toEqual({
-      ok: true,
-      data: [
-        {
-          latitude: 42.5,
-          longitude: 0,
-          timestampMs: 12345,
-          country: "99",
-          region: "",
-          regionCode: "IDF",
-          city: "Paris",
-          pointCount: 1,
-        },
-      ],
-      countryCounts: [{ country: "", views: 8, sessions: 4, visitors: 0 }],
-      regionCounts: [
-        { value: "12", label: "", views: 0, sessions: 0, visitors: 2 },
-      ],
-      cityCounts: [
-        { value: "", label: "Paris", views: 7, sessions: 0, visitors: 0 },
-      ],
-    });
-  });
-
-  it("reads missing payload sections as empty, and fails when the request does", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        jsonResponse({
-          ok: true,
-          data: null,
-          countryCounts: "bad",
-          regionCounts: undefined,
-          cityCounts: {},
-        }),
-      )
-      .mockRejectedValueOnce(new Error("offline"));
-    globalThis.fetch = fetchMock;
-
-    await expect(fetchOverviewGeoPoints("geo-empty", window)).resolves.toEqual({
-      ok: true,
-      data: [],
-      countryCounts: [],
-      regionCounts: [],
-      cityCounts: [],
-    });
-    await expect(fetchOverviewGeoPoints("geo-fail", window)).rejects.toThrow(
-      "offline",
-    );
-  });
 
   it("normalizes geo dimension labels for generic, region, and city tabs", async () => {
     const fetchMock = vi

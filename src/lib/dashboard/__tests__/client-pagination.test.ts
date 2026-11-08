@@ -1,11 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-  fetchEventTypeFields,
-  fetchEventTypeFieldValues,
-  fetchFunnels,
-  fetchPages,
-} from "@/lib/dashboard/client/data/core";
+import { fetchFunnels, fetchPages } from "@/lib/dashboard/client/data/core";
 import { fetchReferrers } from "@/lib/dashboard/client/data/referrers";
 import {
   fetchFilterValues,
@@ -114,76 +109,6 @@ describe("paginated dashboard client requests", () => {
     expect(fetchMock.mock.calls[1][1]).toMatchObject({
       credentials: "omit",
       signal,
-    });
-  });
-
-  it("adds pagination options to event field and value requests", async () => {
-    const signal = new AbortController().signal;
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        jsonResponse({
-          ok: true,
-          eventName: "Signup",
-          data: collection(),
-        }),
-      )
-      .mockResolvedValueOnce(
-        jsonResponse({
-          ok: true,
-          fieldPath: "payload.plan",
-          fieldValueType: "string",
-          data: collection(),
-        }),
-      );
-    globalThis.fetch = fetchMock;
-
-    await fetchEventTypeFields(
-      publicDashboardSiteId("public-dashboard"),
-      window,
-      "Signup",
-      undefined,
-      { limit: 13, cursor: "field-cursor", signal },
-    );
-    await fetchEventTypeFieldValues(
-      publicDashboardSiteId("public-dashboard"),
-      window,
-      "Signup",
-      "payload.plan",
-      "string",
-      undefined,
-      { limit: 7, cursor: "value-cursor", signal },
-    );
-
-    const fieldsUrl = new URL(
-      String(fetchMock.mock.calls[0][0]),
-      "https://test.local",
-    );
-    expect(fieldsUrl.pathname).toBe(
-      "/api/public/share/public-dashboard/event-type-fields",
-    );
-    expect(fieldsUrl.searchParams.get("eventName")).toBe("Signup");
-    expect(fieldsUrl.searchParams.get("limit")).toBe("13");
-    expect(fieldsUrl.searchParams.get("cursor")).toBe("field-cursor");
-    expect(fetchMock.mock.calls[0][1]).toMatchObject({
-      signal,
-      credentials: "omit",
-    });
-
-    const valuesUrl = new URL(
-      String(fetchMock.mock.calls[1][0]),
-      "https://test.local",
-    );
-    expect(valuesUrl.pathname).toBe(
-      "/api/public/share/public-dashboard/event-type-field-values",
-    );
-    expect(valuesUrl.searchParams.get("eventName")).toBe("Signup");
-    expect(valuesUrl.searchParams.get("fieldPath")).toBe("payload.plan");
-    expect(valuesUrl.searchParams.get("limit")).toBe("7");
-    expect(valuesUrl.searchParams.get("cursor")).toBe("value-cursor");
-    expect(fetchMock.mock.calls[1][1]).toMatchObject({
-      signal,
-      credentials: "omit",
     });
   });
 

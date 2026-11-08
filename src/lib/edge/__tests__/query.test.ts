@@ -312,8 +312,7 @@ const eventRecordRow = {
   os: "Windows",
   osVersion: "11",
   deviceType: "desktop",
-  nodeCount: 4,
-  valueCount: 3,
+  propertiesJson: '{"plan":"pro"}',
 };
 function sessionRow(overrides: Record<string, unknown> = {}) {
   return {
@@ -1152,7 +1151,7 @@ describe("edge query handlers", () => {
     ).resolves.toEqual({ ...siteRow, canManage: true });
   });
 
-  it("returns overview metrics, comparison, detail trend, and normalized filter bindings", async () => {
+  it("returns overview metrics, detail trend, and normalized filter bindings", async () => {
     const { env, statements } = createEnv({
       matches: [...authMatches(), ...commonQueryMatches()],
     });
@@ -1160,7 +1159,7 @@ describe("edge query handlers", () => {
     const response = await privateQuery(
       privatePath(
         "overview",
-        "includeChange=1&includeDetail=yes&interval=hour&filter[geo.country]=US&filter[page.hostname]=Example.COM&filter[referrer.domain]=__direct__",
+        "includeDetail=yes&interval=hour&filter[geo.country]=US&filter[page.hostname]=Example.COM&filter[referrer.domain]=__direct__",
       ),
       env,
     );
@@ -1179,18 +1178,6 @@ describe("edge query handlers", () => {
         avgDurationMs: 2000,
         bounceRate: 0.25,
         approximateVisitors: false,
-      },
-      previousData: {
-        views: 10,
-        sessions: 5,
-        visitors: 4,
-        bounces: 1,
-      },
-      changeRates: {
-        views: 100,
-        sessions: 60,
-        visitors: 50,
-        bounces: 100,
       },
       detail: {
         interval: "hour",
@@ -1325,7 +1312,7 @@ describe("edge query handlers", () => {
     expect(dimensionStatement?.bindings.at(-1)).toBe(201);
   });
 
-  it("shapes events summary, trend, records, type detail, fields, and field values", async () => {
+  it("shapes events summary, trend, records and type detail", async () => {
     const { env } = createEnv({
       matches: [...authMatches(), ...commonQueryMatches()],
     });
@@ -1344,17 +1331,6 @@ describe("edge query handlers", () => {
     );
     const detail = await privateQuery(
       privatePath("event-type-detail", "eventName=Signup&interval=hour"),
-      env,
-    );
-    const values = await privateQuery(
-      privatePath(
-        "event-type-field-values",
-        "eventName=Signup&fieldPath=/plan&fieldValueType=string",
-      ),
-      env,
-    );
-    const fields = await privateQuery(
-      privatePath("event-type-fields", "eventName=Signup"),
       env,
     );
     const pages = await privateQuery(privatePath("pages"), env);
@@ -1423,33 +1399,6 @@ describe("edge query handlers", () => {
         shareOfAllEvents: 1,
       },
     });
-    expect(await fields.json()).toMatchObject({
-      ok: true,
-      eventName: "Signup",
-      data: {
-        items: [
-          {
-            path: "/plan",
-            valueType: "string",
-            exampleValue: "pro",
-          },
-        ],
-      },
-    });
-    expect(await values.json()).toMatchObject({
-      ok: true,
-      fieldPath: "/plan",
-      fieldValueType: "string",
-      data: {
-        items: [
-          {
-            value: "pro",
-            events: 2,
-            occurrences: 3,
-          },
-        ],
-      },
-    });
     expect(
       [pages, referrers, eventTypes, funnels].every(
         (response) => response instanceof Response,
@@ -1464,131 +1413,13 @@ describe("edge query handlers", () => {
       privatePath("event-type-detail"),
       env,
     );
-    const missingField = await privateQuery(
-      privatePath("event-type-field-values", "eventName=Signup"),
-      env,
-    );
 
     expect(missingEvent.status).toBe(400);
     expect(await missingEvent.json()).toMatchObject({
       ok: false,
       error: { message: "eventName is required" },
     });
-    expect(missingField.status).toBe(400);
-    expect(await missingField.json()).toMatchObject({
-      ok: false,
-      error: { message: "fieldPath is required" },
-    });
-    expect(prepare).toHaveBeenCalledTimes(2);
-  });
-
-  it("maps event field value variants and rejects invalid field value types", async () => {
-    const fieldValueMatches: SqlMatch[] = [
-      {
-        match: (sql, bindings) =>
-          includesAll("GROUP BY valueType, stringValue")(sql) &&
-          bindings.at(-2) === 2,
-        all: [
-          {
-            valueType: 2,
-            events: 2,
-            occurrences: 3,
-            firstSeenAt: from,
-            lastSeenAt: to,
-            stringValue: null,
-            numberValue: 42.5,
-            booleanValue: null,
-          },
-        ],
-      },
-      {
-        match: (sql, bindings) =>
-          includesAll("GROUP BY valueType, stringValue")(sql) &&
-          bindings.at(-2) === 3,
-        all: [
-          {
-            valueType: 3,
-            events: 1,
-            occurrences: 1,
-            firstSeenAt: from,
-            lastSeenAt: to,
-            stringValue: null,
-            numberValue: null,
-            booleanValue: 1,
-          },
-        ],
-      },
-      {
-        match: (sql, bindings) =>
-          includesAll("GROUP BY valueType, stringValue")(sql) &&
-          bindings.at(-2) === 0,
-        all: [
-          {
-            valueType: 0,
-            events: 1,
-            occurrences: 2,
-            firstSeenAt: from,
-            lastSeenAt: to,
-            stringValue: null,
-            numberValue: null,
-            booleanValue: null,
-          },
-        ],
-      },
-    ];
-    const { env } = createEnv({
-      matches: [...authMatches(), ...fieldValueMatches],
-    });
-
-    const numberValues = await privateQuery(
-      privatePath(
-        "event-type-field-values",
-        "eventName=Signup&fieldPath=/value&fieldValueType=number",
-      ),
-      env,
-    );
-    const booleanValues = await privateQuery(
-      privatePath(
-        "event-type-field-values",
-        "eventName=Signup&fieldPath=/active&fieldValueType=boolean",
-      ),
-      env,
-    );
-    const nullValues = await privateQuery(
-      privatePath(
-        "event-type-field-values",
-        "eventName=Signup&fieldPath=/missing&fieldValueType=null",
-      ),
-      env,
-    );
-    const invalidType = await privateQuery(
-      privatePath(
-        "event-type-field-values",
-        "eventName=Signup&fieldPath=/value&fieldValueType=currency",
-      ),
-      env,
-    );
-
-    expect(await numberValues.json()).toMatchObject({
-      ok: true,
-      fieldValueType: "number",
-      data: { items: [{ value: 42.5 }], pagination: expect.any(Object) },
-    });
-    expect(await booleanValues.json()).toMatchObject({
-      ok: true,
-      fieldValueType: "boolean",
-      data: { items: [{ value: true }], pagination: expect.any(Object) },
-    });
-    expect(await nullValues.json()).toMatchObject({
-      ok: true,
-      fieldValueType: "null",
-      data: { items: [{ value: null }], pagination: expect.any(Object) },
-    });
-    expect(invalidType.status).toBe(400);
-    expect(await invalidType.json()).toMatchObject({
-      ok: false,
-      error: { message: "fieldValueType is required" },
-    });
+    expect(prepare).toHaveBeenCalledTimes(1);
   });
 
   it("routes page dashboard handlers", async () => {
@@ -1708,10 +1539,6 @@ describe("edge query handlers", () => {
       privatePath("overview-geo-country", "geo=US"),
       env,
     );
-    const geoPoints = await privateQuery(
-      privatePath("overview-geo-points", "applyGeoFilter=1&geo=US"),
-      env,
-    );
 
     const pageTabPayload: any = await pageTab.json();
     const sourceTabPayload: any = await sourceTab.json();
@@ -1752,17 +1579,6 @@ describe("edge query handlers", () => {
         ],
         pagination: expect.any(Object),
       },
-    });
-    expect(await geoPoints.json()).toMatchObject({
-      ok: true,
-      data: [
-        {
-          latitude: 37.77,
-          longitude: -122.42,
-          city: "San Francisco",
-        },
-      ],
-      countryCounts: [],
     });
   });
 
@@ -2044,7 +1860,6 @@ describe("edge query handlers", () => {
       "pages-dashboard",
       "event-types",
       "filter-values",
-      "overview-geo-points",
       "countries",
       "utm-source",
       "utm-medium",

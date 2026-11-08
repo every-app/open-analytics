@@ -41,8 +41,8 @@ export async function queryEventsTrendFromD1(
 SELECT
   event_name AS eventName,
   count(*) AS events,
-  count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-  count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+  count(DISTINCT session_id) AS sessions,
+  count(DISTINCT visitor_id) AS visitors
 FROM filtered_events
 GROUP BY event_name
 ORDER BY events DESC, sessions DESC, eventName ASC
@@ -96,8 +96,8 @@ ORDER BY bucket ASC
 SELECT
   ? AS eventName,
   count(*) AS events,
-  count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-  count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+  count(DISTINCT session_id) AS sessions,
+  count(DISTINCT visitor_id) AS visitors
 FROM filtered_events
 ${seriesNames.length > 0 ? `WHERE event_name NOT IN (${seriesNames.map(() => "?").join(", ")})` : ""}
 `,
@@ -180,7 +180,7 @@ bucketed AS (
   SELECT
     ${bucket.sql} AS bucket,
     count(*) AS events,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+    count(DISTINCT visitor_id) AS visitors
   FROM filtered_events
   GROUP BY bucket
 )

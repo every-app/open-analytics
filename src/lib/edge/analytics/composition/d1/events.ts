@@ -3,20 +3,10 @@ import { typedQueryProviderFor } from "@/lib/edge/analytics/application/provider
 import { EMPTY_FILTER_DOCUMENT } from "@/lib/edge/analytics/contract";
 import {
   mapEventAnalyticsContextCards,
-  mapEventField,
-  mapEventFieldValue,
   mapEventSummaryCards,
   mapTabs,
 } from "@/lib/edge/analytics/providers/d1/internal/core";
 import { queryEventAnalyticsContextCardsFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-context";
-import {
-  queryEventFieldsPageFromD1,
-  queryEventFieldValuesPageFromD1,
-} from "@/lib/edge/analytics/providers/d1/internal/events-fields";
-import {
-  decodeEventFieldCursor,
-  decodeEventFieldValueCursor,
-} from "@/lib/edge/analytics/providers/d1/internal/events-fields";
 import { queryEventTypeOverviewFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-overview";
 import {
   decodeEventTypeCursor,
@@ -147,98 +137,6 @@ export function registerEventProviders(
             eventName: stringField(request, "eventName") || undefined,
             page: request.page ?? { limit: request.limit ?? 80, cursor: null },
           }),
-        };
-      }),
-    )
-    .register(
-      "event-field-values",
-      typedQueryProviderFor("event-field-values", async (input) => {
-        const request = input;
-        const eventName = stringField(request, "eventName") || undefined;
-        const fieldPath = stringField(request, "fieldPath");
-        const fieldValueType = stringField(request, "fieldValueType");
-        const limit = numberField(request, "limit", 25);
-        const search = stringField(request, "search") || undefined;
-        const window = timeWindow(request.time);
-        const filters = request.filters ?? EMPTY_FILTER_DOCUMENT;
-        const cursorText = stringField(request, "cursor") || null;
-        const cursor = await decodeEventFieldValueCursor(
-          options.env,
-          options.siteId,
-          window,
-          filters,
-          eventName,
-          fieldPath,
-          fieldValueType,
-          search,
-          cursorText,
-          request.context.policy.audience,
-        );
-        if (cursorText && !cursor)
-          throw new InvalidCursorError("event-field-values");
-        const page = await queryEventFieldValuesPageFromD1(
-          options.env,
-          options.siteId,
-          window,
-          filters,
-          eventName,
-          fieldPath,
-          fieldValueType,
-          limit,
-          search,
-          cursor,
-          request.context.policy.audience,
-        );
-        return {
-          value: {
-            eventName,
-            fieldPath,
-            fieldValueType,
-            data: {
-              items: page.items.map(mapEventFieldValue),
-              pagination: page.pagination,
-            },
-          },
-        };
-      }),
-    )
-    .register(
-      "event-fields",
-      typedQueryProviderFor("event-fields", async (input) => {
-        const request = input;
-        const eventName = stringField(request, "eventName") || undefined;
-        const limit = numberField(request, "limit", 100);
-        const window = timeWindow(request.time);
-        const filters = request.filters ?? EMPTY_FILTER_DOCUMENT;
-        const cursorText = stringField(request, "cursor") || null;
-        const cursor = await decodeEventFieldCursor(
-          options.env,
-          options.siteId,
-          window,
-          filters,
-          eventName,
-          cursorText,
-          request.context.policy.audience,
-        );
-        if (cursorText && !cursor) throw new InvalidCursorError("event-fields");
-        const page = await queryEventFieldsPageFromD1(
-          options.env,
-          options.siteId,
-          window,
-          filters,
-          eventName,
-          limit,
-          cursor,
-          request.context.policy.audience,
-        );
-        return {
-          value: {
-            eventName,
-            data: {
-              items: page.items.map(mapEventField),
-              pagination: page.pagination,
-            },
-          },
         };
       }),
     )

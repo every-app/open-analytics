@@ -43,7 +43,7 @@ const messages = {
       "page.path": "Page path",
       "referrer.domain": "Referrer domain",
       "client.deviceType": "Device type",
-      "event.payload": "Event payload",
+      property: "Property",
       "page.durationMs": "Page duration",
       "event.name": "Event name",
     },
@@ -61,10 +61,10 @@ describe("filter descriptions", () => {
   it("joins every condition with and, in the filter's canonical order", () => {
     expect(
       describe_(
-        'page.path eq "/pricing" AND client.deviceType notIn ["mobile", "tablet"] AND event.payload("/score") between [120, 130]',
+        'page.path eq "/pricing" AND client.deviceType notIn ["mobile", "tablet"] AND property("plan") eq "pro"',
       ),
     ).toBe(
-      'Event payload (/score) is between 120 and 130 and Device type is none of "mobile" or "tablet" and Page path equals "/pricing"',
+      'Device type is none of "mobile" or "tablet" and Page path equals "/pricing" and Property (plan) equals "pro"',
     );
   });
 

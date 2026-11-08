@@ -228,7 +228,7 @@ describe("edge team query coverage", () => {
       visitBindingsForSites(siteIds),
     ]);
     expect(calls[0].sql).toContain(
-      "WHERE site_pk IN (SELECT site_pk FROM site_identities WHERE site_id IN (?, ?))",
+      "WHERE v.site_pk IN (SELECT site_pk FROM site_identities WHERE site_id IN (?, ?))",
     );
     expect(calls[1].sql).toContain("ORDER BY bucket ASC, siteId ASC");
   });
@@ -254,9 +254,9 @@ describe("edge team query coverage", () => {
     } as Env;
     const insert = database.prepare(`
       INSERT INTO visits (
-        visit_id, site_id, visitor_id, session_id, status, started_at,
+        visit_id, visitor_id, session_id, status, started_at,
         last_activity_at, pathname, hostname, duration_ms, site_pk
-      ) VALUES (?1, ?2, ?3, ?4, 'closed', ?5, ?6, '/', 'example.test', ?7,
+      ) VALUES (?1, ?3, ?4, 'closed', ?5, ?6, '/', 'example.test', ?7,
         (SELECT site_pk FROM site_identities WHERE site_id = ?2))
     `);
 
@@ -330,13 +330,13 @@ describe("edge team query coverage", () => {
       expect(calls).toHaveLength(1);
       expect(calls[0]?.sql).toContain("visit_source AS MATERIALIZED");
       expect(calls[0]?.sql).toContain(
-        "SELECT site_id, visitor_id, session_id, duration_ms",
+        "SELECT si.site_id, v.visitor_id, v.session_id, v.duration_ms",
       );
       const plan = database
         .prepare(`EXPLAIN QUERY PLAN ${calls[0]?.sql ?? "SELECT 1"}`)
         .all(...(calls[0]?.bindings ?? [])) as Array<{ detail: string }>;
       expect(
-        plan.filter((row) => row.detail.includes("SEARCH visits USING INDEX")),
+        plan.filter((row) => row.detail.includes("SEARCH v USING INDEX")),
       ).toHaveLength(1);
       expect(
         plan.some((row) =>

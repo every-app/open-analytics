@@ -6,6 +6,8 @@ import {
   coerceString,
   deriveServerSessionId,
   deriveVisitorId,
+  ID_HEX_DIGITS,
+  idFromSha256Hex,
   isSameHostname,
   jsonCloneRecord,
   nowEpochSeconds,
@@ -58,6 +60,21 @@ describe("edge utility helpers", () => {
     expect(clampString("abcdef", 3)).toBe("abc");
   });
 
+  it("keeps an id's first 13 hex digits: 52 bits, a safe JS integer", () => {
+    expect(ID_HEX_DIGITS).toBe(13);
+    expect(idFromSha256Hex("fffffffffffff".padEnd(64, "0"))).toBe(2 ** 52 - 1);
+    expect(2 ** 52 - 1).toBeLessThan(Number.MAX_SAFE_INTEGER);
+    expect(
+      idFromSha256Hex(
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+      ),
+    ).toBe(0xba7816bf8f01c);
+    expect(idFromSha256Hex("0000000000001")).toBe(1);
+    for (const notHex of ["ABCDEF0123456", "55f62b50-0a2b", "abc", ""]) {
+      expect(() => idFromSha256Hex(notHex), notHex).toThrow(TypeError);
+    }
+  });
+
   it("derives stable SHA-256 based identifiers", async () => {
     await expect(sha256Hex("abc")).resolves.toBe(
       "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
@@ -70,7 +87,9 @@ describe("edge utility helpers", () => {
       ua: "Mozilla/5.0",
     };
     const visitorId = await deriveVisitorId(visitor);
-    expect(visitorId).toMatch(/^[0-9a-f]{64}$/);
+    expect(visitorId).toBe(
+      idFromSha256Hex(await sha256Hex("salt|site-1|203.0.113.10|Mozilla/5.0")),
+    );
     await expect(deriveVisitorId(visitor)).resolves.toBe(visitorId);
     await expect(
       deriveVisitorId({ ...visitor, salt: "next-day" }),
@@ -86,7 +105,13 @@ describe("edge utility helpers", () => {
       visitId: "visit-1",
       startedAt,
     });
-    expect(serverSessionId).toMatch(/^[0-9a-f]{64}$/);
+    expect(serverSessionId).toBe(
+      idFromSha256Hex(
+        await sha256Hex(
+          `server-session-v1|site-1|${visitorId}|visit-1|${startedAt}`,
+        ),
+      ),
+    );
     await expect(
       deriveServerSessionId({
         siteId: "site-1",

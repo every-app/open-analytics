@@ -91,7 +91,7 @@ async function pageAggregate(
   SELECT
     pathname,
     count(*) AS views,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions
+    count(DISTINCT session_id) AS sessions
   FROM ${relation}
   GROUP BY pathname`;
   const rollup = await rollupEdgeSource(env, siteId, window, filters);

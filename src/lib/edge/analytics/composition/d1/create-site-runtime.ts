@@ -3,6 +3,7 @@ import { createAnalyticsQueryRuntime } from "@/lib/edge/analytics/composition/qu
 import { createD1ReadDiagnostics } from "@/lib/edge/analytics/providers/d1/internal/diagnostics";
 import { createOverviewReader } from "@/lib/edge/analytics/providers/d1/operations/overview-reader";
 
+import { dashboardProvider } from "./dashboard";
 import { registerEventProviders } from "./events";
 import { registerFunnelProvider } from "./funnels";
 import { registerGoalProviders } from "./goals";
@@ -23,7 +24,8 @@ export function createD1SiteProviderRegistry(options: D1SiteRuntimeBindings) {
   const reader = createOverviewReader(options.env, options.siteId, diagnostics);
   const registry = new AnalyticsProviderRegistry()
     .register("overview", overviewProvider(reader))
-    .register("trend", trendProvider(reader));
+    .register("trend", trendProvider(reader))
+    .register("dashboard", dashboardProvider(options, diagnostics));
   registerSiteContractProviders(registry, options);
   registerEventProviders(registry, options);
   registerFunnelProvider(registry, options);

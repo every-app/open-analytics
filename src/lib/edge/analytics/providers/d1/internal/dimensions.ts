@@ -100,7 +100,7 @@ function sessionPathDimensionCursor(
     : null;
 }
 
-type SessionPathKind = "entry" | "exit";
+export type SessionPathKind = "entry" | "exit";
 
 function dimensionCursorBinding(
   operation: string,
@@ -154,8 +154,8 @@ async function dimensionAggregate(
   SELECT
     COALESCE(${selectExpr}, '') AS value,
     count(*) AS views,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+    count(DISTINCT session_id) AS sessions,
+    count(DISTINCT visitor_id) AS visitors
   FROM ${relation}
   GROUP BY value`;
   const dimension = rollupDimensionForExpression(selectExpr);
@@ -411,20 +411,16 @@ export async function decodeDimensionCursor(
 }
 
 /**
- * The `session_path_rollup` CTE (value, views, sessions, visitors): visits
- * by entry or exit page. Unfiltered reads of a site with rolled-up days add
- * those days to the raw grouping of the window's edges.
+ * CTEs that rank the page views of `relation` within their sessions, ending
+ * in `raw_session_paths` (value, views, sessions, visitors): visits by entry
+ * or exit page.
  */
-async function sessionPathAggregate(
-  env: Env,
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
+export function sessionPathGroupingCtes(
+  relation: string,
   kind: SessionPathKind,
-  diagnostics?: D1ReadDiagnostics,
-): Promise<BoundSql> {
+): string {
   const boundaryRank = kind === "entry" ? "first_rank" : "latest_rank";
-  const grouping = (relation: string) => `
+  return `
 ranked_session_visits AS (
   SELECT
     vs.session_id,
@@ -439,7 +435,7 @@ ranked_session_visits AS (
       ORDER BY vs.started_at DESC, vs.visit_id DESC
     ) AS latest_rank
   FROM ${relation} vs
-  WHERE vs.session_id != '' AND TRIM(COALESCE(vs.pathname, '')) != ''
+  WHERE TRIM(COALESCE(vs.pathname, '')) != ''
 ),
 session_edges AS (
   SELECT
@@ -454,11 +450,26 @@ raw_session_paths AS (
     value,
     count(*) AS views,
     count(*) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+    count(DISTINCT visitor_id) AS visitors
   FROM session_edges
   WHERE TRIM(value) != ''
   GROUP BY value
 )`;
+}
+
+/**
+ * The `session_path_rollup` CTE (value, views, sessions, visitors): visits
+ * by entry or exit page. Unfiltered reads of a site with rolled-up days add
+ * those days to the raw grouping of the window's edges.
+ */
+async function sessionPathAggregate(
+  env: Env,
+  siteId: string,
+  window: QueryWindow,
+  filters: FilterDocument,
+  kind: SessionPathKind,
+  diagnostics?: D1ReadDiagnostics,
+): Promise<BoundSql> {
   const rollup = await rollupEdgeSource(
     env,
     siteId,
@@ -474,7 +485,7 @@ raw_session_paths AS (
     );
     return {
       sql: `${rollup.visitSource.sql},
-${grouping("visit_source")},
+${sessionPathGroupingCtes("visit_source", kind)},
 session_path_rollup AS (
   SELECT value, SUM(views) AS views, SUM(sessions) AS sessions, SUM(visitors) AS visitors
   FROM (
@@ -492,7 +503,7 @@ session_path_rollup AS (
   });
   return {
     sql: `${source.sql},
-${grouping("filtered_visits")},
+${sessionPathGroupingCtes("filtered_visits", kind)},
 session_path_rollup AS (
   SELECT value, views, sessions, visitors FROM raw_session_paths
 )`,
@@ -783,8 +794,8 @@ ${source.sql}
 SELECT
   COALESCE(${keyExpr}, '') AS referrer,
   count(*) AS views,
-  count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-  count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+  count(DISTINCT session_id) AS sessions,
+  count(DISTINCT visitor_id) AS visitors
 FROM filtered_visits
 GROUP BY referrer
 ${search ? "HAVING LOWER(referrer) LIKE ? ESCAPE '\\'" : ""}

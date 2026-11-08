@@ -12,7 +12,6 @@ import type { AppMessages } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
 
 import { ConditionListEditor } from "./filter-editor/editors";
-import { directEventName } from "./filter-editor/field-catalog";
 import type {
   EditorCondition,
   FilterPanelAudience,
@@ -77,7 +76,6 @@ export function FilterEditor({
           conditions={conditions}
           createId={createId}
           document={document}
-          eventName={directEventName(conditions)}
           messages={messages}
           siteId={siteId}
           window={window}

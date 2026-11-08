@@ -6,17 +6,14 @@ import {
 } from "@/lib/edge/analytics/contract";
 import { handleSimpleDimensionContract } from "@/lib/edge/analytics/interfaces/dashboard/protocol/dimensions";
 import {
-  handleEventFieldValuesContract,
   handleEventRecordsContract,
   handleEventsSummaryContract,
   handleEventsTrendContract,
   handleEventTypeDetailContract,
-  handleEventTypeFieldsContract,
   handleEventTypesContract,
 } from "@/lib/edge/analytics/interfaces/dashboard/protocol/events";
 import { handleFilterValuesContract } from "@/lib/edge/analytics/interfaces/dashboard/protocol/filter-values";
 import { handleFunnelAnalysisContract } from "@/lib/edge/analytics/interfaces/dashboard/protocol/funnels";
-import { handleOverviewGeoPointsContract } from "@/lib/edge/analytics/interfaces/dashboard/protocol/overview-extras";
 import {
   handlePagesContract,
   handlePagesDashboardContract,
@@ -97,13 +94,11 @@ describe("typed query adapter validation branches", () => {
       handleEventsSummaryContract(env, siteId, invalidWindow, context),
       handleEventsTrendContract(env, siteId, invalidWindow, context),
       handleEventRecordsContract(env, siteId, invalidWindow, context),
-      handleEventFieldValuesContract(env, siteId, invalidWindow, context),
-      handleEventTypeFieldsContract(env, siteId, invalidWindow, context),
       handleEventTypeDetailContract(env, siteId, invalidWindow, context),
       handleFunnelAnalysisContract(env, siteId, invalidWindow, context),
     ]);
 
-    expect(responses).toHaveLength(8);
+    expect(responses).toHaveLength(6);
     expect(responses.every((response) => response instanceof Response)).toBe(
       true,
     );
@@ -112,15 +107,13 @@ describe("typed query adapter validation branches", () => {
 
   it("executes valid event and funnel reader branches", async () => {
     const valid = new URL(
-      "https://edge.test/query?from=1767225600000&to=1767312000000&eventName=signup&fieldPath=plan&fieldValueType=string&limit=5",
+      "https://edge.test/query?from=1767225600000&to=1767312000000&eventName=signup&limit=5",
     );
     const responses = await Promise.all([
       handleEventTypesContract(env, siteId, valid),
       handleEventsSummaryContract(env, siteId, valid),
       handleEventsTrendContract(env, siteId, valid),
       handleEventRecordsContract(env, siteId, valid),
-      handleEventFieldValuesContract(env, siteId, valid),
-      handleEventTypeFieldsContract(env, siteId, valid),
       handleEventTypeDetailContract(env, siteId, valid, undefined, undefined, {
         includeContext: false,
         includeBreakdowns: false,
@@ -128,7 +121,7 @@ describe("typed query adapter validation branches", () => {
       handleFunnelAnalysisContract(env, siteId, valid),
     ]);
 
-    expect(responses).toHaveLength(8);
+    expect(responses).toHaveLength(6);
     expect(responses.every((response) => response instanceof Response)).toBe(
       true,
     );
@@ -164,12 +157,6 @@ describe("typed query adapter validation branches", () => {
           new URL(`${base}&filterKey=${filterKey}`),
         ),
       ),
-      handleOverviewGeoPointsContract(env, siteId, new URL(base)),
-      handleOverviewGeoPointsContract(
-        env,
-        siteId,
-        new URL(`${base}&applyGeoFilter=true`),
-      ),
       handlePagesContract(
         env,
         siteId,
@@ -201,7 +188,7 @@ describe("typed query adapter validation branches", () => {
       handlePagesDashboardContract(env, siteId, new URL(`${base}&limit=24`)),
     ]);
 
-    expect(responses).toHaveLength(13);
+    expect(responses).toHaveLength(11);
     expect(responses.every((response) => response.status < 500)).toBe(true);
   });
 

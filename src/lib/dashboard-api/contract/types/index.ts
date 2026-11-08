@@ -1,7 +1,6 @@
 export type * from "./admin";
 export type * from "./config";
 export type * from "./dimensions";
-export type * from "./events";
 export type * from "./filters";
 export type * from "./funnels";
 export type * from "./goals";

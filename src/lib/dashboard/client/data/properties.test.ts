@@ -38,7 +38,7 @@ describe("property data client helpers", () => {
         from: 1_000,
         to: 2_000,
         timeZone: "UTC",
-        "filter[event.payload][/author]": "Jane",
+        "filter[property][author]": "Jane",
       },
       { signal: controller.signal },
     );
@@ -73,7 +73,7 @@ describe("property data client helpers", () => {
         sort: "events",
         direction: "asc",
         search: "ja",
-        "filter[event.payload][/author]": "Jane",
+        "filter[property][author]": "Jane",
       }),
       { signal: undefined },
     );

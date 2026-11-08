@@ -5,8 +5,8 @@ export type SqlBinding = string | number | null;
 export interface VisitBindingRow {
   visitId: string;
   siteId: string;
-  visitorId: string;
-  sessionId: string;
+  visitorId: number;
+  sessionId: number;
   status: string;
   startedAt: number;
   lastActivityAt: number;
@@ -35,8 +35,6 @@ export interface VisitBindingRow {
   regionCode: string;
   city: string;
   continent: string;
-  latitude: number | null;
-  longitude: number | null;
   timezone: string;
   browser: string;
   browserVersion: string;
@@ -52,7 +50,6 @@ export interface VisitBindingRow {
 
 export const VISIT_D1_COLUMNS = [
   "visit_id",
-  "site_id",
   "site_pk",
   "visitor_id",
   "session_id",
@@ -84,8 +81,6 @@ export const VISIT_D1_COLUMNS = [
   "region_code",
   "city",
   "continent",
-  "latitude",
-  "longitude",
   "timezone",
   "browser",
   "browser_version",
@@ -213,7 +208,7 @@ export const CREATE_BUFFERED_CUSTOM_EVENTS_SQL = `
     received_at INTEGER NOT NULL,
     sequence INTEGER NOT NULL DEFAULT 0,
     event_name TEXT NOT NULL,
-    event_data_json TEXT NOT NULL DEFAULT '{}',
+    properties_json TEXT,
     revenue_amount REAL,
     revenue_currency TEXT,
     dirty INTEGER NOT NULL DEFAULT 1,
@@ -225,11 +220,10 @@ export const CREATE_BUFFERED_CUSTOM_EVENTS_SQL = `
 
 export function visitBindings(
   row: VisitBindingRow,
-  sitePk: number | null = null,
+  sitePk: number,
 ): SqlBinding[] {
   return [
     row.visitId,
-    row.siteId,
     sitePk,
     row.visitorId,
     row.sessionId,
@@ -261,8 +255,6 @@ export function visitBindings(
     row.regionCode,
     row.city,
     row.continent,
-    row.latitude,
-    row.longitude,
     row.timezone,
     row.browser,
     row.browserVersion,

@@ -14,7 +14,6 @@ import {
   handleOverviewContract as handleOverview,
   handleTrendContract as handleTrend,
 } from "@/lib/edge/analytics/interfaces/dashboard/protocol/overview";
-import { handleOverviewGeoPointsContract as handleOverviewGeoPoints } from "@/lib/edge/analytics/interfaces/dashboard/protocol/overview-extras";
 import { handleOverviewTabContract } from "@/lib/edge/analytics/interfaces/dashboard/protocol/overview-tabs";
 import {
   handlePagesContract as handlePages,
@@ -239,15 +238,14 @@ describe("edge pages D1 queries", () => {
     } as Env;
     const insert = database.prepare(`
       INSERT INTO visits (
-        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
+        site_pk, visit_id, visitor_id, session_id, status, started_at,
         last_activity_at, pathname, hostname, duration_ms
-      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?)
+      ) VALUES (1, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?)
     `);
 
     try {
       insert.run(
         "root-first",
-        siteId,
         "visitor-1",
         "session-1",
         baseMs,
@@ -257,7 +255,6 @@ describe("edge pages D1 queries", () => {
       );
       insert.run(
         "root-last",
-        siteId,
         "visitor-1",
         "session-1",
         baseMs + 1,
@@ -267,7 +264,6 @@ describe("edge pages D1 queries", () => {
       );
       insert.run(
         "pricing-first",
-        siteId,
         "visitor-1",
         "session-2",
         baseMs + 2,
@@ -277,7 +273,6 @@ describe("edge pages D1 queries", () => {
       );
       insert.run(
         "pricing-second",
-        siteId,
         "visitor-2",
         "session-3",
         baseMs + 3,
@@ -287,7 +282,6 @@ describe("edge pages D1 queries", () => {
       );
       insert.run(
         "outside-window",
-        siteId,
         "visitor-3",
         "session-4",
         window.endExclusiveMs,
@@ -1296,15 +1290,14 @@ describe("edge overview D1 queries and handlers", () => {
     } as Env;
     const insert = database.prepare(`
       INSERT INTO visits (
-        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
+        site_pk, visit_id, visitor_id, session_id, status, started_at,
         last_activity_at, pathname, hostname, country, browser, duration_ms
-      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?, ?, ?)
+      ) VALUES (1, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?, ?, ?)
     `);
 
     try {
       insert.run(
         "first-session-first-visit",
-        siteId,
         "visitor-1",
         "session-1",
         baseMs,
@@ -1316,7 +1309,6 @@ describe("edge overview D1 queries and handlers", () => {
       );
       insert.run(
         "first-session-second-visit",
-        siteId,
         "visitor-1",
         "session-1",
         baseMs + 1,
@@ -1328,7 +1320,6 @@ describe("edge overview D1 queries and handlers", () => {
       );
       insert.run(
         "second-session-visit",
-        siteId,
         "visitor-1",
         "session-2",
         baseMs + 2,
@@ -1340,7 +1331,6 @@ describe("edge overview D1 queries and handlers", () => {
       );
       insert.run(
         "excluded-country",
-        siteId,
         "visitor-2",
         "session-3",
         baseMs + 3,
@@ -1380,7 +1370,7 @@ describe("edge overview D1 queries and handlers", () => {
       ).toHaveLength(1);
       expect(
         plan.some((row) =>
-          row.detail.includes("idx_visits_site_pk_started_at"),
+          row.detail.includes("idx_visits_site_pk_pathname_started_at"),
         ),
       ).toBe(true);
     } finally {
@@ -1408,15 +1398,14 @@ describe("edge overview D1 queries and handlers", () => {
     } as Env;
     const insert = database.prepare(`
       INSERT INTO visits (
-        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
+        site_pk, visit_id, visitor_id, session_id, status, started_at,
         last_activity_at, pathname, hostname, duration_ms
-      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?)
+      ) VALUES (1, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?)
     `);
 
     try {
       insert.run(
         "matching-entry",
-        siteId,
         "visitor-1",
         "matching-session",
         baseMs,
@@ -1426,7 +1415,6 @@ describe("edge overview D1 queries and handlers", () => {
       );
       insert.run(
         "matching-follow-up",
-        siteId,
         "visitor-1",
         "matching-session",
         baseMs + 1,
@@ -1436,7 +1424,6 @@ describe("edge overview D1 queries and handlers", () => {
       );
       insert.run(
         "different-entry",
-        siteId,
         "visitor-2",
         "other-session",
         baseMs + 2,
@@ -1446,7 +1433,6 @@ describe("edge overview D1 queries and handlers", () => {
       );
       insert.run(
         "empty-session",
-        siteId,
         "visitor-3",
         "",
         baseMs + 3,
@@ -1570,15 +1556,14 @@ describe("edge overview D1 queries and handlers", () => {
     } as Env;
     const insert = database.prepare(`
       INSERT INTO visits (
-        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
+        site_pk, visit_id, visitor_id, session_id, status, started_at,
         last_activity_at, pathname, hostname, country, duration_ms
-      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?, ?)
+      ) VALUES (1, ?, ?, ?, 'closed', ?, ?, ?, 'example.test', ?, ?)
     `);
 
     try {
       insert.run(
         "first-hour",
-        siteId,
         "visitor-1",
         "session-1",
         baseMs + 100,
@@ -1589,7 +1574,6 @@ describe("edge overview D1 queries and handlers", () => {
       );
       insert.run(
         "second-hour-first",
-        siteId,
         "visitor-1",
         "session-2",
         baseMs + 60 * 60 * 1000 + 100,
@@ -1600,7 +1584,6 @@ describe("edge overview D1 queries and handlers", () => {
       );
       insert.run(
         "second-hour-last",
-        siteId,
         "visitor-1",
         "session-2",
         baseMs + 60 * 60 * 1000 + 200,
@@ -1611,7 +1594,6 @@ describe("edge overview D1 queries and handlers", () => {
       );
       insert.run(
         "excluded-country",
-        siteId,
         "visitor-2",
         "session-3",
         baseMs + 300,
@@ -1654,7 +1636,7 @@ describe("edge overview D1 queries and handlers", () => {
       ).toHaveLength(1);
       expect(
         plan.some((row) =>
-          row.detail.includes("idx_visits_site_pk_started_at"),
+          row.detail.includes("idx_visits_site_pk_pathname_started_at"),
         ),
       ).toBe(true);
     } finally {
@@ -1662,7 +1644,7 @@ describe("edge overview D1 queries and handlers", () => {
     }
   });
 
-  it("returns overview metrics with previous change rates and detail trend mapping", async () => {
+  it("returns overview metrics with their detail trend mapping", async () => {
     const { env, calls } = createD1Env([
       [
         {
@@ -1673,17 +1655,6 @@ describe("edge overview D1 queries and handlers", () => {
           totalDuration: 50000,
           durationViews: 10,
           scrollDepth: 65,
-        },
-      ],
-      [
-        {
-          views: 5,
-          sessions: 5,
-          visitors: 2,
-          bounces: 2,
-          totalDuration: 25000,
-          durationViews: 5,
-          scrollDepth: null,
         },
       ],
       [
@@ -1707,7 +1678,6 @@ describe("edge overview D1 queries and handlers", () => {
         from: window.startMs,
         to: window.endExclusiveMs,
         interval: "hour",
-        includeChange: true,
         includeDetail: true,
         "filter[page.path]": "/pricing",
       }),
@@ -1725,25 +1695,6 @@ describe("edge overview D1 queries and handlers", () => {
         bounceRate: 0.2,
         approximateVisitors: false,
         scrollDepth: 65,
-      },
-      previousData: {
-        views: 5,
-        sessions: 5,
-        visitors: 2,
-        bounces: 2,
-        totalDurationMs: 25000,
-        avgDurationMs: 5000,
-        bounceRate: 0.4,
-        approximateVisitors: false,
-        scrollDepth: null,
-      },
-      changeRates: {
-        views: 100,
-        sessions: 0,
-        visitors: 100,
-        bounces: -50,
-        bounceRate: -50,
-        avgDurationMs: 100,
       },
       detail: {
         interval: "hour",
@@ -1767,9 +1718,8 @@ describe("edge overview D1 queries and handlers", () => {
     expect(response.headers.get("x-insightflare-d1-rows-read")).toBe(
       "unavailable",
     );
-    expect(calls).toHaveLength(3);
+    expect(calls).toHaveLength(2);
     expect(calls.map((call) => call.bindings.at(-1))).toEqual([
-      "/pricing",
       "/pricing",
       "/pricing",
     ]);
@@ -2316,108 +2266,6 @@ describe("edge overview D1 queries and handlers", () => {
     expect(calls[0].sql).toContain("TRIM(COALESCE(device_type, ''))");
     expect(calls[1].sql).toContain("TRIM(COALESCE(browser, ''))");
     expect(calls.map((call) => call.bindings.at(-1))).toEqual([5, 5]);
-  });
-
-  it("maps overview geo points with and without applying geo filters", async () => {
-    const { env, calls } = createD1Env([
-      [
-        {
-          latitude: "37.7",
-          longitude: "-122.4",
-          timestampMs: String(window.startMs),
-          country: "US",
-          region: "California",
-          regionCode: "CA",
-          city: "San Francisco",
-        },
-      ],
-      [
-        {
-          country: "US",
-          views: "7",
-          sessions: "4",
-          visitors: "3",
-        },
-      ],
-      [],
-      [
-        {
-          country: "us",
-          regionCode: "ca",
-          region: "California",
-          city: "San Francisco",
-          views: "5",
-          sessions: "3",
-          visitors: "2",
-        },
-      ],
-    ]);
-
-    const withoutGeo = await handleOverviewGeoPoints(
-      env,
-      siteId,
-      url("/overview/geo-points", {
-        from: window.startMs,
-        to: window.endExclusiveMs,
-        "filter[geo.country]": "US",
-        "filter[geo.region]": "California",
-        limit: 9,
-      }),
-    );
-    const withGeo = await handleOverviewGeoPoints(
-      env,
-      siteId,
-      url("/overview/geo-points", {
-        from: window.startMs,
-        to: window.endExclusiveMs,
-        "filter[geo.country]": "US",
-        "filter[geo.region]": "California",
-        applyGeoFilter: true,
-        limit: 10,
-      }),
-    );
-
-    await expect(withoutGeo.json()).resolves.toEqual({
-      ok: true,
-      data: [
-        {
-          latitude: 37.7,
-          longitude: -122.4,
-          timestampMs: window.startMs,
-          country: "US",
-          region: "California",
-          regionCode: "CA",
-          city: "San Francisco",
-          pointCount: 1,
-        },
-      ],
-      countryCounts: [{ country: "US", views: 7, sessions: 4, visitors: 3 }],
-      regionCounts: [],
-      cityCounts: [],
-    });
-    await expect(withGeo.json()).resolves.toEqual({
-      ok: true,
-      data: [],
-      countryCounts: [],
-      regionCounts: [],
-      cityCounts: [
-        {
-          value: "US::CA::California::San Francisco",
-          label: "San Francisco",
-          views: 5,
-          sessions: 3,
-          visitors: 2,
-        },
-      ],
-    });
-    // Every point: a limit in the request doesn't cut the map short.
-    expect(calls[0].sql).not.toContain("LIMIT");
-    expect(calls[0].bindings).not.toContain(9);
-    expect(calls[2].sql).not.toContain("LIMIT");
-    expect(calls[2].bindings).not.toContain(10);
-    expect(calls[2].bindings).toEqual(
-      expect.arrayContaining(["us", "california"]),
-    );
   });
 
   it("rejects invalid overview windows before querying D1", async () => {

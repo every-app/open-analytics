@@ -7,8 +7,6 @@ import { parseFilterUrlForAudience } from "@/lib/edge/analytics/contract";
 import {
   type OverviewMetrics,
   type OverviewQuery,
-  percentChange,
-  previousComparableWindow,
   queryWindowToTime,
   siteQueryContext,
   type TrendPoint,
@@ -26,7 +24,7 @@ import {
   type ResponseContext,
 } from "@/lib/edge/analytics/interfaces/dashboard/protocol/responses";
 import type { Env } from "@/lib/edge/types";
-function aggregateMetrics(row: OverviewMetrics) {
+export function aggregateMetrics(row: OverviewMetrics) {
   return {
     views: row.views,
     sessions: row.sessions,
@@ -40,7 +38,7 @@ function aggregateMetrics(row: OverviewMetrics) {
     scrollDepth: row.scrollDepth,
   };
 }
-function trendRows(points: readonly TrendPoint[]) {
+export function trendRows(points: readonly TrendPoint[]) {
   return points.map((point) => ({
     bucket: point.bucket,
     timestampMs: point.timestampMs,
@@ -68,16 +66,11 @@ export async function handleOverviewContract(
   if (!window) return badRequest("Invalid time window");
   const filters = parseFilterUrlForAudience(queryContext.policy.audience, url);
   const diagnostics = createAnalyticsReadDiagnostics();
-  const currentTime = queryWindowToTime(window);
-  const previousTime = parseBooleanFlag(url, "includeChange")
-    ? queryWindowToTime(previousComparableWindow(window))
-    : undefined;
   const includeDetail = parseBooleanFlag(url, "includeDetail");
   const query = {
     context: queryContext,
-    time: currentTime,
+    time: queryWindowToTime(window),
     filters,
-    previousTime,
     detailInterval: includeDetail ? parseInterval(url) : undefined,
   } satisfies OverviewQuery;
   const result = await createEdgeSiteAnalyticsRuntime({
@@ -87,23 +80,10 @@ export async function handleOverviewContract(
   }).execute("overview", query);
   if (!result.ok) return queryErrorResponse(result.error);
 
-  const current = aggregateMetrics(result.data.current);
-  const payload: Record<string, unknown> = { ok: true, data: current };
-  if (result.data.previous) {
-    const previous = aggregateMetrics(result.data.previous);
-    payload.previousData = previous;
-    payload.changeRates = {
-      views: percentChange(current.views, previous.views),
-      sessions: percentChange(current.sessions, previous.sessions),
-      visitors: percentChange(current.visitors, previous.visitors),
-      bounces: percentChange(current.bounces, previous.bounces),
-      bounceRate: percentChange(current.bounceRate, previous.bounceRate),
-      avgDurationMs: percentChange(
-        current.avgDurationMs,
-        previous.avgDurationMs,
-      ),
-    };
-  }
+  const payload: Record<string, unknown> = {
+    ok: true,
+    data: aggregateMetrics(result.data.current),
+  };
   if (result.data.detail) {
     payload.detail = {
       interval: result.data.detail.interval,

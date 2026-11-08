@@ -4,6 +4,7 @@ import type { QueryOperation } from "@/lib/edge/analytics/contract";
 export const PUBLIC_QUERY_PATHS = [
   "overview",
   "trend",
+  "dashboard",
   "pages",
   "pages-dashboard",
   "referrers",
@@ -27,7 +28,6 @@ export const PUBLIC_QUERY_PATHS = [
   "overview-geo-city",
   "overview-geo-continent",
   "overview-geo-timezone",
-  "overview-geo-points",
   "utm-source",
   "utm-medium",
   "utm-campaign",
@@ -40,8 +40,6 @@ export const DASHBOARD_QUERY_PATHS = [
   "events-summary",
   "events-trend",
   "events-records",
-  "event-type-fields",
-  "event-type-field-values",
   "event-type-detail",
   "funnels",
   "goal-conversions",
@@ -87,11 +85,11 @@ export function applyPublicQueryPolicy(url: URL): PublicQueryPolicyDecision {
 export function operationForQueryRoute(pathname: string): QueryOperation {
   if (pathname === "overview") return "overview";
   if (pathname === "trend") return "trend";
+  if (pathname === "dashboard") return "dashboard";
   if (pathname === "pages") return "pages";
   if (pathname === "pages-dashboard") return "pages-dashboard";
   if (pathname === "referrers") return "referrers";
   if (pathname === "filter-values") return "filter-values";
-  if (pathname === "overview-geo-points") return "geo-points";
   if (pathname === "funnels") return "funnel-analysis";
   if (pathname === "goal-conversions") return "goal-conversions";
   if (pathname === "goal-summary") return "goal-summary";
@@ -103,8 +101,6 @@ export function operationForQueryRoute(pathname: string): QueryOperation {
   if (pathname === "events-trend") return "event-trend";
   if (pathname === "event-types") return "event-types";
   if (pathname === "event-type-detail") return "event-type-detail";
-  if (pathname === "event-type-fields") return "event-fields";
-  if (pathname === "event-type-field-values") return "event-field-values";
   if (pathname === "events-records") return "event-records";
   if (pathname === "overview-source-channel") return "channels";
   if (pathname.startsWith("overview-source-")) return "referrers";

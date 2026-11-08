@@ -14,7 +14,7 @@ describe("registry-driven editor metadata", () => {
         "page.query",
         "page.hash",
         "event.name",
-        "event.payload",
+        "property",
         "session.entryPath",
         "session.exitPath",
         "referrer.domain",

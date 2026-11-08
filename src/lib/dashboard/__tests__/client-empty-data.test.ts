@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  emptyDashboardFilterOptions,
-  emptyEventFieldValues,
-} from "@/lib/dashboard/client/data/empty";
+import { emptyDashboardFilterOptions } from "@/lib/dashboard/client/data/empty";
 
 const EMPTY_PAGINATION = {
   limit: 1,
@@ -13,15 +10,6 @@ const EMPTY_PAGINATION = {
 };
 
 describe("dashboard client empty data builders", () => {
-  it("preserves requested empty metadata values", () => {
-    expect(emptyEventFieldValues("payload.plan", "string")).toEqual({
-      ok: true,
-      fieldPath: "payload.plan",
-      fieldValueType: "string",
-      data: { items: [], pagination: EMPTY_PAGINATION },
-    });
-  });
-
   it("builds empty filter suggestions", () => {
     expect(emptyDashboardFilterOptions()).toEqual({
       ok: true,

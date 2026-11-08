@@ -2,6 +2,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { DashboardLoad } from "@/components/dashboard/site-pages/overview/dashboard-load";
 import { OverviewMetricsSection } from "@/components/dashboard/site-pages/overview/metrics";
 import type { OverviewSummary } from "@/components/dashboard/site-pages/overview/metrics-data";
 import { replaceUrlWithoutNavigation } from "@/lib/dashboard/client/history";
@@ -82,6 +83,7 @@ function renderStats(filter: string, current: OverviewMetrics): HTMLElement {
         siteId="site-1"
         window={window}
         filters={parseFilterDsl(filter, analyticsFilterRegistry)}
+        load={{} as DashboardLoad}
       />,
     ),
   );

@@ -81,6 +81,7 @@ export type QuerySubject =
 export type QueryOperation =
   | "overview"
   | "trend"
+  | "dashboard"
   | "team-sites"
   | "comparison"
   | "comparison-breakdown"
@@ -90,14 +91,11 @@ export type QueryOperation =
   | "referrers"
   | "channels"
   | "filter-values"
-  | "geo-points"
   | "realtime"
   | "event-summary"
   | "event-trend"
   | "event-types"
   | "event-type-detail"
-  | "event-fields"
-  | "event-field-values"
   | "event-records"
   | "funnel-analysis"
   | "goal-conversions"
@@ -111,11 +109,8 @@ export type DetailCapability =
   | "page.query"
   | "page.hash"
   | "referrer.url"
-  | "precise-location"
-  | "event.payload"
   | "event.context"
-  | "event.breakdowns"
-  | "event.fields";
+  | "event.breakdowns";
 export interface QueryLimits {
   readonly maxBuckets?: number;
   readonly maxLimit?: number;
@@ -377,7 +372,6 @@ export interface PagesDashboardQuery extends BaseQuery {
   readonly audience?: QueryAudience;
 }
 export interface OverviewQuery extends BaseQuery {
-  readonly previousTime?: QueryTime;
   readonly detailInterval?: CalendarGranularity;
 }
 export interface TrendQuery extends BaseQuery {
@@ -395,15 +389,6 @@ export interface FilterValuesQuery extends BaseQuery {
   readonly limit?: number;
   readonly page?: PageRequest;
 }
-export interface EventFieldValuesQuery extends BaseQuery {
-  readonly eventName: string;
-  readonly fieldPath: string;
-  readonly fieldValueType: string;
-  readonly search?: string;
-  readonly limit?: number;
-  readonly page?: PageRequest;
-}
-export type GeoPointsQuery = BaseQuery;
 export type TopPagesQuery = PagesQuery;
 export type ReferrerQuery = ReferrersQuery;
 export type ChannelQuery = ChannelsQuery;
@@ -422,7 +407,6 @@ export interface OverviewMetrics {
 }
 export interface OverviewResult {
   readonly current: OverviewMetrics;
-  readonly previous?: OverviewMetrics;
   readonly detail?: TrendResult;
 }
 export interface TrendPoint extends OverviewMetrics {
@@ -534,36 +518,6 @@ export interface FilterValuesResult {
     readonly pagination: PaginationMeta;
   };
 }
-export interface GeoPointsResult {
-  readonly points: readonly {
-    readonly latitude: number;
-    readonly longitude: number;
-    readonly timestampMs: number;
-    readonly country: string;
-    readonly region: string;
-    readonly regionCode: string;
-    readonly city: string;
-    readonly pointCount: number;
-  }[];
-  readonly countryCounts: readonly {
-    readonly country: string;
-    readonly views: number;
-    readonly sessions: number;
-    readonly visitors: number;
-  }[];
-  readonly regionCounts: readonly {
-    readonly value: string;
-    readonly views: number;
-    readonly sessions: number;
-    readonly visitors: number;
-  }[];
-  readonly cityCounts: readonly {
-    readonly value: string;
-    readonly views: number;
-    readonly sessions: number;
-    readonly visitors: number;
-  }[];
-}
 export type TopPagesResult = PagesResult;
 export type DashboardPage = CanonicalObject;
 export type ReferrerResult = ReferrersResult;
@@ -594,7 +548,6 @@ export interface TypedQueryOperations {
     filterOptions(
       input: FilterOptionsQuery,
     ): Promise<AnalyticsResult<FilterOptionsResult>>;
-    geoPoints(input: GeoPointsQuery): Promise<AnalyticsResult<GeoPointsResult>>;
   };
   readonly pages: {
     top(input: TopPagesQuery): Promise<AnalyticsResult<TopPagesResult>>;

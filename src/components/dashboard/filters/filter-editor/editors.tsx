@@ -19,24 +19,20 @@ import { AnimatePresence, motion } from "motion/react";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import {
   analyticsFilterRegistry,
-  EVENT_PAYLOAD_FIELD,
   type FilterDocument,
   FilterOperator,
   type FilterValue,
+  PROPERTY_FIELD,
 } from "@/lib/filter-contract/index";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { formatI18nTemplate } from "@/lib/i18n/template";
 
-import {
-  allowedFields,
-  filterPickerGroups,
-  isSelectablePayloadFieldType,
-} from "./field-catalog";
+import { allowedFields, filterPickerGroups } from "./field-catalog";
 import type { EditorCondition, FilterPanelAudience } from "./model";
 import { defaultCondition, firstOperator, VALUELESS_OPERATORS } from "./model";
 import {
   RangeValueInput,
-  SearchablePayloadPathInput,
+  SearchablePropertyKeyInput,
   SearchableValueInput,
 } from "./value-inputs";
 
@@ -44,7 +40,6 @@ interface ConditionContext {
   readonly audience: FilterPanelAudience;
   /** The filter the rows make, for value suggestions. */
   readonly document: FilterDocument;
-  readonly eventName: string | undefined;
   readonly messages: AppMessages;
   readonly siteId: string | undefined;
   readonly window: TimeWindow | undefined;
@@ -175,23 +170,20 @@ function ConditionEditor({
   const definition = analyticsFilterRegistry.get(condition.field);
   const operators = [...(definition?.operators ?? [])];
   const needsValue = !VALUELESS_OPERATORS.has(condition.operator);
-  const isPayload = condition.field === EVENT_PAYLOAD_FIELD;
-  const valueDisabled = isPayload && !condition.payloadPath.trim();
-  const valueKind = isPayload
-    ? condition.scalarKind
-    : (definition?.valueKind ?? "string");
+  const isProperty = condition.field === PROPERTY_FIELD;
+  const valueDisabled = isProperty && !condition.propertyKey.trim();
+  const valueKind = definition?.valueKind ?? "string";
   const setField = (field: string) => {
     const next = analyticsFilterRegistry.get(field);
     if (!next) return;
     onChange((current) => ({
       ...current,
       field,
-      payloadPath: "",
+      propertyKey: "",
       operator: firstOperator(next),
       value: undefined,
       listValues: undefined,
       valueText: "",
-      scalarKind: "string",
       valueDirty: true,
     }));
   };
@@ -215,23 +207,6 @@ function ConditionEditor({
       valueText: values.map((value) => String(value ?? "")).join(", "),
       valueDirty: true,
     }));
-  const setScalarKind = (scalarKind: string) => {
-    if (
-      scalarKind !== "string" &&
-      scalarKind !== "number" &&
-      scalarKind !== "boolean"
-    )
-      return;
-    onChange((current) => ({
-      ...current,
-      scalarKind,
-      value: undefined,
-      listValues: undefined,
-      valueText: "",
-      valueDirty: true,
-    }));
-  };
-
   return (
     <div className="grid gap-2 border-l border-border pl-3 pb-3 sm:grid-cols-2">
       <div className="text-xs font-medium text-muted-foreground sm:col-span-2">
@@ -260,55 +235,29 @@ function ConditionEditor({
         </Select>
       </div>
 
-      {isPayload ? (
+      {isProperty ? (
         <div className="space-y-2 sm:col-span-2">
-          <SearchablePayloadPathInput
+          <SearchablePropertyKeyInput
             condition={condition}
             document={context.document}
-            eventName={context.eventName}
             messages={messages}
-            needsValue={needsValue}
             siteId={context.siteId}
             window={context.window}
-            onChange={(payloadPath) =>
-              onChange((current) => ({ ...current, payloadPath }))
+            onChange={(propertyKey) =>
+              onChange((current) => ({ ...current, propertyKey }))
             }
-            onSelect={(field) =>
+            onSelect={(propertyKey) =>
               onChange((current) => ({
                 ...current,
-                payloadPath: field.path,
-                ...(isSelectablePayloadFieldType(field.valueType)
-                  ? {
-                      scalarKind: field.valueType,
-                      value: undefined,
-                      listValues: undefined,
-                      valueText: "",
-                      valueDirty: true,
-                    }
-                  : {}),
+                propertyKey,
+                value: undefined,
+                listValues: undefined,
+                valueText: "",
+                valueDirty: true,
               }))
             }
           />
         </div>
-      ) : null}
-
-      {isPayload && needsValue ? (
-        <Select value={condition.scalarKind} onValueChange={setScalarKind}>
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="string">
-              {messages.filterBuilder.valueKinds.string}
-            </SelectItem>
-            <SelectItem value="number">
-              {messages.filterBuilder.valueKinds.number}
-            </SelectItem>
-            <SelectItem value="boolean">
-              {messages.filterBuilder.valueKinds.boolean}
-            </SelectItem>
-          </SelectContent>
-        </Select>
       ) : null}
 
       {needsValue ? (
@@ -346,7 +295,6 @@ function ConditionEditor({
               condition={condition}
               disabled={valueDisabled}
               document={context.document}
-              eventName={context.eventName}
               messages={messages}
               siteId={context.siteId}
               valueKind={valueKind}

@@ -1,4 +1,3 @@
-import { propertyKeyOf } from "@/lib/analytics/property-path";
 import { browserEngineCaseSql } from "@/lib/browser-engine";
 import {
   concat,
@@ -94,6 +93,14 @@ function definitionOf(condition: FilterCondition): RegisteredFilterField {
   return definition;
 }
 
+/** The key of a condition on a custom property. */
+function propertyKeyOf(condition: FilterCondition): string {
+  if (condition.target.kind !== "property") {
+    throw new TypeError("Only a property condition has a property key.");
+  }
+  return condition.target.key;
+}
+
 function validAlias(value: string): string {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
     throw new TypeError("Filter aliases must be internal SQL identifiers.");
@@ -113,21 +120,22 @@ function columnExpression(field: RegisteredFilterField, visit: string): string {
     case "session.boundary.entry":
     case "session.boundary.exit":
     case "event.name":
-    case "event.payload":
+    case "property":
       throw new TypeError(`${field.id} is not a page view column.`);
     default:
       return column(COLUMN_STRATEGY_COLUMNS[field.compilerStrategy]);
   }
 }
 
-/** The stored value a text field compares: trimmed, and lowercased if it folds case. */
+/**
+ * The stored value a field compares: the column itself, which ingest
+ * trims, so an index on it serves the filter; lowercased if the field folds
+ * case.
+ */
 function normalizedText(field: RegisteredFilterField, expression: string) {
-  if (field.valueKind === "number" || field.valueKind === "boolean")
-    return expression;
-  const trimmed = `TRIM(COALESCE(${expression}, ''))`;
   return field.comparison === FilterTextComparison.CaseInsensitive
-    ? `LOWER(${trimmed})`
-    : trimmed;
+    ? `LOWER(${expression})`
+    : expression;
 }
 
 function binding(field: RegisteredFilterField, value: FilterValue) {
@@ -256,7 +264,7 @@ function sessionBoundary(
     parameter(scope.startMs),
     text(" AND started_at < "),
     parameter(scope.endExclusiveMs),
-    text(` AND session_id != ''
+    text(`
     ) session_edges
     WHERE boundary_rank = 1 AND `),
     comparison(field, "session_edges.pathname", condition),
@@ -264,154 +272,58 @@ function sessionBoundary(
   );
 }
 
-function payloadValueType(value: FilterValue): number {
-  if (value === null) return 0;
-  if (typeof value === "string") return 1;
-  if (typeof value === "number") return 2;
-  return 3;
-}
-
-function payloadValueColumn(alias: string, value: FilterValue): string {
-  if (typeof value === "string") return `${alias}.string_value`;
-  if (typeof value === "number") return `${alias}.number_value`;
-  if (typeof value === "boolean") return `${alias}.boolean_value`;
-  return `${alias}.value_type`;
-}
-
-/** The custom property rows at the condition's path, as FROM and WHERE. */
+/** The custom property rows a condition reads, as FROM and WHERE. */
 interface PropertyRows {
   readonly from: string;
   readonly where: SqlFragment;
 }
 
-/** A page view's custom properties: strings at top-level paths. */
-function pageViewProperties(path: string, visit: string): PropertyRows {
-  const key = propertyKeyOf(path);
+/** A page view's own custom property `key`. */
+function pageViewProperty(key: string, visit: string): PropertyRows {
   return {
-    from: `(SELECT visit_id, key, 1 AS value_type, value AS string_value, NULL AS number_value, NULL AS boolean_value FROM visit_properties) property_value`,
-    where:
-      key === null
-        ? text("0")
-        : concat(
-            text(
-              `property_value.visit_id = ${visit}.visit_id AND property_value.key = `,
-            ),
-            parameter(key),
-          ),
-  };
-}
-
-function eventPayloadValues(path: string, event: string): PropertyRows {
-  return {
-    from: "custom_event_json_values property_value INNER JOIN custom_event_json_paths property_path ON property_path.id = property_value.path_id",
+    from: "visit_properties property",
     where: concat(
-      text(
-        `property_value.event_pk = ${event}.event_pk AND property_value.site_pk = ${event}.site_pk AND property_path.site_pk = ${event}.site_pk AND property_path.path = `,
-      ),
-      parameter(path),
+      text(`property.visit_id = ${visit}.visit_id AND property.key = `),
+      parameter(key),
     ),
   };
 }
 
+/** A custom event's own custom property `key`. */
+function eventProperty(key: string, event: string): PropertyRows {
+  return {
+    from: "custom_event_properties property",
+    where: concat(
+      text(`property.event_pk = ${event}.event_pk AND property.key = `),
+      parameter(key),
+    ),
+  };
+}
+
+/**
+ * A condition on a custom property: whether the row has the property, or
+ * has it with a value that matches. Its value is a string, compared as
+ * stored.
+ */
 function propertyComparison(
+  field: RegisteredFilterField,
   condition: FilterCondition,
   rows: PropertyRows,
 ): SqlFragment {
-  const exists = (extra: SqlFragment = text("")) =>
+  const exists = (predicate: SqlFragment | null) =>
     concat(
       text(`EXISTS (SELECT 1 FROM ${rows.from} WHERE `),
       rows.where,
-      extra,
+      ...(predicate ? [text(" AND "), predicate] : []),
       text(")"),
     );
-  const { operator, value } = condition;
-  switch (operator) {
+  switch (condition.operator) {
     case FilterOperator.Exists:
-      return exists();
+      return exists(null);
     case FilterOperator.NotExists:
-      return concat(text("NOT "), exists());
-    case FilterOperator.IsNull:
-      return exists(text(" AND property_value.value_type = 0"));
-    case FilterOperator.NotNull:
-      return exists(text(" AND property_value.value_type != 0"));
-    case FilterOperator.IsEmpty:
-      return exists(
-        text(
-          " AND property_value.value_type = 1 AND property_value.string_value = ''",
-        ),
-      );
-    case FilterOperator.NotEmpty:
-      return exists(
-        text(
-          " AND property_value.value_type = 1 AND property_value.string_value != ''",
-        ),
-      );
+      return concat(text("NOT "), exists(null));
     default:
-      break;
-  }
-  const values = Array.isArray(value) ? value : [value as FilterValue];
-  const types = new Set(values.map(payloadValueType));
-  if (types.size !== 1) {
-    throw new TypeError("Custom property lists need values of one JSON type.");
-  }
-  const type = text(` AND property_value.value_type = ${[...types][0]}`);
-  const column = payloadValueColumn("property_value", values[0]!);
-  const scalar = (item: FilterValue) =>
-    parameter(typeof item === "boolean" ? (item ? 1 : 0) : item);
-  switch (operator) {
-    case FilterOperator.In:
-    case FilterOperator.NotIn:
-      return exists(
-        concat(
-          type,
-          text(
-            ` AND ${column} ${operator === FilterOperator.NotIn ? "NOT IN" : "IN"} (SELECT value FROM json_each(`,
-          ),
-          parameter(
-            JSON.stringify(
-              values.map((item) =>
-                typeof item === "boolean" ? (item ? 1 : 0) : item,
-              ),
-            ),
-          ),
-          text("))"),
-        ),
-      );
-    case FilterOperator.Between:
-      return exists(
-        concat(
-          type,
-          text(` AND ${column} BETWEEN `),
-          scalar(values[0]!),
-          text(" AND "),
-          scalar(values[1]!),
-        ),
-      );
-    case FilterOperator.Contains:
-    case FilterOperator.NotContains:
-    case FilterOperator.StartsWith:
-    case FilterOperator.EndsWith:
-      return exists(
-        concat(
-          type,
-          text(" AND "),
-          stringMatch("property_value.string_value", operator, value as string),
-        ),
-      );
-    default:
-      return value === null
-        ? exists(
-            text(
-              ` AND property_value.value_type ${COMPARISON_SQL[operator]!} 0`,
-            ),
-          )
-        : exists(
-            concat(
-              type,
-              text(` AND ${column} ${COMPARISON_SQL[operator]!} `),
-              scalar(value as FilterValue),
-            ),
-          );
+      return exists(comparison(field, "property.value", condition));
   }
 }
 
@@ -430,15 +342,11 @@ function pageViewCondition(
       return comparison(field, columnExpression(field, visit), condition);
     case FilterFieldSource.SessionBoundary:
       return sessionBoundary(field, condition, scope, visit);
-    case FilterFieldSource.Payload:
+    case FilterFieldSource.Property:
       return propertyComparison(
+        field,
         condition,
-        pageViewProperties(
-          condition.target.kind === "event-payload"
-            ? condition.target.path
-            : "",
-          visit,
-        ),
+        pageViewProperty(propertyKeyOf(condition), visit),
       );
     case FilterFieldSource.EventName:
       throw new TypeError("event.name is not a page view field.");
@@ -446,8 +354,8 @@ function pageViewCondition(
 }
 
 /**
- * A condition on a custom event: its name and payload are its own, and the
- * page view fields are those of the visit it was sent from.
+ * A condition on a custom event: its name and properties are its own, and
+ * the page view fields are those of the visit it was sent from.
  */
 function eventCondition(
   condition: FilterCondition,
@@ -460,15 +368,11 @@ function eventCondition(
   switch (field.source) {
     case FilterFieldSource.EventName:
       return comparison(field, eventName, condition);
-    case FilterFieldSource.Payload:
+    case FilterFieldSource.Property:
       return propertyComparison(
+        field,
         condition,
-        eventPayloadValues(
-          condition.target.kind === "event-payload"
-            ? condition.target.path
-            : "",
-          event,
-        ),
+        eventProperty(propertyKeyOf(condition), event),
       );
     default:
       return pageViewCondition(condition, scope, visit);
@@ -524,8 +428,8 @@ function bySource(conditions: readonly FilterCondition[]) {
         source(condition) === FilterFieldSource.Visit ||
         source(condition) === FilterFieldSource.SessionBoundary,
     ),
-    payload: conditions.filter(
-      (condition) => source(condition) === FilterFieldSource.Payload,
+    properties: conditions.filter(
+      (condition) => source(condition) === FilterFieldSource.Property,
     ),
     eventNames: conditions.filter(
       (condition) =>
@@ -552,24 +456,24 @@ export function visitFilterSql(
   visit = "v",
 ): SqlFragment | null {
   const alias = validAlias(visit);
-  const { pageView, payload, eventNames, excludedEventNames } = bySource(
+  const { pageView, properties, eventNames, excludedEventNames } = bySource(
     filters.conditions,
   );
   const parts = pageView.map((condition) =>
     pageViewCondition(condition, scope, alias),
   );
   if (eventNames.length > 0) {
-    parts.push(visitHasEvent([...eventNames, ...payload], scope, alias));
-  } else if (payload.length > 0) {
+    parts.push(visitHasEvent([...eventNames, ...properties], scope, alias));
+  } else if (properties.length > 0) {
     parts.push(
       join(
         [
           and(
-            payload.map((condition) =>
+            properties.map((condition) =>
               pageViewCondition(condition, scope, alias),
             ),
           )!,
-          visitHasEvent(payload, scope, alias),
+          visitHasEvent(properties, scope, alias),
         ].map(parenthesize),
         text(" OR "),
       ),

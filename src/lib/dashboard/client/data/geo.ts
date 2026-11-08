@@ -10,10 +10,7 @@ import {
   withFilters,
 } from "@/lib/dashboard/client/utils";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
-import type {
-  OverviewGeoPointsData,
-  OverviewGeoTabData,
-} from "@/lib/dashboard-api/client/edge";
+import type { OverviewGeoTabData } from "@/lib/dashboard-api/client/edge";
 import type { FilterDocument } from "@/lib/filter-contract";
 function normalizeGeoDimensionLabel(
   tab: OverviewGeoDimensionTab,
@@ -30,86 +27,6 @@ function normalizeGeoDimensionLabel(
       .map((segment) => segment.trim())
       .filter((segment) => segment.length > 0)[segmentIndex] || fallback
   );
-}
-export async function fetchOverviewGeoPoints(
-  siteId: string,
-  window: TimeWindow,
-  filters?: FilterDocument,
-  options?: Pick<
-    DashboardListRequestOptions,
-    "signal" | "comparison" | "comparisonMetric" | "comparisonSortBy"
-  > & {
-    applyGeoFilter?: boolean;
-  },
-): Promise<OverviewGeoPointsData> {
-  return fetchPrivateJson<OverviewGeoPointsData>(
-    "/api/private/overview-geo-points",
-    withComparison(
-      withFilters(
-        {
-          siteId,
-          from: window.from,
-          to: window.to,
-          timeZone: window.timeZone,
-          ...(options?.applyGeoFilter ? { applyGeoFilter: 1 } : {}),
-        },
-        filters,
-      ),
-      options?.comparison,
-      {
-        metric: options?.comparisonMetric,
-        sortBy: options?.comparisonSortBy,
-      },
-    ),
-    { signal: options?.signal },
-  ).then((payload) => ({
-    ok: payload.ok,
-    data: Array.isArray(payload.data)
-      ? payload.data.map((row) => ({
-          latitude: Number((row as { latitude?: unknown }).latitude ?? 0),
-          longitude: Number((row as { longitude?: unknown }).longitude ?? 0),
-          timestampMs: Number(
-            (row as { timestampMs?: unknown }).timestampMs ?? 0,
-          ),
-          country: String((row as { country?: unknown }).country ?? ""),
-          region: String((row as { region?: unknown }).region ?? ""),
-          regionCode: String(
-            (row as { regionCode?: unknown }).regionCode ?? "",
-          ),
-          city: String((row as { city?: unknown }).city ?? ""),
-          pointCount: Math.max(
-            1,
-            Number((row as { pointCount?: unknown }).pointCount ?? 1),
-          ),
-        }))
-      : [],
-    countryCounts: Array.isArray(payload.countryCounts)
-      ? payload.countryCounts.map((row) => ({
-          country: String((row as { country?: unknown }).country ?? ""),
-          views: Number((row as { views?: unknown }).views ?? 0),
-          sessions: Number((row as { sessions?: unknown }).sessions ?? 0),
-          visitors: Number((row as { visitors?: unknown }).visitors ?? 0),
-        }))
-      : [],
-    regionCounts: Array.isArray(payload.regionCounts)
-      ? payload.regionCounts.map((row) => ({
-          value: String((row as { value?: unknown }).value ?? ""),
-          label: String((row as { label?: unknown }).label ?? ""),
-          views: Number((row as { views?: unknown }).views ?? 0),
-          sessions: Number((row as { sessions?: unknown }).sessions ?? 0),
-          visitors: Number((row as { visitors?: unknown }).visitors ?? 0),
-        }))
-      : [],
-    cityCounts: Array.isArray(payload.cityCounts)
-      ? payload.cityCounts.map((row) => ({
-          value: String((row as { value?: unknown }).value ?? ""),
-          label: String((row as { label?: unknown }).label ?? ""),
-          views: Number((row as { views?: unknown }).views ?? 0),
-          sessions: Number((row as { sessions?: unknown }).sessions ?? 0),
-          visitors: Number((row as { visitors?: unknown }).visitors ?? 0),
-        }))
-      : [],
-  }));
 }
 /** Paginated form used by TabbedDataTableCard loaders. */
 export async function fetchOverviewGeoDimensionTabPage(

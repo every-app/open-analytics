@@ -33,10 +33,10 @@ describe("filter URL codec", () => {
       "client.screenWidth lte 800",
       "geo.isEU eq true",
       "utm.medium exists",
-      'event.payload("/plan") eq "pro"',
-      'event.payload("/plan") eq "json:literal"',
-      'event.payload("/seats") in [1, 2]',
-      'event.payload("/beta") eq false',
+      'property("plan") eq "pro"',
+      'property("plan") eq "eq:literal"',
+      'property("seats") in ["1", "2"]',
+      'property("beta") notExists',
       "utm.term isEmpty",
     ].join(" AND ");
     const document = parseFilterDsl(source, analyticsFilterRegistry);
@@ -48,7 +48,7 @@ describe("filter URL codec", () => {
       "nc:/admin",
       "sw:/blog",
     ]);
-    expect(url.get("filter[event.payload][/seats]")).toBe("in:json:1,json:2");
+    expect(url.get("filter[property][seats]")).toBe("in:1,2");
     expect(url.get("filter[utm.source]")).toBe("nin:a\\,b,c\\\\d");
   });
 
@@ -80,12 +80,11 @@ describe("filter URL codec", () => {
 
   it.each([
     ["filter[page.path", "invalid_filter_key"],
-    ["filter[event.payload]=pro", "invalid_filter_key"],
+    ["filter[property]=pro", "invalid_filter_key"],
     ["filter[page.path][/x]=a", "invalid_filter_key"],
     ["filter[page.durationMs]=abc", "invalid_number"],
     ["filter[page.durationMs]=", "invalid_number"],
     ["filter[geo.isEU]=yes", "invalid_boolean"],
-    ["filter[event.payload][/a]=json:{", "invalid_json_scalar"],
   ])("rejects %s", (query, code) => {
     expect(() => parseFilterParams(query, analyticsFilterRegistry)).toThrow(
       expect.objectContaining({ code }),

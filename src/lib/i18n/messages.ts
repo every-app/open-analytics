@@ -159,11 +159,6 @@ export interface AppMessages {
     };
     fieldLabels: Record<string, string>;
     operatorLabels: Record<string, string>;
-    valueKinds: {
-      string: string;
-      number: string;
-      boolean: string;
-    };
     booleanTrue: string;
     booleanFalse: string;
     valueUnset: string;
@@ -184,7 +179,7 @@ export interface AppMessages {
       perMille: string;
       pixels: string;
     };
-    jsonPointerPlaceholder: string;
+    propertyKeyPlaceholder: string;
     savedFiltersLoading: string;
     noSavedFilter: string;
     systemPresets: string;
@@ -473,7 +468,7 @@ export interface AppMessages {
     browser: string;
     os: string;
     device: string;
-    payload: string;
+    properties: string;
     nodeCount: string;
     payloadFields: string;
     values: string;
@@ -1309,7 +1304,7 @@ const enMessages = {
       "geo.continent": "Continent",
       "geo.timeZone": "Time zone",
       "event.name": "Event name",
-      "event.payload": "Properties",
+      property: "Property",
       "page.durationMs": "Time on page",
       "page.scrollDepth": "Scroll depth",
       "client.screenWidth": "Screen width",
@@ -1337,11 +1332,6 @@ const enMessages = {
       isEmpty: "Is empty",
       notEmpty: "Is not empty",
     },
-    valueKinds: {
-      string: "Text",
-      number: "Number",
-      boolean: "Boolean",
-    },
     booleanTrue: "True",
     booleanFalse: "False",
     valueUnset: "(not set)",
@@ -1362,7 +1352,7 @@ const enMessages = {
       perMille: "‰",
       pixels: "Pixels",
     },
-    jsonPointerPlaceholder: "Search or enter a JSON pointer",
+    propertyKeyPlaceholder: "Search or enter a property",
     savedFiltersLoading: "Loading saved filters...",
     noSavedFilter: "No saved filter",
     systemPresets: "System presets",
@@ -1662,7 +1652,7 @@ const enMessages = {
     browser: "Browser",
     os: "OS",
     device: "Device",
-    payload: "Payload",
+    properties: "Properties",
     nodeCount: "Node count",
     payloadFields: "Payload fields",
     values: "Values",

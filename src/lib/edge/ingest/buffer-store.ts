@@ -15,6 +15,12 @@ import type {
   StoredOpenVisit,
   VisitRow,
 } from "./types";
+/** Custom properties as the buffer keeps them: a JSON object, NULL if none. */
+export function propertiesJson(
+  properties: Record<string, string>,
+): string | null {
+  return Object.keys(properties).length > 0 ? JSON.stringify(properties) : null;
+}
 /**
  * A page view's context for a custom event, from the buffer or, for one the
  * buffer no longer holds, from D1 (which the buffer then keeps again).
@@ -84,7 +90,7 @@ export function findRecentVisitorSession(
   context: Pick<SqlWriter, "sqlOne">,
   input: {
     siteId: string;
-    visitorId: string;
+    visitorId: number;
     visitId: string;
     startedAt: number;
     routePreviousHostname?: string;
@@ -135,7 +141,6 @@ export function findRecentVisitorSession(
       WHERE site_id = ?
         AND visitor_id = ?
         AND visit_id != ?
-        AND session_id != ''
         AND last_activity_at >= ?
       ORDER BY
         routeMatch DESC,
@@ -214,18 +219,22 @@ export function readVisitRow(
     visitId,
   );
 }
-/** A page view the buffer no longer holds, read back from D1, clean. */
+/**
+ * A page view the buffer no longer holds, read back from D1, clean. D1
+ * keeps no coordinates, so it has none for the realtime map.
+ */
 export async function readPersistedVisitRow(
   db: DatabaseRuntime,
   siteId: string,
   visitId: string,
 ): Promise<BufferedVisitRow | null> {
-  const row = await db.first<BufferedVisitRow>({
+  const row = await db.first<
+    Omit<BufferedVisitRow, "siteId" | "latitude" | "longitude">
+  >({
     sql: `
       SELECT
         visit_id AS visitId,
         status,
-        site_id AS siteId,
         visitor_id AS visitorId,
         session_id AS sessionId,
         started_at AS startedAt,
@@ -255,8 +264,6 @@ export async function readPersistedVisitRow(
         region_code AS regionCode,
         city,
         continent,
-        latitude,
-        longitude,
         timezone,
         browser,
         browser_version AS browserVersion,
@@ -279,6 +286,9 @@ export async function readPersistedVisitRow(
   return row
     ? {
         ...row,
+        siteId,
+        latitude: null,
+        longitude: null,
         dirty: 0,
         flushAttempts: 0,
         hiddenAt: null,
@@ -404,9 +414,7 @@ export function insertVisit(
     record.screenWidth,
     record.screenHeight,
     record.language,
-    Object.keys(record.properties).length > 0
-      ? JSON.stringify(record.properties)
-      : null,
+    propertiesJson(record.properties),
     createdAt,
     createdAt,
   ];
@@ -439,7 +447,7 @@ export function insertCustomEvent(
     receivedAt: record.receivedAt,
     sequence: record.sequence,
     eventName: record.eventName,
-    eventDataJson: record.eventDataJson,
+    propertiesJson: propertiesJson(record.properties),
     revenueAmount: record.revenueAmount,
     revenueCurrency: record.revenueCurrency,
   });
@@ -456,7 +464,7 @@ export function insertBufferedCustomEvent(
     `
       INSERT INTO buffered_custom_events (
         event_id, site_id, visit_id, occurred_at, received_at, sequence,
-        event_name, event_data_json, revenue_amount, revenue_currency,
+        event_name, properties_json, revenue_amount, revenue_currency,
         created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(event_id) DO NOTHING
@@ -468,7 +476,7 @@ export function insertBufferedCustomEvent(
     record.receivedAt,
     record.sequence,
     record.eventName,
-    record.eventDataJson,
+    record.propertiesJson,
     record.revenueAmount,
     record.revenueCurrency,
     toUnixSeconds(record.receivedAt),
@@ -504,7 +512,7 @@ export function updateOpenVisitActivity(
 export function hasOpenVisitsForVisitor(
   context: Pick<SqlWriter, "sqlOne">,
   siteId: string,
-  visitorId: string,
+  visitorId: number,
 ): boolean {
   const row = context.sqlOne<{ ok: number }>(
     `

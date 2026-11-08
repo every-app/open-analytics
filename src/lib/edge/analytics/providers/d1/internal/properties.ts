@@ -1,4 +1,3 @@
-import { propertyPath } from "@/lib/analytics/property-path";
 import {
   type FilterDocument,
   type PropertyKey,
@@ -16,10 +15,6 @@ import {
 } from "./core-sources";
 import type { QueryWindow } from "./core-types";
 
-/** An event payload path's key, decoding its JSON pointer escapes. */
-const PATH_KEY_SQL =
-  "REPLACE(REPLACE(SUBSTR(path.path, 2), '~1', '/'), '~0', '~')";
-
 type Binding = string | number;
 
 interface PropertyRows {
@@ -29,10 +24,10 @@ interface PropertyRows {
 }
 
 /**
- * Every page view's property and every event's top-level string payload
- * value in the window, with whose they were: one key's, or all keys'.
- * Unfiltered, it reads the property and payload indexes for the window;
- * filtered, only the rows of the filtered page views and events.
+ * Every page view's and custom event's property in the window, with whose
+ * they were: one key's, or all keys'. Unfiltered, it reads the property
+ * indexes for the window; filtered, only the rows of the filtered page
+ * views and events.
  */
 function propertyRows(
   siteId: string,
@@ -69,15 +64,12 @@ property_rows AS (
     ${key === null ? "" : "AND p.key = ?"}
     AND p.started_at >= ? AND p.started_at < ?
   UNION ALL
-  SELECT ${PATH_KEY_SQL}, val.string_value, e.visitor_id, e.session_id, 0, 1
-  FROM custom_event_json_paths path
-  INNER JOIN custom_event_json_values val
-    ON val.site_pk = path.site_pk AND val.path_id = path.id
-  INNER JOIN ${events} e ON e.event_pk = val.event_pk
-  WHERE path.site_pk = ${SITE_PK_FROM_SITE_ID_SQL}
-    AND ${key === null ? "INSTR(SUBSTR(path.path, 2), '/') = 0" : "path.path = ?"}
-    AND val.value_type = 1
-    AND val.occurred_at >= ? AND val.occurred_at < ?
+  SELECT p.key, p.value, e.visitor_id, e.session_id, 0, 1
+  FROM custom_event_properties p
+  INNER JOIN ${events} e ON e.event_pk = p.event_pk
+  WHERE p.site_pk = ${SITE_PK_FROM_SITE_ID_SQL}
+    ${key === null ? "" : "AND p.key = ?"}
+    AND p.occurred_at >= ? AND p.occurred_at < ?
 )`;
   return {
     ctes: [...filteredSources.map((source) => source.sql), ctes].join(","),
@@ -87,7 +79,7 @@ property_rows AS (
       ...(key === null ? [] : [key]),
       ...range,
       siteId,
-      ...(key === null ? [] : [propertyPath(key)]),
+      ...(key === null ? [] : [key]),
       ...range,
     ],
   };

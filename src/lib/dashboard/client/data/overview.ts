@@ -2,17 +2,45 @@ import { fetchPrivateJson } from "@/lib/dashboard/client/request";
 import { withFilters, withPagination } from "@/lib/dashboard/client/utils";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type {
+  DashboardData,
   OverviewData,
   PagesData,
   TrendData,
 } from "@/lib/dashboard-api/client/edge";
+import type { DashboardCardTabs } from "@/lib/edge/analytics/contract/dashboard";
 import type { FilterDocument } from "@/lib/filter-contract";
+/**
+ * A dashboard load in one request: the totals, the graph's points and the
+ * top rows of `cards`, the tab each card shows.
+ */
+export async function fetchDashboard(
+  siteId: string,
+  window: TimeWindow,
+  filters: FilterDocument,
+  cards: DashboardCardTabs | null,
+  signal: AbortSignal,
+): Promise<DashboardData> {
+  return fetchPrivateJson<DashboardData>(
+    "/api/private/dashboard",
+    withFilters(
+      {
+        siteId,
+        from: window.from,
+        to: window.to,
+        timeZone: window.timeZone,
+        interval: window.interval,
+        ...cards,
+      },
+      filters,
+    ),
+    { signal },
+  );
+}
 export async function fetchOverview(
   siteId: string,
   window: TimeWindow,
   filters?: FilterDocument,
   options?: {
-    includeChange?: boolean;
     includeDetail?: boolean;
     signal?: AbortSignal;
   },
@@ -25,7 +53,6 @@ export async function fetchOverview(
         from: window.from,
         to: window.to,
         timeZone: window.timeZone,
-        ...(options?.includeChange ? { includeChange: 1 } : {}),
         ...(options?.includeDetail
           ? { includeDetail: 1, interval: window.interval }
           : {}),

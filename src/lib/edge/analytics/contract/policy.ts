@@ -25,6 +25,7 @@ const DEFAULT_LIMITS: QueryLimits = {
 const ALL_OPERATIONS: readonly QueryOperation[] = [
   "overview",
   "trend",
+  "dashboard",
   "team-sites",
   "comparison",
   "comparison-breakdown",
@@ -34,14 +35,11 @@ const ALL_OPERATIONS: readonly QueryOperation[] = [
   "referrers",
   "channels",
   "filter-values",
-  "geo-points",
   "realtime",
   "event-summary",
   "event-trend",
   "event-types",
   "event-type-detail",
-  "event-fields",
-  "event-field-values",
   "event-records",
   "funnel-analysis",
   "goal-conversions",
@@ -55,13 +53,13 @@ const ALL_OPERATIONS: readonly QueryOperation[] = [
 const PUBLIC_OPERATIONS: readonly QueryOperation[] = [
   "overview",
   "trend",
+  "dashboard",
   "dimension",
   "pages",
   "pages-dashboard",
   "referrers",
   "channels",
   "filter-values",
-  "geo-points",
   "event-types",
 ];
 
@@ -69,11 +67,8 @@ const PRIVATE_DETAILS = new Set<DetailCapability>([
   "page.query",
   "page.hash",
   "referrer.url",
-  "precise-location",
-  "event.payload",
   "event.context",
   "event.breakdowns",
-  "event.fields",
 ]);
 
 function policy(

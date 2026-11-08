@@ -48,15 +48,15 @@ describe("filter editor model", () => {
 
   it("strips only the condition a value picker suggests for", () => {
     const source = parsed(
-      'page.path eq "/docs" AND geo.country eq "US" AND event.payload("/id") eq "1"',
+      'page.path eq "/docs" AND geo.country eq "US" AND property("id") eq "1"',
     );
     expect(stripSuggestionFacet(source, "page.path", "")).toEqual(
-      parsed('geo.country eq "US" AND event.payload("/id") eq "1"'),
+      parsed('geo.country eq "US" AND property("id") eq "1"'),
     );
-    expect(stripSuggestionFacet(source, "event.payload", "/id")).toEqual(
+    expect(stripSuggestionFacet(source, "property", "id")).toEqual(
       parsed('page.path eq "/docs" AND geo.country eq "US"'),
     );
-    expect(stripSuggestionFacet(source, "event.payload", "")).toEqual(source);
+    expect(stripSuggestionFacet(source, "property", "")).toEqual(source);
   });
 
   it("reads rows from a filter, and none from DSL that doesn't parse", () => {
@@ -78,11 +78,11 @@ describe("filter editor model", () => {
     ).toEqual([]);
     expect(
       editorConditionsFromDocument(
-        parsed('event.payload("/plan") eq 3'),
+        parsed('property("plan") eq "3"'),
         conditionIdFactory(),
       ),
     ).toMatchObject([
-      { field: "event.payload", payloadPath: "/plan", scalarKind: "number" },
+      { field: "property", propertyKey: "plan", valueText: "3" },
     ]);
   });
 
@@ -107,13 +107,11 @@ describe("filter editor model", () => {
         row("page.path", FilterOperator.In, "/docs, /pricing"),
         row("geo.isEU", FilterOperator.Eq, "true"),
         row("page.title", FilterOperator.Exists, ""),
-        row("event.payload", FilterOperator.Between, "1, 3", {
-          payloadPath: "/score",
-          scalarKind: "number",
+        row("property", FilterOperator.In, "basic, pro", {
+          propertyKey: "plan",
         }),
-        row("event.payload", FilterOperator.Eq, "true", {
-          payloadPath: "/active",
-          scalarKind: "boolean",
+        row("property", FilterOperator.Eq, "true", {
+          propertyKey: "active",
         }),
         row("geo.country", FilterOperator.In, "", {
           listValues: ["US", "DE"],
@@ -121,7 +119,7 @@ describe("filter editor model", () => {
       ]),
     ).toEqual(
       parsed(
-        'page.durationMs gte 12.5 AND page.path in ["/docs", "/pricing"] AND geo.isEU eq true AND page.title exists AND event.payload("/score") between [1, 3] AND event.payload("/active") eq true AND geo.country in ["US", "DE"]',
+        'page.durationMs gte 12.5 AND page.path in ["/docs", "/pricing"] AND geo.isEU eq true AND page.title exists AND property("plan") in ["basic", "pro"] AND property("active") eq "true" AND geo.country in ["US", "DE"]',
       ),
     );
     expect(() => documentFromEditor([defaultCondition(createId)])).toThrow(

@@ -291,11 +291,11 @@ describe("dashboard query-state helpers", () => {
       });
     });
 
-    it("parses event payload conditions through the shared codec", () => {
+    it("parses custom property conditions through the shared codec", () => {
       const filters = parseFilterDocumentFromSearchParams(
         new URLSearchParams({
-          "filter[event.payload][/plan]": "pro",
-          "filter[event.payload][/trial]": "ne:json:false",
+          "filter[property][plan]": "pro",
+          "filter[property][trial]": "ne:false",
           "filter[page.path]": "in:/docs,/pricing",
         }),
       );
@@ -350,7 +350,7 @@ describe("dashboard query-state helpers", () => {
       );
     });
 
-    it("omits empty scalar and event payload filters from the URL", () => {
+    it("omits empty scalar and custom property filters from the URL", () => {
       const href = withRangeAndFilters(
         "/dashboard",
         "30d",
@@ -460,13 +460,13 @@ describe("dashboard query-state helpers", () => {
       const params = new URLSearchParams([
         ["filter[page.path]", "/politics"],
         ["filter[page.path][or:0.0]", "/world"],
-        ["filter[event.payload][/device/screen/width]", "json:1920"],
+        ["filter[property][screen width]", "1920"],
         ["filter[referrer.domain]", "google.com"],
         ["filter[page.title]", "News & Politics"],
       ]);
 
       expect(serializeDashboardSearchParams(params)).toBe(
-        "filter[page.path]=/politics&filter[page.path][or:0.0]=/world&filter[event.payload][/device/screen/width]=json:1920&filter[referrer.domain]=google.com&filter[page.title]=News%20%26%20Politics",
+        "filter[page.path]=/politics&filter[page.path][or:0.0]=/world&filter[property][screen%20width]=1920&filter[referrer.domain]=google.com&filter[page.title]=News%20%26%20Politics",
       );
     });
 

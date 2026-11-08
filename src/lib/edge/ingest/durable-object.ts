@@ -30,6 +30,7 @@ import {
   insertBufferedVisitRow,
   insertCustomEvent,
   insertVisit,
+  propertiesJson,
   readPersistedVisitRow,
   updateOpenVisitActivity,
 } from "./buffer-store";
@@ -69,7 +70,7 @@ export class IngestDurableObject extends DurableObject {
   private readonly doEnv: Env;
   private readonly schemaReady: Promise<void>;
   private readonly sql: IngestSqlAccess;
-  private readonly dictionaryIds = new Map<string, number>();
+  private readonly eventNameIds = new Map<string, number>();
   private activeNowCache: {
     readonly cutoffBucket: number;
     readonly expiresAtMs: number;
@@ -692,7 +693,7 @@ export class IngestDurableObject extends DurableObject {
       receivedAt: number;
       sequence: number;
       eventName: string;
-      eventDataJson: string;
+      propertiesJson: string | null;
     }>(
       `
         SELECT
@@ -701,7 +702,7 @@ export class IngestDurableObject extends DurableObject {
           received_at AS receivedAt,
           sequence,
           event_name AS eventName,
-          event_data_json AS eventDataJson
+          properties_json AS propertiesJson
         FROM buffered_custom_events
         WHERE site_id = ? AND visit_id = ?
         ORDER BY occurred_at ASC, created_at ASC
@@ -723,7 +724,7 @@ export class IngestDurableObject extends DurableObject {
         sequence: pending.sequence,
         eventId: pending.eventId,
         eventName: pending.eventName,
-        eventDataJson: pending.eventDataJson,
+        propertiesJson: pending.propertiesJson,
         visitId: record.visitId,
         sessionId: record.sessionId,
         startedAt: record.startedAt,
@@ -770,9 +771,9 @@ export class IngestDurableObject extends DurableObject {
     const visit = this.sql.sqlOne<{
       visitId: string;
       startedAt: number;
-      visitorId: string;
+      visitorId: number;
       siteId: string;
-      sessionId: string;
+      sessionId: number;
       pathname: string;
       queryString: string;
       hash: string;
@@ -1145,7 +1146,7 @@ export class IngestDurableObject extends DurableObject {
       sequence: record.sequence,
       eventId: record.eventId,
       eventName: record.eventName,
-      eventDataJson: record.eventDataJson,
+      propertiesJson: propertiesJson(record.properties),
       visitId: record.visitId,
       sessionId: record.sessionId,
       startedAt: record.startedAt,
@@ -1228,7 +1229,7 @@ export class IngestDurableObject extends DurableObject {
     );
     return {
       db,
-      dictionaryIds: this.dictionaryIds,
+      eventNameIds: this.eventNameIds,
       sqlAll: <T>(query: string, ...bindings: SqlBinding[]) =>
         this.sql.measuredSqlAll<T>(logger, query, ...bindings),
       sqlOne: <T>(query: string, ...bindings: SqlBinding[]) =>
@@ -1238,7 +1239,7 @@ export class IngestDurableObject extends DurableObject {
       readPersistedVisitRow: (siteId: string, visitId: string) =>
         readPersistedVisitRow(db, siteId, visitId),
       insertBufferedVisitRow: (row) => insertBufferedVisitRow(this.sql, row),
-      hasOpenVisitsForVisitor: (siteId: string, visitorId: string) =>
+      hasOpenVisitsForVisitor: (siteId: string, visitorId: number) =>
         hasOpenVisitsForVisitor(this.sql, siteId, visitorId),
       pushRealtimeRecord: this.pushRealtimeRecord.bind(this),
       observability: logger,

@@ -109,8 +109,8 @@ export interface NormalizedVisitContext {
   traceId?: string;
   siteId: string;
   visitId: string;
-  visitorId: string;
-  sessionId: string;
+  visitorId: number;
+  sessionId: number;
   startedAt: number;
   pathname: string;
   queryString: string;
@@ -151,7 +151,7 @@ export interface NormalizedPageview extends NormalizedVisitContext {
   receivedAt: number;
   /** The session's channel, from its referrer and UTM tags. */
   channel: TrafficChannelId;
-  /** Custom properties, normalized by `normalizePageProperties`. */
+  /** Custom properties, normalized by `normalizeProperties`. */
   properties: Record<string, string>;
 }
 
@@ -184,7 +184,8 @@ export interface NormalizedCustomEvent extends NormalizedVisitContext {
   receivedAt: number;
   eventAt: number;
   eventName: string;
-  eventDataJson: string;
+  /** Custom properties, normalized by `normalizeProperties`. */
+  properties: Record<string, string>;
   revenueAmount: number | null;
   revenueCurrency: string | null;
 }

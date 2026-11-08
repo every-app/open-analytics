@@ -1,9 +1,9 @@
 import {
-  EVENT_PAYLOAD_FIELD,
   type FilterDocument,
   type FilterFieldDefinition,
   FilterOperator,
   type FilterValueKind,
+  PROPERTY_FIELD,
   targetFieldId,
 } from "./filters";
 import type { FilterAudience } from "./types";
@@ -19,8 +19,8 @@ export enum FilterFieldSource {
   SessionBoundary = "session-boundary",
   /** The custom event's name: a visit matches through one of its events. */
   EventName = "event-name",
-  /** A page view's custom property or a custom event's payload value. */
-  Payload = "payload",
+  /** A custom property of the page view, or of one of its custom events. */
+  Property = "property",
 }
 
 /** How a text field compares: as stored, or lowercased. */
@@ -75,7 +75,7 @@ export type FilterCompilerStrategy =
   | "session.boundary.entry"
   | "session.boundary.exit"
   | "event.name"
-  | "event.payload";
+  | "property";
 
 export interface RegisteredFilterField extends FilterFieldDefinition {
   readonly source: FilterFieldSource;
@@ -149,27 +149,6 @@ const OPERATORS_BY_VALUE_KIND: Readonly<
     FilterOperator.IsNull,
     FilterOperator.NotNull,
   ],
-  "json-scalar": [
-    FilterOperator.Eq,
-    FilterOperator.Neq,
-    FilterOperator.In,
-    FilterOperator.NotIn,
-    FilterOperator.Contains,
-    FilterOperator.NotContains,
-    FilterOperator.StartsWith,
-    FilterOperator.EndsWith,
-    FilterOperator.Gt,
-    FilterOperator.Gte,
-    FilterOperator.Lt,
-    FilterOperator.Lte,
-    FilterOperator.Between,
-    FilterOperator.Exists,
-    FilterOperator.NotExists,
-    FilterOperator.IsNull,
-    FilterOperator.NotNull,
-    FilterOperator.IsEmpty,
-    FilterOperator.NotEmpty,
-  ],
 };
 
 function groupFor(id: string): FilterFieldGroup {
@@ -195,6 +174,7 @@ interface FieldOptions {
   readonly operators?: readonly FilterOperator[];
   readonly number?: FilterFieldDefinition["number"];
   readonly unit?: FilterFieldDefinition["unit"];
+  readonly scalarsAsText?: boolean;
 }
 
 function field<const Id extends string>(
@@ -224,6 +204,7 @@ function field<const Id extends string>(
     compilerStrategy,
     ...(options.number ? { number: options.number } : {}),
     ...(options.unit ? { unit: options.unit } : {}),
+    ...(options.scalarsAsText ? { scalarsAsText: true } : {}),
     ...(isText
       ? {
           canonicalize: (value) =>
@@ -270,9 +251,24 @@ const FIELDS = [
     ...PRIVATE,
     source: FilterFieldSource.EventName,
   }),
-  field(EVENT_PAYLOAD_FIELD, "json-scalar", "event.payload", {
+  // A property is a key with a value, never null or empty.
+  field(PROPERTY_FIELD, "string", "property", {
     ...PRIVATE,
-    source: FilterFieldSource.Payload,
+    source: FilterFieldSource.Property,
+    scalarsAsText: true,
+    suggestionMode: "discrete",
+    operators: [
+      FilterOperator.Eq,
+      FilterOperator.Neq,
+      FilterOperator.In,
+      FilterOperator.NotIn,
+      FilterOperator.Contains,
+      FilterOperator.NotContains,
+      FilterOperator.StartsWith,
+      FilterOperator.EndsWith,
+      FilterOperator.Exists,
+      FilterOperator.NotExists,
+    ],
   }),
   field(
     "session.entryPath",
@@ -334,7 +330,7 @@ const FIELDS = [
 export type AnalyticsFilterFieldId = (typeof FIELDS)[number]["id"];
 
 /** Bump when canonical IDs, value kinds, or operator semantics change. */
-export const ANALYTICS_FILTER_REGISTRY_REVISION = "analytics-filter-v8";
+export const ANALYTICS_FILTER_REGISTRY_REVISION = "analytics-filter-v9";
 
 export const analyticsFilterRegistry: ReadonlyMap<
   string,
@@ -371,8 +367,8 @@ export function matchesOnlyCustomEvents(document: FilterDocument): boolean {
 
 /**
  * Whether the filter is custom properties alone, e.g.
- * `event.payload("/plan") eq "pro"`: page views and custom events both
- * carry properties, so both match it.
+ * `property("plan") eq "pro"`: page views and custom events both carry
+ * properties, so both match it.
  */
 export function matchesOnlyProperties(document: FilterDocument): boolean {
   return (
@@ -380,7 +376,7 @@ export function matchesOnlyProperties(document: FilterDocument): boolean {
     document.conditions.every(
       (condition) =>
         analyticsFilterDefinition(targetFieldId(condition.target))?.source ===
-        FilterFieldSource.Payload,
+        FilterFieldSource.Property,
     )
   );
 }

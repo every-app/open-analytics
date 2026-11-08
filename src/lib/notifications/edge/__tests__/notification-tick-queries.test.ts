@@ -125,11 +125,11 @@ function seed(input: { rolledUp: number; alerts?: number }): Setup {
 function visitToday(database: DatabaseSync, sitePk: number): void {
   database
     .prepare(
-      `INSERT INTO visits (visit_id, site_pk, site_id, visitor_id, session_id,
+      `INSERT INTO visits (visit_id, site_pk, visitor_id, session_id,
          status, started_at, last_activity_at, duration_ms, pathname, hostname)
-       VALUES (?, ?, ?, 'v', 's', 'complete', ?, ?, 1000, '/', 'example.com')`,
+       VALUES (?, ?, 'v', 's', 'complete', ?, ?, 1000, '/', 'example.com')`,
     )
-    .run(`visit-${sitePk}`, sitePk, siteId(sitePk), START - 3_600_000, START);
+    .run(`visit-${sitePk}`, sitePk, START - 3_600_000, START);
 }
 
 /** Messages per rule. */

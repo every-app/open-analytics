@@ -86,23 +86,3 @@ WHERE site_pk = ${SITE_PK_FROM_SITE_ID_SQL}
     bindings: [siteId, dimension, split.startDay, split.endDay],
   };
 }
-
-/** The map's rolled-up points, in the raw points query's columns. */
-export function dailyGeoPoints(siteId: string, split: RollupSplit): BoundSql {
-  return {
-    sql: `
-SELECT
-  latitude AS lat_bucket,
-  longitude AS lon_bucket,
-  country,
-  region,
-  region_code AS regionCode,
-  city,
-  latest_at,
-  views AS point_count
-FROM visit_daily_geo_points
-WHERE site_pk = ${SITE_PK_FROM_SITE_ID_SQL}
-  AND day >= ? AND day < ?`,
-    bindings: [siteId, split.startDay, split.endDay],
-  };
-}

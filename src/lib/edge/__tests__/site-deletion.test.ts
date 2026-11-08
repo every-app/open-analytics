@@ -25,14 +25,11 @@ const SITE_TABLES = [
   "visits",
   "visit_properties",
   "custom_events",
-  "custom_event_json_nodes",
-  "custom_event_json_values",
+  "custom_event_properties",
   "custom_event_names",
-  "custom_event_json_paths",
   "visit_hourly_rollups",
   "visit_daily_rollups",
   "visit_daily_dimension_rollups",
-  "visit_daily_geo_points",
   "visit_rollup_dirty_days",
   "visit_rollup_state",
 ];
@@ -76,21 +73,16 @@ describe("site deletion", () => {
         }),
       );
     }
-    // An event with a payload on the first page view of each site.
+    // An event with a property on the first page view of each site.
     database.exec(`
-      INSERT INTO custom_event_names (id, site_pk, site_id, name, last_seen_at)
-        VALUES (1, 1, 'site-1', 'signup', 0), (2, 2, 'site-2', 'signup', 0);
-      INSERT INTO custom_event_json_paths (id, site_pk, site_id, path, last_seen_at)
-        VALUES (1, 1, 'site-1', '$.plan', 0), (2, 2, 'site-2', '$.plan', 0);
-      INSERT INTO custom_events (event_pk, event_id, site_pk, site_id, visit_id,
-        event_name_id, occurred_at, received_at, node_count, value_count)
-      SELECT site_pk, 'e' || site_pk, site_pk, site_id, MIN(visit_id), site_pk, 0, 0, 1, 1
+      INSERT INTO custom_event_names (id, site_pk, name, last_seen_at)
+        VALUES (1, 1, 'signup', 0), (2, 2, 'signup', 0);
+      INSERT INTO custom_events (event_pk, event_id, site_pk, visit_id,
+        event_name_id, occurred_at, received_at)
+      SELECT site_pk, 'e' || site_pk, site_pk, MIN(visit_id), site_pk, 0, 0
       FROM visits GROUP BY site_pk;
-      INSERT INTO custom_event_json_nodes (event_pk, node_id, path_id, value_type, depth)
-        VALUES (1, 1, 1, 1, 0), (2, 1, 2, 1, 0);
-      INSERT INTO custom_event_json_values (event_pk, node_id, site_id, site_pk,
-        event_name_id, path_id, occurred_at, value_type, string_value)
-        VALUES (1, 1, 'site-1', 1, 1, 1, 0, 1, 'pro'), (2, 1, 'site-2', 2, 2, 2, 0, 1, 'pro');
+      INSERT INTO custom_event_properties (event_pk, key, value, site_pk, occurred_at)
+        VALUES (1, 'plan', 'pro', 1, 0), (2, 'plan', 'pro', 2, 0);
       INSERT INTO visit_properties (visit_id, key, value, site_pk, started_at)
       SELECT visit_id, 'author', 'Jane', site_pk, started_at FROM visits;
     `);
@@ -105,9 +97,7 @@ describe("site deletion", () => {
           (
             database
               .prepare(
-                table === "custom_event_json_nodes"
-                  ? `SELECT COUNT(*) AS n FROM ${table} WHERE event_pk = ${sitePk}`
-                  : `SELECT COUNT(*) AS n FROM ${table} WHERE site_pk = ${sitePk}`,
+                `SELECT COUNT(*) AS n FROM ${table} WHERE site_pk = ${sitePk}`,
               )
               .get() as { n: number }
           ).n,
@@ -147,14 +137,12 @@ describe("site deletion", () => {
       }),
     );
     database.exec(`
-      INSERT INTO custom_event_names (id, site_pk, site_id, name, last_seen_at)
-        VALUES (1, 1, 'site-1', 'signup', 0);
-      INSERT INTO custom_event_json_paths (id, site_pk, site_id, path, last_seen_at)
-        VALUES (1, 1, 'site-1', '$.items', 0);
+      INSERT INTO custom_event_names (id, site_pk, name, last_seen_at)
+        VALUES (1, 1, 'signup', 0);
       DELETE FROM sites WHERE id = 'site-1';
     `);
     // Once the purge has deleted the site's events, the ingest buffer
-    // flushes one with a payload of 1,500 values onto a page view.
+    // flushes one with 1,500 properties onto a page view.
     const sqlite = createSqliteD1Database(database);
     const rowsChanged: number[] = [];
     const totalChanges = () =>
@@ -179,22 +167,16 @@ describe("site deletion", () => {
             rowsChanged.push(totalChanges() - before);
             if (sql.includes("DELETE FROM custom_events")) {
               database.exec(`
-                INSERT INTO custom_events (event_pk, event_id, site_pk, site_id,
-                  visit_id, event_name_id, occurred_at, received_at, node_count,
-                  value_count)
-                SELECT 1, 'late', 1, 'site-1', MIN(visit_id), 1, 0, 0, 1500, 1500
+                INSERT INTO custom_events (event_pk, event_id, site_pk,
+                  visit_id, event_name_id, occurred_at, received_at)
+                SELECT 1, 'late', 1, MIN(visit_id), 1, 0, 0
                 FROM visits;
-                WITH RECURSIVE node(id) AS (
-                  SELECT 1 UNION ALL SELECT id + 1 FROM node WHERE id < 1500
+                WITH RECURSIVE n(id) AS (
+                  SELECT 1 UNION ALL SELECT id + 1 FROM n WHERE id < 1500
                 )
-                INSERT INTO custom_event_json_nodes (event_pk, node_id, path_id,
-                  value_type, depth)
-                SELECT 1, id, 1, 1, 1 FROM node;
-                INSERT INTO custom_event_json_values (event_pk, node_id, site_id,
-                  site_pk, event_name_id, path_id, occurred_at, value_type,
-                  string_value)
-                SELECT 1, node_id, 'site-1', 1, 1, 1, 0, 1, 'x'
-                FROM custom_event_json_nodes;
+                INSERT INTO custom_event_properties (event_pk, key, value,
+                  site_pk, occurred_at)
+                SELECT 1, 'key-' || id, 'x', 1, 0 FROM n;
               `);
             }
             return result;

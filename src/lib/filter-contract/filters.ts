@@ -1,8 +1,9 @@
+import { PROPERTY_LIMITS } from "@/lib/analytics/properties";
+
 import type { FilterAudience } from "./types";
 
 export type FilterValue = string | number | boolean | null;
-export type FilterValueKind =
-  "string" | "enum" | "number" | "boolean" | "json-scalar";
+export type FilterValueKind = "string" | "enum" | "number" | "boolean";
 
 export enum FilterOperator {
   Eq = "eq",
@@ -57,9 +58,6 @@ export const NEGATED_FILTER_OPERATORS: ReadonlySet<FilterOperator> = new Set([
 ]);
 
 export type FilterFieldId = string & { readonly __brand: "FilterFieldId" };
-export type CanonicalJsonPath = string & {
-  readonly __brand: "CanonicalJsonPath";
-};
 
 export interface FieldFilterTarget {
   readonly kind: "field";
@@ -67,18 +65,18 @@ export interface FieldFilterTarget {
 }
 
 /**
- * A custom property: a page view's property or, at any depth, a custom
- * event's payload value, named by a JSON pointer.
+ * A custom property, by its key: a page view's own or a custom event's, as
+ * Plausible's `props:<key>`.
  */
-export interface EventPayloadFilterTarget {
-  readonly kind: "event-payload";
-  readonly path: CanonicalJsonPath;
+export interface PropertyFilterTarget {
+  readonly kind: "property";
+  readonly key: string;
 }
 
-export type FilterTarget = FieldFilterTarget | EventPayloadFilterTarget;
+export type FilterTarget = FieldFilterTarget | PropertyFilterTarget;
 
-/** The registry field of a target: a payload path is `event.payload`. */
-export const EVENT_PAYLOAD_FIELD = "event.payload";
+/** The registry field of a property target. */
+export const PROPERTY_FIELD = "property";
 
 export interface FilterCondition {
   readonly target: FilterTarget;
@@ -113,6 +111,8 @@ export interface FilterFieldDefinition {
     readonly step?: number;
   };
   readonly unit?: "ms" | "px" | "ratio" | "%";
+  /** A number or boolean value is kept as its text, as ingest stores it. */
+  readonly scalarsAsText?: boolean;
   readonly canonicalize?: (value: FilterValue) => FilterValue;
 }
 
@@ -152,37 +152,20 @@ function isFilterOperator(value: unknown): value is FilterOperator {
 }
 
 export function targetFieldId(target: FilterTarget): string {
-  return target.kind === "field" ? target.field : EVENT_PAYLOAD_FIELD;
+  return target.kind === "field" ? target.field : PROPERTY_FIELD;
 }
 
-function canonicalJsonPath(value: unknown, path: string): CanonicalJsonPath {
-  if (typeof value !== "string" || value.length === 0 || value.length > 240) {
+/** A property key as ingest keeps it: trimmed, and not over the limit. */
+function canonicalPropertyKey(value: unknown, path: string): string {
+  const key = typeof value === "string" ? value.trim() : "";
+  if (!key || key.length > PROPERTY_LIMITS.keyLength) {
     fail(
-      "invalid_json_path",
+      "invalid_property_key",
       path,
-      "Expected a bounded canonical JSON pointer path.",
+      `A property key is 1 to ${PROPERTY_LIMITS.keyLength} characters.`,
     );
   }
-  if (!value.startsWith("/") || value === "/" || value.includes("//")) {
-    fail(
-      "invalid_json_path",
-      path,
-      "JSON path must be a non-empty JSON pointer.",
-    );
-  }
-  const segments = value.slice(1).split("/");
-  if (
-    segments.some(
-      (segment) => segment.length === 0 || /~(?![01])/.test(segment),
-    )
-  ) {
-    fail(
-      "invalid_json_path",
-      path,
-      "JSON path contains an invalid pointer segment.",
-    );
-  }
-  return value as CanonicalJsonPath;
+  return key;
 }
 
 function canonicalTarget(
@@ -193,15 +176,15 @@ function canonicalTarget(
   if (!isRecord(input)) {
     fail("invalid_target", path, "Filter condition requires a typed target.");
   }
-  if (input.kind === "event-payload") {
-    const definition = registry.get(EVENT_PAYLOAD_FIELD);
+  if (input.kind === "property") {
+    const definition = registry.get(PROPERTY_FIELD);
     if (!definition) {
-      fail("unknown_field", path, "The event payload field is not registered.");
+      fail("unknown_field", path, "The property field is not registered.");
     }
     return {
       target: {
-        kind: "event-payload",
-        path: canonicalJsonPath(input.path, `${path}.path`),
+        kind: "property",
+        key: canonicalPropertyKey(input.key, `${path}.key`),
       },
       definition,
     };
@@ -213,11 +196,11 @@ function canonicalTarget(
   if (typeof field !== "string" || !registry.has(field)) {
     fail("unknown_field", `${path}.field`, `Unknown filter field: ${field}`);
   }
-  if (field === EVENT_PAYLOAD_FIELD) {
+  if (field === PROPERTY_FIELD) {
     fail(
       "invalid_target",
       `${path}.field`,
-      "event.payload requires an event-payload target with a JSON pointer path.",
+      "A property filter needs a property target with its key.",
     );
   }
   return {
@@ -280,13 +263,13 @@ function canonicalValue(
     }
     return raw;
   }
-  if (definition.valueKind === "json-scalar") {
-    if (typeof raw === "number" && !Number.isFinite(raw)) {
-      fail("invalid_number", path, "Expected a finite number.");
-    }
-    return raw;
-  }
-  if (typeof raw !== "string") {
+  if (
+    typeof raw !== "string" &&
+    !(
+      definition.scalarsAsText &&
+      (typeof raw === "number" || typeof raw === "boolean")
+    )
+  ) {
     fail("invalid_string", path, "Expected a string filter value.");
   }
   return definition.canonicalize ? definition.canonicalize(raw) : raw;
@@ -429,7 +412,7 @@ function conditionFingerprint(condition: FilterCondition): string {
     condition.target.kind,
     condition.target.kind === "field"
       ? condition.target.field
-      : condition.target.path,
+      : condition.target.key,
     condition.operator,
     condition.value ?? null,
   ]);

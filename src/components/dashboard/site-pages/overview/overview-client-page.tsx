@@ -1,5 +1,7 @@
+import { useDashboardComparisonQuery } from "@/components/dashboard/comparison/use-dashboard-comparison-query";
 import { useDashboardQuery } from "@/components/dashboard/shell/dashboard-query-provider";
 
+import { useDashboardLoad } from "./dashboard-load";
 import { GoalConversionsCard } from "./goal-conversions-card";
 import { OverviewMetricsSection } from "./metrics";
 import { PropertiesCard } from "./properties-card";
@@ -20,6 +22,13 @@ export function OverviewClientPage({
   goalsPath,
 }: OverviewClientPageProps) {
   const { window, filters } = useDashboardQuery();
+  // One request brings the top stats, the graph and the cards' top rows.
+  const load = useDashboardLoad(
+    siteId,
+    window,
+    filters,
+    useDashboardComparisonQuery(window, filters) !== null,
+  );
 
   return (
     <div className="space-y-6">
@@ -29,6 +38,7 @@ export function OverviewClientPage({
         siteId={siteId}
         window={window}
         filters={filters}
+        load={load}
       />
       <OverviewReportCards
         locale={locale}
@@ -37,6 +47,7 @@ export function OverviewClientPage({
         siteDomain={siteDomain}
         filters={filters}
         filtered={filters.conditions.length > 0}
+        load={load}
       />
       {goalsPath ? (
         // Each card shows only when it has rows; one alone is full width.

@@ -26,8 +26,8 @@ channel_rollup AS (
   SELECT
     channel,
     count(*) AS views,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+    count(DISTINCT session_id) AS sessions,
+    count(DISTINCT visitor_id) AS visitors
   FROM filtered_visits
   GROUP BY channel
 )

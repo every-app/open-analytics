@@ -34,9 +34,9 @@ function createEnv() {
   seedSites(database, [SITE]);
   const insert = database.prepare(`
     INSERT INTO visits (
-      visit_id, site_id, site_pk, visitor_id, session_id, status, started_at,
+      visit_id, site_pk, visitor_id, session_id, status, started_at,
       last_activity_at, pathname, hostname, scroll_depth
-    ) VALUES (?, ?, ?, ?, ?, 'complete', ?, ?, ?, 'example.com', ?)
+    ) VALUES (?, ?, ?, ?, 'complete', ?, ?, ?, 'example.com', ?)
   `);
   const pageViews: Array<[string, string, number, string, number | null]> = [
     // Scrolled past 75% of the pricing page.
@@ -52,7 +52,6 @@ function createEnv() {
   for (const [visitId, person, startedAt, pathname, depth] of pageViews) {
     insert.run(
       visitId,
-      SITE.siteId,
       SITE.sitePk,
       `visitor-${person}`,
       `session-${person}`,

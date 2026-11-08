@@ -4,6 +4,7 @@ import {
   type FilterFieldRegistry,
   FilterOperator,
   type FilterValue,
+  PROPERTY_FIELD,
 } from "@/lib/filter-contract";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { formatI18nTemplate } from "@/lib/i18n/template";
@@ -50,10 +51,10 @@ function fieldDescription(
   registry: FilterFieldRegistry,
   messages: FilterDescriptionMessages,
 ): string {
-  if (condition.target.kind === "event-payload") {
+  if (condition.target.kind === "property") {
     const label =
-      messages.filterBuilder.fieldLabels["event.payload"] ?? "event.payload";
-    return `${label} (${condition.target.path})`;
+      messages.filterBuilder.fieldLabels[PROPERTY_FIELD] ?? PROPERTY_FIELD;
+    return `${label} (${condition.target.key})`;
   }
   const field = registry.get(condition.target.field);
   return (

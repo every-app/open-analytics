@@ -81,6 +81,26 @@ export function clampString(input: string, maxLen: number): string {
   return input.slice(0, maxLen);
 }
 
+/**
+ * How many hex digits of an id's SHA-256 make the stored id: 13, 52 bits,
+ * so it stays below Number.MAX_SAFE_INTEGER. D1 returns integers as JS
+ * numbers and binds no BigInt.
+ */
+export const ID_HEX_DIGITS = 13;
+
+/**
+ * A visitor or session id from its SHA-256 hex digest: the integer of its
+ * first `ID_HEX_DIGITS` hex digits. The one mapping from a hex id to a
+ * stored one: migration 0016 and the ingest buffer convert ids stored as
+ * hex with it.
+ */
+export function idFromSha256Hex(hex: string): number {
+  if (!/^[0-9a-f]{13,}$/.test(hex)) {
+    throw new TypeError("Expected a lowercase SHA-256 hex digest.");
+  }
+  return Number.parseInt(hex.slice(0, ID_HEX_DIGITS), 16);
+}
+
 // The salt is random, kept only for its UTC day, and the site is part of the
 // hash: a visitor gets a different id on every site and every day, and no
 // past id can be recomputed once its day's salt is deleted.
@@ -89,24 +109,28 @@ export async function deriveVisitorId(input: {
   siteId: string;
   ip: string;
   ua: string;
-}): Promise<string> {
-  return sha256Hex([input.salt, input.siteId, input.ip, input.ua].join("|"));
+}): Promise<number> {
+  return idFromSha256Hex(
+    await sha256Hex([input.salt, input.siteId, input.ip, input.ua].join("|")),
+  );
 }
 
 export async function deriveServerSessionId(input: {
   siteId: string;
-  visitorId: string;
+  visitorId: number;
   visitId: string;
   startedAt: number;
-}): Promise<string> {
-  return sha256Hex(
-    [
-      "server-session-v1",
-      input.siteId,
-      input.visitorId,
-      input.visitId,
-      String(Math.floor(input.startedAt)),
-    ].join("|"),
+}): Promise<number> {
+  return idFromSha256Hex(
+    await sha256Hex(
+      [
+        "server-session-v1",
+        input.siteId,
+        String(input.visitorId),
+        input.visitId,
+        String(Math.floor(input.startedAt)),
+      ].join("|"),
+    ),
   );
 }
 

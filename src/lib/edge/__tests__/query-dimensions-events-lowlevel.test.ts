@@ -9,12 +9,10 @@ import {
   type FilterDocument,
 } from "@/lib/edge/analytics/contract";
 import {
-  handleEventFieldValuesContract as handleEventTypeFieldValues,
   handleEventRecordsContract as handleEventsRecords,
   handleEventsSummaryContract as handleEventsSummary,
   handleEventsTrendContract as handleEventsTrend,
   handleEventTypeDetailContract as handleEventTypeDetail,
-  handleEventTypeFieldsContract as handleEventTypeFields,
   handleEventTypesContract as handleEventTypes,
 } from "@/lib/edge/analytics/interfaces/dashboard/protocol/events";
 import type {
@@ -31,14 +29,6 @@ import {
   querySessionPathDimensionFromD1,
   querySessionPathDimensionPageFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/dimensions";
-import {
-  decodeEventFieldCursor,
-  decodeEventFieldValueCursor,
-  queryEventFieldsFromD1,
-  queryEventFieldsPageFromD1,
-  queryEventFieldValuesFromD1,
-  queryEventFieldValuesPageFromD1,
-} from "@/lib/edge/analytics/providers/d1/internal/events-fields";
 import { queryEventTypeOverviewFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-overview";
 import {
   decodeEventTypeCursor,
@@ -142,8 +132,7 @@ function eventRecord(overrides: Partial<EventRecordRow> = {}): EventRecordRow {
     os: "Windows",
     osVersion: "11",
     deviceType: "desktop",
-    nodeCount: 3,
-    valueCount: 2,
+    propertiesJson: "{}",
     ...overrides,
   };
 }
@@ -375,126 +364,6 @@ describe("edge query dimensions low-level coverage", () => {
     expect(calls[2].sql).toContain("LOWER(referrer) LIKE");
   });
 });
-describe("edge query event fields and records low-level coverage", () => {
-  it("queries event fields and skips D1 for unsupported field value types", async () => {
-    const { env, calls, prepare } = createD1Env([
-      [
-        {
-          path: "/plan",
-          valueType: 1,
-          events: 2,
-          occurrences: 3,
-          firstSeenAt: baseMs,
-          lastSeenAt: baseMs + 1,
-          stringValue: "pro",
-          numberValue: null,
-          booleanValue: null,
-        },
-      ],
-    ]);
-
-    await expect(
-      queryEventFieldsFromD1(
-        env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        "Signup",
-        9,
-      ),
-    ).resolves.toEqual([
-      {
-        path: "/plan",
-        valueType: 1,
-        events: 2,
-        occurrences: 3,
-        firstSeenAt: baseMs,
-        lastSeenAt: baseMs + 1,
-        stringValue: "pro",
-        numberValue: null,
-        booleanValue: null,
-      },
-    ]);
-    await expect(
-      queryEventFieldValuesFromD1(
-        env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        "Signup",
-        "/plan",
-        "unsupported",
-        5,
-      ),
-    ).resolves.toEqual([]);
-
-    expect(prepare).toHaveBeenCalledTimes(1);
-    expect(calls[0].sql).toContain("GROUP BY path, valueType");
-    expect(calls[0].bindings).toEqual([
-      siteId,
-      siteId,
-      "Signup",
-      ...windowBindings(),
-      9,
-    ]);
-  });
-
-  it("binds event field value path, value type, filters, and limit", async () => {
-    const { env, calls } = createD1Env([
-      [
-        {
-          valueType: 2,
-          events: "4",
-          occurrences: "5",
-          firstSeenAt: baseMs,
-          lastSeenAt: baseMs + 2,
-          stringValue: null,
-          numberValue: 42,
-          booleanValue: null,
-        },
-      ],
-    ]);
-
-    await expect(
-      queryEventFieldValuesFromD1(
-        env,
-        siteId,
-        window,
-        filterFixture({ clientDeviceType: "mobile" }),
-        "Purchase",
-        "/amount",
-        "number",
-        7,
-        "4",
-      ),
-    ).resolves.toEqual([
-      {
-        valueType: 2,
-        events: "4",
-        occurrences: "5",
-        firstSeenAt: baseMs,
-        lastSeenAt: baseMs + 2,
-        stringValue: null,
-        numberValue: 42,
-        booleanValue: null,
-      },
-    ]);
-
-    expect(calls[0].sql).toContain("WHERE p.path = ? AND v.value_type = ?");
-    expect(calls[0].sql).toContain("LIKE ? ESCAPE '\\'");
-    expect(calls[0].bindings).toEqual([
-      siteId,
-      siteId,
-      "Purchase",
-      ...windowBindings(),
-      "mobile",
-      "/amount",
-      2,
-      "%4%",
-      7,
-    ]);
-  });
-});
 describe("edge query event handlers low-level coverage", () => {
   it("rejects event handler requests with missing identifiers or invalid windows", async () => {
     const { env, prepare } = createD1Env([]);
@@ -527,36 +396,6 @@ describe("edge query event handlers low-level coverage", () => {
       siteId,
       url("/event-type-detail", { eventName: "Signup", from: 20, to: 10 }),
     );
-    const missingFieldName = await handleEventTypeFieldValues(
-      env,
-      siteId,
-      url("/event-field-values", {
-        fieldPath: "/paid",
-        fieldValueType: "boolean",
-        from: window.startMs,
-        to: window.endExclusiveMs,
-      }),
-    );
-    const missingFieldPath = await handleEventTypeFieldValues(
-      env,
-      siteId,
-      url("/event-field-values", {
-        eventName: "Signup",
-        fieldValueType: "boolean",
-        from: window.startMs,
-        to: window.endExclusiveMs,
-      }),
-    );
-    const missingFieldType = await handleEventTypeFieldValues(
-      env,
-      siteId,
-      url("/event-field-values", {
-        eventName: "Signup",
-        fieldPath: "/paid",
-        from: window.startMs,
-        to: window.endExclusiveMs,
-      }),
-    );
 
     await expect(invalidTypes.json()).resolves.toMatchObject({
       ok: false,
@@ -578,99 +417,38 @@ describe("edge query event handlers low-level coverage", () => {
       ok: false,
       error: { message: "Invalid time window" },
     });
-    await expect(missingFieldName.json()).resolves.toMatchObject({
-      ok: true,
-      fieldPath: "/paid",
-      fieldValueType: "boolean",
-      data: {
-        items: [],
-        pagination: {
-          limit: 25,
-          returned: 0,
-          hasMore: false,
-          nextCursor: null,
-        },
-      },
-    });
-    await expect(missingFieldPath.json()).resolves.toMatchObject({
-      ok: false,
-      error: { message: "fieldPath is required" },
-    });
-    await expect(missingFieldType.json()).resolves.toMatchObject({
-      ok: false,
-      error: { message: "fieldValueType is required" },
-    });
-    expect(prepare).toHaveBeenCalledTimes(1);
+    expect(prepare).not.toHaveBeenCalled();
   });
 
-  it("returns narrow field and detail handler responses", async () => {
-    const { env, calls } = createD1Env([
-      [
-        {
-          path: "/plan",
-          valueType: 1,
-          events: 2,
-          occurrences: 3,
-          firstSeenAt: baseMs,
-          lastSeenAt: baseMs + 1,
-          stringValue: "pro",
-          numberValue: null,
-          booleanValue: null,
-        },
-      ],
-    ]);
+  it("returns a narrow detail handler response", async () => {
+    const { env, calls } = createD1Env([]);
     const logger = createInvocationLogger({
       source: "worker",
       trigger: "request",
     });
-    const { fields, detail } = await runWithInvocationLogger(
-      logger,
-      async () => ({
-        fields: await handleEventTypeFields(
-          env,
-          siteId,
-          url("/event-type-fields", {
-            eventName: "Signup",
-            from: window.startMs,
-            to: window.endExclusiveMs,
-          }),
-        ),
-        detail: await handleEventTypeDetail(
-          env,
-          siteId,
-          url("/event-type-detail", {
-            eventName: "Signup",
-            from: window.startMs,
-            to: window.endExclusiveMs,
-          }),
-          undefined,
-          undefined,
-          {
-            includeContext: false,
-            includeBreakdowns: false,
-          },
-        ),
-      }),
+    const detail = await runWithInvocationLogger(logger, () =>
+      handleEventTypeDetail(
+        env,
+        siteId,
+        url("/event-type-detail", {
+          eventName: "Signup",
+          from: window.startMs,
+          to: window.endExclusiveMs,
+        }),
+        undefined,
+        undefined,
+        {
+          includeContext: false,
+          includeBreakdowns: false,
+        },
+      ),
     );
 
-    await expect(fields.json()).resolves.toMatchObject({
-      ok: true,
-      eventName: "Signup",
-      data: {
-        items: [{ path: "/plan", valueType: "string", exampleValue: "pro" }],
-        pagination: {
-          limit: 100,
-          returned: 1,
-          hasMore: false,
-          nextCursor: null,
-        },
-      },
-    });
     await expect(detail.json()).resolves.toMatchObject({
       ok: true,
       cards: { page: { path: [] } },
     });
-    expect(calls).toHaveLength(3);
+    expect(calls).toHaveLength(2);
   });
 
   it("maps event types from D1 rows", async () => {
@@ -831,59 +609,6 @@ describe("edge query event handlers low-level coverage", () => {
       },
     });
   });
-
-  it("returns event field values handler payloads", async () => {
-    const { env } = createD1Env([
-      [
-        {
-          valueType: 3,
-          events: 2,
-          occurrences: 2,
-          firstSeenAt: baseMs,
-          lastSeenAt: baseMs + 1,
-          stringValue: null,
-          numberValue: null,
-          booleanValue: 1,
-        },
-      ],
-    ]);
-
-    const valuesResponse = await handleEventTypeFieldValues(
-      env,
-      siteId,
-      url("/event-field-values", {
-        eventName: "Signup",
-        fieldPath: "/paid",
-        fieldValueType: "boolean",
-        from: window.startMs,
-        to: window.endExclusiveMs,
-        limit: 3,
-      }),
-    );
-
-    await expect(valuesResponse.json()).resolves.toEqual({
-      ok: true,
-      fieldPath: "/paid",
-      fieldValueType: "boolean",
-      data: {
-        items: [
-          {
-            value: true,
-            events: 2,
-            occurrences: 2,
-            firstSeenAt: baseMs,
-            lastSeenAt: baseMs + 1,
-          },
-        ],
-        pagination: {
-          limit: 3,
-          returned: 1,
-          hasMore: false,
-          nextCursor: null,
-        },
-      },
-    });
-  });
 });
 describe("edge query event type overview low-level coverage", () => {
   it("uses zero summary fallbacks when scoped and event rows are empty", async () => {
@@ -969,196 +694,6 @@ describe("edge paginated event types low-level coverage", () => {
       pagination: { returned: 0, hasMore: false, nextCursor: null },
     });
     expect(last.calls[0].bindings).toContain(7);
-  });
-});
-describe("edge paginated event fields low-level coverage", () => {
-  it("paginates event fields and preserves the typed cursor binding", async () => {
-    const first = createD1Env([
-      [
-        {
-          path: "plan",
-          valueType: 1,
-          events: 4,
-          occurrences: 6,
-          firstSeenAt: baseMs,
-          lastSeenAt: baseMs + 10,
-          stringValue: "pro",
-          numberValue: null,
-          booleanValue: null,
-        },
-        {
-          path: "amount",
-          valueType: 2,
-          events: 2,
-          occurrences: 2,
-          firstSeenAt: baseMs,
-          lastSeenAt: baseMs + 5,
-          stringValue: null,
-          numberValue: 20,
-          booleanValue: null,
-        },
-      ],
-    ]);
-    const page = await queryEventFieldsPageFromD1(
-      first.env,
-      siteId,
-      window,
-      EMPTY_FILTER_DOCUMENT,
-      "Signup",
-      1,
-      null,
-      "public-share",
-    );
-    expect(page).toMatchObject({
-      items: [{ path: "plan", valueType: 1 }],
-      pagination: { hasMore: true, nextCursor: expect.any(String) },
-    });
-    const cursor = await decodeEventFieldCursor(
-      first.env,
-      siteId,
-      window,
-      EMPTY_FILTER_DOCUMENT,
-      "Signup",
-      page.pagination.nextCursor,
-      "public-share",
-    );
-    expect(cursor).toEqual({
-      events: 4,
-      occurrences: 6,
-      path: "plan",
-      valueType: 1,
-    });
-
-    const second = createD1Env([[]]);
-    await expect(
-      queryEventFieldsPageFromD1(
-        second.env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        "Signup",
-        1,
-        cursor,
-      ),
-    ).resolves.toMatchObject({
-      items: [],
-      pagination: { returned: 0, hasMore: false, nextCursor: null },
-    });
-    expect(second.calls[0].bindings).toContain(4);
-  });
-
-  it("handles typed value searches, boolean values, invalid types, and cursors", async () => {
-    const invalid = createD1Env([]);
-    await expect(
-      queryEventFieldValuesPageFromD1(
-        invalid.env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        undefined,
-        "payload.value",
-        "unsupported",
-        10,
-      ),
-    ).resolves.toEqual({
-      items: [],
-      pagination: { limit: 10, returned: 0, hasMore: false, nextCursor: null },
-    });
-    expect(invalid.calls).toHaveLength(0);
-
-    const numeric = createD1Env([
-      [
-        {
-          valueType: 2,
-          events: 3,
-          occurrences: 3,
-          firstSeenAt: baseMs,
-          lastSeenAt: baseMs + 1,
-          stringValue: null,
-          numberValue: 42,
-          booleanValue: null,
-        },
-        {
-          valueType: 2,
-          events: 1,
-          occurrences: 1,
-          firstSeenAt: baseMs,
-          lastSeenAt: baseMs + 1,
-          stringValue: null,
-          numberValue: 7,
-          booleanValue: null,
-        },
-      ],
-    ]);
-    const numericPage = await queryEventFieldValuesPageFromD1(
-      numeric.env,
-      siteId,
-      window,
-      EMPTY_FILTER_DOCUMENT,
-      "Signup",
-      "amount",
-      "number",
-      1,
-      " 42_% ",
-      null,
-      "public-share",
-    );
-    expect(numericPage).toMatchObject({
-      items: [{ numberValue: 42 }],
-      pagination: { hasMore: true, nextCursor: expect.any(String) },
-    });
-    expect(numeric.calls[0].sql).toContain("CAST(v.number_value AS TEXT)");
-    expect(numeric.calls[0].bindings).toContain("%42\\_\\%%");
-
-    const valueCursor = await decodeEventFieldValueCursor(
-      numeric.env,
-      siteId,
-      window,
-      EMPTY_FILTER_DOCUMENT,
-      "Signup",
-      "amount",
-      "number",
-      " 42_% ",
-      numericPage.pagination.nextCursor,
-      "public-share",
-    );
-    expect(valueCursor).toMatchObject({
-      occurrences: 3,
-      events: 3,
-      numberValue: 42,
-    });
-
-    const boolean = createD1Env([
-      [
-        {
-          valueType: 3,
-          events: 1,
-          occurrences: 1,
-          firstSeenAt: baseMs,
-          lastSeenAt: baseMs + 1,
-          stringValue: null,
-          numberValue: null,
-          booleanValue: 1,
-        },
-      ],
-    ]);
-    await expect(
-      queryEventFieldValuesPageFromD1(
-        boolean.env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        "Signup",
-        "paid",
-        "boolean",
-        5,
-        "true",
-      ),
-    ).resolves.toMatchObject({
-      items: [{ booleanValue: 1 }],
-      pagination: { hasMore: false },
-    });
-    expect(boolean.calls[0].sql).toContain("CASE v.boolean_value");
   });
 });
 describe("edge paginated dimensions low-level coverage", () => {

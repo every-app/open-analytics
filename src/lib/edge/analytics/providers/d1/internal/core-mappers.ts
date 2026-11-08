@@ -3,8 +3,6 @@ import { avgDuration, bounceRate } from "./core-time";
 import {
   type DimensionRow,
   type EventAnalyticsContextCards,
-  type EventFieldRow,
-  type EventFieldValueRow,
   type EventRecordRow,
   type EventSummaryCards,
   type GeoTabRow,
@@ -12,7 +10,6 @@ import {
   type OverviewGeoTabKey,
   type ReferrerRow,
 } from "./core-types";
-import { customEventJsonTypeLabel } from "./core-values";
 export function mapOverviewAggregate(
   row: OverviewAggregateRow,
   options?: { approximateVisitors?: boolean },
@@ -142,44 +139,7 @@ export function mapEventRecord(row: EventRecordRow) {
     os: row.os,
     osVersion: row.osVersion,
     deviceType: row.deviceType,
-    nodeCount: row.nodeCount,
-    valueCount: row.valueCount,
-  };
-}
-export function mapEventField(row: EventFieldRow) {
-  let exampleValue: string | number | boolean | null = null;
-  if (row.valueType === 1 && row.stringValue !== null) {
-    exampleValue = row.stringValue;
-  } else if (row.valueType === 2 && row.numberValue !== null) {
-    exampleValue = row.numberValue;
-  } else if (row.valueType === 3 && row.booleanValue !== null) {
-    exampleValue = row.booleanValue === 1;
-  }
-  return {
-    path: row.path,
-    valueType: customEventJsonTypeLabel(row.valueType),
-    events: row.events,
-    occurrences: row.occurrences,
-    firstSeenAt: row.firstSeenAt,
-    lastSeenAt: row.lastSeenAt,
-    exampleValue,
-  };
-}
-export function mapEventFieldValue(row: EventFieldValueRow) {
-  let value: string | number | boolean | null = null;
-  if (row.valueType === 1) {
-    value = row.stringValue ?? "";
-  } else if (row.valueType === 2) {
-    value = Number(row.numberValue ?? 0);
-  } else if (row.valueType === 3) {
-    value = row.booleanValue === 1;
-  }
-  return {
-    value,
-    events: Number(row.events ?? 0),
-    occurrences: Number(row.occurrences ?? 0),
-    firstSeenAt: Number(row.firstSeenAt ?? 0),
-    lastSeenAt: Number(row.lastSeenAt ?? 0),
+    properties: JSON.parse(row.propertiesJson) as Record<string, string>,
   };
 }
 export function mapReferrers(rows: ReferrerRow[]) {

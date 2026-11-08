@@ -1,4 +1,6 @@
+import { normalizeProperties } from "@/lib/analytics/properties";
 import { classifyTrafficChannel } from "@/lib/analytics/traffic-channel-rules";
+import { idFromSha256Hex } from "@/lib/edge/utils";
 
 import type { SqlBinding } from "./sql";
 import { CREATE_BUFFERED_CUSTOM_EVENTS_SQL } from "./sql";
@@ -10,36 +12,11 @@ interface DurableObjectSqlStorage {
   ): {
     toArray(): unknown[];
   };
-  /**
-   * Durable Object SQLite exposes transactionSync on the storage object.  The
-   * local SQL test doubles can provide the same method directly, while older
-   * doubles may omit it and use the non-transactional compatibility path.
-   */
-  transactionSync?<T>(closure: () => T): T;
-}
-
-export interface IngestSchemaOptions {
-  transactionSync?<T>(closure: () => T): T;
-}
-
-function transactionSync<T>(
-  sql: DurableObjectSqlStorage,
-  closure: () => T,
-  options?: IngestSchemaOptions,
-): T {
-  if (typeof sql.transactionSync === "function") {
-    return sql.transactionSync(closure);
-  }
-  if (typeof options?.transactionSync === "function") {
-    return options.transactionSync(closure);
-  }
-  return closure();
 }
 
 interface TableColumnInfo {
   name?: string;
-  notnull?: number;
-  dflt_value?: unknown;
+  type?: string;
 }
 
 function tableColumns(
@@ -134,115 +111,34 @@ const DROPPED_TABLES = [
   "ingest_schema_metadata",
 ] as const;
 
-const LEGACY_EVENT_CONTEXT_COLUMNS = [
-  "visitor_id",
-  "session_id",
-  "pathname",
-  "hostname",
-] as const;
-
-function hasIncompatibleLegacyEventContext(
-  sql: DurableObjectSqlStorage,
-): boolean {
-  const columns = tableColumns(sql, "buffered_custom_events");
-  return LEGACY_EVENT_CONTEXT_COLUMNS.some((columnName) => {
-    const column = columns.find((candidate) => candidate.name === columnName);
-    return column?.notnull === 1 && column.dflt_value === null;
-  });
-}
-
-function migrateLegacyBufferedCustomEvents(
-  sql: DurableObjectSqlStorage,
-  options?: IngestSchemaOptions,
-): void {
-  const columnNames = tableColumnNames(sql, "buffered_custom_events");
-  const value = (columnName: string, fallback: string): string =>
-    columnNames.has(columnName) ? columnName : fallback;
-  const coalesce = (columnName: string, fallback: string): string =>
-    columnNames.has(columnName)
-      ? `COALESCE(${columnName}, ${fallback})`
-      : fallback;
-
-  const migrate = () => {
-    sql.exec(`
-        CREATE TABLE buffered_custom_events_migration (
-          event_id TEXT PRIMARY KEY,
-          site_id TEXT NOT NULL,
-          visit_id TEXT NOT NULL,
-          occurred_at INTEGER NOT NULL,
-          received_at INTEGER NOT NULL,
-          sequence INTEGER NOT NULL DEFAULT 0,
-          event_name TEXT NOT NULL,
-          event_data_json TEXT NOT NULL DEFAULT '{}',
-          dirty INTEGER NOT NULL DEFAULT 1,
-          flush_attempts INTEGER NOT NULL DEFAULT 0,
-          last_flush_error TEXT,
-          created_at INTEGER NOT NULL,
-          visitor_id TEXT,
-          session_id TEXT,
-          pathname TEXT,
-          hostname TEXT
-        )
-      `);
-    sql.exec(`
-        INSERT INTO buffered_custom_events_migration (
-          event_id, site_id, visit_id, occurred_at, received_at, sequence,
-          event_name, event_data_json, dirty, flush_attempts,
-          last_flush_error, created_at, visitor_id, session_id, pathname,
-          hostname
-        )
-        SELECT
-          event_id,
-          site_id,
-          visit_id,
-          occurred_at,
-          ${coalesce("received_at", "occurred_at")},
-          ${coalesce("sequence", "0")},
-          event_name,
-          event_data_json,
-          dirty,
-          flush_attempts,
-          last_flush_error,
-          created_at,
-          ${value("visitor_id", "NULL")},
-          ${value("session_id", "NULL")},
-          ${value("pathname", "NULL")},
-          ${value("hostname", "NULL")}
-        FROM buffered_custom_events
-      `);
-    sql.exec(
-      "ALTER TABLE buffered_custom_events RENAME TO buffered_custom_events_legacy",
-    );
-    // Its indexes go with it and are created again on the new table.
-    sql.exec("DROP TABLE buffered_custom_events_legacy");
-    sql.exec(
-      "ALTER TABLE buffered_custom_events_migration RENAME TO buffered_custom_events",
-    );
-  };
-
-  // Durable Object SQLite rejects SQL BEGIN/COMMIT. Use its native API so
-  // schema changes and row copies roll back together if any step fails.
-  if (
-    typeof sql.transactionSync === "function" ||
-    typeof options?.transactionSync === "function"
-  ) {
-    transactionSync(sql, migrate, options);
+/**
+ * Custom events buffered with their raw payload get the flat properties
+ * ingest now keeps, and are written to D1 again: the migration that made
+ * properties flat dropped the custom events D1 had.
+ */
+function flattenBufferedEventData(sql: DurableObjectSqlStorage): void {
+  if (!tableColumnNames(sql, "buffered_custom_events").has("event_data_json")) {
     return;
   }
-
-  // Standalone SQLite callers without the Durable Object storage API.
-  sql.exec("BEGIN");
-  try {
-    migrate();
-    sql.exec("COMMIT");
-  } catch (error) {
-    try {
-      sql.exec("ROLLBACK");
-    } catch {
-      // Preserve the migration error if rollback is unavailable.
-    }
-    throw error;
+  ensureColumn(sql, "buffered_custom_events", "properties_json", "TEXT");
+  const rows = sql
+    .exec(
+      "SELECT event_id AS eventId, event_data_json AS eventDataJson FROM buffered_custom_events",
+    )
+    .toArray() as Array<{ eventId: string; eventDataJson: string }>;
+  for (const row of rows) {
+    const properties = normalizeProperties(JSON.parse(row.eventDataJson));
+    sql.exec(
+      `
+        UPDATE buffered_custom_events
+        SET properties_json = ?, dirty = 1
+        WHERE event_id = ?
+      `,
+      Object.keys(properties).length > 0 ? JSON.stringify(properties) : null,
+      row.eventId,
+    );
   }
+  sql.exec("ALTER TABLE buffered_custom_events DROP COLUMN event_data_json");
 }
 
 /**
@@ -284,66 +180,112 @@ function classifyBufferedVisitChannels(sql: DurableObjectSqlStorage): void {
   }
 }
 
-export function initializeIngestSqlSchema(
-  sql: DurableObjectSqlStorage,
-  options?: IngestSchemaOptions,
-): void {
-  sql.exec(`
-      CREATE TABLE IF NOT EXISTS buffered_visits (
-        visit_id TEXT PRIMARY KEY,
-        site_id TEXT NOT NULL,
-        visitor_id TEXT NOT NULL,
-        session_id TEXT NOT NULL,
-        status TEXT NOT NULL,
-        started_at INTEGER NOT NULL,
-        last_activity_at INTEGER NOT NULL,
-        hidden_at INTEGER,
-        hidden_ms INTEGER NOT NULL DEFAULT 0,
-        ended_at INTEGER,
-        finalized_at INTEGER,
-        duration_ms INTEGER,
-        scroll_depth INTEGER,
-        duration_source TEXT,
-        exit_reason TEXT,
-        pathname TEXT NOT NULL,
-        query_string TEXT NOT NULL DEFAULT '',
-        hash_fragment TEXT NOT NULL DEFAULT '',
-        hostname TEXT NOT NULL,
-        title TEXT NOT NULL DEFAULT '',
-        referrer_url TEXT NOT NULL DEFAULT '',
-        referrer_host TEXT NOT NULL DEFAULT '',
-        utm_source TEXT NOT NULL DEFAULT '',
-        utm_medium TEXT NOT NULL DEFAULT '',
-        utm_campaign TEXT NOT NULL DEFAULT '',
-        utm_term TEXT NOT NULL DEFAULT '',
-        utm_content TEXT NOT NULL DEFAULT '',
-        channel TEXT NOT NULL,
-        is_eu INTEGER NOT NULL DEFAULT 0,
-        country TEXT NOT NULL DEFAULT '',
-        region TEXT NOT NULL DEFAULT '',
-        region_code TEXT NOT NULL DEFAULT '',
-        city TEXT NOT NULL DEFAULT '',
-        continent TEXT NOT NULL DEFAULT '',
-        latitude REAL,
-        longitude REAL,
-        timezone TEXT NOT NULL DEFAULT '',
-        browser TEXT NOT NULL DEFAULT '',
-        browser_version TEXT NOT NULL DEFAULT '',
-        os TEXT NOT NULL DEFAULT '',
-        os_version TEXT NOT NULL DEFAULT '',
-        device_type TEXT NOT NULL DEFAULT '',
-        screen_width INTEGER,
-        screen_height INTEGER,
-        language TEXT NOT NULL DEFAULT '',
-        properties_json TEXT,
-        dirty INTEGER NOT NULL DEFAULT 1,
-        flush_attempts INTEGER NOT NULL DEFAULT 0,
-        last_flush_error TEXT,
-        buffer_revision INTEGER NOT NULL DEFAULT 1,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
-      )
-    `);
+/** A buffered page view's columns, its ids the integers D1 keeps. */
+const BUFFERED_VISITS_COLUMNS_SQL = `
+  visit_id TEXT PRIMARY KEY,
+  site_id TEXT NOT NULL,
+  visitor_id INTEGER NOT NULL,
+  session_id INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  started_at INTEGER NOT NULL,
+  last_activity_at INTEGER NOT NULL,
+  hidden_at INTEGER,
+  hidden_ms INTEGER NOT NULL DEFAULT 0,
+  ended_at INTEGER,
+  finalized_at INTEGER,
+  duration_ms INTEGER,
+  scroll_depth INTEGER,
+  duration_source TEXT,
+  exit_reason TEXT,
+  pathname TEXT NOT NULL,
+  query_string TEXT NOT NULL DEFAULT '',
+  hash_fragment TEXT NOT NULL DEFAULT '',
+  hostname TEXT NOT NULL,
+  title TEXT NOT NULL DEFAULT '',
+  referrer_url TEXT NOT NULL DEFAULT '',
+  referrer_host TEXT NOT NULL DEFAULT '',
+  utm_source TEXT NOT NULL DEFAULT '',
+  utm_medium TEXT NOT NULL DEFAULT '',
+  utm_campaign TEXT NOT NULL DEFAULT '',
+  utm_term TEXT NOT NULL DEFAULT '',
+  utm_content TEXT NOT NULL DEFAULT '',
+  channel TEXT NOT NULL,
+  is_eu INTEGER NOT NULL DEFAULT 0,
+  country TEXT NOT NULL DEFAULT '',
+  region TEXT NOT NULL DEFAULT '',
+  region_code TEXT NOT NULL DEFAULT '',
+  city TEXT NOT NULL DEFAULT '',
+  continent TEXT NOT NULL DEFAULT '',
+  latitude REAL,
+  longitude REAL,
+  timezone TEXT NOT NULL DEFAULT '',
+  browser TEXT NOT NULL DEFAULT '',
+  browser_version TEXT NOT NULL DEFAULT '',
+  os TEXT NOT NULL DEFAULT '',
+  os_version TEXT NOT NULL DEFAULT '',
+  device_type TEXT NOT NULL DEFAULT '',
+  screen_width INTEGER,
+  screen_height INTEGER,
+  language TEXT NOT NULL DEFAULT '',
+  properties_json TEXT,
+  dirty INTEGER NOT NULL DEFAULT 1,
+  flush_attempts INTEGER NOT NULL DEFAULT 0,
+  last_flush_error TEXT,
+  buffer_revision INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+`;
+
+/**
+ * Page views buffered with hex visitor and session ids get the integers
+ * ingest now derives, by the same mapping (idFromSha256Hex), and are written
+ * to D1 again: a session open across the deploy keeps its identity. The
+ * column types change, so the table is rebuilt; it holds what the alarm
+ * hasn't written and the last half hour, so a row at a time is cheap.
+ */
+function convertBufferedVisitIds(sql: DurableObjectSqlStorage): void {
+  const visitorId = tableColumns(sql, "buffered_visits").find(
+    (column) => column.name === "visitor_id",
+  );
+  if (visitorId?.type === "INTEGER") return;
+  sql.exec(
+    `CREATE TABLE buffered_visits_next (${BUFFERED_VISITS_COLUMNS_SQL})`,
+  );
+  // The columns both tables have; the others take their defaults.
+  const kept = tableColumnNames(sql, "buffered_visits");
+  const columns = tableColumns(sql, "buffered_visits_next")
+    .map((column) => column.name!)
+    .filter((column) => kept.has(column));
+  const rows = sql
+    .exec(`SELECT ${columns.join(", ")} FROM buffered_visits`)
+    .toArray() as Array<Record<string, SqlBinding>>;
+  for (const row of rows) {
+    const converted: Record<string, SqlBinding> = {
+      // Trimmed as ingest now stores text, as migration 0017 trimmed D1's.
+      ...Object.fromEntries(
+        Object.entries(row).map(([column, value]) => [
+          column,
+          typeof value === "string" ? value.trim() : value,
+        ]),
+      ),
+      visitor_id: idFromSha256Hex(String(row.visitor_id)),
+      session_id: idFromSha256Hex(String(row.session_id)),
+      dirty: 1,
+    };
+    sql.exec(
+      `INSERT INTO buffered_visits_next (${columns.join(", ")})
+       VALUES (${columns.map(() => "?").join(", ")})`,
+      ...columns.map((column) => converted[column]),
+    );
+  }
+  sql.exec("DROP TABLE buffered_visits");
+  sql.exec("ALTER TABLE buffered_visits_next RENAME TO buffered_visits");
+}
+
+export function initializeIngestSqlSchema(sql: DurableObjectSqlStorage): void {
+  sql.exec(
+    `CREATE TABLE IF NOT EXISTS buffered_visits (${BUFFERED_VISITS_COLUMNS_SQL})`,
+  );
   ensureColumn(sql, "buffered_visits", "hidden_at", "INTEGER");
   ensureColumn(sql, "buffered_visits", "properties_json", "TEXT");
   ensureColumn(
@@ -362,14 +304,7 @@ export function initializeIngestSqlSchema(
   ensureColumn(sql, "buffered_visits", "channel", "TEXT");
   classifyBufferedVisitChannels(sql);
   sql.exec(CREATE_BUFFERED_CUSTOM_EVENTS_SQL);
-
-  // Keep legacy event rows in place.  A legacy context column without a
-  // default would reject current inserts, so rebuild that shape atomically;
-  // all rows and legacy context values are copied before the old table goes
-  // away.  Other old shapes can be migrated additively.
-  if (hasIncompatibleLegacyEventContext(sql)) {
-    migrateLegacyBufferedCustomEvents(sql, options);
-  }
+  flattenBufferedEventData(sql);
   const eventColumnNames = tableColumnNames(sql, "buffered_custom_events");
   if (!eventColumnNames.has("received_at")) {
     ensureColumn(
@@ -405,6 +340,8 @@ export function initializeIngestSqlSchema(
   for (const tableName of DROPPED_TABLES) {
     sql.exec(`DROP TABLE IF EXISTS ${tableName}`);
   }
+  // Its indexes go with the old table and are created again below.
+  convertBufferedVisitIds(sql);
   // Page views buffered before ingest rounded coordinates round here, so
   // neither the realtime view nor a later flush carries finer ones.
   sql.exec(`

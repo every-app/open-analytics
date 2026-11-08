@@ -1,3 +1,5 @@
+import type { DashboardCard } from "@/lib/edge/analytics/contract/dashboard";
+
 import type { PaginatedCollection } from "./pagination";
 
 export interface OverviewMetrics {
@@ -14,15 +16,6 @@ export interface OverviewMetrics {
    * in %; null when no page view reported one. Only with a page path filter.
    */
   scrollDepth?: number | null;
-}
-
-export interface OverviewChangeRates {
-  views: number | null;
-  sessions: number | null;
-  visitors: number | null;
-  bounces: number | null;
-  bounceRate: number | null;
-  avgDurationMs: number | null;
 }
 
 export interface OverviewDetailPoint {
@@ -50,8 +43,6 @@ export interface OverviewDetailData {
 export interface OverviewData {
   ok: boolean;
   data: OverviewMetrics;
-  previousData?: OverviewMetrics;
-  changeRates?: OverviewChangeRates;
   detail?: OverviewDetailData;
 }
 
@@ -78,6 +69,26 @@ export interface TrendData {
   data: TrendPoint[];
 }
 
+/**
+ * A dashboard load: the totals, the graph's points and, unless Compare is
+ * on, the top rows of the tab each card shows.
+ */
+export interface DashboardData {
+  ok: boolean;
+  overview: OverviewMetrics;
+  trend: Omit<TrendData, "ok">;
+  cards?: Record<DashboardCard, DashboardCardRowData[]>;
+}
+
+/** A card row of a dashboard load: what it groups by, and how that reads. */
+export interface DashboardCardRowData {
+  value: string;
+  label: string;
+  views: number;
+  sessions: number;
+  visitors: number;
+}
+
 export interface OverviewClientDimensionTabsData {
   ok: boolean;
   tabs: {
@@ -98,40 +109,6 @@ export interface OverviewGeoDimensionTabsData {
     continent: Array<{ label: string; views: number; sessions: number }>;
     timezone: Array<{ label: string; views: number; sessions: number }>;
   };
-}
-
-export interface OverviewGeoPointsData {
-  ok: boolean;
-  data: Array<{
-    latitude: number;
-    longitude: number;
-    timestampMs: number;
-    country: string;
-    region?: string;
-    regionCode?: string;
-    city?: string;
-    pointCount?: number;
-  }>;
-  countryCounts: Array<{
-    country: string;
-    views: number;
-    sessions: number;
-    visitors: number;
-  }>;
-  regionCounts: Array<{
-    value: string;
-    label: string;
-    views: number;
-    sessions: number;
-    visitors: number;
-  }>;
-  cityCounts: Array<{
-    value: string;
-    label: string;
-    views: number;
-    sessions: number;
-    visitors: number;
-  }>;
 }
 
 export interface OverviewTabData {

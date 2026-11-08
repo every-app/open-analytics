@@ -9,12 +9,6 @@ export function overviewProvider(reader: OverviewReader) {
       time: query.time,
       filters,
     });
-    const previous = query.previousTime
-      ? await reader.readOverview({
-          time: query.previousTime,
-          filters,
-        })
-      : undefined;
     const detailInterval = query.detailInterval;
     const detail = detailInterval
       ? await reader.readTrend({
@@ -31,15 +25,10 @@ export function overviewProvider(reader: OverviewReader) {
     return {
       value: {
         current: current.value,
-        ...(previous ? { previous: previous.value } : {}),
         ...(detailResult ? { detail: detailResult } : {}),
       },
-      source:
-        previous && previous.source !== current.source
-          ? "mixed"
-          : current.source,
-      approximateVisitors:
-        current.approximateVisitors || Boolean(previous?.approximateVisitors),
+      source: current.source,
+      approximateVisitors: current.approximateVisitors,
     };
   });
 }

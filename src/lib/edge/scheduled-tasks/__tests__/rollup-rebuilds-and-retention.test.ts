@@ -35,10 +35,10 @@ function insertPageViews(
 ): void {
   database.exec(`
     WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < ${count})
-    INSERT INTO visits (visit_id, site_pk, site_id, visitor_id, session_id,
+    INSERT INTO visits (visit_id, site_pk, visitor_id, session_id,
       status, started_at, last_activity_at, duration_ms, pathname, hostname)
     SELECT
-      '${prefix}-${sitePk}-${day}-' || i, ${sitePk}, 'site-${sitePk}',
+      '${prefix}-${sitePk}-${day}-' || i, ${sitePk},
       '${prefix}-visitor-' || i, '${prefix}-session-' || i, 'complete',
       ${day * DAY_MS} + i, ${day * DAY_MS} + i, 1000, '/', 'example.com'
     FROM n

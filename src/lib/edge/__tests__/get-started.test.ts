@@ -54,11 +54,11 @@ function seedVisit(
 ) {
   database
     .prepare(
-      `INSERT INTO visits (visit_id, site_pk, site_id, visitor_id, session_id, status,
+      `INSERT INTO visits (visit_id, site_pk, visitor_id, session_id, status,
          started_at, last_activity_at, pathname, hostname)
-       VALUES (?, ?, ?, 'v', 'x', 'complete', ?, ?, '/', 'example.com')`,
+       VALUES (?, ?, 'v', 'x', 'complete', ?, ?, '/', 'example.com')`,
     )
-    .run(`${siteId}-visit`, pk, siteId, startedAt, startedAt);
+    .run(`${siteId}-visit`, pk, startedAt, startedAt);
 }
 
 function seedMembers(database: DatabaseSync, teamId: string, count: number) {

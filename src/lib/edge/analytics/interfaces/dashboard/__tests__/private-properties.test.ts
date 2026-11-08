@@ -21,14 +21,14 @@ let database: DatabaseSync;
 
 /**
  * Two visitors' page views with properties, one outside the period, and an
- * event whose payload has a top-level string, a number and a nested value.
+ * event with properties of its own.
  */
 function seed(db: DatabaseSync) {
   seedSites(db, [{ siteId: "site-1", sitePk: 1 }]);
   const visit = db.prepare(
-    `INSERT INTO visits (visit_id, site_id, site_pk, visitor_id, session_id,
+    `INSERT INTO visits (visit_id, site_pk, visitor_id, session_id,
        status, started_at, last_activity_at, pathname, hostname)
-     VALUES (?, 'site-1', 1, ?, ?, 'complete', ?, ?, ?, 'example.com')`,
+     VALUES (?, 1, ?, ?, 'complete', ?, ?, ?, 'example.com')`,
   );
   visit.run("v1", "visitor-a", "s1", FROM + 1_000, FROM + 1_000, "/blog/a");
   visit.run("v2", "visitor-b", "s2", FROM + 2_000, FROM + 2_000, "/blog/b");
@@ -43,23 +43,14 @@ function seed(db: DatabaseSync) {
   property.run("author", "John", "v2");
   property.run("author", "Old", "old");
   db.exec(`
-    INSERT INTO custom_event_names (id, site_pk, site_id, name, last_seen_at)
-      VALUES (1, 1, 'site-1', 'signup', 0);
-    INSERT INTO custom_event_json_paths (id, site_pk, site_id, path, last_seen_at)
-      VALUES (1, 1, 'site-1', '/author', 0), (2, 1, 'site-1', '/plan', 0),
-        (3, 1, 'site-1', '/seats', 0), (4, 1, 'site-1', '/nested/author', 0);
-    INSERT INTO custom_events (event_pk, event_id, site_pk, site_id, visit_id,
-      event_name_id, occurred_at, received_at, node_count, value_count)
-      VALUES (1, 'e1', 1, 'site-1', 'v3', 1, ${FROM + 3_500}, ${FROM + 3_500}, 4, 4);
-    INSERT INTO custom_event_json_nodes (event_pk, node_id, path_id, value_type, depth)
-      VALUES (1, 1, 1, 1, 1), (1, 2, 2, 1, 1), (1, 3, 3, 2, 1), (1, 4, 4, 1, 2);
-    INSERT INTO custom_event_json_values (event_pk, node_id, site_id, site_pk,
-      event_name_id, path_id, occurred_at, value_type, string_value, number_value)
-      VALUES
-        (1, 1, 'site-1', 1, 1, 1, ${FROM + 3_500}, 1, 'Jane', NULL),
-        (1, 2, 'site-1', 1, 1, 2, ${FROM + 3_500}, 1, 'pro', NULL),
-        (1, 3, 'site-1', 1, 1, 3, ${FROM + 3_500}, 2, NULL, 5),
-        (1, 4, 'site-1', 1, 1, 4, ${FROM + 3_500}, 1, 'x', NULL);
+    INSERT INTO custom_event_names (id, site_pk, name, last_seen_at)
+      VALUES (1, 1, 'signup', 0);
+    INSERT INTO custom_events (event_pk, event_id, site_pk, visit_id,
+      event_name_id, occurred_at, received_at)
+      VALUES (1, 'e1', 1, 'v3', 1, ${FROM + 3_500}, ${FROM + 3_500});
+    INSERT INTO custom_event_properties (event_pk, key, value, site_pk, occurred_at)
+      VALUES (1, 'author', 'Jane', 1, ${FROM + 3_500}),
+        (1, 'plan', 'pro', 1, ${FROM + 3_500});
   `);
 }
 
@@ -101,7 +92,7 @@ async function query(
 }
 
 const author = (value: string) => ({
-  target: { kind: "event-payload", path: "/author" },
+  target: { kind: "property", key: "author" },
   operator: "eq",
   value,
 });
@@ -113,7 +104,7 @@ describe("custom property breakdown", () => {
   });
   afterEach(() => database.close());
 
-  it("lists the period's keys of page views and top-level string event properties", async () => {
+  it("lists the period's keys of page views and events", async () => {
     const { status, body } = await query("properties");
 
     expect(status).toBe(200);

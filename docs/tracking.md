@@ -12,7 +12,7 @@ Add the snippet from a site's **Settings** page:
 window.openAnalytics.track("signup_click", { plan: "pro", source: "pricing" });
 ```
 
-- `track(eventName, eventData?, options?)`: report a custom event. `options.revenue` adds [revenue](#revenue).
+- `track(eventName, eventData?, options?)`: report a custom event with custom properties, `eventData`. `options.revenue` adds [revenue](#revenue).
 - `trackOnce(eventName, eventData?, options?)`: report an event name at most once per page.
 - `setGlobalProperties(props)` / `clearGlobalProperties()`: add or clear properties on later events and page views.
 
@@ -59,7 +59,7 @@ Give a goal on that event (`event.name eq "Purchase"`) a revenue currency, and t
 
 Currencies are never converted. A goal adds up only the events tracked in its own currency; events in other currencies don't count toward its revenue.
 
-## Page view properties
+## Custom properties
 
 Give page views custom properties, such as the author or type of a page, to break the dashboard down by them. Set them on the script tag with a `data-prop-<key>` attribute each, and they go with every page view:
 
@@ -78,17 +78,17 @@ Or set them from JavaScript. They go with every later page view, as well as with
 window.openAnalytics.setGlobalProperties({ plan: "pro", logged_in: true });
 ```
 
-- Properties are flat key and value pairs. Numbers and booleans are sent as strings, and objects, arrays and `null` are left out of page views.
+- Page views and custom events keep properties the same way, as Plausible does: flat key and value pairs. A number or boolean value is kept as a string. A value that is an object, an array or `null` is dropped, key by key, and the rest of the properties and the event are kept; nested data isn't flattened.
 - A `setGlobalProperties` key replaces a script tag attribute with the same key. `clearGlobalProperties()` removes them; the script tag's stay.
-- A page view keeps at most 30 properties. A key over 64 characters is dropped, and a value is cut to 255.
-- The **Properties** card, beside the goal conversions (not on share pages), lists one key's values with their visitors, page views and events, picked from the keys seen in the period. Events' top-level string properties count in it too. Click a value to filter the dashboard by it: the filter matches page views with that property and events with it in their payload. In a filter expression, it is `event.payload("/author") eq "Jane Doe"`.
+- A page view or event keeps at most 30 properties. A key over 64 characters is dropped, and a value is cut to 255.
+- The **Properties** card, beside the goal conversions (not on share pages), lists one key's values with their visitors, page views and events, picked from the keys seen in the period. Click a value to filter the dashboard by it: the filter matches page views and events with that property value. In a filter expression, it is `property("author") eq "Jane Doe"`.
 
 ## What counts
 
 - A pageview is a new path. A change to the query string alone is the same page, and so is a new `#hash` unless hash tracking is on in the site's Settings. `history.replaceState` is never a pageview.
 - A visit takes its source from its first page: the referrer and the `utm_*` tags. UTM tags are recorded even when query-string tracking is off.
 - Nothing is stored in the browser. Visitors are counted with a hash of the IP address, user agent, site and a random salt. Each site gets a new salt every UTC day, and the old one is deleted shortly after its day ends, so a visitor ID can't be recomputed afterward or matched across sites. The same person on two days counts twice.
-- No IP address or raw user agent is stored. A page view keeps the browser, operating system and device read from the user agent, and its location as country, region, city and coordinates rounded to about 11 km.
+- No IP address or raw user agent is stored. A page view keeps the browser, operating system and device read from the user agent, and its location as country, region and city. Coordinates rounded to about 11 km stay only in the ingest buffer, for the Realtime map, while a visit is live.
 - Visit duration counts only the time the page is visible. Time in a background tab is left out.
 - Scroll depth is how far down a page the visitor scrolled: the bottom of the deepest view as a percent of the page's height, from 0 to 100. A page too short to scroll counts as 100. As in Plausible, a page's scroll depth is each visitor's deepest scroll on it, averaged over the visitors. The Top pages card's **Details** shows and sorts by each page's, and filtering by a page shows a **Scroll depth** top stat, in place of views per visit, that you can graph.
 - Only the site's domain and its subdomains are counted. Pages on `localhost`, `127.0.0.1` or `file://` send nothing. To count another domain, add it as an allowed domain (`-other.example`) in the site's blocking rules.

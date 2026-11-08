@@ -8,8 +8,6 @@ import {
 import { type QueryWindow } from "@/lib/edge/analytics/contract";
 import {
   parseBooleanFlag,
-  parseEventFieldPath,
-  parseEventFieldValueType,
   parseEventName,
   parseEventRecordSort,
   parseFilterOptionKey,
@@ -23,8 +21,6 @@ import {
   appendSqlConditions,
   buildTimeBuckets,
   clientDimensionDefinition,
-  customEventJsonTypeCode,
-  customEventJsonTypeLabel,
   DIRECT_REFERRER_FILTER_VALUE,
   emptyOverviewAggregateRow,
   eventRecordOrderBy,
@@ -33,7 +29,6 @@ import {
   geoTabLabel,
   intervalBucketMs,
   mapEventAnalyticsContextCards,
-  mapEventFieldValue,
   mapEventRecord,
   mapGeoTabs,
   mapOverviewAggregate,
@@ -141,17 +136,6 @@ describe("edge query core parsers", () => {
     expect(parseListSearch(url())).toBeUndefined();
     expect(parseEventName(url("?eventName=%20signup%20"))).toBe("signup");
     expect(parseEventName(url("?eventName=%20%20"))).toBeUndefined();
-    expect(parseEventFieldPath(url("?fieldPath=/payload/plan"))).toBe(
-      "/payload/plan",
-    );
-    expect(parseEventFieldPath(url("?fieldPath="))).toBeUndefined();
-    expect(parseEventFieldPath(url())).toBeUndefined();
-    expect(parseEventFieldValueType(url("?fieldValueType=Object"))).toBe(
-      "object",
-    );
-    expect(parseEventFieldValueType(url("?fieldValueType=unsupported"))).toBe(
-      undefined,
-    );
     expect(parseFilterOptionKey(url("?filterKey=geo.timeZone"))).toBe(
       "geo.timeZone",
     );
@@ -438,79 +422,7 @@ describe("edge query core mappers", () => {
     ).toEqual([{ referrer: "news.example", views: 4, sessions: 2 }]);
   });
 
-  it("maps defensive event values and geo labels", () => {
-    expect([
-      mapEventFieldValue({
-        valueType: 1,
-        events: 3,
-        occurrences: 4,
-        firstSeenAt: 10,
-        lastSeenAt: 20,
-        stringValue: "pro",
-        numberValue: null,
-        booleanValue: null,
-      }),
-      mapEventFieldValue({
-        valueType: 2,
-        events: 1,
-        occurrences: 2,
-        firstSeenAt: 30,
-        lastSeenAt: 40,
-        stringValue: null,
-        numberValue: 12.5,
-        booleanValue: null,
-      }),
-      mapEventFieldValue({
-        valueType: 3,
-        events: 5,
-        occurrences: 6,
-        firstSeenAt: 50,
-        lastSeenAt: 60,
-        stringValue: null,
-        numberValue: null,
-        booleanValue: 0,
-      }),
-      mapEventFieldValue({
-        valueType: 0,
-        events: null as unknown as number,
-        occurrences: undefined as unknown as number,
-        firstSeenAt: null as unknown as number,
-        lastSeenAt: undefined as unknown as number,
-        stringValue: "ignored",
-        numberValue: 99,
-        booleanValue: 1,
-      }),
-    ]).toEqual([
-      {
-        value: "pro",
-        events: 3,
-        occurrences: 4,
-        firstSeenAt: 10,
-        lastSeenAt: 20,
-      },
-      {
-        value: 12.5,
-        events: 1,
-        occurrences: 2,
-        firstSeenAt: 30,
-        lastSeenAt: 40,
-      },
-      {
-        value: false,
-        events: 5,
-        occurrences: 6,
-        firstSeenAt: 50,
-        lastSeenAt: 60,
-      },
-      {
-        value: null,
-        events: 0,
-        occurrences: 0,
-        firstSeenAt: 0,
-        lastSeenAt: 0,
-      },
-    ]);
-
+  it("maps defensive geo labels", () => {
     expect(geoTabLabel("US::CA", "region")).toBe("US");
     expect(geoTabLabel("US::Austin", "city")).toBe("Austin");
     expect(geoTabLabel("unknown", "timezone")).toBe("unknown");
@@ -539,8 +451,7 @@ describe("edge query core mappers", () => {
         os: "macOS",
         osVersion: "14",
         deviceType: "desktop",
-        nodeCount: 3,
-        valueCount: 4,
+        propertiesJson: '{"plan":"pro"}',
       }),
     ).toEqual({
       eventId: "event-1",
@@ -563,8 +474,7 @@ describe("edge query core mappers", () => {
       os: "macOS",
       osVersion: "14",
       deviceType: "desktop",
-      nodeCount: 3,
-      valueCount: 4,
+      properties: { plan: "pro" },
     });
 
     const dim = [{ value: "A", views: 1, sessions: 1, visitors: 1 }];
@@ -682,19 +592,15 @@ describe("edge query core SQL helpers", () => {
       }),
     );
 
-    expect(filter.clause).toContain("LOWER(TRIM(COALESCE(v.country, ''))) = ?");
-    expect(filter.clause).toContain(
-      "LOWER(TRIM(COALESCE(v.referrer_host, ''))) = ?",
-    );
-    expect(filter.clause).toContain(
-      "LOWER(TRIM(COALESCE(v.referrer_url, ''))) = ?",
-    );
+    expect(filter.clause).toContain("LOWER(v.country) = ?");
+    expect(filter.clause).toContain("LOWER(v.referrer_host) = ?");
+    expect(filter.clause).toContain("LOWER(v.referrer_url) = ?");
     expect(filter.clause).toContain("v.os || ' ' || v.os_version");
     expect(filter.clause).toContain(
       "CAST(v.screen_width AS TEXT) || 'x' || CAST(v.screen_height AS TEXT)",
     );
-    expect(filter.clause).toContain("LOWER(TRIM(COALESCE(v.region, ''))) = ?");
-    expect(filter.clause).toContain("LOWER(TRIM(COALESCE(v.city, ''))) = ?");
+    expect(filter.clause).toContain("LOWER(v.region) = ?");
+    expect(filter.clause).toContain("LOWER(v.city) = ?");
     expect(filter.bindings).toEqual(
       expect.arrayContaining([
         "us",
@@ -734,18 +640,14 @@ describe("edge query core SQL helpers", () => {
       }),
     );
 
-    expect(filter.clause).toContain("TRIM(COALESCE(v.title, '')) = ?");
+    expect(filter.clause).toContain("v.title = ?");
     expect(filter.clause).toContain("v.session_id IN");
     expect(filter.clause).toContain("ORDER BY started_at ASC, visit_id ASC");
     expect(filter.clause).toContain("ORDER BY started_at DESC, visit_id DESC");
-    expect(filter.clause).toContain(
-      "LOWER(TRIM(COALESCE(v.referrer_host, ''))) = ?",
-    );
-    expect(filter.clause).toContain(
-      "LOWER(TRIM(COALESCE(v.referrer_url, ''))) = ?",
-    );
-    expect(filter.clause).toContain("TRIM(COALESCE(v.language, '')) = ?");
-    expect(filter.clause).toContain("TRIM(COALESCE(v.timezone, '')) = ?");
+    expect(filter.clause).toContain("LOWER(v.referrer_host) = ?");
+    expect(filter.clause).toContain("LOWER(v.referrer_url) = ?");
+    expect(filter.clause).toContain("v.language = ?");
+    expect(filter.clause).toContain("v.timezone = ?");
     expect(filter.bindings).toEqual(
       expect.arrayContaining([
         "Docs",
@@ -758,16 +660,6 @@ describe("edge query core SQL helpers", () => {
     );
 
     expect(sql(EMPTY_FILTER_DOCUMENT)).toEqual({ clause: "", bindings: [] });
-  });
-
-  it("maps custom event JSON type labels and codes", () => {
-    expect(customEventJsonTypeLabel(0)).toBe("null");
-    expect(customEventJsonTypeLabel(4)).toBe("object");
-    expect(customEventJsonTypeLabel(5)).toBe("array");
-    expect(customEventJsonTypeCode("null")).toBe(0);
-    expect(customEventJsonTypeCode("object")).toBe(4);
-    expect(customEventJsonTypeCode("array")).toBe(5);
-    expect(customEventJsonTypeCode("unknown")).toBeNull();
   });
 
   it("builds deterministic event ordering clauses", () => {

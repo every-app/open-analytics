@@ -17,9 +17,11 @@ export interface RealtimeSnapshotRecord {
   sequence?: number | null;
   eventId?: string;
   eventName?: string;
-  eventDataJson?: string | null;
+  /** A custom event's properties as a JSON object, NULL if none. */
+  propertiesJson?: string | null;
   visitId: string;
-  sessionId: string;
+  /** Null for a custom event whose page view the buffer no longer holds. */
+  sessionId: number | null;
   startedAt?: number | null;
   previousVisitId?: string;
   previousVisitStartedAt?: number | null;
@@ -35,7 +37,7 @@ export interface RealtimeSnapshotRecord {
   utmCampaign?: string;
   utmTerm?: string;
   utmContent?: string;
-  visitorId: string;
+  visitorId: number | null;
   isEU?: boolean | number | null;
   country: string;
   region: string;
@@ -67,8 +69,8 @@ export interface RealtimeSnapshotRecord {
 
 export interface RealtimeVisitPayloadInput {
   visitId: string;
-  visitorId: string;
-  sessionId: string;
+  visitorId: number;
+  sessionId: number;
   startedAt: number;
   lastActivityAt: number;
   pathname: string;
@@ -164,14 +166,12 @@ function inferRealtimeEventKind(
   return "custom_event";
 }
 
-function parseRealtimeJsonValue(input: unknown): unknown {
-  if (input === null || input === undefined || input === "") return null;
-  if (typeof input !== "string") return input;
-  try {
-    return JSON.parse(input);
-  } catch {
-    return input;
-  }
+/**
+ * An id as the realtime view reads it: a string, and empty for a custom
+ * event whose page view the buffer no longer holds.
+ */
+function realtimeId(id: number | null): string {
+  return id === null ? "" : String(id);
 }
 
 export function toRealtimePayload(
@@ -191,9 +191,11 @@ export function toRealtimePayload(
     eventName:
       record.eventName ??
       (eventKind === "custom_event" ? record.eventType : ""),
-    eventData: parseRealtimeJsonValue(record.eventDataJson) ?? {},
+    properties: record.propertiesJson
+      ? (JSON.parse(record.propertiesJson) as Record<string, string>)
+      : {},
     visitId: record.visitId,
-    sessionId: record.sessionId,
+    sessionId: realtimeId(record.sessionId),
     startedAt: record.startedAt ?? null,
     previousVisitId: record.previousVisitId ?? "",
     previousVisitStartedAt: record.previousVisitStartedAt ?? null,
@@ -209,7 +211,7 @@ export function toRealtimePayload(
     utmCampaign: record.utmCampaign ?? "",
     utmTerm: record.utmTerm ?? "",
     utmContent: record.utmContent ?? "",
-    visitorId: record.visitorId,
+    visitorId: realtimeId(record.visitorId),
     isEU:
       record.isEU === undefined || record.isEU === null
         ? null
@@ -250,8 +252,8 @@ export function toRealtimeVisitPayload(
 ): Record<string, unknown> {
   return {
     visitId: visit.visitId,
-    visitorId: visit.visitorId,
-    sessionId: visit.sessionId,
+    visitorId: realtimeId(visit.visitorId),
+    sessionId: realtimeId(visit.sessionId),
     startedAt: visit.startedAt,
     lastActivityAt: visit.lastActivityAt,
     pathname: visit.pathname,

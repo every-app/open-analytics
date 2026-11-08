@@ -59,12 +59,11 @@ const EXPIRED_EVENTS_SQL = `
  * One round of deletes for a batch of expired page views, one D1 batch,
  * which first records the latest UTC day they start on as the site's
  * `retention_reached_day`, so the rollup task never rebuilds a day from part
- * of its page views. Then it deletes up to a batch of their events' payload
- * values, then of the payload nodes left without values, then the events
- * left without payload, then up to a batch of the page views' properties,
- * then the page views left without events or properties. No statement
- * cascades, so none changes more than a batch of rows; a large payload or
- * many properties take a few rounds.
+ * of its page views. Then it deletes up to a batch of their events'
+ * properties, then the events left without properties, then up to a batch
+ * of the page views' properties, then the page views left without events or
+ * properties. No statement cascades, so none changes more than a batch of
+ * rows; many properties take a few rounds.
  */
 const EXPIRED_ROUND = [
   {
@@ -83,37 +82,22 @@ const EXPIRED_ROUND = [
   },
   {
     sql: `
-      DELETE FROM custom_event_json_values
-      WHERE (event_pk, node_id) IN (
-        SELECT event_pk, node_id FROM custom_event_json_values
+      DELETE FROM custom_event_properties
+      WHERE (event_pk, key) IN (
+        SELECT event_pk, key FROM custom_event_properties
         WHERE event_pk IN (${EXPIRED_EVENTS_SQL})
         LIMIT ${RETENTION_BATCH_ROWS}
       )
     `,
-    tag: "scheduled_tasks.retention.event_values",
-  },
-  {
-    sql: `
-      DELETE FROM custom_event_json_nodes
-      WHERE (event_pk, node_id) IN (
-        SELECT n.event_pk, n.node_id FROM custom_event_json_nodes n
-        WHERE n.event_pk IN (${EXPIRED_EVENTS_SQL})
-          AND NOT EXISTS (
-            SELECT 1 FROM custom_event_json_values v
-            WHERE v.event_pk = n.event_pk AND v.node_id = n.node_id
-          )
-        LIMIT ${RETENTION_BATCH_ROWS}
-      )
-    `,
-    tag: "scheduled_tasks.retention.event_nodes",
+    tag: "scheduled_tasks.retention.event_properties",
   },
   {
     sql: `
       DELETE FROM custom_events
       WHERE event_pk IN (${EXPIRED_EVENTS_SQL})
         AND NOT EXISTS (
-          SELECT 1 FROM custom_event_json_nodes n
-          WHERE n.event_pk = custom_events.event_pk
+          SELECT 1 FROM custom_event_properties p
+          WHERE p.event_pk = custom_events.event_pk
         )
     `,
     tag: "scheduled_tasks.retention.events",
@@ -220,15 +204,14 @@ async function deleteExpired(
     const results = await db.batch(
       EXPIRED_ROUND.map((statement) => ({ ...statement, bindings })),
     );
-    const [, values = 0, nodes = 0, events = 0, properties = 0, visits = 0] =
+    const [, eventProperties = 0, events = 0, visitProperties = 0, visits = 0] =
       results.map((result) => Number(result.meta?.changes ?? 0));
     deleted.events += events;
     deleted.visits += visits;
-    // A round that deleted no payload, event or property found none; it
-    // then deleted every page view of its batch, the last if the batch was
-    // short.
+    // A round that deleted no event or property found none; it then deleted
+    // every page view of its batch, the last if the batch was short.
     deleted.done =
-      values + nodes + events + properties === 0 &&
+      eventProperties + events + visitProperties === 0 &&
       visits < RETENTION_BATCH_ROWS;
   }
   return deleted;

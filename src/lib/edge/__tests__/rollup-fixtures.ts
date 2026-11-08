@@ -90,48 +90,36 @@ const PLACES: ReadonlyArray<{
   region: string;
   regionCode: string;
   city: string;
-  latitude: number | null;
-  longitude: number | null;
 }> = [
   {
     country: "US",
     region: "California",
     regionCode: "CA",
     city: "San Francisco",
-    latitude: 37.8,
-    longitude: -122.4,
   },
   {
     country: "US",
     region: "New York",
     regionCode: "NY",
     city: "New York",
-    latitude: 40.7,
-    longitude: -74,
   },
   {
     country: "DE",
     region: "Berlin",
     regionCode: "BE",
     city: "Berlin",
-    latitude: 52.5,
-    longitude: 13.4,
   },
   {
     country: "IN",
     region: "Karnataka",
     regionCode: "KA",
     city: "Bengaluru",
-    latitude: 13,
-    longitude: 77.6,
   },
   {
     country: "AU",
     region: "",
     regionCode: "",
     city: "",
-    latitude: null,
-    longitude: null,
   },
 ];
 const DEVICES: ReadonlyArray<{
@@ -151,8 +139,8 @@ export interface SyntheticVisit {
   visitId: string;
   sitePk: number;
   siteId: string;
-  visitorId: string;
-  sessionId: string;
+  visitorId: number;
+  sessionId: number;
   status: string;
   startedAt: number;
   durationMs: number | null;
@@ -183,6 +171,14 @@ export function syntheticVisits(input: {
     device: pick(random, DEVICES),
   }));
   const visits: SyntheticVisit[] = [];
+  // Ids are integers, as ingest stores them, and never repeat across sites.
+  const visitorIds = new Map<string, number>();
+  const visitorId = (key: string) => {
+    if (!visitorIds.has(key)) {
+      visitorIds.set(key, input.sitePk * 1_000_000 + visitorIds.size);
+    }
+    return visitorIds.get(key)!;
+  };
   let sessionCounter = 0;
   for (let dayStart = input.fromMs; dayStart < input.toMs; dayStart += DAY_MS) {
     for (let index = 0; index < input.peoplePerDay; index += 1) {
@@ -193,21 +189,23 @@ export function syntheticVisits(input: {
         let at = dayStart + Math.floor(random() * DAY_MS);
         const pageViews = 1 + Math.floor(random() * 5);
         let day = Math.floor(at / DAY_MS);
-        let sessionId = `${input.siteId}-s${sessionCounter++}`;
+        let session = sessionCounter++;
         for (let view = 0; view < pageViews; view += 1) {
           if (at >= input.toMs) break;
           if (Math.floor(at / DAY_MS) !== day) {
             // The visitor id rotated: a new visitor, so a new visit.
             day = Math.floor(at / DAY_MS);
-            sessionId = `${input.siteId}-s${sessionCounter++}`;
+            session = sessionCounter++;
           }
-          const anonymous = random() < 0.02;
+          // Drawn as before, when an anonymous page view had no ids, so the
+          // rest of the data stays the same.
+          random();
           visits.push({
-            visitId: `${sessionId}-v${view}`,
+            visitId: `${input.siteId}-s${session}-v${view}`,
             sitePk: input.sitePk,
             siteId: input.siteId,
-            visitorId: anonymous ? "" : `${person.id}-d${day}`,
-            sessionId: anonymous ? "" : sessionId,
+            visitorId: visitorId(`${person.id}-d${day}`),
+            sessionId: input.sitePk * 1_000_000 + session,
             status: random() < 0.1 ? "timeout" : "complete",
             startedAt: at,
             durationMs:
@@ -231,21 +229,20 @@ export function insertVisits(
 ): void {
   const statement = database.prepare(`
     INSERT INTO visits (
-      visit_id, site_id, site_pk, visitor_id, session_id, status, started_at,
+      visit_id, site_pk, visitor_id, session_id, status, started_at,
       last_activity_at, duration_ms, pathname, hostname, referrer_url,
       referrer_host, utm_source, utm_medium, utm_campaign, utm_term,
-      utm_content, channel, country, region, region_code, city, latitude,
-      longitude, browser, os, os_version, device_type
+      utm_content, channel, country, region, region_code, city, browser, os,
+      os_version, device_type
     ) VALUES (
-      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'example.com', ?, ?, ?, ?, ?, ?, ?, ?, ?,
-      ?, ?, ?, ?, ?, ?, ?, ?, ?
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, 'example.com', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?
     )
   `);
   database.exec("BEGIN");
   for (const visit of visits) {
     statement.run(
       visit.visitId,
-      visit.siteId,
       visit.sitePk,
       visit.visitorId,
       visit.sessionId,
@@ -266,8 +263,6 @@ export function insertVisits(
       visit.place.region,
       visit.place.regionCode,
       visit.place.city,
-      visit.place.latitude,
-      visit.place.longitude,
       visit.device.browser,
       visit.device.os,
       visit.device.osVersion,

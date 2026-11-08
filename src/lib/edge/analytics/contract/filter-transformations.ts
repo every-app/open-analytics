@@ -1,5 +1,6 @@
 import {
   type FilterDocument,
+  targetFieldId,
   withoutFilterFields,
 } from "@/lib/filter-contract/filters";
 
@@ -19,4 +20,13 @@ export function withoutFilterKey(
 /** The filter without its location conditions, for the location cards. */
 export function withoutGeoFilter(filters: FilterDocument): FilterDocument {
   return withoutFilterFields(filters, GEO_FIELDS);
+}
+
+/** The filter's location conditions alone. */
+export function onlyGeoFilter(filters: FilterDocument): FilterDocument {
+  return {
+    conditions: filters.conditions.filter((condition) =>
+      GEO_FIELDS.has(targetFieldId(condition.target)),
+    ),
+  };
 }

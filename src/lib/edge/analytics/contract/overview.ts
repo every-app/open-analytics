@@ -54,12 +54,6 @@ export async function executeOverview(
     time: input.time,
     filters,
   });
-  const previous = input.previousTime
-    ? await reader.readOverview({
-        time: input.previousTime,
-        filters,
-      })
-    : undefined;
   let detail: TrendResult | undefined;
   if (input.detailInterval) {
     const trend = await executeTrend(reader, {
@@ -76,17 +70,12 @@ export async function executeOverview(
     ok: true,
     data: {
       current: current.value,
-      ...(previous ? { previous: previous.value } : {}),
       ...(detail ? { detail } : {}),
     },
     meta: {
       time: input.time,
-      source:
-        previous && previous.source !== current.source
-          ? "mixed"
-          : current.source,
-      approximateVisitors:
-        current.approximateVisitors || Boolean(previous?.approximateVisitors),
+      source: current.source,
+      approximateVisitors: current.approximateVisitors,
     },
   };
 }

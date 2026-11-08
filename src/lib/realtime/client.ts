@@ -741,7 +741,7 @@ function normalizeRealtimeEvent(payload: unknown): RealtimeEvent | null {
         record.event_name ??
         (eventKind === "custom_event" ? eventType : ""),
     ),
-    eventData: record.eventData ?? record.event_data ?? {},
+    properties: (record.properties ?? {}) as Record<string, string>,
     visitId: String(record.visitId ?? record.visit_id ?? ""),
     sessionId: String(record.sessionId ?? record.session_id ?? ""),
     startedAt: normalizeNullableNumber(record.startedAt ?? record.started_at),

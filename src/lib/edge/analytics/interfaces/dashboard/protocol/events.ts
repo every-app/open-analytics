@@ -3,8 +3,6 @@ import { parseFilterUrlForAudience } from "@/lib/edge/analytics/contract";
 import { siteQueryContext } from "@/lib/edge/analytics/contract";
 import { queryWindowToTime } from "@/lib/edge/analytics/contract";
 import {
-  parseEventFieldPath,
-  parseEventFieldValueType,
   parseEventName,
   parseEventRecordSort,
   parseInterval,
@@ -117,64 +115,6 @@ export async function handleEventRecordsContract(
   );
   if (!result.ok) return queryErrorResponse(result.error);
   return jsonResponseWith(ctx!, { ok: true, data: result.data });
-}
-export async function handleEventFieldValuesContract(
-  env: Env,
-  siteId: string,
-  url: URL,
-  ctx?: ResponseContext,
-  queryContext = siteQueryContext(siteId, "private-dashboard"),
-): Promise<Response> {
-  const eventName = parseEventName(url) ?? undefined;
-  const fieldPath = parseEventFieldPath(url);
-  const fieldValueType = parseEventFieldValueType(url);
-  if (!fieldPath) return badRequest("fieldPath is required");
-  if (!fieldValueType) return badRequest("fieldValueType is required");
-  const window = parseWindow(url);
-  if (!window) return badRequest("Invalid time window");
-  const filters = parseFilterUrlForAudience(queryContext.policy.audience, url);
-  const result = await createEdgeSiteAnalyticsRuntime({ env, siteId }).execute(
-    "event-field-values",
-    {
-      context: queryContext,
-      time: queryWindowToTime(window),
-      filters,
-      eventName: eventName ?? "",
-      fieldPath,
-      fieldValueType,
-      limit: parseLimit(url, 25, 100),
-      search: parseListSearch(url) ?? "",
-      cursor: url.searchParams.get("cursor") ?? "",
-    },
-  );
-  if (!result.ok) return queryErrorResponse(result.error);
-  const { eventName: _eventName, ...data } = result.data;
-  return jsonResponseWith(ctx!, { ok: true, ...data });
-}
-export async function handleEventTypeFieldsContract(
-  env: Env,
-  siteId: string,
-  url: URL,
-  ctx?: ResponseContext,
-  queryContext = siteQueryContext(siteId, "private-dashboard"),
-): Promise<Response> {
-  const eventName = parseEventName(url) ?? undefined;
-  const window = parseWindow(url);
-  if (!window) return badRequest("Invalid time window");
-  const filters = parseFilterUrlForAudience(queryContext.policy.audience, url);
-  const result = await createEdgeSiteAnalyticsRuntime({ env, siteId }).execute(
-    "event-fields",
-    {
-      context: queryContext,
-      time: queryWindowToTime(window),
-      filters,
-      eventName: eventName ?? "",
-      limit: parseLimit(url, 100, 200),
-      cursor: url.searchParams.get("cursor") ?? "",
-    },
-  );
-  if (!result.ok) return queryErrorResponse(result.error);
-  return jsonResponseWith(ctx!, { ok: true, ...result.data });
 }
 export async function handleEventTypeDetailContract(
   env: Env,

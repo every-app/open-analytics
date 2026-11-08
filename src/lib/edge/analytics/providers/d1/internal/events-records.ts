@@ -19,8 +19,6 @@ const EVENT_RECORD_SOURCE_COLUMNS = [
   "ce.occurred_at",
   "ce.received_at",
   "ce.sequence",
-  "ce.node_count",
-  "ce.value_count",
   "v.visitor_id",
   "v.session_id",
   "v.pathname",
@@ -178,8 +176,11 @@ SELECT
   os,
   os_version AS osVersion,
   device_type AS deviceType,
-  node_count AS nodeCount,
-  value_count AS valueCount
+  (
+    SELECT json_group_object(property.key, property.value)
+    FROM custom_event_properties property
+    WHERE property.event_pk = es.event_pk
+  ) AS propertiesJson
 FROM filtered_events es
 ${filterClause || "WHERE 1 = 1"}
 ${cursorClause}

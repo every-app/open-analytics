@@ -46,23 +46,23 @@ interface Seed {
   readonly events?: ReadonlyArray<
     readonly [id: string, visit: string, name: string, at: number]
   >;
-  readonly payloads?: ReadonlyArray<
-    readonly [event: string, path: string, value: string]
+  readonly properties?: ReadonlyArray<
+    readonly [event: string, key: string, value: string]
   >;
 }
 
-function seed({ visits, events = [], payloads = [] }: Seed) {
+function seed({ visits, events = [], properties = [] }: Seed) {
   const test = createRollupTestEnv();
   const database: DatabaseSync = test.database;
   seedSites(database, [{ siteId: SITE_ID, sitePk: 1 }]);
   for (const [id, session, visitor, at, path, country] of visits) {
     database
       .prepare(
-        `INSERT INTO visits (visit_id, site_id, site_pk, visitor_id, session_id, status,
+        `INSERT INTO visits (visit_id, site_pk, visitor_id, session_id, status,
           started_at, last_activity_at, pathname, hostname, country)
-         VALUES (?, ?, 1, ?, ?, 'complete', ?, ?, ?, 'example.com', ?)`,
+         VALUES (?, 1, ?, ?, 'complete', ?, ?, ?, 'example.com', ?)`,
       )
-      .run(id, SITE_ID, visitor, session, at, at, path, country ?? "US");
+      .run(id, visitor, session, at, at, path, country ?? "US");
   }
   const names = new Map<string, number>();
   const eventPks = new Map<string, number>();
@@ -71,41 +71,26 @@ function seed({ visits, events = [], payloads = [] }: Seed) {
       names.set(name, names.size + 1);
       database
         .prepare(
-          "INSERT INTO custom_event_names (id, site_id, site_pk, name, last_seen_at) VALUES (?, ?, 1, ?, 0)",
+          "INSERT INTO custom_event_names (id, site_pk, name, last_seen_at) VALUES (?, 1, ?, 0)",
         )
-        .run(names.get(name)!, SITE_ID, name);
+        .run(names.get(name)!, name);
     }
     eventPks.set(id, eventPks.size + 1);
     database
       .prepare(
-        `INSERT INTO custom_events (event_pk, event_id, site_id, site_pk, visit_id, event_name_id,
-          occurred_at, received_at, node_count, value_count)
-         VALUES (?, ?, ?, 1, ?, ?, ?, ?, 0, 0)`,
+        `INSERT INTO custom_events (event_pk, event_id, site_pk, visit_id, event_name_id,
+          occurred_at, received_at)
+         VALUES (?, ?, 1, ?, ?, ?, ?)`,
       )
-      .run(eventPks.get(id)!, id, SITE_ID, visit, names.get(name)!, at, at);
+      .run(eventPks.get(id)!, id, visit, names.get(name)!, at, at);
   }
-  const paths = new Map<string, number>();
-  for (const [event, path, value] of payloads) {
-    if (!paths.has(path)) {
-      paths.set(path, paths.size + 1);
-      database
-        .prepare(
-          "INSERT INTO custom_event_json_paths (id, site_id, site_pk, path, last_seen_at) VALUES (?, ?, 1, ?, 0)",
-        )
-        .run(paths.get(path)!, SITE_ID, path);
-    }
+  for (const [event, key, value] of properties) {
     database
       .prepare(
-        "INSERT INTO custom_event_json_nodes (event_pk, node_id, path_id, value_type, depth) VALUES (?, 1, ?, 1, 1)",
+        `INSERT INTO custom_event_properties (event_pk, key, value, site_pk, occurred_at)
+         VALUES (?, ?, ?, 1, 0)`,
       )
-      .run(eventPks.get(event)!, paths.get(path)!);
-    database
-      .prepare(
-        `INSERT INTO custom_event_json_values (event_pk, node_id, site_id, site_pk, event_name_id,
-          path_id, occurred_at, value_type, string_value)
-         VALUES (?, 1, ?, 1, 1, ?, 0, 1, ?)`,
-      )
-      .run(eventPks.get(event)!, SITE_ID, paths.get(path)!, value);
+      .run(eventPks.get(event)!, key, value);
   }
   return test;
 }
@@ -124,7 +109,7 @@ const SHOP: Seed = {
     ["event-3", "visit-4", "purchase", 126_000],
     ["event-4", "visit-3", "signup", 70_000],
   ],
-  payloads: [["event-1", "/plan", "pro"]],
+  properties: [["event-1", "plan", "pro"]],
 };
 
 describe("goal conversions on D1", () => {
@@ -135,9 +120,7 @@ describe("goal conversions on D1", () => {
       { id: "purchase", filter: dsl('event.name eq "purchase"') },
       {
         id: "pro",
-        filter: dsl(
-          'event.name eq "purchase" AND event.payload("/plan") eq "pro"',
-        ),
+        filter: dsl('event.name eq "purchase" AND property("plan") eq "pro"'),
       },
     ];
 
@@ -185,7 +168,7 @@ describe("goal conversions on D1", () => {
       SITE_ID,
       window,
       EMPTY_FILTER_DOCUMENT,
-      [{ id: "pro", filter: dsl('event.payload("/plan") eq "pro"') }],
+      [{ id: "pro", filter: dsl('property("plan") eq "pro"') }],
     );
 
     expect(result.goals.get("pro")).toEqual({
@@ -376,7 +359,7 @@ describe("goal timeseries on D1", () => {
       bucketWindow,
       "minute",
       EMPTY_FILTER_DOCUMENT,
-      dsl('event.name eq "purchase" AND event.payload("/plan") eq "pro"'),
+      dsl('event.name eq "purchase" AND property("plan") eq "pro"'),
     );
 
     expect(rows).toHaveLength(GOAL_TIMESERIES_MAX_BUCKETS);

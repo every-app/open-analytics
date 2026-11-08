@@ -9,7 +9,6 @@ import {
 import { classifyCollectBotTraffic } from "@/lib/edge/collector/bot-protection";
 import { normalizeTrackerUaClientHints } from "@/lib/edge/collector/client-hints";
 import { requestIp } from "@/lib/edge/collector/request-ip";
-import { expandCustomEventData } from "@/lib/edge/ingest/custom-event-json";
 import type { InvocationLogger } from "@/lib/edge/observability/logger";
 import {
   normalizeSiteSettingsKey,
@@ -483,14 +482,6 @@ export async function handleCollectRequest(
     } catch {
       logger?.warn("collect.rejected.invalid_json");
       return jsonError(origin, "Invalid JSON payload", 400);
-    }
-  }
-
-  if (payload?.kind === "custom_event") {
-    const eventDataResult = expandCustomEventData(payload.eventData);
-    if (!eventDataResult.ok) {
-      logger?.warn("collect.rejected.invalid_custom_event_data");
-      return jsonError(origin, eventDataResult.error, eventDataResult.status);
     }
   }
 

@@ -209,8 +209,8 @@ function pageViewDimensionsSql(): string {
 SELECT
   ?1, '${dimension}', ?2, value,
   count(*),
-  count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END),
-  count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END)
+  count(DISTINCT session_id),
+  count(DISTINCT visitor_id)
 FROM (
   SELECT COALESCE(${expression}, '') AS value, session_id, visitor_id
   FROM day_views
@@ -249,7 +249,7 @@ WITH ranked AS (
     ) AS latest_rank
   FROM visits
   WHERE site_pk = ?1 AND started_at >= ?3 AND started_at < ?4
-    AND session_id != '' AND TRIM(COALESCE(pathname, '')) != ''
+    AND TRIM(COALESCE(pathname, '')) != ''
 ),
 session_edges AS (
   SELECT
@@ -261,14 +261,14 @@ session_edges AS (
 )
 SELECT
   ?1, '${RollupDimension.EntryPage}', ?2, entry_page, count(*), count(*),
-  count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END)
+  count(DISTINCT visitor_id)
 FROM session_edges
 WHERE TRIM(entry_page) != ''
 GROUP BY entry_page
 UNION ALL
 SELECT
   ?1, '${RollupDimension.ExitPage}', ?2, exit_page, count(*), count(*),
-  count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END)
+  count(DISTINCT visitor_id)
 FROM session_edges
 WHERE TRIM(exit_page) != ''
 GROUP BY exit_page`;
@@ -296,7 +296,7 @@ hours AS (
   SELECT
     hour_bucket,
     count(*) AS views,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors,
+    count(DISTINCT visitor_id) AS visitors,
     COALESCE(sum(CASE WHEN duration_ms >= 0 THEN duration_ms ELSE 0 END), 0) AS duration_ms_sum,
     COALESCE(sum(CASE WHEN duration_ms >= 0 THEN 1 ELSE 0 END), 0) AS duration_ms_count
   FROM day_views
@@ -305,13 +305,11 @@ hours AS (
 visitor_hours AS (
   SELECT MIN(hour_bucket) AS first_hour, MAX(hour_bucket) AS last_hour
   FROM day_views
-  WHERE visitor_id != ''
   GROUP BY visitor_id
 ),
 visit_starts AS (
   SELECT MIN(hour_bucket) AS hour_bucket, count(*) AS views
   FROM day_views
-  WHERE session_id != ''
   GROUP BY session_id
 ),
 firsts AS (
@@ -340,30 +338,10 @@ LEFT JOIN firsts f ON f.hour_bucket = h.hour_bucket
 LEFT JOIN lasts l ON l.hour_bucket = h.hour_bucket
 LEFT JOIN starts s ON s.hour_bucket = h.hour_bucket`;
 
-const GEO_POINTS_SQL = `
-INSERT INTO visit_daily_geo_points (
-  site_pk, day, latitude, longitude, country, region, region_code, city,
-  views, latest_at
-)
-SELECT
-  ?1, ?2,
-  latitude AS lat_bucket,
-  longitude AS lon_bucket,
-  country, region, region_code, city,
-  COUNT(*),
-  MAX(started_at)
-FROM visits
-WHERE site_pk = ?1 AND started_at >= ?3 AND started_at < ?4
-  AND latitude IS NOT NULL
-  AND longitude IS NOT NULL
-  AND ABS(latitude) <= 90
-  AND ABS(longitude) <= 180
-GROUP BY lat_bucket, lon_bucket, country, region, region_code, city`;
-
 /**
  * Rolls up one UTC day of a site from its page views, replacing what was
- * rolled up for it before: hourly counts, daily totals, card dimensions and
- * map points, with `record`, which records the day as rolled up. It is one
+ * rolled up for it before: hourly counts, daily totals and card dimensions,
+ * with `record`, which records the day as rolled up. It is one
  * D1 batch, a transaction, so readers see the whole day or none of it.
  * Returns the day's page views.
  */
@@ -440,16 +418,6 @@ async function rollUpDay(
       sql: SESSION_DIMENSIONS_SQL,
       bindings: dayBindings,
       tag: tag("session_dimensions"),
-    },
-    {
-      sql: "DELETE FROM visit_daily_geo_points WHERE site_pk = ? AND day = ?",
-      bindings: [site.sitePk, day],
-      tag: tag("delete_geo_points"),
-    },
-    {
-      sql: GEO_POINTS_SQL,
-      bindings: dayBindings,
-      tag: tag("geo_points"),
     },
     record,
   ];

@@ -855,7 +855,7 @@ describe("private admin edge handler", () => {
       const identity = statement({ first: { sitePk: 7 } });
       const recordDeletes = Array.from({ length: 3 }, () => statement());
       // Each purge step deletes nothing, so it runs once.
-      const purgeDeletes = Array.from({ length: 14 }, () =>
+      const purgeDeletes = Array.from({ length: 10 }, () =>
         statement({ run: { success: true, meta: { changes: 0 } } }),
       );
       const { env } = createEnv([

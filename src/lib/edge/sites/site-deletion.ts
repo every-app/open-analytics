@@ -64,38 +64,15 @@ function batchDelete(
     )`;
 }
 
-/** Rows of the site's event payloads with `column` equal to `id`. */
-function payloadNodesWith(column: string, id: string): string {
-  return `EXISTS (
-    SELECT 1 FROM custom_events e
-    JOIN custom_event_json_nodes n ON n.event_pk = e.event_pk
-    WHERE e.site_pk = ?1 AND n.${column} = ${id}
-  )`;
-}
-
-// Events and properties before their page views, and an event's payload
-// rows before the event. Each delete skips rows that something still refers
-// to: rows the ingest buffer flushed after an earlier step. So no statement
-// cascades or breaks a foreign key, and a later run deletes what is left.
+// Events and properties before their page views, and an event's
+// properties before the event. Each delete skips rows that something still
+// refers to: rows the ingest buffer flushed after an earlier step. So no
+// statement cascades or breaks a foreign key, and a later run deletes what
+// is left.
 const PURGE_STEPS: readonly PurgeStep[] = [
   {
-    tag: "admin.sites.purge_custom_event_json_values",
-    sql: batchDelete("custom_event_json_values", ["event_pk", "node_id"]),
-  },
-  {
-    tag: "admin.sites.purge_custom_event_json_nodes",
-    sql: `
-      DELETE FROM custom_event_json_nodes
-      WHERE (event_pk, node_id) IN (
-        SELECT n.event_pk, n.node_id FROM custom_event_json_nodes n
-        JOIN custom_events e ON e.event_pk = n.event_pk
-        WHERE e.site_pk = ?1
-          AND NOT EXISTS (
-            SELECT 1 FROM custom_event_json_values v
-            WHERE v.event_pk = n.event_pk AND v.node_id = n.node_id
-          )
-        LIMIT ?2
-      )`,
+    tag: "admin.sites.purge_custom_event_properties",
+    sql: batchDelete("custom_event_properties", ["event_pk", "key"]),
   },
   {
     tag: "admin.sites.purge_custom_events",
@@ -103,8 +80,8 @@ const PURGE_STEPS: readonly PurgeStep[] = [
       "custom_events",
       ["event_pk"],
       `EXISTS (
-        SELECT 1 FROM custom_event_json_nodes n
-        WHERE n.event_pk = custom_events.event_pk
+        SELECT 1 FROM custom_event_properties p
+        WHERE p.event_pk = custom_events.event_pk
       )`,
     ),
   },
@@ -141,19 +118,6 @@ const PURGE_STEPS: readonly PurgeStep[] = [
     ]),
   },
   {
-    tag: "admin.sites.purge_daily_geo_points",
-    sql: batchDelete("visit_daily_geo_points", [
-      "site_pk",
-      "day",
-      "latitude",
-      "longitude",
-      "country",
-      "region",
-      "region_code",
-      "city",
-    ]),
-  },
-  {
     tag: "admin.sites.purge_custom_event_names",
     sql: batchDelete(
       "custom_event_names",
@@ -161,28 +125,6 @@ const PURGE_STEPS: readonly PurgeStep[] = [
       `EXISTS (
         SELECT 1 FROM custom_events e
         WHERE e.site_pk = ?1 AND e.event_name_id = custom_event_names.id
-      ) OR EXISTS (
-        SELECT 1 FROM custom_event_json_values v
-        WHERE v.site_pk = ?1 AND v.event_name_id = custom_event_names.id
-      )`,
-    ),
-  },
-  {
-    tag: "admin.sites.purge_custom_event_json_keys",
-    sql: batchDelete(
-      "custom_event_json_keys",
-      ["id"],
-      payloadNodesWith("key_id", "custom_event_json_keys.id"),
-    ),
-  },
-  {
-    tag: "admin.sites.purge_custom_event_json_paths",
-    sql: batchDelete(
-      "custom_event_json_paths",
-      ["id"],
-      `${payloadNodesWith("path_id", "custom_event_json_paths.id")} OR EXISTS (
-        SELECT 1 FROM custom_event_json_values v
-        WHERE v.site_pk = ?1 AND v.path_id = custom_event_json_paths.id
       )`,
     ),
   },

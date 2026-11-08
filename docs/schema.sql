@@ -27,101 +27,41 @@ CREATE TABLE configs (
   created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
-CREATE TABLE custom_event_json_keys (
-  id INTEGER PRIMARY KEY,
-  site_id TEXT NOT NULL,
-  key TEXT NOT NULL,
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  last_seen_at INTEGER NOT NULL,
-  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk)
-);
-
-CREATE UNIQUE INDEX idx_custom_event_json_keys_site_pk_key
-  ON custom_event_json_keys(site_pk, "key");
-
-CREATE TABLE custom_event_json_nodes (
-  event_pk INTEGER NOT NULL,
-  node_id INTEGER NOT NULL,
-  parent_node_id INTEGER,
-  key_id INTEGER,
-  path_id INTEGER NOT NULL,
-  value_type INTEGER NOT NULL,
-  member_order INTEGER,
-  array_index INTEGER,
-  depth INTEGER NOT NULL,
-  PRIMARY KEY(event_pk, node_id),
-  FOREIGN KEY(event_pk) REFERENCES custom_events(event_pk) ON DELETE CASCADE,
-  FOREIGN KEY(key_id) REFERENCES custom_event_json_keys(id),
-  FOREIGN KEY(path_id) REFERENCES custom_event_json_paths(id)
-);
-
-CREATE INDEX idx_custom_event_nodes_event_parent
-  ON custom_event_json_nodes(event_pk, parent_node_id, member_order, array_index);
-
-CREATE TABLE custom_event_json_paths (
-  id INTEGER PRIMARY KEY,
-  site_id TEXT NOT NULL,
-  path TEXT NOT NULL,
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  last_seen_at INTEGER NOT NULL,
-  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk)
-);
-
-CREATE UNIQUE INDEX idx_custom_event_json_paths_site_pk_path
-  ON custom_event_json_paths(site_pk, path);
-
-CREATE TABLE custom_event_json_values (
-  event_pk INTEGER NOT NULL,
-  node_id INTEGER NOT NULL,
-  site_id TEXT NOT NULL,
-  event_name_id INTEGER NOT NULL,
-  path_id INTEGER NOT NULL,
-  occurred_at INTEGER NOT NULL,
-  scope_node_id INTEGER,
-  value_type INTEGER NOT NULL,
-  string_value TEXT,
-  string_hash TEXT,
-  number_value REAL,
-  boolean_value INTEGER,
-  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
-  PRIMARY KEY(event_pk, node_id),
-  FOREIGN KEY(event_pk, node_id) REFERENCES custom_event_json_nodes(event_pk, node_id) ON DELETE CASCADE,
-  FOREIGN KEY(event_name_id) REFERENCES custom_event_names(id),
-  FOREIGN KEY(path_id) REFERENCES custom_event_json_paths(id)
-);
-
-CREATE INDEX idx_custom_event_values_site_pk_path_time
-  ON custom_event_json_values(site_pk, path_id, occurred_at, event_pk);
-
 CREATE TABLE custom_event_names (
   id INTEGER PRIMARY KEY,
-  site_id TEXT NOT NULL,
+  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
   name TEXT NOT NULL,
   created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  last_seen_at INTEGER NOT NULL,
-  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk)
+  last_seen_at INTEGER NOT NULL
 );
 
 CREATE UNIQUE INDEX idx_custom_event_names_site_pk_name
   ON custom_event_names(site_pk, name);
 
+CREATE TABLE custom_event_properties (
+  event_pk INTEGER NOT NULL REFERENCES custom_events(event_pk) ON DELETE CASCADE,
+  key TEXT NOT NULL,
+  value TEXT NOT NULL,
+  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
+  occurred_at INTEGER NOT NULL,
+  PRIMARY KEY (event_pk, key)
+);
+
+CREATE INDEX idx_custom_event_properties_site_pk_key_occurred
+  ON custom_event_properties(site_pk, key, occurred_at, value);
+
 CREATE TABLE custom_events (
   event_pk INTEGER PRIMARY KEY,
   event_id TEXT NOT NULL UNIQUE,
-  site_id TEXT NOT NULL,
-  visit_id TEXT NOT NULL,
-  event_name_id INTEGER NOT NULL,
+  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
+  visit_id TEXT NOT NULL REFERENCES visits(visit_id) ON DELETE CASCADE,
+  event_name_id INTEGER NOT NULL REFERENCES custom_event_names(id),
   occurred_at INTEGER NOT NULL,
   received_at INTEGER NOT NULL,
   sequence INTEGER NOT NULL DEFAULT 0,
-  node_count INTEGER NOT NULL,
-  value_count INTEGER NOT NULL,
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
   revenue_amount REAL,
   revenue_currency TEXT,
-  FOREIGN KEY(visit_id) REFERENCES visits(visit_id) ON DELETE CASCADE,
-  FOREIGN KEY(event_name_id) REFERENCES custom_event_names(id)
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
 CREATE INDEX idx_custom_events_site_pk_name_time
@@ -303,22 +243,6 @@ CREATE TABLE visit_daily_dimension_rollups (
   PRIMARY KEY (site_pk, dimension, day, value)
 );
 
-CREATE TABLE visit_daily_geo_points (
-  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
-  day INTEGER NOT NULL,
-  latitude REAL NOT NULL,
-  longitude REAL NOT NULL,
-  country TEXT NOT NULL,
-  region TEXT NOT NULL,
-  region_code TEXT NOT NULL,
-  city TEXT NOT NULL,
-  views INTEGER NOT NULL,
-  latest_at INTEGER NOT NULL,
-  PRIMARY KEY (
-    site_pk, day, latitude, longitude, country, region, region_code, city
-  )
-);
-
 CREATE TABLE visit_daily_rollups (
   site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
   day INTEGER NOT NULL,
@@ -373,11 +297,11 @@ CREATE TABLE visit_rollup_state (
   updated_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
-CREATE TABLE visits (
+CREATE TABLE "visits" (
   visit_id TEXT PRIMARY KEY,
-  site_id TEXT NOT NULL,
-  visitor_id TEXT NOT NULL,
-  session_id TEXT NOT NULL,
+  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
+  visitor_id INTEGER NOT NULL,
+  session_id INTEGER NOT NULL,
   status TEXT NOT NULL,
   started_at INTEGER NOT NULL,
   last_activity_at INTEGER NOT NULL,
@@ -398,14 +322,13 @@ CREATE TABLE visits (
   utm_campaign TEXT NOT NULL DEFAULT '',
   utm_term TEXT NOT NULL DEFAULT '',
   utm_content TEXT NOT NULL DEFAULT '',
+  channel TEXT NOT NULL DEFAULT '',
   is_eu INTEGER NOT NULL DEFAULT 0,
   country TEXT NOT NULL DEFAULT '',
   region TEXT NOT NULL DEFAULT '',
   region_code TEXT NOT NULL DEFAULT '',
   city TEXT NOT NULL DEFAULT '',
   continent TEXT NOT NULL DEFAULT '',
-  latitude REAL,
-  longitude REAL,
   timezone TEXT NOT NULL DEFAULT '',
   browser TEXT NOT NULL DEFAULT '',
   browser_version TEXT NOT NULL DEFAULT '',
@@ -415,14 +338,13 @@ CREATE TABLE visits (
   screen_width INTEGER,
   screen_height INTEGER,
   language TEXT NOT NULL DEFAULT '',
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
   scroll_depth INTEGER,
-  channel TEXT NOT NULL DEFAULT ''
+  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  updated_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
+CREATE INDEX idx_visits_site_pk_pathname_started_at
+  ON visits(site_pk, pathname, started_at);
 CREATE INDEX idx_visits_site_pk_session_started_at
   ON visits(site_pk, session_id, started_at);
-CREATE INDEX idx_visits_site_pk_started_at
-  ON visits(site_pk, started_at);
+CREATE INDEX idx_visits_site_pk_started_at ON visits(site_pk, started_at);

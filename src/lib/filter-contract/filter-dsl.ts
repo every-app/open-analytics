@@ -1,5 +1,4 @@
 import {
-  EVENT_PAYLOAD_FIELD,
   FILTER_OPERATORS,
   type FilterCondition,
   type FilterDocument,
@@ -8,6 +7,7 @@ import {
   FilterValidationError,
   type FilterValue,
   normalizeFilterDocument,
+  PROPERTY_FIELD,
   VALUELESS_FILTER_OPERATORS,
 } from "./filters";
 
@@ -24,7 +24,7 @@ export const FILTER_DSL_EXAMPLES = [
   'client.deviceType neq "mobile"',
   'page.path startsWith "/docs" AND referrer.domain eq "google.com"',
   'event.name eq "signup"',
-  'event.payload("/plan") eq "pro"',
+  'property("plan") eq "pro"',
 ] as const;
 
 export enum FilterDslErrorCode {
@@ -248,19 +248,19 @@ class Parser {
         "Expected a filter field.",
       );
     }
-    if (token.value !== EVENT_PAYLOAD_FIELD) {
+    if (token.value !== PROPERTY_FIELD) {
       return { kind: "field", field: token.value } as FilterTarget;
     }
     this.expect(TokenKind.Open, FilterDslErrorCode.ExpectedField, "`(`");
-    const path = this.expect(
+    const key = this.expect(
       TokenKind.String,
       FilterDslErrorCode.ExpectedField,
-      "a JSON pointer string",
+      "a property key string",
     );
     this.expect(TokenKind.Close, FilterDslErrorCode.ExpectedField, "`)`");
     return {
-      kind: "event-payload",
-      path: (path as { value: string }).value,
+      kind: "property",
+      key: (key as { value: string }).value,
     } as FilterTarget;
   }
 
@@ -324,7 +324,7 @@ function formatCondition(condition: FilterCondition): string {
   const target =
     condition.target.kind === "field"
       ? condition.target.field
-      : `${EVENT_PAYLOAD_FIELD}(${JSON.stringify(condition.target.path)})`;
+      : `${PROPERTY_FIELD}(${JSON.stringify(condition.target.key)})`;
   if (VALUELESS_FILTER_OPERATORS.has(condition.operator))
     return `${target} ${condition.operator}`;
   const value = Array.isArray(condition.value)

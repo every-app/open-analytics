@@ -1,8 +1,7 @@
 import type { PageRequest, PaginationMeta } from "@/lib/pagination";
 
+import type { DashboardQuery, DashboardResult } from "./dashboard";
 import type {
-  CanonicalEventFieldsResult,
-  CanonicalEventFieldValuesResult,
   CanonicalEventRecordPageResult,
   CanonicalEventSummaryResult,
   CanonicalEventTrendResult,
@@ -39,7 +38,6 @@ import type {
   FilterValuesResult,
   FunnelAnalysis,
   FunnelDefinition,
-  GeoPointsResult,
   Interval,
   ListSort,
   OverviewQuery,
@@ -218,6 +216,10 @@ export interface CanonicalOperationMap {
     readonly query: CanonicalTrendQuery;
     readonly result: TrendResult;
   };
+  readonly dashboard: {
+    readonly query: DashboardQuery;
+    readonly result: DashboardResult;
+  };
   readonly "team-sites": {
     readonly query: CanonicalTeamSitesQuery;
     readonly result: TeamSitesQueryResult["data"];
@@ -254,10 +256,6 @@ export interface CanonicalOperationMap {
     readonly query: FilterValuesQuery;
     readonly result: FilterValuesResult;
   };
-  readonly "geo-points": {
-    readonly query: BaseQuery & { readonly limit?: number };
-    readonly result: GeoPointsResult;
-  };
   readonly realtime: {
     readonly query: RealtimeQuery;
     readonly result: RealtimeQueryResult;
@@ -277,14 +275,6 @@ export interface CanonicalOperationMap {
   readonly "event-type-detail": {
     readonly query: LegacyEventQuery;
     readonly result: CanonicalEventTypeDetailResult;
-  };
-  readonly "event-fields": {
-    readonly query: LegacyEventQuery;
-    readonly result: CanonicalEventFieldsResult;
-  };
-  readonly "event-field-values": {
-    readonly query: LegacyEventQuery;
-    readonly result: CanonicalEventFieldValuesResult;
   };
   readonly "event-records": {
     readonly query: LegacyEventQuery;

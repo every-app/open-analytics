@@ -21,8 +21,7 @@ describe("goal v1 config contract", () => {
   it("decodes and encodes the exact raw DSL", () => {
     const config: GoalConfigV1 = {
       filterDslVersion: 1,
-      filterDsl:
-        '  event.name eq "purchase" AND\nevent.payload("/plan") eq "pro"  ',
+      filterDsl: '  event.name eq "purchase" AND\nproperty("plan") eq "pro"  ',
     };
     const encoded = encodeGoalConfig(config);
 
@@ -183,7 +182,7 @@ describe("goal v1 config contract", () => {
     for (const filterDsl of [
       'event.name eq "Purchase"',
       'event.name eq "Purchase" AND page.path eq "/checkout"',
-      'event.name eq "Purchase" AND event.payload("/plan") eq "pro"',
+      'event.name eq "Purchase" AND property("plan") eq "pro"',
     ]) {
       expect(
         validateGoalConfigForWrite({
@@ -196,7 +195,7 @@ describe("goal v1 config contract", () => {
     for (const filterDsl of [
       'page.path eq "/thank-you"',
       // A property also matches the page views that carry it.
-      'event.payload("/plan") eq "pro"',
+      'property("plan") eq "pro"',
     ]) {
       expect(() =>
         validateGoalConfigForWrite({

@@ -87,7 +87,7 @@ const filterSchema = z
   .max(4_000)
   .optional()
   .describe(
-    `Filter: conditions joined by AND, each <field> <operator> <value>. A value is a JSON string, number, true, false or a [list] for in and notIn. Operators: ${FILTER_OPERATORS.join(", ")}. Fields: ${FILTER_FIELDS}; a custom property is event.payload("/<key>"). Examples: ${FILTER_DSL_EXAMPLES.join(" | ")}`,
+    `Filter: conditions joined by AND, each <field> <operator> <value>. A value is a JSON string, number, true, false or a [list] for in and notIn. Operators: ${FILTER_OPERATORS.join(", ")}. Fields: ${FILTER_FIELDS}; a custom property of a page view or custom event is property("<key>"), and its value is a string. Examples: ${FILTER_DSL_EXAMPLES.join(" | ")}`,
   );
 
 /** A goal's filter DSL: its `filter`, or the scroll depth goal's. */
@@ -271,9 +271,9 @@ const SITE_REPORTS = {
   "event-types": "Custom event names and counts",
   "events-summary": "Custom event totals",
   "events-trend": "Custom events per interval",
-  "events-records": "Recent custom events (params: eventName, cursor)",
+  "events-records":
+    "Recent custom events with their properties (params: eventName, cursor)",
   "event-type-detail": "One custom event's breakdown (params: eventName)",
-  "event-type-fields": "Payload fields of a custom event (params: eventName)",
   funnels: "Funnels; with params.id, that funnel's conversion analysis",
   goals: "Goals; with params.id, one goal's definition",
   "goal-conversions":
@@ -282,7 +282,7 @@ const SITE_REPORTS = {
     "A goal's conversions, and for a goal with a currency its revenue: total and average per event that carried revenue (params: id)",
   "goal-timeseries": "A goal's conversions per interval (params: id)",
   properties:
-    'Custom property keys of page views and events, by visitors; filter by one with event.payload("/<key>")',
+    'Custom property keys of page views and events, by visitors; filter by one with property("<key>")',
   "property-values":
     "A custom property's values with visitors, visits, page views and events (params: key)",
   "filter-values":

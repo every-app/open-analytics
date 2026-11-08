@@ -27,10 +27,6 @@ describe("query route policy", () => {
 
   it("maps protocol paths to typed operation capabilities", () => {
     expect(operationForQueryRoute("overview")).toBe("overview");
-    expect(operationForQueryRoute("event-type-fields")).toBe("event-fields");
-    expect(operationForQueryRoute("event-type-field-values")).toBe(
-      "event-field-values",
-    );
     expect(operationForQueryRoute("events-records")).toBe("event-records");
     expect(operationForQueryRoute("funnels")).toBe("funnel-analysis");
     expect(operationForQueryRoute("utm-source")).toBe("dimension");
@@ -65,11 +61,8 @@ describe("query route policy", () => {
     expect(
       assertOperationAllowed(publicContext, "event-records"),
     ).toMatchObject({ kind: "capability-denied" });
-    expect(assertOperationAllowed(publicContext, "event-fields")).toMatchObject(
-      { kind: "capability-denied" },
-    );
     expect(
-      assertOperationAllowed(publicContext, "event-field-values"),
+      assertOperationAllowed(publicContext, "property-values"),
     ).toMatchObject({ kind: "capability-denied" });
     expect(assertOperationAllowed(publicContext, "filter-values")).toBeNull();
     expect(assertOperationAllowed(publicContext, "overview")).toBeNull();

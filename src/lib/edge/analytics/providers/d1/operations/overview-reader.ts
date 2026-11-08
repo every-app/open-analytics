@@ -11,7 +11,10 @@ import type {
 } from "@/lib/edge/analytics/contract";
 import type { QueryWindow } from "@/lib/edge/analytics/contract";
 import { queryWindowToTime } from "@/lib/edge/analytics/contract";
-import type { TrendAggregateRow } from "@/lib/edge/analytics/providers/d1/internal/core";
+import type {
+  OverviewAggregateRow,
+  TrendAggregateRow,
+} from "@/lib/edge/analytics/providers/d1/internal/core";
 import {
   createD1ReadDiagnostics,
   type D1ReadDiagnostics,
@@ -27,6 +30,26 @@ function sourceFromDiagnostic(
   result: { diagnosticSource?: "raw" | "rollup" } | undefined,
 ): "raw" | "rollup" {
   return result?.diagnosticSource ?? "raw";
+}
+/** The overview totals as the contract names them. */
+export function overviewMetricsOf(row: OverviewAggregateRow): OverviewMetrics {
+  return {
+    views: row.views,
+    sessions: row.sessions,
+    visitors: row.visitors,
+    bounces: row.bounces,
+    totalDurationMs: row.totalDuration,
+    durationViews: row.durationViews,
+    scrollDepth: row.scrollDepth,
+  };
+}
+/** A trend row as the contract names it. */
+export function trendPointOf(row: TrendAggregateRow): TrendPoint {
+  return {
+    ...overviewMetricsOf(row),
+    bucket: row.bucket,
+    timestampMs: row.timestampMs as TrendPoint["timestampMs"],
+  };
 }
 export function createOverviewReader(
   env: Env,
@@ -48,15 +71,7 @@ export function createOverviewReader(
         diagnostics,
       );
       return {
-        value: {
-          views: result.value.views,
-          sessions: result.value.sessions,
-          visitors: result.value.visitors,
-          bounces: result.value.bounces,
-          totalDurationMs: result.value.totalDuration,
-          durationViews: result.value.durationViews,
-          scrollDepth: result.value.scrollDepth,
-        },
+        value: overviewMetricsOf(result.value),
         source: sourceFromDiagnostic(result),
         approximateVisitors: Boolean(result.approximateVisitors),
       };
@@ -76,17 +91,7 @@ export function createOverviewReader(
         diagnostics,
       );
       return {
-        value: result.value.map((row: TrendAggregateRow) => ({
-          bucket: row.bucket,
-          timestampMs: row.timestampMs as TrendPoint["timestampMs"],
-          views: row.views,
-          sessions: row.sessions,
-          visitors: row.visitors,
-          bounces: row.bounces,
-          totalDurationMs: row.totalDuration,
-          durationViews: row.durationViews,
-          scrollDepth: row.scrollDepth,
-        })),
+        value: result.value.map(trendPointOf),
         source: sourceFromDiagnostic(result),
         approximateVisitors: Boolean(result.approximateVisitors),
       };

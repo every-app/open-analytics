@@ -33,14 +33,13 @@ function createEnv(pageViews: readonly PageView[]): Env {
   seedSites(database, [SITE]);
   const insert = database.prepare(`
     INSERT INTO visits (
-      visit_id, site_id, site_pk, visitor_id, session_id, status, started_at,
+      visit_id, site_pk, visitor_id, session_id, status, started_at,
       last_activity_at, pathname, hostname, scroll_depth
-    ) VALUES (?, ?, ?, ?, ?, 'complete', ?, ?, ?, 'example.com', ?)
+    ) VALUES (?, ?, ?, ?, 'complete', ?, ?, ?, 'example.com', ?)
   `);
   pageViews.forEach(({ pathname, depth, visitor, startedAt }, index) => {
     insert.run(
       `visit-${index}`,
-      SITE.siteId,
       SITE.sitePk,
       visitor,
       `session-${visitor}`,
@@ -201,12 +200,14 @@ describe("the scroll depth top stat", () => {
     },
   ];
 
-  async function overview(filter?: string) {
+  async function overview(
+    filter?: string,
+    range: { startMs: number; endExclusiveMs: number } = window,
+  ) {
     const url = new URL("https://edge.test/overview");
-    url.searchParams.set("from", String(window.startMs));
-    url.searchParams.set("to", String(window.endExclusiveMs));
+    url.searchParams.set("from", String(range.startMs));
+    url.searchParams.set("to", String(range.endExclusiveMs));
     url.searchParams.set("interval", "hour");
-    url.searchParams.set("includeChange", "true");
     url.searchParams.set("includeDetail", "true");
     if (filter) url.searchParams.set("filter[page.path]", filter);
     const response = await handleOverviewContract(
@@ -216,16 +217,23 @@ describe("the scroll depth top stat", () => {
     );
     return (await response.json()) as {
       data: Record<string, unknown>;
-      previousData: Record<string, unknown>;
       detail: { data: Array<Record<string, unknown>> };
     };
   }
+  /** The period just before, which the top stats measure against. */
+  const previous = {
+    startMs: 2 * window.startMs - window.endExclusiveMs,
+    endExclusiveMs: window.startMs,
+  };
 
   it("averages the filtered page views' visitors, in total and per interval", async () => {
     const body = await overview("/pricing");
 
     expect(body.data).toMatchObject({ views: 4, scrollDepth: 65 });
-    expect(body.previousData).toMatchObject({ views: 1, scrollDepth: 40 });
+    expect((await overview("/pricing", previous)).data).toMatchObject({
+      views: 1,
+      scrollDepth: 40,
+    });
     expect(
       body.detail.data.map(({ timestampMs, scrollDepth }) => [
         timestampMs,
@@ -243,7 +251,9 @@ describe("the scroll depth top stat", () => {
 
     expect(body.data.views).toBe(5);
     expect(body.data).not.toHaveProperty("scrollDepth");
-    expect(body.previousData).not.toHaveProperty("scrollDepth");
+    expect((await overview(undefined, previous)).data).not.toHaveProperty(
+      "scrollDepth",
+    );
     expect(body.detail.data).not.toHaveLength(0);
     for (const point of body.detail.data) {
       expect(point).not.toHaveProperty("scrollDepth");

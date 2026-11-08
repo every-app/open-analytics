@@ -9,7 +9,6 @@ import {
   currentD1Operation,
   currentInvocationLogger,
 } from "@/lib/edge/observability/logger";
-import { sitePksFromSiteIdsSql } from "@/lib/edge/sites/identity-sql";
 import type { Env } from "@/lib/edge/types";
 
 import type { FilterDocument, QueryWindow } from "./core-types";
@@ -26,11 +25,11 @@ export interface BoundSql {
 }
 
 export const VISIT_SOURCE_COLUMNS = `
-    visit_id, site_id, site_pk, visitor_id, session_id, status, started_at, last_activity_at,
+    visit_id, site_pk, visitor_id, session_id, status, started_at, last_activity_at,
     ended_at, finalized_at, duration_ms, scroll_depth, duration_source, exit_reason,
     pathname, query_string, hash_fragment, hostname, title, referrer_url, referrer_host,
     utm_source, utm_medium, utm_campaign, utm_term, utm_content, channel,
-    is_eu, country, region, region_code, city, continent, latitude, longitude,
+    is_eu, country, region, region_code, city, continent,
     timezone, browser, browser_version,
     os, os_version, device_type, screen_width, screen_height, language
   `;
@@ -39,15 +38,12 @@ export const VISIT_SOURCE_COLUMNS = `
 export const EVENT_SOURCE_COLUMNS = `
     ce.event_pk,
     ce.event_id,
-    ce.site_id,
     ce.site_pk,
     ce.visit_id,
     cen.name AS event_name,
     ce.occurred_at,
     ce.received_at,
     ce.sequence,
-    ce.node_count,
-    ce.value_count,
     v.visitor_id,
     v.session_id,
     v.pathname,
@@ -106,15 +102,19 @@ export function filteredVisitsCte(
   filters: FilterDocument,
   options: {
     readonly name?: string;
-    readonly columns?: string;
+    /** Columns, or expressions over the page view `v`, with their bindings. */
+    readonly columns?: string | SqlFragment;
     /** For a narrow set of columns that several aggregates read. */
     readonly materialized?: boolean;
   } = {},
 ): BoundSql {
+  const columns = options.columns ?? VISIT_SOURCE_COLUMNS;
   const fragment = concat(
     text(`
 ${options.name ?? "filtered_visits"} AS${options.materialized ? " MATERIALIZED" : ""} (
-  SELECT ${options.columns ?? VISIT_SOURCE_COLUMNS}
+  SELECT `),
+    typeof columns === "string" ? text(columns) : columns,
+    text(`
   FROM visits v
   WHERE v.site_pk = `),
     sitePk(siteId),
@@ -205,15 +205,6 @@ export function buildEventFilteredSourceCte(
     materialized: options?.materialize ?? false,
   });
   return { cte: `\nWITH\n${source.sql}`, bindings: source.bindings };
-}
-export function buildVisitSourceCteForSites(siteCount: number): string {
-  return `
-visit_source AS (
-  SELECT ${VISIT_SOURCE_COLUMNS}
-  FROM visits
-  WHERE site_pk IN ${sitePksFromSiteIdsSql(siteCount)}
-    AND started_at >= ? AND started_at < ?
-)`;
 }
 export function visitSourceBindingsForSites(
   siteIds: string[],

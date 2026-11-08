@@ -2,10 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createDatabaseRuntime } from "@/lib/db";
 import { withDashboardCache } from "@/lib/edge/analytics/composition/dashboard-cache";
-import {
-  geoTabLabel,
-  mapEventField,
-} from "@/lib/edge/analytics/providers/d1/internal/core-mappers";
+import { geoTabLabel } from "@/lib/edge/analytics/providers/d1/internal/core-mappers";
 import { insertVisit } from "@/lib/edge/ingest/buffer-store";
 import { flushCustomEventRow } from "@/lib/edge/ingest/custom-event-flush";
 import { flushPendingToD1 } from "@/lib/edge/ingest/flush";
@@ -30,8 +27,8 @@ function pageview(overrides: Partial<NormalizedPageview> = {}) {
     traceId: "trace-1",
     siteId: "site-1",
     visitId: "visit-1",
-    visitorId: "visitor-1",
-    sessionId: "session-1",
+    visitorId: 11,
+    sessionId: 21,
     previousVisitId: "",
     previousVisitStartedAt: null,
     previousScrollDepth: null,
@@ -78,8 +75,8 @@ function bufferedVisit(
     visitId: "visit-1",
     status: "complete",
     siteId: "site-1",
-    visitorId: "visitor-1",
-    sessionId: "session-1",
+    visitorId: 11,
+    sessionId: 21,
     startedAt: NOW - 31 * 60 * 1000,
     lastActivityAt: NOW - 30 * 60 * 1000,
     endedAt: null,
@@ -137,7 +134,7 @@ function bufferedCustomEvent(
     receivedAt: NOW,
     sequence: 0,
     eventName: "Signup",
-    eventDataJson: '{"plan":"pro"}',
+    propertiesJson: '{"plan":"pro"}',
     revenueAmount: null,
     revenueCurrency: null,
     dirty: 1,
@@ -159,7 +156,7 @@ function flushContext(
   const sqlRun = vi.fn(() => 1);
   return {
     db: createDatabaseRuntime(database as D1Database),
-    dictionaryIds: new Map(),
+    eventNameIds: new Map(),
     sqlAll: vi
       .fn()
       // The flush reads each buffered visit with its properties.
@@ -285,7 +282,7 @@ describe("edge ingest flush edge coverage", () => {
     expect(console.error).not.toHaveBeenCalled();
   });
 
-  it("keeps a custom event dirty when its dictionary id can't be resolved", async () => {
+  it("keeps a custom event dirty when its name's id can't be resolved", async () => {
     const first = vi.fn().mockResolvedValue(null);
     const run = vi.fn().mockResolvedValue({});
     const prepare = vi.fn(() => ({
@@ -309,7 +306,7 @@ describe("edge ingest flush edge coverage", () => {
 
     expect(context.sqlRun).toHaveBeenCalledWith(
       expect.stringContaining("SET flush_attempts = flush_attempts + 1"),
-      "Failed to resolve custom event name dictionary id",
+      "Failed to resolve the custom event name's id",
       "event-1",
     );
     expect(observability.error).toHaveBeenCalledWith(
@@ -344,20 +341,7 @@ describe("edge query parser and mapper edge coverage", () => {
     return parsed;
   }
 
-  it("maps event field examples and geo fallback labels", () => {
-    expect(
-      mapEventField({
-        path: "/total",
-        valueType: 2,
-        events: 1,
-        occurrences: 1,
-        firstSeenAt: 10,
-        lastSeenAt: 20,
-        stringValue: null,
-        numberValue: 12.5,
-        booleanValue: null,
-      }),
-    ).toMatchObject({ valueType: "number", exampleValue: 12.5 });
+  it("maps geo fallback labels", () => {
     expect(geoTabLabel("unknown", "timezone")).toBe("unknown");
   });
 });

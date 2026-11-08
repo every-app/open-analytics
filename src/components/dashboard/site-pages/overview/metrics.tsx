@@ -27,6 +27,7 @@ import type { AppMessages } from "@/lib/i18n/messages";
 import { usePathname } from "@/lib/router";
 import { cn } from "@/lib/utils";
 
+import type { DashboardLoad } from "./dashboard-load";
 import { useOverviewSummaryQuery } from "./metrics-data";
 import {
   ChangeRateInline,
@@ -51,6 +52,7 @@ interface OverviewMetricsSectionProps {
   siteId: string;
   window: TimeWindow;
   filters: FilterDocument;
+  load: DashboardLoad;
 }
 
 function statFormatter(
@@ -102,6 +104,7 @@ export function OverviewMetricsSection({
   siteId,
   window,
   filters,
+  load,
 }: OverviewMetricsSectionProps) {
   const searchParams = useLiveSearchParams();
   const pathname = usePathname() || "/";
@@ -113,6 +116,7 @@ export function OverviewMetricsSection({
     window,
     filters,
     comparisonQuery,
+    load,
   });
   const data = summary.data;
   const comparisonLabel = dashboardComparisonLabel(messages, comparisonQuery);

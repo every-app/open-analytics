@@ -20,6 +20,7 @@ import {
 import { TabbedScrollMaskCard } from "@/components/dashboard/common/tabbed-scroll-mask-card";
 import { useApplyDashboardFilters } from "@/components/dashboard/filters/use-dashboard-filters";
 import type { DashboardComparisonQuery } from "@/lib/dashboard/comparison-query";
+import { DASHBOARD_CARD_ROW_LIMIT } from "@/lib/edge/analytics/contract/dashboard";
 import type { FilterDocument } from "@/lib/filter-contract/index";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { formatI18nTemplate } from "@/lib/i18n/template";
@@ -82,9 +83,11 @@ interface ReportCardProps<TTab extends string> {
   extraTabs?: readonly { value: TTab; label: string; content: ReactNode }[];
   /** Controls for the open tab, shown before Details. */
   tabControls?: (tab: TTab) => ReactNode;
+  /** The open tab, when the page keeps it rather than the card. */
+  activeTab?: TTab;
+  onActiveTabChange?: (tab: TTab) => void;
 }
 
-const CARD_ROW_LIMIT = 10;
 const DETAILS_ROW_LIMIT = 100;
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -136,10 +139,17 @@ export function ReportCard<TTab extends string>({
   details = true,
   extraTabs = [],
   tabControls,
+  activeTab: pageTab,
+  onActiveTabChange,
 }: ReportCardProps<TTab>) {
-  const [activeTab, setActiveTab] = useState<TTab>(
+  const [cardTab, setCardTab] = useState<TTab>(
     extraTabs[0]?.value ?? tabs[0].value,
   );
+  const activeTab = pageTab ?? cardTab;
+  const setActiveTab = (tab: TTab) => {
+    setCardTab(tab);
+    onActiveTabChange?.(tab);
+  };
   const [detailsOpen, setDetailsOpen] = useState(false);
   const rowAdapter = useRowAdapter(tabs);
   const loader = useMemo<TabbedDataTableLoader<TTab, ReportRow, ReportSortKey>>(
@@ -149,7 +159,7 @@ export function ReportCard<TTab extends string>({
         if (!reportTab) throw new Error(`report_tab_missing:${tab}`);
         const page = await reportTab.load({
           cursor,
-          limit: CARD_ROW_LIMIT,
+          limit: DASHBOARD_CARD_ROW_LIMIT,
           search,
           sort,
           signal,
@@ -211,7 +221,7 @@ export function ReportCard<TTab extends string>({
           value={activeTab}
           onValueChange={setActiveTab}
           loader={loader}
-          limit={CARD_ROW_LIMIT}
+          limit={DASHBOARD_CARD_ROW_LIMIT}
           requestKey={`${requestKey}:card`}
           columns={columns}
           rowAdapter={rowAdapter}

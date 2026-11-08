@@ -35,7 +35,6 @@ import {
 } from "@/lib/edge/analytics/providers/d1/internal/dimensions";
 import { queryEventTypeAggregate } from "@/lib/edge/analytics/providers/d1/internal/events-summary";
 import { queryFilterValuesPageFromD1 } from "@/lib/edge/analytics/providers/d1/internal/filter-values";
-import { queryGeoPointsFromD1 } from "@/lib/edge/analytics/providers/d1/internal/geo-points";
 import {
   decodePagesCursor,
   queryPagesPageFromD1,
@@ -639,26 +638,6 @@ export function registerSiteContractProviders(
             },
           };
         }
-      }),
-    )
-    .register(
-      "geo-points",
-      typedQueryProviderFor("geo-points", async (input) => {
-        const request = input;
-        const aggregate = await queryGeoPointsFromD1(
-          options.env,
-          options.siteId,
-          timeWindow(request.time),
-          request.filters ?? EMPTY_FILTER_DOCUMENT,
-        );
-        return {
-          value: {
-            points: aggregate.points,
-            countryCounts: aggregate.countryCounts,
-            regionCounts: aggregate.regionCounts,
-            cityCounts: aggregate.cityCounts,
-          },
-        };
       }),
     )
     .register(

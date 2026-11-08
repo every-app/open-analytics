@@ -6,68 +6,51 @@ import { LoadFailedContent } from "@/components/dashboard/common/table-states";
 import {
   type GeoPointsMapCountryCount,
   GeoPointsMapIsland,
-  type GeoPointsMapPoint,
 } from "@/components/dashboard/geo/geo-points-map-island";
-import { fetchOverviewGeoPoints } from "@/lib/dashboard/client/data/index";
-import { filterQueryKey } from "@/lib/dashboard/filter-query-key";
-import type { TimeWindow } from "@/lib/dashboard/query-state";
-import type { FilterDocument } from "@/lib/filter-contract/index";
+import type { OverviewTabRows } from "@/lib/dashboard/client/data/index";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
+
+/** Where the map's countries come from, and what caches them. */
+export interface MapCountries {
+  readonly queryKey: readonly unknown[];
+  readonly load: (signal: AbortSignal) => Promise<OverviewTabRows>;
+}
 
 interface LocationsMapProps {
   locale: Locale;
   messages: AppMessages;
-  siteId: string;
-  window: TimeWindow;
-  filters: FilterDocument;
+  countries: MapCountries;
   selectedCountryCode: string | null;
   onCountrySelect: (countryCode: string | null) => void;
 }
 
 /**
- * The Locations card's map: where visits came from, by country. Its code
- * and data load only once the tab is open.
+ * The Locations card's map: countries shaded by their visitors, from the
+ * countries list. Its code loads only once the tab is open.
  */
 export function LocationsMap({
   locale,
   messages,
-  siteId,
-  window,
-  filters,
+  countries,
   selectedCountryCode,
   onCountrySelect,
 }: LocationsMapProps) {
-  const filtersKey = useMemo(() => filterQueryKey(filters), [filters]);
   const query = useQuery({
-    queryKey: [
-      "dashboard",
-      "overview-geo-points",
-      siteId,
-      window.from,
-      window.to,
-      window.interval,
-      window.timeZone,
-      filtersKey,
-    ],
-    queryFn: ({ signal }) =>
-      fetchOverviewGeoPoints(siteId, window, filters, { signal }),
+    queryKey: countries.queryKey,
+    queryFn: ({ signal }) => countries.load(signal),
     enabled: typeof globalThis.window !== "undefined",
     placeholderData: keepPreviousData,
   });
-  const points = useMemo<GeoPointsMapPoint[]>(
-    () =>
-      (query.data?.data ?? []).map((item) => ({
-        latitude: item.latitude,
-        longitude: item.longitude,
-        country: item.country,
-        pointCount: item.pointCount,
-      })),
-    [query.data?.data],
-  );
   const countryCounts = useMemo<GeoPointsMapCountryCount[]>(
-    () => query.data?.countryCounts ?? [],
-    [query.data?.countryCounts],
+    () =>
+      (query.data ?? []).map((row) => ({
+        country: row.value ?? row.label,
+        views: row.views,
+        sessions: row.sessions,
+        visitors: row.visitors,
+      })),
+    [query.data],
   );
 
   if (query.isError && !query.isFetching) {
@@ -86,7 +69,7 @@ export function LocationsMap({
         locale={locale}
         messages={messages}
         loading={query.isPending || query.isPlaceholderData}
-        points={points}
+        points={[]}
         countryCounts={countryCounts}
         selectedCountryCode={selectedCountryCode}
         onCountrySelect={onCountrySelect}

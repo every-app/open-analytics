@@ -25,15 +25,7 @@ export class IngestSqlAccess {
   constructor(private readonly doState: DurableObjectState) {}
 
   initializeSchema(): void {
-    const storage = this.doState.storage;
-    initializeIngestSqlSchema(
-      storage.sql,
-      typeof storage.transactionSync === "function"
-        ? {
-            transactionSync: (closure) => storage.transactionSync(closure),
-          }
-        : undefined,
-    );
+    initializeIngestSqlSchema(this.doState.storage.sql);
   }
 
   sqlAll<T>(query: string, ...bindings: SqlBinding[]): T[] {

@@ -1,7 +1,5 @@
 import {
   analyticsFilterRegistry,
-  type CanonicalJsonPath,
-  EVENT_PAYLOAD_FIELD,
   type FilterAudience,
   type FilterCondition,
   type FilterDocument,
@@ -14,11 +12,11 @@ import {
   LIST_FILTER_OPERATORS,
   normalizeFilterDocument,
   parseFilterDsl,
+  PROPERTY_FIELD,
   VALUELESS_FILTER_OPERATORS,
 } from "@/lib/filter-contract/index";
 
 export type FilterPanelAudience = FilterAudience;
-export type ScalarKind = "string" | "number" | "boolean";
 type ValueSuggestion = {
   readonly value: string | number | boolean | null;
   readonly occurrences?: number;
@@ -37,12 +35,12 @@ export type ValueSuggestionPage = {
 export interface EditorCondition {
   readonly id: string;
   readonly field: string;
-  readonly payloadPath: string;
+  /** The custom property's key, for the property field. */
+  readonly propertyKey: string;
   readonly operator: FilterOperator;
   readonly value: FilterValue | readonly FilterValue[] | undefined;
   readonly listValues: readonly FilterValue[] | undefined;
   readonly valueText: string;
-  readonly scalarKind: ScalarKind;
   /** Whether `valueText` holds the value rather than `value`. */
   readonly valueDirty: boolean;
 }
@@ -66,15 +64,15 @@ export function conditionIdFactory() {
 export function stripSuggestionFacet(
   document: FilterDocument,
   field: string,
-  payloadPath: string,
+  propertyKey: string,
 ): FilterDocument {
   return {
     conditions: document.conditions.filter((condition) =>
-      field === EVENT_PAYLOAD_FIELD
+      field === PROPERTY_FIELD
         ? !(
-            condition.target.kind === "event-payload" &&
-            Boolean(payloadPath) &&
-            condition.target.path === payloadPath
+            condition.target.kind === "property" &&
+            Boolean(propertyKey) &&
+            condition.target.key === propertyKey
           )
         : !(
             condition.target.kind === "field" &&
@@ -88,14 +86,6 @@ export function firstOperator(
 ): FilterOperator {
   if (definition.operators.has(FilterOperator.Eq)) return FilterOperator.Eq;
   return [...definition.operators][0]!;
-}
-function scalarKindFor(
-  value: FilterValue | readonly FilterValue[] | undefined,
-): ScalarKind {
-  const item = Array.isArray(value) ? value[0] : value;
-  if (typeof item === "number") return "number";
-  if (typeof item === "boolean") return "boolean";
-  return "string";
 }
 function valueTextFor(
   value: FilterValue | readonly FilterValue[] | undefined,
@@ -117,12 +107,11 @@ export function defaultCondition(
   return {
     id: createId(),
     field,
-    payloadPath: "",
+    propertyKey: "",
     operator: FilterOperator.Eq,
     value: undefined,
     listValues: undefined,
     valueText: "",
-    scalarKind: "string",
     valueDirty: true,
   };
 }
@@ -135,14 +124,13 @@ function editorCondition(
     field:
       condition.target.kind === "field"
         ? condition.target.field
-        : EVENT_PAYLOAD_FIELD,
-    payloadPath:
-      condition.target.kind === "event-payload" ? condition.target.path : "",
+        : PROPERTY_FIELD,
+    propertyKey:
+      condition.target.kind === "property" ? condition.target.key : "",
     operator: condition.operator,
     value: condition.value,
     listValues: Array.isArray(condition.value) ? condition.value : undefined,
     valueText: valueTextFor(condition.value),
-    scalarKind: scalarKindFor(condition.value),
     valueDirty: false,
   };
 }
@@ -168,25 +156,17 @@ export function editorConditionsFromDsl(
     return [];
   }
 }
-function valueForKind(
-  raw: string,
-  valueKind: FilterValueKind,
-  scalarKind: ScalarKind,
-): FilterValue {
-  const kind = valueKind === "json-scalar" ? scalarKind : valueKind;
-  if (kind === "number") return Number(raw);
-  if (kind === "boolean") return raw === "true";
+function valueForKind(raw: string, valueKind: FilterValueKind): FilterValue {
+  if (valueKind === "number") return Number(raw);
+  if (valueKind === "boolean") return raw === "true";
   return raw;
 }
 function conditionFromEditor(node: EditorCondition): FilterCondition {
   const definition = analyticsFilterRegistry.get(node.field);
   if (!definition) throw new Error(EditorError.UnknownField);
   const target =
-    node.field === EVENT_PAYLOAD_FIELD
-      ? {
-          kind: "event-payload" as const,
-          path: node.payloadPath as CanonicalJsonPath,
-        }
+    node.field === PROPERTY_FIELD
+      ? { kind: "property" as const, key: node.propertyKey }
       : { kind: "field" as const, field: definition.id as FilterFieldId };
   if (VALUELESS_FILTER_OPERATORS.has(node.operator)) {
     return { target, operator: node.operator };
@@ -198,9 +178,7 @@ function conditionFromEditor(node: EditorCondition): FilterCondition {
     throw new Error(EditorError.MissingValue);
   }
   const parse = (item: FilterValue) =>
-    item === null
-      ? null
-      : valueForKind(String(item), definition.valueKind, node.scalarKind);
+    item === null ? null : valueForKind(String(item), definition.valueKind);
   const value =
     LIST_FILTER_OPERATORS.has(node.operator) ||
     node.operator === FilterOperator.Between

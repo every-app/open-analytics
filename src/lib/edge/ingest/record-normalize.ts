@@ -1,5 +1,6 @@
 import { UAParser } from "ua-parser-js";
 
+import { normalizeProperties } from "@/lib/analytics/properties";
 import { canonicalSourceHost } from "@/lib/analytics/source-host";
 import { classifyTrafficChannel } from "@/lib/analytics/traffic-channel-rules";
 import { mergeUaClientHintsIntoHeaders } from "@/lib/edge/collector/client-hints";
@@ -22,9 +23,8 @@ import {
   safeHostname,
 } from "@/lib/edge/utils";
 
-import { expandCustomEventData } from "./custom-event-json";
+import { propertiesJson } from "./buffer-store";
 import { clampTimestamp, resolveTrustedClientTimestamp } from "./normalize";
-import { normalizePageProperties } from "./page-properties";
 import { normalizeEventRevenue } from "./revenue";
 import { normalizeScrollDepth } from "./scroll-depth";
 import type {
@@ -43,7 +43,7 @@ interface NormalizeRecordContext {
   ): Promise<StoredOpenVisit | null>;
   findRecentVisitorSession(input: {
     siteId: string;
-    visitorId: string;
+    visitorId: number;
     visitId: string;
     startedAt: number;
     routePreviousHostname?: string;
@@ -65,8 +65,15 @@ function cityLevelCoordinate(value: unknown): number | null {
     ? null
     : Number(coordinate.toFixed(COORDINATE_DECIMALS));
 }
+/**
+ * A text field as D1 keeps it: trimmed and at most `maxLength` long. Filters
+ * and cards compare stored values as they are.
+ */
+function textField(value: unknown, maxLength: number): string {
+  return clampString(coerceString(value).trim(), maxLength).trimEnd();
+}
 function utmField(value: unknown): string {
-  return clampString(coerceString(value || ""), 255);
+  return textField(value, 255);
 }
 function sessionAttributionOf(
   session: RecentVisitorSession,
@@ -134,35 +141,29 @@ export async function normalizeIngestRecord(
 
   const contextGeoBase = {
     isEU,
-    country: clampString(coerceString(cf.country ?? ""), 10),
-    region: clampString(coerceString(cf.region ?? ""), 128),
-    regionCode: clampString(coerceString(cf.regionCode ?? ""), 32),
-    city: clampString(coerceString(cf.city ?? ""), 128),
-    continent: clampString(coerceString(cf.continent ?? ""), 32),
+    country: textField(cf.country, 10),
+    region: textField(cf.region, 128),
+    regionCode: textField(cf.regionCode, 32),
+    city: textField(cf.city, 128),
+    continent: textField(cf.continent, 32),
     latitude: cityLevelCoordinate(cf.latitude),
     longitude: cityLevelCoordinate(cf.longitude),
-    timezone: clampString(
-      coerceString(client.timezone || cf.timezone || ""),
-      120,
-    ),
-    browser: clampString(coerceString(ua.browser.name ?? ""), 80),
-    browserVersion: clampString(coerceString(ua.browser.version ?? ""), 80),
-    os: clampString(coerceString(ua.os.name ?? ""), 80),
-    osVersion: clampString(coerceString(ua.os.version ?? ""), 80),
-    deviceType: clampString(coerceString(ua.device.type ?? "desktop"), 40),
+    timezone: textField(client.timezone || cf.timezone, 120),
+    browser: textField(ua.browser.name, 80),
+    browserVersion: textField(ua.browser.version, 80),
+    os: textField(ua.os.name, 80),
+    osVersion: textField(ua.os.version, 80),
+    deviceType: textField(ua.device.type ?? "desktop", 40),
   };
 
   if (kind === "pageview") {
     if (!visitId) return { record: null, reason: "missing_visit_id" };
-    const pathname = clampString(coerceString(client.pathname || "/"), 2048);
-    const hostname = clampString(
-      coerceString(client.hostname || ""),
-      255,
-    ).toLowerCase();
+    const pathname = textField(client.pathname, 2048) || "/";
+    const hostname = textField(client.hostname, 255).toLowerCase();
     if (!hostname) {
       return { record: null, reason: "missing_hostname" };
     }
-    const rawReferrerUrl = clampString(coerceString(client.referrerUrl), 2000);
+    const rawReferrerUrl = textField(client.referrerUrl, 2000);
     const rawReferrerHost = safeHostname(rawReferrerUrl);
     const referrerIsSameHostname = isSameHostname(rawReferrerHost, hostname);
     const referrerUrl = referrerIsSameHostname ? "" : rawReferrerUrl;
@@ -210,7 +211,7 @@ export async function normalizeIngestRecord(
       routePreviousHashFragment,
     });
     const sessionId =
-      recentSession?.sessionId ||
+      recentSession?.sessionId ??
       (await deriveServerSessionId({
         siteId,
         visitorId,
@@ -253,17 +254,17 @@ export async function normalizeIngestRecord(
         previousScrollDepth: normalizeScrollDepth(client.previousScrollDepth),
         startedAt,
         pathname,
-        queryString: clampString(coerceString(client.query || ""), 2048),
-        hashFragment: clampString(coerceString(client.hash || ""), 1024),
+        queryString: textField(client.query, 2048),
+        hashFragment: textField(client.hash, 1024),
         hostname,
-        title: clampString(coerceString(client.title || ""), 1024),
+        title: textField(client.title, 1024),
         ...attribution,
         channel: classifyTrafficChannel(attribution),
         screenWidth: coerceNumber(client.screenWidth, null),
         screenHeight: coerceNumber(client.screenHeight, null),
-        language: clampString(coerceString(client.language || ""), 120),
+        language: textField(client.language, 120),
         ...contextGeoBase,
-        properties: normalizePageProperties(client.props),
+        properties: normalizeProperties(client.props),
       } satisfies NormalizedPageview,
     };
   }
@@ -314,16 +315,9 @@ export async function normalizeIngestRecord(
 
   if (kind === "custom_event") {
     if (!visitId) return { record: null, reason: "missing_visit_id" };
-    const eventName = clampString(coerceString(client.eventName), 120);
+    const eventName = textField(client.eventName, 120);
     if (!eventName) return { record: null, reason: "missing_event_name" };
-    const eventDataResult = expandCustomEventData(client.eventData);
-    if (!eventDataResult.ok) {
-      return {
-        record: null,
-        reason: "invalid_custom_event_data",
-        detail: { error: eventDataResult.error },
-      };
-    }
+    const properties = normalizeProperties(client.eventData);
     const revenue = normalizeEventRevenue(client.revenue);
     const visit = await context.getVisitContext(siteId, visitId);
     const sequence = 0;
@@ -340,7 +334,7 @@ export async function normalizeIngestRecord(
         receivedAt,
         sequence,
         eventName,
-        eventDataJson: eventDataResult.data.json,
+        propertiesJson: propertiesJson(properties),
         ...revenue,
       });
       return {
@@ -358,7 +352,7 @@ export async function normalizeIngestRecord(
         receivedAt,
         eventAt,
         eventName,
-        eventDataJson: eventDataResult.data.json,
+        properties,
         ...revenue,
         siteId: visit.siteId,
         visitId: visit.visitId,

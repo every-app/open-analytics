@@ -28,87 +28,43 @@ function dsl(source: string): FilterDocument {
   return parseFilterDsl(source, analyticsFilterRegistry);
 }
 
-type PayloadValue = string | number | boolean | null;
-
 /**
  * Four page views in two sessions, the custom events sent from them with
- * their payloads, and one page view property.
+ * their properties, and two page view properties.
  */
 function database(): DatabaseSync {
   const db = createMigratedDatabase();
   db.exec(`
     INSERT INTO site_identities (site_pk, site_id) VALUES (1, '${SITE_ID}');
-    INSERT INTO visits (visit_id, site_id, site_pk, visitor_id, session_id,
+    INSERT INTO visits (visit_id, site_pk, visitor_id, session_id,
       status, started_at, last_activity_at, pathname, hostname, title,
       referrer_host, country, screen_width, is_eu, duration_ms, channel)
     VALUES
-      ('home', '${SITE_ID}', 1, 'v1', 's1', 'complete', 1, 1, '/Docs/100%_ready\\go',
+      ('home', 1, 'v1', 's1', 'complete', 1, 1, '/Docs/100%_ready\\go',
         'WWW.Example.com', 'Home', 'google.com', 'DE', 1280, 1, 500, 'organic_search'),
-      ('pricing', '${SITE_ID}', 1, 'v1', 's1', 'complete', 2, 2, '/docs/100%_ready\\go',
+      ('pricing', 1, 'v1', 's1', 'complete', 2, 2, '/docs/100%_ready\\go',
         'example.com', 'Pricing', '', 'DE', 1280, 1, NULL, 'direct'),
-      ('signup', '${SITE_ID}', 1, 'v2', 's2', 'complete', 3, 3, '/Docs/100Xready\\go',
+      ('signup', 1, 'v2', 's2', 'complete', 3, 3, '/Docs/100Xready\\go',
         'example.com', 'Sign up', 'bing.com', 'US', 390, 0, 20, 'organic_search'),
-      ('outside', '${SITE_ID}', 1, 'v3', 's3', 'complete', 5_000, 5_000, '/late',
+      ('outside', 1, 'v3', 's3', 'complete', 5_000, 5_000, '/late',
         'example.com', 'Late', '', 'US', 390, 0, 20, 'direct');
     INSERT INTO visit_properties (visit_id, key, value, site_pk, started_at)
     VALUES ('home', 'author', 'Jane', 1, 1), ('home', 'a/b', 'slash', 1, 1);
-    INSERT INTO custom_event_names (id, site_id, site_pk, name, last_seen_at)
-    VALUES (1, '${SITE_ID}', 1, 'purchase', 0), (2, '${SITE_ID}', 1, 'signup', 0);
-    INSERT INTO custom_events (event_pk, event_id, site_id, site_pk, visit_id,
-      event_name_id, occurred_at, received_at, node_count, value_count)
+    INSERT INTO custom_event_names (id, site_pk, name, last_seen_at)
+    VALUES (1, 1, 'purchase', 0), (2, 1, 'signup', 0);
+    INSERT INTO custom_events (event_pk, event_id, site_pk, visit_id,
+      event_name_id, occurred_at, received_at)
     VALUES
-      (1, 'buy-pro', '${SITE_ID}', 1, 'pricing', 1, 10, 10, 0, 0),
-      (2, 'buy-free', '${SITE_ID}', 1, 'signup', 1, 11, 11, 0, 0),
-      (3, 'signed-up', '${SITE_ID}', 1, 'signup', 2, 12, 12, 0, 0),
-      (4, 'late-buy', '${SITE_ID}', 1, 'home', 1, 5_000, 5_000, 0, 0);
+      (1, 'buy-pro', 1, 'pricing', 1, 10, 10),
+      (2, 'buy-free', 1, 'signup', 1, 11, 11),
+      (3, 'signed-up', 1, 'signup', 2, 12, 12),
+      (4, 'late-buy', 1, 'home', 1, 5_000, 5_000);
+    INSERT INTO custom_event_properties (event_pk, key, value, site_pk, occurred_at)
+    VALUES
+      (1, 'plan', 'pro', 1, 10), (1, 'seats', '5', 1, 10), (1, 'paid', 'true', 1, 10),
+      (2, 'plan', 'free', 1, 11), (2, 'seats', '0', 1, 11), (2, 'paid', 'false', 1, 11),
+      (4, 'plan', 'pro', 1, 5_000);
   `);
-  const payloads: ReadonlyArray<readonly [number, string, PayloadValue]> = [
-    [1, "/plan", "pro"],
-    [1, "/seats", 5],
-    [1, "/paid", true],
-    [1, "/note", ""],
-    [2, "/plan", "free"],
-    [2, "/seats", 0],
-    [2, "/paid", false],
-    [2, "/note", null],
-    [4, "/plan", "pro"],
-  ];
-  const paths = new Map<string, number>();
-  for (const [eventPk, path, value] of payloads) {
-    if (!paths.has(path)) {
-      paths.set(path, paths.size + 1);
-      db.prepare(
-        "INSERT INTO custom_event_json_paths (id, site_id, site_pk, path, last_seen_at) VALUES (?, ?, 1, ?, 0)",
-      ).run(paths.get(path)!, SITE_ID, path);
-    }
-    const valueType =
-      value === null
-        ? 0
-        : typeof value === "string"
-          ? 1
-          : typeof value === "number"
-            ? 2
-            : 3;
-    const nodeId = paths.get(path)!;
-    db.prepare(
-      "INSERT INTO custom_event_json_nodes (event_pk, node_id, path_id, value_type, depth) VALUES (?, ?, ?, ?, 1)",
-    ).run(eventPk, nodeId, paths.get(path)!, valueType);
-    db.prepare(
-      `INSERT INTO custom_event_json_values (event_pk, node_id, site_id, site_pk,
-        event_name_id, path_id, occurred_at, value_type, string_value,
-        number_value, boolean_value)
-       VALUES (?, ?, ?, 1, 1, ?, 0, ?, ?, ?, ?)`,
-    ).run(
-      eventPk,
-      nodeId,
-      SITE_ID,
-      paths.get(path)!,
-      valueType,
-      typeof value === "string" ? value : null,
-      typeof value === "number" ? value : null,
-      typeof value === "boolean" ? (value ? 1 : 0) : null,
-    );
-  }
   return db;
 }
 
@@ -240,21 +196,18 @@ describe("visitFilterSql", () => {
       "home",
     ]);
     expect(
-      visits(
-        db,
-        'event.name eq "purchase" AND event.payload("/plan") eq "pro"',
-      ),
+      visits(db, 'event.name eq "purchase" AND property("plan") eq "pro"'),
     ).toEqual(["pricing"]);
     expect(
-      visits(db, 'event.name eq "signup" AND event.payload("/plan") eq "free"'),
+      visits(db, 'event.name eq "signup" AND property("plan") eq "free"'),
     ).toEqual([]);
   });
 
   it("matches a custom property of the page view or of one of its events", () => {
     const db = database();
-    expect(visits(db, 'event.payload("/author") eq "Jane"')).toEqual(["home"]);
-    expect(visits(db, 'event.payload("/plan") eq "free"')).toEqual(["signup"]);
-    expect(visits(db, 'event.payload("/a~1b") eq "slash"')).toEqual(["home"]);
+    expect(visits(db, 'property("author") eq "Jane"')).toEqual(["home"]);
+    expect(visits(db, 'property("plan") eq "free"')).toEqual(["signup"]);
+    expect(visits(db, 'property("a/b") eq "slash"')).toEqual(["home"]);
   });
 
   it("rejects an alias that isn't an identifier", () => {
@@ -263,7 +216,7 @@ describe("visitFilterSql", () => {
     ).toThrow(/internal SQL identifier/);
   });
 
-  it("reaches visits through the site's started_at index", () => {
+  it("reaches a page's page views through the page index", () => {
     const db = database();
     const predicate = visitFilterSql(
       dsl('page.path eq "/pricing" AND event.name eq "purchase"'),
@@ -278,13 +231,15 @@ describe("visitFilterSql", () => {
       .all(...(predicate.bindings as SQLInputValue[]))
       .map((row) => String(row.detail))
       .join("\n");
-    expect(plan).toMatch(/SEARCH v USING INDEX idx_visits_site_pk_started_at/);
+    expect(plan).toContain(
+      "SEARCH v USING INDEX idx_visits_site_pk_pathname_started_at (site_pk=? AND pathname=? AND started_at>? AND started_at<?)",
+    );
   });
 
   it("looks a page view property up by the page view's primary key", () => {
     const db = database();
     const predicate = pageViewMatchSql(
-      dsl('event.payload("/author") eq "Jane"'),
+      dsl('property("author") eq "Jane"'),
       scope,
     );
     const plan = db
@@ -295,46 +250,49 @@ describe("visitFilterSql", () => {
       .map((row) => String(row.detail))
       .join("\n");
     expect(plan).toMatch(
-      /SEARCH visit_properties USING PRIMARY KEY \(visit_id=\? AND key=\?\)/,
+      /SEARCH property EXISTS USING PRIMARY KEY \(visit_id=\? AND key=\?\)/,
     );
   });
 });
 
 describe("eventFilterSql", () => {
-  it("keeps JSON types apart", () => {
+  it("compares a property's value as stored, a string", () => {
     const db = database();
-    expect(events(db, 'event.payload("/seats") eq 5')).toEqual(["buy-pro"]);
-    expect(events(db, 'event.payload("/seats") eq "5"')).toEqual([]);
-    expect(events(db, 'event.payload("/seats") eq 0')).toEqual(["buy-free"]);
-    expect(events(db, 'event.payload("/seats") between [1, 10]')).toEqual([
-      "buy-pro",
-    ]);
-    expect(events(db, 'event.payload("/paid") eq true')).toEqual(["buy-pro"]);
-    expect(events(db, 'event.payload("/paid") eq false')).toEqual(["buy-free"]);
-    expect(events(db, 'event.payload("/note") isNull')).toEqual(["buy-free"]);
-    expect(events(db, 'event.payload("/note") isEmpty')).toEqual(["buy-pro"]);
-    expect(events(db, 'event.payload("/note") notEmpty')).toEqual([]);
-    expect(events(db, 'event.payload("/note") notNull')).toEqual(["buy-pro"]);
-    expect(events(db, 'event.payload("/note") notExists')).toEqual([
-      "late-buy",
-      "signed-up",
-    ]);
-    expect(events(db, 'event.payload("/plan") in ["pro", "x"]')).toEqual([
+    expect(events(db, 'property("seats") eq "5"')).toEqual(["buy-pro"]);
+    expect(events(db, 'property("seats") eq "0"')).toEqual(["buy-free"]);
+    expect(events(db, 'property("paid") eq "true"')).toEqual(["buy-pro"]);
+    expect(events(db, 'property("plan") exists')).toEqual([
+      "buy-free",
       "buy-pro",
       "late-buy",
     ]);
-    expect(events(db, 'event.payload("/plan") notIn ["pro"]')).toEqual([
+    expect(events(db, 'property("plan") notExists')).toEqual(["signed-up"]);
+    expect(events(db, 'property("plan") in ["pro", "x"]')).toEqual([
+      "buy-pro",
+      "late-buy",
+    ]);
+    expect(events(db, 'property("plan") notIn ["pro"]')).toEqual(["buy-free"]);
+    expect(events(db, 'property("plan") startsWith "fr"')).toEqual([
       "buy-free",
     ]);
-    expect(events(db, 'event.payload("/plan") startsWith "fr"')).toEqual([
+    expect(events(db, 'property("plan") contains "r"')).toEqual([
       "buy-free",
+      "buy-pro",
+      "late-buy",
     ]);
   });
 
-  it("rejects a list of mixed JSON types", () => {
-    expect(() =>
-      eventFilterSql(dsl('event.payload("/seats") in [5, "5"]'), scope),
-    ).toThrow(/one JSON type/);
+  it("looks an event's property up by the event's primary key", () => {
+    const db = database();
+    const predicate = eventFilterSql(dsl('property("plan") eq "pro"'), scope)!;
+    const plan = db
+      .prepare(`EXPLAIN QUERY PLAN ${EVENTS} WHERE ${predicate.text}`)
+      .all(...(predicate.bindings as SQLInputValue[]))
+      .map((row) => String(row.detail))
+      .join("\n");
+    expect(plan).toMatch(
+      /SEARCH property EXISTS USING PRIMARY KEY \(event_pk=\? AND key=\?\)/,
+    );
   });
 
   it("matches the event's name and its visit's page view fields", () => {

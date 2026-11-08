@@ -474,36 +474,21 @@ describe("query contract time helpers", () => {
     });
   });
 
-  it("combines overview sources and embeds typed trend detail", async () => {
+  it("embeds typed trend detail in the overview", async () => {
     const time = createQueryTime(100, 200, "UTC", 200);
-    const previousTime = createQueryTime(0, 100, "UTC", 200);
     const reader = {
-      readOverview: vi
-        .fn()
-        .mockResolvedValueOnce({
-          value: {
-            views: 4,
-            sessions: 3,
-            visitors: 2,
-            bounces: 1,
-            totalDurationMs: 40,
-            durationViews: 2,
-          },
-          source: "raw",
-          approximateVisitors: false,
-        })
-        .mockResolvedValueOnce({
-          value: {
-            views: 2,
-            sessions: 2,
-            visitors: 1,
-            bounces: 1,
-            totalDurationMs: 10,
-            durationViews: 1,
-          },
-          source: "rollup",
-          approximateVisitors: true,
-        }),
+      readOverview: vi.fn().mockResolvedValue({
+        value: {
+          views: 4,
+          sessions: 3,
+          visitors: 2,
+          bounces: 1,
+          totalDurationMs: 40,
+          durationViews: 2,
+        },
+        source: "raw",
+        approximateVisitors: false,
+      }),
       readTrend: vi.fn().mockResolvedValue({
         value: [
           {
@@ -524,14 +509,14 @@ describe("query contract time helpers", () => {
     const result = await executeOverview(reader, {
       context: siteQueryContext("site-1", "private-dashboard"),
       time,
-      previousTime,
       detailInterval: "hour",
     });
     expect(result).toMatchObject({
       ok: true,
-      data: { previous: { views: 2 }, detail: { interval: "hour" } },
-      meta: { source: "mixed", approximateVisitors: true },
+      data: { current: { views: 4 }, detail: { interval: "hour" } },
+      meta: { source: "raw", approximateVisitors: false },
     });
+    expect(reader.readOverview).toHaveBeenCalledOnce();
     expect(reader.readTrend).toHaveBeenCalledOnce();
   });
 

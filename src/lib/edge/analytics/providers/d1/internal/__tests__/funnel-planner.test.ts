@@ -50,13 +50,12 @@ function database(
   for (const visit of visits) {
     database
       .prepare(
-        `INSERT INTO visits (visit_id, site_id, site_pk, visitor_id, session_id, status,
+        `INSERT INTO visits (visit_id, site_pk, visitor_id, session_id, status,
           started_at, last_activity_at, pathname, hostname, country)
-         VALUES (?, ?, ?, ?, ?, 'complete', ?, ?, ?, 'example.com', ?)`,
+         VALUES (?, ?, ?, ?, 'complete', ?, ?, ?, 'example.com', ?)`,
       )
       .run(
         visit.id,
-        `site-${visit.sitePk ?? 1}`,
         visit.sitePk ?? 1,
         visit.visitor,
         visit.session,
@@ -73,24 +72,18 @@ function database(
       names.set(key, names.size + 1);
       database
         .prepare(
-          "INSERT INTO custom_event_names (id, site_id, site_pk, name, last_seen_at) VALUES (?, ?, ?, ?, 0)",
+          "INSERT INTO custom_event_names (id, site_pk, name, last_seen_at) VALUES (?, ?, ?, 0)",
         )
-        .run(
-          names.get(key)!,
-          `site-${event.sitePk ?? 1}`,
-          event.sitePk ?? 1,
-          event.name,
-        );
+        .run(names.get(key)!, event.sitePk ?? 1, event.name);
     }
     database
       .prepare(
-        `INSERT INTO custom_events (event_id, site_id, site_pk, visit_id, event_name_id,
-          occurred_at, received_at, sequence, node_count, value_count)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0)`,
+        `INSERT INTO custom_events (event_id, site_pk, visit_id, event_name_id,
+          occurred_at, received_at, sequence)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         event.id,
-        `site-${event.sitePk ?? 1}`,
         event.sitePk ?? 1,
         event.visit,
         names.get(key)!,
@@ -280,9 +273,9 @@ describe("FunnelSqlPlan", () => {
     ).toMatchObject({ sessions: 0, visitors: 0 });
 
     db.prepare(
-      `INSERT INTO custom_events (event_id, site_id, site_pk, visit_id, event_name_id,
-        occurred_at, received_at, sequence, node_count, value_count)
-       VALUES ('event-same-time', 'site-1', 1, 'visit-1', 1, 100, 100, 0, 0, 0)`,
+      `INSERT INTO custom_events (event_id, site_pk, visit_id, event_name_id,
+        occurred_at, received_at, sequence)
+       VALUES ('event-same-time', 1, 'visit-1', 1, 100, 100, 0)`,
     ).run();
     expect(
       runPlan(db, buildFunnelSqlPlan(config(LANDING_THEN_SIGNUP), source()))[1],

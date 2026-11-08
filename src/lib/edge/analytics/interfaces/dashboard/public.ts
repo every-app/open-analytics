@@ -45,12 +45,12 @@ const OVERVIEW_TABS: Readonly<Record<string, OverviewTab>> = {
 const PUBLIC_QUERY_PATHS = new Set([
   "overview",
   "trend",
+  "dashboard",
   "pages",
   "referrers",
   "pages-dashboard",
   "event-types",
   "filter-values",
-  "overview-geo-points",
   ...Object.keys(SIMPLE_DIMENSIONS),
   ...Object.keys(OVERVIEW_TABS),
 ]);
@@ -80,6 +80,11 @@ export function executePublicQuery(
   if (input.pathname === "trend") {
     return import("./protocol/overview").then(({ handleTrendContract }) =>
       handleTrendContract(input.env, input.siteId, url, ctx, queryContext),
+    );
+  }
+  if (input.pathname === "dashboard") {
+    return import("./protocol/dashboard").then(({ handleDashboardContract }) =>
+      handleDashboardContract(input.env, input.siteId, url, ctx, queryContext),
     );
   }
   if (input.pathname === "pages") {
@@ -120,18 +125,6 @@ export function executePublicQuery(
     return import("./protocol/filter-values").then(
       ({ handleFilterValuesContract }) =>
         handleFilterValuesContract(
-          input.env,
-          input.siteId,
-          url,
-          ctx,
-          queryContext,
-        ),
-    );
-  }
-  if (input.pathname === "overview-geo-points") {
-    return import("./protocol/overview-extras").then(
-      ({ handleOverviewGeoPointsContract }) =>
-        handleOverviewGeoPointsContract(
           input.env,
           input.siteId,
           url,

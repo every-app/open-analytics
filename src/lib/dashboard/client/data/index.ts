@@ -4,8 +4,7 @@ export {
   deleteFunnel,
   deleteGoal,
   fetchAllGoals,
-  fetchEventTypeFields,
-  fetchEventTypeFieldValues,
+  fetchDashboard,
   fetchFunnelDetail,
   fetchFunnels,
   fetchGoalConversions,
@@ -19,10 +18,7 @@ export {
   updateFunnel,
   updateGoal,
 } from "@/lib/dashboard/client/data/core";
-export {
-  fetchOverviewGeoDimensionTabPage,
-  fetchOverviewGeoPoints,
-} from "@/lib/dashboard/client/data/geo";
+export { fetchOverviewGeoDimensionTabPage } from "@/lib/dashboard/client/data/geo";
 export { fetchPagesDashboard } from "@/lib/dashboard/client/data/pages";
 export {
   fetchPropertyKeys,

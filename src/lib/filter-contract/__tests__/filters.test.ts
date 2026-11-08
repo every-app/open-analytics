@@ -77,33 +77,39 @@ describe("filter documents", () => {
     );
   });
 
-  it("takes custom properties by JSON pointer with typed values", () => {
+  it("takes custom properties by key, with string values, trimmed", () => {
     expect(
       normalize({
-        target: { kind: "event-payload", path: "/plan" },
-        operator: "between",
-        value: [1, 2],
-      }).conditions[0]?.value,
-    ).toEqual([1, 2]);
+        target: { kind: "property", key: " plan " },
+        operator: "eq",
+        value: " pro ",
+      }).conditions[0],
+    ).toEqual({
+      target: { kind: "property", key: "plan" },
+      operator: "eq",
+      value: "pro",
+    });
+    for (const key of ["", "  ", "k".repeat(65), 1]) {
+      expect(
+        code(() =>
+          normalize({
+            target: { kind: "property", key },
+            operator: "eq",
+            value: "pro",
+          }),
+        ),
+      ).toBe("invalid_property_key");
+    }
     expect(
       code(() =>
         normalize({
-          target: { kind: "event-payload", path: "plan" },
-          operator: "eq",
-          value: "pro",
+          target: { kind: "property", key: "seats" },
+          operator: "gt",
+          value: "1",
         }),
       ),
-    ).toBe("invalid_json_path");
-    expect(
-      code(() =>
-        normalize({
-          target: { kind: "event-payload", path: "/a~2" },
-          operator: "eq",
-          value: 1,
-        }),
-      ),
-    ).toBe("invalid_json_path");
-    expect(code(() => normalize(field("event.payload", "eq", "pro")))).toBe(
+    ).toBe("operator_not_allowed");
+    expect(code(() => normalize(field("property", "eq", "pro")))).toBe(
       "invalid_target",
     );
   });
@@ -197,16 +203,6 @@ describe("filter documents", () => {
       "reversed_range",
     ],
     [
-      "a mixed-type range",
-      () =>
-        normalize({
-          target: { kind: "event-payload", path: "/a" },
-          operator: "between",
-          value: [1, "2"],
-        }),
-      "invalid_range",
-    ],
-    [
       "a non-scalar value",
       () => normalize(field("page.path", "eq", { a: 1 })),
       "invalid_value",
@@ -247,34 +243,14 @@ describe("filter documents", () => {
       "invalid_string",
     ],
     [
-      "an infinite custom property",
-      () =>
-        normalize({
-          target: { kind: "event-payload", path: "/a" },
-          operator: "eq",
-          value: Infinity,
-        }),
-      "invalid_number",
-    ],
-    [
       "a null to compare with",
       () =>
         normalize({
-          target: { kind: "event-payload", path: "/a" },
+          target: { kind: "property", key: "a" },
           operator: "eq",
           value: null,
         }),
-      "invalid_value",
-    ],
-    [
-      "a number to search text for",
-      () =>
-        normalize({
-          target: { kind: "event-payload", path: "/a" },
-          operator: "contains",
-          value: 1,
-        }),
-      "invalid_value",
+      "invalid_string",
     ],
   ])("rejects %s", (_name, run, expected) => {
     expect(code(run)).toBe(expected);

@@ -6,11 +6,12 @@ import type { DashboardComparisonQuery } from "@/lib/dashboard/comparison-query"
 import { filterQueryKey } from "@/lib/dashboard/filter-query-key";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type {
-  OverviewData,
   OverviewMetrics,
   TrendPoint,
 } from "@/lib/dashboard-api/client/edge";
 import type { FilterDocument } from "@/lib/filter-contract/index";
+
+import type { DashboardLoad } from "./dashboard-load";
 
 export interface OverviewSummary {
   current: OverviewMetrics;
@@ -21,63 +22,68 @@ export interface OverviewSummary {
   comparisonPoints?: TrendPoint[];
 }
 
-function detailPoints(overview: OverviewData): TrendPoint[] {
-  if (!overview.detail) throw new Error("overview_detail_missing");
-  return overview.detail.data;
+interface ReferenceSummary {
+  reference: OverviewMetrics;
+  comparisonPoints?: TrendPoint[];
+}
+
+/** The period just before `window`, as long as it. */
+export function previousPeriod(window: TimeWindow): TimeWindow {
+  return { ...window, from: 2 * window.from - window.to, to: window.from };
 }
 
 /**
- * The totals and per-interval points the top stats and the main graph read.
- * With Compare on, the comparison's totals and points come along; without,
- * the change is against the previous period. A failed request fails the
- * query, so the stats and graph say so instead of showing zeros.
+ * What the stats' changes are measured against: with Compare on, the
+ * comparison's totals and points; without, the previous period's totals.
  */
-export async function fetchOverviewSummary(
+export async function fetchReferenceSummary(
   siteId: string,
   window: TimeWindow,
   filters: FilterDocument,
   comparisonQuery: DashboardComparisonQuery | null,
   signal: AbortSignal,
-): Promise<OverviewSummary> {
+): Promise<ReferenceSummary> {
   if (comparisonQuery) {
-    const [current, comparison] = await Promise.all([
-      fetchOverview(siteId, window, filters, { includeDetail: true, signal }),
-      fetchOverview(siteId, comparisonQuery.window, comparisonQuery.filters, {
-        includeDetail: true,
-        signal,
-      }),
-    ]);
+    const comparison = await fetchOverview(
+      siteId,
+      comparisonQuery.window,
+      comparisonQuery.filters,
+      { includeDetail: true, signal },
+    );
+    if (!comparison.detail) throw new Error("overview_detail_missing");
     return {
-      current: current.data,
-      currentPoints: detailPoints(current),
       reference: comparison.data,
-      comparisonPoints: detailPoints(comparison),
+      comparisonPoints: comparison.detail.data,
     };
   }
-  const current = await fetchOverview(siteId, window, filters, {
-    includeChange: true,
-    includeDetail: true,
-    signal,
-  });
-  if (!current.previousData) throw new Error("overview_previous_missing");
-  return {
-    current: current.data,
-    currentPoints: detailPoints(current),
-    reference: current.previousData,
-  };
+  const previous = await fetchOverview(
+    siteId,
+    previousPeriod(window),
+    filters,
+    { signal },
+  );
+  return { reference: previous.data };
 }
 
+/**
+ * The totals and per-interval points the top stats and the main graph read:
+ * the dashboard load's, and what they're measured against. A failed request
+ * fails the summary, so the stats and graph say so instead of showing zeros.
+ */
 export function useOverviewSummaryQuery({
   siteId,
   window,
   filters,
   comparisonQuery,
+  load,
 }: {
   siteId: string;
   window: TimeWindow;
   filters: FilterDocument;
   comparisonQuery: DashboardComparisonQuery | null;
+  load: DashboardLoad;
 }) {
+  const current = useQuery(load.query);
   const filtersKey = useMemo(() => filterQueryKey(filters), [filters]);
   const comparisonKey = comparisonQuery
     ? [
@@ -86,11 +92,11 @@ export function useOverviewSummaryQuery({
         comparisonQuery.window.to,
         filterQueryKey(comparisonQuery.filters),
       ]
-    : ["none"];
-  return useQuery({
+    : ["previous"];
+  const reference = useQuery({
     queryKey: [
       "dashboard",
-      "overview-summary",
+      "overview-reference",
       siteId,
       window.from,
       window.to,
@@ -100,8 +106,26 @@ export function useOverviewSummaryQuery({
       ...comparisonKey,
     ],
     queryFn: ({ signal }) =>
-      fetchOverviewSummary(siteId, window, filters, comparisonQuery, signal),
+      fetchReferenceSummary(siteId, window, filters, comparisonQuery, signal),
     enabled: typeof globalThis.window !== "undefined",
     placeholderData: keepPreviousData,
   });
+  const data = useMemo<OverviewSummary | undefined>(
+    () =>
+      current.data && reference.data
+        ? {
+            current: current.data.overview,
+            currentPoints: current.data.trend.data,
+            ...reference.data,
+          }
+        : undefined,
+    [current.data, reference.data],
+  );
+  return {
+    data,
+    isPlaceholderData: current.isPlaceholderData || reference.isPlaceholderData,
+    isFetching: current.isFetching || reference.isFetching,
+    isError: current.isError || reference.isError,
+    refetch: () => Promise.all([current.refetch(), reference.refetch()]),
+  };
 }

@@ -8,13 +8,18 @@ import {
   type SqliteD1Trace,
 } from "@/lib/db/__tests__/sqlite-d1";
 import { seedSites } from "@/lib/edge/__tests__/rollup-fixtures";
+import { executePrivateQuery } from "@/lib/edge/analytics/interfaces/dashboard/private";
+import { createGoalDefinition } from "@/lib/edge/analytics/providers/d1/internal/goals";
 import { IngestDurableObject } from "@/lib/edge/ingest/durable-object";
+import { utcDay } from "@/lib/edge/ingest/visitor-salts";
 import { runVisitRollups } from "@/lib/edge/scheduled-tasks/visit-rollups";
 import type {
   Env,
   IngestEnvelopePayload,
   TrackerClientPayload,
 } from "@/lib/edge/types";
+import { idFromSha256Hex } from "@/lib/edge/utils";
+import { sha256Hex } from "@/lib/sha256";
 const NOW = Date.UTC(2026, 4, 25, 12, 0, 0);
 const VISIT_TIMEOUT_MS = 12 * 60 * 60 * 1000;
 const RECENT_EVENT_RETENTION_MS = 30 * 60 * 1000;
@@ -24,7 +29,6 @@ type SqlBinding = string | number | null;
 type SqlRow = Record<string, unknown>;
 const VISIT_COLUMNS = [
   "visit_id",
-  "site_id",
   "site_pk",
   "visitor_id",
   "session_id",
@@ -56,8 +60,6 @@ const VISIT_COLUMNS = [
   "region_code",
   "city",
   "continent",
-  "latitude",
-  "longitude",
   "timezone",
   "browser",
   "browser_version",
@@ -72,6 +74,9 @@ const VISIT_COLUMNS = [
 ] as const;
 const BUFFERED_VISIT_COLUMNS = [
   ...VISIT_COLUMNS.filter((column) => column !== "site_pk"),
+  "site_id",
+  "latitude",
+  "longitude",
   "hidden_at",
   "dirty",
   "flush_attempts",
@@ -204,10 +209,9 @@ class FakeD1Database {
       );
       CREATE TABLE visits (
         visit_id TEXT PRIMARY KEY,
-        site_id TEXT NOT NULL,
         site_pk INTEGER NOT NULL,
-        visitor_id TEXT NOT NULL,
-        session_id TEXT NOT NULL,
+        visitor_id INTEGER NOT NULL,
+        session_id INTEGER NOT NULL,
         status TEXT NOT NULL,
         started_at INTEGER NOT NULL,
         last_activity_at INTEGER NOT NULL,
@@ -236,8 +240,6 @@ class FakeD1Database {
         region_code TEXT NOT NULL DEFAULT '',
         city TEXT NOT NULL DEFAULT '',
         continent TEXT NOT NULL DEFAULT '',
-        latitude REAL,
-        longitude REAL,
         timezone TEXT NOT NULL DEFAULT '',
         browser TEXT NOT NULL DEFAULT '',
         browser_version TEXT NOT NULL DEFAULT '',
@@ -252,74 +254,32 @@ class FakeD1Database {
       );
       CREATE TABLE custom_event_names (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        site_id TEXT NOT NULL,
         site_pk INTEGER NOT NULL,
         name TEXT NOT NULL,
         created_at INTEGER NOT NULL,
         last_seen_at INTEGER NOT NULL,
         UNIQUE(site_pk, name)
       );
-      CREATE TABLE custom_event_json_keys (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        site_id TEXT NOT NULL,
-        site_pk INTEGER NOT NULL,
-        "key" TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        last_seen_at INTEGER NOT NULL,
-        UNIQUE(site_pk, "key")
-      );
-      CREATE TABLE custom_event_json_paths (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        site_id TEXT NOT NULL,
-        site_pk INTEGER NOT NULL,
-        path TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        last_seen_at INTEGER NOT NULL,
-        UNIQUE(site_pk, path)
-      );
       CREATE TABLE custom_events (
         event_pk INTEGER PRIMARY KEY AUTOINCREMENT,
         event_id TEXT NOT NULL UNIQUE,
-        site_id TEXT NOT NULL,
         site_pk INTEGER NOT NULL,
         visit_id TEXT NOT NULL,
         event_name_id INTEGER NOT NULL,
         occurred_at INTEGER NOT NULL,
         received_at INTEGER NOT NULL,
         sequence INTEGER NOT NULL,
-        node_count INTEGER NOT NULL,
-        value_count INTEGER NOT NULL,
         revenue_amount REAL,
         revenue_currency TEXT,
         created_at INTEGER NOT NULL
       );
-      CREATE TABLE custom_event_json_nodes (
+      CREATE TABLE custom_event_properties (
         event_pk INTEGER NOT NULL,
-        node_id INTEGER NOT NULL,
-        parent_node_id INTEGER,
-        key_id INTEGER,
-        path_id INTEGER NOT NULL,
-        value_type INTEGER NOT NULL,
-        member_order INTEGER,
-        array_index INTEGER,
-        depth INTEGER NOT NULL,
-        UNIQUE(event_pk, node_id)
-      );
-      CREATE TABLE custom_event_json_values (
-        event_pk INTEGER NOT NULL,
-        node_id INTEGER NOT NULL,
-        site_id TEXT NOT NULL,
+        key TEXT NOT NULL,
+        value TEXT NOT NULL,
         site_pk INTEGER NOT NULL,
-        event_name_id INTEGER NOT NULL,
-        path_id INTEGER NOT NULL,
         occurred_at INTEGER NOT NULL,
-        scope_node_id INTEGER,
-        value_type INTEGER NOT NULL,
-        string_value TEXT,
-        string_hash TEXT,
-        number_value REAL,
-        boolean_value INTEGER,
-        UNIQUE(event_pk, node_id, path_id)
+        PRIMARY KEY (event_pk, key)
       );
       CREATE TABLE visit_rollup_state (
         site_pk INTEGER PRIMARY KEY,
@@ -442,10 +402,9 @@ function toSeconds(ms: number): number {
 function visitRecord(overrides: Partial<VisitRecord> = {}): VisitRecord {
   return {
     visit_id: "visit-1",
-    site_id: "site-1",
     site_pk: 1,
-    visitor_id: "visitor-1",
-    session_id: "session-1",
+    visitor_id: 11,
+    session_id: 21,
     status: "open",
     started_at: NOW - 1_000,
     last_activity_at: NOW - 1_000,
@@ -474,8 +433,6 @@ function visitRecord(overrides: Partial<VisitRecord> = {}): VisitRecord {
     region_code: "CA",
     city: "San Francisco",
     continent: "NA",
-    latitude: 37.77,
-    longitude: -122.42,
     timezone: "America/Los_Angeles",
     browser: "Chrome",
     browser_version: "120",
@@ -498,6 +455,9 @@ function bufferedVisitRecord(
     ...Object.fromEntries(
       VISIT_COLUMNS.map((column) => [column, base[column]]),
     ),
+    site_id: "site-1",
+    latitude: 37.77,
+    longitude: -122.42,
     hidden_at: null,
     dirty: 1,
     flush_attempts: 0,
@@ -530,7 +490,7 @@ function insertBufferedCustomEvent(
     received_at: NOW,
     sequence: 0,
     event_name: "Test Event",
-    event_data_json: "{}",
+    properties_json: null,
     dirty: 1,
     flush_attempts: 0,
     last_flush_error: null,
@@ -656,6 +616,11 @@ function envelope(
     },
   };
 }
+/** Ids as a buffer kept them before they were integers: SHA-256 hex. */
+const HEX_VISITOR =
+  "d2a84f4b8b650937ec8f73cd8be2c74add5a911ba64df27458ed8229da804a26";
+const HEX_SESSION =
+  "0b6e3a9f0c1d2e3f405162738495a6b7c8d9e0f1021324354657687980a1b2c3";
 const ENTRY_ATTRIBUTION = {
   referrer_host: "ref.example",
   utm_source: "newsletter",
@@ -1048,10 +1013,10 @@ describe("IngestDurableObject", () => {
           id: "visit-1",
           eventType: "visit",
           visitId: "visit-1",
-          sessionId: visit.session_id,
+          sessionId: String(visit.session_id),
           pathname: "/docs",
           hostname: "example.com",
-          visitorId: visit.visitor_id,
+          visitorId: String(visit.visitor_id),
           screenWidth: 1440,
           screenHeight: 900,
         },
@@ -1077,13 +1042,14 @@ describe("IngestDurableObject", () => {
     );
 
     expect(response.status).toBe(202);
-    const [visit] = localRows<{ visitor_id: string; is_eu: number }>(
+    const [visit] = localRows<{ visitor_id: number; is_eu: number }>(
       ctx.sql,
       "SELECT visitor_id, is_eu FROM buffered_visits WHERE visit_id = ?",
       "visit-1",
     );
     expect(visit?.is_eu).toBe(1);
-    expect(visit?.visitor_id).toMatch(/^[0-9a-f]{64}$/);
+    // An integer: the first 13 hex digits of a SHA-256, as D1 keeps it.
+    expect(Number.isSafeInteger(visit?.visitor_id)).toBe(true);
   });
 
   it("closes previous pageviews and handles leave events", async () => {
@@ -1693,7 +1659,7 @@ describe("IngestDurableObject", () => {
     ).toEqual({ status: "complete", dirty: 0 });
   });
 
-  it("buffers custom events waiting for a visit, rejects invalid data, and flushes event JSON paths", async () => {
+  it("buffers custom events waiting for a visit and flushes their flat properties", async () => {
     const ctx = createTestDo();
 
     const waiting = await postIngest(
@@ -1703,7 +1669,7 @@ describe("IngestDurableObject", () => {
         visitId: "visit-1",
         eventId: "event-waiting",
         eventName: "Checkout Started",
-        eventData: { cart: { total: 42, currency: "USD" } },
+        eventData: { cart: { total: 42, currency: "USD" }, step: 1 },
         sequence: 1,
       }),
     );
@@ -1718,21 +1684,6 @@ describe("IngestDurableObject", () => {
         "event-waiting",
       )[0],
     ).toEqual({ dirty: 1, flush_attempts: 0 });
-
-    const invalid = await postIngest(
-      ctx.object,
-      envelope({
-        kind: "custom_event",
-        visitId: "visit-1",
-        eventId: "event-invalid",
-        eventName: "Bad Data",
-        eventData: null,
-      }),
-    );
-    expect(invalid.status).toBe(202);
-    await expect(invalid.text()).resolves.toBe(
-      "ignored:invalid_custom_event_data",
-    );
 
     await postIngest(ctx.object, envelope());
     expect(ctx.getAlarmAt()).toBe(NOW + 60_000);
@@ -1774,13 +1725,37 @@ describe("IngestDurableObject", () => {
         "SELECT name FROM custom_event_names ORDER BY name",
       ),
     ).toEqual([{ name: "Checkout Finished" }, { name: "Checkout Started" }]);
+    // Nested values are dropped key by key; scalars are kept as strings.
     expect(
-      ctx.d1
-        .all<{
-          path: string;
-        }>("SELECT path FROM custom_event_json_paths ORDER BY path")
-        .map((row) => row.path),
-    ).toEqual(expect.arrayContaining(["/", "/cart/total", "/nested/valid"]));
+      ctx.d1.all(
+        `SELECT e.event_id, p.key, p.value, p.site_pk, p.occurred_at = e.occurred_at AS same_time
+         FROM custom_event_properties p
+         JOIN custom_events e ON e.event_pk = p.event_pk
+         ORDER BY e.event_id, p.key`,
+      ),
+    ).toEqual([
+      {
+        event_id: "event-live",
+        key: "coupon",
+        value: "SAVE",
+        site_pk: 1,
+        same_time: 1,
+      },
+      {
+        event_id: "event-live",
+        key: "revenue",
+        value: "42",
+        site_pk: 1,
+        same_time: 1,
+      },
+      {
+        event_id: "event-waiting",
+        key: "step",
+        value: "1",
+        site_pk: 1,
+        same_time: 1,
+      },
+    ]);
     expect(
       localRows<{ dirty: number }>(
         ctx.sql,
@@ -2200,9 +2175,9 @@ describe("IngestDurableObject", () => {
         last_activity_at, ended_at, finalized_at, pathname, hostname, dirty,
         flush_attempts, next_due_at, flush_due_at, created_at, updated_at
       ) VALUES (
-        'waiting-visit', 'site-1', 'visitor-1', 'session-1', 'complete',
+        'waiting-visit', 'site-1', '${HEX_VISITOR}', '${HEX_SESSION}', 'complete',
         ${NOW - 60_000}, ${NOW - 30_000}, ${NOW - 30_000}, ${NOW - 30_000},
-        '/', 'example.com', 1, 3, ${NOW + 8 * 60_000}, ${NOW + 8 * 60_000},
+        ' /pricing ', 'example.com', 1, 3, ${NOW + 8 * 60_000}, ${NOW + 8 * 60_000},
         ${toSeconds(NOW)}, ${toSeconds(NOW)}
       );
       INSERT INTO buffered_custom_events (
@@ -2224,13 +2199,96 @@ describe("IngestDurableObject", () => {
     vi.setSystemTime(NOW + 60_000);
     await ctx.object.alarm();
 
-    expect(ctx.d1.all("SELECT visit_id, status FROM visits")).toEqual([
-      { visit_id: "waiting-visit", status: "complete" },
+    // Its hex ids reach D1 as the integers ingest now derives, and its text
+    // trimmed as ingest now stores it.
+    expect(
+      ctx.d1.all(
+        "SELECT visit_id, status, pathname, visitor_id, session_id FROM visits",
+      ),
+    ).toEqual([
+      {
+        visit_id: "waiting-visit",
+        status: "complete",
+        pathname: "/pricing",
+        visitor_id: idFromSha256Hex(HEX_VISITOR),
+        session_id: idFromSha256Hex(HEX_SESSION),
+      },
     ]);
     expect(ctx.d1.all("SELECT event_id FROM custom_events")).toEqual([
       { event_id: "waiting-event" },
     ]);
     expect(ctx.getAlarmAt()).toBeNull();
+  });
+
+  it("keeps a session open across the upgrade to integer ids", async () => {
+    // A buffer as the previous version left it: an open page view whose ids
+    // are SHA-256 hex, from the visitor the next page view comes from.
+    const sql = new SqliteSqlStorage();
+    const salt = "salt-of-the-day";
+    const request = envelope().request;
+    const hexVisitor = await sha256Hex(
+      [
+        salt,
+        "site-1",
+        request.headers["cf-connecting-ip"],
+        request.headers["user-agent"],
+      ].join("|"),
+    );
+    sql.db.exec(`
+      CREATE TABLE visitor_salts (day TEXT PRIMARY KEY, salt TEXT NOT NULL);
+      INSERT INTO visitor_salts VALUES ('${utcDay(NOW)}', '${salt}');
+    `);
+    // The previous shape: today's table, its ids text.
+    const current = createTestDo()
+      .sql.exec("SELECT sql FROM sqlite_master WHERE name = 'buffered_visits'")
+      .toArray() as Array<{ sql: string }>;
+    sql.db.exec(
+      current[0]!.sql
+        .replace("visitor_id INTEGER NOT NULL", "visitor_id TEXT NOT NULL")
+        .replace("session_id INTEGER NOT NULL", "session_id TEXT NOT NULL"),
+    );
+    insertBufferedVisit(sql, {
+      visit_id: "before-deploy",
+      visitor_id: hexVisitor,
+      session_id: HEX_SESSION,
+      status: "open",
+      dirty: 0,
+      started_at: NOW - 60_000,
+      last_activity_at: NOW - 30_000,
+    });
+
+    const ctx = createTestDo({}, sql);
+    await postIngest(
+      ctx.object,
+      envelope({ visitId: "after-deploy", referrerUrl: "" }),
+    );
+
+    expect(
+      localRows(
+        ctx.sql,
+        "SELECT visit_id, visitor_id, session_id, dirty FROM buffered_visits ORDER BY started_at",
+      ),
+    ).toEqual([
+      {
+        visit_id: "before-deploy",
+        visitor_id: idFromSha256Hex(hexVisitor),
+        session_id: idFromSha256Hex(HEX_SESSION),
+        // Written to D1 again, as the previous Worker's flush may have failed.
+        dirty: 1,
+      },
+      {
+        visit_id: "after-deploy",
+        visitor_id: idFromSha256Hex(hexVisitor),
+        session_id: idFromSha256Hex(HEX_SESSION),
+        dirty: 1,
+      },
+    ]);
+    expect(
+      localRows<{ type: string }>(
+        ctx.sql,
+        "SELECT typeof(visitor_id) AS type FROM buffered_visits",
+      ).map((row) => row.type),
+    ).toEqual(["integer", "integer"]);
   });
 
   it("does not clear a page view that ended while D1 wrote it", async () => {
@@ -2303,7 +2361,7 @@ describe("IngestDurableObject", () => {
       `
         INSERT INTO buffered_custom_events (
           event_id, site_id, visit_id, occurred_at, received_at, sequence,
-          event_name, event_data_json, dirty, flush_attempts,
+          event_name, properties_json, dirty, flush_attempts,
           last_flush_error, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
@@ -2314,7 +2372,7 @@ describe("IngestDurableObject", () => {
       NOW - retention - 1,
       0,
       "Old Event",
-      "{}",
+      null,
       0,
       0,
       null,
@@ -2757,31 +2815,14 @@ describe("IngestDurableObject", () => {
     });
   });
 
-  it("retains custom events when D1 custom event flush expansion or insert verification fails", async () => {
-    const invalidJsonCtx = createTestDo();
-    invalidJsonCtx.d1.insertVisit({ visit_id: "visit-invalid-json" });
-    insertBufferedCustomEvent(invalidJsonCtx.sql, {
-      event_id: "event-invalid-json",
-      visit_id: "visit-invalid-json",
-      event_data_json: "{not-json",
-    });
-    vi.setSystemTime(NOW + 60_000);
-
-    await invalidJsonCtx.object.alarm();
-    expect(
-      localRows<{ events: number }>(
-        invalidJsonCtx.sql,
-        "SELECT COUNT(*) AS events FROM buffered_custom_events",
-      )[0]?.events,
-    ).toBe(1);
-
+  it("retains a custom event when D1 doesn't create it", async () => {
     const missingInsertCtx = createTestDo();
     missingInsertCtx.d1.insertVisit({ visit_id: "visit-removed-before-batch" });
     insertBufferedCustomEvent(missingInsertCtx.sql, {
       event_id: "event-missing-insert",
       visit_id: "visit-removed-before-batch",
       event_name: "Missing Insert",
-      event_data_json: '{"ok":true}',
+      properties_json: '{"ok":"true"}',
     });
     missingInsertCtx.d1.beforeBatch = () => {
       missingInsertCtx.d1.db
@@ -2865,35 +2906,6 @@ describe("IngestDurableObject", () => {
   });
 
   it("repairs legacy buffered custom event schemas during initialization", () => {
-    const legacySql = new SqliteSqlStorage();
-    legacySql.exec(`
-      CREATE TABLE buffered_custom_events (
-        event_id TEXT PRIMARY KEY,
-        site_id TEXT NOT NULL,
-        visit_id TEXT NOT NULL,
-        visitor_id TEXT NOT NULL,
-        session_id TEXT NOT NULL,
-        pathname TEXT NOT NULL,
-        hostname TEXT NOT NULL,
-        occurred_at INTEGER NOT NULL,
-        event_name TEXT NOT NULL,
-        event_data_json TEXT NOT NULL DEFAULT '{}',
-        dirty INTEGER NOT NULL DEFAULT 1,
-        flush_attempts INTEGER NOT NULL DEFAULT 0,
-        last_flush_error TEXT,
-        created_at INTEGER NOT NULL
-      )
-    `);
-
-    createTestDo({}, legacySql);
-
-    expect(
-      localRows<{ name: string }>(
-        legacySql,
-        "PRAGMA table_info(buffered_custom_events)",
-      ).map((column) => column.name),
-    ).toEqual(expect.arrayContaining(["received_at", "sequence"]));
-
     const preSchedulingSql = new SqliteSqlStorage();
     preSchedulingSql.exec(`
       CREATE TABLE buffered_custom_events (
@@ -2973,7 +2985,7 @@ describe("IngestDurableObject", () => {
         event_id: `event-budget-${index}`,
         visit_id: "event-budget-visit",
         event_name: "Budget Event",
-        event_data_json: '{"ok":true}',
+        properties_json: '{"ok":"true"}',
       });
     }
 
@@ -3011,7 +3023,7 @@ describe("IngestDurableObject", () => {
       event_id: "old-flushed-event",
       visit_id: "old-event-visit",
       event_name: "Old Flushed",
-      event_data_json: '{"ok":true}',
+      properties_json: '{"ok":"true"}',
       occurred_at: NOW - RECENT_EVENT_RETENTION_MS - 1,
       received_at: NOW - RECENT_EVENT_RETENTION_MS - 1,
       created_at: toSeconds(NOW - RECENT_EVENT_RETENTION_MS - 1),
@@ -3079,7 +3091,7 @@ describe("IngestDurableObject", () => {
         event_id: `only-hydrated-event-${index}`,
         visit_id: "only-persisted-orphan",
         event_name: "Hydrated Orphan",
-        event_data_json: '{"ok":true}',
+        properties_json: '{"ok":"true"}',
         occurred_at: NOW - VISIT_TIMEOUT_MS - 1_000 + index,
         received_at: NOW - VISIT_TIMEOUT_MS - 1_000 + index,
         created_at: toSeconds(NOW - VISIT_TIMEOUT_MS - 1_000 + index),
@@ -3700,7 +3712,12 @@ describe("page view properties", () => {
     ).toEqual([
       {
         visit_id: "with-props",
-        properties_json: JSON.stringify({ author: "Jane", section: "blog" }),
+        // A number is kept as a string, as on custom events.
+        properties_json: JSON.stringify({
+          author: "Jane",
+          section: "blog",
+          seats: "5",
+        }),
       },
       { visit_id: "without-props", properties_json: null },
     ]);
@@ -3712,6 +3729,13 @@ describe("page view properties", () => {
         visit_id: "with-props",
         key: "author",
         value: "Jane",
+        site_pk: 1,
+        started_at: NOW - 1_000,
+      },
+      {
+        visit_id: "with-props",
+        key: "seats",
+        value: "5",
         site_pk: 1,
         started_at: NOW - 1_000,
       },
@@ -3743,6 +3767,99 @@ describe("page view properties", () => {
         .get(),
     ).toEqual({ status: "complete" });
     expect(properties()).toEqual(flushed);
+    database.close();
+  });
+});
+
+describe("custom event properties", () => {
+  it("keeps an event's flat properties from ingest to the properties card and a property goal", async () => {
+    const database = createMigratedDatabase();
+    seedSites(database, [{ siteId: "site-1", sitePk: 1 }]);
+    const env = {
+      DB: createSqliteD1Database(database),
+      MAIN_SECRET: "e2e-secret",
+    } as unknown as Env;
+    const goal = await createGoalDefinition(env, "site-1", "Pro signups", {
+      filterDslVersion: 1,
+      filterDsl: 'property("plan") eq "pro"',
+    });
+    const ctx = createTestDo({ DB: env.DB });
+
+    await postIngest(
+      ctx.object,
+      envelope({ visitId: "visit-1", props: { author: "Jane" } }),
+    );
+    // The body the collector forwards, nested values included.
+    await postIngest(
+      ctx.object,
+      envelope({
+        kind: "custom_event",
+        visitId: "visit-1",
+        eventId: "event-1",
+        eventName: "Signup",
+        eventData: { plan: "pro", seats: 3, team: { size: 4 }, tags: ["a"] },
+      }),
+    );
+    vi.setSystemTime(NOW + 60_000);
+    await ctx.object.alarm();
+
+    expect(
+      database
+        .prepare("SELECT key, value FROM custom_event_properties ORDER BY key")
+        .all(),
+    ).toEqual([
+      { key: "plan", value: "pro" },
+      { key: "seats", value: "3" },
+    ]);
+
+    const read = async (pathname: string, params: Record<string, string>) => {
+      const url = new URL(`https://edge.test/api/private/${pathname}`);
+      for (const [key, value] of Object.entries({
+        siteId: "site-1",
+        from: String(NOW - 60_000),
+        to: String(NOW + 60_000),
+        timeZone: "UTC",
+        ...params,
+      })) {
+        url.searchParams.set(key, value);
+      }
+      const response = await executePrivateQuery({
+        env,
+        siteId: "site-1",
+        pathname,
+        url,
+        request: new Request(url),
+      });
+      return ((await response.json()) as { data: unknown }).data;
+    };
+
+    // One properties card for page views and events, as in Plausible.
+    expect(await read("properties", {})).toEqual({
+      items: [
+        { key: "author", visitors: 1 },
+        { key: "plan", visitors: 1 },
+        { key: "seats", visitors: 1 },
+      ],
+    });
+    expect(await read("property-values", { key: "plan" })).toEqual({
+      key: "plan",
+      items: [{ value: "pro", visitors: 1, sessions: 1, views: 0, events: 1 }],
+    });
+    // A goal of the property alone matches the event, and the filter the
+    // card's click sets keeps the page view that sent it.
+    expect(await read("goal-conversions", {})).toMatchObject({
+      goals: [
+        {
+          goal: { id: goal.id },
+          summary: { conversions: 1, visitors: { converted: 1 } },
+        },
+      ],
+    });
+    expect(
+      await read("properties", { "filter[property][plan]": "pro" }),
+    ).toMatchObject({
+      items: expect.arrayContaining([{ key: "author", visitors: 1 }]),
+    });
     database.close();
   });
 });

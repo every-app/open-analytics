@@ -9,7 +9,7 @@ import type {
 } from "@/lib/edge/analytics/contract";
 import { DEFAULT_EVENT_RECORD_SORT } from "@/lib/edge/analytics/contract";
 import { coerceNumber, ONE_DAY_MS } from "@/lib/edge/utils";
-type FilterOptionKey = Exclude<AnalyticsFilterFieldId, "event.payload">;
+type FilterOptionKey = Exclude<AnalyticsFilterFieldId, "property">;
 export function parseWindow(url: URL): QueryWindow | null {
   const nowMs = Date.now();
   const defaultFrom = nowMs - ONE_DAY_MS;
@@ -94,28 +94,6 @@ export function parseEventName(url: URL): string | undefined {
   if (typeof raw !== "string") return undefined;
   const normalized = raw.trim().slice(0, 120);
   return normalized.length > 0 ? normalized : undefined;
-}
-export function parseEventFieldPath(url: URL): string | undefined {
-  const raw = url.searchParams.get("fieldPath");
-  if (typeof raw !== "string") return undefined;
-  const normalized = raw.slice(0, 240);
-  return normalized.length > 0 ? normalized : undefined;
-}
-export function parseEventFieldValueType(url: URL): string | undefined {
-  const raw = url.searchParams.get("fieldValueType");
-  if (typeof raw !== "string") return undefined;
-  const normalized = raw.trim().toLowerCase();
-  if (
-    normalized === "string" ||
-    normalized === "number" ||
-    normalized === "boolean" ||
-    normalized === "null" ||
-    normalized === "object" ||
-    normalized === "array"
-  ) {
-    return normalized;
-  }
-  return undefined;
 }
 export function normalizeFilterValue(value: string | null): string | undefined {
   if (typeof value !== "string") return undefined;

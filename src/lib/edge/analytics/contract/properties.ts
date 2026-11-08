@@ -2,8 +2,8 @@ import type { FilterDocument } from "@/lib/filter-contract/filters";
 
 import type { BaseQuery, Sort } from "./types";
 
-// Custom properties: page views' properties and events' top-level string
-// payload values, together by key, as in Plausible.
+// Custom properties: page views' and custom events', together by key, as in
+// Plausible.
 
 export interface PropertyKeysQuery extends BaseQuery {
   readonly filters: FilterDocument;

@@ -2,10 +2,8 @@ import {
   buildRegionLocationValue,
   parseGeoLocationValue,
 } from "@/lib/analytics/geo-location";
-import { propertyPath } from "@/lib/analytics/property-path";
 import {
   analyticsFilterRegistry,
-  type CanonicalJsonPath,
   EMPTY_FILTER_DOCUMENT,
   type FilterCondition,
   type FilterDocument,
@@ -303,24 +301,21 @@ export function setDashboardFilterValue(
       : [fieldCondition(FIELD_BY_CONTROL_KEY[key], value)]),
   ]);
 }
-function isPropertyCondition(condition: FilterCondition, path: string) {
-  return (
-    condition.target.kind === "event-payload" && condition.target.path === path
-  );
+function isPropertyCondition(condition: FilterCondition, key: string) {
+  return condition.target.kind === "property" && condition.target.key === key;
 }
 /**
- * The custom property value the page is filtered to for `key`: a payload
- * condition at its path equal to a string, which matches page views with
- * the property and events with the payload value.
+ * The custom property value the page is filtered to for `key`: a property
+ * condition equal to a value, which matches page views and custom events
+ * with it.
  */
 export function propertyFilterValue(
   document: FilterDocument,
   key: string,
 ): string | undefined {
-  const path = propertyPath(key);
   const value = document.conditions.find(
     (condition) =>
-      isPropertyCondition(condition, path) &&
+      isPropertyCondition(condition, key) &&
       condition.operator === FilterOperator.Eq,
   )?.value;
   return typeof value === "string" ? value : undefined;
@@ -331,15 +326,14 @@ export function setPropertyFilterValue(
   key: string,
   value: string | null,
 ): FilterDocument {
-  const path = propertyPath(key);
   const base = withoutConditions(document, (condition) =>
-    isPropertyCondition(condition, path),
+    isPropertyCondition(condition, key),
   );
   if (value === null) return normalizedDocument(base);
   return normalizedDocument([
     ...base,
     {
-      target: { kind: "event-payload", path: path as CanonicalJsonPath },
+      target: { kind: "property", key },
       operator: FilterOperator.Eq,
       value,
     },

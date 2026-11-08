@@ -22,7 +22,7 @@ export const RealtimeEventSchema = z
     receivedAt: z.number().int().nullable().optional(),
     sequence: z.number().int().nullable().optional(),
     eventId: z.string().optional(),
-    eventData: z.unknown().optional(),
+    properties: z.record(z.string(), z.string()).optional(),
     visitId: z.string(),
     sessionId: z.string().default(""),
     startedAt: z.number().int().nullable().optional(),

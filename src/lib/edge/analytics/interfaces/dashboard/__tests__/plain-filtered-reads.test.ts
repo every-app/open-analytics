@@ -33,7 +33,6 @@ const PAGE_VIEW_PATHS = [
   "overview-client-device-type",
   "overview-geo-country",
   "overview-geo-region",
-  "overview-geo-points",
   "utm-source",
   "properties",
 ] as const;
@@ -118,13 +117,13 @@ beforeAll(() => {
   });
   insertVisits(database, visits);
   database.exec(`
-    INSERT INTO custom_event_names (id, site_id, site_pk, name, last_seen_at)
-    VALUES (1, '${SITE.siteId}', 1, 'purchase', 0);
+    INSERT INTO custom_event_names (id, site_pk, name, last_seen_at)
+    VALUES (1, 1, 'purchase', 0);
   `);
   const purchase = database.prepare(
-    `INSERT INTO custom_events (event_pk, event_id, site_id, site_pk, visit_id,
-      event_name_id, occurred_at, received_at, node_count, value_count)
-     VALUES (?, ?, ?, 1, ?, 1, ?, ?, 0, 0)`,
+    `INSERT INTO custom_events (event_pk, event_id, site_pk, visit_id,
+      event_name_id, occurred_at, received_at)
+     VALUES (?, ?, 1, ?, 1, ?, ?)`,
   );
   visits
     .filter((visit) => visit.pathname === "/pricing")
@@ -133,7 +132,6 @@ beforeAll(() => {
       purchase.run(
         index + 1,
         `purchase-${index}`,
-        SITE.siteId,
         visit.visitId,
         visit.startedAt + 1,
         visit.startedAt + 1,
@@ -145,7 +143,7 @@ afterAll(() => database.close());
 
 describe("filtered dashboard reads", () => {
   it.each(PAGE_VIEW_PATHS)(
-    "%s reads one plain scan of the window's page views",
+    "%s reads the window's page views through an index",
     async (path) => {
       const result = await read(path, FILTER);
       const reads = result.statements.filter(({ sql }) =>
@@ -156,7 +154,13 @@ describe("filtered dashboard reads", () => {
       for (const statement of reads) {
         expect(statement.sql).not.toMatch(/scope_|visit_daily_/);
         const details = plan(statement);
-        expect(details).toContain("idx_visits_site_pk_started_at");
+        // The filter names a page: its page views, through the page index;
+        // entry and exit pages read their sessions' whole window.
+        expect(details).toContain(
+          path === "overview-page-entry" || path === "overview-page-exit"
+            ? "SEARCH v USING INDEX idx_visits_site_pk_started_at (site_pk=? AND started_at>? AND started_at<?)"
+            : "SEARCH v USING INDEX idx_visits_site_pk_pathname_started_at (site_pk=? AND pathname=? AND started_at>? AND started_at<?)",
+        );
         // Never a full scan of the page views.
         expect(details).not.toMatch(/^SCAN (v|visits)\b/m);
       }

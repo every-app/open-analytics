@@ -57,9 +57,25 @@ describe("filter DSL", () => {
   it("parses custom properties, valueless operators and every example", () => {
     expect(
       parse(
-        'event.payload("/plan") eq "pro" AND event.payload("/beta") eq true AND event.payload("/seats") gte -2 AND event.payload("/coupon") notExists',
+        'property("plan") eq "pro" AND property("beta") eq "true" AND property("seats") startsWith "1" AND property("coupon") notExists',
       ).conditions,
     ).toHaveLength(4);
+    // Ingest keeps a number or boolean property as its text.
+    expect(
+      parse('property("paid") eq true AND property("seats") in [3, 4]')
+        .conditions,
+    ).toEqual([
+      {
+        target: { kind: "property", key: "paid" },
+        operator: FilterOperator.Eq,
+        value: "true",
+      },
+      {
+        target: { kind: "property", key: "seats" },
+        operator: FilterOperator.In,
+        value: ["3", "4"],
+      },
+    ]);
     expect(parse("utm.source notEmpty").conditions[0]).toEqual({
       target: { kind: "field", field: "utm.source" },
       operator: FilterOperator.NotEmpty,
@@ -71,11 +87,11 @@ describe("filter DSL", () => {
 
   it("formats what it parses", () => {
     const source =
-      'event.payload("/plan") in ["basic", "pro"] AND page.path notContains "/admin" AND utm.medium exists';
+      'property("plan") in ["basic", "pro"] AND page.path notContains "/admin" AND utm.medium exists';
     const document = parse(source);
     expect(parse(formatFilterDsl(document))).toEqual(document);
     expect(formatFilterDsl(document)).toBe(
-      'event.payload("/plan") in ["basic", "pro"] AND page.path notContains "/admin" AND utm.medium exists',
+      'page.path notContains "/admin" AND utm.medium exists AND property("plan") in ["basic", "pro"]',
     );
   });
 
@@ -87,7 +103,8 @@ describe("filter DSL", () => {
     ["page.path eq", "expected_value", 12],
     ['page.path eq ["/a" "/b"]', "expected_value", 19],
     ['page.path eq "/" OR page.path eq "/b"', "expected_and", 17],
-    ['event.payload "/a" eq 1', "expected_field", 14],
+    ['property "a" eq "1"', "expected_field", 9],
+    ['property("a") gt "1"', "operator_not_allowed", 0],
     ['page.path eq "/" AND NOT page.path eq "/b"', "expected_operator", 25],
     ['page.path eq "/" AND session.bounce eq true', "unknown_field", 21],
     ['page.path eq "/" AND page.durationMs eq "1"', "invalid_number", 21],

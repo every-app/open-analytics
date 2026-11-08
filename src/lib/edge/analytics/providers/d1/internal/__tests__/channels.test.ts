@@ -29,8 +29,8 @@ describe("channel aggregate query", () => {
     const sql = String((prepare.mock.calls as unknown[][])[0]?.[0]);
     expect(sql).toContain("FROM visits");
     expect(sql).toContain("filtered_visits");
-    expect(sql).toContain("count(DISTINCT CASE WHEN session_id");
-    expect(sql).toContain("count(DISTINCT CASE WHEN visitor_id");
+    expect(sql).toContain("count(DISTINCT session_id)");
+    expect(sql).toContain("count(DISTINCT visitor_id)");
     expect(sql).toContain("ORDER BY views DESC, sessions DESC, channel ASC");
     expect(bind).toHaveBeenCalledWith("site-1", 10, 20, 20);
   });

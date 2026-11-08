@@ -54,15 +54,14 @@ function insertVisit(
 ): void {
   database
     .prepare(
-      `INSERT INTO visits (visit_id, site_pk, site_id, visitor_id, session_id,
+      `INSERT INTO visits (visit_id, site_pk, visitor_id, session_id,
          status, started_at, last_activity_at, duration_ms, pathname, hostname,
          channel)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '/', 'example.com', 'direct')`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, '/', 'example.com', 'direct')`,
     )
     .run(
       visit.id,
       visit.sitePk ?? 1,
-      `site-${visit.sitePk ?? 1}`,
       visit.visitorId ?? `visitor-${visit.id}`,
       visit.sessionId ?? `session-${visit.id}`,
       visit.status ?? "complete",
@@ -461,7 +460,7 @@ describe("visit rollups", () => {
           return {
             bind: (...values: unknown[]) => {
               if (
-                sql.includes("INSERT INTO visit_daily_geo_points") &&
+                sql.includes("INSERT INTO visit_daily_dimension_rollups") &&
                 values[0] === 1
               ) {
                 throw new Error("D1 overloaded");

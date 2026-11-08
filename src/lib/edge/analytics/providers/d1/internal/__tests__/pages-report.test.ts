@@ -149,7 +149,7 @@ describe("pages report", () => {
     ]);
   });
 
-  it("reads a filtered report from one scan of the window's page views", async () => {
+  it("reads a page-filtered report from that page's page views alone", async () => {
     const { items, reads } = await report(PRICING, 100);
 
     expect(items).toEqual(rawPages("pathname = '/pricing'"));
@@ -162,7 +162,9 @@ describe("pages report", () => {
       .all(...reads[0]!.bindings)
       .map((row) => String(row.detail))
       .join("\n");
-    expect(plan).toContain("USING INDEX idx_visits_site_pk_started_at");
+    expect(plan).toContain(
+      "USING INDEX idx_visits_site_pk_pathname_started_at",
+    );
   });
 
   it("pages through the report with cursors", async () => {

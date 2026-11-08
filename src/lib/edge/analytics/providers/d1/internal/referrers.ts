@@ -76,8 +76,8 @@ async function referrerAggregate(
   SELECT
     COALESCE(${keyExpr}, '') AS referrer,
     count(*) AS views,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+    count(DISTINCT session_id) AS sessions,
+    count(DISTINCT visitor_id) AS visitors
   FROM ${relation}
   GROUP BY referrer`;
   const having = search ? "HAVING LOWER(referrer) LIKE ? ESCAPE '\\'" : "";

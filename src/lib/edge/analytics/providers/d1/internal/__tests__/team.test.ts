@@ -7,7 +7,6 @@ vi.mock("@/lib/edge/analytics/providers/d1/internal/rollup-queries", () => ({
 }));
 vi.mock("@/lib/edge/analytics/providers/d1/internal/core", () => ({
   buildTimeBuckets: vi.fn(() => ({ buckets: [1, 2, 3], interval: "day" })),
-  buildVisitSourceCteForSites: vi.fn(() => "visit_source AS (...)"),
   mapOverviewAggregate: vi.fn((row: Record<string, unknown>) => ({
     views: Number(row.views ?? 0),
     sessions: Number(row.sessions ?? 0),
@@ -191,14 +190,14 @@ describe("queryTeamTrendFromD1", () => {
     expect(result).toEqual([]);
   });
 
-  it("connects the unfiltered source CTE directly to SELECT", async () => {
+  it("connects the source CTE directly to SELECT, with each page view's site id", async () => {
     queryD1AllMock.mockResolvedValueOnce([]);
 
     await queryTeamTrendFromD1(makeEnv(), ["s1"], makeWindow(), "day");
 
     const sql = String(queryD1AllMock.mock.calls.at(-1)?.[1]);
-    expect(sql).toContain("visit_source AS (...)\nSELECT");
-    expect(sql).not.toMatch(/\),\s*SELECT/);
+    expect(sql).toContain("SELECT si.site_id, v.visitor_id, v.started_at");
+    expect(sql).toMatch(/\)\nSELECT/);
   });
 });
 describe("listTeamSites", () => {

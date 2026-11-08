@@ -60,6 +60,9 @@ type EffectiveMapTheme = "light" | "dark";
 const DEFAULT_MAP_HEIGHT_CLASS = "h-[460px]";
 const MAP_ACCENT_RGB: [number, number, number] = [41, 120, 214];
 const MAP_POINT_ALPHA_VISIBLE = 112;
+/** A country's fill: the fewest visitors faintest, the most strongest. */
+const COUNTRY_FILL_ALPHA_MIN = 36;
+const COUNTRY_FILL_ALPHA_MAX = 210;
 const CLUSTER_RADIUS_PX = 26;
 const CLUSTER_ZOOM_STEP = 0.25;
 const CLUSTER_CROSSFADE_DURATION_S = 0.22;
@@ -267,6 +270,15 @@ function resolveCountryDisplayNameFromFeature(
   }
   return "";
 }
+/** The fill of a country with `visitors`, against the most any country has. */
+function countryFillAlpha(visitors: number, maxVisitors: number): number {
+  if (visitors <= 0 || maxVisitors <= 0) return 0;
+  return Math.round(
+    COUNTRY_FILL_ALPHA_MIN +
+      (COUNTRY_FILL_ALPHA_MAX - COUNTRY_FILL_ALPHA_MIN) *
+        Math.sqrt(visitors / maxVisitors),
+  );
+}
 function withAlpha(
   rgb: [number, number, number],
   alpha: number,
@@ -432,6 +444,11 @@ export function FlatGeoPointsMap({
     }
     return map;
   }, [countryCounts]);
+  const maxCountryVisitors = useMemo(
+    () =>
+      Math.max(0, ...[...countryCountMap.values()].map((row) => row.visitors)),
+    [countryCountMap],
+  );
 
   const initialViewState = useMemo(
     () => computeInitialViewState(normalizedPoints),
@@ -594,13 +611,24 @@ export function FlatGeoPointsMap({
         stroked: true,
         lineWidthUnits: "pixels",
         lineWidthMinPixels: 0,
-        getFillColor: (feature) =>
-          countryHoverEnabled &&
-          normalizedSelectedCountryCode &&
-          resolveCountryCodeFromFeature(feature) ===
-            normalizedSelectedCountryCode
+        // Countries shade by their visitors, as on Plausible's map.
+        getFillColor: (feature) => {
+          const code = resolveCountryCodeFromFeature(feature);
+          const visitors = code
+            ? (countryCountMap.get(code)?.visitors ?? 0)
+            : 0;
+          if (visitors > 0) {
+            return withAlpha(
+              MAP_ACCENT_RGB,
+              countryFillAlpha(visitors, maxCountryVisitors),
+            );
+          }
+          return countryHoverEnabled &&
+            normalizedSelectedCountryCode &&
+            code === normalizedSelectedCountryCode
             ? withAlpha(MAP_ACCENT_RGB, 80)
-            : [0, 0, 0, 0],
+            : [0, 0, 0, 0];
+        },
         getLineColor: (feature) =>
           countryHoverEnabled &&
           normalizedSelectedCountryCode &&
@@ -645,7 +673,11 @@ export function FlatGeoPointsMap({
           handleCountryClick(feature);
         },
         updateTriggers: {
-          getFillColor: normalizedSelectedCountryCode,
+          getFillColor: [
+            countryCountMap,
+            maxCountryVisitors,
+            normalizedSelectedCountryCode,
+          ],
           getLineColor: [hoveredCountryKey, normalizedSelectedCountryCode],
           getLineWidth: [hoveredCountryKey, normalizedSelectedCountryCode],
         },
@@ -654,6 +686,7 @@ export function FlatGeoPointsMap({
 
     return result;
   }, [
+    countryCountMap,
     countryGeoJson,
     countryHoverEnabled,
     currentZoom,
@@ -661,6 +694,7 @@ export function FlatGeoPointsMap({
     hoveredCountryKey,
     incomingAlpha,
     incomingClusters,
+    maxCountryVisitors,
     normalizedSelectedCountryCode,
     outgoingAlpha,
     outgoingClusters,
@@ -709,7 +743,7 @@ export function FlatGeoPointsMap({
     );
   }
 
-  if (normalizedPoints.length === 0) {
+  if (normalizedPoints.length === 0 && countryCountMap.size === 0) {
     return (
       <div
         className={`flex ${heightClassName} items-center justify-center text-sm text-muted-foreground`}

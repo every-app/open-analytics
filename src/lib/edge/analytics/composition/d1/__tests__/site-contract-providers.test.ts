@@ -15,9 +15,6 @@ vi.mock("@/lib/edge/analytics/providers/d1/internal/journey-retention", () => ({
   parseRetentionGranularity: vi.fn((value) => value),
   queryRetentionFromD1: vi.fn(),
 }));
-vi.mock("@/lib/edge/analytics/providers/d1/internal/geo-points", () => ({
-  queryGeoPointsFromD1: vi.fn(),
-}));
 vi.mock("@/lib/edge/analytics/providers/d1/internal/pages", () => ({
   decodePagesCursor: vi.fn(),
   queryPageCardMetricsFromD1: vi.fn(),
@@ -49,7 +46,6 @@ import {
   querySessionPathDimensionPageFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/dimensions";
 import { queryFilterValuesPageFromD1 } from "@/lib/edge/analytics/providers/d1/internal/filter-values";
-import { queryGeoPointsFromD1 } from "@/lib/edge/analytics/providers/d1/internal/geo-points";
 import {
   decodePagesCursor,
   queryPagesPageFromD1,
@@ -134,12 +130,6 @@ describe("D1 site contract provider pagination routing", () => {
         hasMore: false,
         nextCursor: null,
       },
-    });
-    vi.mocked(queryGeoPointsFromD1).mockResolvedValue({
-      points: [],
-      countryCounts: [],
-      regionCounts: [],
-      cityCounts: [],
     });
   });
 

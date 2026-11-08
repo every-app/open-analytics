@@ -117,6 +117,17 @@ export function executePrivateQuery(
       ),
     );
   }
+  if (input.pathname === "dashboard") {
+    return import("./protocol/dashboard").then(({ handleDashboardContract }) =>
+      handleDashboardContract(
+        input.env,
+        input.siteId,
+        input.url,
+        ctx,
+        queryContext,
+      ),
+    );
+  }
   if (input.pathname === "pages") {
     return import("./protocol/pages").then(({ handlePagesContract }) =>
       handlePagesContract(
@@ -196,18 +207,6 @@ export function executePrivateQuery(
       ),
     );
   }
-  if (input.pathname === "event-type-field-values") {
-    return import("./protocol/events").then(
-      ({ handleEventFieldValuesContract }) =>
-        handleEventFieldValuesContract(
-          input.env,
-          input.siteId,
-          input.url,
-          ctx,
-          queryContext,
-        ),
-    );
-  }
   if (input.pathname === "properties") {
     return import("./protocol/properties").then(
       ({ handlePropertyKeysContract }) =>
@@ -224,18 +223,6 @@ export function executePrivateQuery(
     return import("./protocol/properties").then(
       ({ handlePropertyValuesContract }) =>
         handlePropertyValuesContract(
-          input.env,
-          input.siteId,
-          input.url,
-          ctx,
-          queryContext,
-        ),
-    );
-  }
-  if (input.pathname === "event-type-fields") {
-    return import("./protocol/events").then(
-      ({ handleEventTypeFieldsContract }) =>
-        handleEventTypeFieldsContract(
           input.env,
           input.siteId,
           input.url,
@@ -268,18 +255,6 @@ export function executePrivateQuery(
     return import("./protocol/filter-values").then(
       ({ handleFilterValuesContract }) =>
         handleFilterValuesContract(
-          input.env,
-          input.siteId,
-          input.url,
-          ctx,
-          queryContext,
-        ),
-    );
-  }
-  if (input.pathname === "overview-geo-points") {
-    return import("./protocol/overview-extras").then(
-      ({ handleOverviewGeoPointsContract }) =>
-        handleOverviewGeoPointsContract(
           input.env,
           input.siteId,
           input.url,

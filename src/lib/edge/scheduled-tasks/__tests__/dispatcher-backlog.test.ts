@@ -15,7 +15,9 @@ const START = Date.UTC(2026, 10, 6, 13, 0);
 const MINUTE_MS = 60_000;
 const LIVE_SITES = 3;
 const DAYS = 300;
-const DELETED_SITES = 40;
+// Enough that their purges, a query per step each, outlast what a tick has
+// left after the rollups.
+const DELETED_SITES = 52;
 
 function observability() {
   return {
@@ -63,15 +65,15 @@ function seedBacklogs(database: DatabaseSync): void {
   seedSites(database, [...live, ...deleted]);
   const latestDay = latestCompleteDay(START);
   const visit = database.prepare(
-    `INSERT INTO visits (visit_id, site_pk, site_id, visitor_id, session_id,
+    `INSERT INTO visits (visit_id, site_pk, visitor_id, session_id,
        status, started_at, last_activity_at, duration_ms, pathname, hostname)
-     VALUES (?, ?, ?, 'v', 's', 'complete', ?, ?, 1000, '/', 'example.com')`,
+     VALUES (?, ?, 'v', 's', 'complete', ?, ?, 1000, '/', 'example.com')`,
   );
   for (const site of [...live, ...deleted]) {
     const days = site.siteId.startsWith("live") ? DAYS : 1;
     for (let day = 0; day < days; day += 1) {
       const at = (latestDay - day) * DAY_MS + 3_600_000;
-      visit.run(`${site.siteId}-${day}`, site.sitePk, site.siteId, at, at);
+      visit.run(`${site.siteId}-${day}`, site.sitePk, at, at);
     }
   }
   database.prepare(`DELETE FROM sites WHERE id LIKE 'deleted-%'`).run();
@@ -152,7 +154,7 @@ describe("cron ticks with backlogs", () => {
     expect(
       count(
         database,
-        `SELECT COUNT(*) AS n FROM visits WHERE site_id LIKE 'deleted-%'`,
+        `SELECT COUNT(*) AS n FROM visits WHERE visit_id LIKE 'deleted-%'`,
       ),
     ).toBe(0);
   }, 60_000);

@@ -11,8 +11,8 @@ export interface VisitRow {
   visitId: string;
   status: string;
   siteId: string;
-  visitorId: string;
-  sessionId: string;
+  visitorId: number;
+  sessionId: number;
   startedAt: number;
   lastActivityAt: number;
   pathname: string;
@@ -67,7 +67,8 @@ export interface BufferedCustomEventRow {
   receivedAt: number;
   sequence: number;
   eventName: string;
-  eventDataJson: string;
+  /** The event's custom properties as a JSON object, NULL if none. */
+  propertiesJson: string | null;
   revenueAmount: number | null;
   revenueCurrency: string | null;
   dirty: number;
@@ -83,7 +84,8 @@ export interface BufferedCustomEventInput {
   receivedAt: number;
   sequence: number;
   eventName: string;
-  eventDataJson: string;
+  /** The event's custom properties as a JSON object, NULL if none. */
+  propertiesJson: string | null;
   revenueAmount: number | null;
   revenueCurrency: string | null;
 }
@@ -98,14 +100,13 @@ export interface SessionAttribution {
   utmContent: string;
 }
 export interface RecentVisitorSession extends SessionAttribution {
-  sessionId: string;
+  sessionId: number;
   visitId?: string;
   status?: string;
   routeMatch?: number;
   startedAt: number;
   lastActivityAt: number;
 }
-export type DictionaryKind = "name" | "key" | "path";
 export interface NormalizeResult {
   record: NormalizedIngestRecord | null;
   reason?: string;

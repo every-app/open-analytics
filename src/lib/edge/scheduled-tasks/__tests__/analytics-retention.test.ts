@@ -45,9 +45,9 @@ function seedSite(
     .run(sitePk, rollup.firstDay, rollup.lastDay, rollup.backfilled ? 1 : 0);
   database
     .prepare(
-      "INSERT INTO custom_event_names (id, site_pk, site_id, name, last_seen_at) VALUES (?, ?, ?, 'signup', 0)",
+      "INSERT INTO custom_event_names (id, site_pk, name, last_seen_at) VALUES (?, ?, 'signup', 0)",
     )
-    .run(sitePk, sitePk, `s${sitePk}`);
+    .run(sitePk, sitePk);
 }
 
 /** Page views (each with an event) on a day, and that day's rollup. */
@@ -58,20 +58,20 @@ function seedDay(
   pageViews = 1,
 ) {
   const visit = database.prepare(
-    `INSERT INTO visits (visit_id, site_pk, site_id, visitor_id, session_id, status,
+    `INSERT INTO visits (visit_id, site_pk, visitor_id, session_id, status,
        started_at, last_activity_at, pathname, hostname)
-     VALUES (?, ?, ?, 'v', 'x', 'complete', ?, ?, '/', 'example.com')`,
+     VALUES (?, ?, 'v', 'x', 'complete', ?, ?, '/', 'example.com')`,
   );
   const event = database.prepare(
-    `INSERT INTO custom_events (event_id, site_pk, site_id, visit_id, event_name_id,
-       occurred_at, received_at, node_count, value_count)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)`,
+    `INSERT INTO custom_events (event_id, site_pk, visit_id, event_name_id,
+       occurred_at, received_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
   );
   for (let index = 0; index < pageViews; index += 1) {
     const id = `s${sitePk}-d${day}-${index}`;
     const at = day * DAY_MS + index;
-    visit.run(id, sitePk, `s${sitePk}`, at, at);
-    event.run(`${id}-event`, sitePk, `s${sitePk}`, id, sitePk, at, at);
+    visit.run(id, sitePk, at, at);
+    event.run(`${id}-event`, sitePk, id, sitePk, at, at);
   }
   database
     .prepare(
@@ -112,47 +112,39 @@ function insertPageViews(
     WITH RECURSIVE n(i) AS (
       SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < ${pageViews}
     )
-    INSERT INTO visits (visit_id, site_pk, site_id, visitor_id, session_id,
+    INSERT INTO visits (visit_id, site_pk, visitor_id, session_id,
       status, started_at, last_activity_at, pathname, hostname)
-    SELECT 's${sitePk}-' || i, ${sitePk}, 's${sitePk}', 'v', 'x', 'complete',
+    SELECT 's${sitePk}-' || i, ${sitePk}, 1, 2, 'complete',
       i, i, '/', 'example.com'
     FROM n;
   `);
 }
 
-/** An event with a payload of `nodes` nodes, each with a value. */
-function insertPayloadEvent(
+/** An event with `properties` custom properties. */
+function insertEventWithProperties(
   database: DatabaseSync,
-  event: { id: string; visitId: string; occurredAt: number; nodes: number },
+  event: {
+    id: string;
+    visitId: string;
+    occurredAt: number;
+    properties: number;
+  },
 ) {
-  database.exec(`
-    INSERT OR IGNORE INTO custom_event_json_paths (id, site_pk, site_id, path, last_seen_at)
-      VALUES (1, 1, 's1', '$.items', 0);
-  `);
   const { event_pk: eventPk } = database
     .prepare(
-      `INSERT INTO custom_events (event_id, site_pk, site_id, visit_id, event_name_id,
-         occurred_at, received_at, node_count, value_count)
-       VALUES (?, 1, 's1', ?, 1, ?, ?, ?, ?) RETURNING event_pk`,
+      `INSERT INTO custom_events (event_id, site_pk, visit_id, event_name_id,
+         occurred_at, received_at)
+       VALUES (?, 1, ?, 1, ?, ?) RETURNING event_pk`,
     )
-    .get(
-      event.id,
-      event.visitId,
-      event.occurredAt,
-      event.occurredAt,
-      event.nodes,
-      event.nodes,
-    ) as { event_pk: number };
+    .get(event.id, event.visitId, event.occurredAt, event.occurredAt) as {
+    event_pk: number;
+  };
   database.exec(`
-    WITH RECURSIVE node(id) AS (
-      SELECT 1 UNION ALL SELECT id + 1 FROM node WHERE id < ${event.nodes}
+    WITH RECURSIVE n(id) AS (
+      SELECT 1 UNION ALL SELECT id + 1 FROM n WHERE id < ${event.properties}
     )
-    INSERT INTO custom_event_json_nodes (event_pk, node_id, path_id, value_type, depth)
-      SELECT ${eventPk}, node.id, 1, 1, 1 FROM node;
-    INSERT INTO custom_event_json_values (event_pk, node_id, site_id,
-      event_name_id, path_id, occurred_at, value_type, string_value, site_pk)
-      SELECT event_pk, node_id, 's1', 1, 1, ${event.occurredAt}, 1, 'x', 1
-      FROM custom_event_json_nodes WHERE event_pk = ${eventPk};
+    INSERT INTO custom_event_properties (event_pk, key, value, site_pk, occurred_at)
+      SELECT ${eventPk}, 'key-' || id, 'x', 1, ${event.occurredAt} FROM n;
   `);
 }
 
@@ -350,20 +342,20 @@ describe("analytics retention", () => {
       lastDay: TODAY - 1,
       backfilled: true,
     });
-    // A page view of the last expired day, whose event, with 2,500 payload
-    // rows, came after midnight, on the first retained day.
+    // A page view of the last expired day, whose event, with 2,500
+    // properties, came after midnight, on the first retained day.
     database
       .prepare(
-        `INSERT INTO visits (visit_id, site_pk, site_id, visitor_id, session_id,
+        `INSERT INTO visits (visit_id, site_pk, visitor_id, session_id,
            status, started_at, last_activity_at, pathname, hostname)
-         VALUES ('expired', 1, 's1', 'v', 'x', 'complete', ?, ?, '/', 'example.com')`,
+         VALUES ('expired', 1, 'v', 'x', 'complete', ?, ?, '/', 'example.com')`,
       )
       .run((TODAY - 30) * DAY_MS - 1000, (TODAY - 30) * DAY_MS - 1000);
-    insertPayloadEvent(database, {
+    insertEventWithProperties(database, {
       id: "late-event",
       visitId: "expired",
       occurredAt: (TODAY - 30) * DAY_MS + 60_000,
-      nodes: 2.5 * RETENTION_BATCH_ROWS,
+      properties: 2.5 * RETENTION_BATCH_ROWS,
     });
     // A retained page view keeps its event.
     seedDay(database, 1, TODAY - 30);
@@ -379,12 +371,9 @@ describe("analytics retention", () => {
       queries: db.queries,
     });
     expect(Math.max(...rowsChanged)).toBe(RETENTION_BATCH_ROWS);
-    for (const table of [
-      "custom_event_json_values",
-      "custom_event_json_nodes",
-    ]) {
-      expect(count(database, `SELECT COUNT(*) AS n FROM ${table}`)).toBe(0);
-    }
+    expect(
+      count(database, "SELECT COUNT(*) AS n FROM custom_event_properties"),
+    ).toBe(0);
     expect(
       database
         .prepare(

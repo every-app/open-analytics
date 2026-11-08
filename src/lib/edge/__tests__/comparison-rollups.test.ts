@@ -98,7 +98,7 @@ describe("year-over-year comparisons", () => {
         }).map((visit) => ({
           ...visit,
           visitId: `${index}-${visit.visitId}`,
-          sessionId: visit.sessionId && `${index}-${visit.sessionId}`,
+          sessionId: visit.sessionId + index * 100_000,
         })),
       );
     }

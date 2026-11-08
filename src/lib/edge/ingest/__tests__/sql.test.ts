@@ -16,8 +16,8 @@ function visitRow(overrides: Partial<VisitBindingRow> = {}): VisitBindingRow {
   return {
     visitId: "visit-1",
     siteId: "site-1",
-    visitorId: "visitor-1",
-    sessionId: "session-1",
+    visitorId: 11,
+    sessionId: 21,
     status: "closed",
     startedAt: 1,
     lastActivityAt: 2,
@@ -46,8 +46,6 @@ function visitRow(overrides: Partial<VisitBindingRow> = {}): VisitBindingRow {
     regionCode: "CA",
     city: "San Francisco",
     continent: "NA",
-    latitude: 37.7,
-    longitude: -122.4,
     timezone: "America/Los_Angeles",
     browser: "Chrome",
     browserVersion: "120",
@@ -65,7 +63,7 @@ function visitRow(overrides: Partial<VisitBindingRow> = {}): VisitBindingRow {
 describe("ingest visit SQL bindings", () => {
   it("keeps visit binding order aligned with D1 columns", () => {
     const row = visitRow();
-    const bindings = visitBindings(row);
+    const bindings = visitBindings(row, 7);
 
     expect(bindings).toHaveLength(VISIT_D1_COLUMNS.length);
     expect(
@@ -74,7 +72,9 @@ describe("ingest visit SQL bindings", () => {
       ),
     ).toMatchObject({
       visit_id: "visit-1",
-      site_id: "site-1",
+      site_pk: 7,
+      visitor_id: 11,
+      session_id: 21,
       status: "closed",
       started_at: 1,
       scroll_depth: 60,
@@ -96,6 +96,7 @@ describe("ingest visit SQL bindings", () => {
             durationSource: "",
             exitReason: "",
           }),
+          7,
         )[index],
       ]),
     );
@@ -172,7 +173,7 @@ describe("ingest visit SQL bindings", () => {
         exitReason: "",
         updatedAt: 20,
       });
-      expect(activeStatement.run(...visitBindings(initial)).changes).toBe(1);
+      expect(activeStatement.run(...visitBindings(initial, 7)).changes).toBe(1);
 
       db.prepare("UPDATE visits SET created_at = ? WHERE visit_id = ?").run(
         123,
@@ -180,44 +181,50 @@ describe("ingest visit SQL bindings", () => {
       );
       expect(
         activeStatement.run(
-          ...visitBindings({ ...initial, updatedAt: initial.updatedAt + 1 }),
+          ...visitBindings({ ...initial, updatedAt: initial.updatedAt + 1 }, 7),
         ).changes,
       ).toBe(0);
 
       expect(
         activeStatement.run(
-          ...visitBindings({
-            ...initial,
-            siteId: "site-should-not-change",
-            pathname: "/should-not-change",
-            lastActivityAt: initial.lastActivityAt + 1,
-            updatedAt: initial.updatedAt + 2,
-          }),
+          ...visitBindings(
+            {
+              ...initial,
+              visitorId: 99,
+              pathname: "/should-not-change",
+              lastActivityAt: initial.lastActivityAt + 1,
+              updatedAt: initial.updatedAt + 2,
+            },
+            7,
+          ),
         ).changes,
       ).toBe(1);
       expect(
         finalizedStatement.run(
-          ...visitBindings({
-            ...initial,
-            status: "complete",
-            lastActivityAt: 3,
-            endedAt: 3,
-            finalizedAt: 4,
-            durationMs: 2,
-            durationSource: "server",
-            exitReason: "pagehide",
-            updatedAt: initial.updatedAt + 3,
-          }),
+          ...visitBindings(
+            {
+              ...initial,
+              status: "complete",
+              lastActivityAt: 3,
+              endedAt: 3,
+              finalizedAt: 4,
+              durationMs: 2,
+              durationSource: "server",
+              exitReason: "pagehide",
+              updatedAt: initial.updatedAt + 3,
+            },
+            7,
+          ),
         ).changes,
       ).toBe(1);
       expect(
         db
           .prepare(
-            "SELECT site_id AS siteId, pathname, status, ended_at AS endedAt, duration_ms AS durationMs, created_at AS createdAt FROM visits WHERE visit_id = ?",
+            "SELECT visitor_id AS visitorId, pathname, status, ended_at AS endedAt, duration_ms AS durationMs, created_at AS createdAt FROM visits WHERE visit_id = ?",
           )
           .get(initial.visitId),
       ).toEqual({
-        siteId: "site-1",
+        visitorId: 11,
         pathname: "/docs",
         status: "complete",
         endedAt: 3,
@@ -227,26 +234,32 @@ describe("ingest visit SQL bindings", () => {
 
       expect(
         activeStatement.run(
-          ...visitBindings({
-            ...initial,
-            lastActivityAt: 10,
-            updatedAt: initial.updatedAt + 4,
-          }),
+          ...visitBindings(
+            {
+              ...initial,
+              lastActivityAt: 10,
+              updatedAt: initial.updatedAt + 4,
+            },
+            7,
+          ),
         ).changes,
       ).toBe(0);
       expect(
         finalizedStatement.run(
-          ...visitBindings({
-            ...initial,
-            status: "complete",
-            lastActivityAt: 3,
-            endedAt: 3,
-            finalizedAt: 4,
-            durationMs: 2,
-            durationSource: "server",
-            exitReason: "pagehide",
-            updatedAt: initial.updatedAt + 5,
-          }),
+          ...visitBindings(
+            {
+              ...initial,
+              status: "complete",
+              lastActivityAt: 3,
+              endedAt: 3,
+              finalizedAt: 4,
+              durationMs: 2,
+              durationSource: "server",
+              exitReason: "pagehide",
+              updatedAt: initial.updatedAt + 5,
+            },
+            7,
+          ),
         ).changes,
       ).toBe(0);
     } finally {

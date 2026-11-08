@@ -83,8 +83,8 @@ event_rollup AS (
   SELECT
     COALESCE(event_name, '') AS value,
     count(*) AS views,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+    count(DISTINCT session_id) AS sessions,
+    count(DISTINCT visitor_id) AS visitors
   FROM filtered_events
   GROUP BY value
 )
@@ -162,8 +162,8 @@ event_rollup AS (
   SELECT
     COALESCE(event_name, '') AS value,
     count(*) AS views,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+    count(DISTINCT session_id) AS sessions,
+    count(DISTINCT visitor_id) AS visitors
   FROM filtered_events
   GROUP BY value
 )
@@ -255,8 +255,8 @@ export async function queryEventSummaryMetricsFromD1(
 SELECT
   count(*) AS events,
   count(DISTINCT event_name) AS eventTypes,
-  count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-  count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+  count(DISTINCT session_id) AS sessions,
+  count(DISTINCT visitor_id) AS visitors
 FROM filtered_events
 `,
     source.bindings,
@@ -306,34 +306,34 @@ card_rows AS (
     NULL AS value,
     count(*) AS views,
     count(DISTINCT event_name) AS eventTypes,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+    count(DISTINCT session_id) AS sessions,
+    count(DISTINCT visitor_id) AS visitors
   FROM filtered_events
   UNION ALL
   SELECT 'event', event_name, count(*), 0,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END),
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END)
+    count(DISTINCT session_id),
+    count(DISTINCT visitor_id)
   FROM filtered_events
   WHERE TRIM(COALESCE(event_name, '')) != ''
   GROUP BY event_name
   UNION ALL
   SELECT 'path', pathname, count(*), 0,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END),
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END)
+    count(DISTINCT session_id),
+    count(DISTINCT visitor_id)
   FROM filtered_events
   WHERE TRIM(COALESCE(pathname, '')) != ''
   GROUP BY pathname
   UNION ALL
   SELECT 'title', title, count(*), 0,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END),
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END)
+    count(DISTINCT session_id),
+    count(DISTINCT visitor_id)
   FROM filtered_events
   WHERE TRIM(COALESCE(title, '')) != ''
   GROUP BY title
   UNION ALL
   SELECT 'hostname', hostname, count(*), 0,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END),
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END)
+    count(DISTINCT session_id),
+    count(DISTINCT visitor_id)
   FROM filtered_events
   WHERE TRIM(COALESCE(hostname, '')) != ''
   GROUP BY hostname

@@ -5,8 +5,6 @@ import { siteQueryResponse } from "@/lib/edge/analytics/interfaces/dashboard/pro
 import type * as QueryCore from "@/lib/edge/analytics/providers/d1/internal/core";
 import {
   geoTabLabel,
-  mapEventField,
-  mapEventFieldValue,
   mapEventSummaryCards,
   mapPageCardMetrics,
   percentChange,
@@ -268,8 +266,8 @@ describe("edge query events summary coverage", () => {
     const [, sql, bindings] = queryD1AllMock.mock.calls[0];
     expect(sql).not.toContain("LEFT JOIN visit_source vs");
     expect(sql).toContain("FROM event_rollup");
-    expect(sql).toContain("LOWER(TRIM(COALESCE(v.referrer_host, ''))) = ?");
-    expect(sql).toContain("LOWER(TRIM(COALESCE(v.device_type, ''))) = ?");
+    expect(sql).toContain("LOWER(v.referrer_host) = ?");
+    expect(sql).toContain("LOWER(v.device_type) = ?");
     expect(bindings).toEqual([
       siteId,
       window.startMs,
@@ -531,53 +529,6 @@ describe("edge query events trend coverage", () => {
   });
 });
 describe("edge query core event helper coverage", () => {
-  it("maps event fields and event field values across value types", () => {
-    expect(
-      mapEventField({
-        path: "/plan",
-        valueType: 1,
-        events: 2,
-        occurrences: 3,
-        firstSeenAt: 10,
-        lastSeenAt: 20,
-        stringValue: "pro",
-        numberValue: null,
-        booleanValue: null,
-      }),
-    ).toMatchObject({ valueType: "string", exampleValue: "pro" });
-    expect(
-      mapEventField({
-        path: "/paid",
-        valueType: 3,
-        events: 2,
-        occurrences: 3,
-        firstSeenAt: 10,
-        lastSeenAt: 20,
-        stringValue: null,
-        numberValue: null,
-        booleanValue: 0,
-      }),
-    ).toMatchObject({ valueType: "boolean", exampleValue: false });
-    expect(
-      mapEventFieldValue({
-        valueType: 2,
-        events: null as unknown as number,
-        occurrences: undefined as unknown as number,
-        firstSeenAt: null as unknown as number,
-        lastSeenAt: undefined as unknown as number,
-        stringValue: null,
-        numberValue: null,
-        booleanValue: null,
-      }),
-    ).toEqual({
-      value: 0,
-      events: 0,
-      occurrences: 0,
-      firstSeenAt: 0,
-      lastSeenAt: 0,
-    });
-  });
-
   it("maps event summary cards", () => {
     expect(
       mapEventSummaryCards({

@@ -50,13 +50,12 @@ function seed() {
     database
       .prepare(
         `INSERT INTO visits (
-          visit_id, site_id, site_pk, visitor_id, session_id, status,
+          visit_id, site_pk, visitor_id, session_id, status,
           started_at, last_activity_at, pathname, hostname, country
-        ) VALUES (?, ?, 1, ?, ?, 'finalized', ?, ?, '/checkout', 'example.com', ?)`,
+        ) VALUES (?, 1, ?, ?, 'finalized', ?, ?, '/checkout', 'example.com', ?)`,
       )
       .run(
         visitId,
-        SITE_ID,
         `visitor-${visitId}`,
         `session-${visitId}`,
         START,
@@ -70,21 +69,20 @@ function seed() {
     nameIds.set(name, nameIds.size + 1);
     database
       .prepare(
-        "INSERT INTO custom_event_names (id, site_id, site_pk, name, last_seen_at) VALUES (?, ?, 1, ?, 0)",
+        "INSERT INTO custom_event_names (id, site_pk, name, last_seen_at) VALUES (?, 1, ?, 0)",
       )
-      .run(nameIds.get(name)!, SITE_ID, name);
+      .run(nameIds.get(name)!, name);
   }
   EVENTS.forEach(([name, visitId, minute, amount, currency], index) => {
     database
       .prepare(
         `INSERT INTO custom_events (
-          event_id, site_id, site_pk, visit_id, event_name_id, occurred_at,
-          received_at, node_count, value_count, revenue_amount, revenue_currency
-        ) VALUES (?, ?, 1, ?, ?, ?, ?, 0, 0, ?, ?)`,
+          event_id, site_pk, visit_id, event_name_id, occurred_at,
+          received_at, revenue_amount, revenue_currency
+        ) VALUES (?, 1, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         `event-${index}`,
-        SITE_ID,
         visitId,
         nameIds.get(name)!,
         START + minute * 60_000,

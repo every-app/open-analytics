@@ -26,25 +26,17 @@ import { scrollDepthOf, scrollDepthSql } from "./scroll-depth";
 const VALID_DURATION = "duration_ms IS NOT NULL AND duration_ms >= 0";
 
 /**
- * The filtered page views grouped by session, visitor and `bucket`, with
- * their views and durations: one pass over visits that every aggregate of
- * the statement reads. With scroll depth the groups are per page too, and
- * materialized, since two aggregates read them.
+ * `page_view_groups`: the page views of `from` grouped by session, visitor
+ * and `bucket`, with their views and durations, for every aggregate of the
+ * statement to read. With scroll depth the groups are per page too. A
+ * statement whose aggregates all read it asks for it `materialized`.
  */
-function pageViewGroups(
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
-  options: {
-    readonly bucket?: string;
-    readonly withScrollDepth: boolean;
-  },
-) {
-  const source = filteredVisitsCte(siteId, window, filters, {
-    columns: `session_id, visitor_id, started_at, duration_ms${
-      options.withScrollDepth ? ", pathname, scroll_depth" : ""
-    }`,
-  });
+export function pageViewGroupsCte(options: {
+  readonly from: string;
+  readonly bucket?: string;
+  readonly withScrollDepth: boolean;
+  readonly materialized: boolean;
+}): string {
   const keys = [
     "session_id",
     "visitor_id",
@@ -57,9 +49,7 @@ function pageViewGroups(
     ...(options.bucket ? [`${options.bucket} AS bucket`] : []),
     ...(options.withScrollDepth ? ["pathname"] : []),
   ].join(", ");
-  return {
-    sql: `${source.sql},
-page_view_groups AS${options.withScrollDepth ? " MATERIALIZED" : ""} (
+  return `page_view_groups AS${options.materialized ? " MATERIALIZED" : ""} (
   SELECT
     ${columns},
     count(*) AS views,
@@ -68,10 +58,163 @@ page_view_groups AS${options.withScrollDepth ? " MATERIALIZED" : ""} (
     COALESCE(sum(CASE WHEN ${VALID_DURATION} THEN 1 ELSE 0 END), 0) AS duration_views${
       options.withScrollDepth ? ",\n    MAX(scroll_depth) AS depth" : ""
     }
-  FROM filtered_visits
+  FROM ${options.from}
   GROUP BY ${keys}
+)`;
+}
+
+/** The visit columns `page_view_groups` reads. */
+export function pageViewGroupColumns(withScrollDepth: boolean): string[] {
+  return [
+    "session_id",
+    "visitor_id",
+    "started_at",
+    "duration_ms",
+    ...(withScrollDepth ? ["pathname", "scroll_depth"] : []),
+  ];
+}
+
+/**
+ * The CTEs the overview totals read from `page_view_groups`, and the
+ * SELECT of the totals: one row.
+ */
+export function overviewTotalsSql(withScrollDepth: boolean): {
+  readonly ctes: string;
+  readonly select: string;
+} {
+  return {
+    ctes: `visitor_sessions AS (
+  SELECT
+    session_id,
+    visitor_id,
+    sum(views) AS views,
+    sum(total_duration) AS total_duration,
+    sum(duration_views) AS duration_views
+  FROM page_view_groups
+  GROUP BY session_id, visitor_id
+)${
+      withScrollDepth
+        ? `,
+scroll_depth AS (
+  ${scrollDepthSql({ from: "page_view_groups", visitor: "visitor_id", depth: "depth" })}
+)`
+        : ""
+    }`,
+    select: `SELECT
+  COALESCE(sum(views), 0) AS views,
+  count(DISTINCT session_id) AS sessions,
+  count(DISTINCT visitor_id) AS visitors,
+  COALESCE(sum(CASE WHEN views = 1 THEN 1 ELSE 0 END), 0) AS bounces,
+  COALESCE(sum(total_duration), 0) AS totalDuration,
+  COALESCE(sum(duration_views), 0) AS durationViews${
+    withScrollDepth
+      ? `,
+  (SELECT scrollDepth FROM scroll_depth) AS scrollDepth`
+      : ""
+  }
+FROM visitor_sessions`,
+  };
+}
+
+/**
+ * The CTEs the trend reads from bucketed `page_view_groups`, and the
+ * SELECT of its rows, one per bucket. A session counts in the bucket of its
+ * first page view: `sessionBucket` places `MIN(first_at)`.
+ */
+export function trendSql(
+  sessionBucket: string,
+  withScrollDepth: boolean,
+): { readonly ctes: string; readonly select: string } {
+  // Each bucket's scroll depth is one more arm of the union, read once.
+  const depthColumn = (value: string) =>
+    withScrollDepth ? `, ${value} AS scrollDepth` : "";
+  return {
+    ctes: `visit_buckets AS (
+  SELECT
+    bucket,
+    sum(views) AS views,
+    count(DISTINCT visitor_id) AS visitors,
+    sum(total_duration) AS totalDuration,
+    sum(duration_views) AS durationViews
+  FROM page_view_groups
+  GROUP BY bucket
+),
+session_starts AS (
+  SELECT ${sessionBucket} AS bucket, sum(views) AS views
+  FROM page_view_groups
+  GROUP BY session_id
+),
+session_buckets AS (
+  SELECT
+    bucket,
+    count(*) AS sessions,
+    COALESCE(sum(CASE WHEN views = 1 THEN 1 ELSE 0 END), 0) AS bounces
+  FROM session_starts
+  GROUP BY bucket
+),${
+      withScrollDepth
+        ? `
+scroll_depth_buckets AS (
+  ${scrollDepthSql({
+    from: "page_view_groups",
+    visitor: "visitor_id",
+    depth: "depth",
+    groupBy: { sql: "bucket", as: "bucket" },
+  })}
+),`
+        : ""
+    }
+combined AS (
+  SELECT bucket, views, visitors, 0 AS sessions, 0 AS bounces, totalDuration, durationViews${depthColumn("NULL")} FROM visit_buckets
+  UNION ALL
+  SELECT bucket, 0 AS views, 0 AS visitors, sessions, bounces, 0 AS totalDuration, 0 AS durationViews${depthColumn("NULL")} FROM session_buckets${
+    withScrollDepth
+      ? `
+  UNION ALL
+  SELECT bucket, 0 AS views, 0 AS visitors, 0 AS sessions, 0 AS bounces, 0 AS totalDuration, 0 AS durationViews, scrollDepth FROM scroll_depth_buckets`
+      : ""
+  }
 )`,
-    bindings: source.bindings,
+    select: `SELECT
+  bucket,
+  sum(views) AS views,
+  sum(visitors) AS visitors,
+  sum(sessions) AS sessions,
+  sum(bounces) AS bounces,
+  sum(totalDuration) AS totalDuration,
+  sum(durationViews) AS durationViews${depthColumn("MAX(scrollDepth)")}
+FROM combined
+GROUP BY bucket`,
+  };
+}
+
+/** The overview totals of a row of `overviewTotalsSql`'s SELECT. */
+export function overviewTotalsRow(
+  row: Record<string, unknown>,
+  withScrollDepth: boolean,
+): OverviewAggregateRow {
+  return {
+    views: Number(row.views ?? 0),
+    sessions: Number(row.sessions ?? 0),
+    visitors: Number(row.visitors ?? 0),
+    bounces: Number(row.bounces ?? 0),
+    totalDuration: Number(row.totalDuration ?? 0),
+    durationViews: Number(row.durationViews ?? 0),
+    ...(withScrollDepth ? { scrollDepth: scrollDepthOf(row.scrollDepth) } : {}),
+  };
+}
+
+/** A trend row of a row of `trendSql`'s SELECT. */
+export function trendRow(
+  row: Record<string, unknown>,
+  buckets: ReturnType<typeof buildTimeBuckets>,
+  withScrollDepth: boolean,
+): TrendAggregateRow {
+  const bucket = Number(row.bucket ?? 0);
+  return {
+    bucket,
+    timestampMs: timeBucketTimestamp(buckets, bucket),
+    ...overviewTotalsRow(row, withScrollDepth),
   };
 }
 
@@ -87,59 +230,27 @@ export async function queryOverviewFromD1(
   diagnostics?: D1ReadDiagnostics,
 ): Promise<OverviewAggregateRow> {
   const withScrollDepth = hasPagePathFilter(filters);
-  const groups = pageViewGroups(siteId, window, filters, { withScrollDepth });
+  const source = filteredVisitsCte(siteId, window, filters, {
+    columns: pageViewGroupColumns(withScrollDepth).join(", "),
+  });
+  const totals = overviewTotalsSql(withScrollDepth);
   const sql = `
 WITH
-${groups.sql},
-visitor_sessions AS (
-  SELECT
-    session_id,
-    visitor_id,
-    sum(views) AS views,
-    sum(total_duration) AS total_duration,
-    sum(duration_views) AS duration_views
-  FROM page_view_groups
-  GROUP BY session_id, visitor_id
-)${
-    withScrollDepth
-      ? `,
-scroll_depth AS (
-  ${scrollDepthSql({ from: "page_view_groups", visitor: "visitor_id", depth: "depth" })}
-)`
-      : ""
-  }
-SELECT
-  COALESCE(sum(views), 0) AS views,
-  count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-  count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors,
-  COALESCE(sum(CASE WHEN session_id != '' AND views = 1 THEN 1 ELSE 0 END), 0) AS bounces,
-  COALESCE(sum(total_duration), 0) AS totalDuration,
-  COALESCE(sum(duration_views), 0) AS durationViews${
-    withScrollDepth
-      ? `,
-  (SELECT scrollDepth FROM scroll_depth) AS scrollDepth`
-      : ""
-  }
-FROM visitor_sessions
+${source.sql},
+${pageViewGroupsCte({ from: "filtered_visits", withScrollDepth, materialized: withScrollDepth })},
+${totals.ctes}
+${totals.select}
 `;
   const row =
     (
       await queryD1All<Record<string, unknown>>(
         env,
         sql,
-        groups.bindings,
+        source.bindings,
         diagnostics,
       )
     )[0] ?? {};
-  return {
-    views: Number(row.views ?? 0),
-    sessions: Number(row.sessions ?? 0),
-    visitors: Number(row.visitors ?? 0),
-    bounces: Number(row.bounces ?? 0),
-    totalDuration: Number(row.totalDuration ?? 0),
-    durationViews: Number(row.durationViews ?? 0),
-    ...(withScrollDepth ? { scrollDepth: scrollDepthOf(row.scrollDepth) } : {}),
-  };
+  return overviewTotalsRow(row, withScrollDepth);
 }
 /**
  * Trend rows for the page views in `window`, counted into `buckets`, which
@@ -156,95 +267,34 @@ async function queryTrendBucketsFromD1(
   diagnostics?: D1ReadDiagnostics,
 ): Promise<TrendAggregateRow[]> {
   const withScrollDepth = hasPagePathFilter(filters);
-  const visitBucket = timeBucketCase(buckets, "started_at");
-  const sessionBucket = timeBucketCase(buckets, "MIN(first_at)");
-  const groups = pageViewGroups(siteId, window, filters, {
-    bucket: visitBucket.sql,
-    withScrollDepth,
+  const source = filteredVisitsCte(siteId, window, filters, {
+    columns: pageViewGroupColumns(withScrollDepth).join(", "),
   });
-  // Each bucket's scroll depth is one more arm of the union, read once.
-  const depthColumn = (value: string) =>
-    withScrollDepth ? `, ${value} AS scrollDepth` : "";
+  const trend = trendSql(
+    timeBucketCase(buckets, "MIN(first_at)").sql,
+    withScrollDepth,
+  );
   const sql = `
 WITH
-${groups.sql},
-visit_buckets AS (
-  SELECT
-    bucket,
-    sum(views) AS views,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors,
-    sum(total_duration) AS totalDuration,
-    sum(duration_views) AS durationViews
-  FROM page_view_groups
-  GROUP BY bucket
-),
-session_starts AS (
-  SELECT ${sessionBucket.sql} AS bucket, sum(views) AS views
-  FROM page_view_groups
-  WHERE session_id != ''
-  GROUP BY session_id
-),
-session_buckets AS (
-  SELECT
-    bucket,
-    count(*) AS sessions,
-    COALESCE(sum(CASE WHEN views = 1 THEN 1 ELSE 0 END), 0) AS bounces
-  FROM session_starts
-  GROUP BY bucket
-),${
-    withScrollDepth
-      ? `
-scroll_depth_buckets AS (
-  ${scrollDepthSql({
-    from: "page_view_groups",
-    visitor: "visitor_id",
-    depth: "depth",
-    groupBy: { sql: "bucket", as: "bucket" },
-  })}
-),`
-      : ""
-  }
-combined AS (
-  SELECT bucket, views, visitors, 0 AS sessions, 0 AS bounces, totalDuration, durationViews${depthColumn("NULL")} FROM visit_buckets
-  UNION ALL
-  SELECT bucket, 0 AS views, 0 AS visitors, sessions, bounces, 0 AS totalDuration, 0 AS durationViews${depthColumn("NULL")} FROM session_buckets${
-    withScrollDepth
-      ? `
-  UNION ALL
-  SELECT bucket, 0 AS views, 0 AS visitors, 0 AS sessions, 0 AS bounces, 0 AS totalDuration, 0 AS durationViews, scrollDepth FROM scroll_depth_buckets`
-      : ""
-  }
-)
-SELECT
-  bucket,
-  sum(views) AS views,
-  sum(visitors) AS visitors,
-  sum(sessions) AS sessions,
-  sum(bounces) AS bounces,
-  sum(totalDuration) AS totalDuration,
-  sum(durationViews) AS durationViews${depthColumn("MAX(scrollDepth)")}
-FROM combined
-GROUP BY bucket
+${source.sql},
+${pageViewGroupsCte({
+  from: "filtered_visits",
+  bucket: timeBucketCase(buckets, "started_at").sql,
+  withScrollDepth,
+  materialized: withScrollDepth,
+})},
+${trend.ctes}
+${trend.select}
 ORDER BY bucket ASC
 `;
   return (
     await queryD1All<Record<string, unknown>>(
       env,
       sql,
-      groups.bindings,
+      source.bindings,
       diagnostics,
     )
-  ).map((row) => ({
-    bucket: Number(row.bucket ?? 0),
-    timestampMs: timeBucketTimestamp(buckets, Number(row.bucket ?? 0)),
-    views: Number(row.views ?? 0),
-    visitors: Number(row.visitors ?? 0),
-    sessions: Number(row.sessions ?? 0),
-    bounces: Number(row.bounces ?? 0),
-    totalDuration: Number(row.totalDuration ?? 0),
-    durationViews: Number(row.durationViews ?? 0),
-    ...(withScrollDepth ? { scrollDepth: scrollDepthOf(row.scrollDepth) } : {}),
-  }));
+  ).map((row) => trendRow(row, buckets, withScrollDepth));
 }
 /**
  * Site-level activity is a composite concern, not a breakdown metric. Keep

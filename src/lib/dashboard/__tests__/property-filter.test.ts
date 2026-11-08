@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { propertyKeyOf, propertyPath } from "@/lib/analytics/property-path";
 import {
   propertyFilterValue,
   setDashboardFilterValue,
@@ -15,14 +14,6 @@ import {
 const EMPTY: FilterDocument = { conditions: [] };
 
 describe("custom property filters", () => {
-  it("names a key by a top-level JSON pointer and back", () => {
-    expect(propertyPath("author")).toBe("/author");
-    expect(propertyPath("a/b~c")).toBe("/a~1b~0c");
-    expect(propertyKeyOf("/a~1b~0c")).toBe("a/b~c");
-    expect(propertyKeyOf("/author/name")).toBeNull();
-    expect(propertyKeyOf("author")).toBeNull();
-  });
-
   it("filters by a key's value, beside the page's other filters", () => {
     const withPath = setDashboardFilterValue(EMPTY, "path", "/blog");
     const filtered = setPropertyFilterValue(withPath, "author", "Jane");
@@ -32,8 +23,8 @@ describe("custom property filters", () => {
     expect([
       ...serializeFilterParams(filtered, analyticsFilterRegistry),
     ]).toEqual([
-      ["filter[event.payload][/author]", "Jane"],
       ["filter[page.path]", "/blog"],
+      ["filter[property][author]", "Jane"],
     ]);
   });
 

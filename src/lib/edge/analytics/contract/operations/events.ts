@@ -1,5 +1,1 @@
-export type {
-  EventFieldValuesQuery,
-  EventQuery,
-  EventQueryOperations,
-} from "../types";
+export type { EventQuery, EventQueryOperations } from "../types";

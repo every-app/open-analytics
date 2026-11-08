@@ -1,4 +1,4 @@
-import { type MouseEvent, useMemo, useState } from "react";
+import { type MouseEvent, useCallback, useMemo, useState } from "react";
 import { Clickable } from "@insightflare/ui/clickable";
 import {
   Select,
@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@insightflare/ui/select";
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowUpRightIcon } from "lucide-react";
 
 import {
@@ -23,7 +24,10 @@ import {
   LazyGeoCityBreadcrumbLabel,
   LazyGeoRegionBreadcrumbLabel,
 } from "@/components/dashboard/geo/lazy-geo-location-label";
-import { LocationsMap } from "@/components/dashboard/geo/locations-map";
+import {
+  LocationsMap,
+  type MapCountries,
+} from "@/components/dashboard/geo/locations-map";
 import { useDashboardQuery } from "@/components/dashboard/shell/dashboard-query-provider";
 import {
   type DashboardListRequestOptions,
@@ -43,11 +47,21 @@ import {
   setDashboardFilterValue,
 } from "@/lib/dashboard/filter-state";
 import { decodeUrlDisplayValue } from "@/lib/dashboard/url-display";
+import type { DashboardCardRowData } from "@/lib/dashboard-api/client/edge";
+import {
+  DASHBOARD_CARD_ROW_LIMIT,
+  DashboardCard,
+  DevicesCardTab,
+  LocationsCardTab,
+  PagesCardTab,
+  SourcesCardTab,
+} from "@/lib/edge/analytics/contract/dashboard";
 import type { FilterDocument } from "@/lib/filter-contract/index";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
 
+import type { DashboardLoad } from "./dashboard-load";
 import {
   buildChannelRows,
   buildDeviceRows,
@@ -89,6 +103,9 @@ import type {
 } from "./types";
 import { UTM_TABS, withUtmTag } from "./utm-tabs";
 
+/** Every country a period can have: the map shades them all. */
+const MAP_COUNTRY_LIMIT = 200;
+
 interface OverviewReportCardsProps {
   locale: Locale;
   messages: AppMessages;
@@ -99,6 +116,8 @@ interface OverviewReportCardsProps {
   filtered: boolean;
   /** Rows to show instead of fetching them: Realtime's live visits. */
   localData?: LocalCardData;
+  /** The page's load, which keeps the cards' tabs and brings their top rows. */
+  load?: DashboardLoad;
 }
 
 type Loader = (request: ReportRowsRequest) => Promise<ReportRowsPage>;
@@ -120,6 +139,54 @@ const DEVICE_FILTER: Record<DeviceTab, DashboardFilterControlKey> = {
   osVersion: "clientOsVersion",
   deviceType: "clientDeviceType",
 };
+
+/** Each card tab as the dashboard load names it. */
+const UTM_SOURCES_TAB: Record<UtmDimensionTab, SourcesCardTab> = {
+  source: SourcesCardTab.UtmSource,
+  medium: SourcesCardTab.UtmMedium,
+  campaign: SourcesCardTab.UtmCampaign,
+  term: SourcesCardTab.UtmTerm,
+  content: SourcesCardTab.UtmContent,
+};
+const PAGES_TAB: Record<PageTab, PagesCardTab> = {
+  path: PagesCardTab.Path,
+  entry: PagesCardTab.Entry,
+  exit: PagesCardTab.Exit,
+};
+const LOCATIONS_TAB: Record<LocationTab, LocationsCardTab> = {
+  map: LocationsCardTab.Map,
+  country: LocationsCardTab.Country,
+  region: LocationsCardTab.Region,
+  city: LocationsCardTab.City,
+};
+const DEVICES_TAB: Record<DeviceTab, DevicesCardTab> = {
+  browser: DevicesCardTab.Browser,
+  osVersion: DevicesCardTab.OsVersion,
+  deviceType: DevicesCardTab.DeviceType,
+};
+
+/** The UTM parameter a campaign tab lists by; null for the other tabs. */
+function utmParamOf(tab: SourcesCardTab): UtmDimensionTab | null {
+  return UTM_TABS.find((param) => UTM_SOURCES_TAB[param] === tab) ?? null;
+}
+
+function sourceTabOf(tab: SourcesCardTab): SourceTab {
+  if (tab === SourcesCardTab.Channel) return "channel";
+  if (tab === SourcesCardTab.Domain) return "domain";
+  return "campaigns";
+}
+
+/** A card's top rows, which the dashboard load can bring along. */
+export function isTopRowsRequest(request: ReportRowsRequest): boolean {
+  return (
+    request.limit === DASHBOARD_CARD_ROW_LIMIT &&
+    request.cursor === null &&
+    request.search === "" &&
+    request.sort.key === "visitors" &&
+    request.sort.direction === "desc" &&
+    request.comparison === null
+  );
+}
 
 /** The list request for one of the remote reports. */
 function listOptions(request: ReportRowsRequest): DashboardListRequestOptions {
@@ -282,10 +349,47 @@ export function OverviewReportCards({
   filters,
   filtered,
   localData,
+  load,
 }: OverviewReportCardsProps) {
   const { window } = useDashboardQuery();
   const applyFilters = useApplyDashboardFilters();
-  const [utmParam, setUtmParam] = useState<UtmDimensionTab>(UTM_TABS[0]);
+  const queryClient = useQueryClient();
+  const [pickedUtmParam, setPickedUtmParam] = useState<UtmDimensionTab>(
+    UTM_TABS[0],
+  );
+  const utmParam =
+    (load && utmParamOf(load.tabs[DashboardCard.Sources])) ?? pickedUtmParam;
+  const pickUtmParam = (param: UtmDimensionTab) => {
+    setPickedUtmParam(param);
+    load?.setTabs({
+      ...load.tabs,
+      [DashboardCard.Sources]: UTM_SOURCES_TAB[param],
+    });
+  };
+  /**
+   * A tab's loader that reads the card's top rows from the dashboard load
+   * when it brought this tab's, and makes its own request otherwise.
+   */
+  const fromLoad = useCallback(
+    (
+      card: DashboardCard,
+      tab: string,
+      build: (rows: DashboardCardRowData[]) => ReportRow[],
+      own: Loader,
+    ): Loader =>
+      async (request) => {
+        if (!load || load.cards?.[card] !== tab || !isTopRowsRequest(request)) {
+          return own(request);
+        }
+        const data = await queryClient.ensureQueryData(load.query);
+        if (!data.cards) throw new Error("dashboard_cards_missing");
+        return page(build(data.cards[card]), {
+          hasMore: false,
+          nextCursor: null,
+        });
+      },
+    [load, queryClient],
+  );
   const liveComparison = useDashboardComparisonQuery(window, filters);
   const comparison = localData ? null : liveComparison;
   const labels = messages.dashboard;
@@ -332,19 +436,24 @@ export function OverviewReportCards({
       load: loaderFor(
         localData?.source.domain,
         (rows) => buildSourceRows(rows, messages.overview.direct),
-        async (request) => {
-          const result = await fetchOverviewSourceCardTab(
-            siteId,
-            window,
-            "domain",
-            filters,
-            listOptions(request),
-          );
-          return page(
-            buildSourceRows(result.items, messages.overview.direct),
-            result.pagination,
-          );
-        },
+        fromLoad(
+          DashboardCard.Sources,
+          SourcesCardTab.Domain,
+          (rows) => buildSourceRows(rows, messages.overview.direct),
+          async (request) => {
+            const result = await fetchOverviewSourceCardTab(
+              siteId,
+              window,
+              "domain",
+              filters,
+              listOptions(request),
+            );
+            return page(
+              buildSourceRows(result.items, messages.overview.direct),
+              result.pagination,
+            );
+          },
+        ),
       ),
       renderLabel: (row) =>
         row.filterValue === DIRECT_REFERRER_FILTER_VALUE ? (
@@ -369,19 +478,24 @@ export function OverviewReportCards({
       value: "channel",
       label: labels.tabs.channels,
       columnLabel: labels.columns.channel,
-      load: async (request) => {
-        const result = await fetchOverviewSourceCardTab(
-          siteId,
-          window,
-          "channel",
-          filters,
-          listOptions(request),
-        );
-        return page(
-          buildChannelRows(result.items, channelLabels),
-          result.pagination,
-        );
-      },
+      load: fromLoad(
+        DashboardCard.Sources,
+        SourcesCardTab.Channel,
+        (rows) => buildChannelRows(rows, channelLabels),
+        async (request) => {
+          const result = await fetchOverviewSourceCardTab(
+            siteId,
+            window,
+            "channel",
+            filters,
+            listOptions(request),
+          );
+          return page(
+            buildChannelRows(result.items, channelLabels),
+            result.pagination,
+          );
+        },
+      ),
       renderLabel: (row) =>
         row.channelId ? (
           <InlineMeta
@@ -399,19 +513,24 @@ export function OverviewReportCards({
       value: "campaigns",
       label: labels.tabs.campaigns,
       columnLabel: labels.tabs.utm[utmParam],
-      load: async (request) => {
-        const result = await fetchUtmDimension(
-          siteId,
-          window,
-          utmParam,
-          withUtmTag(filters, utmParam),
-          listOptions(request),
-        );
-        return page(
-          buildUtmRows(utmParam, result.items, labels.notSet),
-          result.pagination,
-        );
-      },
+      load: fromLoad(
+        DashboardCard.Sources,
+        UTM_SOURCES_TAB[utmParam],
+        (rows) => buildUtmRows(utmParam, rows, labels.notSet),
+        async (request) => {
+          const result = await fetchUtmDimension(
+            siteId,
+            window,
+            utmParam,
+            withUtmTag(filters, utmParam),
+            listOptions(request),
+          );
+          return page(
+            buildUtmRows(utmParam, result.items, labels.notSet),
+            result.pagination,
+          );
+        },
+      ),
       renderLabel: (row) => <MonoLabel row={row} />,
       ...controlFilter(filters, UTM_FILTER[utmParam]),
       detailColumns: countColumns,
@@ -420,6 +539,7 @@ export function OverviewReportCards({
   }, [
     countColumns,
     filters,
+    fromLoad,
     labels,
     localData,
     messages,
@@ -443,16 +563,21 @@ export function OverviewReportCards({
       load: loaderFor(
         localData?.page[value],
         (rows) => buildPageRows(value, rows),
-        async (request) => {
-          const result = await fetchOverviewPageCardTab(
-            siteId,
-            window,
-            value,
-            filters,
-            listOptions(request),
-          );
-          return page(buildPageRows(value, result.items), result.pagination);
-        },
+        fromLoad(
+          DashboardCard.Pages,
+          PAGES_TAB[value],
+          (rows) => buildPageRows(value, rows),
+          async (request) => {
+            const result = await fetchOverviewPageCardTab(
+              siteId,
+              window,
+              value,
+              filters,
+              listOptions(request),
+            );
+            return page(buildPageRows(value, result.items), result.pagination);
+          },
+        ),
       ),
       renderLabel: (row) => (
         <PageLabel row={row} siteDomain={siteDomain} messages={messages} />
@@ -503,6 +628,7 @@ export function OverviewReportCards({
   }, [
     countColumns,
     filters,
+    fromLoad,
     labels,
     localData,
     locale,
@@ -527,19 +653,24 @@ export function OverviewReportCards({
       load: loaderFor(
         localData?.geo[value],
         (rows) => buildLocationRows(value, rows, locale, messages),
-        async (request) => {
-          const result = await fetchOverviewGeoDimensionTabPage(
-            siteId,
-            window,
-            value,
-            filters,
-            listOptions(request),
-          );
-          return page(
-            buildLocationRows(value, result.items, locale, messages),
-            result.pagination,
-          );
-        },
+        fromLoad(
+          DashboardCard.Locations,
+          LOCATIONS_TAB[value],
+          (rows) => buildLocationRows(value, rows, locale, messages),
+          async (request) => {
+            const result = await fetchOverviewGeoDimensionTabPage(
+              siteId,
+              window,
+              value,
+              filters,
+              listOptions(request),
+            );
+            return page(
+              buildLocationRows(value, result.items, locale, messages),
+              result.pagination,
+            );
+          },
+        ),
       ),
       renderLabel: (row, source) =>
         source === "search" ? (
@@ -558,6 +689,7 @@ export function OverviewReportCards({
   }, [
     countColumns,
     filters,
+    fromLoad,
     labels,
     localData,
     locale,
@@ -581,19 +713,24 @@ export function OverviewReportCards({
       load: loaderFor(
         localData?.client[value],
         (rows) => buildDeviceRows(value, rows, messages),
-        async (request) => {
-          const result = await fetchOverviewClientDimensionTab(
-            siteId,
-            window,
-            value,
-            filters,
-            listOptions(request),
-          );
-          return page(
-            buildDeviceRows(value, result.items, messages),
-            result.pagination,
-          );
-        },
+        fromLoad(
+          DashboardCard.Devices,
+          DEVICES_TAB[value],
+          (rows) => buildDeviceRows(value, rows, messages),
+          async (request) => {
+            const result = await fetchOverviewClientDimensionTab(
+              siteId,
+              window,
+              value,
+              filters,
+              listOptions(request),
+            );
+            return page(
+              buildDeviceRows(value, result.items, messages),
+              result.pagination,
+            );
+          },
+        ),
       ),
       renderLabel: (row) =>
         value === "deviceType" ? (
@@ -617,14 +754,59 @@ export function OverviewReportCards({
       ),
       tab("deviceType", labels.tabs.devices, labels.columns.device),
     ];
-  }, [countColumns, filters, labels, localData, messages, siteId, window]);
+  }, [
+    countColumns,
+    filters,
+    fromLoad,
+    labels,
+    localData,
+    messages,
+    siteId,
+    window,
+  ]);
 
   const selectedCountry = extractGeoCountryCodeFromFilterValue(
     dashboardFilterValue(filters, "geo") ?? null,
   );
-  const mapTab = localData
-    ? []
-    : [
+  const mapCountries: MapCountries | null = load
+    ? load.cards?.[DashboardCard.Locations] === LocationsCardTab.Map
+      ? {
+          queryKey: [...load.query.queryKey, "map"],
+          load: async () => {
+            const data = await queryClient.ensureQueryData(load.query);
+            if (!data.cards) throw new Error("dashboard_cards_missing");
+            return data.cards[DashboardCard.Locations];
+          },
+        }
+      : {
+          queryKey: [
+            "dashboard",
+            "overview-map-countries",
+            siteId,
+            window.from,
+            window.to,
+            window.timeZone,
+            filtersKey,
+          ],
+          load: async (signal) =>
+            (
+              await fetchOverviewGeoDimensionTabPage(
+                siteId,
+                window,
+                "country",
+                filters,
+                {
+                  limit: MAP_COUNTRY_LIMIT,
+                  sort: "visitors",
+                  direction: "desc",
+                  signal,
+                },
+              )
+            ).items,
+        }
+    : null;
+  const mapTab = mapCountries
+    ? [
         {
           value: "map" as const,
           label: labels.tabs.map,
@@ -632,9 +814,7 @@ export function OverviewReportCards({
             <LocationsMap
               locale={locale}
               messages={messages}
-              siteId={siteId}
-              window={window}
-              filters={filters}
+              countries={mapCountries}
               selectedCountryCode={selectedCountry}
               onCountrySelect={(country) =>
                 applyFilters(
@@ -648,7 +828,8 @@ export function OverviewReportCards({
             />
           ),
         },
-      ];
+      ]
+    : [];
   const shared = {
     messages,
     columns: cardColumns,
@@ -666,11 +847,26 @@ export function OverviewReportCards({
           requestKey={`${requestKey}|${utmParam}`}
           title={labels.cards.sources}
           tabs={sourceTabs}
+          {...(load && {
+            activeTab: sourceTabOf(load.tabs[DashboardCard.Sources]),
+            onActiveTabChange: (tab: SourceTab) =>
+              load.setTabs({
+                ...load.tabs,
+                [DashboardCard.Sources]:
+                  tab === "campaigns"
+                    ? UTM_SOURCES_TAB[utmParam]
+                    : tab === "channel"
+                      ? SourcesCardTab.Channel
+                      : SourcesCardTab.Domain,
+              }),
+          })}
           tabControls={(tab) =>
             tab === "campaigns" ? (
               <Select
                 value={utmParam}
-                onValueChange={(value) => setUtmParam(value as UtmDimensionTab)}
+                onValueChange={(value) =>
+                  pickUtmParam(value as UtmDimensionTab)
+                }
               >
                 <SelectTrigger
                   size="sm"
@@ -692,7 +888,19 @@ export function OverviewReportCards({
         />
       </div>
       <div className="min-w-0">
-        <ReportCard {...shared} title={labels.cards.pages} tabs={pageTabs} />
+        <ReportCard
+          {...shared}
+          title={labels.cards.pages}
+          tabs={pageTabs}
+          {...(load && {
+            activeTab: load.tabs[DashboardCard.Pages],
+            onActiveTabChange: (tab: PageTab) =>
+              load.setTabs({
+                ...load.tabs,
+                [DashboardCard.Pages]: PAGES_TAB[tab],
+              }),
+          })}
+        />
       </div>
       <div className="min-w-0">
         <ReportCard
@@ -700,6 +908,14 @@ export function OverviewReportCards({
           title={labels.cards.locations}
           tabs={locationTabs}
           extraTabs={mapTab}
+          {...(load && {
+            activeTab: load.tabs[DashboardCard.Locations],
+            onActiveTabChange: (tab: LocationTab) =>
+              load.setTabs({
+                ...load.tabs,
+                [DashboardCard.Locations]: LOCATIONS_TAB[tab],
+              }),
+          })}
         />
       </div>
       <div className="min-w-0">
@@ -707,6 +923,14 @@ export function OverviewReportCards({
           {...shared}
           title={labels.cards.devices}
           tabs={deviceTabs}
+          {...(load && {
+            activeTab: load.tabs[DashboardCard.Devices],
+            onActiveTabChange: (tab: DeviceTab) =>
+              load.setTabs({
+                ...load.tabs,
+                [DashboardCard.Devices]: DEVICES_TAB[tab],
+              }),
+          })}
         />
       </div>
     </section>

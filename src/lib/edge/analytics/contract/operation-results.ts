@@ -64,8 +64,7 @@ export interface CanonicalEventRecord {
   readonly os: string;
   readonly osVersion: string;
   readonly deviceType: string;
-  readonly nodeCount: number;
-  readonly valueCount: number;
+  readonly properties: Readonly<Record<string, string>>;
 }
 
 export interface CanonicalEventSummaryResult {
@@ -137,24 +136,6 @@ export interface CanonicalEventTypeDetailResult {
   readonly cards: CanonicalEventContextCards;
 }
 
-export interface CanonicalEventField {
-  readonly path: string;
-  readonly valueType: string;
-  readonly events: number;
-  readonly occurrences: number;
-  readonly firstSeenAt: number;
-  readonly lastSeenAt: number;
-  readonly exampleValue: string | number | boolean | null;
-}
-
-export interface CanonicalEventFieldValue {
-  readonly value: string | number | boolean | null;
-  readonly events: number;
-  readonly occurrences: number;
-  readonly firstSeenAt: number;
-  readonly lastSeenAt: number;
-}
-
 export interface CanonicalGoalMetricSummary {
   readonly total: number;
   readonly converted: number;
@@ -193,17 +174,5 @@ export interface CanonicalGoalTimeseriesResult {
 }
 
 export type CanonicalEventRecordPage = PageResult<CanonicalEventRecord>;
-export type CanonicalEventFieldPage = PageResult<CanonicalEventField>;
-export type CanonicalEventFieldValuePage = PageResult<CanonicalEventFieldValue>;
 export type CanonicalEventTypesPage = CanonicalEventTypeResult;
 export type CanonicalEventRecordPageResult = CanonicalEventRecordPage;
-export type CanonicalEventFieldValuesResult = {
-  readonly eventName: string | undefined;
-  readonly fieldPath: string;
-  readonly fieldValueType: string;
-  readonly data: CanonicalEventFieldValuePage;
-};
-export type CanonicalEventFieldsResult = {
-  readonly eventName: string | undefined;
-  readonly data: CanonicalEventFieldPage;
-};

@@ -58,8 +58,8 @@ function makeVisit(overrides: Partial<StoredOpenVisit> = {}): StoredOpenVisit {
   return {
     siteId: "site-1",
     visitId: "visit-1",
-    visitorId: "visitor-from-visit",
-    sessionId: "session-from-visit",
+    visitorId: 101,
+    sessionId: 201,
     startedAt: receivedAt - 5_000,
     lastActivityAt: receivedAt - 100,
     pathname: "/from-visit",
@@ -98,7 +98,7 @@ function makeRecentSession(
   overrides: Partial<RecentVisitorSession> = {},
 ): RecentVisitorSession {
   return {
-    sessionId: "server-session-1",
+    sessionId: 301,
     visitId: "visit-1",
     status: "open",
     routeMatch: 1,
@@ -274,7 +274,7 @@ describe("normalizeIngestRecord pageview records", () => {
     if (result.record?.kind !== "pageview") {
       throw new Error("Expected a pageview record");
     }
-    expect(result.record.sessionId).not.toBe("");
+    expect(Number.isSafeInteger(result.record.sessionId)).toBe(true);
     expect(result.record.previousVisitId).toBe("");
     expect(result.record.previousVisitStartedAt).toBeNull();
     expect(result.record.previousScrollDepth).toBeNull();
@@ -481,7 +481,7 @@ describe("normalizeIngestRecord pageview records", () => {
     if (result.record?.kind !== "pageview") {
       throw new Error("Expected a pageview record");
     }
-    expect(result.record.sessionId).toMatch(/^[0-9a-f]{64}$/);
+    expect(Number.isSafeInteger(result.record.sessionId)).toBe(true);
   });
 
   it("keeps a city-level location and no raw user agent, postal or metro code or network organization", async () => {
@@ -557,7 +557,7 @@ describe("normalizeIngestRecord pageview records", () => {
     ).resolves.toMatchObject({
       record: {
         kind: "pageview",
-        sessionId: "server-session-1",
+        sessionId: 301,
         previousVisitId: "visit-1",
         previousVisitStartedAt: receivedAt - 10_000,
         previousScrollDepth: 42,
@@ -590,7 +590,7 @@ describe("normalizeIngestRecord pageview records", () => {
 
     expect(result.record).toMatchObject({
       kind: "pageview",
-      sessionId: "server-session-1",
+      sessionId: 301,
       referrerUrl: "https://news.example/story",
       referrerHost: "news.example",
       utmSource: "newsletter",
@@ -687,7 +687,7 @@ describe("normalizeIngestRecord pageview records", () => {
       throw new Error("Expected a pageview record");
     }
     expect(result.record.pathname).toHaveLength(2048);
-    expect(result.record.sessionId).toMatch(/^[0-9a-f]{64}$/);
+    expect(Number.isSafeInteger(result.record.sessionId)).toBe(true);
     expect(result.record.queryString).toHaveLength(2048);
     expect(result.record.hashFragment).toHaveLength(1024);
     expect(result.record.title).toHaveLength(1024);
@@ -854,43 +854,36 @@ describe("normalizeIngestRecord custom event records", () => {
     ).resolves.toMatchObject({ record: null, reason: "missing_visit_id" });
   });
 
-  it("rejects invalid eventData before visit lookup", async () => {
+  it("keeps a custom event's flat properties, as Plausible does, and drops nested ones", async () => {
     const { context } = makeContext({ visit: makeVisit() });
 
-    await expect(
-      normalizeIngestRecord(
+    for (const [eventData, properties] of [
+      [undefined, {}],
+      [[], {}],
+      ["plan=pro", {}],
+      [
+        {
+          plan: " pro ",
+          seats: 3,
+          trial: false,
+          team: { size: 4 },
+          tags: ["new"],
+          coupon: null,
+        },
+        { plan: "pro", seats: "3", trial: "false" },
+      ],
+    ] as const) {
+      const result = await normalizeIngestRecord(
         makeEnvelope({
           kind: "custom_event",
           visitId: "visit-1",
           eventName: "signup",
+          eventData,
         }),
         context,
-      ),
-    ).resolves.toMatchObject({
-      record: null,
-      reason: "invalid_custom_event_data",
-      detail: { error: "eventData is required" },
-    });
-  });
-
-  it("rejects non-object custom event data", async () => {
-    const { context } = makeContext({ visit: makeVisit() });
-
-    await expect(
-      normalizeIngestRecord(
-        makeEnvelope({
-          kind: "custom_event",
-          visitId: "visit-1",
-          eventName: "signup",
-          eventData: [],
-        }),
-        context,
-      ),
-    ).resolves.toMatchObject({
-      record: null,
-      reason: "invalid_custom_event_data",
-      detail: { error: "eventData must be a JSON object" },
-    });
+      );
+      expect(result.record).toMatchObject({ kind: "custom_event", properties });
+    }
   });
 
   it("reports duplicate buffered custom events without scheduling an alarm", async () => {
@@ -927,7 +920,7 @@ describe("normalizeIngestRecord custom event records", () => {
         receivedAt,
         sequence: 0,
         eventName: "signup",
-        eventDataJson: '{"plan":"pro"}',
+        propertiesJson: '{"plan":"pro"}',
         revenueAmount: null,
         revenueCurrency: null,
       },
@@ -969,7 +962,7 @@ describe("normalizeIngestRecord custom event records", () => {
         receivedAt,
         sequence: 0,
         eventName: "signup",
-        eventDataJson: '{"plan":"pro","nested":{"ok":true}}',
+        propertiesJson: '{"plan":"pro"}',
         revenueAmount: 15.99,
         revenueCurrency: "USD",
       },
@@ -998,13 +991,13 @@ describe("normalizeIngestRecord custom event records", () => {
       sequence: 0,
       eventAt: receivedAt - 1_000,
       eventName: "signup",
-      eventDataJson: '{"amount":12,"tags":["new"]}',
+      properties: { amount: "12" },
       revenueAmount: 9.5,
       revenueCurrency: "EUR",
       siteId: "site-1",
       visitId: "visit-1",
-      visitorId: "visitor-from-visit",
-      sessionId: "session-from-visit",
+      visitorId: 101,
+      sessionId: 201,
       pathname: "/from-visit",
       hostname: "example.com",
     });
@@ -1036,7 +1029,7 @@ describe("normalizeIngestRecord custom event records", () => {
       kind: "custom_event",
       sequence: 0,
       eventName: "purchase",
-      eventDataJson: '{"amount":20}',
+      properties: { amount: "20" },
       revenueAmount: null,
       revenueCurrency: null,
       utmSource: "visit",

@@ -1,13 +1,11 @@
-import type { EventField } from "@/lib/dashboard-api/client/edge";
 import {
   analyticsFilterRegistry,
   type FilterFieldGroup,
-  FilterOperator,
   type RegisteredFilterField,
 } from "@/lib/filter-contract/index";
 import type { AppMessages } from "@/lib/i18n/messages";
 
-import type { EditorCondition, FilterPanelAudience } from "./model";
+import type { FilterPanelAudience } from "./model";
 
 export function fieldLabel(
   field: RegisteredFilterField,
@@ -49,34 +47,4 @@ export function filterPickerGroups(
     label: messages.filterBuilder.fieldGroups[key] ?? key,
     fields: entries,
   }));
-}
-/**
- * The custom event the rows filter to, if exactly one: its payload paths
- * are the ones a custom property picker suggests.
- */
-export function directEventName(
-  conditions: readonly EditorCondition[],
-): string | undefined {
-  const names = conditions.filter(
-    (condition) =>
-      condition.field === "event.name" &&
-      condition.operator === FilterOperator.Eq &&
-      condition.valueText.trim().length > 0,
-  );
-  return names.length === 1 ? names[0]!.valueText.trim() : undefined;
-}
-export function isSelectablePayloadFieldType(
-  valueType: EventField["valueType"],
-): valueType is "string" | "number" | "boolean" {
-  return (
-    valueType === "string" || valueType === "number" || valueType === "boolean"
-  );
-}
-export function payloadFieldTypeLabel(
-  valueType: EventField["valueType"],
-  messages: AppMessages,
-): string {
-  return isSelectablePayloadFieldType(valueType)
-    ? messages.filterBuilder.valueKinds[valueType]
-    : valueType;
 }

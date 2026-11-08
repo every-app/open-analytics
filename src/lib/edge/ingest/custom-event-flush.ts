@@ -3,15 +3,11 @@ import { D1QueryBudgetExceededError } from "@/lib/edge/scheduled-tasks/d1-query-
 import { clampString } from "@/lib/edge/utils";
 
 import {
-  expandCustomEventDataJson,
-  type ExpandedCustomEventData,
-} from "./custom-event-json";
-import {
   type IngestFlushContext,
   recordFlushCounter,
   resolveSitePk,
 } from "./flush-types";
-import type { BufferedCustomEventRow, DictionaryKind } from "./types";
+import type { BufferedCustomEventRow } from "./types";
 /**
  * Writes a buffered custom event to D1, whose page view is already there.
  * Whether it was written: one that wasn't stays dirty, its failure counted,
@@ -24,18 +20,9 @@ export async function flushCustomEventRow(
 ): Promise<boolean> {
   try {
     const sitePk = await resolveSitePk(context, row.siteId);
-    const expanded = expandCustomEventDataJson(row.eventDataJson);
-    if (!expanded.ok) {
-      throw new Error(expanded.error);
-    }
-    const ids = await resolveCustomEventDictionaryIds(
-      context,
-      row,
-      expanded.data,
-      sitePk,
-    );
+    const eventNameId = await resolveEventNameId(context, row, sitePk);
     await context.db.batch(
-      prepareCustomEventStatements(row, expanded.data, ids, sitePk),
+      prepareCustomEventStatements(row, eventNameId, sitePk),
     );
     if (!(await hasPersistedCustomEvent(context, row.eventId))) {
       throw new Error("insert_did_not_create_event");
@@ -65,107 +52,39 @@ export async function flushCustomEventRow(
   );
   return true;
 }
-function dictionarySql(kind: DictionaryKind): {
-  table: string;
-  column: string;
-} {
-  if (kind === "name") {
-    return { table: "custom_event_names", column: "name" };
-  }
-  if (kind === "key") {
-    return { table: "custom_event_json_keys", column: '"key"' };
-  }
-  return { table: "custom_event_json_paths", column: "path" };
-}
-async function resolveDictionaryId(
-  context: IngestFlushContext,
-  kind: DictionaryKind,
-  siteId: string,
-  sitePk: number,
-  value: string,
-  seenAt: number,
-): Promise<number> {
-  const cacheKey = `${kind}:${siteId}:${value}`;
-  const cached = context.dictionaryIds.get(cacheKey);
-  if (cached !== undefined) return cached;
-
-  const spec = dictionarySql(kind);
-  await context.db.run({
-    sql: `
-      INSERT INTO ${spec.table} (site_id, site_pk, ${spec.column}, created_at, last_seen_at)
-      VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT(site_pk, ${spec.column}) DO UPDATE SET
-        last_seen_at = excluded.last_seen_at
-    `,
-    bindings: [siteId, sitePk, value, seenAt, seenAt],
-    tag: `ingest.dictionary.${kind}.upsert`,
-  });
-
-  const row = await context.db.first<{ id: number }>({
-    sql: `
-      SELECT id
-      FROM ${spec.table}
-      WHERE site_pk = ? AND ${spec.column} = ?
-      LIMIT 1
-    `,
-    bindings: [sitePk, value],
-    tag: `ingest.dictionary.${kind}.first`,
-  });
-  const id = Number(row?.id ?? 0);
-  if (!Number.isFinite(id) || id <= 0) {
-    throw new Error(`Failed to resolve custom event ${kind} dictionary id`);
-  }
-  context.dictionaryIds.set(cacheKey, id);
-  return id;
-}
-async function resolveCustomEventDictionaryIds(
+/** The event name's id in D1, created on its first event. */
+async function resolveEventNameId(
   context: IngestFlushContext,
   row: BufferedCustomEventRow,
-  expanded: ExpandedCustomEventData,
   sitePk: number,
-): Promise<{
-  eventNameId: number;
-  keyIds: Map<string, number>;
-  pathIds: Map<string, number>;
-}> {
-  const seenAt = row.createdAt;
-  const eventNameId = await resolveDictionaryId(
-    context,
-    "name",
-    row.siteId,
-    sitePk,
-    row.eventName,
-    seenAt,
-  );
-  const keyIds = new Map<string, number>();
-  for (const key of expanded.keys) {
-    keyIds.set(
-      key,
-      await resolveDictionaryId(
-        context,
-        "key",
-        row.siteId,
-        sitePk,
-        key,
-        seenAt,
-      ),
-    );
-  }
-  const pathIds = new Map<string, number>();
-  for (const path of expanded.paths) {
-    pathIds.set(
-      path,
-      await resolveDictionaryId(
-        context,
-        "path",
-        row.siteId,
-        sitePk,
-        path,
-        seenAt,
-      ),
-    );
-  }
-  return { eventNameId, keyIds, pathIds };
+): Promise<number> {
+  const cacheKey = `${sitePk}:${row.eventName}`;
+  const cached = context.eventNameIds.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  await context.db.run({
+    sql: `
+      INSERT INTO custom_event_names (site_pk, name, created_at, last_seen_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(site_pk, name) DO UPDATE SET
+        last_seen_at = excluded.last_seen_at
+    `,
+    bindings: [sitePk, row.eventName, row.createdAt, row.createdAt],
+    tag: "ingest.custom_event_names.upsert",
+  });
+  const name = await context.db.first<{ id: number }>({
+    sql: `
+      SELECT id
+      FROM custom_event_names
+      WHERE site_pk = ? AND name = ?
+      LIMIT 1
+    `,
+    bindings: [sitePk, row.eventName],
+    tag: "ingest.custom_event_names.first",
+  });
+  if (!name) throw new Error("Failed to resolve the custom event name's id");
+  context.eventNameIds.set(cacheKey, name.id);
+  return name.id;
 }
 async function hasPersistedCustomEvent(
   context: IngestFlushContext,
@@ -183,39 +102,34 @@ async function hasPersistedCustomEvent(
   });
   return persisted !== null;
 }
+/**
+ * The event's write, only once its page view is in D1, then one statement
+ * for its custom properties if it has any.
+ */
 function prepareCustomEventStatements(
   row: BufferedCustomEventRow,
-  expanded: ExpandedCustomEventData,
-  ids: {
-    eventNameId: number;
-    keyIds: Map<string, number>;
-    pathIds: Map<string, number>;
-  },
+  eventNameId: number,
   sitePk: number,
 ): DatabaseStatement[] {
-  const eventStatement: DatabaseStatement = {
+  const event: DatabaseStatement = {
     sql: `
       INSERT OR IGNORE INTO custom_events (
-        event_id, site_id, site_pk, visit_id, event_name_id, occurred_at, received_at,
-        sequence, node_count, value_count, revenue_amount, revenue_currency,
-        created_at
+        event_id, site_pk, visit_id, event_name_id, occurred_at, received_at,
+        sequence, revenue_amount, revenue_currency, created_at
       )
-      SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+      SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       FROM visits
       WHERE site_pk = ? AND visit_id = ?
       LIMIT 1
     `,
     bindings: [
       row.eventId,
-      row.siteId,
       sitePk,
       row.visitId,
-      ids.eventNameId,
+      eventNameId,
       row.occurredAt,
       row.receivedAt,
       row.sequence,
-      expanded.nodes.length,
-      expanded.values.length,
       row.revenueAmount,
       row.revenueCurrency,
       row.createdAt,
@@ -224,75 +138,20 @@ function prepareCustomEventStatements(
     ],
     tag: "ingest.custom_events.insert",
   };
-
-  const nodeStatements = expanded.nodes.map((node) => {
-    const pathId = ids.pathIds.get(node.path);
-    if (pathId === undefined) {
-      throw new Error(`Missing custom event path id for ${node.path}`);
-    }
-    const keyId = node.key === null ? null : ids.keyIds.get(node.key);
-    if (node.key !== null && keyId === undefined) {
-      throw new Error(`Missing custom event key id for ${node.key}`);
-    }
-    return {
+  if (row.propertiesJson === null) return [event];
+  return [
+    event,
+    {
       sql: `
-        INSERT OR IGNORE INTO custom_event_json_nodes (
-          event_pk, node_id, parent_node_id, key_id, path_id, value_type,
-          member_order, array_index, depth
+        INSERT OR IGNORE INTO custom_event_properties (
+          event_pk, key, value, site_pk, occurred_at
         )
-        SELECT event_pk, ?, ?, ?, ?, ?, ?, ?, ?
-        FROM custom_events
-        WHERE event_id = ?
+        SELECT ce.event_pk, property.key, property.value, ce.site_pk, ce.occurred_at
+        FROM custom_events ce, json_each(?2) AS property
+        WHERE ce.event_id = ?1
       `,
-      bindings: [
-        node.nodeId,
-        node.parentNodeId,
-        keyId ?? null,
-        pathId,
-        node.valueType,
-        node.memberOrder,
-        node.arrayIndex,
-        node.depth,
-        row.eventId,
-      ],
-      tag: "ingest.custom_event_json_nodes.insert",
-    };
-  });
-
-  const valueStatements = expanded.values.map((value) => {
-    const pathId = ids.pathIds.get(value.path);
-    if (pathId === undefined) {
-      throw new Error(`Missing custom event value path id for ${value.path}`);
-    }
-    return {
-      sql: `
-        INSERT OR IGNORE INTO custom_event_json_values (
-          event_pk, node_id, site_id, site_pk, event_name_id, path_id, occurred_at,
-          scope_node_id, value_type, string_value, string_hash, number_value,
-          boolean_value
-        )
-        SELECT event_pk, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-        FROM custom_events
-        WHERE event_id = ?
-      `,
-      bindings: [
-        value.nodeId,
-        row.siteId,
-        sitePk,
-        ids.eventNameId,
-        pathId,
-        row.occurredAt,
-        value.scopeNodeId,
-        value.valueType,
-        value.stringValue,
-        value.stringHash,
-        value.numberValue,
-        value.booleanValue,
-        row.eventId,
-      ],
-      tag: "ingest.custom_event_json_values.insert",
-    };
-  });
-
-  return [eventStatement, ...nodeStatements, ...valueStatements];
+      bindings: [row.eventId, row.propertiesJson],
+      tag: "ingest.custom_event_properties.insert",
+    },
+  ];
 }

@@ -33,16 +33,15 @@ function createFixture() {
 
   const insertVisit = database.prepare(`
     INSERT INTO visits (
-      visit_id, site_id, visitor_id, session_id, status,
+      visit_id, visitor_id, session_id, status,
       started_at, last_activity_at, pathname, hostname, site_pk
     ) VALUES (
-      ?, ?, ?, ?, 'active', ?, ?, '/', ?,
+      ?, ?, ?, 'active', ?, ?, '/', ?,
       (SELECT site_pk FROM site_identities WHERE site_id = ? LIMIT 1)
     )
   `);
   insertVisit.run(
     "visit-1",
-    "site-1",
     "visitor-1",
     "session-1",
     1_800_000_000_000,
@@ -52,7 +51,6 @@ function createFixture() {
   );
   insertVisit.run(
     "visit-2",
-    "site-1",
     "visitor-2",
     "session-2",
     1_800_000_001_000,
@@ -62,7 +60,6 @@ function createFixture() {
   );
   insertVisit.run(
     "visit-3",
-    "site-2",
     "visitor-3",
     "session-3",
     1_900_000_000_000,

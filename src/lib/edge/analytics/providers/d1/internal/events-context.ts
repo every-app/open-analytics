@@ -104,8 +104,8 @@ export async function queryEventAnalyticsContextCardsFromD1(
     ${expr} AS value,
     NULL AS label,
     count(*) AS views,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+    count(DISTINCT session_id) AS sessions,
+    count(DISTINCT visitor_id) AS visitors
   FROM filtered_events
   ${includeEmpty ? "" : `WHERE TRIM(COALESCE(${expr}, '')) != ''`}
   GROUP BY value`,
@@ -118,8 +118,8 @@ export async function queryEventAnalyticsContextCardsFromD1(
     ${valueExpr} AS value,
     ${labelExpr} AS label,
     count(*) AS views,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
+    count(DISTINCT session_id) AS sessions,
+    count(DISTINCT visitor_id) AS visitors
   FROM filtered_events
   WHERE TRIM(COALESCE(${valueExpr}, '')) != ''
   GROUP BY value, label`,
@@ -132,8 +132,8 @@ export async function queryEventAnalyticsContextCardsFromD1(
     edges.${kind}Path AS value,
     NULL AS label,
     count(*) AS views,
-    count(DISTINCT CASE WHEN fe.session_id != '' THEN fe.session_id ELSE NULL END) AS sessions,
-    count(DISTINCT CASE WHEN fe.visitor_id != '' THEN fe.visitor_id ELSE NULL END) AS visitors
+    count(DISTINCT fe.session_id) AS sessions,
+    count(DISTINCT fe.visitor_id) AS visitors
   FROM filtered_events fe
   INNER JOIN session_edges edges ON edges.session_id = fe.session_id
   WHERE TRIM(COALESCE(edges.${kind}Path, '')) != ''

@@ -1,14 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
-  fetchEventTypeFieldValues,
   fetchFilterValues,
   fetchFunnelDetail,
   fetchFunnels,
   fetchOverview,
   fetchOverviewClientDimensionTab,
   fetchOverviewGeoDimensionTabPage,
-  fetchOverviewGeoPoints,
   fetchOverviewPageCardTab,
   fetchOverviewSourceCardTab,
   fetchPages,
@@ -221,28 +219,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
           null,
         ),
       ).toEqual({ siteId: "123" });
-    });
-  });
-
-  describe("empty parameter fallbacks", () => {
-    const mockWindow = {
-      preset: "today" as const,
-      from: 1700000000000,
-      to: 1700000000000 + 24 * 60 * 60 * 1000,
-      timeZone: "UTC",
-      interval: "hour" as const,
-    };
-
-    it("should handle empty parameter fallbacks gracefully", async () => {
-      // Test invalid inputs resulting in empty return datasets
-      const emptyEvtField = await fetchEventTypeFieldValues(
-        "site-1",
-        mockWindow,
-        "",
-        "",
-        "string",
-      );
-      expect(emptyEvtField.data.items).toHaveLength(0);
     });
   });
 
@@ -486,11 +462,9 @@ describe("Dashboard Client Data Processing Utilities", () => {
       globalThis.fetch = fetchMock as any;
 
       await fetchOverview("option-overview", mockWindow, undefined, {
-        includeChange: true,
         includeDetail: true,
       });
       const params = paramsFromCall(fetchMock, 0);
-      expect(params.get("includeChange")).toBe("1");
       expect(params.get("includeDetail")).toBe("1");
       expect(params.get("interval")).toBe("hour");
     });
@@ -511,14 +485,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
       expect(params.get("fullUrl")).toBe("1");
       expect(params.get("limit")).toBe("12");
 
-      await fetchOverviewGeoPoints("option-geo-points", mockWindow, undefined, {
-        applyGeoFilter: true,
-      });
-      params = paramsFromCall(fetchMock, 1);
-      // The map asks for every point.
-      expect(params.has("limit")).toBe(false);
-      expect(params.get("applyGeoFilter")).toBe("1");
-
       await fetchPagesDashboard(
         "option-pages-dashboard",
         mockWindow,
@@ -528,26 +494,9 @@ describe("Dashboard Client Data Processing Utilities", () => {
           cursor: "pages-cursor",
         },
       );
-      params = paramsFromCall(fetchMock, 2);
+      params = paramsFromCall(fetchMock, 1);
       expect(params.get("limit")).toBe("14");
       expect(params.get("cursor")).toBe("pages-cursor");
-    });
-
-    it("forwards cancellation signals for overview geo point requests", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(freshJsonResponse({ ok: true, data: [] }));
-      globalThis.fetch = fetchMock as any;
-      const controller = new AbortController();
-
-      await fetchOverviewGeoPoints("geo-points-signal", mockWindow, undefined, {
-        signal: controller.signal,
-      });
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({ signal: controller.signal }),
-      );
     });
 
     it("forwards cancellation signals for overview source tabs", async () => {
@@ -586,31 +535,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
           { signal: controller.signal },
         ),
       ).rejects.toMatchObject({ name: "AbortError" });
-    });
-
-    it("forwards cancellation signals for event field values", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(
-          freshJsonResponse({ ok: true, data: emptyPaginatedCollection }),
-        );
-      globalThis.fetch = fetchMock as any;
-      const controller = new AbortController();
-
-      await fetchEventTypeFieldValues(
-        "event-field-values-signal",
-        mockWindow,
-        "Signup",
-        "payload.plan",
-        "string",
-        undefined,
-        { signal: controller.signal },
-      );
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({ signal: controller.signal }),
-      );
     });
 
     it("forwards cancellation signals for UTM dimension requests", async () => {
@@ -769,44 +693,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
       ).rejects.toMatchObject({ name: "AbortError" });
     });
 
-    it("preserves aborted overview geo point requests", async () => {
-      const controller = new AbortController();
-      controller.abort();
-
-      await expect(
-        fetchOverviewGeoPoints("geo-points-aborted", mockWindow, undefined, {
-          signal: controller.signal,
-        }),
-      ).rejects.toMatchObject({ name: "AbortError" });
-    });
-
-    it("should return empty fallback payloads when recoverable endpoints fail", async () => {
-      const fetchMock = vi.fn().mockRejectedValue(new Error("offline"));
-      globalThis.fetch = fetchMock as any;
-
-      const fieldValues = await fetchEventTypeFieldValues(
-        "fallback-field-values",
-        mockWindow,
-        "Signup",
-        "payload.plan",
-        "string",
-      );
-      expect(fieldValues).toEqual({
-        ok: true,
-        fieldPath: "payload.plan",
-        fieldValueType: "string",
-        data: {
-          items: [],
-          pagination: {
-            limit: 1,
-            returned: 0,
-            hasMore: false,
-            nextCursor: null,
-          },
-        },
-      });
-    });
-
     // A failed request fails the dashboard's reads, so their cards say
     // "Couldn't load" instead of drawing zeros.
     it("rejects when a dashboard report request fails", async () => {
@@ -816,9 +702,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
           Promise.resolve(new Response("D1 DB is overloaded", { status: 500 })),
         );
 
-      await expect(
-        fetchOverviewGeoPoints("failed-geo-points", mockWindow),
-      ).rejects.toThrow("Request failed (500");
       await expect(
         fetchOverviewPageCardTab("failed-page-tab", mockWindow, "path"),
       ).rejects.toThrow("Request failed (500");
@@ -843,110 +726,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
       await expect(
         fetchFilterValues("fallback-filter-options", mockWindow, "geo.country"),
       ).resolves.toEqual(emptyPaginatedCollection);
-    });
-
-    it("should normalize geo point and count payloads", async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValueOnce(
-          freshJsonResponse({
-            ok: true,
-            data: [
-              {
-                latitude: "10.5",
-                longitude: null,
-                timestampMs: "123",
-                country: 77,
-                region: null,
-                regionCode: "CA",
-                city: undefined,
-              },
-            ],
-            countryCounts: [
-              {
-                country: undefined,
-                views: "3",
-                sessions: null,
-                visitors: undefined,
-              },
-            ],
-            regionCounts: [
-              {
-                value: undefined,
-                label: null,
-                views: "4",
-                sessions: "2",
-                visitors: null,
-              },
-            ],
-            cityCounts: [
-              {
-                value: null,
-                label: "San Francisco",
-                views: undefined,
-                sessions: "1",
-                visitors: "5",
-              },
-            ],
-          }),
-        )
-        .mockResolvedValueOnce(
-          freshJsonResponse({
-            ok: true,
-            data: null,
-            countryCounts: null,
-            regionCounts: null,
-            cityCounts: null,
-          }),
-        );
-      globalThis.fetch = fetchMock as any;
-
-      const mapped = await fetchOverviewGeoPoints(
-        "geo-points-normalize",
-        mockWindow,
-      );
-      expect(mapped.data[0]).toEqual({
-        latitude: 10.5,
-        longitude: 0,
-        timestampMs: 123,
-        country: "77",
-        region: "",
-        regionCode: "CA",
-        city: "",
-        pointCount: 1,
-      });
-      expect(mapped.countryCounts[0]).toEqual({
-        country: "",
-        views: 3,
-        sessions: 0,
-        visitors: 0,
-      });
-      expect(mapped.regionCounts[0]).toEqual({
-        value: "",
-        label: "",
-        views: 4,
-        sessions: 2,
-        visitors: 0,
-      });
-      expect(mapped.cityCounts[0]).toEqual({
-        value: "",
-        label: "San Francisco",
-        views: 0,
-        sessions: 1,
-        visitors: 5,
-      });
-
-      const emptySections = await fetchOverviewGeoPoints(
-        "geo-points-non-array",
-        mockWindow,
-      );
-      expect(emptySections).toEqual({
-        ok: true,
-        data: [],
-        countryCounts: [],
-        regionCounts: [],
-        cityCounts: [],
-      });
     });
 
     it("should format geo dimension labels for region and city hierarchies", async () => {
@@ -1055,30 +834,6 @@ describe("Dashboard Client Data Processing Utilities", () => {
           "country",
         ).then((page) => page.items),
       ).rejects.toThrow("pagination_contract_violation");
-    });
-
-    it("should return empty field values when the field path is nullish", async () => {
-      const out = await fetchEventTypeFieldValues(
-        "empty-field-path",
-        mockWindow,
-        "Signup",
-        null as any,
-        "string",
-      );
-      expect(out).toEqual({
-        ok: true,
-        fieldPath: "",
-        fieldValueType: "string",
-        data: {
-          items: [],
-          pagination: {
-            limit: 1,
-            returned: 0,
-            hasMore: false,
-            nextCursor: null,
-          },
-        },
-      });
     });
   });
 });

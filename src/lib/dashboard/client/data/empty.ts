@@ -1,8 +1,4 @@
-import type {
-  DashboardFilterOptionsData,
-  EventField,
-  EventFieldValuesData,
-} from "@/lib/dashboard-api/client/edge";
+import type { DashboardFilterOptionsData } from "@/lib/dashboard-api/client/edge";
 function emptyPagination(limit = 1) {
   return {
     limit,
@@ -10,17 +6,6 @@ function emptyPagination(limit = 1) {
     hasMore: false,
     nextCursor: null,
   } as const;
-}
-export function emptyEventFieldValues(
-  fieldPath = "",
-  fieldValueType: EventField["valueType"] | "" = "",
-): EventFieldValuesData {
-  return {
-    ok: true,
-    fieldPath,
-    fieldValueType,
-    data: { items: [], pagination: emptyPagination() },
-  };
 }
 export function emptyDashboardFilterOptions(): DashboardFilterOptionsData {
   return {

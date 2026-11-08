@@ -969,9 +969,11 @@ export function RealtimeLogEventDetailsDrawer({
             <Separator />
 
             <section className="space-y-3">
-              <h3 className="text-sm font-medium">{messages.events.payload}</h3>
+              <h3 className="text-sm font-medium">
+                {messages.events.properties}
+              </h3>
               <JsonTreePanel
-                value={event.eventData ?? {}}
+                value={event.properties ?? {}}
                 labels={messages.events}
               />
             </section>

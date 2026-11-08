@@ -118,8 +118,8 @@ export interface EventRecordRow {
   os: string;
   osVersion: string;
   deviceType: string;
-  nodeCount: number;
-  valueCount: number;
+  /** The event's custom properties, a JSON object. */
+  propertiesJson: string;
 }
 export interface EventTrendSeriesRow {
   eventName: string;
@@ -136,56 +136,6 @@ export interface EventTypeTrendPointRow {
   bucket: number;
   events: number;
   visitors: number;
-}
-export interface EventFieldRow {
-  path: string;
-  valueType: number;
-  events: number;
-  occurrences: number;
-  firstSeenAt: number;
-  lastSeenAt: number;
-  stringValue: string | null;
-  numberValue: number | null;
-  booleanValue: number | null;
-}
-export interface EventFieldValueRow {
-  valueType: number;
-  events: number;
-  occurrences: number;
-  firstSeenAt: number;
-  lastSeenAt: number;
-  stringValue: string | null;
-  numberValue: number | null;
-  booleanValue: number | null;
-}
-export interface GeoPointRow {
-  latitude: number;
-  longitude: number;
-  timestampMs: number;
-  country: string;
-  region: string;
-  regionCode: string;
-  city: string;
-  pointCount: number;
-}
-export interface GeoCountryCountRow {
-  country: string;
-  views: number;
-  sessions: number;
-  visitors: number;
-}
-export interface GeoDimensionCountRow {
-  value: string;
-  label: string;
-  views: number;
-  sessions: number;
-  visitors: number;
-}
-export interface GeoPointAggregate {
-  points: GeoPointRow[];
-  countryCounts: GeoCountryCountRow[];
-  regionCounts: GeoDimensionCountRow[];
-  cityCounts: GeoDimensionCountRow[];
 }
 export type {
   ClientDimensionKey,

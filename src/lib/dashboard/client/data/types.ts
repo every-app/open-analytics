@@ -68,7 +68,7 @@ export type OverviewClientDimensionTab = "browser" | "osVersion" | "deviceType";
 export type OverviewGeoDimensionTab = "country" | "region" | "city";
 export type DashboardFilterOptionKey = Exclude<
   AnalyticsFilterFieldId,
-  "event.payload"
+  "property"
 >;
 export type UtmDimensionTab =
   "source" | "medium" | "campaign" | "term" | "content";

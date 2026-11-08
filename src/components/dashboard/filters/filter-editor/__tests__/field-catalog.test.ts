@@ -2,17 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   allowedFields,
-  directEventName,
   fieldLabel,
   filterPickerGroups,
-  isSelectablePayloadFieldType,
-  payloadFieldTypeLabel,
 } from "@/components/dashboard/filters/filter-editor/field-catalog";
-import {
-  defaultCondition,
-  type EditorCondition,
-} from "@/components/dashboard/filters/filter-editor/model";
-import { FilterOperator } from "@/lib/filter-contract";
 import type { RegisteredFilterField } from "@/lib/filter-contract/filter-registry";
 import type { AppMessages } from "@/lib/i18n/messages";
 
@@ -20,21 +12,8 @@ const messages = {
   filterBuilder: {
     fieldGroups: { page: "Pages", event: "Events" },
     fieldLabels: { "page.path": "Page path" },
-    valueKinds: { string: "String", number: "Number", boolean: "Boolean" },
   },
 } as unknown as AppMessages;
-
-function condition(
-  field: string,
-  valueText: string,
-  operator = FilterOperator.Eq,
-): EditorCondition {
-  return {
-    ...defaultCondition(() => field, field),
-    operator,
-    valueText,
-  };
-}
 
 describe("filter field catalog", () => {
   it("labels a field by its translation, or its id when there is none", () => {
@@ -97,33 +76,5 @@ describe("filter field catalog", () => {
     expect(filterPickerGroups([ungrouped], messages)[0]?.label).toBe(
       "unlisted",
     );
-  });
-
-  it("recognizes only one direct event-name condition", () => {
-    expect(directEventName([condition("event.name", " signup ")])).toBe(
-      "signup",
-    );
-    expect(directEventName([])).toBeUndefined();
-    expect(
-      directEventName([
-        condition("event.name", "signup", FilterOperator.Neq),
-        condition("page.path", "/pricing"),
-      ]),
-    ).toBeUndefined();
-    expect(
-      directEventName([
-        condition("event.name", "signup"),
-        condition("event.name", "purchase"),
-      ]),
-    ).toBeUndefined();
-  });
-
-  it("labels supported payload types and leaves dynamic types explicit", () => {
-    expect(isSelectablePayloadFieldType("string")).toBe(true);
-    expect(isSelectablePayloadFieldType("number")).toBe(true);
-    expect(isSelectablePayloadFieldType("boolean")).toBe(true);
-    expect(isSelectablePayloadFieldType("object")).toBe(false);
-    expect(payloadFieldTypeLabel("number", messages)).toBe("Number");
-    expect(payloadFieldTypeLabel("object", messages)).toBe("object");
   });
 });

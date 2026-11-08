@@ -21,15 +21,17 @@ import {
 import {
   INSERT_VISIT_PROPERTIES_SQL,
   MARK_ROLLED_UP_DAY_SQL,
+  type VisitBindingRow,
   visitBindings,
   visitUpsertSql,
 } from "./sql";
 import { toUnixSeconds } from "./time";
 import type { BufferedCustomEventRow, BufferedVisitRow } from "./types";
-type BufferedVisitFlushRow = BufferedVisitRow & {
-  /** The page view's custom properties as a JSON object, NULL if none. */
-  propertiesJson: string | null;
-};
+type BufferedVisitFlushRow = VisitBindingRow &
+  Pick<BufferedVisitRow, "flushAttempts" | "bufferRevision"> & {
+    /** The page view's custom properties as a JSON object, NULL if none. */
+    propertiesJson: string | null;
+  };
 /** Buffered custom events read at a time. Not a limit on how many flush. */
 const CUSTOM_EVENT_PAGE_SIZE = 100;
 /**
@@ -48,8 +50,8 @@ export enum MaintenanceOutcome {
 interface FinishedVisitCandidate {
   visitId: string;
   siteId: string;
-  visitorId: string;
-  sessionId: string;
+  visitorId: number;
+  sessionId: number;
   status: string;
   startedAt: number;
   lastActivityAt: number;
@@ -278,8 +280,6 @@ function selectDirtyVisits(
         region_code AS regionCode,
         city,
         continent,
-        latitude,
-        longitude,
         timezone,
         browser,
         browser_version AS browserVersion,
@@ -290,7 +290,6 @@ function selectDirtyVisits(
         screen_height AS screenHeight,
         language,
         properties_json AS propertiesJson,
-        dirty,
         flush_attempts AS flushAttempts,
         buffer_revision AS bufferRevision,
         created_at AS createdAt,
@@ -414,7 +413,7 @@ async function flushCustomEvents(context: IngestFlushContext): Promise<void> {
           e.received_at AS receivedAt,
           e.sequence,
           e.event_name AS eventName,
-          e.event_data_json AS eventDataJson,
+          e.properties_json AS propertiesJson,
           e.revenue_amount AS revenueAmount,
           e.revenue_currency AS revenueCurrency,
           e.dirty,
