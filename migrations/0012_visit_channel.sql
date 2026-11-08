@@ -1,0 +1,88 @@
+-- A page view stores its traffic channel, classified by ingest when it
+-- arrives (classifyTrafficChannel in src/lib/analytics/traffic-channel-rules.ts),
+-- so no read classifies it again. Rule changes apply to page views from
+-- then on, as in Plausible.
+--
+-- `everyapp deploy` migrates before it uploads the new Worker, so the
+-- previous Worker writes page views for a moment after this runs. They take
+-- the empty default; the new Worker's ingest buffer writes their channel
+-- again when it starts.
+ALTER TABLE visits ADD COLUMN channel TEXT NOT NULL DEFAULT '';
+
+-- Existing page views take the channel every read gave them until now: this
+-- is the expression the readers used, unchanged.
+UPDATE visits SET channel = CASE
+  WHEN TRIM(COALESCE(utm_medium, '')) = '' AND TRIM(COALESCE(utm_campaign, '')) = ''
+    AND ((LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'chatgpt.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.chatgpt.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'chat.openai.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.chat.openai.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'perplexity.ai' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.perplexity.ai'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'claude.ai' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.claude.ai'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'gemini.google.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.gemini.google.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'copilot.microsoft.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.copilot.microsoft.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'chat.deepseek.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.chat.deepseek.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'chat.mistral.ai' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.chat.mistral.ai'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'grok.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.grok.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'meta.ai' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.meta.ai'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'poe.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.poe.com')
+    OR (LOWER(TRIM(COALESCE(utm_source, ''))) GLOB 'chatgpt.com' OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB '*.chatgpt.com'
+      OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB 'chat.openai.com' OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB '*.chat.openai.com'
+      OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB 'perplexity.ai' OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB '*.perplexity.ai'
+      OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB 'claude.ai' OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB '*.claude.ai'
+      OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB 'gemini.google.com' OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB '*.gemini.google.com'
+      OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB 'copilot.microsoft.com' OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB '*.copilot.microsoft.com'
+      OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB 'chat.deepseek.com' OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB '*.chat.deepseek.com'
+      OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB 'chat.mistral.ai' OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB '*.chat.mistral.ai'
+      OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB 'grok.com' OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB '*.grok.com'
+      OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB 'meta.ai' OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB '*.meta.ai'
+      OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB 'poe.com' OR LOWER(TRIM(COALESCE(utm_source, ''))) GLOB '*.poe.com')) THEN 'ai_assistants'
+  WHEN TRIM(COALESCE(utm_source, '')) = '' AND TRIM(COALESCE(utm_medium, '')) = '' AND TRIM(COALESCE(utm_campaign, '')) = ''
+    AND (LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'google.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.google.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'google.[a-z][a-z]' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.google.[a-z][a-z]'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'google.co.[a-z][a-z]' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.google.co.[a-z][a-z]'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'google.com.[a-z][a-z]' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.google.com.[a-z][a-z]'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'com.google.android.googlequicksearchbox' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.com.google.android.googlequicksearchbox'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'bing.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.bing.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'duckduckgo.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.duckduckgo.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'search.yahoo.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.search.yahoo.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'search.yahoo.co.jp' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.search.yahoo.co.jp'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'baidu.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.baidu.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'yandex.ru' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.yandex.ru'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'yandex.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.yandex.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'ecosia.org' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.ecosia.org'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'naver.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.naver.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'sogou.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.sogou.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'so.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.so.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'search.brave.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.search.brave.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'startpage.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.startpage.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'qwant.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.qwant.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'kagi.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.kagi.com') THEN 'organic_search'
+  WHEN TRIM(COALESCE(utm_source, '')) = '' AND TRIM(COALESCE(utm_medium, '')) = '' AND TRIM(COALESCE(utm_campaign, '')) = ''
+    AND (LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'facebook.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.facebook.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'instagram.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.instagram.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'threads.net' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.threads.net'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'threads.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.threads.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'x.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.x.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'twitter.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.twitter.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 't.co' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.t.co'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'linkedin.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.linkedin.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'lnkd.in' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.lnkd.in'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'reddit.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.reddit.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'youtube.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.youtube.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'youtu.be' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.youtu.be'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'tiktok.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.tiktok.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'pinterest.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.pinterest.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'bsky.app' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.bsky.app'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'mastodon.social' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.mastodon.social'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'news.ycombinator.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.news.ycombinator.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'weibo.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.weibo.com'
+      OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB 'zhihu.com' OR LOWER(TRIM(COALESCE(referrer_host, ''))) GLOB '*.zhihu.com') THEN 'social'
+  WHEN LOWER(TRIM(COALESCE(utm_medium, ''))) IN ('cpc', 'ppc', 'paidsearch', 'paid-search') THEN 'paid_search'
+  WHEN LOWER(TRIM(COALESCE(utm_medium, ''))) IN ('paid_social', 'paid-social', 'social_ads', 'social-ads') THEN 'paid_social'
+  WHEN LOWER(TRIM(COALESCE(utm_medium, ''))) IN ('display', 'banner', 'programmatic') THEN 'display'
+  WHEN LOWER(TRIM(COALESCE(utm_medium, ''))) IN ('email', 'newsletter') THEN 'email'
+  WHEN LOWER(TRIM(COALESCE(utm_medium, ''))) IN ('affiliate', 'partner') THEN 'affiliate'
+  WHEN LOWER(TRIM(COALESCE(utm_medium, ''))) IN ('other', 'unknown', 'unclassified') THEN 'other'
+  WHEN NOT (TRIM(COALESCE(utm_source, '')) = '' AND TRIM(COALESCE(utm_medium, '')) = '' AND TRIM(COALESCE(utm_campaign, '')) = '') THEN 'campaign'
+  WHEN NOT TRIM(COALESCE(referrer_host, '')) = '' THEN 'referral'
+  ELSE 'direct'
+END;

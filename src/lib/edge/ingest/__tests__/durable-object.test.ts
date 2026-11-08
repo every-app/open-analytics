@@ -49,6 +49,7 @@ const VISIT_COLUMNS = [
   "utm_campaign",
   "utm_term",
   "utm_content",
+  "channel",
   "is_eu",
   "country",
   "region",
@@ -228,6 +229,7 @@ class FakeD1Database {
         utm_campaign TEXT NOT NULL DEFAULT '',
         utm_term TEXT NOT NULL DEFAULT '',
         utm_content TEXT NOT NULL DEFAULT '',
+        channel TEXT NOT NULL,
         is_eu INTEGER NOT NULL DEFAULT 0,
         country TEXT NOT NULL DEFAULT '',
         region TEXT NOT NULL DEFAULT '',
@@ -465,6 +467,7 @@ function visitRecord(overrides: Partial<VisitRecord> = {}): VisitRecord {
     utm_campaign: "",
     utm_term: "",
     utm_content: "",
+    channel: "referral",
     is_eu: 0,
     country: "US",
     region: "California",
@@ -1913,6 +1916,44 @@ describe("IngestDurableObject", () => {
         "SELECT COUNT(*) AS count FROM buffered_visits WHERE dirty = 1",
       )[0]?.count,
     ).toBe(0);
+  });
+
+  it("writes each page view's channel, its session's from the entry", async () => {
+    const ctx = createTestDo();
+    const untagged = {
+      query: "",
+      utmSource: "",
+      utmMedium: "",
+      utmCampaign: "",
+    };
+    await postIngest(
+      ctx.object,
+      envelope({
+        ...untagged,
+        visitId: "search",
+        referrerUrl: "https://www.google.com/",
+      }),
+    );
+    await postIngest(ctx.object, sameSiteNavigation(NOW));
+    const otherVisitor = envelope({}).request.headers;
+    await postIngest(
+      ctx.object,
+      envelope(
+        { visitId: "paid", utmSource: "google", utmMedium: "cpc" },
+        { headers: { ...otherVisitor, "cf-connecting-ip": "203.0.113.20" } },
+      ),
+    );
+
+    vi.setSystemTime(NOW + 60_000);
+    await ctx.object.alarm();
+
+    expect(
+      ctx.d1.all("SELECT visit_id, channel FROM visits ORDER BY visit_id"),
+    ).toEqual([
+      { visit_id: "next-visit", channel: "organic_search" },
+      { visit_id: "paid", channel: "paid_search" },
+      { visit_id: "search", channel: "organic_search" },
+    ]);
   });
 
   it("writes everything dirty in one alarm, batch after batch", async () => {

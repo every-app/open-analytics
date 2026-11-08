@@ -1,4 +1,3 @@
-import { buildTrafficChannelSqlExpression } from "@/lib/analytics/traffic-channel-rules";
 import {
   analyticsFilterDefinition,
   type FilterDocument,
@@ -186,7 +185,7 @@ export async function queryFilterValuesPageFromD1(
 
   const selectExpr =
     field === "traffic.channel"
-      ? buildTrafficChannelSqlExpression()
+      ? "channel"
       : resolveCrossBreakdownDimension(field)?.labelExpr;
   if (!selectExpr) {
     return {

@@ -1,3 +1,5 @@
+import type { TrafficChannelId } from "@/lib/analytics/traffic-channel-rules";
+
 export interface Env {
   DB: D1Database;
   INGEST_DO: DurableObjectNamespace;
@@ -147,6 +149,8 @@ export interface NormalizedPageview extends NormalizedVisitContext {
   previousVisitStartedAt: number | null;
   previousScrollDepth: number | null;
   receivedAt: number;
+  /** The session's channel, from its referrer and UTM tags. */
+  channel: TrafficChannelId;
   /** Custom properties, normalized by `normalizePageProperties`. */
   properties: Record<string, string>;
 }

@@ -119,7 +119,7 @@ function createSqliteEventEnv(): { env: Env; d1: SqliteD1Database } {
       referrer_host TEXT NOT NULL DEFAULT '', utm_source TEXT NOT NULL DEFAULT '',
       utm_medium TEXT NOT NULL DEFAULT '', utm_campaign TEXT NOT NULL DEFAULT '',
       utm_term TEXT NOT NULL DEFAULT '', utm_content TEXT NOT NULL DEFAULT '',
-      is_eu INTEGER NOT NULL DEFAULT 0, country TEXT NOT NULL DEFAULT '',
+      channel TEXT NOT NULL DEFAULT '', is_eu INTEGER NOT NULL DEFAULT 0, country TEXT NOT NULL DEFAULT '',
       region TEXT NOT NULL DEFAULT '', region_code TEXT NOT NULL DEFAULT '',
       city TEXT NOT NULL DEFAULT '', continent TEXT NOT NULL DEFAULT '', latitude REAL,
       longitude REAL, timezone TEXT NOT NULL DEFAULT '',

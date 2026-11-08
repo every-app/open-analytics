@@ -1,5 +1,4 @@
 import { propertyKeyOf } from "@/lib/analytics/property-path";
-import { buildTrafficChannelSqlExpression } from "@/lib/analytics/traffic-channel-rules";
 import { browserEngineCaseSql } from "@/lib/browser-engine";
 import {
   analyticsFilterDefinition,
@@ -68,6 +67,7 @@ const COLUMN_STRATEGY_COLUMNS: Readonly<Record<FilterColumnStrategy, string>> =
     "column.utm_campaign": "utm_campaign",
     "column.utm_term": "utm_term",
     "column.utm_content": "utm_content",
+    "column.channel": "channel",
     "column.browser": "browser",
     "column.browser_version": "browser_version",
     "column.os": "os",
@@ -117,14 +117,6 @@ function directColumn(
   strategy: FilterCompilerStrategy,
 ): string {
   if (strategy === "event.name") return `${compiler.eventAlias}.event_name`;
-  if (strategy === "derived.trafficChannel") {
-    return buildTrafficChannelSqlExpression({
-      referrerHost: column(compiler, "referrer_host"),
-      utmSource: column(compiler, "utm_source"),
-      utmMedium: column(compiler, "utm_medium"),
-      utmCampaign: column(compiler, "utm_campaign"),
-    });
-  }
   if (strategy === "derived.browserEngine") {
     return browserEngineCaseSql(
       column(compiler, "browser"),

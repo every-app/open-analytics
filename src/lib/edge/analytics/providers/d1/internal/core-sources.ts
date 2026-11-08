@@ -18,7 +18,7 @@ export const VISIT_SOURCE_COLUMNS = `
     visit_id, site_id, site_pk, visitor_id, session_id, status, started_at, last_activity_at,
     ended_at, finalized_at, duration_ms, scroll_depth, duration_source, exit_reason,
     pathname, query_string, hash_fragment, hostname, title, referrer_url, referrer_host,
-    utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+    utm_source, utm_medium, utm_campaign, utm_term, utm_content, channel,
     is_eu, country, region, region_code, city, continent, latitude, longitude,
     timezone, browser, browser_version,
     os, os_version, device_type, screen_width, screen_height, language
@@ -68,6 +68,7 @@ export function buildEventAnalyticsSourceCte(options?: {
     v.utm_campaign,
     v.utm_term,
     v.utm_content,
+    v.channel,
     v.duration_ms,
     v.scroll_depth,
     v.is_eu,

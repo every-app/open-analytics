@@ -1,7 +1,4 @@
-import {
-  buildTrafficChannelSqlExpression,
-  type TrafficChannelId,
-} from "@/lib/analytics/traffic-channel-rules";
+import type { TrafficChannelId } from "@/lib/analytics/traffic-channel-rules";
 import type { Env } from "@/lib/edge/types";
 
 import type { FilterDocument, QueryWindow } from "./core";
@@ -20,16 +17,6 @@ export interface ChannelAggregateRow {
   readonly visitors: number;
 }
 
-/**
- * Keep acquisition classification in SQL so channel metrics use the same
- * visit/filter source and distinct-identity semantics as other aggregates.
- * Domain discovery predicates and UTM medium mappings are imported from the
- * shared traffic-channel rules module; do not duplicate those lists here.
- */
-export function buildTrafficChannelCaseSql(): string {
-  return buildTrafficChannelSqlExpression();
-}
-
 export async function queryChannelsFromD1(
   env: Env,
   siteId: string,
@@ -41,7 +28,6 @@ export async function queryChannelsFromD1(
   const filter = scopedDataset
     ? null
     : buildVisitFilterSql(filters, "visit_source", { window });
-  const channelExpression = buildTrafficChannelCaseSql();
   const sql = `
 WITH
 ${scopedDataset?.ctes ?? buildVisitSourceCte()},
@@ -52,7 +38,7 @@ filtered_visits AS (
 ),
 channel_rollup AS (
   SELECT
-    ${channelExpression} AS channel,
+    channel,
     count(*) AS views,
     count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
     count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors

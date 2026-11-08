@@ -1,5 +1,4 @@
 import { propertyKeyOf } from "@/lib/analytics/property-path";
-import { classifyTrafficChannel } from "@/lib/analytics/traffic-channel-rules";
 import { browserEngineLabel } from "@/lib/browser-engine";
 import { AnalyticsProviderDomainError } from "@/lib/edge/analytics/application/errors";
 import type { TypedQueryProviderMiddleware } from "@/lib/edge/analytics/application/provider-registry";
@@ -58,6 +57,7 @@ const DATA_COLUMNS = [
   "utm_campaign",
   "utm_term",
   "utm_content",
+  "channel",
   "is_eu",
   "country",
   "region",
@@ -517,14 +517,6 @@ function directColumn(
     return row[strategy.slice("column.".length)];
   if (strategy === "event.name")
     return row.kind === "event" ? row.event_name : undefined;
-  if (strategy === "derived.trafficChannel") {
-    return classifyTrafficChannel({
-      referrerHost: String(row.referrer_host ?? ""),
-      utmSource: String(row.utm_source ?? ""),
-      utmMedium: String(row.utm_medium ?? ""),
-      utmCampaign: String(row.utm_campaign ?? ""),
-    });
-  }
   if (strategy === "derived.browserEngine")
     return browserEngineLabel(String(row.browser ?? ""), String(row.os ?? ""));
   if (strategy === "derived.osVersion") {

@@ -200,7 +200,7 @@ async function earliestDataDay(
 
 const PAGE_VIEW_DIMENSION_COLUMNS = `
   visitor_id, session_id, pathname, referrer_host,
-  utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+  utm_source, utm_medium, utm_campaign, utm_term, utm_content, channel,
   country, region, region_code, city, browser, os, os_version, device_type`;
 
 function pageViewDimensionsSql(): string {

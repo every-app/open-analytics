@@ -1,3 +1,5 @@
+import type { TrafficChannelId } from "@/lib/analytics/traffic-channel-rules";
+
 export type SqlBinding = string | number | null;
 
 export interface VisitBindingRow {
@@ -26,6 +28,7 @@ export interface VisitBindingRow {
   utmCampaign: string;
   utmTerm: string;
   utmContent: string;
+  channel: TrafficChannelId;
   isEU: number;
   country: string;
   region: string;
@@ -74,6 +77,7 @@ export const VISIT_D1_COLUMNS = [
   "utm_campaign",
   "utm_term",
   "utm_content",
+  "channel",
   "is_eu",
   "country",
   "region",
@@ -99,10 +103,16 @@ const VISIT_D1_COLUMN_SQL = VISIT_D1_COLUMNS.join(", ");
 const VISIT_D1_PLACEHOLDER_SQL = VISIT_D1_COLUMNS.map(() => "?").join(", ");
 type VisitD1Column = (typeof VISIT_D1_COLUMNS)[number];
 
+/*
+ * A page view's channel never changes, but an existing row may lack it: one
+ * the previous Worker wrote after the migration that added the column, which
+ * the ingest buffer writes again when it starts (schema.ts).
+ */
 const ACTIVE_VISIT_UPDATE_COLUMNS = [
   "status",
   "last_activity_at",
   "scroll_depth",
+  "channel",
 ] as const satisfies readonly VisitD1Column[];
 
 const FINALIZED_VISIT_UPDATE_COLUMNS = [
@@ -114,6 +124,7 @@ const FINALIZED_VISIT_UPDATE_COLUMNS = [
   "scroll_depth",
   "duration_source",
   "exit_reason",
+  "channel",
 ] as const satisfies readonly VisitD1Column[];
 
 function buildVisitUpsertSql(
@@ -243,6 +254,7 @@ export function visitBindings(
     row.utmCampaign,
     row.utmTerm,
     row.utmContent,
+    row.channel,
     row.isEU,
     row.country,
     row.region,

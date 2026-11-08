@@ -127,6 +127,7 @@ const RAW_COLUMNS = [
   "utm_campaign",
   "utm_term",
   "utm_content",
+  "channel",
   "is_eu",
   "country",
   "region",

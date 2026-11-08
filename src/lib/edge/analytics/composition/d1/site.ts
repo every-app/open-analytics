@@ -1,4 +1,3 @@
-import { buildTrafficChannelSqlExpression } from "@/lib/analytics/traffic-channel-rules";
 import type { AnalyticsProviderRegistry } from "@/lib/edge/analytics/application/provider-registry";
 import { typedQueryProviderFor } from "@/lib/edge/analytics/application/provider-registry";
 import type {
@@ -65,7 +64,7 @@ function overviewTabExpression(tab: string): string | null {
   if (tab === "page.hostname") return "TRIM(COALESCE(hostname, ''))";
   if (tab === "source.domain") return "referrer_host";
   if (tab === "source.link") return "TRIM(COALESCE(referrer_url, ''))";
-  if (tab === "source.channel") return buildTrafficChannelSqlExpression();
+  if (tab === "source.channel") return "channel";
   if (tab.startsWith("client.")) {
     return clientDimensionDefinition(
       tab.slice("client.".length) as
@@ -234,7 +233,7 @@ export async function overviewTabData(
     }
   }
   if (tab === "source.channel") {
-    const selectExpr = buildTrafficChannelSqlExpression();
+    const selectExpr = "channel";
     const cursor = await decodeDimensionCursor(
       options.env,
       options.siteId,

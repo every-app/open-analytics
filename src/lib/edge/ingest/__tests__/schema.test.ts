@@ -80,6 +80,10 @@ function createPerRowDeadlineSchema(sql: SqliteSqlStorage): void {
       exit_reason TEXT,
       pathname TEXT NOT NULL,
       hostname TEXT NOT NULL,
+      referrer_host TEXT NOT NULL DEFAULT '',
+      utm_source TEXT NOT NULL DEFAULT '',
+      utm_medium TEXT NOT NULL DEFAULT '',
+      utm_campaign TEXT NOT NULL DEFAULT '',
       latitude REAL,
       longitude REAL,
       perf_ttfb_ms REAL,
@@ -147,15 +151,18 @@ function createPerRowDeadlineSchema(sql: SqliteSqlStorage): void {
       ('buffered_visits_cleanup_due_at', 1, ${NOW});
     INSERT INTO buffered_visits (
       visit_id, site_id, visitor_id, session_id, status, started_at,
-      last_activity_at, pathname, hostname, perf_ttfb_ms, dirty,
-      flush_attempts, next_due_at, flush_due_at, created_at, updated_at
+      last_activity_at, pathname, hostname, referrer_host, utm_source,
+      utm_medium, perf_ttfb_ms, dirty, flush_attempts, next_due_at,
+      flush_due_at, created_at, updated_at
     ) VALUES
       ('dirty-complete', 'site-1', 'visitor-1', 'session-1', 'complete',
-        ${NOW - 2_000}, ${NOW - 1_000}, '/complete', 'example.com', 120, 1,
-        2, ${NOW + 240_000}, ${NOW + 240_000}, ${NOW}, ${NOW}),
+        ${NOW - 2_000}, ${NOW - 1_000}, '/complete', 'example.com',
+        'www.google.com', '', '', 120, 1, 2, ${NOW + 240_000},
+        ${NOW + 240_000}, ${NOW}, ${NOW}),
       ('clean-open', 'site-1', 'visitor-2', 'session-2', 'open',
-        ${NOW - 2_000}, ${NOW - 1_000}, '/open', 'example.com', NULL, 0,
-        0, ${NOW + 1_000}, NULL, ${NOW}, ${NOW});
+        ${NOW - 2_000}, ${NOW - 1_000}, '/open', 'example.com', '',
+        'newsletter', 'email', NULL, 0, 0, ${NOW + 1_000}, NULL, ${NOW},
+        ${NOW});
     INSERT INTO buffered_custom_events (
       event_id, site_id, visit_id, occurred_at, received_at, event_name,
       dirty, next_due_at, flush_due_at, created_at
@@ -250,14 +257,21 @@ describe("initializeIngestSqlSchema", () => {
       "idx_buffered_visits_status_hidden_at",
     ]);
     // The rows waiting for D1 still wait for it, their failures counted.
+    // Each takes its channel and waits for D1 again, as the previous Worker
+    // may have written it there without one.
     expect(
       rows(
         sql,
-        "SELECT visit_id, dirty, flush_attempts FROM buffered_visits ORDER BY visit_id",
+        "SELECT visit_id, channel, dirty, flush_attempts FROM buffered_visits ORDER BY visit_id",
       ),
     ).toEqual([
-      { visit_id: "clean-open", dirty: 0, flush_attempts: 0 },
-      { visit_id: "dirty-complete", dirty: 1, flush_attempts: 2 },
+      { visit_id: "clean-open", channel: "email", dirty: 1, flush_attempts: 0 },
+      {
+        visit_id: "dirty-complete",
+        channel: "organic_search",
+        dirty: 1,
+        flush_attempts: 2,
+      },
     ]);
     expect(
       rows(sql, "SELECT event_id, dirty FROM buffered_custom_events"),
@@ -278,6 +292,10 @@ describe("initializeIngestSqlSchema", () => {
         last_activity_at INTEGER NOT NULL,
         pathname TEXT NOT NULL,
         hostname TEXT NOT NULL,
+        referrer_host TEXT NOT NULL DEFAULT '',
+        utm_source TEXT NOT NULL DEFAULT '',
+        utm_medium TEXT NOT NULL DEFAULT '',
+        utm_campaign TEXT NOT NULL DEFAULT '',
         latitude REAL,
         longitude REAL,
         postal_code TEXT NOT NULL DEFAULT '',

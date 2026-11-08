@@ -48,6 +48,7 @@ export type FilterColumnStrategy =
   | "column.utm_campaign"
   | "column.utm_term"
   | "column.utm_content"
+  | "column.channel"
   | "column.browser"
   | "column.browser_version"
   | "column.os"
@@ -73,7 +74,6 @@ export type FilterColumnStrategy =
 
 export type FilterCompilerStrategy =
   | FilterColumnStrategy
-  | "derived.trafficChannel"
   | "derived.browserEngine"
   | "derived.osVersion"
   | "derived.screenSize"
@@ -518,7 +518,7 @@ const FIELDS = [
     profile: "direct-referrer" as const,
     suggestionMode: "search" as const,
   },
-  enumField("traffic.channel", PUBLIC_AUDIENCES, "derived.trafficChannel", {
+  enumField("traffic.channel", PUBLIC_AUDIENCES, "column.channel", {
     suggestionMode: "discrete",
   }),
   text("utm.source", PUBLIC_AUDIENCES, "column.utm_source", "trimmed-text", {

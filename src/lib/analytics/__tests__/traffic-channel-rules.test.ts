@@ -2,12 +2,13 @@ import { DatabaseSync } from "node:sqlite";
 
 import { describe, expect, it } from "vitest";
 
+import { loadMigrations } from "@/../scripts/schema/database";
 import {
-  buildTrafficChannelSqlExpression,
   classifyTrafficChannel,
   type TrafficChannelAttributionInput,
   type TrafficChannelId,
 } from "@/lib/analytics/traffic-channel-rules";
+import { seedSites } from "@/lib/edge/__tests__/rollup-fixtures";
 
 const CASES: ReadonlyArray<
   readonly [TrafficChannelAttributionInput, TrafficChannelId]
@@ -77,36 +78,72 @@ const CASES: ReadonlyArray<
   [{}, "direct"],
 ];
 
-function classifyInSqlite(
+/** Inputs the rules above meet in combination, and each case on its own. */
+const COMBINATIONS: readonly TrafficChannelAttributionInput[] = [
+  ...CASES.map(([input]) => input),
+  ...[
+    "",
+    "google.com",
+    "www.google.co.uk",
+    " WWW.Bing.COM ",
+    "chatgpt.com",
+    "gemini.google.com",
+    "t.co",
+    "example.com",
+  ].flatMap((referrerHost) =>
+    ["", " ", "chatgpt.com", "newsletter"].flatMap((utmSource) =>
+      ["", "cpc", "Email", "social", "unknown"].flatMap((utmMedium) =>
+        ["", "launch"].map((utmCampaign) => ({
+          referrerHost,
+          utmSource,
+          utmMedium,
+          utmCampaign,
+        })),
+      ),
+    ),
+  ),
+];
+
+/**
+ * The channels the migration that added the column gives existing page
+ * views, in input order.
+ */
+function backfilledChannels(
   inputs: readonly TrafficChannelAttributionInput[],
 ): string[] {
   const database = new DatabaseSync(":memory:");
   try {
-    database.exec(`
-      CREATE TABLE visits (
-        id INTEGER PRIMARY KEY,
-        referrer_host TEXT,
-        utm_source TEXT,
-        utm_medium TEXT,
-        utm_campaign TEXT
-      )
-    `);
+    const migrations = loadMigrations();
+    const channelMigration = migrations.find((migration) =>
+      migration.file.endsWith("_visit_channel.sql"),
+    )!;
+    for (const migration of migrations) {
+      if (migration === channelMigration) break;
+      database.exec(migration.sql);
+    }
+    seedSites(database, [{ siteId: "site-1", sitePk: 1 }]);
     const insert = database.prepare(
-      "INSERT INTO visits VALUES (?, ?, ?, ?, ?)",
+      `INSERT INTO visits (
+        visit_id, site_id, site_pk, visitor_id, session_id, status,
+        started_at, last_activity_at, pathname, hostname, referrer_host,
+        utm_source, utm_medium, utm_campaign
+      ) VALUES (?, 'site-1', 1, 'visitor', 'session', 'complete', ?, ?, '/',
+        'example.com', ?, ?, ?, ?)`,
     );
-    inputs.forEach((input, id) =>
+    inputs.forEach((input, index) =>
       insert.run(
-        id,
-        input.referrerHost ?? null,
-        input.utmSource ?? null,
-        input.utmMedium ?? null,
-        input.utmCampaign ?? null,
+        `visit-${index}`,
+        index,
+        index,
+        input.referrerHost ?? "",
+        input.utmSource ?? "",
+        input.utmMedium ?? "",
+        input.utmCampaign ?? "",
       ),
     );
+    database.exec(channelMigration.sql);
     return database
-      .prepare(
-        `SELECT ${buildTrafficChannelSqlExpression()} AS channel FROM visits ORDER BY id`,
-      )
+      .prepare("SELECT channel FROM visits ORDER BY started_at")
       .all()
       .map((row) => String(row.channel));
   } finally {
@@ -119,24 +156,9 @@ describe("traffic channel rules", () => {
     expect(classifyTrafficChannel(input)).toBe(channel);
   });
 
-  it("classifies every case the same way in SQL", () => {
-    expect(classifyInSqlite(CASES.map(([input]) => input))).toEqual(
-      CASES.map(([, channel]) => channel),
+  it("backfills existing page views to the channel ingest gives them", () => {
+    expect(backfilledChannels(COMBINATIONS)).toEqual(
+      COMBINATIONS.map(classifyTrafficChannel),
     );
-  });
-
-  it("supports qualified columns for derived channel filters", () => {
-    const sql = buildTrafficChannelSqlExpression({
-      referrerHost: "vs.referrer_host",
-      utmSource: "vs.utm_source",
-      utmMedium: "vs.utm_medium",
-      utmCampaign: "vs.utm_campaign",
-    });
-
-    expect(sql).toContain("vs.referrer_host");
-    expect(sql).toContain("vs.utm_source");
-    expect(sql).toContain("vs.utm_medium");
-    expect(sql).toContain("vs.utm_campaign");
-    expect(sql).not.toMatch(/(?<!vs\.)\b(referrer_host|utm_\w+)\b/);
   });
 });

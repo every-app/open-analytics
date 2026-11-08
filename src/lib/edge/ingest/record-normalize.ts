@@ -1,6 +1,7 @@
 import { UAParser } from "ua-parser-js";
 
 import { canonicalSourceHost } from "@/lib/analytics/source-host";
+import { classifyTrafficChannel } from "@/lib/analytics/traffic-channel-rules";
 import { mergeUaClientHintsIntoHeaders } from "@/lib/edge/collector/client-hints";
 import type {
   IngestEnvelopePayload,
@@ -257,6 +258,7 @@ export async function normalizeIngestRecord(
         hostname,
         title: clampString(coerceString(client.title || ""), 1024),
         ...attribution,
+        channel: classifyTrafficChannel(attribution),
         screenWidth: coerceNumber(client.screenWidth, null),
         screenHeight: coerceNumber(client.screenHeight, null),
         language: clampString(coerceString(client.language || ""), 120),

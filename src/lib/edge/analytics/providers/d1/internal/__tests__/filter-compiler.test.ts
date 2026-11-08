@@ -65,7 +65,7 @@ describe("filter SQL compiler", () => {
     expect(result.clause).toContain("vs.screen_width IS NOT NULL");
   });
 
-  it("compiles traffic channel filters from the shared attribution expression", () => {
+  it("compiles traffic channel filters against the stored channel", () => {
     const result = compileFilterDocument(
       document({
         kind: "condition",
@@ -76,8 +76,8 @@ describe("filter SQL compiler", () => {
       { alias: "vs" },
     );
 
-    expect(result.clause).toContain("vs.referrer_host");
-    expect(result.clause).toContain("vs.utm_medium");
+    expect(result.clause).toContain("vs.channel");
+    expect(result.clause).not.toContain("referrer_host");
     expect(result.clause).toContain("= ?");
     expect(result.bindings).toEqual(["organic_search"]);
   });

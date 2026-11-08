@@ -420,7 +420,8 @@ CREATE TABLE visits (
   created_at INTEGER NOT NULL DEFAULT (unixepoch()),
   updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
   site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
-  scroll_depth INTEGER
+  scroll_depth INTEGER,
+  channel TEXT NOT NULL DEFAULT ''
 );
 
 CREATE INDEX idx_visits_site_pk_session_started_at

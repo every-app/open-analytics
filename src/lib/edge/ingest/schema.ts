@@ -1,3 +1,5 @@
+import { classifyTrafficChannel } from "@/lib/analytics/traffic-channel-rules";
+
 import type { SqlBinding } from "./sql";
 import { CREATE_BUFFERED_CUSTOM_EVENTS_SQL } from "./sql";
 
@@ -243,6 +245,45 @@ function migrateLegacyBufferedCustomEvents(
   }
 }
 
+/**
+ * Page views buffered before ingest classified channels get theirs, and are
+ * written to D1 again: the previous Worker may have written one after the
+ * migration that added the column, which left it without a channel.
+ */
+function classifyBufferedVisitChannels(sql: DurableObjectSqlStorage): void {
+  const rows = sql
+    .exec(
+      `
+        SELECT
+          visit_id AS visitId,
+          referrer_host AS referrerHost,
+          utm_source AS utmSource,
+          utm_medium AS utmMedium,
+          utm_campaign AS utmCampaign
+        FROM buffered_visits
+        WHERE channel IS NULL
+      `,
+    )
+    .toArray() as Array<{
+    visitId: string;
+    referrerHost: string;
+    utmSource: string;
+    utmMedium: string;
+    utmCampaign: string;
+  }>;
+  for (const row of rows) {
+    sql.exec(
+      `
+        UPDATE buffered_visits
+        SET channel = ?, dirty = 1
+        WHERE visit_id = ?
+      `,
+      classifyTrafficChannel(row),
+      row.visitId,
+    );
+  }
+}
+
 export function initializeIngestSqlSchema(
   sql: DurableObjectSqlStorage,
   options?: IngestSchemaOptions,
@@ -276,6 +317,7 @@ export function initializeIngestSqlSchema(
         utm_campaign TEXT NOT NULL DEFAULT '',
         utm_term TEXT NOT NULL DEFAULT '',
         utm_content TEXT NOT NULL DEFAULT '',
+        channel TEXT NOT NULL,
         is_eu INTEGER NOT NULL DEFAULT 0,
         country TEXT NOT NULL DEFAULT '',
         region TEXT NOT NULL DEFAULT '',
@@ -317,6 +359,8 @@ export function initializeIngestSqlSchema(
     "buffer_revision",
     "INTEGER NOT NULL DEFAULT 1",
   );
+  ensureColumn(sql, "buffered_visits", "channel", "TEXT");
+  classifyBufferedVisitChannels(sql);
   sql.exec(CREATE_BUFFERED_CUSTOM_EVENTS_SQL);
 
   // Keep legacy event rows in place.  A legacy context column without a

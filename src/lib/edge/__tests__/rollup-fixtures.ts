@@ -1,6 +1,7 @@
 import type { DatabaseSync } from "node:sqlite";
 
 import { createMigratedDatabase } from "@/../scripts/schema/database";
+import { classifyTrafficChannel } from "@/lib/analytics/traffic-channel-rules";
 import { createSqliteD1Database } from "@/lib/db/__tests__/sqlite-d1";
 import type { Env } from "@/lib/edge/types";
 
@@ -233,11 +234,11 @@ export function insertVisits(
       visit_id, site_id, site_pk, visitor_id, session_id, status, started_at,
       last_activity_at, duration_ms, pathname, hostname, referrer_url,
       referrer_host, utm_source, utm_medium, utm_campaign, utm_term,
-      utm_content, country, region, region_code, city, latitude, longitude,
-      browser, os, os_version, device_type
+      utm_content, channel, country, region, region_code, city, latitude,
+      longitude, browser, os, os_version, device_type
     ) VALUES (
       ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'example.com', ?, ?, ?, ?, ?, ?, ?, ?, ?,
-      ?, ?, ?, ?, ?, ?, ?, ?
+      ?, ?, ?, ?, ?, ?, ?, ?, ?
     )
   `);
   database.exec("BEGIN");
@@ -260,6 +261,7 @@ export function insertVisits(
       visit.source.utmCampaign,
       visit.source.utmTerm,
       visit.source.utmContent,
+      classifyTrafficChannel(visit.source),
       visit.place.country,
       visit.place.region,
       visit.place.regionCode,

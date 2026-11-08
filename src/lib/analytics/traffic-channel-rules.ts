@@ -1,7 +1,7 @@
 /**
- * How a visit's source maps to a channel. The SQL expression and
- * classifyTrafficChannel apply the same rules in the same order, from the
- * same lists; keep both here.
+ * How a page view's source maps to a channel. Ingest classifies each page
+ * view once, when it arrives, and stores the channel with it; a rule change
+ * applies to page views from then on.
  */
 
 export const TRAFFIC_CHANNEL_IDS = [
@@ -21,18 +21,10 @@ export const TRAFFIC_CHANNEL_IDS = [
 
 export type TrafficChannelId = (typeof TRAFFIC_CHANNEL_IDS)[number];
 
-export interface TrafficChannelSqlColumns {
-  readonly referrerHost?: string;
-  readonly utmSource?: string;
-  readonly utmMedium?: string;
-  readonly utmCampaign?: string;
-}
-
 /*
- * Source domains, as SQLite GLOB patterns: each matches the host itself and
- * its subdomains. Ingest stores a source's canonical host (source-host.ts);
- * the variants older page views kept are listed too, so they classify the
- * same.
+ * Source domains, each matching the host itself and its subdomains, where
+ * `[a-z]` is any one letter. Ingest stores a source's canonical host
+ * (source-host.ts); the variants older page views kept are listed too.
  */
 
 const AI_ASSISTANT_DOMAINS = [
@@ -124,63 +116,7 @@ const UTM_MEDIUM_CHANNELS = Object.entries(UTM_CHANNEL_MEDIUMS) as Array<
   [UtmMediumChannel, readonly string[]]
 >;
 
-function normalizedSql(column: string): string {
-  return `LOWER(TRIM(COALESCE(${column}, '')))`;
-}
-
-function blankSql(column: string): string {
-  return `TRIM(COALESCE(${column}, '')) = ''`;
-}
-
-function domainSql(column: string, domains: readonly string[]): string {
-  const value = normalizedSql(column);
-  return `(${domains
-    .map((domain) => `${value} GLOB '${domain}' OR ${value} GLOB '*.${domain}'`)
-    .join(" OR ")})`;
-}
-
-/**
- * The derived channel of a visit row, in this order:
- *
- * 1. AI assistants: the referrer or utm_source is an AI assistant, with no
- *    utm_medium or utm_campaign. ChatGPT tags its links
- *    `utm_source=chatgpt.com`. It comes first because gemini.google.com is
- *    also a Google host.
- * 2. Organic search, then social: the referrer's domain, with no UTM tags.
- * 3. The channel of a known utm_medium, then Campaign for any other tags.
- * 4. Referral when there is a referrer, else Direct.
- *
- * Callers may pass qualified columns so filters and aggregates share it.
- */
-export function buildTrafficChannelSqlExpression(
-  columns: TrafficChannelSqlColumns = {},
-): string {
-  const referrerHost = columns.referrerHost ?? "referrer_host";
-  const utmSource = columns.utmSource ?? "utm_source";
-  const utmMedium = columns.utmMedium ?? "utm_medium";
-  const utmCampaign = columns.utmCampaign ?? "utm_campaign";
-  const untagged = `${blankSql(utmSource)} AND ${blankSql(utmMedium)} AND ${blankSql(utmCampaign)}`;
-  const mediums = UTM_MEDIUM_CHANNELS.map(
-    ([channel, values]) =>
-      `WHEN ${normalizedSql(utmMedium)} IN (${values.map((value) => `'${value}'`).join(", ")}) THEN '${channel}'`,
-  ).join("\n    ");
-
-  return `CASE
-    WHEN ${blankSql(utmMedium)} AND ${blankSql(utmCampaign)}
-      AND (${domainSql(referrerHost, AI_ASSISTANT_DOMAINS)}
-        OR ${domainSql(utmSource, AI_ASSISTANT_DOMAINS)}) THEN 'ai_assistants'
-    WHEN ${untagged}
-      AND ${domainSql(referrerHost, SEARCH_ENGINE_DOMAINS)} THEN 'organic_search'
-    WHEN ${untagged}
-      AND ${domainSql(referrerHost, SOCIAL_DOMAINS)} THEN 'social'
-    ${mediums}
-    WHEN NOT (${untagged}) THEN 'campaign'
-    WHEN NOT ${blankSql(referrerHost)} THEN 'referral'
-    ELSE 'direct'
-  END`;
-}
-
-/** domainSql's twin: GLOB's `[a-z]` is a regular expression class too. */
+/** A source domain list as one pattern: `[a-z]` is a regular expression class. */
 function domainPattern(domains: readonly string[]): RegExp {
   return new RegExp(
     `(?:^|\\.)(?:${domains.map((domain) => domain.replaceAll(".", "\\.")).join("|")})$`,
@@ -205,8 +141,15 @@ function normalizeAttributionValue(value: string | null | undefined): string {
 }
 
 /**
- * Classify one visit as buildTrafficChannelSqlExpression does, for filters
- * evaluated in memory.
+ * A page view's channel, from its session's source, in this order:
+ *
+ * 1. AI assistants: the referrer or utm_source is an AI assistant, with no
+ *    utm_medium or utm_campaign. ChatGPT tags its links
+ *    `utm_source=chatgpt.com`. It comes first because gemini.google.com is
+ *    also a Google host.
+ * 2. Organic search, then social: the referrer's domain, with no UTM tags.
+ * 3. The channel of a known utm_medium, then Campaign for any other tags.
+ * 4. Referral when there is a referrer, else Direct.
  */
 export function classifyTrafficChannel(
   input: TrafficChannelAttributionInput,

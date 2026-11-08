@@ -215,14 +215,14 @@ describe("rollup rebuilds and retention", () => {
     ).toBe(after);
   });
 
-  it("rebuilds the channels of rolled-up days retention hasn't reached after the channel rules change", async () => {
+  it("rebuilds the channels of rolled-up days retention hasn't reached when their page views' channels change", async () => {
     const { database, env } = setup([1]);
     const [reached, open] = [CUTOFF_DAY + 1, CUTOFF_DAY + 2];
     for (const day of [reached, open]) {
       insertPageViews(database, 1, day, 2, "hn");
     }
     database.exec(
-      "UPDATE visits SET referrer_host = 'news.ycombinator.com' WHERE site_pk = 1",
+      "UPDATE visits SET referrer_host = 'news.ycombinator.com', channel = 'social' WHERE site_pk = 1",
     );
     await runVisitRollups(env, NOW);
     // The days as the old rules rolled them up, with retention at the first.

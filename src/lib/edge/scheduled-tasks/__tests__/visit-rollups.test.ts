@@ -55,8 +55,9 @@ function insertVisit(
   database
     .prepare(
       `INSERT INTO visits (visit_id, site_pk, site_id, visitor_id, session_id,
-         status, started_at, last_activity_at, duration_ms, pathname, hostname)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '/', 'example.com')`,
+         status, started_at, last_activity_at, duration_ms, pathname, hostname,
+         channel)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '/', 'example.com', 'direct')`,
     )
     .run(
       visit.id,

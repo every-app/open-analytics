@@ -1,5 +1,3 @@
-import { buildTrafficChannelSqlExpression } from "@/lib/analytics/traffic-channel-rules";
-
 import {
   cityValueExpr,
   clientDimensionDefinition,
@@ -42,10 +40,7 @@ export const PAGE_VIEW_ROLLUP_DIMENSIONS: ReadonlyArray<{
   readonly expression: string;
 }> = [
   { dimension: RollupDimension.PagePath, expression: "pathname" },
-  {
-    dimension: RollupDimension.Channel,
-    expression: buildTrafficChannelSqlExpression(),
-  },
+  { dimension: RollupDimension.Channel, expression: "channel" },
   { dimension: RollupDimension.Referrer, expression: "referrer_host" },
   {
     dimension: RollupDimension.UtmSource,

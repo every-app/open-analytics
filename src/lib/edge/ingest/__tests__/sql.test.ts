@@ -39,6 +39,7 @@ function visitRow(overrides: Partial<VisitBindingRow> = {}): VisitBindingRow {
     utmCampaign: "launch",
     utmTerm: "term",
     utmContent: "hero",
+    channel: "email",
     isEU: 0,
     country: "US",
     region: "California",

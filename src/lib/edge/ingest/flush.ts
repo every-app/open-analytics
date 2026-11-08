@@ -271,6 +271,7 @@ function selectDirtyVisits(
         utm_campaign AS utmCampaign,
         utm_term AS utmTerm,
         utm_content AS utmContent,
+        channel,
         is_eu AS isEU,
         country,
         region,

@@ -21,13 +21,22 @@ const DROPPED_VISIT_COLUMNS = [
   "user_name",
 ];
 
-/** A database as every migration before this one left it. */
+/**
+ * A database as every migration before this one left it, with the page
+ * views' channel a later migration adds, which the rollup task reads.
+ */
 function databaseBeforeMigration(): DatabaseSync {
   const database = new DatabaseSync(":memory:");
-  for (const migration of loadMigrations()) {
+  const migrations = loadMigrations();
+  for (const migration of migrations) {
     if (migration.file >= MIGRATION) break;
     database.exec(migration.sql);
   }
+  database.exec(
+    migrations.find((migration) =>
+      migration.file.endsWith("_visit_channel.sql"),
+    )!.sql,
+  );
   return database;
 }
 
