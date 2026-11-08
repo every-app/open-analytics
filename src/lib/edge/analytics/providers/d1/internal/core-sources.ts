@@ -21,8 +21,7 @@ export const VISIT_SOURCE_COLUMNS = `
     utm_source, utm_medium, utm_campaign, utm_term, utm_content,
     is_eu, country, region, region_code, city, continent, latitude, longitude,
     timezone, browser, browser_version,
-    os, os_version, device_type, screen_width, screen_height, language,
-    ae_synced_at
+    os, os_version, device_type, screen_width, screen_height, language
   `;
 export function buildVisitSourceCte(): string {
   return `

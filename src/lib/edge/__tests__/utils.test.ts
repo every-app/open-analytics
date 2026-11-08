@@ -4,16 +4,13 @@ import {
   clampString,
   coerceNumber,
   coerceString,
-  DEFAULT_SESSION_WINDOW_MINUTES,
   deriveServerSessionId,
   deriveVisitorId,
   isSameHostname,
   jsonCloneRecord,
-  MAX_SESSION_WINDOW_MINUTES,
   nowEpochSeconds,
   ONE_DAY_MS,
   ONE_HOUR_MS,
-  resolveSessionWindowMinutes,
   safeHostname,
   TEN_MINUTES_MS,
 } from "@/lib/edge/utils";
@@ -24,8 +21,6 @@ describe("edge utility helpers", () => {
     expect(TEN_MINUTES_MS).toBe(600_000);
     expect(ONE_HOUR_MS).toBe(3_600_000);
     expect(ONE_DAY_MS).toBe(86_400_000);
-    expect(DEFAULT_SESSION_WINDOW_MINUTES).toBe(30);
-    expect(MAX_SESSION_WINDOW_MINUTES).toBe(1440);
   });
 
   it("coerces strings and numbers with fallbacks", () => {
@@ -100,21 +95,6 @@ describe("edge utility helpers", () => {
         startedAt,
       }),
     ).resolves.toBe(serverSessionId);
-  });
-
-  it("normalizes session window configuration", () => {
-    expect(resolveSessionWindowMinutes({ SESSION_WINDOW_MINUTES: "45" })).toBe(
-      45,
-    );
-    expect(resolveSessionWindowMinutes({ SESSION_WINDOW_MINUTES: "0" })).toBe(
-      30,
-    );
-    expect(resolveSessionWindowMinutes({ SESSION_WINDOW_MINUTES: "abc" })).toBe(
-      30,
-    );
-    expect(
-      resolveSessionWindowMinutes({ SESSION_WINDOW_MINUTES: "99999" }),
-    ).toBe(1440);
   });
 
   it("returns epoch seconds for the current time", () => {

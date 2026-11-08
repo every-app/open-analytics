@@ -3,7 +3,6 @@ import { UAParser } from "ua-parser-js";
 import { canonicalSourceHost } from "@/lib/analytics/source-host";
 import { mergeUaClientHintsIntoHeaders } from "@/lib/edge/collector/client-hints";
 import type {
-  Env,
   IngestEnvelopePayload,
   NormalizedCustomEvent,
   NormalizedLeave,
@@ -19,7 +18,6 @@ import {
   deriveServerSessionId,
   deriveVisitorId,
   isSameHostname,
-  resolveSessionWindowMinutes,
   safeHostname,
 } from "@/lib/edge/utils";
 
@@ -37,7 +35,6 @@ import type {
 } from "./types";
 import { utcDay } from "./visitor-salts";
 interface NormalizeRecordContext {
-  env: Pick<Env, "SESSION_WINDOW_MINUTES">;
   visitorSalt(day: string): string;
   getVisitContext(
     siteId: string,
@@ -48,12 +45,11 @@ interface NormalizeRecordContext {
     visitorId: string;
     visitId: string;
     startedAt: number;
-    sessionWindowMs: number;
     routePreviousHostname?: string;
     routePreviousPathname?: string;
     routePreviousQueryString?: string;
     routePreviousHashFragment?: string;
-  }): Promise<RecentVisitorSession | null>;
+  }): RecentVisitorSession | null;
   insertBufferedCustomEvent(record: BufferedCustomEventInput): boolean;
 }
 /** Decimal places a page view's coordinates keep: 1 is about 11 km, a city. */
@@ -202,13 +198,11 @@ export async function normalizeIngestRecord(
         routePreviousHashFragment = "";
       }
     }
-    const sessionWindowMinutes = resolveSessionWindowMinutes(context.env);
-    const recentSession = await context.findRecentVisitorSession({
+    const recentSession = context.findRecentVisitorSession({
       siteId,
       visitorId,
       visitId,
       startedAt,
-      sessionWindowMs: sessionWindowMinutes * 60 * 1000,
       routePreviousHostname,
       routePreviousPathname,
       routePreviousQueryString,

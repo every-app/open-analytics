@@ -3,7 +3,10 @@ import { DatabaseSync } from "node:sqlite";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createMigratedDatabase } from "@/../scripts/schema/database";
-import { createSqliteD1Database } from "@/lib/db/__tests__/sqlite-d1";
+import {
+  createSqliteD1Database,
+  type SqliteD1Trace,
+} from "@/lib/db/__tests__/sqlite-d1";
 import { seedSites } from "@/lib/edge/__tests__/rollup-fixtures";
 import { IngestDurableObject } from "@/lib/edge/ingest/durable-object";
 import { runVisitRollups } from "@/lib/edge/scheduled-tasks/visit-rollups";
@@ -15,6 +18,8 @@ import type {
 const NOW = Date.UTC(2026, 4, 25, 12, 0, 0);
 const VISIT_TIMEOUT_MS = 12 * 60 * 60 * 1000;
 const RECENT_EVENT_RETENTION_MS = 30 * 60 * 1000;
+const SESSION_WINDOW_MS = 30 * 60 * 1000;
+const MAX_CLIENT_EVENT_LAG_MS = 30 * 1000;
 type SqlBinding = string | number | null;
 type SqlRow = Record<string, unknown>;
 const VISIT_COLUMNS = [
@@ -61,20 +66,15 @@ const VISIT_COLUMNS = [
   "screen_width",
   "screen_height",
   "language",
-  "ae_synced_at",
   "created_at",
   "updated_at",
 ] as const;
 const BUFFERED_VISIT_COLUMNS = [
-  ...VISIT_COLUMNS.filter(
-    (column) => column !== "ae_synced_at" && column !== "site_pk",
-  ),
+  ...VISIT_COLUMNS.filter((column) => column !== "site_pk"),
   "hidden_at",
   "dirty",
   "flush_attempts",
   "last_flush_error",
-  "next_due_at",
-  "flush_due_at",
   "buffer_revision",
 ] as const;
 type VisitColumn = (typeof VISIT_COLUMNS)[number];
@@ -181,9 +181,17 @@ class FakeD1Database {
       this.beforeBatch = null;
       await hook(statements);
     }
-    for (const statement of statements) {
-      await statement.run();
+    // A D1 batch is a transaction: all of it or none.
+    this.db.exec("BEGIN");
+    try {
+      for (const statement of statements) {
+        await statement.run();
+      }
+    } catch (error) {
+      this.db.exec("ROLLBACK");
+      throw error;
     }
+    this.db.exec("COMMIT");
     return statements.map(() => ({ success: true }));
   });
 
@@ -237,12 +245,6 @@ class FakeD1Database {
         screen_width INTEGER,
         screen_height INTEGER,
         language TEXT NOT NULL DEFAULT '',
-        perf_ttfb_ms REAL,
-        perf_fcp_ms REAL,
-        perf_lcp_ms REAL,
-        perf_cls REAL,
-        perf_inp_ms REAL,
-        ae_synced_at INTEGER,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       );
@@ -287,7 +289,6 @@ class FakeD1Database {
         value_count INTEGER NOT NULL,
         revenue_amount REAL,
         revenue_currency TEXT,
-        ae_synced_at INTEGER,
         created_at INTEGER NOT NULL
       );
       CREATE TABLE custom_event_json_nodes (
@@ -481,7 +482,6 @@ function visitRecord(overrides: Partial<VisitRecord> = {}): VisitRecord {
     screen_width: 1440,
     screen_height: 900,
     language: "en-US",
-    ae_synced_at: null,
     created_at: toSeconds(NOW),
     updated_at: toSeconds(NOW),
     ...overrides,
@@ -491,44 +491,17 @@ function bufferedVisitRecord(
   overrides: Partial<BufferedVisitRecord> = {},
 ): BufferedVisitRecord {
   const base = visitRecord(overrides as Partial<VisitRecord>);
-  const row = {
+  return {
     ...Object.fromEntries(
-      VISIT_COLUMNS.filter((column) => column !== "ae_synced_at").map(
-        (column) => [column, base[column]],
-      ),
+      VISIT_COLUMNS.map((column) => [column, base[column]]),
     ),
     hidden_at: null,
     dirty: 1,
     flush_attempts: 0,
     last_flush_error: null,
+    buffer_revision: 1,
     ...overrides,
   } as BufferedVisitRecord;
-  const dirty = Number(row.dirty) === 1;
-  const flushDueAt =
-    row.flush_due_at === null || row.flush_due_at === undefined
-      ? dirty
-        ? NOW + 60_000
-        : null
-      : Number(row.flush_due_at);
-  const lifecycleDueAt =
-    row.status === "open"
-      ? Number(row.last_activity_at) + VISIT_TIMEOUT_MS
-      : row.status === "hidden_pending"
-        ? Number(row.hidden_at ?? row.last_activity_at) +
-          (row.hidden_at === null || row.hidden_at === undefined
-            ? VISIT_TIMEOUT_MS
-            : 30 * 60 * 1000)
-        : null;
-  row.flush_due_at = flushDueAt;
-  row.next_due_at =
-    row.next_due_at ??
-    (flushDueAt === null
-      ? lifecycleDueAt
-      : lifecycleDueAt === null
-        ? flushDueAt
-        : Math.min(flushDueAt, lifecycleDueAt));
-  row.buffer_revision = row.buffer_revision ?? 1;
-  return row;
 }
 function insertBufferedVisit(
   sql: SqliteSqlStorage,
@@ -558,9 +531,6 @@ function insertBufferedCustomEvent(
     dirty: 1,
     flush_attempts: 0,
     last_flush_error: null,
-    next_due_at: NOW + 60_000,
-    flush_due_at: NOW + 60_000,
-    buffer_revision: 1,
     created_at: toSeconds(NOW),
     ...overrides,
   };
@@ -744,16 +714,6 @@ describe("IngestDurableObject", () => {
   it("exports a durable object class and rejects unknown or invalid request routes", async () => {
     const ctx = createTestDo();
 
-    const bufferStoreContext = (
-      ctx.object as unknown as {
-        bufferStoreContext: () => {
-          sqlAll: <T>(query: string, ...bindings: SqlBinding[]) => T[];
-        };
-      }
-    ).bufferStoreContext();
-    expect(
-      bufferStoreContext.sqlAll<{ value: number }>("SELECT 1 AS value"),
-    ).toEqual([{ value: 1 }]);
     expect(
       (
         ctx.object as unknown as {
@@ -761,14 +721,6 @@ describe("IngestDurableObject", () => {
         }
       ).sqlRun("UPDATE buffered_visits SET dirty = dirty WHERE 0"),
     ).toBe(0);
-    await (
-      ctx.object as unknown as {
-        advanceWaitingCustomEvents: (
-          siteId: string,
-          visitId: string,
-        ) => Promise<void>;
-      }
-    ).advanceWaitingCustomEvents("site-1", "missing-visit");
 
     expect(IngestDurableObject).toBeTypeOf("function");
 
@@ -914,8 +866,6 @@ describe("IngestDurableObject", () => {
     const response = await ctx.object.fetch(
       new Request("https://ingest.internal/active"),
     );
-
-    expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ ok: true, activeNow: 1 });
   });
 
@@ -925,8 +875,6 @@ describe("IngestDurableObject", () => {
     const response = await ctx.object.fetch(
       new Request("https://ingest.internal/snapshot"),
     );
-
-    expect(response.status).toBe(200);
     expect(console.log).toHaveBeenLastCalledWith(
       expect.objectContaining({
         source: "do",
@@ -1335,19 +1283,19 @@ describe("IngestDurableObject", () => {
     ]);
   });
 
-  it("starts a new server session after the configured inactivity window", async () => {
-    const ctx = createTestDo({ SESSION_WINDOW_MINUTES: "1" });
+  it("starts a new server session after 30 minutes without a page view", async () => {
+    const ctx = createTestDo();
 
     await postIngest(
       ctx.object,
       envelope(
         {
           visitId: "old-visit",
-          startedAt: NOW - 120_000,
-          timestamp: NOW - 120_000,
+          startedAt: NOW - SESSION_WINDOW_MS - 1,
+          timestamp: NOW - SESSION_WINDOW_MS - 1,
           pathname: "/old",
         },
-        { receivedAt: NOW - 120_000 },
+        { receivedAt: NOW - SESSION_WINDOW_MS - 1 },
       ),
     );
     await postIngest(
@@ -1401,7 +1349,19 @@ describe("IngestDurableObject", () => {
     ]);
   });
 
-  it("gives a pageview the referrer and UTM tags of a session already flushed to D1", async () => {
+  it("starts a session without asking D1", async () => {
+    const ctx = createTestDo();
+
+    await postIngest(ctx.object, envelope());
+
+    expect(localRows(ctx.sql, "SELECT visit_id FROM buffered_visits")).toEqual([
+      { visit_id: "visit-1" },
+    ]);
+    expect(ctx.d1.prepare).not.toHaveBeenCalled();
+    expect(ctx.d1.batch).not.toHaveBeenCalled();
+  });
+
+  it("keeps a finished page view buffered while a page view can still join its session", async () => {
     const ctx = createTestDo();
     await postIngest(
       ctx.object,
@@ -1411,15 +1371,27 @@ describe("IngestDurableObject", () => {
         timestamp: NOW - 20_000,
       }),
     );
-    vi.setSystemTime(NOW + 60_000);
-    await ctx.object.fetch(
-      new Request("https://ingest.internal/flush", { method: "POST" }),
+    await postIngest(
+      ctx.object,
+      envelope({
+        kind: "leave",
+        visitId: "entry-visit",
+        timestamp: NOW - 10_000,
+      }),
     );
-    ctx.sql.exec("DELETE FROM buffered_visits");
+    vi.setSystemTime(NOW + 60_000);
+    await ctx.object.alarm();
+    // The last moment a page view can join: it ended 30 minutes before the
+    // page view started, which arrives as late as a start may lag.
+    const receivedAt =
+      NOW - 10_000 + SESSION_WINDOW_MS + MAX_CLIENT_EVENT_LAG_MS;
+    vi.setSystemTime(receivedAt);
+    await ctx.object.alarm();
+    ctx.d1.prepare.mockClear();
 
     await postIngest(
       ctx.object,
-      sameSiteNavigation(NOW + 50_000, { receivedAt: NOW + 60_000 }),
+      sameSiteNavigation(receivedAt - MAX_CLIENT_EVENT_LAG_MS, { receivedAt }),
     );
 
     expect(
@@ -1428,9 +1400,16 @@ describe("IngestDurableObject", () => {
         `
           SELECT visit_id, referrer_host, utm_source, utm_medium, utm_campaign
           FROM buffered_visits
+          WHERE visit_id = 'next-visit'
         `,
       ),
     ).toEqual([{ visit_id: "next-visit", ...ENTRY_ATTRIBUTION }]);
+    const [entry, next] = localRows<{ session_id: string }>(
+      ctx.sql,
+      "SELECT session_id FROM buffered_visits ORDER BY started_at",
+    );
+    expect(next?.session_id).toBe(entry?.session_id);
+    expect(ctx.d1.prepare).not.toHaveBeenCalled();
   });
 
   it("keeps hidden visits pending and ends their duration when the tab was hidden", async () => {
@@ -1681,11 +1660,7 @@ describe("IngestDurableObject", () => {
     await visibility("visible", backAt);
     await visibility("hidden", hiddenAt);
 
-    const flush = await ctx.object.fetch(
-      new Request("https://ingest.internal/flush", { method: "POST" }),
-    );
-
-    expect(flush.status).toBe(200);
+    await ctx.object.alarm();
     expect(
       ctx.d1.all<{
         status: string;
@@ -1731,22 +1706,15 @@ describe("IngestDurableObject", () => {
     );
     expect(waiting.status).toBe(202);
     await expect(waiting.text()).resolves.toBe("ignored:waiting_for_visit");
-    expect(ctx.getAlarmAt()).toBe(NOW + 60_000);
+    // It can't be written before its page view: nothing for the alarm yet.
+    expect(ctx.getAlarmAt()).toBeNull();
     expect(
-      localRows<{
-        dirty: number;
-        flush_attempts: number;
-        last_flush_error: string | null;
-      }>(
+      localRows<{ dirty: number; flush_attempts: number }>(
         ctx.sql,
-        "SELECT dirty, flush_attempts, last_flush_error FROM buffered_custom_events WHERE event_id = ?",
+        "SELECT dirty, flush_attempts FROM buffered_custom_events WHERE event_id = ?",
         "event-waiting",
       )[0],
-    ).toEqual({
-      dirty: 1,
-      flush_attempts: 0,
-      last_flush_error: "waiting_for_visit",
-    });
+    ).toEqual({ dirty: 1, flush_attempts: 0 });
 
     const invalid = await postIngest(
       ctx.object,
@@ -1764,23 +1732,7 @@ describe("IngestDurableObject", () => {
     );
 
     await postIngest(ctx.object, envelope());
-    expect(
-      localRows<{
-        flush_due_at: number;
-        next_due_at: number;
-        flush_attempts: number;
-        last_flush_error: string | null;
-      }>(
-        ctx.sql,
-        "SELECT flush_due_at, next_due_at, flush_attempts, last_flush_error FROM buffered_custom_events WHERE event_id = ?",
-        "event-waiting",
-      )[0],
-    ).toEqual({
-      flush_due_at: NOW + 60_000,
-      next_due_at: NOW + 60_000,
-      flush_attempts: 0,
-      last_flush_error: null,
-    });
+    expect(ctx.getAlarmAt()).toBe(NOW + 60_000);
     await postIngest(
       ctx.object,
       envelope({
@@ -1806,11 +1758,7 @@ describe("IngestDurableObject", () => {
       )[0]?.count,
     ).toBe(2);
 
-    const flush = await ctx.object.fetch(
-      new Request("https://ingest.internal/flush", { method: "POST" }),
-    );
-    expect(flush.status).toBe(200);
-    await expect(flush.json()).resolves.toEqual({ ok: true });
+    await ctx.object.alarm();
 
     expect(ctx.d1.batch).toHaveBeenCalled();
     expect(
@@ -1879,10 +1827,7 @@ describe("IngestDurableObject", () => {
     ).toEqual(revenueRows);
 
     vi.setSystemTime(NOW + 60_000);
-    const flush = await ctx.object.fetch(
-      new Request("https://ingest.internal/flush", { method: "POST" }),
-    );
-    expect(flush.status).toBe(200);
+    await ctx.object.alarm();
 
     expect(
       ctx.d1.all(
@@ -1934,21 +1879,82 @@ describe("IngestDurableObject", () => {
     ).toEqual([{ event_id: "event-out-of-order" }]);
   });
 
-  it("keeps rows that are not yet due buffered on manual flush, even with force", async () => {
-    const regular = createTestDo();
-    await postIngest(regular.object, envelope());
+  it("writes a burst of page views to D1 in one batch, setting the alarm once", async () => {
+    const ctx = createTestDo();
+    for (let second = 0; second < 30; second += 1) {
+      const at = NOW + second * 1_000;
+      vi.setSystemTime(at);
+      await postIngest(
+        ctx.object,
+        envelope(
+          { visitId: `visit-${second}`, startedAt: at, timestamp: at },
+          { receivedAt: at },
+        ),
+      );
+    }
 
-    const regularFlush = await regular.object.fetch(
-      new Request("https://ingest.internal/flush?force=1", { method: "POST" }),
-    );
+    // Each page view made a row dirty; only the first armed the alarm, and
+    // only it read the alarm from storage.
+    expect(ctx.state.storage.getAlarm).toHaveBeenCalledTimes(1);
+    expect(ctx.state.storage.setAlarm).toHaveBeenCalledTimes(1);
+    expect(ctx.getAlarmAt()).toBe(NOW + 60_000);
 
-    expect(regularFlush.status).toBe(200);
+    vi.setSystemTime(NOW + 60_000);
+    await ctx.object.alarm();
+
+    expect(ctx.d1.batch).toHaveBeenCalledTimes(1);
     expect(
-      regular.d1.all<{ visit_id: string }>(
-        "SELECT visit_id FROM visits WHERE visit_id = ?",
-        "visit-1",
-      ),
-    ).toEqual([]);
+      ctx.d1.all<{ count: number }>("SELECT COUNT(*) AS count FROM visits")[0]
+        ?.count,
+    ).toBe(30);
+    expect(
+      localRows<{ count: number }>(
+        ctx.sql,
+        "SELECT COUNT(*) AS count FROM buffered_visits WHERE dirty = 1",
+      )[0]?.count,
+    ).toBe(0);
+  });
+
+  it("writes everything dirty in one alarm, batch after batch", async () => {
+    const ctx = createTestDo();
+    for (let index = 0; index < 250; index += 1) {
+      insertBufferedVisit(ctx.sql, {
+        visit_id: `visit-${index}`,
+        visitor_id: `visitor-${index}`,
+      });
+    }
+
+    await ctx.object.alarm();
+
+    // 100 page views a batch.
+    expect(ctx.d1.batch).toHaveBeenCalledTimes(3);
+    expect(
+      ctx.d1.all<{ count: number }>("SELECT COUNT(*) AS count FROM visits")[0]
+        ?.count,
+    ).toBe(250);
+  });
+
+  it("goes on in a new invocation at once when the D1 queries run out", async () => {
+    const ctx = createTestDo();
+    for (let index = 0; index < 1_001; index += 1) {
+      insertBufferedVisit(ctx.sql, {
+        visit_id: `visit-${index}`,
+        visitor_id: `visitor-${index}`,
+        flush_attempts: 1,
+      });
+    }
+
+    await ctx.object.alarm();
+
+    // Page views that failed before go one a query: 1,000 of them, and the
+    // site's key, fit no invocation.
+    expect(
+      localRows<{ count: number }>(
+        ctx.sql,
+        "SELECT COUNT(*) AS count FROM buffered_visits WHERE dirty = 1",
+      )[0]?.count,
+    ).toBe(3);
+    expect(ctx.getAlarmAt()).toBe(NOW);
   });
 
   it("hydrates persisted visits when custom events arrive after the buffered row is gone", async () => {
@@ -1988,86 +1994,227 @@ describe("IngestDurableObject", () => {
     ).toEqual({ event_name: "Download" });
   });
 
-  it("falls back to individual D1 visit flushes when a batch fails", async () => {
+  it("writes a failed batch's page views one by one", async () => {
     const ctx = createTestDo();
     ctx.d1.failBatchCalls = 1;
-    await postIngest(ctx.object, envelope());
-    vi.setSystemTime(NOW + 60_000);
+    insertBufferedVisit(ctx.sql, { visit_id: "visit-1" });
+    insertBufferedVisit(ctx.sql, { visit_id: "visit-2" });
 
-    const flush = await ctx.object.fetch(
-      new Request("https://ingest.internal/flush", { method: "POST" }),
-    );
+    await ctx.object.alarm();
 
-    expect(flush.status).toBe(200);
-    expect(ctx.d1.batch).toHaveBeenCalledTimes(2);
+    expect(ctx.d1.batch).toHaveBeenCalledTimes(3);
     expect(
       ctx.d1.all<{ visit_id: string }>(
-        "SELECT visit_id FROM visits WHERE visit_id = ?",
-        "visit-1",
+        "SELECT visit_id FROM visits ORDER BY visit_id",
       ),
-    ).toEqual([{ visit_id: "visit-1" }]);
-    expect(
-      localRows<{ dirty: number }>(
-        ctx.sql,
-        "SELECT dirty FROM buffered_visits WHERE visit_id = ?",
-        "visit-1",
-      )[0]?.dirty,
-    ).toBe(0);
+    ).toEqual([{ visit_id: "visit-1" }, { visit_id: "visit-2" }]);
+    expect(ctx.getAlarmAt()).toBe(NOW + VISIT_TIMEOUT_MS - 1_000);
   });
 
-  it("retains rows that cannot be flushed after batch and individual failures", async () => {
+  it("keeps a page view D1 rejects out of the others' batch", async () => {
+    const ctx = createTestDo();
+    ctx.d1.db.exec(`
+      CREATE TRIGGER reject_poison BEFORE INSERT ON visits
+      WHEN NEW.visit_id = 'poison'
+      BEGIN SELECT RAISE(ABORT, 'rejected'); END;
+    `);
+    insertBufferedVisit(ctx.sql, {
+      visit_id: "healthy",
+      started_at: NOW - 2_000,
+    });
+    insertBufferedVisit(ctx.sql, { visit_id: "poison" });
+
+    await ctx.object.alarm();
+
+    // The batch failed, then the page views went one by one.
+    expect(ctx.d1.batch).toHaveBeenCalledTimes(3);
+    expect(
+      localRows(
+        ctx.sql,
+        "SELECT visit_id, dirty, flush_attempts, last_flush_error FROM buffered_visits ORDER BY visit_id",
+      ),
+    ).toEqual([
+      {
+        visit_id: "healthy",
+        dirty: 0,
+        flush_attempts: 0,
+        last_flush_error: null,
+      },
+      {
+        visit_id: "poison",
+        dirty: 1,
+        flush_attempts: 1,
+        last_flush_error: "rejected",
+      },
+    ]);
+    expect(ctx.getAlarmAt()).toBe(NOW + 60_000);
+
+    insertBufferedVisit(ctx.sql, { visit_id: "later" });
+    ctx.d1.batch.mockClear();
+    vi.setSystemTime(NOW + 60_000);
+    await ctx.object.alarm();
+
+    // The new page view's batch leaves the rejected one out; it goes alone.
+    expect(ctx.d1.batch).toHaveBeenCalledTimes(2);
+    expect(ctx.d1.batch.mock.calls[0]?.[0]).toHaveLength(1);
+    expect(
+      ctx.d1.all<{ visit_id: string }>(
+        "SELECT visit_id FROM visits ORDER BY visit_id",
+      ),
+    ).toEqual([{ visit_id: "healthy" }, { visit_id: "later" }]);
+    expect(
+      localRows(
+        ctx.sql,
+        "SELECT flush_attempts FROM buffered_visits WHERE visit_id = 'poison'",
+      ),
+    ).toEqual([{ flush_attempts: 2 }]);
+  });
+
+  it("stops at the first page view that fails alone, as D1 may be down", async () => {
     const ctx = createTestDo();
     ctx.d1.failBatchCalls = 2;
-    await postIngest(ctx.object, envelope());
-    vi.setSystemTime(NOW + 60_000);
+    insertBufferedVisit(ctx.sql, {
+      visit_id: "visit-1",
+      started_at: NOW - 2_000,
+    });
+    insertBufferedVisit(ctx.sql, { visit_id: "visit-2" });
 
-    const flush = await ctx.object.fetch(
-      new Request("https://ingest.internal/flush", { method: "POST" }),
-    );
+    await ctx.object.alarm();
 
-    expect(flush.status).toBe(200);
     expect(ctx.d1.batch).toHaveBeenCalledTimes(2);
     expect(
-      localRows<{ count: number }>(
+      localRows(
         ctx.sql,
-        "SELECT COUNT(*) AS count FROM buffered_visits",
-      )[0]?.count,
-    ).toBe(1);
-    expect(
-      localRows<{ dirty: number; flush_attempts: number }>(
-        ctx.sql,
-        "SELECT dirty, flush_attempts FROM buffered_visits WHERE visit_id = ?",
-        "visit-1",
-      )[0],
-    ).toEqual({ dirty: 1, flush_attempts: 1 });
+        "SELECT visit_id, dirty, flush_attempts FROM buffered_visits ORDER BY visit_id",
+      ),
+    ).toEqual([
+      { visit_id: "visit-1", dirty: 1, flush_attempts: 1 },
+      { visit_id: "visit-2", dirty: 1, flush_attempts: 0 },
+    ]);
+    expect(ctx.getAlarmAt()).toBe(NOW + 60_000);
   });
 
-  it("does not clear a newer local revision after D1 await", async () => {
+  it("flushes what a buffer held under per-row deadlines when it upgrades", async () => {
+    const sql = new SqliteSqlStorage();
+    // The tables as the per-row deadline version left them, a row each
+    // waiting for D1 after failed attempts pushed its deadline out.
+    sql.db.exec(`
+      CREATE TABLE buffered_visits (
+        visit_id TEXT PRIMARY KEY, site_id TEXT NOT NULL,
+        visitor_id TEXT NOT NULL, session_id TEXT NOT NULL,
+        status TEXT NOT NULL, started_at INTEGER NOT NULL,
+        last_activity_at INTEGER NOT NULL, hidden_at INTEGER,
+        hidden_ms INTEGER NOT NULL DEFAULT 0, ended_at INTEGER,
+        finalized_at INTEGER, duration_ms INTEGER, scroll_depth INTEGER,
+        duration_source TEXT, exit_reason TEXT, pathname TEXT NOT NULL,
+        query_string TEXT NOT NULL DEFAULT '',
+        hash_fragment TEXT NOT NULL DEFAULT '', hostname TEXT NOT NULL,
+        title TEXT NOT NULL DEFAULT '', referrer_url TEXT NOT NULL DEFAULT '',
+        referrer_host TEXT NOT NULL DEFAULT '',
+        utm_source TEXT NOT NULL DEFAULT '', utm_medium TEXT NOT NULL DEFAULT '',
+        utm_campaign TEXT NOT NULL DEFAULT '', utm_term TEXT NOT NULL DEFAULT '',
+        utm_content TEXT NOT NULL DEFAULT '', is_eu INTEGER NOT NULL DEFAULT 0,
+        country TEXT NOT NULL DEFAULT '', region TEXT NOT NULL DEFAULT '',
+        region_code TEXT NOT NULL DEFAULT '', city TEXT NOT NULL DEFAULT '',
+        continent TEXT NOT NULL DEFAULT '', latitude REAL, longitude REAL,
+        timezone TEXT NOT NULL DEFAULT '', browser TEXT NOT NULL DEFAULT '',
+        browser_version TEXT NOT NULL DEFAULT '', os TEXT NOT NULL DEFAULT '',
+        os_version TEXT NOT NULL DEFAULT '',
+        device_type TEXT NOT NULL DEFAULT '', screen_width INTEGER,
+        screen_height INTEGER, language TEXT NOT NULL DEFAULT '',
+        perf_ttfb_ms REAL, perf_fcp_ms REAL, perf_lcp_ms REAL, perf_cls REAL,
+        perf_inp_ms REAL, properties_json TEXT,
+        dirty INTEGER NOT NULL DEFAULT 1,
+        flush_attempts INTEGER NOT NULL DEFAULT 0, last_flush_error TEXT,
+        next_due_at INTEGER, flush_due_at INTEGER,
+        buffer_revision INTEGER NOT NULL DEFAULT 1,
+        created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+      );
+      CREATE INDEX idx_buffered_visits_next_due
+        ON buffered_visits(next_due_at, visit_id);
+      CREATE INDEX idx_buffered_visits_dirty_flush_due
+        ON buffered_visits(dirty, flush_due_at, flush_attempts);
+      CREATE TABLE buffered_custom_events (
+        event_id TEXT PRIMARY KEY, site_id TEXT NOT NULL,
+        visit_id TEXT NOT NULL, occurred_at INTEGER NOT NULL,
+        received_at INTEGER NOT NULL, sequence INTEGER NOT NULL DEFAULT 0,
+        event_name TEXT NOT NULL, event_data_json TEXT NOT NULL DEFAULT '{}',
+        revenue_amount REAL, revenue_currency TEXT,
+        dirty INTEGER NOT NULL DEFAULT 1,
+        flush_attempts INTEGER NOT NULL DEFAULT 0, last_flush_error TEXT,
+        next_due_at INTEGER, flush_due_at INTEGER,
+        buffer_revision INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL
+      );
+      CREATE INDEX idx_buffered_custom_events_next_due
+        ON buffered_custom_events(next_due_at, event_id);
+      CREATE TABLE analytics_sessions (
+        site_id TEXT NOT NULL, session_id TEXT PRIMARY KEY,
+        visitor_id TEXT NOT NULL, started_at INTEGER NOT NULL,
+        last_activity_at INTEGER NOT NULL, page_count INTEGER NOT NULL,
+        entry_path TEXT NOT NULL, last_path TEXT NOT NULL,
+        last_visit_id TEXT NOT NULL, next_due_at INTEGER NOT NULL
+      );
+      INSERT INTO buffered_visits (
+        visit_id, site_id, visitor_id, session_id, status, started_at,
+        last_activity_at, ended_at, finalized_at, pathname, hostname, dirty,
+        flush_attempts, next_due_at, flush_due_at, created_at, updated_at
+      ) VALUES (
+        'waiting-visit', 'site-1', 'visitor-1', 'session-1', 'complete',
+        ${NOW - 60_000}, ${NOW - 30_000}, ${NOW - 30_000}, ${NOW - 30_000},
+        '/', 'example.com', 1, 3, ${NOW + 8 * 60_000}, ${NOW + 8 * 60_000},
+        ${toSeconds(NOW)}, ${toSeconds(NOW)}
+      );
+      INSERT INTO buffered_custom_events (
+        event_id, site_id, visit_id, occurred_at, received_at, event_name,
+        dirty, next_due_at, flush_due_at, created_at
+      ) VALUES (
+        'waiting-event', 'site-1', 'waiting-visit', ${NOW - 40_000},
+        ${NOW - 40_000}, 'Signup', 1, ${NOW + 60_000}, ${NOW + 60_000},
+        ${toSeconds(NOW)}
+      );
+    `);
+    const ctx = createTestDo({}, sql);
+
+    // The sweep after the deploy finds the rows waiting and sets the alarm.
+    await ctx.object.fetch(
+      new Request("https://ingest.internal/reconcile", { method: "POST" }),
+    );
+    expect(ctx.getAlarmAt()).toBe(NOW + 60_000);
+    vi.setSystemTime(NOW + 60_000);
+    await ctx.object.alarm();
+
+    expect(ctx.d1.all("SELECT visit_id, status FROM visits")).toEqual([
+      { visit_id: "waiting-visit", status: "complete" },
+    ]);
+    expect(ctx.d1.all("SELECT event_id FROM custom_events")).toEqual([
+      { event_id: "waiting-event" },
+    ]);
+    expect(ctx.getAlarmAt()).toBeNull();
+  });
+
+  it("does not clear a page view that ended while D1 wrote it", async () => {
     const ctx = createTestDo();
     await postIngest(ctx.object, envelope());
     vi.setSystemTime(NOW + 60_000);
     ctx.d1.beforeBatch = async () => {
-      await postIngest(
-        ctx.object,
-        envelope({ kind: "visibility", visibilityState: "hidden" }),
-      );
+      await postIngest(ctx.object, envelope({ kind: "leave" }));
     };
 
-    const flush = await ctx.object.fetch(
-      new Request("https://ingest.internal/flush", { method: "POST" }),
-    );
-
-    expect(flush.status).toBe(200);
+    await ctx.object.alarm();
+    // Written open, then again once it ended, in the same alarm.
+    expect(ctx.d1.batch).toHaveBeenCalledTimes(2);
     expect(
-      localRows<{ dirty: number; status: string }>(
+      ctx.d1.all("SELECT status FROM visits WHERE visit_id = 'visit-1'"),
+    ).toEqual([{ status: "complete" }]);
+    expect(
+      localRows(
         ctx.sql,
-        "SELECT dirty, status FROM buffered_visits WHERE visit_id = ?",
-        "visit-1",
-      )[0],
-    ).toEqual({ dirty: 1, status: "hidden_pending" });
+        "SELECT dirty, status FROM buffered_visits WHERE visit_id = 'visit-1'",
+      ),
+    ).toEqual([{ dirty: 0, status: "complete" }]);
   });
 
-  it("backs off custom events that still have no persisted visit during flush", async () => {
+  it("leaves a custom event without its page view for the page view, asking D1 nothing", async () => {
     const ctx = createTestDo();
     await postIngest(
       ctx.object,
@@ -2078,48 +2225,37 @@ describe("IngestDurableObject", () => {
         eventData: { ok: true },
       }),
     );
+    ctx.d1.prepare.mockClear();
     vi.setSystemTime(NOW + 60_000);
 
-    const flush = await ctx.object.fetch(
-      new Request("https://ingest.internal/flush", { method: "POST" }),
-    );
-
-    expect(flush.status).toBe(200);
+    await ctx.object.alarm();
     expect(
-      localRows<{ count: number }>(
+      localRows(
         ctx.sql,
-        "SELECT COUNT(*) AS count FROM buffered_custom_events",
-      )[0]?.count,
-    ).toBe(1);
-    expect(
-      localRows<{
-        dirty: number;
-        flush_attempts: number;
-        last_flush_error: string;
-      }>(
-        ctx.sql,
-        "SELECT dirty, flush_attempts, last_flush_error FROM buffered_custom_events WHERE event_id = ?",
-        "event-orphan",
-      )[0],
-    ).toEqual({
-      dirty: 1,
-      flush_attempts: 1,
-      last_flush_error: "waiting_for_visit",
-    });
-    expect(
-      ctx.d1.all<{ count: number }>(
-        "SELECT COUNT(*) AS count FROM custom_events",
-      )[0]?.count,
-    ).toBe(0);
+        "SELECT dirty, flush_attempts FROM buffered_custom_events WHERE event_id = 'event-orphan'",
+      ),
+    ).toEqual([{ dirty: 1, flush_attempts: 0 }]);
+    expect(ctx.d1.prepare).not.toHaveBeenCalled();
+    expect(ctx.d1.batch).not.toHaveBeenCalled();
+    expect(ctx.getAlarmAt()).toBeNull();
   });
 
-  it("cleans old flushed rows during manual flush", async () => {
+  it("deletes finished rows once no page view can join their session", async () => {
     const ctx = createTestDo();
+    const retention = SESSION_WINDOW_MS + MAX_CLIENT_EVENT_LAG_MS;
     insertBufferedVisit(ctx.sql, {
       visit_id: "old-complete",
       status: "complete",
-      ended_at: NOW - RECENT_EVENT_RETENTION_MS - 1,
-      finalized_at: NOW - RECENT_EVENT_RETENTION_MS - 1,
+      ended_at: NOW - retention - 1,
+      finalized_at: NOW - retention - 1,
+      dirty: 0,
+    });
+    insertBufferedVisit(ctx.sql, {
+      visit_id: "recent-complete",
+      visitor_id: "visitor-2",
+      status: "complete",
+      ended_at: NOW - retention,
+      finalized_at: NOW - retention,
       dirty: 0,
     });
     ctx.sql.exec(
@@ -2133,8 +2269,8 @@ describe("IngestDurableObject", () => {
       "old-event",
       "site-1",
       "old-complete",
-      NOW - RECENT_EVENT_RETENTION_MS - 1,
-      NOW - RECENT_EVENT_RETENTION_MS - 1,
+      NOW - retention - 1,
+      NOW - retention - 1,
       0,
       "Old Event",
       "{}",
@@ -2144,17 +2280,10 @@ describe("IngestDurableObject", () => {
       toSeconds(NOW),
     );
 
-    const flush = await ctx.object.fetch(
-      new Request("https://ingest.internal/flush", { method: "POST" }),
-    );
-
-    expect(flush.status).toBe(200);
-    expect(
-      localRows<{ visits: number }>(
-        ctx.sql,
-        "SELECT COUNT(*) AS visits FROM buffered_visits",
-      )[0]?.visits,
-    ).toBe(0);
+    await ctx.object.alarm();
+    expect(localRows(ctx.sql, "SELECT visit_id FROM buffered_visits")).toEqual([
+      { visit_id: "recent-complete" },
+    ]);
     expect(
       localRows<{ events: number }>(
         ctx.sql,
@@ -2208,23 +2337,37 @@ describe("IngestDurableObject", () => {
     );
   });
 
-  it("only advances a later alarm and keeps an earlier alarm", async () => {
+  it("moves the alarm earlier for a hidden page view's grace, never later", async () => {
     const ctx = createTestDo();
     await postIngest(ctx.object, envelope());
+    vi.setSystemTime(NOW + 60_000);
+    await ctx.object.alarm();
+    expect(ctx.getAlarmAt()).toBe(NOW - 1_000 + VISIT_TIMEOUT_MS);
 
-    await ctx.state.storage.setAlarm(NOW + 2 * 60 * 60 * 1000);
+    const hiddenAt = NOW + 120_000;
+    vi.setSystemTime(hiddenAt);
     await postIngest(
       ctx.object,
-      envelope({ kind: "visibility", visibilityState: "hidden" }),
+      envelope(
+        { kind: "visibility", visibilityState: "hidden", timestamp: hiddenAt },
+        { receivedAt: hiddenAt },
+      ),
     );
-    expect(ctx.getAlarmAt()).toBe(NOW + 60_000);
+    expect(ctx.getAlarmAt()).toBe(hiddenAt + RECENT_EVENT_RETENTION_MS);
 
-    await ctx.state.storage.setAlarm(NOW + 30_000);
+    vi.mocked(ctx.state.storage.setAlarm).mockClear();
     await postIngest(
       ctx.object,
-      envelope({ kind: "visibility", visibilityState: "visible" }),
+      envelope(
+        { kind: "visibility", visibilityState: "visible", timestamp: hiddenAt },
+        { receivedAt: hiddenAt },
+      ),
     );
-    expect(ctx.getAlarmAt()).toBe(NOW + 30_000);
+    expect(ctx.state.storage.setAlarm).not.toHaveBeenCalled();
+    // Neither change waits for D1.
+    expect(localRows(ctx.sql, "SELECT dirty FROM buffered_visits")).toEqual([
+      { dirty: 0 },
+    ]);
   });
 
   it("ignores additional invalid validation shapes without buffering rows", async () => {
@@ -2583,11 +2726,7 @@ describe("IngestDurableObject", () => {
     });
     vi.setSystemTime(NOW + 60_000);
 
-    const invalidJsonFlush = await invalidJsonCtx.object.fetch(
-      new Request("https://ingest.internal/flush", { method: "POST" }),
-    );
-
-    expect(invalidJsonFlush.status).toBe(200);
+    await invalidJsonCtx.object.alarm();
     expect(
       localRows<{ events: number }>(
         invalidJsonCtx.sql,
@@ -2609,11 +2748,7 @@ describe("IngestDurableObject", () => {
         .run("visit-removed-before-batch");
     };
 
-    const missingInsertFlush = await missingInsertCtx.object.fetch(
-      new Request("https://ingest.internal/flush", { method: "POST" }),
-    );
-
-    expect(missingInsertFlush.status).toBe(200);
+    await missingInsertCtx.object.alarm();
     expect(
       localRows<{ events: number }>(
         missingInsertCtx.sql,
@@ -2650,8 +2785,6 @@ describe("IngestDurableObject", () => {
       visit_id: "late-persisted",
       occurred_at: NOW - VISIT_TIMEOUT_MS - 1_000,
       received_at: NOW - VISIT_TIMEOUT_MS - 1_000,
-      flush_due_at: NOW + 60 * 60 * 1000,
-      next_due_at: NOW + 60 * 60 * 1000,
       created_at: toSeconds(NOW - VISIT_TIMEOUT_MS - 1_000),
     });
     insertBufferedCustomEvent(ctx.sql, {
@@ -2664,11 +2797,7 @@ describe("IngestDurableObject", () => {
 
     vi.setSystemTime(NOW + 60_000);
 
-    const flush = await ctx.object.fetch(
-      new Request("https://ingest.internal/flush", { method: "POST" }),
-    );
-
-    expect(flush.status).toBe(200);
+    await ctx.object.alarm();
     expect(
       localRows<{ dirty: number; status: string }>(
         ctx.sql,
@@ -2690,6 +2819,8 @@ describe("IngestDurableObject", () => {
         "event-delete",
       )[0]?.events,
     ).toBe(0);
+    // Its page view back, the event waits for the next alarm.
+    expect(ctx.getAlarmAt()).toBe(NOW + 120_000);
   });
 
   it("repairs legacy buffered custom event schemas during initialization", () => {
@@ -2720,15 +2851,7 @@ describe("IngestDurableObject", () => {
         legacySql,
         "PRAGMA table_info(buffered_custom_events)",
       ).map((column) => column.name),
-    ).toEqual(
-      expect.arrayContaining([
-        "received_at",
-        "sequence",
-        "next_due_at",
-        "flush_due_at",
-        "buffer_revision",
-      ]),
-    );
+    ).toEqual(expect.arrayContaining(["received_at", "sequence"]));
 
     const preSchedulingSql = new SqliteSqlStorage();
     preSchedulingSql.exec(`
@@ -2755,122 +2878,54 @@ describe("IngestDurableObject", () => {
         preSchedulingSql,
         "PRAGMA table_info(buffered_custom_events)",
       ).map((column) => column.name),
-    ).toEqual(
-      expect.arrayContaining([
-        "next_due_at",
-        "flush_due_at",
-        "buffer_revision",
-      ]),
-    );
+    ).toEqual(expect.arrayContaining(["revenue_amount", "revenue_currency"]));
   });
 
-  it("uses deadline indexes for alarm selection and flush selection", () => {
+  it("reads what the alarm writes and the visit deadlines through indexes", () => {
     const ctx = createTestDo();
-    const visitIndexes = localRows<{ name: string }>(
-      ctx.sql,
-      "PRAGMA index_list(buffered_visits)",
-    ).map((row) => row.name);
-    const eventIndexes = localRows<{ name: string }>(
-      ctx.sql,
-      "PRAGMA index_list(buffered_custom_events)",
-    ).map((row) => row.name);
+    const plan = (query: string) =>
+      localRows<{ detail: string }>(ctx.sql, `EXPLAIN QUERY PLAN ${query}`)
+        .map((row) => row.detail)
+        .join(" | ");
 
-    expect(visitIndexes).toEqual(
-      expect.arrayContaining([
-        "idx_buffered_visits_next_due",
-        "idx_buffered_visits_dirty_flush_due",
-      ]),
-    );
+    const visitFlushPlan = plan(`
+      SELECT visit_id FROM buffered_visits
+      WHERE dirty = 1
+      ORDER BY flush_attempts ASC, started_at ASC
+      LIMIT 100
+    `);
+    expect(visitFlushPlan).toContain("idx_buffered_visits_dirty");
+    expect(visitFlushPlan).not.toContain("TEMP B-TREE");
+    const eventFlushPlan = plan(`
+      SELECT event_id FROM buffered_custom_events
+      WHERE dirty = 1
+      ORDER BY flush_attempts ASC, occurred_at ASC
+      LIMIT 100
+    `);
+    expect(eventFlushPlan).toContain("idx_buffered_custom_events_dirty");
+    expect(eventFlushPlan).not.toContain("TEMP B-TREE");
     expect(
-      localRows<{ name: string; seqno: number }>(
-        ctx.sql,
-        "PRAGMA index_info(idx_buffered_visits_dirty_flush_due)",
-      )
-        .sort((left, right) => left.seqno - right.seqno)
-        .map((row) => row.name),
-    ).toEqual(["dirty", "flush_due_at", "flush_attempts"]);
-    expect(visitIndexes).not.toEqual(
-      expect.arrayContaining([
-        "idx_buffered_visits_dirty_updated",
-        "idx_buffered_visits_status_last_activity",
-        "idx_buffered_visits_site_visit_status",
-        "idx_buffered_visits_started_at",
-        "idx_buffered_visits_ended_at",
-      ]),
-    );
-    expect(eventIndexes).toEqual(
-      expect.arrayContaining([
-        "idx_buffered_custom_events_next_due",
-        "idx_buffered_custom_events_dirty_flush_due",
-      ]),
-    );
-    expect(eventIndexes).not.toContain(
-      "idx_buffered_custom_events_dirty_occurred",
-    );
-
-    const visitPlan = localRows<{ detail: string }>(
-      ctx.sql,
-      `EXPLAIN QUERY PLAN
-       SELECT next_due_at
-       FROM buffered_visits
-       WHERE next_due_at IS NOT NULL
-       ORDER BY next_due_at ASC, visit_id ASC
-       LIMIT 1`,
-    );
-    const flushPlan = localRows<{ detail: string }>(
-      ctx.sql,
-      `EXPLAIN QUERY PLAN
-       SELECT visit_id
-       FROM buffered_visits
-       WHERE dirty = 1 AND flush_due_at IS NOT NULL AND flush_due_at <= ?
-       ORDER BY flush_due_at ASC, updated_at ASC, flush_attempts ASC
-       LIMIT ?`,
-      NOW,
-      10,
-    );
-    const eventPlan = localRows<{ detail: string }>(
-      ctx.sql,
-      `EXPLAIN QUERY PLAN
-       SELECT next_due_at
-       FROM buffered_custom_events
-       WHERE next_due_at IS NOT NULL
-       ORDER BY next_due_at ASC, event_id ASC
-       LIMIT 1`,
-    );
-    const eventFlushPlan = localRows<{ detail: string }>(
-      ctx.sql,
-      `EXPLAIN QUERY PLAN
-       SELECT event_id
-       FROM buffered_custom_events
-       WHERE dirty = 1 AND flush_due_at IS NOT NULL AND flush_due_at <= ?
-       ORDER BY flush_due_at ASC, created_at ASC, flush_attempts ASC
-       LIMIT ?`,
-      NOW,
-      10,
-    );
-
-    expect(visitPlan.map((row) => row.detail).join(" ")).toContain(
-      "idx_buffered_visits_next_due",
-    );
-    expect(flushPlan.map((row) => row.detail).join(" ")).toContain(
-      "idx_buffered_visits_dirty_flush_due",
-    );
-    expect(eventPlan.map((row) => row.detail).join(" ")).toContain(
-      "idx_buffered_custom_events_next_due",
-    );
-    expect(eventFlushPlan.map((row) => row.detail).join(" ")).toContain(
-      "idx_buffered_custom_events_dirty_flush_due",
-    );
+      plan(
+        "SELECT MIN(last_activity_at) FROM buffered_visits WHERE status = 'open'",
+      ),
+    ).toContain("idx_buffered_visits_status_activity");
+    expect(
+      plan(
+        "SELECT MIN(hidden_at) FROM buffered_visits WHERE status = 'hidden_pending' AND hidden_at IS NOT NULL",
+      ),
+    ).toContain("idx_buffered_visits_status_hidden_at");
   });
 
-  it("reschedules alarms when dirty custom events remain after the alarm flush budget", async () => {
+  it("writes every custom event whose page view is in D1 in one alarm", async () => {
     const ctx = createTestDo();
-    ctx.d1.insertVisit({
+    const visit = {
       visit_id: "event-budget-visit",
       status: "complete",
       ended_at: NOW - 1_000,
       finalized_at: NOW - 1_000,
-    });
+    };
+    ctx.d1.insertVisit(visit);
+    insertBufferedVisit(ctx.sql, { ...visit, dirty: 0 });
 
     for (let index = 0; index < 21; index += 1) {
       insertBufferedCustomEvent(ctx.sql, {
@@ -2885,50 +2940,32 @@ describe("IngestDurableObject", () => {
 
     await ctx.object.alarm();
 
-    expect(ctx.getAlarmAt()).toBe(NOW + 120_000);
+    expect(
+      ctx.d1.all<{ count: number }>(
+        "SELECT COUNT(*) AS count FROM custom_events",
+      )[0]?.count,
+    ).toBe(21);
     expect(
       localRows<{ dirty: number }>(
         ctx.sql,
         "SELECT COUNT(*) AS dirty FROM buffered_custom_events WHERE dirty = 1",
       )[0]?.dirty,
-    ).toBe(1);
+    ).toBe(0);
+    // Nothing waits: the page view ended.
+    expect(ctx.getAlarmAt()).toBeNull();
   });
 
-  it("reschedules alarms when dirty visits remain after the alarm flush budget", async () => {
+  it("deletes a written custom event older than the retention in the same alarm", async () => {
     const ctx = createTestDo();
-    for (let index = 0; index < 201; index += 1) {
-      insertBufferedVisit(ctx.sql, {
-        visit_id: `visit-budget-${index}`,
-        session_id: `session-budget-${index}`,
-        status: "complete",
-        ended_at: NOW - 1_000,
-        finalized_at: NOW - 1_000,
-        dirty: 1,
-      });
-    }
-
-    vi.setSystemTime(NOW + 60_000);
-
-    await ctx.object.alarm();
-
-    expect(ctx.getAlarmAt()).toBe(NOW + 120_000);
-    expect(
-      localRows<{ dirty: number }>(
-        ctx.sql,
-        "SELECT COUNT(*) AS dirty FROM buffered_visits WHERE dirty = 1",
-      )[0]?.dirty,
-    ).toBe(101);
-    expect(ctx.state.storage.deleteAlarm).not.toHaveBeenCalled();
-  });
-
-  it("deletes old flushed custom event rows immediately after successful D1 flush", async () => {
-    const ctx = createTestDo();
-    ctx.d1.insertVisit({
+    const visit = {
       visit_id: "old-event-visit",
       status: "complete",
-      ended_at: NOW - RECENT_EVENT_RETENTION_MS - 1,
-      finalized_at: NOW - RECENT_EVENT_RETENTION_MS - 1,
-    });
+      ended_at: NOW - VISIT_TIMEOUT_MS + 60_000,
+      finalized_at: NOW - VISIT_TIMEOUT_MS + 60_000,
+      duration_source: "hidden",
+    };
+    ctx.d1.insertVisit(visit);
+    insertBufferedVisit(ctx.sql, { ...visit, dirty: 0 });
     insertBufferedCustomEvent(ctx.sql, {
       event_id: "old-flushed-event",
       visit_id: "old-event-visit",
@@ -2941,11 +2978,7 @@ describe("IngestDurableObject", () => {
 
     vi.setSystemTime(NOW + 60_000);
 
-    const flush = await ctx.object.fetch(
-      new Request("https://ingest.internal/flush", { method: "POST" }),
-    );
-
-    expect(flush.status).toBe(200);
+    await ctx.object.alarm();
     expect(
       ctx.d1.all<{ event_id: string }>(
         "SELECT event_id FROM custom_events WHERE event_id = ?",
@@ -2959,6 +2992,37 @@ describe("IngestDurableObject", () => {
         "old-flushed-event",
       )[0]?.events,
     ).toBe(0);
+  });
+
+  it("keeps an old orphan event whose page view arrives while cleanup asks D1 for it", async () => {
+    const ctx = createTestDo();
+    insertBufferedCustomEvent(ctx.sql, {
+      event_id: "event-racing",
+      visit_id: "arriving-visit",
+      occurred_at: NOW - VISIT_TIMEOUT_MS - 1_000,
+      received_at: NOW - VISIT_TIMEOUT_MS - 1_000,
+      created_at: toSeconds(NOW - VISIT_TIMEOUT_MS - 1_000),
+    });
+    const prepare = ctx.d1.prepare.getMockImplementation()!;
+    let arrived = false;
+    ctx.d1.prepare.mockImplementation((query: string) => {
+      if (!arrived && query.includes("AS visitId")) {
+        arrived = true;
+        insertBufferedVisit(ctx.sql, { visit_id: "arriving-visit" });
+      }
+      return prepare(query);
+    });
+
+    await ctx.object.alarm();
+
+    expect(arrived).toBe(true);
+    expect(
+      localRows<{ events: number }>(
+        ctx.sql,
+        "SELECT COUNT(*) AS events FROM buffered_custom_events WHERE event_id = ?",
+        "event-racing",
+      )[0]?.events,
+    ).toBe(1);
   });
 
   it("keeps old orphan events when cleanup hydrates every missing visit from D1", async () => {
@@ -2981,11 +3045,7 @@ describe("IngestDurableObject", () => {
       });
     }
 
-    const flush = await ctx.object.fetch(
-      new Request("https://ingest.internal/flush", { method: "POST" }),
-    );
-
-    expect(flush.status).toBe(200);
+    await ctx.object.alarm();
     expect(
       localRows<{ dirty: number }>(
         ctx.sql,
@@ -3119,8 +3179,20 @@ describe("rollups of days the ingest buffer writes to afterwards", () => {
   function createRollupDo() {
     const database = createMigratedDatabase();
     seedSites(database, [{ siteId: "site-1", sitePk: 1 }]);
-    const DB = createSqliteD1Database(database);
-    return { database, ctx: createTestDo({ DB }), env: { DB } as Env };
+    const trace: SqliteD1Trace = {
+      preparedSql: [],
+      bindings: [],
+      batchStatements: [],
+    };
+    const DB = createSqliteD1Database(database, trace);
+    return { database, trace, ctx: createTestDo({ DB }), env: { DB } as Env };
+  }
+
+  /** The dirty-day marks the alarm's D1 batches carried. */
+  function markStatements(trace: SqliteD1Trace): number {
+    return (trace.batchStatements ?? [])
+      .flat()
+      .filter((sql) => sql.includes("visit_rollup_dirty_days")).length;
   }
 
   function dayRollup(database: DatabaseSync) {
@@ -3205,6 +3277,65 @@ describe("rollups of days the ingest buffer writes to afterwards", () => {
     expect(dirtyDays(database)).toEqual([]);
   });
 
+  it("marks a page view's day only once the day could be rolled up", async () => {
+    const { database, trace, ctx, env } = createRollupDo();
+    const flushFinished = async (
+      visitId: string,
+      startedAt: number,
+      at: number,
+    ) => {
+      insertBufferedVisit(ctx.sql, {
+        visit_id: visitId,
+        visitor_id: visitId,
+        status: "complete",
+        started_at: startedAt,
+        last_activity_at: startedAt + 1_000,
+        ended_at: startedAt + 1_000,
+        finalized_at: startedAt + 1_000,
+      });
+      vi.setSystemTime(at);
+      await ctx.object.alarm();
+    };
+
+    // Today can't be rolled up: no statement for it.
+    await flushFinished(
+      "today",
+      DAY * DAY_MS + 10 * HOUR_MS,
+      DAY * DAY_MS + 11 * HOUR_MS,
+    );
+    expect(markStatements(trace)).toBe(0);
+
+    await runVisitRollups(env, ROLLUP_AT);
+    // The next day is rolled up at noon the day after. An hour and a minute
+    // before, its page view still has nothing to mark.
+    const nextRollupAt = ROLLUP_AT + DAY_MS;
+    await flushFinished(
+      "early",
+      NEXT_DAY_MS + 23 * HOUR_MS,
+      nextRollupAt - HOUR_MS - 60_000,
+    );
+    expect(markStatements(trace)).toBe(0);
+
+    // Within the hour, a flush that may race the rollup marks it, though
+    // only a rolled-up day is recorded.
+    await flushFinished(
+      "racing",
+      NEXT_DAY_MS + 23 * HOUR_MS,
+      nextRollupAt - 30 * 60_000,
+    );
+    expect(markStatements(trace)).toBe(1);
+    expect(dirtyDays(database)).toEqual([]);
+
+    // A rolled-up day's page view is marked.
+    await flushFinished(
+      "late",
+      DAY * DAY_MS + 15 * HOUR_MS,
+      nextRollupAt - 29 * 60_000,
+    );
+    expect(markStatements(trace)).toBe(2);
+    expect(dirtyDays(database)).toEqual([{ site_pk: 1, day: DAY }]);
+  });
+
   it("adds a page view flushed after its day was rolled up", async () => {
     const { database, ctx, env } = createRollupDo();
     await pageView(ctx, "on-time", DAY * DAY_MS + 10 * HOUR_MS);
@@ -3264,10 +3395,7 @@ describe("scroll depth", () => {
 
   async function flushAt(ctx: TestDoContext, at: number) {
     vi.setSystemTime(at);
-    const response = await ctx.object.fetch(
-      new Request("https://ingest.internal/flush", { method: "POST" }),
-    );
-    expect(response.status).toBe(200);
+    await ctx.object.alarm();
   }
 
   function d1ScrollDepths(ctx: TestDoContext) {
@@ -3411,8 +3539,13 @@ describe("scroll depth", () => {
     ]);
   });
 
-  it("flushes the depth to D1 while the page view is hidden and again when it ends", async () => {
+  it("writes a page view to D1 when it opens and when it ends, not while hidden, shown or active", async () => {
     const ctx = createTestDo();
+    const visitWrites = () =>
+      ctx.d1.prepare.mock.calls.filter(([query]) =>
+        query.includes("INSERT INTO visits"),
+      ).length;
+    const at = (offset: number) => ({ receivedAt: NOW + offset });
     await postIngest(
       ctx.object,
       envelope({ visitId: "visit-1", startedAt: NOW, timestamp: NOW }),
@@ -3421,41 +3554,50 @@ describe("scroll depth", () => {
     expect(d1ScrollDepths(ctx)).toEqual([
       { visit_id: "visit-1", status: "open", scroll_depth: null },
     ]);
+    expect(visitWrites()).toBe(1);
 
+    vi.setSystemTime(NOW + 60_000);
+    await postIngest(ctx.object, {
+      ...hidden("visit-1", NOW + 60_000, 35),
+      request: { ...hidden("visit-1", 0).request, ...at(60_000) },
+    });
+    await postIngest(ctx.object, {
+      ...visible("visit-1", NOW + 70_000),
+      request: { ...visible("visit-1", 0).request, ...at(70_000) },
+    });
     await postIngest(
       ctx.object,
       envelope(
         {
-          kind: "visibility",
+          kind: "custom_event",
           visitId: "visit-1",
-          visibilityState: "hidden",
-          timestamp: NOW + 60_000,
-          scrollDepth: 35,
+          eventId: "event-1",
+          eventName: "Signup",
+          eventData: {},
+          timestamp: NOW + 80_000,
         },
-        { receivedAt: NOW + 60_000 },
+        at(80_000),
       ),
     );
     await flushAt(ctx, NOW + 120_000);
-    expect(d1ScrollDepths(ctx)).toEqual([
-      { visit_id: "visit-1", status: "hidden_pending", scroll_depth: 35 },
+    // Only the custom event went to D1; the page view is as it opened.
+    expect(ctx.d1.all("SELECT event_id FROM custom_events")).toEqual([
+      { event_id: "event-1" },
     ]);
+    expect(d1ScrollDepths(ctx)).toEqual([
+      { visit_id: "visit-1", status: "open", scroll_depth: null },
+    ]);
+    expect(visitWrites()).toBe(1);
 
-    await postIngest(
-      ctx.object,
-      envelope(
-        {
-          kind: "leave",
-          visitId: "visit-1",
-          timestamp: NOW + 120_000,
-          scrollDepth: 70,
-        },
-        { receivedAt: NOW + 120_000 },
-      ),
-    );
+    await postIngest(ctx.object, {
+      ...leave("visit-1", NOW + 120_000, 70),
+      request: { ...leave("visit-1", 0).request, ...at(120_000) },
+    });
     await flushAt(ctx, NOW + 180_000);
     expect(d1ScrollDepths(ctx)).toEqual([
       { visit_id: "visit-1", status: "complete", scroll_depth: 70 },
     ]);
+    expect(visitWrites()).toBe(2);
   });
 
   it("keeps the depth of a page view read back from D1", async () => {

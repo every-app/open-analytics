@@ -1,28 +1,23 @@
-import { createDatabaseRuntime, type DatabaseStatement } from "@/lib/db";
-import { clampString, ONE_DAY_MS } from "@/lib/edge/utils";
+import type { DatabaseStatement } from "@/lib/db";
+import { D1QueryBudgetExceededError } from "@/lib/edge/scheduled-tasks/d1-query-budget";
+import { latestCompleteDay } from "@/lib/edge/scheduled-tasks/visit-rollups";
+import { clampString, ONE_DAY_MS, ONE_HOUR_MS } from "@/lib/edge/utils";
 
 import {
   D1_FLUSH_BATCH_SIZE,
-  D1_FLUSH_CUSTOM_EVENT_BATCH_SIZE,
-  D1_FLUSH_MAX_BATCHES_PER_ALARM,
   FLUSHED_BUFFER_RETENTION_MS,
   HIDDEN_LEAVE_GRACE_MS,
   ORPHAN_CUSTOM_EVENT_TIMEOUT_MS,
-  TIMEOUT_FINALIZE_BATCH_SIZE,
   VISIT_TIMEOUT_MS,
   WS_PRESENCE_LEAVE_EVENT,
 } from "./constants";
-import { flushCustomEventRowIndividually } from "./custom-event-flush";
+import { flushCustomEventRow } from "./custom-event-flush";
 import { engagedDurationMs } from "./engaged-time";
 import {
   type IngestFlushContext,
   recordFlushCounter,
   resolveSitePk,
 } from "./flush-types";
-import {
-  deleteAnalyticsSession,
-  readDueAnalyticsSessions,
-} from "./session-state";
 import {
   INSERT_VISIT_PROPERTIES_SQL,
   MARK_ROLLED_UP_DAY_SQL,
@@ -31,49 +26,26 @@ import {
 } from "./sql";
 import { toUnixSeconds } from "./time";
 import type { BufferedCustomEventRow, BufferedVisitRow } from "./types";
-interface FlushBufferFields {
-  bufferRevision: number;
-  flushDueAt: number | null;
-  nextDueAt: number | null;
+type BufferedVisitFlushRow = BufferedVisitRow & {
+  /** The page view's custom properties as a JSON object, NULL if none. */
+  propertiesJson: string | null;
+};
+/** Buffered custom events read at a time. Not a limit on how many flush. */
+const CUSTOM_EVENT_PAGE_SIZE = 100;
+/**
+ * A flush marks a page view's day for the rollup task only once the day
+ * could be rolled up: from this long before, so a flush racing the rollup
+ * run still marks it.
+ */
+const ROLLUP_MARK_MARGIN_MS = ONE_HOUR_MS;
+/** What a maintenance run of the alarm got through. */
+export enum MaintenanceOutcome {
+  /** Everything due is done, or waits for the next alarm after a failure. */
+  Done = "done",
+  /** The invocation's D1 queries ran out with work left. */
+  OutOfQueries = "out_of_queries",
 }
-type BufferedVisitFlushRow = BufferedVisitRow &
-  Partial<FlushBufferFields> & {
-    /** The page view's custom properties as a JSON object, NULL if none. */
-    propertiesJson: string | null;
-  };
-type BufferedCustomEventFlushRow = BufferedCustomEventRow &
-  Partial<FlushBufferFields>;
-// A visit flush is a two-statement D1 group: its upsert and at most one
-// mark of its day. Keep the existing D1 batch and alarm budgets expressed in
-// physical statements rather than buffered rows. The batch's one statement
-// for properties is outside the groups.
-const VISIT_FLUSH_STATEMENT_GROUP_SIZE = 2;
-const VISIT_FLUSH_ROW_BATCH_SIZE = Math.max(
-  1,
-  Math.floor(D1_FLUSH_BATCH_SIZE / VISIT_FLUSH_STATEMENT_GROUP_SIZE),
-);
-const VISIT_CLEANUP_META_KEY = "buffered_visits_cleanup_due_at";
-const VISIT_CLEANUP_META_VERSION = 1;
-// The CAS delete expands to four bound variables per candidate. Keep the
-// batch below the Durable Object SQLite host-parameter limit while retaining
-// a bounded cleanup pass.
-const VISIT_CLEANUP_BATCH_SIZE = 20;
-const VISIT_CLEANUP_RETRY_MS = 60 * 1000;
-interface VisitCleanupMetadataRow {
-  metadataValue?: number | null;
-}
-interface VisitCleanupCandidate {
-  visitId: string;
-  bufferRevision: number;
-}
-const FLUSH_RETRY_DELAYS_MS = [
-  60 * 1000,
-  2 * 60 * 1000,
-  4 * 60 * 1000,
-  8 * 60 * 1000,
-  15 * 60 * 1000,
-] as const;
-interface TimedOutVisitCandidate {
+interface FinishedVisitCandidate {
   visitId: string;
   siteId: string;
   visitorId: string;
@@ -110,13 +82,52 @@ interface TimedOutVisitCandidate {
   language: string;
   screenWidth: number | null;
   screenHeight: number | null;
-  screenSize: string;
   latitude: number | null;
   longitude: number | null;
 }
+const FINISHED_VISIT_CANDIDATE_COLUMNS = `
+  visit_id AS visitId,
+  site_id AS siteId,
+  visitor_id AS visitorId,
+  session_id AS sessionId,
+  status,
+  started_at AS startedAt,
+  last_activity_at AS lastActivityAt,
+  hidden_at AS hiddenAt,
+  hidden_ms AS hiddenMs,
+  pathname,
+  query_string AS queryString,
+  hash_fragment AS hash,
+  title,
+  hostname,
+  referrer_url AS referrerUrl,
+  referrer_host AS referrerHost,
+  utm_source AS utmSource,
+  utm_medium AS utmMedium,
+  utm_campaign AS utmCampaign,
+  utm_term AS utmTerm,
+  utm_content AS utmContent,
+  is_eu AS isEU,
+  country,
+  region,
+  region_code AS regionCode,
+  city,
+  continent,
+  timezone,
+  browser,
+  browser_version AS browserVersion,
+  os,
+  os_version AS osVersion,
+  device_type AS deviceType,
+  language,
+  screen_width AS screenWidth,
+  screen_height AS screenHeight,
+  latitude,
+  longitude
+`;
 async function pushFinalizedVisitRealtimeEvent(
   context: IngestFlushContext,
-  visit: TimedOutVisitCandidate,
+  visit: FinishedVisitCandidate,
   eventAt: number,
   durationMs: number | null,
   durationSource: string,
@@ -170,348 +181,89 @@ async function pushFinalizedVisitRealtimeEvent(
     longitude: visit.longitude,
   });
 }
+/**
+ * The alarm's work: finish the page views whose time is up, write every
+ * dirty row to D1, then delete what the buffer no longer needs. A D1 failure
+ * leaves rows dirty for the next alarm; running out of the invocation's D1
+ * queries ends the run early.
+ */
+export async function runMaintenance(
+  context: IngestFlushContext,
+): Promise<MaintenanceOutcome> {
+  await finalizeDueVisits(context);
+  return withinQueryBudget(context, async () => {
+    await flushPendingToD1(context);
+    await cleanupBufferedRows(context);
+  });
+}
+/** Cleanup on its own, for a site whose alarm doesn't run. */
+export async function runCleanup(
+  context: IngestFlushContext,
+): Promise<MaintenanceOutcome> {
+  return withinQueryBudget(context, () => cleanupBufferedRows(context));
+}
+async function withinQueryBudget(
+  context: IngestFlushContext,
+  work: () => Promise<void>,
+): Promise<MaintenanceOutcome> {
+  try {
+    await work();
+  } catch (error) {
+    if (!(error instanceof D1QueryBudgetExceededError)) throw error;
+    context.observability?.warn("do.maintenance.out_of_d1_queries");
+    return MaintenanceOutcome.OutOfQueries;
+  }
+  return MaintenanceOutcome.Done;
+}
+/**
+ * Writes every dirty page view to D1, batch after batch, then every custom
+ * event whose page view is there.
+ */
 export async function flushPendingToD1(
   context: IngestFlushContext,
-  force = false,
 ): Promise<void> {
-  let batches = 0;
-  while (batches < D1_FLUSH_MAX_BATCHES_PER_ALARM) {
-    batches += 1;
-    const now = Date.now();
-    const dueFilter = force ? "" : "AND flush_due_at <= ?";
-    const visitRows = context.sqlAll<BufferedVisitFlushRow>(
-      `
-        SELECT
-          visit_id AS visitId,
-          status,
-          site_id AS siteId,
-          visitor_id AS visitorId,
-          session_id AS sessionId,
-          started_at AS startedAt,
-          last_activity_at AS lastActivityAt,
-          ended_at AS endedAt,
-          finalized_at AS finalizedAt,
-          duration_ms AS durationMs,
-          scroll_depth AS scrollDepth,
-          COALESCE(duration_source, '') AS durationSource,
-          COALESCE(exit_reason, '') AS exitReason,
-          pathname,
-          query_string AS queryString,
-          hash_fragment AS hashFragment,
-          hostname,
-          title,
-          referrer_url AS referrerUrl,
-          referrer_host AS referrerHost,
-          utm_source AS utmSource,
-          utm_medium AS utmMedium,
-          utm_campaign AS utmCampaign,
-          utm_term AS utmTerm,
-          utm_content AS utmContent,
-          is_eu AS isEU,
-          country,
-          region,
-          region_code AS regionCode,
-          city,
-          continent,
-          latitude,
-          longitude,
-          timezone,
-          browser,
-          browser_version AS browserVersion,
-          os,
-          os_version AS osVersion,
-          device_type AS deviceType,
-          screen_width AS screenWidth,
-          screen_height AS screenHeight,
-          language,
-          properties_json AS propertiesJson,
-          dirty,
-          flush_attempts AS flushAttempts,
-          buffer_revision AS bufferRevision,
-          flush_due_at AS flushDueAt,
-          next_due_at AS nextDueAt,
-          created_at AS createdAt,
-          updated_at AS updatedAt
-        FROM buffered_visits
-        WHERE dirty = 1
-          AND flush_due_at IS NOT NULL
-          ${dueFilter}
-        ORDER BY flush_due_at ASC, updated_at ASC, flush_attempts ASC
-        LIMIT ?
-      `,
-      ...(force ? [] : [now]),
-      VISIT_FLUSH_ROW_BATCH_SIZE,
-    );
-    const eventRows = context.sqlAll<BufferedCustomEventFlushRow>(
-      `
-        SELECT
-          event_id AS eventId,
-          site_id AS siteId,
-          visit_id AS visitId,
-          occurred_at AS occurredAt,
-          received_at AS receivedAt,
-          sequence,
-          event_name AS eventName,
-          event_data_json AS eventDataJson,
-          revenue_amount AS revenueAmount,
-          revenue_currency AS revenueCurrency,
-          dirty,
-          flush_attempts AS flushAttempts,
-          last_flush_error AS lastFlushError,
-          buffer_revision AS bufferRevision,
-          flush_due_at AS flushDueAt,
-          next_due_at AS nextDueAt,
-          created_at AS createdAt
-        FROM buffered_custom_events
-        WHERE dirty = 1
-          AND flush_due_at IS NOT NULL
-          ${dueFilter}
-        ORDER BY flush_due_at ASC, created_at ASC, flush_attempts ASC
-        LIMIT ?
-      `,
-      ...(force ? [] : [now]),
-      D1_FLUSH_CUSTOM_EVENT_BATCH_SIZE,
-    );
-
-    if (visitRows.length === 0 && eventRows.length === 0) {
-      return;
-    }
-    context.observability?.info("do.flush.pending_batch");
-
-    if (visitRows.length > 0) {
-      try {
-        const sitePkById = new Map<string, number>();
-        for (const siteId of new Set(visitRows.map((row) => row.siteId))) {
-          sitePkById.set(siteId, await resolveSitePk(context, siteId));
-        }
-        const preparedVisits = prepareVisitStatements(
-          visitRows.map((row) => {
-            const sitePk = sitePkById.get(row.siteId);
-            if (sitePk === undefined) {
-              throw new Error(`Missing site identity for ${row.siteId}`);
-            }
-            return { row, sitePk };
-          }),
-        );
-        await createDatabaseRuntime(context.env.DB).batch(preparedVisits);
-        recordFlushCounter(context, "flushedVisits", visitRows.length);
-        markVisitRowsFlushed(context, visitRows);
-      } catch (error) {
-        void error;
-        context.observability?.error("do.flush.visit_batch_failed");
-        await flushRowsIndividually(context, visitRows, []);
-      }
-    }
-
-    let flushedAnyEvent = false;
-    for (const eventRow of eventRows) {
-      flushedAnyEvent =
-        (await flushCustomEventRowIndividually(context, eventRow)) ||
-        flushedAnyEvent;
-    }
-
-    if (visitRows.length === 0 && eventRows.length > 0 && !flushedAnyEvent) {
-      return;
-    }
-
-    if (
-      visitRows.length < VISIT_FLUSH_ROW_BATCH_SIZE &&
-      eventRows.length < D1_FLUSH_CUSTOM_EVENT_BATCH_SIZE
-    ) {
-      return;
+  await flushVisits(context);
+  await flushCustomEvents(context);
+}
+async function flushVisits(context: IngestFlushContext): Promise<void> {
+  for (;;) {
+    const rows = selectDirtyVisits(context);
+    if (rows.length === 0) return;
+    // Rows come oldest first, those that failed before last. Those go one
+    // by one, so a page view D1 rejects can't fail the others' batch.
+    const fresh = rows.filter((row) => row.flushAttempts === 0);
+    if (fresh.length > 1 && (await writeVisits(context, fresh))) continue;
+    // A failed batch's rows, or those that failed before, one by one. The
+    // first that fails ends the run: D1 may be down.
+    for (const row of fresh.length > 0 ? fresh : rows) {
+      if (!(await writeVisits(context, [row]))) return;
     }
   }
 }
-export async function cleanupBufferedRows(
+function selectDirtyVisits(
   context: IngestFlushContext,
-): Promise<void> {
-  const now = Date.now();
-  const visitCutoff = now - FLUSHED_BUFFER_RETENTION_MS;
-  const hiddenFallbackCutoff = now - VISIT_TIMEOUT_MS;
-  const eventCutoff = visitCutoff;
-  const storedCleanupDueAt = context.getVisitCleanupDueAt?.();
-  const cleanupDueAt =
-    storedCleanupDueAt === undefined
-      ? readVisitCleanupDueAt(context)
-      : storedCleanupDueAt;
-  const normalizedCleanupDueAt = cleanupDueAt ?? null;
-  const nextCleanupDueAt =
-    normalizedCleanupDueAt === null
-      ? findEarliestVisitCleanupDueAt(context, now)
-      : normalizedCleanupDueAt;
-  if (normalizedCleanupDueAt === null && nextCleanupDueAt !== null) {
-    writeVisitCleanupDueAt(context, nextCleanupDueAt);
-  } else if (normalizedCleanupDueAt === null && nextCleanupDueAt === null) {
-    context.setVisitCleanupDueAt?.(null);
-  }
-
-  let deletedVisits = 0;
-  if (nextCleanupDueAt !== null && nextCleanupDueAt <= now) {
-    const candidates = context.sqlAll<VisitCleanupCandidate>(
-      `
-        SELECT visit_id AS visitId, buffer_revision AS bufferRevision
-        FROM buffered_visits
-        WHERE ${visitCleanupEligibilitySql()}
-        ORDER BY COALESCE(finalized_at, ended_at, started_at) ASC, visit_id ASC
-        LIMIT ?
-      `,
-      hiddenFallbackCutoff,
-      visitCutoff,
-      VISIT_CLEANUP_BATCH_SIZE,
-    );
-    if (candidates.length > 0) {
-      const conditions = candidates
-        .map(
-          () =>
-            "(visit_id = ? AND buffer_revision = ? AND dirty = 0 AND (status = 'timeout' OR (status NOT IN ('open', 'hidden_pending') AND ((COALESCE(duration_source, '') = 'hidden' OR COALESCE(exit_reason, '') = 'hidden_timeout') AND COALESCE(finalized_at, ended_at, started_at) < ?) OR (NOT (COALESCE(duration_source, '') = 'hidden' OR COALESCE(exit_reason, '') = 'hidden_timeout') AND COALESCE(finalized_at, ended_at, started_at) < ?))))",
-        )
-        .join(" OR ");
-      const bindings = candidates.flatMap((candidate) => [
-        candidate.visitId,
-        candidate.bufferRevision,
-        hiddenFallbackCutoff,
-        visitCutoff,
-      ]);
-      deletedVisits = context.sqlRun(
-        `DELETE FROM buffered_visits WHERE ${conditions}`,
-        ...bindings,
-      );
-    }
-    const recomputedDueAt = findEarliestVisitCleanupDueAt(context, now);
-    const nextDueAt =
-      recomputedDueAt === null
-        ? null
-        : candidates.length >= VISIT_CLEANUP_BATCH_SIZE &&
-            recomputedDueAt <= now
-          ? Math.min(recomputedDueAt, now + VISIT_CLEANUP_RETRY_MS)
-          : recomputedDueAt;
-    writeVisitCleanupDueAt(context, nextDueAt);
-  }
-  if (deletedVisits > 0) {
-    context.observability?.info("do.cleanup.visit_rows_deleted");
-  }
-  const deletedEvents = context.sqlRun(
-    `
-      DELETE FROM buffered_custom_events
-      WHERE dirty = 0
-        AND occurred_at < ?
-    `,
-    eventCutoff,
-  );
-  if (deletedEvents > 0) {
-    context.observability?.info("do.cleanup.custom_event_rows_deleted");
-  }
-  await cleanupOrphanedCustomEvents(context, now);
-}
-function visitCleanupEligibilitySql(): string {
-  return `
-    dirty = 0
-    AND (
-      status = 'timeout'
-      OR (
-        status NOT IN ('open', 'hidden_pending')
-        AND (
-          (COALESCE(duration_source, '') = 'hidden'
-            OR COALESCE(exit_reason, '') = 'hidden_timeout')
-          AND COALESCE(finalized_at, ended_at, started_at) < ?
-        )
-        OR (
-          NOT (COALESCE(duration_source, '') = 'hidden'
-            OR COALESCE(exit_reason, '') = 'hidden_timeout')
-          AND COALESCE(finalized_at, ended_at, started_at) < ?
-        )
-      )
-    )
-  `;
-}
-function readVisitCleanupDueAt(
-  context: IngestFlushContext,
-): number | null | undefined {
-  const row = context.sqlOne<VisitCleanupMetadataRow>(
-    `
-      SELECT metadata_value AS metadataValue
-      FROM ingest_schema_metadata
-      WHERE metadata_key = ? AND version = ?
-      LIMIT 1
-    `,
-    VISIT_CLEANUP_META_KEY,
-    VISIT_CLEANUP_META_VERSION,
-  );
-  if (!row) return null;
-  const value = row.metadataValue;
-  return typeof value === "number" && Number.isFinite(value)
-    ? Math.trunc(value)
-    : null;
-}
-function writeVisitCleanupDueAt(
-  context: IngestFlushContext,
-  dueAt: number | null,
-): void {
-  context.sqlRun(
-    `
-      INSERT INTO ingest_schema_metadata (
-        metadata_key, version, metadata_value
-      ) VALUES (?, ?, ?)
-      ON CONFLICT(metadata_key) DO UPDATE SET
-        version = excluded.version,
-        metadata_value = excluded.metadata_value
-    `,
-    VISIT_CLEANUP_META_KEY,
-    VISIT_CLEANUP_META_VERSION,
-    dueAt,
-  );
-  context.setVisitCleanupDueAt?.(dueAt);
-}
-function findEarliestVisitCleanupDueAt(
-  context: IngestFlushContext,
-  now: number,
-): number | null {
-  const row = context.sqlOne<{ cleanupDueAt: number | null }>(
-    `
-      SELECT MIN(
-        CASE
-          WHEN status = 'timeout' THEN ?
-          WHEN COALESCE(duration_source, '') = 'hidden'
-            OR COALESCE(exit_reason, '') = 'hidden_timeout'
-            THEN COALESCE(finalized_at, ended_at, started_at) + ?
-          ELSE COALESCE(finalized_at, ended_at, started_at) + ?
-        END
-      ) AS cleanupDueAt
-      FROM buffered_visits
-      WHERE dirty = 0
-        AND status NOT IN ('open', 'hidden_pending')
-    `,
-    now,
-    VISIT_TIMEOUT_MS,
-    FLUSHED_BUFFER_RETENTION_MS,
-  );
-  const value = row?.cleanupDueAt;
-  return typeof value === "number" && Number.isFinite(value)
-    ? Math.trunc(value)
-    : null;
-}
-export async function flushTimeouts(
-  context: IngestFlushContext,
-): Promise<void> {
-  const now = Date.now();
-  await flushHiddenFallbacks(context, now);
-  const rows = context.sqlAll<TimedOutVisitCandidate>(
+): BufferedVisitFlushRow[] {
+  return context.sqlAll<BufferedVisitFlushRow>(
     `
       SELECT
         visit_id AS visitId,
+        status,
         site_id AS siteId,
         visitor_id AS visitorId,
         session_id AS sessionId,
-        status,
         started_at AS startedAt,
         last_activity_at AS lastActivityAt,
-        hidden_at AS hiddenAt,
-        hidden_ms AS hiddenMs,
+        ended_at AS endedAt,
+        finalized_at AS finalizedAt,
+        duration_ms AS durationMs,
+        scroll_depth AS scrollDepth,
+        COALESCE(duration_source, '') AS durationSource,
+        COALESCE(exit_reason, '') AS exitReason,
         pathname,
         query_string AS queryString,
-        hash_fragment AS hash,
-        title,
+        hash_fragment AS hashFragment,
         hostname,
+        title,
         referrer_url AS referrerUrl,
         referrer_host AS referrerHost,
         utm_source AS utmSource,
@@ -525,344 +277,98 @@ export async function flushTimeouts(
         region_code AS regionCode,
         city,
         continent,
+        latitude,
+        longitude,
         timezone,
         browser,
         browser_version AS browserVersion,
         os,
         os_version AS osVersion,
         device_type AS deviceType,
-        language,
         screen_width AS screenWidth,
         screen_height AS screenHeight,
-        CASE
-          WHEN screen_width IS NOT NULL AND screen_height IS NOT NULL
-            THEN CAST(screen_width AS TEXT) || 'x' || CAST(screen_height AS TEXT)
-          ELSE ''
-        END AS screenSize,
-        latitude,
-        longitude
-      FROM buffered_visits
-      WHERE (
-          status = 'open'
-          OR (status = 'hidden_pending' AND hidden_at IS NULL)
-        )
-        AND last_activity_at <= ?
-      LIMIT ?
-    `,
-    now - VISIT_TIMEOUT_MS,
-    TIMEOUT_FINALIZE_BATCH_SIZE,
-  );
-  if (rows.length > 0) {
-    context.observability?.info("do.timeout_visits_found");
-  }
-
-  for (const visit of rows) {
-    const rowsWritten = context.sqlRun(
-      `
-        UPDATE buffered_visits
-        SET status = 'timeout',
-            last_activity_at = ?,
-            hidden_at = NULL,
-            ended_at = ?,
-            finalized_at = ?,
-            duration_ms = NULL,
-            duration_source = 'timeout',
-            dirty = 1,
-            updated_at = ?,
-            flush_due_at = CASE
-              WHEN flush_due_at IS NULL OR flush_due_at > ? THEN ?
-              ELSE flush_due_at
-            END,
-            next_due_at = CASE
-              WHEN flush_due_at IS NULL OR flush_due_at > ? THEN ?
-              ELSE flush_due_at
-            END,
-            buffer_revision = buffer_revision + 1
-        WHERE site_id = ?
-          AND visit_id = ?
-          AND (status = 'open' OR (status = 'hidden_pending' AND hidden_at IS NULL))
-      `,
-      now,
-      now,
-      now,
-      toUnixSeconds(now),
-      now,
-      now,
-      now,
-      now,
-      visit.siteId,
-      visit.visitId,
-    );
-    if (rowsWritten === 0) continue;
-    if (!context.hasOpenVisitsForVisitor(visit.siteId, visit.visitorId)) {
-      await pushFinalizedVisitRealtimeEvent(
-        context,
-        visit,
-        now,
-        null,
-        "timeout",
-        "timeout",
-      );
-    }
-  }
-}
-async function flushHiddenFallbacks(
-  context: IngestFlushContext,
-  now: number,
-): Promise<void> {
-  const rows = context.sqlAll<TimedOutVisitCandidate>(
-    `
-      SELECT
-        visit_id AS visitId,
-        site_id AS siteId,
-        visitor_id AS visitorId,
-        session_id AS sessionId,
-        status,
-        started_at AS startedAt,
-        last_activity_at AS lastActivityAt,
-        hidden_at AS hiddenAt,
-        hidden_ms AS hiddenMs,
-        pathname,
-        query_string AS queryString,
-        hash_fragment AS hash,
-        title,
-        hostname,
-        referrer_url AS referrerUrl,
-        referrer_host AS referrerHost,
-        utm_source AS utmSource,
-        utm_medium AS utmMedium,
-        utm_campaign AS utmCampaign,
-        utm_term AS utmTerm,
-        utm_content AS utmContent,
-        is_eu AS isEU,
-        country,
-        region,
-        region_code AS regionCode,
-        city,
-        continent,
-        timezone,
-        browser,
-        browser_version AS browserVersion,
-        os,
-        os_version AS osVersion,
-        device_type AS deviceType,
         language,
-        screen_width AS screenWidth,
-        screen_height AS screenHeight,
-        CASE
-          WHEN screen_width IS NOT NULL AND screen_height IS NOT NULL
-            THEN CAST(screen_width AS TEXT) || 'x' || CAST(screen_height AS TEXT)
-          ELSE ''
-        END AS screenSize,
-        latitude,
-        longitude
+        properties_json AS propertiesJson,
+        dirty,
+        flush_attempts AS flushAttempts,
+        buffer_revision AS bufferRevision,
+        created_at AS createdAt,
+        updated_at AS updatedAt
       FROM buffered_visits
-      WHERE status = 'hidden_pending'
-        AND hidden_at IS NOT NULL
-        AND hidden_at <= ?
+      WHERE dirty = 1
+      ORDER BY flush_attempts ASC, started_at ASC
       LIMIT ?
     `,
-    now - HIDDEN_LEAVE_GRACE_MS,
-    TIMEOUT_FINALIZE_BATCH_SIZE,
+    D1_FLUSH_BATCH_SIZE,
   );
-  if (rows.length > 0) {
-    context.observability?.info("do.hidden_fallbacks_found");
-  }
-
-  for (const visit of rows) {
-    const hiddenAt = Math.max(visit.hiddenAt ?? now, visit.startedAt);
-    const durationMs = engagedDurationMs({
-      startedAt: visit.startedAt,
-      endAt: hiddenAt,
-      hiddenAt,
-      hiddenMs: visit.hiddenMs,
-    });
-    const rowsWritten = context.sqlRun(
-      `
-        UPDATE buffered_visits
-        SET status = 'complete',
-            last_activity_at = ?,
-            hidden_at = NULL,
-            ended_at = ?,
-            finalized_at = ?,
-            duration_ms = ?,
-            duration_source = 'hidden',
-            exit_reason = 'hidden_timeout',
-            dirty = 1,
-            updated_at = ?,
-            flush_due_at = CASE
-              WHEN flush_due_at IS NULL OR flush_due_at > ? THEN ?
-              ELSE flush_due_at
-            END,
-            next_due_at = CASE
-              WHEN flush_due_at IS NULL OR flush_due_at > ? THEN ?
-              ELSE flush_due_at
-            END,
-            buffer_revision = buffer_revision + 1
-        WHERE site_id = ? AND visit_id = ? AND status = 'hidden_pending'
-      `,
-      hiddenAt,
-      hiddenAt,
-      hiddenAt,
-      durationMs,
-      toUnixSeconds(now),
-      now,
-      now,
-      now,
-      now,
-      visit.siteId,
-      visit.visitId,
-    );
-    if (rowsWritten === 0) continue;
-    if (!context.hasOpenVisitsForVisitor(visit.siteId, visit.visitorId)) {
-      await pushFinalizedVisitRealtimeEvent(
-        context,
-        visit,
-        hiddenAt,
-        durationMs,
-        "hidden",
-        "hidden_timeout",
-      );
-    }
-  }
-  flushExpiredAnalyticsSessions(context, now);
 }
-function flushExpiredAnalyticsSessions(
-  context: IngestFlushContext,
-  now: number,
-): void {
-  const sessions = readDueAnalyticsSessions(context, now);
-  for (const session of sessions) {
-    deleteAnalyticsSession(context, session.sessionId);
-  }
-}
-function markVisitRowsFlushed(
-  context: IngestFlushContext,
-  rows: BufferedVisitFlushRow[],
-): void {
-  if (rows.length === 0) return;
-  const conditions = rows
-    .map(() => "(visit_id = ? AND buffer_revision = ?)")
-    .join(" OR ");
-  const bindings = rows.flatMap((row) => [row.visitId, bufferRevisionOf(row)]);
-  const updated = context.sqlRun(
-    `
-      UPDATE buffered_visits
-      SET
-        dirty = 0,
-        flush_attempts = 0,
-        last_flush_error = NULL,
-        flush_due_at = NULL,
-        next_due_at = CASE
-          WHEN status = 'open' THEN last_activity_at + ${VISIT_TIMEOUT_MS}
-          WHEN status = 'hidden_pending' THEN
-            COALESCE(hidden_at, last_activity_at) +
-            CASE
-              WHEN hidden_at IS NULL THEN ${VISIT_TIMEOUT_MS}
-              ELSE ${HIDDEN_LEAVE_GRACE_MS}
-            END
-          ELSE NULL
-        END
-      WHERE ${conditions}
-    `,
-    ...bindings,
-  );
-  void updated;
-  scheduleVisitCleanupForRows(context, rows, Date.now());
-}
-function scheduleVisitCleanupForRows(
+/**
+ * Writes page views to D1 in one batch. Whether it did: a single page view
+ * that failed has the failure counted.
+ */
+async function writeVisits(
   context: IngestFlushContext,
   rows: readonly BufferedVisitFlushRow[],
-  now: number,
-): void {
-  let candidateDueAt: number | null = null;
-  for (const row of rows) {
-    if (row.status === "open" || row.status === "hidden_pending") continue;
-    const eventAt = row.finalizedAt ?? row.endedAt ?? row.startedAt;
-    const dueAt =
-      row.status === "timeout"
-        ? now
-        : eventAt +
-          (row.durationSource === "hidden" ||
-          row.exitReason === "hidden_timeout"
-            ? VISIT_TIMEOUT_MS
-            : FLUSHED_BUFFER_RETENTION_MS);
-    candidateDueAt =
-      candidateDueAt === null ? dueAt : Math.min(candidateDueAt, dueAt);
-  }
-  if (candidateDueAt === null) return;
-
-  const knownDueAt = context.getVisitCleanupDueAt?.();
-  const currentDueAt =
-    knownDueAt === undefined ? readVisitCleanupDueAt(context) : knownDueAt;
-  const normalizedCurrentDueAt = currentDueAt ?? null;
-  if (
-    normalizedCurrentDueAt !== null &&
-    normalizedCurrentDueAt <= candidateDueAt
-  )
-    return;
-  writeVisitCleanupDueAt(context, candidateDueAt);
-}
-function markVisitRowsFailed(
-  context: IngestFlushContext,
-  rows: BufferedVisitFlushRow[],
-  errorMessage: string,
-): void {
-  if (rows.length === 0) return;
-  const now = Date.now();
-  for (const row of rows) {
-    const retryAt = now + retryDelayFor(row.flushAttempts);
-    const updated = context.sqlRun(
-      `UPDATE buffered_visits SET flush_attempts = ?, last_flush_error = ?, flush_due_at = ?, next_due_at = ? WHERE visit_id = ? AND buffer_revision = ?`,
-      row.flushAttempts + 1,
-      errorMessage,
-      retryAt,
-      nextDueAtAfterRetry(row, retryAt),
-      row.visitId,
-      bufferRevisionOf(row),
+): Promise<boolean> {
+  try {
+    const sitePks = new Map<string, number>();
+    for (const row of rows) {
+      if (!sitePks.has(row.siteId)) {
+        sitePks.set(row.siteId, await resolveSitePk(context, row.siteId));
+      }
+    }
+    await context.db.batch(prepareVisitStatements(rows, sitePks, Date.now()));
+  } catch (error) {
+    if (error instanceof D1QueryBudgetExceededError) throw error;
+    if (rows.length > 1) {
+      context.observability?.error("do.flush.visit_batch_failed");
+      return false;
+    }
+    context.observability?.error("do.flush.visit_failed");
+    context.sqlRun(
+      `
+        UPDATE buffered_visits
+        SET flush_attempts = flush_attempts + 1, last_flush_error = ?
+        WHERE visit_id = ?
+      `,
+      clampString(String(error instanceof Error ? error.message : error), 400),
+      rows[0]!.visitId,
     );
-    void updated;
+    return false;
   }
-}
-function bufferRevisionOf(row: Partial<FlushBufferFields>): number {
-  return row.bufferRevision ?? 0;
-}
-function retryDelayFor(previousAttempts: number): number {
-  const attempt = Number.isFinite(previousAttempts)
-    ? Math.max(0, Math.floor(previousAttempts))
-    : 0;
-  return (
-    FLUSH_RETRY_DELAYS_MS[
-      Math.min(attempt, FLUSH_RETRY_DELAYS_MS.length - 1)
-    ] ?? FLUSH_RETRY_DELAYS_MS[0]
+  recordFlushCounter(context, "flushedVisits", rows.length);
+  // A row changed while D1 wrote it keeps its new revision and stays dirty.
+  context.sqlRun(
+    `
+      UPDATE buffered_visits
+      SET dirty = 0, flush_attempts = 0, last_flush_error = NULL
+      WHERE (visit_id, buffer_revision) IN (
+        SELECT json_extract(value, '$[0]'), json_extract(value, '$[1]')
+        FROM json_each(?)
+      )
+    `,
+    JSON.stringify(rows.map((row) => [row.visitId, row.bufferRevision])),
   );
-}
-function nextDueAtAfterRetry(
-  row: Partial<FlushBufferFields>,
-  retryAt: number,
-): number {
-  if (
-    row.nextDueAt === undefined ||
-    row.nextDueAt === null ||
-    row.nextDueAt === row.flushDueAt
-  ) {
-    return retryAt;
-  }
-  return Math.min(row.nextDueAt, retryAt);
+  return true;
 }
 /**
  * The page views' writes, then a statement per site and UTC day they start
- * on that marks the day for the rollup task if it is already rolled up,
- * then one statement for their custom properties if they have any.
+ * on that marks the day for the rollup task if it is already rolled up (only
+ * for a day that could be), then one statement for their custom properties
+ * if they have any.
  */
 function prepareVisitStatements(
-  visits: readonly { row: BufferedVisitFlushRow; sitePk: number }[],
+  rows: readonly BufferedVisitFlushRow[],
+  sitePks: ReadonlyMap<string, number>,
+  now: number,
 ): DatabaseStatement[] {
+  const rolledUpDaysFrom = latestCompleteDay(now + ROLLUP_MARK_MARGIN_MS);
   const days = new Map<string, { sitePk: number; day: number }>();
   const properties: (string | number)[][] = [];
+  const visits = rows.map((row) => ({ row, sitePk: sitePks.get(row.siteId)! }));
   for (const { row, sitePk } of visits) {
     const day = Math.floor(row.startedAt / ONE_DAY_MS);
-    days.set(`${sitePk}:${day}`, { sitePk, day });
+    if (day <= rolledUpDaysFrom) days.set(`${sitePk}:${day}`, { sitePk, day });
     if (row.propertiesJson === null) continue;
     const pairs = JSON.parse(row.propertiesJson) as Record<string, string>;
     for (const [key, value] of Object.entries(pairs)) {
@@ -891,112 +397,282 @@ function prepareVisitStatements(
       : []),
   ];
 }
-async function flushRowsIndividually(
-  context: IngestFlushContext,
-  visitRows: BufferedVisitFlushRow[],
-  eventRows: BufferedCustomEventRow[],
-): Promise<void> {
-  for (const row of visitRows) {
-    await flushVisitRowIndividually(context, row);
-  }
-  for (const row of eventRows) {
-    await flushCustomEventRowIndividually(context, row);
+/**
+ * Writes the dirty custom events whose page view is in D1: one the buffer
+ * holds clean. The others wait for their page view.
+ */
+async function flushCustomEvents(context: IngestFlushContext): Promise<void> {
+  for (;;) {
+    const rows = context.sqlAll<BufferedCustomEventRow>(
+      `
+        SELECT
+          e.event_id AS eventId,
+          e.site_id AS siteId,
+          e.visit_id AS visitId,
+          e.occurred_at AS occurredAt,
+          e.received_at AS receivedAt,
+          e.sequence,
+          e.event_name AS eventName,
+          e.event_data_json AS eventDataJson,
+          e.revenue_amount AS revenueAmount,
+          e.revenue_currency AS revenueCurrency,
+          e.dirty,
+          e.flush_attempts AS flushAttempts,
+          e.created_at AS createdAt
+        FROM buffered_custom_events e
+        WHERE e.dirty = 1
+          AND EXISTS (
+            SELECT 1
+            FROM buffered_visits v
+            WHERE v.visit_id = e.visit_id
+              AND v.site_id = e.site_id
+              AND v.dirty = 0
+          )
+        ORDER BY e.flush_attempts ASC, e.occurred_at ASC
+        LIMIT ?
+      `,
+      CUSTOM_EVENT_PAGE_SIZE,
+    );
+    if (rows.length === 0) return;
+    for (const row of rows) {
+      if (!(await flushCustomEventRow(context, row))) return;
+    }
   }
 }
-async function flushVisitRowIndividually(
+/**
+ * Deletes what the buffer no longer needs: finished page views once a new
+ * one can't join their session (a timed-out one at once, one that ended
+ * hidden after the visit timeout, as a late event may still need its
+ * context), written custom events after the same retention, and custom
+ * events whose page view never arrived.
+ */
+export async function cleanupBufferedRows(
   context: IngestFlushContext,
-  row: BufferedVisitFlushRow,
 ): Promise<void> {
-  try {
-    const sitePk = await resolveSitePk(context, row.siteId);
-    await createDatabaseRuntime(context.env.DB).batch(
-      prepareVisitStatements([{ row, sitePk }]),
+  const now = Date.now();
+  const deletedVisits = context.sqlRun(
+    `
+      DELETE FROM buffered_visits
+      WHERE dirty = 0
+        AND status NOT IN ('open', 'hidden_pending')
+        AND (
+          status = 'timeout'
+          OR COALESCE(finalized_at, ended_at, started_at) < CASE
+            WHEN COALESCE(duration_source, '') = 'hidden'
+              OR COALESCE(exit_reason, '') = 'hidden_timeout'
+              THEN ?
+            ELSE ?
+          END
+        )
+    `,
+    now - VISIT_TIMEOUT_MS,
+    now - FLUSHED_BUFFER_RETENTION_MS,
+  );
+  if (deletedVisits > 0) {
+    context.observability?.info("do.cleanup.visit_rows_deleted");
+  }
+  const deletedEvents = context.sqlRun(
+    `
+      DELETE FROM buffered_custom_events
+      WHERE dirty = 0
+        AND occurred_at < ?
+    `,
+    now - FLUSHED_BUFFER_RETENTION_MS,
+  );
+  if (deletedEvents > 0) {
+    context.observability?.info("do.cleanup.custom_event_rows_deleted");
+  }
+  await cleanupOrphanedCustomEvents(context, now);
+}
+/**
+ * Finishes the page views whose time is up: hidden ones the visitor didn't
+ * come back to, and open ones without activity for the visit timeout.
+ */
+export async function finalizeDueVisits(
+  context: IngestFlushContext,
+): Promise<void> {
+  const now = Date.now();
+  await finalizeHiddenVisits(context, now);
+  const rows = context.sqlAll<FinishedVisitCandidate>(
+    `
+      SELECT ${FINISHED_VISIT_CANDIDATE_COLUMNS}
+      FROM buffered_visits
+      WHERE (
+          status = 'open'
+          OR (status = 'hidden_pending' AND hidden_at IS NULL)
+        )
+        AND last_activity_at <= ?
+    `,
+    now - VISIT_TIMEOUT_MS,
+  );
+  if (rows.length > 0) {
+    context.observability?.info("do.timeout_visits_found");
+  }
+
+  for (const visit of rows) {
+    const rowsWritten = context.sqlRun(
+      `
+        UPDATE buffered_visits
+        SET status = 'timeout',
+            last_activity_at = ?,
+            hidden_at = NULL,
+            ended_at = ?,
+            finalized_at = ?,
+            duration_ms = NULL,
+            duration_source = 'timeout',
+            dirty = 1,
+            updated_at = ?,
+            buffer_revision = buffer_revision + 1
+        WHERE site_id = ?
+          AND visit_id = ?
+          AND (status = 'open' OR (status = 'hidden_pending' AND hidden_at IS NULL))
+      `,
+      now,
+      now,
+      now,
+      toUnixSeconds(now),
+      visit.siteId,
+      visit.visitId,
     );
-    recordFlushCounter(context, "flushedVisits");
-    markVisitRowsFlushed(context, [row]);
-  } catch (error) {
-    const message = clampString(
-      String(error instanceof Error ? error.message : error),
-      400,
-    );
-    context.observability?.error("do.flush.visit_failed");
-    markVisitRowsFailed(context, [row], message);
+    if (rowsWritten === 0) continue;
+    if (!context.hasOpenVisitsForVisitor(visit.siteId, visit.visitorId)) {
+      await pushFinalizedVisitRealtimeEvent(
+        context,
+        visit,
+        now,
+        null,
+        "timeout",
+        "timeout",
+      );
+    }
   }
 }
+async function finalizeHiddenVisits(
+  context: IngestFlushContext,
+  now: number,
+): Promise<void> {
+  const rows = context.sqlAll<FinishedVisitCandidate>(
+    `
+      SELECT ${FINISHED_VISIT_CANDIDATE_COLUMNS}
+      FROM buffered_visits
+      WHERE status = 'hidden_pending'
+        AND hidden_at IS NOT NULL
+        AND hidden_at <= ?
+    `,
+    now - HIDDEN_LEAVE_GRACE_MS,
+  );
+  if (rows.length > 0) {
+    context.observability?.info("do.hidden_fallbacks_found");
+  }
+
+  for (const visit of rows) {
+    const hiddenAt = Math.max(visit.hiddenAt ?? now, visit.startedAt);
+    const durationMs = engagedDurationMs({
+      startedAt: visit.startedAt,
+      endAt: hiddenAt,
+      hiddenAt,
+      hiddenMs: visit.hiddenMs,
+    });
+    const rowsWritten = context.sqlRun(
+      `
+        UPDATE buffered_visits
+        SET status = 'complete',
+            last_activity_at = ?,
+            hidden_at = NULL,
+            ended_at = ?,
+            finalized_at = ?,
+            duration_ms = ?,
+            duration_source = 'hidden',
+            exit_reason = 'hidden_timeout',
+            dirty = 1,
+            updated_at = ?,
+            buffer_revision = buffer_revision + 1
+        WHERE site_id = ? AND visit_id = ? AND status = 'hidden_pending'
+      `,
+      hiddenAt,
+      hiddenAt,
+      hiddenAt,
+      durationMs,
+      toUnixSeconds(now),
+      visit.siteId,
+      visit.visitId,
+    );
+    if (rowsWritten === 0) continue;
+    if (!context.hasOpenVisitsForVisitor(visit.siteId, visit.visitorId)) {
+      await pushFinalizedVisitRealtimeEvent(
+        context,
+        visit,
+        hiddenAt,
+        durationMs,
+        "hidden",
+        "hidden_timeout",
+      );
+    }
+  }
+}
+/**
+ * Custom events whose page view the buffer hasn't held for the visit
+ * timeout: one whose page view D1 has gets it back, so the event flushes;
+ * the others are deleted.
+ */
 async function cleanupOrphanedCustomEvents(
   context: IngestFlushContext,
   now: number,
 ): Promise<void> {
-  const cutoffMs = now - ORPHAN_CUSTOM_EVENT_TIMEOUT_MS;
-  const rows = context.sqlAll<{
-    eventId: string;
-    siteId: string;
-    visitId: string;
-    bufferRevision?: number;
-  }>(
-    `
-      SELECT
-        e.event_id AS eventId,
-        e.site_id AS siteId,
-        e.visit_id AS visitId,
-        e.buffer_revision AS bufferRevision
-      FROM buffered_custom_events e
-      WHERE e.dirty = 1
-        AND e.occurred_at <= ?
-        AND NOT EXISTS (
-          SELECT 1
-          FROM buffered_visits v
-          WHERE v.site_id = e.site_id
-            AND v.visit_id = e.visit_id
-        )
-      ORDER BY e.occurred_at ASC, e.created_at ASC
-      LIMIT ?
-    `,
-    cutoffMs,
-    D1_FLUSH_CUSTOM_EVENT_BATCH_SIZE,
-  );
-  if (rows.length === 0) return;
-
-  const orphanRows: Array<{
-    eventId: string;
-    bufferRevision?: number;
-  }> = [];
-  for (const row of rows) {
-    const persistedVisit = await context.readPersistedVisitRow(
-      row.siteId,
-      row.visitId,
-    );
-    if (persistedVisit) {
-      context.insertBufferedVisitRow(persistedVisit);
-      continue;
-    }
-    const localVisit = context.sqlOne<{ ok: number }>(
+  let deleted = 0;
+  for (;;) {
+    const rows = context.sqlAll<{
+      eventId: string;
+      siteId: string;
+      visitId: string;
+    }>(
       `
-        SELECT 1 AS ok
-        FROM buffered_visits
-        WHERE site_id = ? AND visit_id = ?
-        LIMIT 1
+        SELECT
+          e.event_id AS eventId,
+          e.site_id AS siteId,
+          e.visit_id AS visitId
+        FROM buffered_custom_events e
+        WHERE e.dirty = 1
+          AND e.occurred_at <= ?
+          AND NOT EXISTS (
+            SELECT 1
+            FROM buffered_visits v
+            WHERE v.site_id = e.site_id
+              AND v.visit_id = e.visit_id
+          )
+        ORDER BY e.occurred_at ASC, e.created_at ASC
+        LIMIT ?
       `,
-      row.siteId,
-      row.visitId,
+      now - ORPHAN_CUSTOM_EVENT_TIMEOUT_MS,
+      CUSTOM_EVENT_PAGE_SIZE,
     );
-    if (localVisit) continue;
-    orphanRows.push(row);
+    if (rows.length === 0) break;
+    for (const row of rows) {
+      const persistedVisit = await context.readPersistedVisitRow(
+        row.siteId,
+        row.visitId,
+      );
+      if (persistedVisit) {
+        context.insertBufferedVisitRow(persistedVisit);
+        continue;
+      }
+      // Its page view may have arrived while D1 was asked for it.
+      deleted += context.sqlRun(
+        `
+          DELETE FROM buffered_custom_events
+          WHERE event_id = ?
+            AND NOT EXISTS (
+              SELECT 1
+              FROM buffered_visits v
+              WHERE v.site_id = buffered_custom_events.site_id
+                AND v.visit_id = buffered_custom_events.visit_id
+            )
+        `,
+        row.eventId,
+      );
+    }
   }
-
-  if (orphanRows.length === 0) return;
-  const conditions = orphanRows
-    .map(() => "(event_id = ? AND buffer_revision = ?)")
-    .join(" OR ");
-  const bindings = orphanRows.flatMap((row) => [
-    row.eventId,
-    row.bufferRevision ?? 0,
-  ]);
-  const deleted = context.sqlRun(
-    `DELETE FROM buffered_custom_events WHERE ${conditions}`,
-    ...bindings,
-  );
-  void deleted;
-  void cutoffMs;
-  context.observability?.warn("do.cleanup.orphan_custom_events_deleted");
+  if (deleted > 0) {
+    context.observability?.warn("do.cleanup.orphan_custom_events_deleted");
+  }
 }

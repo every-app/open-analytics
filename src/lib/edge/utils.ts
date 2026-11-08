@@ -3,8 +3,6 @@ import { sha256Hex } from "@/lib/sha256";
 export const TEN_MINUTES_MS = 10 * 60 * 1000;
 export const ONE_HOUR_MS = 60 * 60 * 1000;
 export const ONE_DAY_MS = 24 * ONE_HOUR_MS;
-export const DEFAULT_SESSION_WINDOW_MINUTES = 30;
-export const MAX_SESSION_WINDOW_MINUTES = 24 * 60;
 
 export function coerceString(input: unknown, fallback = ""): string {
   if (typeof input !== "string") {
@@ -93,16 +91,6 @@ export async function deriveVisitorId(input: {
   ua: string;
 }): Promise<string> {
   return sha256Hex([input.salt, input.siteId, input.ip, input.ua].join("|"));
-}
-
-export function resolveSessionWindowMinutes(input: {
-  SESSION_WINDOW_MINUTES?: string;
-}): number {
-  const raw = Number(input.SESSION_WINDOW_MINUTES || "");
-  if (!Number.isFinite(raw) || raw <= 0) {
-    return DEFAULT_SESSION_WINDOW_MINUTES;
-  }
-  return Math.max(1, Math.min(MAX_SESSION_WINDOW_MINUTES, Math.floor(raw)));
 }
 
 export async function deriveServerSessionId(input: {

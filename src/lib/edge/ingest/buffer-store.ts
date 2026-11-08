@@ -1,17 +1,11 @@
-import { createDatabaseRuntime } from "@/lib/db";
+import type { DatabaseRuntime } from "@/lib/db";
 import { SITE_PK_FROM_SITE_ID_SQL } from "@/lib/edge/sites/identity-sql";
 import type {
-  Env,
   NormalizedCustomEvent,
   NormalizedPageview,
 } from "@/lib/edge/types";
 
-import {
-  D1_FLUSH_INTERVAL_MS,
-  HIDDEN_LEAVE_GRACE_MS,
-  ORPHAN_CUSTOM_EVENT_TIMEOUT_MS,
-  VISIT_TIMEOUT_MS,
-} from "./constants";
+import { SESSION_WINDOW_MS } from "./constants";
 import { toUnixSeconds } from "./time";
 import type {
   BufferedCustomEventInput,
@@ -21,44 +15,24 @@ import type {
   StoredOpenVisit,
   VisitRow,
 } from "./types";
-interface BufferStoreContext extends SqlWriter {
-  env: Pick<Env, "DB">;
-}
-function minDueAt(
-  flushDueAt: number | null,
-  lifecycleDeadline: number | null,
-): number | null {
-  if (flushDueAt === null) return lifecycleDeadline;
-  if (lifecycleDeadline === null) return flushDueAt;
-  return Math.min(flushDueAt, lifecycleDeadline);
-}
-function visitLifecycleDeadline(row: {
-  status: string;
-  lastActivityAt: number;
-  hiddenAt?: number | null;
-}): number | null {
-  if (row.status === "open") return row.lastActivityAt + VISIT_TIMEOUT_MS;
-  if (row.status !== "hidden_pending") return null;
-  return (
-    (row.hiddenAt ?? row.lastActivityAt ?? 0) +
-    (row.hiddenAt === null || row.hiddenAt === undefined
-      ? VISIT_TIMEOUT_MS
-      : HIDDEN_LEAVE_GRACE_MS)
-  );
-}
+/**
+ * A page view's context for a custom event, from the buffer or, for one the
+ * buffer no longer holds, from D1 (which the buffer then keeps again).
+ */
 export async function getVisitContext(
-  context: BufferStoreContext,
+  sql: SqlWriter,
+  db: DatabaseRuntime,
   siteId: string,
   visitId: string,
 ): Promise<StoredOpenVisit | null> {
-  let row = await readVisitRow(context, siteId, visitId);
+  let row = readVisitRow(sql, siteId, visitId);
   if (!row) {
-    const persisted = await readPersistedVisitRow(context, siteId, visitId);
+    const persisted = await readPersistedVisitRow(db, siteId, visitId);
     if (persisted) {
-      insertBufferedVisitRow(context, persisted);
+      insertBufferedVisitRow(sql, persisted);
       // Do not return the D1 snapshot after a raced INSERT ... DO NOTHING:
       // another invocation may already have a newer local business state.
-      row = (await readVisitRow(context, siteId, visitId)) ?? persisted;
+      row = readVisitRow(sql, siteId, visitId) ?? persisted;
     }
   }
   if (!row) return null;
@@ -100,28 +74,32 @@ export async function getVisitContext(
     language: row.language,
   };
 }
-export async function findRecentVisitorSession(
-  context: BufferStoreContext,
+/**
+ * The visitor's session a page view starting at `startedAt` continues: one
+ * with activity in the last 30 minutes. The buffer keeps every finished page
+ * view that long (FLUSHED_BUFFER_RETENTION_MS), so it holds every session a
+ * page view can still join and D1 is never asked.
+ */
+export function findRecentVisitorSession(
+  context: Pick<SqlWriter, "sqlOne">,
   input: {
     siteId: string;
     visitorId: string;
     visitId: string;
     startedAt: number;
-    sessionWindowMs: number;
     routePreviousHostname?: string;
     routePreviousPathname?: string;
     routePreviousQueryString?: string;
     routePreviousHashFragment?: string;
   },
-): Promise<RecentVisitorSession | null> {
-  const cutoff = input.startedAt - input.sessionWindowMs;
+): RecentVisitorSession | null {
   const routeMatchEnabled =
     input.routePreviousHostname && input.routePreviousPathname ? 1 : 0;
   const routePreviousHostname = input.routePreviousHostname || "";
   const routePreviousPathname = input.routePreviousPathname || "";
   const routePreviousQueryString = input.routePreviousQueryString || "";
   const routePreviousHashFragment = input.routePreviousHashFragment || "";
-  const buffered = context.sqlOne<RecentVisitorSession>(
+  return context.sqlOne<RecentVisitorSession>(
     `
       SELECT
         session_id AS sessionId,
@@ -181,87 +159,14 @@ export async function findRecentVisitorSession(
     input.siteId,
     input.visitorId,
     input.visitId,
-    cutoff,
+    input.startedAt - SESSION_WINDOW_MS,
   );
-  if (buffered) return buffered;
-
-  const persisted = await createDatabaseRuntime(context.env.DB)
-    .first<RecentVisitorSession>({
-      sql: `
-      SELECT
-        session_id AS sessionId,
-        visit_id AS visitId,
-        status,
-        CASE
-          WHEN ? = 1
-            AND status IN ('open', 'hidden_pending')
-            AND hostname = ?
-            AND pathname = ?
-            AND query_string = ?
-            AND hash_fragment = ?
-            THEN 2
-          WHEN ? = 1
-            AND status IN ('open', 'hidden_pending')
-            AND hostname = ?
-            AND pathname = ?
-            AND (query_string = ? OR query_string = '' OR ? = '')
-            AND (hash_fragment = ? OR hash_fragment = '' OR ? = '')
-            THEN 1
-          ELSE 0
-        END AS routeMatch,
-        started_at AS startedAt,
-        last_activity_at AS lastActivityAt,
-        referrer_url AS referrerUrl,
-        referrer_host AS referrerHost,
-        utm_source AS utmSource,
-        utm_medium AS utmMedium,
-        utm_campaign AS utmCampaign,
-        utm_term AS utmTerm,
-        utm_content AS utmContent
-      FROM visits
-      WHERE site_pk = ${SITE_PK_FROM_SITE_ID_SQL}
-        AND visitor_id = ?
-        AND visit_id != ?
-        AND session_id != ''
-        AND last_activity_at >= ?
-      ORDER BY
-        routeMatch DESC,
-        CASE WHEN status IN ('open', 'hidden_pending') THEN 0 ELSE 1 END,
-        last_activity_at DESC,
-        started_at DESC
-      LIMIT 1
-    `,
-      bindings: [
-        routeMatchEnabled,
-        routePreviousHostname,
-        routePreviousPathname,
-        routePreviousQueryString,
-        routePreviousHashFragment,
-        routeMatchEnabled,
-        routePreviousHostname,
-        routePreviousPathname,
-        routePreviousQueryString,
-        routePreviousQueryString,
-        routePreviousHashFragment,
-        routePreviousHashFragment,
-        input.siteId,
-        input.visitorId,
-        input.visitId,
-        cutoff,
-      ],
-      tag: "ingest.visits.find_recent_session",
-    })
-    // A persisted-session lookup is an optimization for session continuity;
-    // a D1 outage must not turn a valid pageview into a failed ingest.
-    .catch(() => null);
-
-  return persisted ?? null;
 }
-export async function readVisitRow(
-  context: Pick<BufferStoreContext, "sqlOne">,
+export function readVisitRow(
+  context: Pick<SqlWriter, "sqlOne">,
   siteId: string,
   visitId: string,
-): Promise<VisitRow | null> {
+): VisitRow | null {
   return context.sqlOne<VisitRow>(
     `
       SELECT
@@ -309,14 +214,13 @@ export async function readVisitRow(
     visitId,
   );
 }
+/** A page view the buffer no longer holds, read back from D1, clean. */
 export async function readPersistedVisitRow(
-  context: Pick<BufferStoreContext, "env">,
+  db: DatabaseRuntime,
   siteId: string,
   visitId: string,
 ): Promise<BufferedVisitRow | null> {
-  const row = await createDatabaseRuntime(
-    context.env.DB,
-  ).first<BufferedVisitRow>({
+  const row = await db.first<BufferedVisitRow>({
     sql: `
       SELECT
         visit_id AS visitId,
@@ -378,24 +282,14 @@ export async function readPersistedVisitRow(
         flushAttempts: 0,
         hiddenAt: null,
         lastFlushError: null,
-        flushDueAt: null,
-        nextDueAt: null,
         bufferRevision: 1,
       }
     : null;
 }
-function insertBufferedVisitRowIfAbsent(
-  context: Pick<BufferStoreContext, "sqlRun">,
+export function insertBufferedVisitRow(
+  context: Pick<SqlWriter, "sqlRun">,
   row: BufferedVisitRow,
-): boolean {
-  const flushDueAt =
-    row.flushDueAt !== undefined
-      ? row.flushDueAt
-      : row.dirty === 1
-        ? Date.now() + D1_FLUSH_INTERVAL_MS
-        : null;
-  const nextDueAt = minDueAt(flushDueAt, visitLifecycleDeadline(row));
-  const bufferRevision = row.bufferRevision ?? 1;
+): void {
   const bindings: Array<string | number | null> = [
     row.visitId,
     row.siteId,
@@ -443,13 +337,11 @@ function insertBufferedVisitRowIfAbsent(
     row.dirty,
     row.flushAttempts,
     row.lastFlushError ?? null,
-    nextDueAt,
-    flushDueAt,
-    bufferRevision,
+    row.bufferRevision,
     row.createdAt,
     row.updatedAt,
   ];
-  const rowsWritten = context.sqlRun(
+  context.sqlRun(
     `
       INSERT INTO buffered_visits (
         visit_id, site_id, visitor_id, session_id, status, started_at, last_activity_at,
@@ -459,28 +351,19 @@ function insertBufferedVisitRowIfAbsent(
         is_eu, country, region, region_code, city, continent, latitude, longitude,
         timezone, browser, browser_version,
         os, os_version, device_type, screen_width, screen_height, language,
-        dirty, flush_attempts, last_flush_error, next_due_at, flush_due_at,
-        buffer_revision, created_at, updated_at
+        dirty, flush_attempts, last_flush_error, buffer_revision, created_at, updated_at
       ) VALUES (${bindings.map(() => "?").join(", ")})
       ON CONFLICT(visit_id) DO NOTHING
     `,
     ...bindings,
   );
-  return rowsWritten > 0;
 }
-export function insertBufferedVisitRow(
-  context: Pick<BufferStoreContext, "sqlRun">,
-  row: BufferedVisitRow,
-): void {
-  insertBufferedVisitRowIfAbsent(context, row);
-}
-export async function insertVisit(
-  context: Pick<BufferStoreContext, "sqlRun">,
+/** Buffers a new page view, dirty. Whether it was new. */
+export function insertVisit(
+  context: Pick<SqlWriter, "sqlRun">,
   record: NormalizedPageview,
-): Promise<boolean> {
+): boolean {
   const createdAt = toUnixSeconds(record.receivedAt);
-  const flushDueAt = record.receivedAt + D1_FLUSH_INTERVAL_MS;
-  const nextDueAt = minDueAt(flushDueAt, record.startedAt + VISIT_TIMEOUT_MS);
   const bindings: Array<string | number | null> = [
     record.visitId,
     record.siteId,
@@ -521,12 +404,6 @@ export async function insertVisit(
     Object.keys(record.properties).length > 0
       ? JSON.stringify(record.properties)
       : null,
-    1,
-    0,
-    null,
-    nextDueAt,
-    flushDueAt,
-    1,
     createdAt,
     createdAt,
   ];
@@ -539,9 +416,7 @@ export async function insertVisit(
           is_eu, country, region, region_code, city, continent, latitude, longitude,
           timezone, browser, browser_version,
           os, os_version, device_type, screen_width, screen_height, language,
-          properties_json,
-          dirty, flush_attempts, last_flush_error, next_due_at, flush_due_at,
-          buffer_revision, created_at, updated_at
+          properties_json, created_at, updated_at
         ) VALUES (${bindings.map(() => "?").join(", ")})
         ON CONFLICT(visit_id) DO NOTHING
       `,
@@ -549,10 +424,10 @@ export async function insertVisit(
   );
   return rowsWritten > 0;
 }
-export async function insertCustomEvent(
-  context: Pick<BufferStoreContext, "sqlRun">,
+export function insertCustomEvent(
+  context: Pick<SqlWriter, "sqlRun">,
   record: NormalizedCustomEvent,
-): Promise<boolean> {
+): boolean {
   return insertBufferedCustomEvent(context, {
     eventId: record.eventId,
     siteId: record.siteId,
@@ -566,30 +441,21 @@ export async function insertCustomEvent(
     revenueCurrency: record.revenueCurrency,
   });
 }
+/**
+ * Buffers a custom event, dirty. The alarm writes it once its page view is
+ * in D1. Whether it was new.
+ */
 export function insertBufferedCustomEvent(
-  context: Pick<BufferStoreContext, "sqlRun">,
+  context: Pick<SqlWriter, "sqlRun">,
   record: BufferedCustomEventInput,
 ): boolean {
-  const createdAt = toUnixSeconds(record.receivedAt);
-  const flushDueAt = record.receivedAt + D1_FLUSH_INTERVAL_MS;
-  const nextDueAt = minDueAt(
-    flushDueAt,
-    record.occurredAt + ORPHAN_CUSTOM_EVENT_TIMEOUT_MS,
-  );
   const rowsWritten = context.sqlRun(
     `
       INSERT INTO buffered_custom_events (
         event_id, site_id, visit_id, occurred_at, received_at, sequence,
         event_name, event_data_json, revenue_amount, revenue_currency,
-        dirty, flush_attempts, last_flush_error, next_due_at, flush_due_at,
-        buffer_revision, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0,
-        CASE WHEN EXISTS (
-          SELECT 1
-          FROM buffered_visits
-          WHERE site_id = ? AND visit_id = ?
-        ) THEN NULL ELSE 'waiting_for_visit' END,
-        ?, ?, 1, ?)
+        created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(event_id) DO NOTHING
     `,
     record.eventId,
@@ -602,80 +468,52 @@ export function insertBufferedCustomEvent(
     record.eventDataJson,
     record.revenueAmount,
     record.revenueCurrency,
-    record.siteId,
-    record.visitId,
-    nextDueAt,
-    flushDueAt,
-    createdAt,
+    toUnixSeconds(record.receivedAt),
   );
   return rowsWritten > 0;
 }
-export async function updateOpenVisitActivity(
-  context: Pick<BufferStoreContext, "sqlRun">,
+/**
+ * A custom event's activity on its open page view. Only the buffer keeps
+ * it, for the realtime view and the visit timeout: D1 receives the page
+ * view's state when it ends.
+ */
+export function updateOpenVisitActivity(
+  context: Pick<SqlWriter, "sqlRun">,
   visitId: string,
   eventAt: number,
-): Promise<void> {
-  const now = Date.now();
-  const updatedAt = toUnixSeconds(now);
-  const flushDueAt = now + D1_FLUSH_INTERVAL_MS;
-
-  // Most activity arrives while the visit is already dirty and its flush is
-  // earlier than the lifecycle timeout.  In that state the scheduling keys do
-  // not change, so update only the non-indexed activity fields.  This avoids
-  // rewriting the due indexes for every custom event while preserving the
-  // exact latest activity timestamp and revision used by the flush CAS.
-  const activityOnlyRows = context.sqlRun(
-    `
-      UPDATE buffered_visits
-      SET last_activity_at = ?,
-          buffer_revision = COALESCE(buffer_revision, 1) + 1,
-          updated_at = ?
-      WHERE visit_id = ?
-        AND status = 'open'
-        AND last_activity_at < ?
-        AND dirty = 1
-        AND flush_due_at IS NOT NULL
-        AND next_due_at = flush_due_at
-    `,
-    eventAt,
-    updatedAt,
-    visitId,
-    eventAt,
-  );
-  if (activityOnlyRows > 0) return;
-
+): void {
   context.sqlRun(
     `
       UPDATE buffered_visits
       SET last_activity_at = ?,
-          dirty = 1,
-          flush_due_at = CASE WHEN dirty = 0 THEN ? ELSE flush_due_at END,
-          buffer_revision = COALESCE(buffer_revision, 1) + 1,
-          next_due_at = CASE
-            WHEN dirty = 0 THEN CASE
-              WHEN ? <= ? + ${VISIT_TIMEOUT_MS} THEN ?
-              ELSE ? + ${VISIT_TIMEOUT_MS}
-            END
-            WHEN flush_due_at IS NULL THEN ? + ${VISIT_TIMEOUT_MS}
-            WHEN flush_due_at <= ? + ${VISIT_TIMEOUT_MS} THEN flush_due_at
-            ELSE ? + ${VISIT_TIMEOUT_MS}
-          END,
           updated_at = ?
       WHERE visit_id = ?
         AND status = 'open'
         AND last_activity_at < ?
     `,
     eventAt,
-    flushDueAt,
-    flushDueAt,
-    eventAt,
-    flushDueAt,
-    eventAt,
-    eventAt,
-    eventAt,
-    eventAt,
-    updatedAt,
+    toUnixSeconds(Date.now()),
     visitId,
     eventAt,
   );
+}
+/** Whether the visitor has another page view open, so presence stays. */
+export function hasOpenVisitsForVisitor(
+  context: Pick<SqlWriter, "sqlOne">,
+  siteId: string,
+  visitorId: string,
+): boolean {
+  const row = context.sqlOne<{ ok: number }>(
+    `
+      SELECT 1 AS ok
+      FROM buffered_visits
+      WHERE site_id = ?
+        AND visitor_id = ?
+        AND status = 'open'
+      LIMIT 1
+    `,
+    siteId,
+    visitorId,
+  );
+  return row !== null;
 }

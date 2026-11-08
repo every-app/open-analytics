@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createDatabaseRuntime } from "@/lib/db";
 import { withDashboardCache } from "@/lib/edge/analytics/composition/dashboard-cache";
 import {
   geoTabLabel,
   mapEventField,
 } from "@/lib/edge/analytics/providers/d1/internal/core-mappers";
 import { insertVisit } from "@/lib/edge/ingest/buffer-store";
-import { flushCustomEventRowIndividually } from "@/lib/edge/ingest/custom-event-flush";
+import { flushCustomEventRow } from "@/lib/edge/ingest/custom-event-flush";
 import { flushPendingToD1 } from "@/lib/edge/ingest/flush";
 import type { IngestFlushContext } from "@/lib/edge/ingest/flush-types";
 import type {
@@ -117,8 +118,6 @@ function bufferedVisit(
     language: "",
     dirty: 1,
     flushAttempts: 0,
-    flushDueAt: NOW,
-    nextDueAt: NOW,
     bufferRevision: 1,
     createdAt: Math.floor((NOW - 31 * 60 * 1000) / 1000),
     updatedAt: Math.floor((NOW - 30 * 60 * 1000) / 1000),
@@ -141,9 +140,6 @@ function bufferedCustomEvent(
     revenueCurrency: null,
     dirty: 1,
     flushAttempts: 0,
-    flushDueAt: NOW,
-    nextDueAt: NOW,
-    bufferRevision: 1,
     createdAt: Math.floor(NOW / 1000),
     ...overrides,
   };
@@ -151,19 +147,17 @@ function bufferedCustomEvent(
 function flushContext(
   visitRows: BufferedVisitRow[] = [],
   eventRows: BufferedCustomEventRow[] = [],
+  database: Partial<D1Database> = {
+    prepare: vi.fn(() => ({
+      bind: vi.fn(() => ({})),
+    })) as unknown as D1Database["prepare"],
+    batch: vi.fn(async () => []),
+  },
 ): IngestFlushContext & { sqlRun: ReturnType<typeof vi.fn> } {
   const sqlRun = vi.fn(() => 1);
   return {
-    env: {
-      DB: {
-        prepare: vi.fn(() => ({
-          bind: vi.fn(() => ({})),
-        })),
-        batch: vi.fn(async () => []),
-      } as unknown as D1Database,
-    },
+    db: createDatabaseRuntime(database as D1Database),
     dictionaryIds: new Map(),
-    sitePks: new Map([["site-1", 1]]),
     sqlAll: vi
       .fn()
       // The flush reads each buffered visit with its properties.
@@ -172,7 +166,8 @@ function flushContext(
       )
       .mockReturnValueOnce(eventRows)
       .mockReturnValue([]),
-    sqlOne: vi.fn(() => null),
+    // The site's key, stored by an earlier flush.
+    sqlOne: vi.fn(() => ({ sitePk: 1 })) as IngestFlushContext["sqlOne"],
     sqlRun,
     readPersistedVisitRow: vi.fn(async () => null),
     insertBufferedVisitRow: vi.fn(),
@@ -284,26 +279,20 @@ describe("edge ingest flush edge coverage", () => {
       }),
     };
 
-    await expect(insertVisit(context, pageview())).rejects.toThrow(error);
+    expect(() => insertVisit(context, pageview())).toThrow(error);
     expect(console.error).not.toHaveBeenCalled();
   });
 
-  it("deletes custom events when dictionary ids cannot be resolved", async () => {
-    const first = vi
-      .fn()
-      .mockResolvedValueOnce({ ok: 1 })
-      .mockResolvedValueOnce(null);
+  it("keeps a custom event dirty when its dictionary id can't be resolved", async () => {
+    const first = vi.fn().mockResolvedValue(null);
     const run = vi.fn().mockResolvedValue({});
     const prepare = vi.fn(() => ({
       bind: vi.fn(() => ({ first, run })),
     }));
-    const context = flushContext() as IngestFlushContext & {
-      sqlRun: ReturnType<typeof vi.fn>;
-    };
-    context.env.DB = {
-      prepare,
+    const context = flushContext([], [], {
+      prepare: prepare as unknown as D1Database["prepare"],
       batch: vi.fn(async () => []),
-    } as unknown as D1Database;
+    });
     const observability = {
       increment: vi.fn(),
       info: vi.fn(),
@@ -313,41 +302,34 @@ describe("edge ingest flush edge coverage", () => {
     context.observability = observability;
 
     await expect(
-      flushCustomEventRowIndividually(context, bufferedCustomEvent()),
+      flushCustomEventRow(context, bufferedCustomEvent()),
     ).resolves.toBe(false);
 
     expect(context.sqlRun).toHaveBeenCalledWith(
-      "UPDATE buffered_custom_events SET flush_attempts = ?, last_flush_error = ?, flush_due_at = ?, next_due_at = ? WHERE event_id = ? AND buffer_revision = ? AND flush_attempts = ? AND last_flush_error IS ?",
-      1,
+      expect.stringContaining("SET flush_attempts = flush_attempts + 1"),
       "Failed to resolve custom event name dictionary id",
-      NOW + 60_000,
-      NOW + 60_000,
       "event-1",
-      1,
-      0,
-      null,
     );
     expect(observability.error).toHaveBeenCalledWith(
       "do.flush.custom_event_failed",
     );
   });
 
-  it("schedules old flushed visits using startedAt when ended timestamps are absent", async () => {
-    const context = flushContext([bufferedVisit()], []);
+  it("marks a written page view clean at the revision it wrote", async () => {
+    const batch = vi.fn(async () => []);
+    const context = flushContext([bufferedVisit()], [], {
+      prepare: vi.fn(() => ({
+        bind: vi.fn(() => ({})),
+      })) as unknown as D1Database["prepare"],
+      batch,
+    });
 
     await flushPendingToD1(context);
 
-    expect(context.env.DB.batch).toHaveBeenCalledTimes(1);
+    expect(batch).toHaveBeenCalledTimes(1);
     expect(context.sqlRun).toHaveBeenCalledWith(
-      expect.stringContaining("UPDATE buffered_visits"),
-      "visit-1",
-      1,
-    );
-    expect(context.sqlRun).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO ingest_schema_metadata"),
-      "buffered_visits_cleanup_due_at",
-      1,
-      expect.any(Number),
+      expect.stringContaining("SET dirty = 0"),
+      JSON.stringify([["visit-1", 1]]),
     );
   });
 });

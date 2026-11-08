@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { FLUSHED_BUFFER_RETENTION_MS } from "@/lib/edge/ingest/constants";
-import { flushCustomEventRowIndividually } from "@/lib/edge/ingest/custom-event-flush";
+import { createDatabaseRuntime } from "@/lib/db";
+import { flushCustomEventRow } from "@/lib/edge/ingest/custom-event-flush";
 import { hashCustomEventStringValue } from "@/lib/edge/ingest/custom-event-json";
 import type { IngestFlushContext } from "@/lib/edge/ingest/flush-types";
 import type { BufferedCustomEventRow } from "@/lib/edge/ingest/types";
 import type { InvocationPerformanceCounter } from "@/lib/edge/observability/logger";
+import { BudgetedDatabase } from "@/lib/edge/scheduled-tasks/d1-query-budget";
 
 const NOW = Date.UTC(2026, 4, 25, 12, 0, 0);
 
@@ -32,18 +33,15 @@ function bufferedCustomEvent(
     revenueCurrency: null,
     dirty: 1,
     flushAttempts: 0,
-    flushDueAt: NOW,
-    nextDueAt: NOW,
-    bufferRevision: 1,
     createdAt: Math.floor(NOW / 1000),
     ...overrides,
   };
 }
 
 function createFlushContext(options: {
-  visitExists?: boolean;
   eventExists?: boolean;
   dictionaryIds?: Record<string, number>;
+  maxQueries?: number;
 }): IngestFlushContext & {
   calls: D1Call[];
   sqlRun: ReturnType<typeof vi.fn>;
@@ -69,9 +67,6 @@ function createFlushContext(options: {
       return {
         run: vi.fn(async () => ({})),
         first: vi.fn(async () => {
-          if (sql.includes("FROM visits")) {
-            return options.visitExists === false ? null : { ok: 1 };
-          }
           if (sql.includes("FROM custom_events")) {
             return options.eventExists === false ? null : { ok: 1 };
           }
@@ -88,16 +83,14 @@ function createFlushContext(options: {
   }));
 
   return {
-    env: {
-      DB: {
-        prepare,
-        batch,
-      } as unknown as D1Database,
-    },
+    db: new BudgetedDatabase(
+      createDatabaseRuntime({ prepare, batch } as unknown as D1Database),
+      options.maxQueries ?? 1000,
+    ),
     dictionaryIds,
-    sitePks: new Map([["site-1", 1]]),
     sqlAll: vi.fn(() => []),
-    sqlOne: vi.fn(() => null),
+    // The site's key, stored by an earlier flush.
+    sqlOne: vi.fn(() => ({ sitePk: 1 })) as IngestFlushContext["sqlOne"],
     sqlRun,
     readPersistedVisitRow: vi.fn(async () => null),
     insertBufferedVisitRow: vi.fn(),
@@ -117,7 +110,7 @@ function createFlushContext(options: {
   };
 }
 
-describe("custom event individual flush branch coverage", () => {
+describe("custom event flush", () => {
   beforeEach(() => {
     vi.useFakeTimers({ now: NOW });
     vi.spyOn(console, "log").mockImplementation(() => {});
@@ -130,40 +123,14 @@ describe("custom event individual flush branch coverage", () => {
     vi.restoreAllMocks();
   });
 
-  it("backs off buffered custom events while waiting for their visit", async () => {
-    const context = createFlushContext({ visitExists: false });
-
-    await expect(
-      flushCustomEventRowIndividually(context, bufferedCustomEvent()),
-    ).resolves.toBe(false);
-
-    expect(context.batch).not.toHaveBeenCalled();
-    expect(context.sqlRun).toHaveBeenCalledWith(
-      "UPDATE buffered_custom_events SET flush_attempts = ?, last_flush_error = 'waiting_for_visit', flush_due_at = ?, next_due_at = ? WHERE event_id = ? AND buffer_revision = ? AND flush_attempts = ? AND last_flush_error IS ?",
-      1,
-      NOW + 60_000,
-      NOW + 60_000,
-      "event-1",
-      1,
-      0,
-      null,
-    );
-    expect(context.observability.warn).toHaveBeenCalledWith(
-      "do.flush.custom_event_waiting_for_visit",
-    );
-  });
-
-  it("flushes custom events, resolves dictionaries, and deletes old flushed rows", async () => {
+  it("flushes custom events and resolves dictionaries", async () => {
     const context = createFlushContext({});
     const row = bufferedCustomEvent({
-      occurredAt: NOW - FLUSHED_BUFFER_RETENTION_MS - 1,
       revenueAmount: 15.99,
       revenueCurrency: "USD",
     });
 
-    await expect(flushCustomEventRowIndividually(context, row)).resolves.toBe(
-      true,
-    );
+    await expect(flushCustomEventRow(context, row)).resolves.toBe(true);
 
     expect(context.batch).toHaveBeenCalledTimes(1);
     expect(context.batch.mock.calls[0]![0]).toHaveLength(4);
@@ -228,7 +195,6 @@ describe("custom event individual flush branch coverage", () => {
     ).toBe(true);
     expect(context.calls).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ bindings: [1, "visit-1"] }),
         expect.objectContaining({
           bindings: ["site-1", 1, "Signup", createdAt, createdAt],
         }),
@@ -241,17 +207,10 @@ describe("custom event individual flush branch coverage", () => {
         expect.objectContaining({ bindings: ["event-1"] }),
       ]),
     );
-    expect(context.sqlRun).toHaveBeenNthCalledWith(
-      1,
-      "UPDATE buffered_custom_events SET dirty = 0, flush_attempts = 0, last_flush_error = NULL, flush_due_at = NULL, next_due_at = NULL WHERE (event_id = ? AND buffer_revision = ?)",
+    expect(context.sqlRun).toHaveBeenCalledTimes(1);
+    expect(context.sqlRun).toHaveBeenCalledWith(
+      expect.stringContaining("SET dirty = 0, flush_attempts = 0"),
       "event-1",
-      1,
-    );
-    expect(context.sqlRun).toHaveBeenNthCalledWith(
-      2,
-      "DELETE FROM buffered_custom_events WHERE (event_id = ? AND buffer_revision = ?)",
-      "event-1",
-      1,
     );
     expect(context.observability.increment).toHaveBeenCalledWith(
       "flushedCustomEvents",
@@ -259,49 +218,47 @@ describe("custom event individual flush branch coverage", () => {
     );
   });
 
-  it("marks rows failed when the batch does not create a persisted event", async () => {
+  it("keeps an event dirty, its failure counted, when the batch does not create it", async () => {
     const context = createFlushContext({ eventExists: false });
 
     await expect(
-      flushCustomEventRowIndividually(context, bufferedCustomEvent()),
+      flushCustomEventRow(context, bufferedCustomEvent()),
     ).resolves.toBe(false);
 
     expect(context.batch).toHaveBeenCalledTimes(1);
     expect(context.sqlRun).toHaveBeenCalledWith(
-      "UPDATE buffered_custom_events SET flush_attempts = ?, last_flush_error = ?, flush_due_at = ?, next_due_at = ? WHERE event_id = ? AND buffer_revision = ? AND flush_attempts = ? AND last_flush_error IS ?",
-      1,
+      expect.stringContaining("SET flush_attempts = flush_attempts + 1"),
       "insert_did_not_create_event",
-      NOW + 60_000,
-      NOW + 60_000,
       "event-1",
-      1,
-      0,
-      null,
     );
-    expect(context.observability.warn).toHaveBeenCalledWith(
-      "do.flush.custom_event_insert_not_confirmed",
+    expect(context.observability.error).toHaveBeenCalledWith(
+      "do.flush.custom_event_failed",
     );
   });
 
-  it("normalizes non-Error D1 failures before scheduling a retry", async () => {
+  it("records a non-Error D1 failure as text", async () => {
     const context = createFlushContext({});
     context.batch.mockRejectedValue("string failure");
 
     await expect(
-      flushCustomEventRowIndividually(context, bufferedCustomEvent()),
+      flushCustomEventRow(context, bufferedCustomEvent()),
     ).resolves.toBe(false);
 
     expect(context.sqlRun).toHaveBeenCalledWith(
-      "UPDATE buffered_custom_events SET flush_attempts = ?, last_flush_error = ?, flush_due_at = ?, next_due_at = ? WHERE event_id = ? AND buffer_revision = ? AND flush_attempts = ? AND last_flush_error IS ?",
-      1,
+      expect.stringContaining("SET flush_attempts = flush_attempts + 1"),
       "string failure",
-      NOW + 60_000,
-      NOW + 60_000,
       "event-1",
-      1,
-      0,
-      null,
     );
+  });
+
+  it("leaves running out of D1 queries to the caller, without counting a failure", async () => {
+    const context = createFlushContext({ maxQueries: 2 });
+
+    await expect(
+      flushCustomEventRow(context, bufferedCustomEvent()),
+    ).rejects.toThrow("more than its 2 D1 queries");
+
+    expect(context.sqlRun).not.toHaveBeenCalled();
   });
 
   it("uses cached dictionary ids without re-querying dictionary tables", async () => {
@@ -315,38 +272,12 @@ describe("custom event individual flush branch coverage", () => {
     });
 
     await expect(
-      flushCustomEventRowIndividually(context, bufferedCustomEvent()),
+      flushCustomEventRow(context, bufferedCustomEvent()),
     ).resolves.toBe(true);
 
     expect(
       context.calls.some((call) => call.sql.includes("custom_event_json_keys")),
     ).toBe(false);
     expect(context.batch).toHaveBeenCalledTimes(1);
-  });
-
-  it("uses the documented exponential retry sequence", async () => {
-    const delays = [60_000, 120_000, 240_000, 480_000, 900_000, 900_000];
-
-    for (const [previousAttempts, delay] of delays.entries()) {
-      const context = createFlushContext({ visitExists: false });
-      const row = bufferedCustomEvent({
-        flushAttempts: previousAttempts,
-        flushDueAt: NOW,
-        nextDueAt: NOW,
-      });
-
-      await flushCustomEventRowIndividually(context, row);
-
-      expect(context.sqlRun).toHaveBeenCalledWith(
-        "UPDATE buffered_custom_events SET flush_attempts = ?, last_flush_error = 'waiting_for_visit', flush_due_at = ?, next_due_at = ? WHERE event_id = ? AND buffer_revision = ? AND flush_attempts = ? AND last_flush_error IS ?",
-        previousAttempts + 1,
-        NOW + delay,
-        NOW + delay,
-        "event-1",
-        1,
-        previousAttempts,
-        null,
-      );
-    }
   });
 });

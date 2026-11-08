@@ -37,8 +37,6 @@ export default defineConfig((ctx) => {
       ],
       env: {
         ...worker.env,
-        // Minutes of inactivity that end a session.
-        SESSION_WINDOW_MINUTES: bindings.text("30"),
         // How long the Worker caches a site's /script.js response.
         SCRIPT_CACHE_TTL_SECONDS: bindings.text("600"),
       },

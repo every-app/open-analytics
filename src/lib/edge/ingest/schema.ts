@@ -1,4 +1,3 @@
-import { HIDDEN_LEAVE_GRACE_MS, VISIT_TIMEOUT_MS } from "./constants";
 import type { SqlBinding } from "./sql";
 import { CREATE_BUFFERED_CUSTOM_EVENTS_SQL } from "./sql";
 
@@ -21,14 +20,6 @@ export interface IngestSchemaOptions {
   transactionSync?<T>(closure: () => T): T;
 }
 
-const VISIT_DEADLINE_REPAIR_KEY = "buffered_visits_next_due_at";
-const VISIT_DEADLINE_REPAIR_VERSION = 1;
-
-interface SchemaMetadataRow {
-  version?: number;
-  metadataValue?: number | null;
-}
-
 function transactionSync<T>(
   sql: DurableObjectSqlStorage,
   closure: () => T,
@@ -49,11 +40,6 @@ interface TableColumnInfo {
   dflt_value?: unknown;
 }
 
-interface IndexColumnInfo {
-  name?: string;
-  seqno?: number;
-}
-
 function tableColumns(
   sql: DurableObjectSqlStorage,
   tableName: string,
@@ -68,38 +54,6 @@ function tableColumnNames(
   tableName: string,
 ): Set<string> {
   return new Set(tableColumns(sql, tableName).map((row) => row.name ?? ""));
-}
-
-function indexColumnNames(
-  sql: DurableObjectSqlStorage,
-  indexName: string,
-): string[] {
-  return (
-    sql.exec(`PRAGMA index_info(${indexName})`).toArray() as IndexColumnInfo[]
-  )
-    .sort((left, right) => (left.seqno ?? 0) - (right.seqno ?? 0))
-    .map((row) => row.name ?? "");
-}
-
-function ensureIndexColumns(
-  sql: DurableObjectSqlStorage,
-  indexName: string,
-  expectedColumns: readonly string[],
-): void {
-  const existingColumns = indexColumnNames(sql, indexName);
-  if (
-    existingColumns.length === expectedColumns.length &&
-    existingColumns.every(
-      (columnName, index) => columnName === expectedColumns[index],
-    )
-  ) {
-    return;
-  }
-
-  // CREATE INDEX IF NOT EXISTS does not update an already deployed index.
-  // Drop only when its shape is different so this remains a one-time migration
-  // instead of rebuilding the index on every DO construction.
-  sql.exec(`DROP INDEX IF EXISTS ${indexName}`);
 }
 
 function ensureColumn(
@@ -123,9 +77,11 @@ function dropColumnIfExists(
 
 /**
  * Columns a page view no longer stores: the raw user agent, postal and metro
- * code and the network organization, as Plausible keeps none of them, and
- * the deleted identify() API's user. Dropped from existing Durable Objects so
- * buffered values don't linger.
+ * code and the network organization, as Plausible keeps none of them, the
+ * deleted identify() API's user and the web vitals nothing reads. Also the
+ * per-row flush and lifecycle deadlines: a row is now just dirty until the
+ * alarm writes it. Dropped from existing Durable Objects so buffered values
+ * don't linger.
  */
 const DROPPED_BUFFERED_VISIT_COLUMNS = [
   "ua_raw",
@@ -134,8 +90,47 @@ const DROPPED_BUFFERED_VISIT_COLUMNS = [
   "as_organization",
   "user_id",
   "user_name",
+  "perf_ttfb_ms",
+  "perf_fcp_ms",
+  "perf_lcp_ms",
+  "perf_cls",
+  "perf_inp_ms",
+  "next_due_at",
+  "flush_due_at",
 ] as const;
-const DROPPED_BUFFERED_CUSTOM_EVENT_COLUMNS = ["user_id"] as const;
+const DROPPED_BUFFERED_CUSTOM_EVENT_COLUMNS = [
+  "user_id",
+  "next_due_at",
+  "flush_due_at",
+  "buffer_revision",
+] as const;
+
+/**
+ * Indexes of earlier versions. The deadline indexes go first, as SQLite
+ * can't drop an indexed column.
+ */
+const DROPPED_INDEXES = [
+  "idx_buffered_visits_dirty_updated",
+  "idx_buffered_visits_status_last_activity",
+  "idx_buffered_visits_site_visit_status",
+  "idx_buffered_visits_started_at",
+  "idx_buffered_visits_ended_at",
+  "idx_buffered_visits_next_due",
+  "idx_buffered_visits_dirty_flush_due",
+  "idx_buffered_custom_events_next_due",
+  "idx_buffered_custom_events_dirty_flush_due",
+  "idx_buffered_custom_events_dirty_occurred",
+  "idx_analytics_sessions_next_due",
+] as const;
+
+/**
+ * Tables of earlier versions: per-session page counts nothing read, and the
+ * bookkeeping of the per-row deadlines.
+ */
+const DROPPED_TABLES = [
+  "analytics_sessions",
+  "ingest_schema_metadata",
+] as const;
 
 const LEGACY_EVENT_CONTEXT_COLUMNS = [
   "visitor_id",
@@ -180,9 +175,6 @@ function migrateLegacyBufferedCustomEvents(
           dirty INTEGER NOT NULL DEFAULT 1,
           flush_attempts INTEGER NOT NULL DEFAULT 0,
           last_flush_error TEXT,
-          next_due_at INTEGER,
-          flush_due_at INTEGER,
-          buffer_revision INTEGER NOT NULL DEFAULT 1,
           created_at INTEGER NOT NULL,
           visitor_id TEXT,
           session_id TEXT,
@@ -194,8 +186,8 @@ function migrateLegacyBufferedCustomEvents(
         INSERT INTO buffered_custom_events_migration (
           event_id, site_id, visit_id, occurred_at, received_at, sequence,
           event_name, event_data_json, dirty, flush_attempts,
-          last_flush_error, next_due_at, flush_due_at, buffer_revision,
-          created_at, visitor_id, session_id, pathname, hostname
+          last_flush_error, created_at, visitor_id, session_id, pathname,
+          hostname
         )
         SELECT
           event_id,
@@ -209,9 +201,6 @@ function migrateLegacyBufferedCustomEvents(
           dirty,
           flush_attempts,
           last_flush_error,
-          ${value("next_due_at", "NULL")},
-          ${value("flush_due_at", "NULL")},
-          ${coalesce("buffer_revision", "1")},
           created_at,
           ${value("visitor_id", "NULL")},
           ${value("session_id", "NULL")},
@@ -222,10 +211,7 @@ function migrateLegacyBufferedCustomEvents(
     sql.exec(
       "ALTER TABLE buffered_custom_events RENAME TO buffered_custom_events_legacy",
     );
-    sql.exec("DROP INDEX IF EXISTS idx_buffered_custom_events_next_due");
-    sql.exec("DROP INDEX IF EXISTS idx_buffered_custom_events_dirty_flush_due");
-    sql.exec("DROP INDEX IF EXISTS idx_buffered_custom_events_dirty_occurred");
-    sql.exec("DROP INDEX IF EXISTS idx_buffered_custom_events_occurred");
+    // Its indexes go with it and are created again on the new table.
     sql.exec("DROP TABLE buffered_custom_events_legacy");
     sql.exec(
       "ALTER TABLE buffered_custom_events_migration RENAME TO buffered_custom_events",
@@ -257,140 +243,10 @@ function migrateLegacyBufferedCustomEvents(
   }
 }
 
-function repairMissingVisitDeadlines(
-  sql: DurableObjectSqlStorage,
-  now: number,
-  options?: IngestSchemaOptions,
-): void {
-  sql.exec(`
-      CREATE TABLE IF NOT EXISTS ingest_schema_metadata (
-        metadata_key TEXT PRIMARY KEY,
-        version INTEGER NOT NULL,
-        metadata_value INTEGER
-      )
-    `);
-  if (!tableColumnNames(sql, "ingest_schema_metadata").has("metadata_value")) {
-    sql.exec(
-      "ALTER TABLE ingest_schema_metadata ADD COLUMN metadata_value INTEGER",
-    );
-  }
-
-  const marker = sql
-    .exec(
-      `
-        SELECT version
-        FROM ingest_schema_metadata
-        WHERE metadata_key = ?
-        LIMIT 1
-      `,
-      VISIT_DEADLINE_REPAIR_KEY,
-    )
-    .toArray()[0] as SchemaMetadataRow | undefined;
-  if (marker?.version === VISIT_DEADLINE_REPAIR_VERSION) return;
-
-  transactionSync(
-    sql,
-    () => {
-      // Re-check inside the transaction so a retry or a future concurrent
-      // initializer cannot run an already-completed repair a second time.
-      const currentMarker = sql
-        .exec(
-          `
-          SELECT version
-          FROM ingest_schema_metadata
-          WHERE metadata_key = ?
-          LIMIT 1
-        `,
-          VISIT_DEADLINE_REPAIR_KEY,
-        )
-        .toArray()[0] as SchemaMetadataRow | undefined;
-      if (currentMarker?.version === VISIT_DEADLINE_REPAIR_VERSION) return;
-
-      // Rows created before deadline scheduling may have neither due column.
-      // Keep the existing flush deadline precedence, but only repair rows whose
-      // next deadline is absent.  The marker is written only after this UPDATE
-      // succeeds, so a failed transaction can be retried on the next startup.
-      sql.exec(
-        `
-        UPDATE buffered_visits
-        SET
-          flush_due_at = CASE
-            WHEN dirty = 1 AND flush_due_at IS NULL THEN ?
-            ELSE flush_due_at
-          END,
-          next_due_at = CASE
-            WHEN dirty = 1 AND flush_due_at IS NULL THEN ?
-            WHEN flush_due_at IS NULL THEN
-              CASE
-                WHEN status = 'open' THEN last_activity_at + ?
-                WHEN status = 'hidden_pending' THEN
-                  COALESCE(hidden_at, last_activity_at, 0) +
-                  CASE
-                    WHEN hidden_at IS NULL THEN ?
-                    ELSE ?
-                  END
-                ELSE NULL
-              END
-            WHEN status = 'open' THEN
-              CASE
-                WHEN flush_due_at <= last_activity_at + ?
-                  THEN flush_due_at
-                ELSE last_activity_at + ?
-              END
-            WHEN status = 'hidden_pending' THEN
-              CASE
-                WHEN flush_due_at <= COALESCE(hidden_at, last_activity_at, 0) +
-                  CASE
-                    WHEN hidden_at IS NULL THEN ?
-                    ELSE ?
-                  END
-                  THEN flush_due_at
-                ELSE COALESCE(hidden_at, last_activity_at, 0) +
-                  CASE
-                    WHEN hidden_at IS NULL THEN ?
-                    ELSE ?
-                  END
-              END
-            ELSE flush_due_at
-          END
-        WHERE next_due_at IS NULL
-          AND (
-            dirty = 1
-            OR flush_due_at IS NOT NULL
-            OR status IN ('open', 'hidden_pending')
-          )
-      `,
-        now,
-        now,
-        VISIT_TIMEOUT_MS,
-        VISIT_TIMEOUT_MS,
-        HIDDEN_LEAVE_GRACE_MS,
-        VISIT_TIMEOUT_MS,
-        VISIT_TIMEOUT_MS,
-        VISIT_TIMEOUT_MS,
-        HIDDEN_LEAVE_GRACE_MS,
-        VISIT_TIMEOUT_MS,
-        HIDDEN_LEAVE_GRACE_MS,
-      );
-      sql.exec(
-        `
-        INSERT INTO ingest_schema_metadata (metadata_key, version)
-        VALUES (?, ?)
-        ON CONFLICT(metadata_key) DO UPDATE SET version = excluded.version
-      `,
-        VISIT_DEADLINE_REPAIR_KEY,
-        VISIT_DEADLINE_REPAIR_VERSION,
-      );
-    },
-    options,
-  );
-}
-
 export function initializeIngestSqlSchema(
   sql: DurableObjectSqlStorage,
   options?: IngestSchemaOptions,
 ): void {
-  const now = Date.now();
   sql.exec(`
       CREATE TABLE IF NOT EXISTS buffered_visits (
         visit_id TEXT PRIMARY KEY,
@@ -437,27 +293,15 @@ export function initializeIngestSqlSchema(
         screen_width INTEGER,
         screen_height INTEGER,
         language TEXT NOT NULL DEFAULT '',
-        perf_ttfb_ms REAL,
-        perf_fcp_ms REAL,
-        perf_lcp_ms REAL,
-        perf_cls REAL,
-        perf_inp_ms REAL,
         properties_json TEXT,
         dirty INTEGER NOT NULL DEFAULT 1,
         flush_attempts INTEGER NOT NULL DEFAULT 0,
         last_flush_error TEXT,
-        next_due_at INTEGER,
-        flush_due_at INTEGER,
         buffer_revision INTEGER NOT NULL DEFAULT 1,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       )
     `);
-  ensureColumn(sql, "buffered_visits", "perf_ttfb_ms", "REAL");
-  ensureColumn(sql, "buffered_visits", "perf_fcp_ms", "REAL");
-  ensureColumn(sql, "buffered_visits", "perf_lcp_ms", "REAL");
-  ensureColumn(sql, "buffered_visits", "perf_cls", "REAL");
-  ensureColumn(sql, "buffered_visits", "perf_inp_ms", "REAL");
   ensureColumn(sql, "buffered_visits", "hidden_at", "INTEGER");
   ensureColumn(sql, "buffered_visits", "properties_json", "TEXT");
   ensureColumn(
@@ -467,68 +311,12 @@ export function initializeIngestSqlSchema(
     "INTEGER NOT NULL DEFAULT 0",
   );
   ensureColumn(sql, "buffered_visits", "scroll_depth", "INTEGER");
-  ensureColumn(sql, "buffered_visits", "next_due_at", "INTEGER");
-  ensureColumn(sql, "buffered_visits", "flush_due_at", "INTEGER");
   ensureColumn(
     sql,
     "buffered_visits",
     "buffer_revision",
     "INTEGER NOT NULL DEFAULT 1",
   );
-  for (const columnName of DROPPED_BUFFERED_VISIT_COLUMNS) {
-    dropColumnIfExists(sql, "buffered_visits", columnName);
-  }
-  // Page views buffered before ingest rounded coordinates round here, so
-  // neither the realtime view nor a later flush carries finer ones.
-  sql.exec(`
-      UPDATE buffered_visits
-      SET latitude = ROUND(latitude, 1), longitude = ROUND(longitude, 1)
-      WHERE latitude <> ROUND(latitude, 1) OR longitude <> ROUND(longitude, 1)
-    `);
-  // Rows created before due-time scheduling have NULL due columns.  Make
-  // legacy dirty rows immediately eligible and restore lifecycle deadlines
-  // for clean open/hidden visits without touching already-scheduled rows.
-  repairMissingVisitDeadlines(sql, now, options);
-
-  // These indexes were useful for broad historical scans, but they are not
-  // part of the hot ingest/flush paths.  In a Durable Object every UPDATE of
-  // an indexed row also has to maintain the index, so keeping them materially
-  // amplifies lifecycle writes.  The remaining indexes cover Alarm selection,
-  // due-row flushing, hidden/timeout status scans, and session/visitor lookup.
-  for (const indexName of [
-    "idx_buffered_visits_dirty_updated",
-    "idx_buffered_visits_status_last_activity",
-    "idx_buffered_visits_site_visit_status",
-    "idx_buffered_visits_started_at",
-    "idx_buffered_visits_ended_at",
-  ]) {
-    sql.exec(`DROP INDEX IF EXISTS ${indexName}`);
-  }
-  ensureIndexColumns(sql, "idx_buffered_visits_dirty_flush_due", [
-    "dirty",
-    "flush_due_at",
-    "flush_attempts",
-  ]);
-  sql.exec(`
-      CREATE INDEX IF NOT EXISTS idx_buffered_visits_next_due
-      ON buffered_visits(next_due_at, visit_id)
-    `);
-  sql.exec(`
-      CREATE INDEX IF NOT EXISTS idx_buffered_visits_dirty_flush_due
-      ON buffered_visits(dirty, flush_due_at, flush_attempts)
-    `);
-  sql.exec(`
-      CREATE INDEX IF NOT EXISTS idx_buffered_visits_status_hidden_at
-      ON buffered_visits(status, hidden_at)
-    `);
-  sql.exec(`
-      CREATE INDEX IF NOT EXISTS idx_buffered_visits_site_session_status_started
-      ON buffered_visits(site_id, session_id, status, started_at)
-    `);
-  sql.exec(`
-      CREATE INDEX IF NOT EXISTS idx_buffered_visits_site_visitor_status
-      ON buffered_visits(site_id, visitor_id, status)
-    `);
   sql.exec(CREATE_BUFFERED_CUSTOM_EVENTS_SQL);
 
   // Keep legacy event rows in place.  A legacy context column without a
@@ -560,66 +348,70 @@ export function initializeIngestSqlSchema(
   );
   ensureColumn(sql, "buffered_custom_events", "revenue_amount", "REAL");
   ensureColumn(sql, "buffered_custom_events", "revenue_currency", "TEXT");
-  ensureColumn(sql, "buffered_custom_events", "next_due_at", "INTEGER");
-  ensureColumn(sql, "buffered_custom_events", "flush_due_at", "INTEGER");
-  ensureColumn(
-    sql,
-    "buffered_custom_events",
-    "buffer_revision",
-    "INTEGER NOT NULL DEFAULT 1",
-  );
+
+  for (const indexName of DROPPED_INDEXES) {
+    sql.exec(`DROP INDEX IF EXISTS ${indexName}`);
+  }
+  for (const columnName of DROPPED_BUFFERED_VISIT_COLUMNS) {
+    dropColumnIfExists(sql, "buffered_visits", columnName);
+  }
   for (const columnName of DROPPED_BUFFERED_CUSTOM_EVENT_COLUMNS) {
     dropColumnIfExists(sql, "buffered_custom_events", columnName);
   }
+  for (const tableName of DROPPED_TABLES) {
+    sql.exec(`DROP TABLE IF EXISTS ${tableName}`);
+  }
+  // Page views buffered before ingest rounded coordinates round here, so
+  // neither the realtime view nor a later flush carries finer ones.
   sql.exec(`
-      UPDATE buffered_custom_events
-      SET
-        flush_due_at = CASE
-          WHEN dirty = 1 AND flush_due_at IS NULL THEN ${now}
-          ELSE flush_due_at
-        END,
-        next_due_at = CASE
-          WHEN dirty = 1 AND flush_due_at IS NULL THEN ${now}
-          WHEN dirty = 1 THEN flush_due_at
-          ELSE NULL
-        END
-      WHERE next_due_at IS NULL AND dirty = 1
+      UPDATE buffered_visits
+      SET latitude = ROUND(latitude, 1), longitude = ROUND(longitude, 1)
+      WHERE latitude <> ROUND(latitude, 1) OR longitude <> ROUND(longitude, 1)
+    `);
+
+  // What the alarm writes to D1, oldest first, with rows that failed before
+  // last.
+  sql.exec(`
+      CREATE INDEX IF NOT EXISTS idx_buffered_visits_dirty
+      ON buffered_visits(dirty, flush_attempts, started_at)
+    `);
+  // Visit timeouts, the active visits of the realtime view and the finished
+  // ones cleanup deletes.
+  sql.exec(`
+      CREATE INDEX IF NOT EXISTS idx_buffered_visits_status_activity
+      ON buffered_visits(status, last_activity_at)
     `);
   sql.exec(`
-      CREATE INDEX IF NOT EXISTS idx_buffered_custom_events_next_due
-      ON buffered_custom_events(next_due_at, event_id)
+      CREATE INDEX IF NOT EXISTS idx_buffered_visits_status_hidden_at
+      ON buffered_visits(status, hidden_at)
     `);
   sql.exec(`
-      CREATE INDEX IF NOT EXISTS idx_buffered_custom_events_dirty_flush_due
-      ON buffered_custom_events(dirty, flush_due_at, created_at, flush_attempts)
+      CREATE INDEX IF NOT EXISTS idx_buffered_visits_site_session_status_started
+      ON buffered_visits(site_id, session_id, status, started_at)
     `);
-  sql.exec("DROP INDEX IF EXISTS idx_buffered_custom_events_dirty_occurred");
+  sql.exec(`
+      CREATE INDEX IF NOT EXISTS idx_buffered_visits_site_visitor_status
+      ON buffered_visits(site_id, visitor_id, status)
+    `);
+  sql.exec(`
+      CREATE INDEX IF NOT EXISTS idx_buffered_custom_events_dirty
+      ON buffered_custom_events(dirty, flush_attempts, occurred_at)
+    `);
   sql.exec(`
       CREATE INDEX IF NOT EXISTS idx_buffered_custom_events_occurred
       ON buffered_custom_events(occurred_at)
     `);
   sql.exec(`
-    CREATE TABLE IF NOT EXISTS analytics_sessions (
-      site_id TEXT NOT NULL,
-      session_id TEXT PRIMARY KEY,
-        visitor_id TEXT NOT NULL,
-        started_at INTEGER NOT NULL,
-        last_activity_at INTEGER NOT NULL,
-        page_count INTEGER NOT NULL,
-        entry_path TEXT NOT NULL,
-        last_path TEXT NOT NULL,
-        last_visit_id TEXT NOT NULL,
-        next_due_at INTEGER NOT NULL
-      )
-    `);
-  sql.exec(`
-      CREATE INDEX IF NOT EXISTS idx_analytics_sessions_next_due
-      ON analytics_sessions(next_due_at, session_id)
-    `);
-  sql.exec(`
       CREATE TABLE IF NOT EXISTS visitor_salts (
         day TEXT PRIMARY KEY,
         salt TEXT NOT NULL
+      )
+    `);
+  // The site's key in D1. It never changes, so it is looked up once.
+  sql.exec(`
+      CREATE TABLE IF NOT EXISTS site_pks (
+        site_id TEXT PRIMARY KEY,
+        site_pk INTEGER NOT NULL
       )
     `);
 }

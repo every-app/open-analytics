@@ -21,23 +21,10 @@ function createTestDo(options: {
   let alarmAt = options.alarmAt;
   const storage = {
     sql: {
+      // A buffer with a row waiting for D1.
       exec: vi.fn((query: string) => ({
-        toArray: () => {
-          if (query.includes("FROM buffered_visits")) {
-            return [
-              {
-                nextDueAt: NOW - 1,
-                flushDueAt: NOW - 1,
-                dirty: 1,
-                status: "complete",
-                lastActivityAt: NOW - 1,
-                hiddenAt: null,
-                visitId: "visit-1",
-              } satisfies SqlRow,
-            ];
-          }
-          return [];
-        },
+        toArray: () =>
+          query.includes("AS pending") ? [{ pending: 1 } satisfies SqlRow] : [],
       })),
     },
     getAlarm: vi.fn(async () => alarmAt),

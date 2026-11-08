@@ -6,7 +6,6 @@ export interface Env {
   DISABLE_CRON_TASKS?: string;
   /** Another OpenMapTiles style host for the dashboard maps (map-relay.ts). */
   MAP_STYLE_BASE_URL?: string;
-  SESSION_WINDOW_MINUTES?: string;
   SCRIPT_CACHE_TTL_SECONDS?: string;
   /** The organization a deployment is pinned to (everyAppWorker). */
   EVERY_APP_ORG_ID?: string;

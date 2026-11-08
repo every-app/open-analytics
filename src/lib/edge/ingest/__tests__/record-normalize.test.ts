@@ -132,10 +132,9 @@ function makeContext(
 
   return {
     context: {
-      env: {},
       visitorSalt: testSalt,
       getVisitContext: async () => options.visit ?? null,
-      findRecentVisitorSession: async () => options.recentSession ?? null,
+      findRecentVisitorSession: () => options.recentSession ?? null,
       insertBufferedCustomEvent: (record: never) => {
         buffered.push(record);
         return options.inserted ?? true;

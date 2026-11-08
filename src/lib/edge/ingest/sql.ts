@@ -91,7 +91,6 @@ export const VISIT_D1_COLUMNS = [
   "screen_width",
   "screen_height",
   "language",
-  "ae_synced_at",
   "created_at",
   "updated_at",
 ] as const;
@@ -209,9 +208,6 @@ export const CREATE_BUFFERED_CUSTOM_EVENTS_SQL = `
     dirty INTEGER NOT NULL DEFAULT 1,
     flush_attempts INTEGER NOT NULL DEFAULT 0,
     last_flush_error TEXT,
-    next_due_at INTEGER,
-    flush_due_at INTEGER,
-    buffer_revision INTEGER NOT NULL DEFAULT 1,
     created_at INTEGER NOT NULL
   )
 `;
@@ -264,7 +260,6 @@ export function visitBindings(
     row.screenWidth,
     row.screenHeight,
     row.language,
-    null,
     row.createdAt,
     row.updatedAt,
   ];

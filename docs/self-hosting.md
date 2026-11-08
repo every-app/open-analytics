@@ -51,11 +51,10 @@ Then open `https://analytics.<your gateway domain>`, create a site, and add its 
 
 | Name                       | Meaning                                                | Where                                                          |
 | -------------------------- | ------------------------------------------------------ | -------------------------------------------------------------- |
-| `SESSION_WINDOW_MINUTES`   | Session window in minutes (default `30`)               | `bindings.text` in `cloudflare.config.ts`                      |
 | `SCRIPT_CACHE_TTL_SECONDS` | Cache TTL for `/script.js` (default `600`)             | `bindings.text` in `cloudflare.config.ts`                      |
 | `MAP_STYLE_BASE_URL`       | Optional OpenMapTiles style host (default OpenFreeMap) | Not set by default; add it to `cloudflare.config.ts` to use it |
 
-These are plain Worker variables, not secrets: edit `env` in [`cloudflare.config.ts`](../cloudflare.config.ts) and deploy your change with the Every App checkout's CLI, as under [Deploy](#deploy). `MAP_STYLE_BASE_URL` is read by the map style relay (`src/lib/edge/resources/map-relay.ts`); to point at another host, add `MAP_STYLE_BASE_URL: bindings.text("https://…")` next to the other two and redeploy.
+These are plain Worker variables, not secrets: edit `env` in [`cloudflare.config.ts`](../cloudflare.config.ts) and deploy your change with the Every App checkout's CLI, as under [Deploy](#deploy). `MAP_STYLE_BASE_URL` is read by the map style relay (`src/lib/edge/resources/map-relay.ts`); to point at another host, add `MAP_STYLE_BASE_URL: bindings.text("https://…")` next to the other one and redeploy.
 
 **System Settings** shows whether the gateway can send email and can send a test message.
 

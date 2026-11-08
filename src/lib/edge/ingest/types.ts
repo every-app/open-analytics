@@ -55,9 +55,7 @@ export interface BufferedVisitRow extends VisitRow, VisitBindingRow {
   dirty: number;
   flushAttempts: number;
   lastFlushError?: string | null;
-  nextDueAt?: number | null;
-  flushDueAt?: number | null;
-  bufferRevision?: number;
+  bufferRevision: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -75,9 +73,6 @@ export interface BufferedCustomEventRow {
   dirty: number;
   flushAttempts: number;
   lastFlushError?: string | null;
-  nextDueAt?: number | null;
-  flushDueAt?: number | null;
-  bufferRevision?: number;
   createdAt: number;
 }
 export interface BufferedCustomEventInput {

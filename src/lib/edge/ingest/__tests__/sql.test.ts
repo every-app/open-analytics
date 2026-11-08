@@ -81,7 +81,6 @@ describe("ingest visit SQL bindings", () => {
       exit_reason: "leave",
       pathname: "/docs",
       query_string: "ref=home",
-      ae_synced_at: null,
       created_at: 10,
       updated_at: 20,
     });
@@ -118,7 +117,8 @@ describe("ingest visit SQL bindings", () => {
     expect(UPSERT_ACTIVE_VISIT_SQL).not.toContain(
       "ended_at = excluded.ended_at",
     );
-    // A hidden page view's depth reaches D1 before the page view ends.
+    // A page view written again while open (its first write's mark lost)
+    // keeps its depth so far.
     expect(UPSERT_ACTIVE_VISIT_SQL).toContain(
       "scroll_depth = excluded.scroll_depth",
     );
@@ -135,7 +135,7 @@ describe("ingest visit SQL bindings", () => {
       "site_id = excluded.site_id",
     );
     expect(UPSERT_FINALIZED_VISIT_SQL).not.toContain(
-      "ae_synced_at = excluded.ae_synced_at",
+      "created_at = excluded.created_at",
     );
     expect(UPSERT_FINALIZED_VISIT_SQL).toContain("WHERE");
     expect(UPSERT_FINALIZED_VISIT_SQL).toContain(
@@ -147,7 +147,7 @@ describe("ingest visit SQL bindings", () => {
     expect(visitUpsertSql("timeout")).toBe(UPSERT_FINALIZED_VISIT_SQL);
   });
 
-  it("updates only lifecycle fields while retaining immutable and archive state", () => {
+  it("updates only lifecycle fields while retaining immutable state", () => {
     const db = new DatabaseSync(":memory:");
     db.exec(`
       CREATE TABLE visits (
@@ -173,7 +173,7 @@ describe("ingest visit SQL bindings", () => {
       });
       expect(activeStatement.run(...visitBindings(initial)).changes).toBe(1);
 
-      db.prepare("UPDATE visits SET ae_synced_at = ? WHERE visit_id = ?").run(
+      db.prepare("UPDATE visits SET created_at = ? WHERE visit_id = ?").run(
         123,
         initial.visitId,
       );
@@ -212,7 +212,7 @@ describe("ingest visit SQL bindings", () => {
       expect(
         db
           .prepare(
-            "SELECT site_id AS siteId, pathname, status, ended_at AS endedAt, duration_ms AS durationMs, ae_synced_at AS aeSyncedAt FROM visits WHERE visit_id = ?",
+            "SELECT site_id AS siteId, pathname, status, ended_at AS endedAt, duration_ms AS durationMs, created_at AS createdAt FROM visits WHERE visit_id = ?",
           )
           .get(initial.visitId),
       ).toEqual({
@@ -221,7 +221,7 @@ describe("ingest visit SQL bindings", () => {
         status: "complete",
         endedAt: 3,
         durationMs: 2,
-        aeSyncedAt: 123,
+        createdAt: 123,
       });
 
       expect(

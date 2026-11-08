@@ -90,17 +90,8 @@ CREATE TABLE custom_event_json_values (
   FOREIGN KEY(path_id) REFERENCES custom_event_json_paths(id)
 );
 
-CREATE INDEX idx_custom_event_values_site_pk_boolean_eq
-  ON custom_event_json_values(site_pk, path_id, boolean_value, occurred_at, event_pk)
-  WHERE value_type = 3;
-CREATE INDEX idx_custom_event_values_site_pk_number_range
-  ON custom_event_json_values(site_pk, path_id, number_value, occurred_at, event_pk)
-  WHERE value_type = 2;
 CREATE INDEX idx_custom_event_values_site_pk_path_time
   ON custom_event_json_values(site_pk, path_id, occurred_at, event_pk);
-CREATE INDEX idx_custom_event_values_site_pk_string_eq
-  ON custom_event_json_values(site_pk, path_id, string_hash, occurred_at, event_pk)
-  WHERE value_type = 1;
 
 CREATE TABLE custom_event_names (
   id INTEGER PRIMARY KEY,
@@ -125,7 +116,6 @@ CREATE TABLE custom_events (
   sequence INTEGER NOT NULL DEFAULT 0,
   node_count INTEGER NOT NULL,
   value_count INTEGER NOT NULL,
-  ae_synced_at INTEGER,
   created_at INTEGER NOT NULL DEFAULT (unixepoch()),
   site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
   revenue_amount REAL,
@@ -134,14 +124,10 @@ CREATE TABLE custom_events (
   FOREIGN KEY(event_name_id) REFERENCES custom_event_names(id)
 );
 
-CREATE INDEX idx_custom_events_created_at_site_pk_performance
-  ON custom_events(created_at, site_pk, occurred_at, event_pk);
 CREATE INDEX idx_custom_events_site_pk_name_time
   ON custom_events(site_pk, event_name_id, occurred_at, event_pk);
 CREATE INDEX idx_custom_events_site_pk_time
   ON custom_events(site_pk, occurred_at, event_pk);
-CREATE INDEX idx_custom_events_site_pk_visit_time
-  ON custom_events(site_pk, visit_id, occurred_at, event_pk);
 CREATE INDEX idx_custom_events_visit_id ON custom_events(visit_id);
 
 CREATE TABLE members (
@@ -431,27 +417,13 @@ CREATE TABLE visits (
   screen_width INTEGER,
   screen_height INTEGER,
   language TEXT NOT NULL DEFAULT '',
-  ae_synced_at INTEGER,
   created_at INTEGER NOT NULL DEFAULT (unixepoch()),
   updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  perf_ttfb_ms REAL,
-  perf_fcp_ms REAL,
-  perf_lcp_ms REAL,
-  perf_cls REAL,
-  perf_inp_ms REAL,
   site_pk INTEGER NOT NULL REFERENCES site_identities(site_pk),
   scroll_depth INTEGER
 );
 
-CREATE INDEX idx_visits_created_at_site_pk_performance
-  ON visits(created_at, site_pk, started_at, visit_id);
-CREATE INDEX idx_visits_site_pk_last_activity
-  ON visits(site_pk, last_activity_at);
 CREATE INDEX idx_visits_site_pk_session_started_at
   ON visits(site_pk, session_id, started_at);
 CREATE INDEX idx_visits_site_pk_started_at
   ON visits(site_pk, started_at);
-CREATE INDEX idx_visits_site_pk_visitor_last_activity
-  ON visits(site_pk, visitor_id, last_activity_at);
-CREATE INDEX idx_visits_site_pk_visitor_started_at
-  ON visits(site_pk, visitor_id, started_at);

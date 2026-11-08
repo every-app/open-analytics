@@ -1,16 +1,15 @@
-import { createDatabaseRuntime } from "@/lib/db";
+import type { DatabaseRuntime } from "@/lib/db";
 import type {
   InvocationLogger,
   InvocationPerformanceCounter,
 } from "@/lib/edge/observability/logger";
-import type { Env } from "@/lib/edge/types";
 
 import type { RealtimeSnapshotRecord } from "./normalize";
 import type { BufferedVisitRow, SqlWriter } from "./types";
 export interface IngestFlushContext extends SqlWriter {
-  env: Pick<Env, "DB">;
+  /** D1, counting the invocation's queries: it refuses one past the limit. */
+  db: DatabaseRuntime;
   dictionaryIds: Map<string, number>;
-  sitePks: Map<string, number>;
   readPersistedVisitRow(
     siteId: string,
     visitId: string,
@@ -18,8 +17,6 @@ export interface IngestFlushContext extends SqlWriter {
   insertBufferedVisitRow(row: BufferedVisitRow): void;
   hasOpenVisitsForVisitor(siteId: string, visitorId: string): boolean;
   pushRealtimeRecord(record: RealtimeSnapshotRecord): Promise<void>;
-  getVisitCleanupDueAt?: () => number | null | undefined;
-  setVisitCleanupDueAt?: (dueAt: number | null) => void;
   /**
    * Owned by the DO invocation boundary.  Flush helpers only report stable
    * aggregate counters and event codes; they never emit their own logs.
@@ -30,50 +27,39 @@ export interface IngestFlushContext extends SqlWriter {
   >;
 }
 /**
- * Resolve the durable internal site key once per DO lifetime.  The first
- * lookup keeps the common path read-only; INSERT OR IGNORE handles a site
- * whose identity was not present when migration 0039 ran, and the final
- * lookup obtains the winner if concurrent writers raced to create it.
+ * The site's key in D1. It never changes, so the Durable Object stores it
+ * after the first flush and later flushes don't ask D1. The site's first
+ * flush also creates its identity.
  */
 export async function resolveSitePk(
   context: IngestFlushContext,
   siteId: string,
 ): Promise<number> {
-  const cached = context.sitePks.get(siteId);
-  if (cached !== undefined) return cached;
+  const stored = context.sqlOne<{ sitePk: number }>(
+    "SELECT site_pk AS sitePk FROM site_pks WHERE site_id = ?",
+    siteId,
+  );
+  if (stored) return stored.sitePk;
 
-  const existing = await createDatabaseRuntime(context.env.DB).first<{
-    sitePk: number;
-  }>({
-    sql: `SELECT site_pk AS sitePk FROM site_identities WHERE site_id = ? LIMIT 1`,
-    bindings: [siteId],
-    tag: "ingest.site_identities.first",
-  });
-  const existingPk = Number(existing?.sitePk ?? 0);
-  if (Number.isSafeInteger(existingPk) && existingPk > 0) {
-    context.sitePks.set(siteId, existingPk);
-    return existingPk;
-  }
-
-  await createDatabaseRuntime(context.env.DB).run({
+  await context.db.run({
     sql: `INSERT OR IGNORE INTO site_identities (site_id) VALUES (?)`,
     bindings: [siteId],
     tag: "ingest.site_identities.insert",
   });
-
-  const created = await createDatabaseRuntime(context.env.DB).first<{
-    sitePk: number;
-  }>({
+  const identity = await context.db.first<{ sitePk: number }>({
     sql: `SELECT site_pk AS sitePk FROM site_identities WHERE site_id = ? LIMIT 1`,
     bindings: [siteId],
     tag: "ingest.site_identities.first",
   });
-  const sitePk = Number(created?.sitePk ?? 0);
-  if (!Number.isSafeInteger(sitePk) || sitePk <= 0) {
+  if (!identity) {
     throw new Error(`Failed to resolve site identity for ${siteId}`);
   }
-  context.sitePks.set(siteId, sitePk);
-  return sitePk;
+  context.sqlRun(
+    "INSERT INTO site_pks (site_id, site_pk) VALUES (?, ?)",
+    siteId,
+    identity.sitePk,
+  );
+  return identity.sitePk;
 }
 export function recordFlushCounter(
   context: IngestFlushContext,
