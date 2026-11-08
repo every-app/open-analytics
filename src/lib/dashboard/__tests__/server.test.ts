@@ -110,8 +110,7 @@ describe("dashboard server helpers", () => {
     );
   });
 
-  it("falls back when sites, notifications, or the gateway URL are unavailable", async () => {
-    mocks.sites.mockRejectedValue(new Error("edge unavailable"));
+  it("falls back when notifications or the gateway URL are unavailable", async () => {
     mocks.notifications.mockRejectedValue(new Error("unavailable"));
     mocks.resolveEdgeRuntime.mockResolvedValue({
       request: new Request("https://app.test/app"),
@@ -120,16 +119,24 @@ describe("dashboard server helpers", () => {
     });
 
     await expect(getDashboardTeamContext()).resolves.toMatchObject({
-      sites: [],
       unreadAttentionCount: 0,
       gatewayUrl: "/",
     });
   });
 
-  it("returns null without a signed-in person or workspace", async () => {
-    mocks.session.mockRejectedValueOnce(new Error("not signed in"));
-    await expect(getDashboardTeamContext()).resolves.toBeNull();
+  it("throws when the session or sites can't be read", async () => {
+    mocks.session.mockRejectedValueOnce(new Error("D1 DB is overloaded"));
+    await expect(getDashboardTeamContext()).rejects.toThrow(
+      "D1 DB is overloaded",
+    );
 
+    mocks.sites.mockRejectedValueOnce(new Error("D1 DB is overloaded"));
+    await expect(getDashboardTeamContext()).rejects.toThrow(
+      "D1 DB is overloaded",
+    );
+  });
+
+  it("returns null without a signed-in person or workspace", async () => {
     mocks.session.mockResolvedValueOnce(null);
     await expect(getDashboardTeamContext()).resolves.toBeNull();
 

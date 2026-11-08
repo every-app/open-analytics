@@ -48,15 +48,11 @@ function withSiteSlug(site: SiteData): SiteWithSlug {
     slug: getSiteSlug(site),
   };
 }
-const getMe = cache(async () => {
-  try {
-    return await readAdmin("session");
-  } catch {
-    return null;
-  }
-});
+const getMe = cache(() => readAdmin("session"));
 const getUnreadAttentionCount = cache(async (): Promise<number> => {
-  const notifications = await readAdmin("notifications", { limit: 1 });
+  const notifications = await readDashboardAdmin("notifications", {
+    limit: 1,
+  });
   return notifications?.unreadAttentionCount ?? 0;
 });
 const getAdminRuntime = cache(async () => {
@@ -67,46 +63,52 @@ const getAdminRuntime = cache(async () => {
     url: runtime.url,
   };
 });
+/**
+ * Null when the admin service refuses the read (no identity, no access). A
+ * read that fails, such as D1 being overloaded, throws.
+ */
 async function readAdmin<K extends keyof AdminServiceReadMap>(
   route: K,
   params?: Record<string, string | number>,
 ): Promise<AdminServiceReadMap[K] | null> {
-  try {
-    const runtime = await getAdminRuntime();
-    const url = new URL(runtime.url);
-    for (const [key, value] of Object.entries(params ?? {})) {
-      url.searchParams.set(key, String(value));
-    }
-    const result = await readAdminService({
-      route,
-      request: runtime.request,
-      env: runtime.env,
-      url,
-    });
-    return result;
-  } catch {
-    return null;
+  const runtime = await getAdminRuntime();
+  const url = new URL(runtime.url);
+  for (const [key, value] of Object.entries(params ?? {})) {
+    url.searchParams.set(key, String(value));
   }
+  return readAdminService({
+    route,
+    request: runtime.request,
+    env: runtime.env,
+    url,
+  });
 }
-/** Server-only typed reads shared by route-level SSR loaders. */
+/**
+ * Server-only typed reads shared by route-level SSR loaders: null on any
+ * failure, and the page then loads its data in the browser.
+ */
 export async function readDashboardAdmin<K extends keyof AdminServiceReadMap>(
   route: K,
   params?: Record<string, string | number>,
 ): Promise<AdminServiceReadMap[K] | null> {
-  return readAdmin(route, params);
+  try {
+    return await readAdmin(route, params);
+  } catch {
+    return null;
+  }
 }
+/** Throws when the read fails, rather than showing an empty workspace. */
 export const getDashboardTeamSites = cache(
   async (teamId: string): Promise<SiteWithSlug[]> => {
-    try {
-      const sites = await readAdmin("sites", { teamId });
-      if (!sites) return [];
-      return sites.map(withSiteSlug);
-    } catch {
-      return [];
-    }
+    const sites = await readAdmin("sites", { teamId });
+    if (!sites) return [];
+    return sites.map(withSiteSlug);
   },
 );
-/** Null without a signed-in person (a share page, or no identity). */
+/**
+ * Null without a signed-in person (a share page, or no identity). A failed
+ * read throws: a cached null would show "page not found" until reload.
+ */
 export const getDashboardTeamContext = cache(
   async (): Promise<DashboardTeamContext | null> => {
     const me = await getMe();
