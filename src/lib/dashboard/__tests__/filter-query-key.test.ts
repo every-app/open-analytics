@@ -2,34 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import { filterQueryKey } from "@/lib/dashboard/filter-query-key";
 import { dashboardFilterDocumentFromPresentation } from "@/lib/dashboard/filter-state";
-import { attachFilterScopePreference } from "@/lib/filter-contract";
 
 describe("filterQueryKey", () => {
-  it("includes the canonical filter fingerprint and defaults scope to auto", () => {
+  it("is the canonical filter fingerprint, and the empty one without a filter", () => {
     const filters = dashboardFilterDocumentFromPresentation({ path: "/docs" });
-    const key = filterQueryKey(filters);
 
-    expect(key).toContain("filter-v1:");
-    expect(key).toContain(":scope=auto");
-  });
-
-  it("distinguishes scope metadata that JSON serialization omits", () => {
-    const filters = dashboardFilterDocumentFromPresentation({ path: "/docs" });
-    const visitor = attachFilterScopePreference(filters, "visitor");
-    const session = attachFilterScopePreference(filters, "session");
-
-    expect(filterQueryKey(visitor)).not.toBe(filterQueryKey(session));
-    expect(filterQueryKey(visitor)).toContain(":scope=visitor");
-    expect(filterQueryKey(session)).toContain(":scope=session");
-  });
-
-  it("treats scope metadata as Auto when there is no active filter", () => {
-    const empty = attachFilterScopePreference(
-      dashboardFilterDocumentFromPresentation({}),
-      "visitor",
+    expect(filterQueryKey(filters)).toContain("filter-v2:");
+    expect(filterQueryKey(filters)).toContain("page.path");
+    expect(filterQueryKey()).toBe(
+      filterQueryKey(dashboardFilterDocumentFromPresentation({})),
     );
-
-    expect(filterQueryKey(empty)).toContain(":scope=auto");
   });
 
   it("is stable for equivalent filter documents", () => {

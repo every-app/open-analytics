@@ -1,24 +1,14 @@
 import {
   analyticsFilterRegistry,
+  EMPTY_FILTER_DOCUMENT,
   type FilterDocument,
   filterFingerprint,
-  filterScopePreferenceFromDocument,
 } from "@/lib/filter-contract";
 
-const EMPTY_FILTER_DOCUMENT: FilterDocument = { version: 1, root: null };
-
-/**
- * Builds a stable, browser-safe identity for a filtered dashboard query.
- *
- * Scope preference is stored as non-enumerable metadata on FilterDocument,
- * so JSON.stringify(filters) cannot distinguish otherwise identical
- * expressions with different scope semantics.
- */
+/** A stable, browser-safe identity for a filtered dashboard query. */
 export function filterQueryKey(filters?: FilterDocument): string {
-  const document = filters ?? EMPTY_FILTER_DOCUMENT;
-  const fingerprint = filterFingerprint(document, analyticsFilterRegistry);
-  const scope = document.root
-    ? (filterScopePreferenceFromDocument(document) ?? "auto")
-    : "auto";
-  return `${fingerprint}:scope=${scope}`;
+  return filterFingerprint(
+    filters ?? EMPTY_FILTER_DOCUMENT,
+    analyticsFilterRegistry,
+  );
 }

@@ -37,11 +37,9 @@ import { queryEventTypeAggregate } from "@/lib/edge/analytics/providers/d1/inter
 import { queryFilterValuesPageFromD1 } from "@/lib/edge/analytics/providers/d1/internal/filter-values";
 import { queryGeoPointsFromD1 } from "@/lib/edge/analytics/providers/d1/internal/geo-points";
 import {
+  decodePagesCursor,
   queryPagesPageFromD1,
-  queryPagesWithTabsFromD1,
-  queryPageTabsAggregate,
 } from "@/lib/edge/analytics/providers/d1/internal/pages";
-import { decodePagesCursor } from "@/lib/edge/analytics/providers/d1/internal/pages";
 import { queryPagesDashboard } from "@/lib/edge/analytics/providers/d1/internal/pages-dashboard";
 import { queryReferrersPageFromD1 } from "@/lib/edge/analytics/providers/d1/internal/referrers";
 import { decodeReferrersCursor } from "@/lib/edge/analytics/providers/d1/internal/referrers";
@@ -734,94 +732,30 @@ export function registerSiteContractProviders(
     )
     .register(
       "pages",
-      typedQueryProviderFor("pages", async (input) => {
-        const request = input;
+      typedQueryProviderFor("pages", async (request) => {
         const filters = request.filters ?? EMPTY_FILTER_DOCUMENT;
-        if (request.variant === "tabs") {
-          return {
-            value: await queryPageTabsAggregate(
-              options.env,
-              options.siteId,
-              timeWindow(request.time),
-              filters,
-              numberField(request, "limit", 20),
-            ),
-          };
-        }
-        if (request.includeTabs === true) {
-          const rawPage = request.page;
-          const page =
-            rawPage && typeof rawPage === "object"
-              ? (rawPage as { limit?: unknown; cursor?: unknown })
-              : {};
-          const limit =
-            page &&
-            typeof page.limit === "number" &&
-            Number.isFinite(page.limit)
-              ? page.limit
-              : numberField(request, "limit", 20);
-          const cursorText =
-            page && typeof page.cursor === "string" ? page.cursor : null;
-          const cursor = await decodePagesCursor(
+        const window = timeWindow(request.time);
+        const audience = request.context.policy.audience;
+        const cursor = await decodePagesCursor(
+          options.env,
+          options.siteId,
+          window,
+          filters,
+          request.page.cursor ?? null,
+          audience,
+        );
+        return {
+          value: await queryPagesPageFromD1(
             options.env,
             options.siteId,
-            timeWindow(request.time),
+            window,
             filters,
-            request.includeDetails === true,
-            cursorText,
-            request.context.policy.audience,
-          );
-          if (cursorText && !cursor) throw new InvalidCursorError("pages");
-          return {
-            value: await queryPagesWithTabsFromD1(
-              options.env,
-              options.siteId,
-              timeWindow(request.time),
-              filters,
-              limit,
-              request.includeDetails === true,
-              cursor,
-              request.context.policy.audience,
-            ),
-            source: "raw",
-          };
-        }
-        const rawPage = request.page;
-        const page =
-          rawPage && typeof rawPage === "object"
-            ? (rawPage as { limit?: unknown; cursor?: unknown })
-            : {};
-        {
-          const limit =
-            typeof page.limit === "number" && Number.isFinite(page.limit)
-              ? page.limit
-              : numberField(request, "limit", 20);
-          const cursorText =
-            typeof page.cursor === "string" ? page.cursor : null;
-          const cursor = await decodePagesCursor(
-            options.env,
-            options.siteId,
-            timeWindow(request.time),
-            filters,
-            request.includeDetails === true,
-            cursorText,
-            request.context.policy.audience,
-          );
-          if (cursorText && !cursor) throw new InvalidCursorError("pages");
-          return {
-            value: await queryPagesPageFromD1(
-              options.env,
-              options.siteId,
-              timeWindow(request.time),
-              filters,
-              limit,
-              request.includeDetails === true,
-              cursor,
-              request.context.policy.audience,
-            ),
-            source: "raw",
-          };
-        }
+            request.page.limit,
+            cursor,
+            audience,
+          ),
+          source: "raw",
+        };
       }),
     )
     .register(

@@ -14,7 +14,7 @@ import type {
   OverviewGeoPointsData,
   OverviewGeoTabData,
 } from "@/lib/dashboard-api/client/edge";
-import type { FilterDocument, FilterScope } from "@/lib/filter-contract";
+import type { FilterDocument } from "@/lib/filter-contract";
 function normalizeGeoDimensionLabel(
   tab: OverviewGeoDimensionTab,
   row: Record<string, unknown>,
@@ -40,7 +40,6 @@ export async function fetchOverviewGeoPoints(
     "signal" | "comparison" | "comparisonMetric" | "comparisonSortBy"
   > & {
     applyGeoFilter?: boolean;
-    resolvedScope?: FilterScope;
   },
 ): Promise<OverviewGeoPointsData> {
   return fetchPrivateJson<OverviewGeoPointsData>(
@@ -55,7 +54,6 @@ export async function fetchOverviewGeoPoints(
           ...(options?.applyGeoFilter ? { applyGeoFilter: 1 } : {}),
         },
         filters,
-        options?.resolvedScope,
       ),
       options?.comparison,
       {
@@ -119,7 +117,7 @@ export async function fetchOverviewGeoDimensionTabPage(
   window: TimeWindow,
   tab: OverviewGeoDimensionTab,
   filters?: FilterDocument,
-  options?: DashboardListRequestOptions & { resolvedScope?: FilterScope },
+  options?: DashboardListRequestOptions,
 ): Promise<OverviewGeoTabData["data"]> {
   const payload = await fetchPrivateJson<OverviewGeoTabData>(
     `/api/private/overview-geo-${tab}`,
@@ -137,7 +135,6 @@ export async function fetchOverviewGeoDimensionTabPage(
           ...(options?.direction ? { direction: options.direction } : {}),
         },
         filters,
-        options?.resolvedScope,
       ),
       options?.comparison,
       {

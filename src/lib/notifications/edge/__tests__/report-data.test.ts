@@ -130,9 +130,8 @@ describe("notification report data", () => {
       env,
       "site-1",
       expect.objectContaining({ label: "2026-07-06 to 2026-07-12" }),
-      5,
-      false,
       EMPTY_FILTER_DOCUMENT,
+      5,
     );
   });
 

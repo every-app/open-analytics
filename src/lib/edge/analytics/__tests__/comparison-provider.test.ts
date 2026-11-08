@@ -42,7 +42,7 @@ vi.mock("@/lib/edge/analytics/providers/d1/operations/site-breakdown", () => ({
 import { createComparisonProviders } from "@/lib/edge/analytics/providers/d1/comparison";
 
 const env = {} as Env;
-const filters: FilterDocument = { version: 1, root: null };
+const filters: FilterDocument = { conditions: [] };
 const time: QueryTime = createQueryTime(
   Date.parse("2026-08-01T00:00:00.000Z"),
   Date.parse("2026-08-03T00:00:00.000Z"),

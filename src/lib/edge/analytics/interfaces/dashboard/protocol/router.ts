@@ -44,6 +44,7 @@ export const DASHBOARD_QUERY_PATHS = [
   "event-type-field-values",
   "event-type-detail",
   "funnels",
+  "goal-conversions",
   "goal-summary",
   "goal-timeseries",
   "properties",
@@ -92,6 +93,7 @@ export function operationForQueryRoute(pathname: string): QueryOperation {
   if (pathname === "filter-values") return "filter-values";
   if (pathname === "overview-geo-points") return "geo-points";
   if (pathname === "funnels") return "funnel-analysis";
+  if (pathname === "goal-conversions") return "goal-conversions";
   if (pathname === "goal-summary") return "goal-summary";
   if (pathname === "goal-timeseries") return "goal-timeseries";
   if (pathname === "properties") return "property-keys";

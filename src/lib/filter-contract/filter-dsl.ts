@@ -1,21 +1,14 @@
-import { analyzeFilterDocument } from "./filter-semantics";
 import {
-  type CanonicalJsonPath,
-  FILTER_OPERATOR_IDS,
-  type FilterComparisonValue,
+  EVENT_PAYLOAD_FIELD,
+  FILTER_OPERATORS,
   type FilterCondition,
   type FilterDocument,
-  type FilterDurationTarget,
-  type FilterDurationUnit,
-  type FilterExpression,
-  type FilterFieldId,
   type FilterFieldRegistry,
-  type FilterOperator,
-  type FilterTargetExpression,
-  type FilterTimeAnchorTarget,
+  type FilterTarget,
   FilterValidationError,
   type FilterValue,
   normalizeFilterDocument,
+  VALUELESS_FILTER_OPERATORS,
 } from "./filters";
 
 /** The version of the human-readable filter expression language. */
@@ -24,1771 +17,323 @@ export const FILTER_DSL_VERSION = 1 as const;
 /** Maximum UTF-16 source length accepted by persisted and API DSL inputs. */
 export const FILTER_DSL_MAX_LENGTH = 65_536 as const;
 
-/** Canonical operator spellings emitted by the DSL formatter. */
-export const FILTER_DSL_OPERATOR_IDS = FILTER_OPERATOR_IDS;
-
-/** Syntax guidance shared by API discovery and the dashboard editor. */
-export const FILTER_DSL_SYNTAX = {
-  condition: "<target-expression> <operator> <condition-value>",
-  targetExpression:
-    "Registered fields remain lowercase (for example page.path). Entity collections use the uppercase roots PAGE, EVENT, SESSION, or VISITOR. Inside a selector, use $.member for the current entity; use -> member for a collection projection and .member only after a single-entity reducer.",
-  boolean:
-    "Combine expressions with <expression> AND <expression> or <expression> OR <expression>; prefix an expression with NOT to negate it.",
-  grouping:
-    "Use parentheses for precedence, or use AND(<expression>) and OR(<expression>) for an explicit single-child group.",
-  value:
-    "A JSON scalar; temporal `between` ranges may use elapsed duration endpoints or @now/@range anchors with elapsed offsets.",
-  list: "Use [<value>, ...] for in and notIn values.",
-  selector:
-    'Filter an entity collection with PAGE { $.path eq "/docs" }. Use uppercase PAGE, EVENT, SESSION, or VISITOR roots and $.member references inside the selector.',
-  reducer:
-    "Use count, first, last, nth, sum, avg, min, max, or countDistinct with an explicitly typed collection; use -> member for a scalar projection.",
-  temporal:
-    "Use bucket(Page-or-Event-collection, <positive-calendar-period>), periods(collection, <positive-calendar-period>), or window(collection, event-or-page-anchor-or-@now-or-@range-anchor, [<start-offset>, <end-offset>]). Calendar periods must be positive safe integers such as 1h, 1d, 2w, 3mo or 1y.",
-  relation:
-    "Use sequence([...]), adjacent(sequence), and without(sequence, collection) with visitor or session query Scope, or inside an explicit session/visitor selector.",
-  payloadTarget:
-    'Use event.payload("<json-pointer>") as a registered field, $.payload("<json-pointer>") inside an Event selector, or EVENT -> payload("<json-pointer>") for a collection projection.',
-  caseSensitivity:
-    "Field identifiers are case-sensitive; operators and boolean keywords are case-insensitive.",
-} as const;
-
-/** Valid API-facing examples used in the analytics schema discovery response. */
+/** Valid examples, shown to API callers. */
 export const FILTER_DSL_EXAMPLES = [
   'page.path eq "/pricing"',
   'geo.country in ["US", "GB"]',
-  'NOT client.deviceType eq "mobile"',
+  'client.deviceType neq "mobile"',
   'page.path startsWith "/docs" AND referrer.domain eq "google.com"',
-  "time(last(PAGE)) gte @now-14d",
-  "count(EVENT) gte 3 AND countDistinct(PAGE -> path) gte 5",
-  'sum(EVENT { $.name eq "purchase" } -> payload("/amount")) gt 1000',
-  'sequence([EVENT { $.name eq "signup" }, EVENT { $.name eq "purchase" }]) { $span lte 14d AND $gap(1, 2) lte 7d AND $same($.payload("/productId")) } exists',
-  "periods(EVENT, 1w) { count($items) gte 3 } exists",
+  'event.name eq "signup"',
+  'event.payload("/plan") eq "pro"',
 ] as const;
 
-const VALUELESS_OPERATORS = new Set<FilterOperator>([
-  "exists",
-  "notExists",
-  "isNull",
-  "notNull",
-  "isEmpty",
-  "notEmpty",
-]);
-
-const OPERATORS = new Map<string, FilterOperator>([
-  ["eq", "eq"],
-  ["neq", "neq"],
-  ["in", "in"],
-  ["notin", "notIn"],
-  ["contains", "contains"],
-  ["startswith", "startsWith"],
-  ["endswith", "endsWith"],
-  ["gt", "gt"],
-  ["gte", "gte"],
-  ["lt", "lt"],
-  ["lte", "lte"],
-  ["between", "between"],
-  ["exists", "exists"],
-  ["notexists", "notExists"],
-  ["isnull", "isNull"],
-  ["notnull", "notNull"],
-  ["isempty", "isEmpty"],
-  ["notempty", "notEmpty"],
-]);
-
-export interface FilterDslParseErrorDetails {
-  readonly code: string;
-  readonly offset: number;
-  readonly length?: number;
-  readonly expected?: string;
-  readonly source?: string;
-  readonly cause?: unknown;
+export enum FilterDslErrorCode {
+  UnterminatedString = "unterminated_string",
+  InvalidToken = "invalid_token",
+  ExpectedField = "expected_field",
+  ExpectedOperator = "expected_operator",
+  ExpectedValue = "expected_value",
+  ExpectedAnd = "expected_and",
+  InvalidCondition = "invalid_condition",
 }
 
 /**
  * Error raised while parsing or validating a filter DSL document.
  *
  * `offset` is a UTF-16 source offset, matching JavaScript string indexing.
- * `length` is zero for errors reported at end-of-input.
  */
 export class FilterDslParseError extends Error {
   readonly code: string;
   readonly offset: number;
   readonly length: number;
-  readonly expected?: string;
-  readonly source?: string;
-  readonly cause?: unknown;
 
-  constructor(message: string, details: FilterDslParseErrorDetails) {
-    const location =
-      details.length === 0 || details.offset >= (details.source?.length ?? 0)
-        ? `at offset ${details.offset} (end of input)`
-        : `at offset ${details.offset}`;
-    super(`${message} [${details.code}] ${location}.`);
+  constructor(message: string, code: string, offset: number, length: number) {
+    super(`${message} [${code}] at offset ${offset}.`);
     this.name = "FilterDslParseError";
-    this.code = details.code;
-    this.offset = details.offset;
-    this.length = details.length ?? 1;
-    this.expected = details.expected;
-    this.source = details.source;
-    this.cause = details.cause;
-    Object.setPrototypeOf(this, new.target.prototype);
+    this.code = code;
+    this.offset = offset;
+    this.length = length;
   }
 }
 
-interface TokenBase {
-  readonly start: number;
-  readonly end: number;
+enum TokenKind {
+  Word = "word",
+  String = "string",
+  Number = "number",
+  Open = "(",
+  Close = ")",
+  ListOpen = "[",
+  ListClose = "]",
+  Comma = ",",
+  End = "end",
 }
 
 type Token =
-  | (TokenBase & { readonly kind: "identifier"; readonly value: string })
-  | (TokenBase & { readonly kind: "string"; readonly value: string })
-  | (TokenBase & { readonly kind: "number"; readonly value: number })
-  | (TokenBase & {
-      readonly kind: "duration";
-      readonly value: {
-        readonly amount: number;
-        readonly unit: FilterDurationUnit;
-      };
-    })
-  | (TokenBase & {
-      readonly kind: "time-anchor";
-      readonly value: FilterTimeAnchorTarget;
-    })
-  | (TokenBase & { readonly kind: "boolean"; readonly value: boolean })
-  | (TokenBase & { readonly kind: "dollar" })
-  | (TokenBase & {
-      readonly kind:
-        | "null"
-        | "open"
-        | "close"
-        | "list-open"
-        | "list-close"
-        | "comma"
-        | "dot"
-        | "projection"
-        | "brace-open"
-        | "brace-close"
-        | "dollar"
-        | "end";
-    });
+  | {
+      readonly kind: TokenKind.Word | TokenKind.String;
+      readonly value: string;
+      readonly start: number;
+      readonly end: number;
+    }
+  | {
+      readonly kind: TokenKind.Number;
+      readonly value: number;
+      readonly start: number;
+      readonly end: number;
+    }
+  | {
+      readonly kind: Exclude<
+        TokenKind,
+        TokenKind.Word | TokenKind.String | TokenKind.Number
+      >;
+      readonly start: number;
+      readonly end: number;
+    };
 
-interface Span {
-  readonly start: number;
-  readonly end: number;
-}
+const PUNCTUATION: Readonly<Record<string, TokenKind>> = {
+  "(": TokenKind.Open,
+  ")": TokenKind.Close,
+  "[": TokenKind.ListOpen,
+  "]": TokenKind.ListClose,
+  ",": TokenKind.Comma,
+};
 
-interface NodeLocation {
-  readonly span: Span;
-  readonly field?: Span;
-  readonly target?: Span;
-  readonly path?: Span;
-  readonly operator?: Span;
-  readonly value?: Span;
-  readonly valueElements?: readonly Span[];
-}
+const OPERATORS = new Map(
+  FILTER_OPERATORS.map((operator) => [operator.toLowerCase(), operator]),
+);
 
-interface ParsedTarget {
-  readonly target: FilterTargetExpression;
-  readonly location: {
-    readonly target: Span;
-    readonly path?: Span;
-  };
-}
-
-interface ParsedValue {
-  readonly value: FilterCondition["value"];
-  readonly span: Span;
-  readonly elements: readonly Span[];
-}
-
-function spanFromToken(token: Token): Span {
-  return { start: token.start, end: token.end };
-}
-
-function tokenError(
-  source: string,
-  code: string,
-  token: Token,
-  message: string,
-  expected?: string,
-): FilterDslParseError {
-  return new FilterDslParseError(message, {
-    code,
-    offset: token.start,
-    length: token.end - token.start,
-    expected,
-    source,
-  });
-}
-
-function sourceError(
-  source: string,
-  code: string,
-  offset: number,
-  message: string,
-  length = 1,
-  expected?: string,
-): FilterDslParseError {
-  return new FilterDslParseError(message, {
-    code,
-    offset,
-    length,
-    expected,
-    source,
-  });
-}
-
-function tokenize(source: string): readonly Token[] {
+function tokenize(source: string): Token[] {
   const tokens: Token[] = [];
   let index = 0;
   while (index < source.length) {
     const rest = source.slice(index);
-    const whitespace = rest.match(/^\s+/);
+    const whitespace = /^\s+/.exec(rest);
     if (whitespace) {
       index += whitespace[0].length;
       continue;
     }
-
     const start = index;
-    const character = source[index]!;
-    if (rest.startsWith("->")) {
-      tokens.push({ kind: "projection", start, end: start + 2 });
-      index += 2;
-      continue;
-    }
-    const timeAnchor = rest.match(
-      /^@(now|range\.start|range\.end)(?:([+-])(\d+(?:\.\d+)?)(ms|mo|s|m|h|d|w|y))?/i,
-    );
-    if (timeAnchor) {
-      const anchor =
-        timeAnchor[1]!.toLowerCase() as FilterTimeAnchorTarget["anchor"];
-      const sign = timeAnchor[2] === "-" ? -1 : 1;
-      const amount = timeAnchor[3] ? Number(timeAnchor[3]) * sign : undefined;
-      const unit = timeAnchor[4]?.toLowerCase() as
-        FilterDurationUnit | undefined;
-      const end = start + timeAnchor[0].length;
-      tokens.push({
-        kind: "time-anchor",
-        value: {
-          kind: "time-anchor",
-          anchor,
-          ...(amount === undefined || unit === undefined
-            ? {}
-            : { offset: { kind: "duration", amount, unit } }),
-        },
-        start,
-        end,
-      });
-      index = end;
-      continue;
-    }
-    const duration = rest.match(/^(-?\d+(?:\.\d+)?)(ms|mo|s|m|h|d|w|y)\b/i);
-    if (duration) {
-      tokens.push({
-        kind: "duration",
-        value: {
-          amount: Number(duration[1]),
-          unit: duration[2]!.toLowerCase() as FilterDurationUnit,
-        },
-        start,
-        end: start + duration[0].length,
-      });
-      index += duration[0].length;
-      continue;
-    }
-    if (character === '"') {
-      let end = index + 1;
-      while (end < source.length) {
-        if (source[end] === "\\") {
-          end += 2;
-          continue;
-        }
-        if (source[end] === '"') break;
-        end += 1;
-      }
-      if (source[end] !== '"') {
-        throw sourceError(
-          source,
-          "unterminated_string",
-          start,
-          "Unterminated JSON string.",
-          source.length - start,
-          'a closing `"`',
-        );
-      }
-      const raw = source.slice(start, end + 1);
-      try {
-        const value = JSON.parse(raw);
-        if (typeof value !== "string") throw new Error();
-        tokens.push({
-          kind: "string",
-          value,
-          start,
-          end: end + 1,
-        });
-      } catch {
-        throw sourceError(
-          source,
-          "invalid_string",
-          start,
-          "Invalid JSON string literal.",
-          end + 1 - start,
-          "a valid JSON string",
-        );
-      }
-      index = end + 1;
-      continue;
-    }
-
-    const number = rest.match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
-    if (number) {
-      const raw = number[0]!;
-      const value = Number(raw);
-      if (!Number.isFinite(value)) {
-        throw sourceError(
-          source,
-          "invalid_number",
-          start,
-          "JSON number is outside the supported finite range.",
-          raw.length,
-          "a finite JSON number",
-        );
-      }
-      tokens.push({
-        kind: "number",
-        value,
-        start,
-        end: start + raw.length,
-      });
-      index += raw.length;
-      continue;
-    }
-
-    const identifier = rest.match(/^[A-Za-z_](?:[A-Za-z0-9._]|-(?!>))*/);
-    if (identifier) {
-      const value = identifier[0]!;
-      const normalized = value.toLowerCase();
-      if (normalized === "true" || normalized === "false") {
-        tokens.push({
-          kind: "boolean",
-          value: normalized === "true",
-          start,
-          end: start + value.length,
-        });
-      } else if (normalized === "null") {
-        tokens.push({
-          kind: "null",
-          start,
-          end: start + value.length,
-        });
-      } else {
-        tokens.push({
-          kind: "identifier",
-          value,
-          start,
-          end: start + value.length,
-        });
-      }
-      index += value.length;
-      continue;
-    }
-
-    const punctuation: Record<
-      string,
-      | "open"
-      | "close"
-      | "list-open"
-      | "list-close"
-      | "comma"
-      | "dot"
-      | "projection"
-      | "brace-open"
-      | "brace-close"
-      | "dollar"
-      | undefined
-    > = {
-      "(": "open",
-      ")": "close",
-      "[": "list-open",
-      "]": "list-close",
-      ",": "comma",
-      ".": "dot",
-      "{": "brace-open",
-      "}": "brace-close",
-      $: "dollar",
-    };
-    const kind = punctuation[character];
-    if (kind) {
-      tokens.push({ kind, start, end: start + 1 });
+    const punctuation = PUNCTUATION[source[index]!];
+    if (punctuation) {
+      tokens.push({ kind: punctuation, start, end: start + 1 } as Token);
       index += 1;
       continue;
     }
-
-    throw sourceError(
-      source,
-      "invalid_token",
+    if (source[index] === '"') {
+      const string = /^"(?:[^"\\]|\\.)*"/.exec(rest);
+      if (!string) {
+        throw new FilterDslParseError(
+          "Unterminated JSON string.",
+          FilterDslErrorCode.UnterminatedString,
+          start,
+          source.length - start,
+        );
+      }
+      tokens.push({
+        kind: TokenKind.String,
+        value: JSON.parse(string[0]) as string,
+        start,
+        end: start + string[0].length,
+      });
+      index += string[0].length;
+      continue;
+    }
+    const number = /^-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?(?![\w.])/.exec(rest);
+    if (number) {
+      tokens.push({
+        kind: TokenKind.Number,
+        value: Number(number[0]),
+        start,
+        end: start + number[0].length,
+      });
+      index += number[0].length;
+      continue;
+    }
+    const word = /^[A-Za-z][A-Za-z0-9_.]*/.exec(rest);
+    if (!word) {
+      throw new FilterDslParseError(
+        "Unexpected character.",
+        FilterDslErrorCode.InvalidToken,
+        start,
+        1,
+      );
+    }
+    tokens.push({
+      kind: TokenKind.Word,
+      value: word[0],
       start,
-      `Unexpected character ${JSON.stringify(character)}.`,
-    );
+      end: start + word[0].length,
+    });
+    index += word[0].length;
   }
-  return [...tokens, { kind: "end", start: source.length, end: source.length }];
+  tokens.push({ kind: TokenKind.End, start: index, end: index });
+  return tokens;
 }
 
 class Parser {
   private index = 0;
 
-  constructor(
-    private readonly source: string,
-    private readonly tokens: readonly Token[],
-    private readonly locations: WeakMap<object, NodeLocation>,
-    private readonly registry: FilterFieldRegistry,
-  ) {}
+  constructor(private readonly tokens: readonly Token[]) {}
 
-  parse(): FilterExpression {
-    const expression = this.orExpression();
-    if (this.current.kind !== "end") {
-      throw tokenError(
-        this.source,
-        "unexpected_token",
-        this.current,
-        "Unexpected token after the filter expression.",
-      );
-    }
-    return expression;
-  }
-
-  private get current(): Token {
+  private peek(): Token {
     return this.tokens[this.index]!;
   }
 
-  private consume(kind: Token["kind"]): Token | undefined {
-    if (this.current.kind !== kind) return undefined;
-    const token = this.current;
-    this.index += 1;
+  private next(): Token {
+    return this.tokens[this.index++]!;
+  }
+
+  private error(token: Token, code: FilterDslErrorCode, message: string) {
+    return new FilterDslParseError(
+      message,
+      code,
+      token.start,
+      token.end - token.start,
+    );
+  }
+
+  private expect(kind: TokenKind, code: FilterDslErrorCode, what: string) {
+    const token = this.next();
+    if (token.kind !== kind) throw this.error(token, code, `Expected ${what}.`);
     return token;
   }
 
-  private consumeKeyword(keyword: "and" | "or" | "not"): Token | undefined {
-    if (
-      this.current.kind !== "identifier" ||
-      this.current.value.toLowerCase() !== keyword
-    ) {
-      return undefined;
-    }
-    const token = this.current;
-    this.index += 1;
-    return token;
-  }
-
-  private expectIdentifier(): Token & {
-    readonly kind: "identifier";
-  } {
-    if (this.current.kind !== "identifier") {
-      throw tokenError(
-        this.source,
-        "expected_identifier",
-        this.current,
-        "Expected a filter field or operator identifier.",
-        "an identifier",
-      );
-    }
-    const token = this.current;
-    this.index += 1;
-    return token;
-  }
-
-  private orExpression(): FilterExpression {
-    const children = [this.andExpression()];
-    while (this.consumeKeyword("or")) {
-      children.push(this.andExpression());
-    }
-    if (children.length === 1) return children[0]!;
-    const expression: FilterExpression = { kind: "or", children };
-    this.locations.set(expression, {
-      span: {
-        start: this.spanOf(children[0]!).start,
-        end: this.spanOf(children[children.length - 1]!).end,
-      },
-    });
-    return expression;
-  }
-
-  private andExpression(): FilterExpression {
-    const children = [this.unaryExpression()];
-    while (this.consumeKeyword("and")) {
-      children.push(this.unaryExpression());
-    }
-    if (children.length === 1) return children[0]!;
-    const expression: FilterExpression = { kind: "and", children };
-    this.locations.set(expression, {
-      span: {
-        start: this.spanOf(children[0]!).start,
-        end: this.spanOf(children[children.length - 1]!).end,
-      },
-    });
-    return expression;
-  }
-
-  private unaryExpression(): FilterExpression {
-    const notToken = this.consumeKeyword("not");
-    if (notToken) {
-      const child = this.unaryExpression();
-      const expression: FilterExpression = { kind: "not", child };
-      this.locations.set(expression, {
-        span: { start: notToken.start, end: this.spanOf(child).end },
-      });
-      return expression;
-    }
-
-    const explicitGroup =
-      this.current.kind === "identifier" &&
-      (this.current.value.toLowerCase() === "and" ||
-        this.current.value.toLowerCase() === "or") &&
-      this.tokens[this.index + 1]?.kind === "open"
-        ? (this.current.value.toLowerCase() as "and" | "or")
-        : null;
-    if (explicitGroup) {
-      const groupToken = this.current;
-      this.index += 2;
-      const child = this.orExpression();
-      const close = this.consume("close");
-      if (!close) {
-        throw sourceError(
-          this.source,
-          "missing_closing_parenthesis",
-          this.current.start,
-          "Missing closing parenthesis for boolean group.",
-          this.current.end - this.current.start,
-          "`)`",
+  parse(): Array<{ condition: unknown; start: number; end: number }> {
+    const conditions = [this.condition()];
+    while (this.peek().kind !== TokenKind.End) {
+      const token = this.next();
+      if (token.kind !== TokenKind.Word || token.value.toUpperCase() !== "AND")
+        throw this.error(
+          token,
+          FilterDslErrorCode.ExpectedAnd,
+          "Expected AND between conditions.",
         );
-      }
-      const expression: FilterExpression = {
-        kind: explicitGroup,
-        children: [child],
-      };
-      this.locations.set(expression, {
-        span: { start: groupToken.start, end: close.end },
-      });
-      return expression;
+      conditions.push(this.condition());
     }
-
-    const open = this.consume("open");
-    if (open) {
-      const expression = this.orExpression();
-      const close = this.consume("close");
-      if (!close) {
-        throw sourceError(
-          this.source,
-          "missing_closing_parenthesis",
-          this.current.start,
-          "Missing closing parenthesis.",
-          this.current.end - this.current.start,
-          "`)`",
-        );
-      }
-      // Parentheses are syntax, not AST nodes. Keep the span on the parsed
-      // expression so validation errors inside the group still have a useful
-      // fallback location.
-      const location = this.locations.get(expression);
-      this.locations.set(expression, {
-        ...(location ?? { span: this.spanOf(expression) }),
-        span: { start: open.start, end: close.end },
-      });
-      return expression;
-    }
-    return this.condition();
+    return conditions;
   }
 
-  private condition(): FilterCondition {
-    const fieldToken = this.current;
-    const parsedTarget = this.targetExpression();
-    if (
-      parsedTarget.target.kind === "context-intrinsic" &&
-      parsedTarget.target.intrinsic === "same" &&
-      !(
-        this.current.kind === "identifier" &&
-        OPERATORS.has(this.current.value.toLowerCase())
-      )
-    ) {
-      const expression: FilterCondition = {
-        kind: "condition",
-        target: parsedTarget.target,
-        operator: "eq",
-        value: true,
-      };
-      this.locations.set(expression, {
-        span: parsedTarget.location.target,
-        target: parsedTarget.location.target,
-      });
-      return expression;
-    }
-    const operatorToken = this.expectIdentifier();
-    const operator = OPERATORS.get(operatorToken.value.toLowerCase());
+  private condition() {
+    const start = this.peek().start;
+    const target = this.target();
+    const operatorToken = this.next();
+    const operator =
+      operatorToken.kind === TokenKind.Word
+        ? OPERATORS.get(operatorToken.value.toLowerCase())
+        : undefined;
     if (!operator) {
-      throw tokenError(
-        this.source,
-        "unknown_operator",
+      throw this.error(
         operatorToken,
-        `Unknown filter operator ${JSON.stringify(operatorToken.value)}.`,
-        "a supported filter operator",
+        FilterDslErrorCode.ExpectedOperator,
+        "Expected an operator.",
       );
     }
-
-    if (VALUELESS_OPERATORS.has(operator)) {
-      const expression: FilterCondition = {
-        kind: "condition",
-        target: parsedTarget.target,
-        operator,
-      };
-      this.locations.set(expression, {
-        span: { start: fieldToken.start, end: operatorToken.end },
-        field: spanFromToken(fieldToken),
-        target: parsedTarget.location.target,
-        path: parsedTarget.location.path,
-        operator: spanFromToken(operatorToken),
-      });
-      return expression;
+    if (VALUELESS_FILTER_OPERATORS.has(operator)) {
+      return { condition: { target, operator }, start, end: operatorToken.end };
     }
-
-    const parsedValue = this.value(operator);
-    const expression: FilterCondition = {
-      kind: "condition",
-      target: parsedTarget.target,
-      operator,
-      value: parsedValue.value,
-    };
-    this.locations.set(expression, {
-      span: { start: fieldToken.start, end: parsedValue.span.end },
-      field: spanFromToken(fieldToken),
-      target: parsedTarget.location.target,
-      path: parsedTarget.location.path,
-      operator: spanFromToken(operatorToken),
-      value: parsedValue.span,
-      valueElements: parsedValue.elements,
-    });
-    return expression;
-  }
-
-  private targetExpression(): ParsedTarget {
-    const start = this.current.start;
-    let target = this.primaryTarget();
-    let path: Span | undefined = this.locations.get(target)?.path;
-    let end = this.tokens[this.index - 1]?.end ?? start;
-    for (;;) {
-      if (this.consume("brace-open")) {
-        const predicate = this.orExpression();
-        const close = this.consume("brace-close");
-        if (!close) {
-          throw sourceError(
-            this.source,
-            "missing_selector_brace",
-            this.current.start,
-            "Missing closing brace for selector.",
-            this.current.end - this.current.start,
-            "`}`",
-          );
-        }
-        target = { kind: "selector", collection: target, predicate };
-        end = close.end;
-        this.locations.set(target, { span: { start, end } });
-        continue;
-      }
-      if (this.consume("projection")) {
-        const memberToken = this.expectIdentifier();
-        const memberPath = memberToken.value;
-        if (memberPath === "payload" && this.consume("open")) {
-          if (this.current.kind !== "string") {
-            throw tokenError(
-              this.source,
-              "expected_payload_path",
-              this.current,
-              "Expected a JSON pointer string for the payload projection.",
-              'a JSON string such as `"/metadata/value"`',
-            );
-          }
-          const pathToken = this.current;
-          this.index += 1;
-          const close = this.consume("close");
-          if (!close) {
-            throw tokenError(
-              this.source,
-              "missing_payload_parenthesis",
-              this.current,
-              "Missing closing parenthesis for the payload projection.",
-              "`)`",
-            );
-          }
-          target = {
-            kind: "projection",
-            collection: target,
-            member: "payload",
-            path: pathToken.value as CanonicalJsonPath,
-          };
-          path = spanFromToken(pathToken);
-          end = close.end;
-        } else {
-          target = {
-            kind: "projection",
-            collection: target,
-            member: memberPath,
-          };
-          end = memberToken.end;
-        }
-        this.locations.set(target, {
-          span: { start, end },
-          ...(path ? { path } : {}),
-        });
-        continue;
-      }
-      if (!this.consume("dot")) break;
-      const member = this.expectIdentifier();
-      end = member.end;
-      if (member.value === "payload" && this.consume("open")) {
-        throw tokenError(
-          this.source,
-          "explicit_projection_required",
-          member,
-          "Use `-> payload(...)` to project a collection, or `$.payload(...)` inside an Event selector.",
-          "`-> payload(...)` or `$.payload(...)`",
-        );
-      } else {
-        const parts = member.value.split(".");
-        for (const part of parts) {
-          target = { kind: "member", object: target, member: part };
-        }
-      }
-      this.locations.set(target, {
-        span: { start, end },
-        ...(path ? { path } : {}),
-      });
-    }
+    const value = this.value();
     return {
-      target,
-      location: { target: { start, end }, ...(path ? { path } : {}) },
+      condition: { target, operator, value },
+      start,
+      end: this.tokens[this.index - 1]!.end,
     };
   }
 
-  private primaryTarget(): FilterTargetExpression {
-    if (this.current.kind === "dollar") return this.contextTarget();
-    if (this.current.kind === "time-anchor") {
-      const target = this.current.value;
-      this.index += 1;
-      return target;
-    }
-    if (this.current.kind === "duration") {
-      const token = this.current;
-      this.index += 1;
-      return { kind: "duration", ...token.value };
-    }
-    if (this.current.kind !== "identifier") {
-      throw tokenError(
-        this.source,
-        this.current.kind === "string"
-          ? "expected_identifier"
-          : "expected_target",
-        this.current,
-        this.current.kind === "string"
-          ? "Expected a filter field or operator identifier."
-          : "Expected a filter target expression.",
-        this.current.kind === "string"
-          ? "an identifier"
-          : "a field, entity root, reducer, or temporal expression",
+  private target(): FilterTarget {
+    const token = this.next();
+    if (token.kind !== TokenKind.Word) {
+      throw this.error(
+        token,
+        FilterDslErrorCode.ExpectedField,
+        "Expected a filter field.",
       );
     }
-    const token = this.current;
-    this.index += 1;
-    const name = token.value;
-    const normalized = name.toLowerCase();
-    if (name === "event.payload" && this.consume("open")) {
-      const payloadToken = this.tokens[this.index]!;
-      if (payloadToken.kind !== "string") {
-        throw tokenError(
-          this.source,
-          "expected_payload_path",
-          payloadToken,
-          "Expected a JSON pointer string for the event payload target.",
-          'a JSON string such as `"/metadata/value"`',
-        );
-      }
-      const pathToken = payloadToken;
-      this.index += 1;
-      const close = this.consume("close");
-      if (!close) {
-        throw sourceError(
-          this.source,
-          "missing_payload_parenthesis",
-          this.tokens[this.index]!.start,
-          "Missing closing parenthesis for the event payload target.",
-          this.tokens[this.index]!.end - this.tokens[this.index]!.start,
-          "`)`",
-        );
-      }
-      const target: FilterTargetExpression = {
-        kind: "event-payload",
-        path: pathToken.value as CanonicalJsonPath,
-      };
-      this.locations.set(target, {
-        span: { start: token.start, end: close.end },
-        target: { start: token.start, end: close.end },
-        path: spanFromToken(pathToken),
-      });
-      return target;
+    if (token.value !== EVENT_PAYLOAD_FIELD) {
+      return { kind: "field", field: token.value } as FilterTarget;
     }
-    if (this.tokens[this.index]!.kind === "open") {
-      return this.functionTarget(token);
-    }
-    if (["EVENT", "PAGE", "SESSION", "VISITOR"].includes(name)) {
-      return {
-        kind: "entity-root",
-        entity: normalized as "event" | "page" | "session" | "visitor",
-      };
-    }
-    const contextMatch = /^(sequence|period|bucket)\.(.+)$/i.exec(name);
-    if (contextMatch) {
-      return contextMatch[2]!
-        .split(".")
-        .reduce<FilterTargetExpression>(
-          (object, member) => ({ kind: "member", object, member }),
-          {
-            kind: "context-root",
-            context: contextMatch[1]!.toLowerCase() as
-              "sequence" | "period" | "bucket",
-          },
-        );
-    }
-    if (normalized === "time") {
-      return {
-        kind: "member",
-        object: { kind: "context-root", context: "current" },
-        member: "time",
-      };
-    }
-    if (this.registry.has(name)) {
-      return { kind: "field", field: name as FilterFieldId };
-    }
-    return { kind: "field", field: name as FilterFieldId };
+    this.expect(TokenKind.Open, FilterDslErrorCode.ExpectedField, "`(`");
+    const path = this.expect(
+      TokenKind.String,
+      FilterDslErrorCode.ExpectedField,
+      "a JSON pointer string",
+    );
+    this.expect(TokenKind.Close, FilterDslErrorCode.ExpectedField, "`)`");
+    return {
+      kind: "event-payload",
+      path: (path as { value: string }).value,
+    } as FilterTarget;
   }
 
-  private contextTarget(): FilterTargetExpression {
-    const start = this.current.start;
-    this.index += 1;
-    if (this.consume("dot")) {
-      const memberToken = this.expectIdentifier();
-      if (memberToken.value === "time")
-        throw tokenError(
-          this.source,
-          "invalid_member",
-          memberToken,
-          "Use the dedicated `time` expression; `$.time` is not a current entity member.",
-        );
-      if (memberToken.value === "payload" && this.consume("open")) {
-        if (this.current.kind !== "string")
-          throw tokenError(
-            this.source,
-            "expected_payload_path",
-            this.current,
-            "Expected a JSON pointer string for the current Event payload.",
-            'a JSON string such as `"/metadata/value"`',
-          );
-        const pathToken = this.current;
-        this.index += 1;
-        const close = this.consume("close");
-        if (!close)
-          throw tokenError(
-            this.source,
-            "missing_payload_parenthesis",
-            this.current,
-            "Missing closing parenthesis for the current Event payload.",
-            "`)`",
-          );
-        const target: FilterTargetExpression = {
-          kind: "current-payload",
-          path: pathToken.value as CanonicalJsonPath,
-        };
-        this.locations.set(target, {
-          span: { start, end: close.end },
-          target: { start, end: close.end },
-          path: spanFromToken(pathToken),
-        });
-        return target;
-      }
-      const target = memberToken.value
-        .split(".")
-        .reduce<FilterTargetExpression>(
-          (object, member) => ({ kind: "member", object, member }),
-          { kind: "context-root", context: "current" },
-        );
-      this.locations.set(target, {
-        span: { start, end: memberToken.end },
-        target: { start, end: memberToken.end },
-      });
-      return target;
+  private value(): FilterValue | FilterValue[] {
+    if (this.peek().kind !== TokenKind.ListOpen) return this.scalar();
+    this.next();
+    const values = [this.scalar()];
+    while (this.peek().kind === TokenKind.Comma) {
+      this.next();
+      values.push(this.scalar());
     }
-    const nameToken = this.current;
-    if (nameToken.kind !== "identifier")
-      throw tokenError(
-        this.source,
-        "unknown_context_intrinsic",
-        nameToken,
-        "Expected a supported context intrinsic after `$`.",
-        "$span, $items, $gap(...), or $same(...)",
-      );
-    this.index += 1;
-    const name = nameToken.value.toLowerCase();
-    if (/^(?:span|items)\./u.test(name))
-      throw tokenError(
-        this.source,
-        "invalid_member",
-        nameToken,
-        `Context intrinsic $${name} does not expose members.`,
-      );
-    if (name === "span" || name === "items") {
-      const target: FilterTargetExpression =
-        name === "span"
-          ? {
-              kind: "context-intrinsic",
-              context: "sequence",
-              intrinsic: "span",
-            }
-          : {
-              kind: "context-intrinsic",
-              context: "period",
-              intrinsic: "items",
-            };
-      this.locations.set(target, {
-        span: { start, end: nameToken.end },
-        target: { start, end: nameToken.end },
-      });
-      return target;
-    }
-    if (name !== "gap" && name !== "same")
-      throw tokenError(
-        this.source,
-        "unknown_context_intrinsic",
-        nameToken,
-        `Unknown context intrinsic $${nameToken.value}.`,
-        "$span, $items, $gap(...), or $same(...)",
-      );
-    if (!this.consume("open"))
-      throw tokenError(
-        this.source,
-        "invalid_context_intrinsic_arguments",
-        this.current,
-        `$${name} requires parenthesized arguments.`,
-        "`(`",
-      );
-    let target: FilterTargetExpression;
-    if (name === "gap") {
-      const from = this.current;
-      if (from.kind !== "number" || !Number.isSafeInteger(from.value))
-        throw tokenError(
-          this.source,
-          "invalid_sequence_gap",
-          from,
-          "$gap indexes must be positive integer literals.",
-          "a positive integer step index",
-        );
-      this.index += 1;
-      if (!this.consume("comma"))
-        throw tokenError(
-          this.source,
-          "invalid_sequence_gap",
-          this.current,
-          "$gap requires a from and to step index.",
-          "`,`",
-        );
-      const to = this.current;
-      if (to.kind !== "number" || !Number.isSafeInteger(to.value))
-        throw tokenError(
-          this.source,
-          "invalid_sequence_gap",
-          to,
-          "$gap indexes must be positive integer literals.",
-          "a positive integer step index",
-        );
-      this.index += 1;
-      if (!this.consume("close"))
-        throw tokenError(
-          this.source,
-          "invalid_sequence_gap",
-          this.current,
-          "Expected `)` after $gap indexes.",
-          "`)`",
-        );
-      if (from.value < 1 || to.value <= from.value)
-        throw tokenError(
-          this.source,
-          "invalid_sequence_gap",
-          from,
-          "$gap requires 1 <= from < to.",
-        );
-      target = {
-        kind: "context-intrinsic",
-        context: "sequence",
-        intrinsic: "gap",
-        from: from.value,
-        to: to.value,
-      };
-    } else {
-      const input = this.targetExpression().target;
-      if (!this.consume("close"))
-        throw tokenError(
-          this.source,
-          "invalid_context_intrinsic_arguments",
-          this.current,
-          "Expected `)` after $same target.",
-          "`)`",
-        );
-      target = {
-        kind: "context-intrinsic",
-        context: "sequence",
-        intrinsic: "same",
-        input,
-      };
-    }
-    this.locations.set(target, {
-      span: { start, end: this.tokens[this.index - 1]!.end },
-      target: { start, end: this.tokens[this.index - 1]!.end },
-    });
-    return target;
+    this.expect(TokenKind.ListClose, FilterDslErrorCode.ExpectedValue, "`]`");
+    return values;
   }
 
-  private functionTarget(
-    token: Token & { readonly kind: "identifier" },
-  ): FilterTargetExpression {
-    const name = token.value.toLowerCase();
-    this.index += 1; // opening parenthesis
-    if (name === "time") {
-      const input = this.targetExpression().target;
-      if (!this.consume("close"))
-        throw tokenError(
-          this.source,
-          "invalid_occurrence_time_arguments",
-          this.current,
-          "time() accepts exactly one Page or Event occurrence.",
-          "`)`",
-        );
-      return { kind: "occurrence-time", input };
+  private scalar(): FilterValue {
+    const token = this.next();
+    if (token.kind === TokenKind.String || token.kind === TokenKind.Number)
+      return token.value;
+    if (token.kind === TokenKind.Word) {
+      if (token.value === "true") return true;
+      if (token.value === "false") return false;
+      if (token.value === "null") return null;
     }
-    if (name === "sequence") {
-      if (!this.consume("list-open")) {
-        throw tokenError(
-          this.source,
-          "expected_sequence_steps",
-          this.current,
-          "sequence requires a step list.",
-          "`[` ",
-        );
-      }
-      const steps: FilterTargetExpression[] = [];
-      if (this.current.kind !== "list-close") {
-        do {
-          steps.push(this.targetExpression().target);
-        } while (this.consume("comma"));
-      }
-      if (!this.consume("list-close") || !this.consume("close")) {
-        throw sourceError(
-          this.source,
-          "invalid_sequence",
-          this.current.start,
-          "Expected `])` after sequence steps.",
-          this.current.end - this.current.start,
-          "`])`",
-        );
-      }
-      return { kind: "sequence", steps };
-    }
-    if (name === "window") {
-      const collection = this.targetExpression().target;
-      if (!this.consume("comma"))
-        throw tokenError(
-          this.source,
-          "expected_argument_separator",
-          this.current,
-          "window arguments must be separated by commas.",
-          "`,`",
-        );
-      const anchor = this.targetExpression().target;
-      if (!this.consume("comma") || !this.consume("list-open"))
-        throw tokenError(
-          this.source,
-          "expected_duration_range",
-          this.current,
-          "window requires a two-value duration range.",
-          "`[start, end]`",
-        );
-      const startOffset = this.requireDuration();
-      if (!this.consume("comma"))
-        throw tokenError(
-          this.source,
-          "expected_argument_separator",
-          this.current,
-          "Duration bounds must be separated by a comma.",
-          "`,`",
-        );
-      const endOffset = this.requireDuration();
-      if (!this.consume("list-close") || !this.consume("close"))
-        throw tokenError(
-          this.source,
-          "invalid_window",
-          this.current,
-          "Expected `])` after window bounds.",
-          "`])`",
-        );
-      return { kind: "window", collection, anchor, startOffset, endOffset };
-    }
-    if (name === "bucket" || name === "periods") {
-      const collection = this.targetExpression().target;
-      if (!this.consume("comma")) {
-        throw tokenError(
-          this.source,
-          "expected_argument_separator",
-          this.current,
-          `${token.value} arguments must be separated by commas.`,
-          "`,`",
-        );
-      }
-      const interval = this.requireDuration();
-      if (!this.consume("close")) {
-        throw tokenError(
-          this.source,
-          "missing_closing_parenthesis",
-          this.current,
-          "Missing closing parenthesis.",
-          "`)`",
-        );
-      }
-      return name === "bucket"
-        ? { kind: "bucket", input: collection, interval }
-        : { kind: "periods", collection, interval };
-    }
-    const first = this.targetExpression().target;
-    let second: FilterTargetExpression | undefined;
-    if (this.consume("comma")) {
-      if (name === "nth") {
-        const index = this.current;
-        if (
-          index.kind !== "number" ||
-          !Number.isSafeInteger(index.value) ||
-          index.value < 1
-        ) {
-          throw tokenError(
-            this.source,
-            "invalid_index",
-            index,
-            "nth requires a positive integer index.",
-            "a positive integer",
-          );
-        }
-        this.index += 1;
-        if (!this.consume("close"))
-          throw tokenError(
-            this.source,
-            "missing_closing_parenthesis",
-            this.current,
-            "Missing closing parenthesis.",
-            "`)`",
-          );
-        return {
-          kind: "reducer",
-          reducer: "nth",
-          input: first,
-          index: index.value,
-        };
-      }
-      second = this.targetExpression().target;
-    }
-    if (!this.consume("close")) {
-      throw tokenError(
-        this.source,
-        "missing_closing_parenthesis",
-        this.current,
-        "Missing closing parenthesis.",
-        "`)`",
-      );
-    }
-    if (
-      [
-        "count",
-        "first",
-        "last",
-        "sum",
-        "avg",
-        "min",
-        "max",
-        "countdistinct",
-      ].includes(name)
-    ) {
-      if (second)
-        throw tokenError(
-          this.source,
-          "unexpected_argument",
-          token,
-          `${token.value} accepts one argument.`,
-        );
-      return {
-        kind: "reducer",
-        reducer:
-          name === "countdistinct"
-            ? "countDistinct"
-            : (name as
-                "count" | "first" | "last" | "sum" | "avg" | "min" | "max"),
-        input: first,
-      };
-    }
-    if (["add", "sub", "mul", "div"].includes(name)) {
-      if (!second)
-        throw tokenError(
-          this.source,
-          "missing_argument",
-          token,
-          `${token.value} requires two arguments.`,
-        );
-      return {
-        kind: "arithmetic",
-        operator: name as "add" | "sub" | "mul" | "div",
-        left: first,
-        right: second,
-      };
-    }
-    if (name === "adjacent") {
-      if (second)
-        throw tokenError(
-          this.source,
-          "unexpected_argument",
-          token,
-          "adjacent accepts one sequence.",
-        );
-      return { kind: "adjacent", sequence: first };
-    }
-    if (name === "without") {
-      if (!second)
-        throw tokenError(
-          this.source,
-          "missing_argument",
-          token,
-          "without requires a sequence and an excluded collection.",
-        );
-      return { kind: "without", sequence: first, excluded: second };
-    }
-    throw tokenError(
-      this.source,
-      "unknown_function",
+    throw this.error(
       token,
-      `Unknown filter expression function ${JSON.stringify(token.value)}.`,
+      FilterDslErrorCode.ExpectedValue,
+      "Expected a JSON value.",
     );
   }
-
-  private requireDuration(): FilterDurationTarget {
-    if (this.current.kind !== "duration") {
-      throw tokenError(
-        this.source,
-        "expected_duration",
-        this.current,
-        "Expected a duration literal.",
-        "a duration such as `7d`",
-      );
-    }
-    const token = this.current;
-    this.index += 1;
-    return { kind: "duration", ...token.value };
-  }
-
-  private value(operator: FilterOperator): ParsedValue {
-    if (this.current.kind === "time-anchor") {
-      const token = this.current;
-      this.index += 1;
-      return {
-        value: token.value,
-        span: spanFromToken(token),
-        elements: [spanFromToken(token)],
-      };
-    }
-    if (this.current.kind === "duration") {
-      const token = this.current;
-      this.index += 1;
-      const value: FilterDurationTarget = {
-        kind: "duration",
-        ...token.value,
-      };
-      return {
-        value,
-        span: spanFromToken(token),
-        elements: [spanFromToken(token)],
-      };
-    }
-    const open = this.consume("list-open");
-    if (open) {
-      const values: Array<
-        FilterValue | FilterTimeAnchorTarget | FilterDurationTarget
-      > = [];
-      const elements: Span[] = [];
-      const close = this.consume("list-close");
-      if (close) {
-        return {
-          value: [] as FilterValue[],
-          span: { start: open.start, end: close.end },
-          elements,
-        };
-      }
-
-      do {
-        if (operator === "between") {
-          const parsed = this.comparisonRangeEndpoint();
-          values.push(parsed.value);
-          elements.push(parsed.span);
-        } else {
-          const parsed = this.scalarValue();
-          values.push(parsed.value);
-          elements.push(parsed.span);
-        }
-      } while (this.consume("comma"));
-
-      const closingBracket = this.consume("list-close");
-      if (!closingBracket) {
-        throw sourceError(
-          this.source,
-          "missing_list_bracket",
-          this.current.start,
-          "Missing closing bracket for value list.",
-          this.current.end - this.current.start,
-          "`]`",
-        );
-      }
-      if (operator === "between" && values.length !== 2) {
-        throw sourceError(
-          this.source,
-          "invalid_range",
-          open.start,
-          "Between requires exactly two values.",
-          closingBracket.end - open.start,
-        );
-      }
-      return {
-        value:
-          operator === "between"
-            ? ([
-                values[0] as FilterComparisonValue,
-                values[1] as FilterComparisonValue,
-              ] as const)
-            : (values as FilterValue[]),
-        span: { start: open.start, end: closingBracket.end },
-        elements,
-      };
-    }
-
-    const scalar = this.scalarValue();
-    return {
-      value: scalar.value,
-      span: scalar.span,
-      elements: [scalar.span],
-    };
-  }
-
-  private comparisonRangeEndpoint(): {
-    readonly value: FilterComparisonValue;
-    readonly span: Span;
-  } {
-    if (this.current.kind === "time-anchor") {
-      const token = this.current;
-      this.index += 1;
-      return { value: token.value, span: spanFromToken(token) };
-    }
-    if (this.current.kind === "duration") {
-      const token = this.current;
-      this.index += 1;
-      return {
-        value: { kind: "duration", ...token.value },
-        span: spanFromToken(token),
-      };
-    }
-    const scalar = this.scalarValue();
-    return scalar;
-  }
-
-  private scalarValue(): { readonly value: FilterValue; readonly span: Span } {
-    if (
-      this.current.kind === "string" ||
-      this.current.kind === "number" ||
-      this.current.kind === "boolean"
-    ) {
-      const token = this.current;
-      this.index += 1;
-      return { value: token.value, span: spanFromToken(token) };
-    }
-    const nullToken = this.consume("null");
-    if (nullToken) return { value: null, span: spanFromToken(nullToken) };
-    throw tokenError(
-      this.source,
-      "expected_value",
-      this.current,
-      "Expected a JSON string, number, boolean, or null value.",
-      "a JSON scalar value",
-    );
-  }
-
-  private spanOf(expression: FilterExpression): Span {
-    return (
-      this.locations.get(expression)?.span ?? {
-        start: this.current.start,
-        end: this.current.start,
-      }
-    );
-  }
-}
-
-function fallbackLocation(source: string): Span {
-  return { start: source.length, end: source.length };
-}
-
-function validationLocation(
-  path: string,
-  root: FilterExpression,
-  locations: WeakMap<object, NodeLocation>,
-  source: string,
-): Span {
-  const parts = path.split(".");
-  if (parts[0] !== "root") return fallbackLocation(source);
-
-  let expression: FilterExpression = root;
-  let location = locations.get(expression);
-  for (let index = 1; index < parts.length; index += 1) {
-    const part = parts[index]!;
-    if (part === "child" && expression.kind === "not") {
-      expression = expression.child;
-      location = locations.get(expression);
-      continue;
-    }
-
-    const childMatch = /^children(?:\[(\d+)\])?$/.exec(part);
-    if (childMatch) {
-      if (!childMatch[1]) return location?.span ?? fallbackLocation(source);
-      if (expression.kind !== "and" && expression.kind !== "or") {
-        return location?.span ?? fallbackLocation(source);
-      }
-      const child = expression.children[Number(childMatch[1])];
-      if (!child) return location?.span ?? fallbackLocation(source);
-      expression = child;
-      location = locations.get(expression);
-      continue;
-    }
-
-    if (part === "target") {
-      const targetPart = parts[index + 1];
-      if (targetPart === "field") {
-        return (
-          location?.field ??
-          location?.target ??
-          location?.span ??
-          fallbackLocation(source)
-        );
-      }
-      if (targetPart === "path") {
-        return (
-          location?.path ??
-          location?.target ??
-          location?.span ??
-          fallbackLocation(source)
-        );
-      }
-      return location?.target ?? location?.span ?? fallbackLocation(source);
-    }
-    if (part === "operator") {
-      return location?.operator ?? location?.span ?? fallbackLocation(source);
-    }
-    const valueMatch = /^value(?:\[(\d+)\])?$/.exec(part);
-    if (valueMatch) {
-      if (valueMatch[1] && location?.valueElements) {
-        return (
-          location.valueElements[Number(valueMatch[1])] ??
-          location.value ??
-          location.span
-        );
-      }
-      return location?.value ?? location?.span ?? fallbackLocation(source);
-    }
-    if (part === "kind" || part === "field" || part === "path") {
-      if (part === "field") {
-        return (
-          location?.field ??
-          location?.target ??
-          location?.span ??
-          fallbackLocation(source)
-        );
-      }
-      if (part === "path")
-        return (
-          location?.path ??
-          location?.target ??
-          location?.span ??
-          fallbackLocation(source)
-        );
-      return location?.span ?? fallbackLocation(source);
-    }
-  }
-  return location?.span ?? fallbackLocation(source);
-}
-
-function rethrowValidationError(
-  error: FilterValidationError,
-  source: string,
-  root: FilterExpression,
-  locations: WeakMap<object, NodeLocation>,
-): never {
-  const location = validationLocation(error.path, root, locations, source);
-  throw new FilterDslParseError(error.message, {
-    code: error.code,
-    offset: location.start,
-    length: location.end - location.start,
-    source,
-    cause: error,
-  });
 }
 
 /**
- * Parse a DSL v1 expression and validate it against the supplied field
- * registry. Parsing intentionally preserves the source expression's boolean
- * grouping and condition order; registry normalization is used only as a
- * validation pass, matching the dashboard editor's behavior.
+ * Parses `<field> <operator> [<value>]` conditions joined by AND. Throws a
+ * FilterDslParseError naming the offending source offset.
  */
 export function parseFilterDsl(
   source: string,
   registry: FilterFieldRegistry,
-  options: { readonly validateSemantics?: boolean } = {},
 ): FilterDocument {
-  if (!source.trim()) {
-    return { version: FILTER_DSL_VERSION, root: null };
-  }
-
-  const locations = new WeakMap<object, NodeLocation>();
-  const root = new Parser(
-    source,
-    tokenize(source),
-    locations,
-    registry,
-  ).parse();
-  try {
-    const normalized = normalizeFilterDocument(
-      {
-        version: FILTER_DSL_VERSION,
-        root,
-      },
-      registry,
-    );
-    if (options.validateSemantics !== false)
-      analyzeFilterDocument(normalized, registry);
-  } catch (error) {
-    if (error instanceof FilterValidationError) {
-      rethrowValidationError(error, source, root, locations);
+  if (!source.trim()) return { conditions: [] };
+  const parsed = new Parser(tokenize(source)).parse();
+  const conditions = parsed.map(({ condition, start, end }) => {
+    try {
+      return normalizeFilterDocument({ conditions: [condition] }, registry)
+        .conditions[0]!;
+    } catch (error) {
+      if (!(error instanceof FilterValidationError)) throw error;
+      throw new FilterDslParseError(
+        error.message,
+        error.code,
+        start,
+        end - start,
+      );
     }
-    throw error;
-  }
-  return { version: FILTER_DSL_VERSION, root };
+  });
+  return normalizeFilterDocument({ conditions }, registry);
 }
 
-const PRECEDENCE: Readonly<Record<FilterExpression["kind"], number>> = {
-  condition: 4,
-  not: 3,
-  and: 2,
-  or: 1,
-};
-
-function formatDuration(duration: {
-  readonly amount: number;
-  readonly unit: FilterDurationUnit;
-}): string {
-  return `${duration.amount}${duration.unit}`;
-}
-
-type FormatEntity = "event" | "page" | "session" | "visitor";
-
-function entityForFormat(
-  target: FilterTargetExpression,
-): FormatEntity | undefined {
-  if (target.kind === "entity-root") return target.entity;
-  if (target.kind === "selector") return entityForFormat(target.collection);
-  if (target.kind === "window") return entityForFormat(target.collection);
-  if (
-    target.kind === "reducer" &&
-    ["first", "last", "nth"].includes(target.reducer)
-  )
-    return entityForFormat(target.input);
-  return undefined;
-}
-
-function formatTargetExpression(
-  target: FilterTargetExpression,
-  currentEntity?: FormatEntity,
-): string {
-  switch (target.kind) {
-    case "field":
-      if (currentEntity && target.field.startsWith(`${currentEntity}.`))
-        return `$.${target.field.slice(currentEntity.length + 1)}`;
-      if (currentEntity && /^(?:geo|client|referrer|utm)\./u.test(target.field))
-        return `$.${target.field}`;
-      return target.field;
-    case "event-payload":
-      if (currentEntity === "event")
-        return `$.payload(${JSON.stringify(target.path)})`;
-      return `event.payload(${JSON.stringify(target.path)})`;
-    case "current-payload":
-      return `$.payload(${JSON.stringify(target.path)})`;
-    case "entity-root":
-      return target.entity.toUpperCase();
-    case "context-root":
-      return target.context === "current" ? "" : target.context;
-    case "context-intrinsic":
-      if (target.intrinsic === "span") return "$span";
-      if (target.intrinsic === "items") return "$items";
-      if (target.intrinsic === "gap")
-        return `$gap(${target.from}, ${target.to})`;
-      return `$same(${formatTargetExpression(target.input, currentEntity)})`;
-    case "occurrence-time":
-      return `time(${formatTargetExpression(target.input, currentEntity)})`;
-    case "member": {
-      if (
-        target.object.kind === "context-root" &&
-        target.object.context === "current" &&
-        target.member === "time"
-      )
-        return "time";
-      if (
-        target.object.kind === "context-root" &&
-        target.object.context === "sequence" &&
-        target.member === "span"
-      )
-        return "$span";
-      if (
-        target.object.kind === "context-root" &&
-        target.object.context === "period" &&
-        target.member === "items"
-      )
-        return "$items";
-      if (
-        target.object.kind === "context-root" &&
-        target.object.context === "current"
-      )
-        return `$.${target.member}`;
-      const object = formatTargetExpression(target.object, currentEntity);
-      return object ? `${object}.${target.member}` : target.member;
-    }
-    case "selector": {
-      const entity = entityForFormat(target.collection);
-      return `${formatTargetExpression(target.collection, currentEntity)} { ${formatExpression(target.predicate, 0, undefined, entity)} }`;
-    }
-    case "projection":
-      return `${formatTargetExpression(target.collection, currentEntity)} -> ${target.member}${target.path === undefined ? "" : `(${JSON.stringify(target.path)})`}`;
-    case "reducer":
-      return target.reducer === "nth"
-        ? `nth(${formatTargetExpression(target.input, currentEntity)}, ${target.index})`
-        : `${target.reducer}(${formatTargetExpression(target.input, currentEntity)})`;
-    case "arithmetic":
-      return `${target.operator}(${formatTargetExpression(target.left, currentEntity)}, ${formatTargetExpression(target.right, currentEntity)})`;
-    case "duration":
-      return formatDuration(target);
-    case "time-anchor": {
-      if (!target.offset) return `@${target.anchor}`;
-      const signed = `${target.offset.amount >= 0 ? "+" : ""}${formatDuration(target.offset)}`;
-      return `@${target.anchor}${signed}`;
-    }
-    case "bucket":
-      return `bucket(${formatTargetExpression(target.input, currentEntity)}, ${formatDuration(target.interval)})`;
-    case "window":
-      return `window(${formatTargetExpression(target.collection, currentEntity)}, ${formatTargetExpression(target.anchor, currentEntity)}, [${formatDuration(target.startOffset)}, ${formatDuration(target.endOffset)}])`;
-    case "periods":
-      return `periods(${formatTargetExpression(target.collection, currentEntity)}, ${formatDuration(target.interval)})`;
-    case "sequence":
-      return `sequence([${target.steps.map((step) => formatTargetExpression(step, currentEntity)).join(", ")}])`;
-    case "adjacent":
-      return `adjacent(${formatTargetExpression(target.sequence, currentEntity)})`;
-    case "without":
-      return `without(${formatTargetExpression(target.sequence, currentEntity)}, ${formatTargetExpression(target.excluded, currentEntity)})`;
-  }
-}
-
-export function formatFilterTargetExpression(
-  target: FilterTargetExpression,
-): string {
-  return formatTargetExpression(target);
-}
-
-function formatConditionValue(
-  value: FilterCondition["value"],
-  currentEntity?: FormatEntity,
-): string {
-  if (
-    value &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    "kind" in value
-  ) {
-    return formatTargetExpression(
-      value as FilterTargetExpression,
-      currentEntity,
-    );
-  }
-  if (Array.isArray(value))
-    return `[${value
-      .map((item) =>
-        item && typeof item === "object" && "kind" in item
-          ? formatTargetExpression(
-              item as FilterTargetExpression,
-              currentEntity,
-            )
-          : JSON.stringify(item),
-      )
-      .join(", ")}]`;
-  return JSON.stringify(value);
-}
-
-function formatCondition(
-  condition: FilterCondition,
-  currentEntity?: FormatEntity,
-): string {
-  const target = formatTargetExpression(condition.target, currentEntity);
-  if (
-    condition.target.kind === "context-intrinsic" &&
-    condition.target.intrinsic === "same"
-  )
-    return target;
-  if (VALUELESS_OPERATORS.has(condition.operator)) {
+function formatCondition(condition: FilterCondition): string {
+  const target =
+    condition.target.kind === "field"
+      ? condition.target.field
+      : `${EVENT_PAYLOAD_FIELD}(${JSON.stringify(condition.target.path)})`;
+  if (VALUELESS_FILTER_OPERATORS.has(condition.operator))
     return `${target} ${condition.operator}`;
-  }
-  return `${target} ${condition.operator} ${formatConditionValue(condition.value, currentEntity)}`;
+  const value = Array.isArray(condition.value)
+    ? `[${condition.value.map((item) => JSON.stringify(item)).join(", ")}]`
+    : JSON.stringify(condition.value);
+  return `${target} ${condition.operator} ${value}`;
 }
 
-function formatExpression(
-  expression: FilterExpression,
-  parentPrecedence = 0,
-  parentGroupKind?: "and" | "or",
-  currentEntity?: FormatEntity,
-): string {
-  const precedence = PRECEDENCE[expression.kind];
-  const source =
-    expression.kind === "condition"
-      ? formatCondition(expression, currentEntity)
-      : expression.kind === "not"
-        ? `NOT ${formatExpression(expression.child, precedence, undefined, currentEntity)}`
-        : expression.children.length === 1
-          ? `${expression.kind.toUpperCase()}(${formatExpression(expression.children[0]!, 0, undefined, currentEntity)})`
-          : expression.children
-              .map((child) =>
-                formatExpression(
-                  child,
-                  precedence,
-                  expression.kind,
-                  currentEntity,
-                ),
-              )
-              .join(` ${expression.kind.toUpperCase()} `);
-  return precedence < parentPrecedence || expression.kind === parentGroupKind
-    ? `(${source})`
-    : source;
-}
-
-/** Format a filter document using the canonical DSL v1 surface syntax. */
+/** Formats a filter document in the DSL that parseFilterDsl reads. */
 export function formatFilterDsl(document: FilterDocument): string {
-  return document.root ? formatExpression(document.root) : "";
+  return document.conditions.map(formatCondition).join(" AND ");
 }

@@ -1,4 +1,4 @@
-import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 
 import { describe, expect, it } from "vitest";
 
@@ -9,11 +9,6 @@ import {
   type FilterDocument,
   type FunnelConfigV2,
   normalizeFilterDocument,
-  prepareScopedQuery,
-  type QueryAudience,
-  type QueryInput,
-  type QueryTime,
-  siteQueryContext,
 } from "@/lib/edge/analytics/contract";
 import type { QueryWindow } from "@/lib/edge/analytics/providers/d1/internal/core";
 import { queryEventAnalyticsContextCardsFromD1 } from "@/lib/edge/analytics/providers/d1/internal/events-context";
@@ -28,10 +23,16 @@ import {
   queryEventsTrendFromD1,
   queryEventTypeTrendFromD1,
 } from "@/lib/edge/analytics/providers/d1/internal/events-trend";
+import {
+  eventFilterSql,
+  visitFilterSql,
+} from "@/lib/edge/analytics/providers/d1/internal/filter-compiler";
 import { queryFunnelAnalysis } from "@/lib/edge/analytics/providers/d1/internal/funnels";
-import { compileScopedDatasetSql } from "@/lib/edge/analytics/providers/d1/internal/scoped-dataset";
 import type { Env } from "@/lib/edge/types";
-import type { FilterExpression } from "@/lib/filter-contract/filters";
+import {
+  type FilterCondition,
+  FilterOperator,
+} from "@/lib/filter-contract/filters";
 
 import { filterFixture } from "./filter-fixtures";
 
@@ -148,6 +149,11 @@ function createSqliteEventEnv(): { env: Env; d1: SqliteD1Database } {
       id INTEGER PRIMARY KEY,
       path TEXT NOT NULL,
       site_pk INTEGER GENERATED ALWAYS AS (1) STORED
+    );
+    CREATE TABLE visit_properties (
+      visit_id TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL,
+      site_pk INTEGER NOT NULL, started_at INTEGER NOT NULL,
+      PRIMARY KEY (visit_id, key)
     );
     CREATE TABLE custom_event_json_values (
       event_pk INTEGER NOT NULL, path_id INTEGER NOT NULL, value_type INTEGER NOT NULL,
@@ -287,34 +293,24 @@ function createSqliteEventEnv(): { env: Env; d1: SqliteD1Database } {
   } as { env: Env; d1: SqliteD1Database };
 }
 
-type TruthScope = "event" | "session" | "visitor";
-type TruthRelationIds = {
-  visits: string[];
-  events: string[];
-  sessions: string[];
-  visitors: string[];
-};
-
-function truthCondition(field: string, value: string): FilterExpression {
+function truthCondition(
+  field: string,
+  value: string,
+  operator = FilterOperator.Eq,
+): FilterCondition {
   return {
-    kind: "condition",
     target: { kind: "field", field: field as never },
-    operator: "eq",
+    operator,
     value,
   };
 }
 
-function truthPayload(value: string): FilterExpression {
+function truthPayload(value: string): FilterCondition {
   return {
-    kind: "condition",
     target: { kind: "event-payload", path: "/plan" as never },
-    operator: "eq",
+    operator: FilterOperator.Eq,
     value,
   };
-}
-
-function truthFilters(root: FilterExpression | null) {
-  return normalizeFilterDocument({ version: 1, root }, analyticsFilterRegistry);
 }
 
 function seedFilterSemanticsTruthFixture(d1: SqliteD1Database): void {
@@ -468,73 +464,60 @@ function seedFilterSemanticsTruthFixture(d1: SqliteD1Database): void {
     .run(112, 1, 1, eventTime, "pro", null, null);
 }
 
-function readTruthRelationIds(
+/** The page views and custom events in the window that a filter matches. */
+function readTruthIds(
   d1: SqliteD1Database,
-  root: FilterExpression | null,
-  scopePreference: TruthScope,
-  audience: QueryAudience = "private-dashboard",
-): TruthRelationIds {
-  const filters = truthFilters(root);
-  const prepared = prepareScopedQuery("overview", {
-    context: siteQueryContext(siteId, audience),
-    time: {
-      range: {
-        startMs: window.startMs,
-        endExclusiveMs: window.endExclusiveMs,
-      },
-      reportingTimeZone: "UTC",
-      capturedAtMs: window.nowMs,
-    },
-    filters,
-    scopePreference,
-  } as QueryInput & { time: QueryTime });
-  const dataset = compileScopedDatasetSql({
-    filters: prepared.filters!,
-    plan: prepared.scopePlan!,
-    siteIds: [siteId],
-    window,
-  });
-  const bindings = dataset.bindings.map(({ value }) => value);
-  const read = (relation: string, column: string): string[] =>
-    (
-      d1.database
-        .prepare(
-          `WITH ${dataset.ctes} SELECT ${column} AS id FROM ${relation} ORDER BY id`,
-        )
-        .all(...bindings) as Array<{ id: string }>
-    ).map(({ id }) => id);
-
+  ...conditions: FilterCondition[]
+): { visits: string[]; events: string[] } {
+  const filters = normalizeFilterDocument(
+    { conditions },
+    analyticsFilterRegistry,
+  );
+  const scope = {
+    siteId,
+    startMs: window.startMs,
+    endExclusiveMs: window.endExclusiveMs,
+  };
+  const read = (
+    sql: string,
+    predicate: ReturnType<typeof visitFilterSql>,
+  ): string[] =>
+    d1.database
+      .prepare(`${sql} AND ${predicate?.text ?? "1"} ORDER BY 1`)
+      .all(
+        window.startMs,
+        window.endExclusiveMs,
+        ...((predicate?.bindings ?? []) as SQLInputValue[]),
+      )
+      .map((row) => String(row.id));
   return {
-    visits: read(dataset.visitRelation, "visit_id"),
-    events: read(dataset.eventRelation, "event_id"),
-    sessions: read(dataset.sessionRelation, "session_id"),
-    visitors: read(dataset.visitorRelation, "visitor_id"),
+    visits: read(
+      "SELECT v.visit_id AS id FROM visits v WHERE v.started_at >= ? AND v.started_at < ?",
+      visitFilterSql(filters, scope),
+    ),
+    events: read(
+      `SELECT ce.event_id AS id FROM custom_events ce
+       JOIN custom_event_names cen ON cen.id = ce.event_name_id
+       JOIN visits v ON v.visit_id = ce.visit_id
+       WHERE ce.occurred_at >= ? AND ce.occurred_at < ?`,
+      eventFilterSql(filters, scope),
+    ),
   };
 }
 
 describe("event detail D1 SQL", () => {
-  it("runs filtered event-record pages through the canonical scoped dataset", async () => {
+  it("runs filtered event-record pages through one plain scan", async () => {
     const { env, d1 } = createSqliteEventEnv();
-    const prepared = prepareScopedQuery("event-records", {
-      context: siteQueryContext(siteId, "private-dashboard"),
-      time: {
-        range: {
-          startMs: window.startMs,
-          endExclusiveMs: window.endExclusiveMs,
-        },
-        reportingTimeZone: "UTC",
-        capturedAtMs: window.nowMs,
-      },
-      filters: truthFilters(truthCondition("geo.country", "CN")),
-      scopePreference: "auto",
-    } as QueryInput & { time: QueryTime });
 
     try {
       const page = await queryEventRecordPageFromD1(
         env,
         siteId,
         window,
-        prepared.filters!,
+        normalizeFilterDocument(
+          { conditions: [truthCondition("geo.country", "CN")] },
+          analyticsFilterRegistry,
+        ),
         {
           limit: 50,
           sort: { key: "occurredAt", direction: "desc" },
@@ -545,7 +528,8 @@ describe("event detail D1 SQL", () => {
         "event-other-name",
         "event-1",
       ]);
-      expect(d1.calls.at(-1)?.sql).toContain("FROM scope_final_events es");
+      expect(d1.calls.at(-1)?.sql).toContain("FROM filtered_events es");
+      expect(d1.calls.at(-1)?.sql).not.toContain("scope_");
     } finally {
       d1.close();
     }
@@ -568,7 +552,7 @@ describe("event detail D1 SQL", () => {
       const plan = d1.database
         .prepare(`EXPLAIN QUERY PLAN ${query?.sql ?? "SELECT 1"}`)
         .all(...(query?.bindings ?? [])) as Array<{ detail: string }>;
-      expect(query?.sql).toContain("target_event_name AS");
+      expect(query?.sql).toContain("ce.event_name_id = (SELECT id");
       expect(query?.sql).not.toContain("TRIM(COALESCE(es.event_name");
       expect(plan.map((row) => row.detail).join("\n")).toContain(
         "idx_custom_events_site_pk_name_time",
@@ -578,7 +562,7 @@ describe("event detail D1 SQL", () => {
     }
   });
 
-  it("adds a scoped visit source for session-boundary event filters", async () => {
+  it("filters events by their session's entry page", async () => {
     const { env, d1 } = createSqliteEventEnv();
 
     try {
@@ -590,16 +574,8 @@ describe("event detail D1 SQL", () => {
       );
       expect(summary.events).toBe(2);
       const query = d1.calls.at(-1);
-      expect(query?.sql).toContain("visit_source AS");
+      expect(query?.sql).toContain("v.session_id IN");
       expect(query?.sql).toContain("ROW_NUMBER() OVER");
-      expect(query?.bindings.slice(0, 6)).toEqual([
-        siteId,
-        window.startMs,
-        window.endExclusiveMs,
-        siteId,
-        window.startMs,
-        window.endExclusiveMs,
-      ]);
     } finally {
       d1.close();
     }
@@ -798,8 +774,7 @@ describe("event detail D1 SQL", () => {
       const cursorQuery = d1.calls.at(-1);
       expect(cursorQuery?.sql).not.toContain("OFFSET");
       expect(cursorQuery?.sql).not.toContain("SELECT *");
-      expect(cursorQuery?.sql).not.toContain("filtered_events AS");
-      expect(cursorQuery?.sql).toContain("FROM event_source es");
+      expect(cursorQuery?.sql).toContain("FROM filtered_events es");
       const plan = d1.database
         .prepare(`EXPLAIN QUERY PLAN ${cursorQuery?.sql ?? "SELECT 1"}`)
         .all(...(cursorQuery?.bindings ?? []));
@@ -838,7 +813,7 @@ describe("event detail D1 SQL", () => {
         .prepare(`EXPLAIN QUERY PLAN ${query?.sql ?? "SELECT 1"}`)
         .all(...(query?.bindings ?? [])) as Array<{ detail: string }>;
       const planDetails = plan.map((row) => row.detail).join("\n");
-      expect(query?.sql).toContain("target_event_name AS");
+      expect(query?.sql).toContain("ce.event_name_id = (SELECT id");
       expect(query?.sql).not.toContain("TRIM(COALESCE(es.event_name");
       expect(planDetails).toContain("idx_custom_events_site_pk_name_time");
       expect(query?.sql).toContain("v.query_string");
@@ -909,65 +884,17 @@ describe("event detail D1 SQL", () => {
     }
   });
 
-  it("feeds funnel progression from the final scoped relations", async () => {
-    const { env, d1 } = createSqliteEventEnv();
-    const prepared = prepareScopedQuery("funnel-analysis", {
-      context: siteQueryContext(siteId, "private-dashboard"),
-      time: {
-        range: {
-          startMs: window.startMs,
-          endExclusiveMs: window.endExclusiveMs,
-        },
-        reportingTimeZone: "UTC",
-        capturedAtMs: window.nowMs,
-      },
-      filters: filterFixture({ path: "/posts/minecraft-meteor-guide" }),
-      scopePreference: "event",
-    } as QueryInput & { time: QueryTime });
-
-    try {
-      const analysis = await queryFunnelAnalysis(
-        env,
-        siteId,
-        window,
-        prepared.filters!,
-        funnelConfig([
-          {
-            id: "guide",
-            filterDsl: 'page.path eq "/posts/minecraft-meteor-guide"',
-          },
-          { id: "click", filterDsl: `event.name eq "${eventName}"` },
-        ]),
-      );
-
-      expect(analysis.steps.map((step) => step.sessions)).toEqual([1, 1]);
-      expect(analysis.summary).toMatchObject({
-        totalProgressions: 1,
-        convertedProgressions: 1,
-      });
-      expect(
-        d1.calls.some((call) => call.sql.includes("FROM scope_final_visits")),
-      ).toBe(true);
-      expect(
-        d1.calls.some((call) => call.sql.includes("FROM scope_final_events")),
-      ).toBe(true);
-      expect(d1.calls).toHaveLength(1);
-    } finally {
-      d1.close();
-    }
-  });
-
   it("uses event filters to select funnel sessions before loading page steps", async () => {
     const { env, d1 } = createSqliteEventEnv();
     const filters = normalizeFilterDocument(
       {
-        version: 1,
-        root: {
-          kind: "condition",
-          target: { kind: "field", field: "event.name" },
-          operator: "eq",
-          value: eventName,
-        },
+        conditions: [
+          {
+            target: { kind: "field", field: "event.name" },
+            operator: "eq",
+            value: eventName,
+          },
+        ],
       },
       analyticsFilterRegistry,
     );
@@ -1019,230 +946,22 @@ describe("event detail D1 SQL", () => {
     }
   });
 
-  it("derives scoped event entry and exit from the final visit relation", async () => {
+  it("reads a filtered event's entry and exit pages from its whole session", async () => {
     const { env, d1 } = createSqliteEventEnv();
-    const prepared = prepareScopedQuery("event-type-detail", {
-      context: siteQueryContext(siteId, "private-dashboard"),
-      time: {
-        range: {
-          startMs: window.startMs,
-          endExclusiveMs: window.endExclusiveMs,
-        },
-        reportingTimeZone: "UTC",
-        capturedAtMs: window.nowMs,
-      },
-      filters: filterFixture({ path: "/posts/minecraft-meteor-guide" }),
-      scopePreference: "event",
-    } as QueryInput & { time: QueryTime });
 
     try {
       const cards = await queryEventAnalyticsContextCardsFromD1(
         env,
         siteId,
         window,
-        prepared.filters!,
+        filterFixture({ path: "/posts/minecraft-meteor-guide" }),
         100,
         eventName,
         ["entry", "exit"],
       );
 
-      expect(cards.page.entry).toMatchObject([
-        { value: "/posts/minecraft-meteor-guide" },
-      ]);
-      expect(cards.page.exit).toMatchObject([
-        { value: "/posts/minecraft-meteor-guide" },
-      ]);
-      expect(d1.calls.at(-1)?.sql).toContain("INNER JOIN scope_final_visits v");
-    } finally {
-      d1.close();
-    }
-  });
-
-  it("keeps all four final relations aligned for Event and Visitor scopes", () => {
-    const { env, d1 } = createSqliteEventEnv();
-    const visitorPrepared = prepareScopedQuery("overview", {
-      context: siteQueryContext(siteId, "private-dashboard"),
-      time: {
-        range: {
-          startMs: window.startMs,
-          endExclusiveMs: window.endExclusiveMs,
-        },
-        reportingTimeZone: "UTC",
-        capturedAtMs: window.nowMs,
-      },
-      filters: filterFixture({ path: "/posts/minecraft-meteor-guide" }),
-      scopePreference: "visitor",
-    } as QueryInput & { time: QueryTime });
-
-    try {
-      const visitorDataset = compileScopedDatasetSql({
-        filters: visitorPrepared.filters!,
-        plan: visitorPrepared.scopePlan!,
-        siteIds: [siteId],
-        window,
-      });
-      const visitorCounts = d1.database
-        .prepare(
-          `
-          WITH ${visitorDataset.ctes}
-          SELECT
-            (SELECT count(*) FROM ${visitorDataset.visitRelation}) AS visits,
-            (SELECT count(*) FROM ${visitorDataset.eventRelation}) AS events,
-            (SELECT count(*) FROM ${visitorDataset.sessionRelation}) AS sessions,
-            (SELECT count(*) FROM ${visitorDataset.visitorRelation}) AS visitors
-        `,
-        )
-        .get(...visitorDataset.bindings.map(({ value }) => value)) as Record<
-        string,
-        number
-      >;
-
-      expect(visitorCounts).toEqual({
-        visits: 3,
-        events: 2,
-        sessions: 1,
-        visitors: 1,
-      });
-
-      const eventPrepared = prepareScopedQuery("overview", {
-        context: siteQueryContext(siteId, "private-dashboard"),
-        time: {
-          range: {
-            startMs: window.startMs,
-            endExclusiveMs: window.endExclusiveMs,
-          },
-          reportingTimeZone: "UTC",
-          capturedAtMs: window.nowMs,
-        },
-        filters: filterFixture({ path: "/posts/minecraft-meteor-guide" }),
-        scopePreference: "event",
-      } as QueryInput & { time: QueryTime });
-      const eventDataset = compileScopedDatasetSql({
-        filters: eventPrepared.filters!,
-        plan: eventPrepared.scopePlan!,
-        siteIds: [siteId],
-        window,
-      });
-      const eventCounts = d1.database
-        .prepare(
-          `
-          WITH ${eventDataset.ctes}
-          SELECT
-            (SELECT count(*) FROM ${eventDataset.visitRelation}) AS visits,
-            (SELECT count(*) FROM ${eventDataset.eventRelation}) AS events,
-            (SELECT count(*) FROM ${eventDataset.sessionRelation}) AS sessions,
-            (SELECT count(*) FROM ${eventDataset.visitorRelation}) AS visitors
-        `,
-        )
-        .get(...eventDataset.bindings.map(({ value }) => value)) as Record<
-        string,
-        number
-      >;
-
-      expect(eventCounts).toEqual({
-        visits: 1,
-        events: 2,
-        sessions: 1,
-        visitors: 1,
-      });
-    } finally {
-      d1.close();
-    }
-  });
-
-  it("includes an entity represented only by an in-window custom event", () => {
-    const { env, d1 } = createSqliteEventEnv();
-    const eventOnlyVisitStart = window.startMs - 2 * 60 * 60 * 1000;
-    d1.database
-      .prepare(
-        `INSERT INTO visits (
-          visit_id, site_id, visitor_id, session_id, started_at, pathname
-        ) VALUES (?, ?, ?, ?, ?, ?)`,
-      )
-      .run(
-        "visit-event-only",
-        siteId,
-        "visitor-event-only",
-        "session-event-only",
-        eventOnlyVisitStart,
-        "/outside-window",
-      );
-    d1.database
-      .prepare(
-        "INSERT INTO custom_event_names (id, site_id, name) VALUES (?, ?, ?)",
-      )
-      .run(100, siteId, "event_only_type");
-    d1.database
-      .prepare(
-        "INSERT INTO custom_events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      )
-      .run(
-        2,
-        "event-only",
-        siteId,
-        "visit-event-only",
-        100,
-        eventTime,
-        eventTime,
-        1,
-        1,
-        1,
-        null,
-      );
-
-    try {
-      const prepared = prepareScopedQuery("overview", {
-        context: siteQueryContext(siteId, "private-dashboard"),
-        time: {
-          range: {
-            startMs: window.startMs,
-            endExclusiveMs: window.endExclusiveMs,
-          },
-          reportingTimeZone: "UTC",
-          capturedAtMs: window.nowMs,
-        },
-        filters: normalizeFilterDocument(
-          {
-            version: 1,
-            root: {
-              kind: "condition",
-              target: { kind: "field", field: "event.name" },
-              operator: "eq",
-              value: "event_only_type",
-            },
-          },
-          analyticsFilterRegistry,
-        ),
-        scopePreference: "visitor",
-      } as QueryInput & { time: QueryTime });
-      const dataset = compileScopedDatasetSql({
-        filters: prepared.filters!,
-        plan: prepared.scopePlan!,
-        siteIds: [siteId],
-        window,
-      });
-      const counts = d1.database
-        .prepare(
-          `
-          WITH ${dataset.ctes}
-          SELECT
-            (SELECT count(*) FROM ${dataset.visitRelation}) AS visits,
-            (SELECT count(*) FROM ${dataset.eventRelation}) AS events,
-            (SELECT count(*) FROM ${dataset.sessionRelation}) AS sessions,
-            (SELECT count(*) FROM ${dataset.visitorRelation}) AS visitors
-        `,
-        )
-        .get(...dataset.bindings.map(({ value }) => value)) as Record<
-        string,
-        number
-      >;
-
-      expect(counts).toEqual({
-        visits: 0,
-        events: 1,
-        sessions: 1,
-        visitors: 1,
-      });
+      expect(cards.page.entry).toMatchObject([{ value: "/entry" }]);
+      expect(cards.page.exit).toMatchObject([{ value: "/exit" }]);
     } finally {
       d1.close();
     }
@@ -1280,7 +999,7 @@ describe("event detail D1 SQL", () => {
     }
   });
 
-  it("keeps the scoped event source when overview filters affect share metrics", async () => {
+  it("filters the share of all events by the overview's filters too", async () => {
     const { env, d1 } = createSqliteEventEnv();
 
     try {
@@ -1294,41 +1013,26 @@ describe("event detail D1 SQL", () => {
       );
 
       const query = d1.calls.at(-1);
-      expect(query?.sql).toContain("scoped_event_source AS");
-      expect(query?.sql).toContain("TRIM(COALESCE(es.pathname, '')) = ?");
+      expect(query?.sql).toContain("scoped_events AS");
+      expect(
+        query?.sql.match(/TRIM\(COALESCE\(v\.pathname, ''\)\) = \?/g),
+      ).toHaveLength(2);
     } finally {
       d1.close();
     }
   });
 
-  it("freezes the four final relations for cross-observation filter semantics", () => {
+  it("matches page views and events by the plain-scan rules", () => {
     const { d1 } = createSqliteEventEnv();
     seedFilterSemanticsTruthFixture(d1);
 
     const page = truthCondition("page.path", "/pricing");
     const purchase = truthCondition("event.name", "truth_purchase");
-    const pageAndPurchase: FilterExpression = {
-      kind: "and",
-      children: [page, purchase],
-    };
-    const pageOrPurchase: FilterExpression = {
-      kind: "or",
-      children: [page, purchase],
-    };
-    const notPurchase: FilterExpression = {
-      kind: "not",
-      child: purchase,
-    };
-    const eventAndPro: FilterExpression = {
-      kind: "and",
-      children: [
-        truthCondition("event.name", "truth_other"),
-        truthPayload("pro"),
-      ],
-    };
 
     try {
-      expect(readTruthRelationIds(d1, page, "event")).toEqual({
+      // A page view field: the window's page views on the page, and the
+      // events sent from such a page view.
+      expect(readTruthIds(d1, page)).toEqual({
         visits: [
           "truth-cross-pricing",
           "truth-multi-pricing",
@@ -1336,22 +1040,9 @@ describe("event detail D1 SQL", () => {
           "truth-visitor-pricing",
         ],
         events: ["truth-purchase-outside"],
-        sessions: [
-          "truth-session-cross",
-          "truth-session-multi",
-          "truth-session-outside",
-          "truth-session-pricing",
-          "truth-session-visitor-a",
-        ],
-        visitors: [
-          "truth-visitor-a",
-          "truth-visitor-d",
-          "truth-visitor-e",
-          "truth-visitor-f",
-          "truth-visitor-g",
-        ],
       });
-      expect(readTruthRelationIds(d1, purchase, "event")).toEqual({
+      // An event name: the page views that sent such an event in the window.
+      expect(readTruthIds(d1, purchase)).toEqual({
         visits: [
           "truth-checkout",
           "truth-cross-event",
@@ -1365,204 +1056,58 @@ describe("event detail D1 SQL", () => {
           "truth-purchase-outside",
           "truth-purchase-visitor",
         ],
-        sessions: [
-          "truth-session-checkout",
-          "truth-session-cross",
-          "truth-session-home",
-          "truth-session-outside",
-          "truth-session-visitor-b",
-        ],
-        visitors: [
-          "truth-visitor-b",
-          "truth-visitor-c",
-          "truth-visitor-d",
-          "truth-visitor-e",
-          "truth-visitor-f",
-        ],
       });
-      expect(readTruthRelationIds(d1, pageAndPurchase, "event")).toEqual({
+      // Both on the same page view.
+      expect(readTruthIds(d1, page, purchase)).toEqual({
         visits: [],
         events: ["truth-purchase-outside"],
-        sessions: ["truth-session-outside"],
-        visitors: ["truth-visitor-d"],
       });
-      expect(readTruthRelationIds(d1, pageOrPurchase, "event")).toEqual({
-        visits: [
-          "truth-checkout",
-          "truth-cross-event",
-          "truth-cross-pricing",
-          "truth-home",
-          "truth-multi-pricing",
-          "truth-pricing",
-          "truth-visitor-event",
-          "truth-visitor-pricing",
-        ],
-        events: [
-          "truth-purchase-cross",
-          "truth-purchase-free",
-          "truth-purchase-home",
-          "truth-purchase-outside",
-          "truth-purchase-visitor",
-        ],
-        sessions: [
-          "truth-session-checkout",
-          "truth-session-cross",
-          "truth-session-home",
-          "truth-session-multi",
-          "truth-session-outside",
-          "truth-session-pricing",
-          "truth-session-visitor-a",
-          "truth-session-visitor-b",
-        ],
-        visitors: [
-          "truth-visitor-a",
-          "truth-visitor-b",
-          "truth-visitor-c",
-          "truth-visitor-d",
-          "truth-visitor-e",
-          "truth-visitor-f",
-          "truth-visitor-g",
-        ],
-      });
-      expect(readTruthRelationIds(d1, notPurchase, "event")).toEqual({
-        visits: ["truth-checkout"],
-        events: ["truth-other-pro"],
-        sessions: ["truth-session-checkout"],
-        visitors: ["truth-visitor-c"],
-      });
-      expect(readTruthRelationIds(d1, eventAndPro, "event")).toEqual({
-        visits: ["truth-checkout"],
-        events: ["truth-other-pro"],
-        sessions: ["truth-session-checkout"],
-        visitors: ["truth-visitor-c"],
-      });
-
-      expect(readTruthRelationIds(d1, pageAndPurchase, "session")).toEqual({
-        visits: ["truth-cross-event", "truth-cross-pricing"],
-        events: ["truth-purchase-cross", "truth-purchase-outside"],
-        sessions: ["truth-session-cross", "truth-session-outside"],
-        visitors: ["truth-visitor-d", "truth-visitor-e"],
-      });
-      expect(readTruthRelationIds(d1, page, "session")).toEqual({
-        visits: [
-          "truth-cross-event",
-          "truth-cross-pricing",
-          "truth-multi-home",
-          "truth-multi-pricing",
-          "truth-pricing",
-          "truth-visitor-pricing",
-        ],
-        events: ["truth-purchase-cross", "truth-purchase-outside"],
-        sessions: [
-          "truth-session-cross",
-          "truth-session-multi",
-          "truth-session-outside",
-          "truth-session-pricing",
-          "truth-session-visitor-a",
-        ],
-        visitors: [
-          "truth-visitor-a",
-          "truth-visitor-d",
-          "truth-visitor-e",
-          "truth-visitor-f",
-          "truth-visitor-g",
-        ],
-      });
-      expect(readTruthRelationIds(d1, notPurchase, "session")).toEqual({
-        visits: [
-          "truth-multi-home",
-          "truth-multi-pricing",
-          "truth-pricing",
-          "truth-visitor-pricing",
-        ],
-        events: [],
-        sessions: [
-          "truth-session-multi",
-          "truth-session-pricing",
-          "truth-session-visitor-a",
-        ],
-        visitors: ["truth-visitor-a", "truth-visitor-f", "truth-visitor-g"],
-      });
-
-      const neq = readTruthRelationIds(
-        d1,
-        {
-          kind: "condition",
-          target: { kind: "field", field: "page.path" as never },
-          operator: "neq",
-          value: "/home",
-        },
-        "session",
-      );
-      const notEq = readTruthRelationIds(
-        d1,
-        {
-          kind: "not",
-          child: truthCondition("page.path", "/home"),
-        },
-        "session",
-      );
-      expect(neq.visits).toContain("truth-multi-pricing");
-      expect(neq.sessions).toContain("truth-session-multi");
-      expect(notEq.visits).not.toContain("truth-multi-pricing");
-      expect(notEq.sessions).not.toContain("truth-session-multi");
-
-      expect(readTruthRelationIds(d1, pageAndPurchase, "visitor")).toEqual({
-        visits: [
-          "truth-cross-event",
-          "truth-cross-pricing",
-          "truth-visitor-event",
-          "truth-visitor-pricing",
-        ],
-        events: [
-          "truth-purchase-cross",
-          "truth-purchase-outside",
-          "truth-purchase-visitor",
-        ],
-        sessions: [
-          "truth-session-cross",
-          "truth-session-outside",
-          "truth-session-visitor-a",
-          "truth-session-visitor-b",
-        ],
-        visitors: ["truth-visitor-d", "truth-visitor-e", "truth-visitor-f"],
-      });
-      expect(readTruthRelationIds(d1, notPurchase, "visitor")).toEqual({
-        visits: ["truth-multi-home", "truth-multi-pricing", "truth-pricing"],
-        events: [],
-        sessions: ["truth-session-multi", "truth-session-pricing"],
-        visitors: ["truth-visitor-a", "truth-visitor-g"],
-      });
-    } finally {
-      d1.close();
-    }
-  });
-
-  it("keeps audience adapters in filter-result parity", () => {
-    const { d1 } = createSqliteEventEnv();
-    seedFilterSemanticsTruthFixture(d1);
-
-    try {
-      const pageResults = (["private-dashboard", "public-share"] as const).map(
-        (audience) =>
-          readTruthRelationIds(
-            d1,
-            truthCondition("page.path", "/pricing"),
-            "event",
-            audience,
-          ),
-      );
-      expect(pageResults[1]).toEqual(pageResults[0]);
+      // "Is not" an event name: the page views that sent none.
       expect(
-        pageResults.map(({ visits, events, sessions, visitors }) => ({
-          visits: visits.length,
-          events: events.length,
-          sessions: sessions.length,
-          visitors: visitors.length,
-        })),
+        readTruthIds(
+          d1,
+          truthCondition("event.name", "truth_purchase", FilterOperator.Neq),
+        ),
+      ).toEqual({
+        visits: [
+          "truth-cross-pricing",
+          "truth-multi-home",
+          "truth-multi-pricing",
+          "truth-pricing",
+          "truth-visitor-pricing",
+        ],
+        events: ["truth-other-pro"],
+      });
+      // An event name and a property: the same event carries both.
+      expect(
+        readTruthIds(
+          d1,
+          truthCondition("event.name", "truth_other"),
+          truthPayload("pro"),
+        ),
+      ).toEqual({ visits: ["truth-checkout"], events: ["truth-other-pro"] });
+      expect(readTruthIds(d1, purchase, truthPayload("pro"))).toEqual({
+        visits: [],
+        events: [],
+      });
+      // A property alone: page views whose own events carry it.
+      expect(readTruthIds(d1, truthPayload("free"))).toEqual({
+        visits: ["truth-checkout"],
+        events: ["truth-purchase-free"],
+      });
+      expect(
+        readTruthIds(
+          d1,
+          truthCondition("page.path", "/home", FilterOperator.Neq),
+        ).visits,
       ).toEqual([
-        { visits: 4, events: 1, sessions: 5, visitors: 5 },
-        { visits: 4, events: 1, sessions: 5, visitors: 5 },
+        "truth-checkout",
+        "truth-cross-event",
+        "truth-cross-pricing",
+        "truth-multi-pricing",
+        "truth-pricing",
+        "truth-visitor-event",
+        "truth-visitor-pricing",
       ]);
     } finally {
       d1.close();

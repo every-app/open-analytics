@@ -1,8 +1,6 @@
 import { createDatabaseRuntime } from "@/lib/db";
 import type { QueryWindow } from "@/lib/edge/analytics/contract";
 import {
-  createScopedFilterPlan,
-  EMPTY_FILTER_DOCUMENT,
   type FilterDocument,
   type FunnelAnalysis,
   type FunnelConfigV2,
@@ -24,7 +22,6 @@ import {
 import { queryD1All } from "./core";
 import { encodeD1FunnelConfig } from "./funnel-config-validation";
 import { buildFunnelSqlPlan } from "./funnel-planner";
-import { compileScopedDatasetSql, scopedDatasetFor } from "./scoped-dataset";
 const FUNNEL_ANALYSIS_KIND = "funnel";
 export type {
   FunnelAnalysis,
@@ -139,29 +136,6 @@ export async function queryFunnelDefinition(
   );
   return rows[0] ? mapFunnelDefinition(rows[0]) : null;
 }
-function baseFunnelDataset(
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
-) {
-  const existing = scopedDatasetFor(siteId, window, filters);
-  if (existing) return existing;
-
-  // A no-filter private request has no prepared metadata. It still gets the
-  // canonical relation bundle before Step filters are applied.
-  const plan = createScopedFilterPlan(
-    "funnel-analysis",
-    EMPTY_FILTER_DOCUMENT,
-    "event",
-  );
-  if (!plan) throw new Error("funnel_scope_unavailable");
-  return compileScopedDatasetSql({
-    filters: EMPTY_FILTER_DOCUMENT,
-    plan,
-    siteIds: [siteId],
-    window,
-  });
-}
 function numberRow(value: unknown): number {
   const result = Number(value ?? 0);
   return Number.isFinite(result) && result > 0 ? Math.floor(result) : 0;
@@ -233,14 +207,15 @@ export async function queryFunnelAnalysis(
 ): Promise<FunnelAnalysis> {
   const plan = buildFunnelSqlPlan(
     config,
-    baseFunnelDataset(siteId, window, filters),
+    {
+      siteId,
+      startMs: window.startMs,
+      endExclusiveMs: window.endExclusiveMs,
+      filters,
+    },
     { allowHistoricalOverLimit: true },
   );
-  const rows = await queryD1All<FunnelCountRow>(
-    env,
-    plan.sql,
-    plan.bindings.map((binding) => binding.value),
-  );
+  const rows = await queryD1All<FunnelCountRow>(env, plan.sql, plan.bindings);
   return analysisFromRows(config, rows);
 }
 export async function createFunnelDefinition(
@@ -249,7 +224,7 @@ export async function createFunnelDefinition(
   name: string,
   config: FunnelConfigV2,
 ): Promise<FunnelDefinition> {
-  const encoded = encodeD1FunnelConfig(config);
+  const encoded = encodeD1FunnelConfig(config, siteId);
   const id = crypto.randomUUID();
   const now = Math.floor(Date.now() / 1_000);
   await createDatabaseRuntime(env.DB).run({
@@ -277,7 +252,7 @@ export async function updateFunnelDefinition(
   name: string,
   config: FunnelConfigV2,
 ): Promise<FunnelDefinition> {
-  const encoded = encodeD1FunnelConfig(config);
+  const encoded = encodeD1FunnelConfig(config, siteId);
   const now = Math.floor(Date.now() / 1_000);
   await createDatabaseRuntime(env.DB).run({
     sql: "UPDATE analysis_definitions SET name=?, config_json=?, config_version=?, updated_at=? WHERE id=? AND site_id=? AND kind=? AND archived_at IS NULL",

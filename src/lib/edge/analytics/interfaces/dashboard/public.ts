@@ -84,14 +84,7 @@ export function executePublicQuery(
   }
   if (input.pathname === "pages") {
     return import("./protocol/pages").then(({ handlePagesContract }) =>
-      handlePagesContract(
-        input.env,
-        input.siteId,
-        url,
-        false,
-        ctx,
-        queryContext,
-      ),
+      handlePagesContract(input.env, input.siteId, url, ctx, queryContext),
     );
   }
   if (input.pathname === "referrers") {

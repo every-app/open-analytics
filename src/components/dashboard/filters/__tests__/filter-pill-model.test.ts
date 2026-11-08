@@ -7,8 +7,6 @@ import {
 } from "@/lib/dashboard/filter-state";
 import {
   analyticsFilterRegistry,
-  attachFilterScopePreference,
-  filterScopePreferenceFromDocument,
   formatFilterDsl,
   parseFilterDsl,
 } from "@/lib/filter-contract/index";
@@ -69,17 +67,14 @@ describe("filter pills", () => {
     expect(formatFilterDsl(location.without)).toBe('page.path eq "/"');
   });
 
-  it("removes one filter and keeps the rest and the scope", () => {
-    const document = attachFilterScopePreference(
-      dsl('page.path eq "/a" AND client.browser eq "Firefox"'),
-      "session",
-    );
-    const [page, browser] = filterPills(document, messages, "en");
+  it("removes one filter and keeps the rest", () => {
+    const document = dsl('page.path eq "/a" AND client.browser eq "Firefox"');
+    const pills = filterPills(document, messages, "en");
+    const page = pills.find((pill) => pill.label === "Page is /a")!;
+    const browser = pills.find((pill) => pill.label === "Browser is Firefox")!;
 
-    expect(page!.label).toBe("Page is /a");
-    expect(formatFilterDsl(page!.without)).toBe('client.browser eq "Firefox"');
-    expect(filterScopePreferenceFromDocument(page!.without)).toBe("session");
-    expect(formatFilterDsl(browser!.without)).toBe('page.path eq "/a"');
+    expect(formatFilterDsl(page.without)).toBe('client.browser eq "Firefox"');
+    expect(formatFilterDsl(browser.without)).toBe('page.path eq "/a"');
   });
 
   it("words the other operators, and lists several values", () => {
@@ -90,29 +85,12 @@ describe("filter pills", () => {
         ),
       ),
     ).toEqual([
-      "Page is not /admin",
       "Page contains blog",
+      "Page is not /admin",
       "UTM source is a or b",
     ]);
     // A field no card offers goes by the filter builder's name for it.
     expect(labels(dsl('page.title eq "Home"'))).toEqual(["Page title is Home"]);
     expect(labels(dsl("utm.term notEmpty"))).toEqual(["UTM term is not empty"]);
-  });
-
-  it("shows an OR or a NOT as one pill that clears it", () => {
-    const either = dsl('page.path eq "/a" OR page.path eq "/b"');
-    const [pill] = filterPills(either, messages, "en");
-    expect(pill!.label).toContain("/a");
-    expect(pill!.label).toContain("/b");
-    expect(pill!.without.root).toBeNull();
-
-    const nested = dsl(
-      'client.browser eq "Firefox" AND (page.path eq "/a" OR page.path eq "/b")',
-    );
-    const pills = filterPills(nested, messages, "en");
-    expect(pills).toHaveLength(2);
-    expect(formatFilterDsl(pills[1]!.without)).toBe(
-      'client.browser eq "Firefox"',
-    );
   });
 });

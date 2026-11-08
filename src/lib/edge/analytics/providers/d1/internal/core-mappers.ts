@@ -10,7 +10,6 @@ import {
   type GeoTabRow,
   type OverviewAggregateRow,
   type OverviewGeoTabKey,
-  type PageRow,
   type ReferrerRow,
 } from "./core-types";
 import { customEventJsonTypeLabel } from "./core-values";
@@ -50,15 +49,6 @@ export function mapPageCardMetrics(row: OverviewAggregateRow) {
       overview.sessions > 0 ? overview.views / overview.sessions : 0,
     avgDurationMs: overview.avgDurationMs,
   };
-}
-export function mapPages(rows: PageRow[]) {
-  return rows.map((row) => ({
-    pathname: row.pathname,
-    query: row.query,
-    hash: row.hash,
-    views: row.views,
-    sessions: row.sessions,
-  }));
 }
 export function mapTabs(rows: readonly DimensionRow[] | null | undefined) {
   return (Array.isArray(rows) ? rows : []).map((row) => ({

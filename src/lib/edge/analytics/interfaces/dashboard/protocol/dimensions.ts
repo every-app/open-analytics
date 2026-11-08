@@ -2,6 +2,7 @@ import { createEdgeSiteAnalyticsRuntime } from "@/lib/edge/analytics/composition
 import {
   type CanonicalDimensionQuery,
   comparisonReferenceWindow,
+  EMPTY_FILTER_DOCUMENT,
   type FilterDocument,
   isComparisonMode,
   type OverviewTableComparisonQuery,
@@ -93,8 +94,8 @@ export async function handleSimpleDimensionContract(
         )
       : compare !== "same"
         ? filters
-        : ({ version: 1, root: null } as FilterDocument);
-    if (compare !== "same" || referenceFilters.root) {
+        : EMPTY_FILTER_DOCUMENT;
+    if (compare !== "same" || referenceFilters.conditions.length > 0) {
       const referenceWindow = comparisonReferenceWindow(compare, window);
       const comparisonMetric = url.searchParams.get("metric");
       const comparisonSortBy = url.searchParams.get("sortBy");

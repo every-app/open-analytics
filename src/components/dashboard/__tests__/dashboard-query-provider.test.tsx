@@ -9,19 +9,17 @@ import {
 } from "@/components/dashboard/shell/dashboard-query-provider";
 import { TimeZoneProvider } from "@/components/time-zone-provider";
 function Probe() {
-  const { filters, scopePreference } = useDashboardQuery();
+  const { filters } = useDashboardQuery();
   return createElement(
     "span",
     null,
-    `${filters.root ? "filtered" : "empty"}:${scopePreference}`,
+    filters.conditions.length > 0 ? "filtered" : "empty",
   );
 }
 function App({ children }: { children: ReactNode }) {
   return (
     <TimeZoneProvider>
-      <DashboardQueryProvider initialScopePreference="visitor">
-        {children}
-      </DashboardQueryProvider>
+      <DashboardQueryProvider>{children}</DashboardQueryProvider>
     </TimeZoneProvider>
   );
 }
@@ -44,7 +42,7 @@ describe("DashboardQueryProvider", () => {
     window.history.replaceState(
       null,
       "",
-      "/zh/app/team/site/pages?scope=visitor&filter%5Bpage.path%5D=%2Fdocs",
+      "/zh/app/team/site/pages?filter%5Bpage.path%5D=%2Fdocs",
     );
   });
 
@@ -61,24 +59,7 @@ describe("DashboardQueryProvider", () => {
       await Promise.resolve();
     });
 
-    expect(container.textContent).toBe("filtered:visitor");
-  });
-
-  it("clears a scope-only URL and falls back to Auto", async () => {
-    window.history.replaceState(
-      null,
-      "",
-      "/zh/app/team/site/pages?scope=visitor",
-    );
-
-    await act(async () => {
-      root = createRoot(container);
-      root.render(createElement(ScopeApp, { scopeKey: "site-id" }));
-      await Promise.resolve();
-    });
-
-    expect(window.location.search).toBe("");
-    expect(container.textContent).toBe("empty:auto");
+    expect(container.textContent).toBe("filtered");
   });
 
   it("keeps URL filters when the initial site scope resolves", async () => {
@@ -87,13 +68,13 @@ describe("DashboardQueryProvider", () => {
       root.render(createElement(ScopeApp, { scopeKey: "" }));
       await Promise.resolve();
     });
-    expect(container.textContent).toBe("filtered:visitor");
+    expect(container.textContent).toBe("filtered");
 
     await act(async () => {
       root.render(createElement(ScopeApp, { scopeKey: "site-id" }));
       await Promise.resolve();
     });
 
-    expect(container.textContent).toBe("filtered:visitor");
+    expect(container.textContent).toBe("filtered");
   });
 });

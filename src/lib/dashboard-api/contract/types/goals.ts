@@ -32,7 +32,10 @@ export interface GoalRevenue {
 
 export interface GoalSummary {
   sessions: GoalMetric;
+  /** Unique conversions; the rate is against the period's visitors. */
   visitors: GoalMetric;
+  /** Total conversions: the page views or custom events that matched. */
+  conversions: number;
   /** Null for a goal without a currency. */
   revenue: GoalRevenue | null;
 }
@@ -51,6 +54,12 @@ export interface GoalListData {
 export interface GoalSummaryData {
   ok: boolean;
   data: { goal: GoalDefinition; summary: GoalSummary };
+}
+
+/** Every goal of the site with its conversions. */
+export interface GoalConversionsData {
+  ok: boolean;
+  data: { goals: { goal: GoalDefinition; summary: GoalSummary }[] };
 }
 
 export interface GoalTimeseriesData {

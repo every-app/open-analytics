@@ -1,4 +1,3 @@
-import { EMPTY_FILTER_DOCUMENT } from "@/lib/edge/analytics/contract";
 import type { Env } from "@/lib/edge/types";
 
 import type {
@@ -8,21 +7,10 @@ import type {
   ListSort,
   QueryWindow,
 } from "./core";
-import {
-  buildEventAnalyticsSourceCte,
-  buildEventFilterSql,
-  buildVisitSourceCte,
-  eventRecordOrderBy,
-  eventSourceBindings,
-  queryD1All,
-  visitSourceBindings,
-} from "./core";
-import type { ScopedDatasetSql } from "./scoped-dataset";
-import { scopedDatasetFor } from "./scoped-dataset";
-// Event-record lists only need this projection for their output, filters, and
-// cursor predicates. Keeping it explicit prevents the shared analytics source
-// from carrying unrelated visit columns through every page query.
-const EVENT_RECORD_BASE_SOURCE_COLUMNS = [
+import { eventRecordOrderBy, filteredEventsCte, queryD1All } from "./core";
+// Event-record lists only need this projection for their output, search and
+// cursor predicates.
+const EVENT_RECORD_SOURCE_COLUMNS = [
   "ce.event_pk",
   "ce.event_id",
   "ce.site_pk",
@@ -48,46 +36,30 @@ const EVENT_RECORD_BASE_SOURCE_COLUMNS = [
   "v.os_version",
   "v.device_type",
 ] as const;
-const EVENT_RECORD_FILTER_SOURCE_COLUMNS: Readonly<
-  Record<string, readonly string[]>
-> = {
-  "page.query": ["v.query_string"],
-  "page.hash": ["v.hash_fragment"],
-  "referrer.url": ["v.referrer_url"],
-  "utm.source": ["v.utm_source"],
-  "utm.medium": ["v.utm_medium"],
-  "utm.campaign": ["v.utm_campaign"],
-  "utm.term": ["v.utm_term"],
-  "utm.content": ["v.utm_content"],
-  "traffic.channel": ["v.channel"],
-  "client.language": ["v.language"],
-  "client.screenSize": ["v.screen_width", "v.screen_height"],
-  "geo.city": ["v.city"],
-  "geo.continent": ["v.continent"],
-  "geo.timeZone": ["v.timezone"],
-};
-function eventRecordSourceColumns(filters: FilterDocument): string {
-  const columns = new Set<string>(EVENT_RECORD_BASE_SOURCE_COLUMNS);
-  const collect = (expression: FilterDocument["root"]): void => {
-    if (!expression) return;
-    if (expression.kind === "condition") {
-      if (expression.target.kind === "field") {
-        for (const column of EVENT_RECORD_FILTER_SOURCE_COLUMNS[
-          expression.target.field
-        ] ?? []) {
-          columns.add(column);
-        }
-      }
-      return;
-    }
-    if (expression.kind === "not") {
-      collect(expression.child);
-      return;
-    }
-    for (const child of expression.children) collect(child);
+const SEARCHED_COLUMNS = [
+  "event_name",
+  "event_id",
+  "visit_id",
+  "session_id",
+  "visitor_id",
+  "pathname",
+  "title",
+  "hostname",
+] as const;
+/** Events whose name, ids or page contain the search text, ignoring case. */
+function searchClause(search: string | undefined) {
+  if (!search) return { clause: "", bindings: [] as string[] };
+  const escaped = search
+    .toLowerCase()
+    .replaceAll("\\", "\\\\")
+    .replaceAll("%", "\\%")
+    .replaceAll("_", "\\_");
+  return {
+    clause: `WHERE (${SEARCHED_COLUMNS.map(
+      (column) => `LOWER(TRIM(COALESCE(es.${column}, ''))) LIKE ? ESCAPE '\\'`,
+    ).join(" OR ")})`,
+    bindings: SEARCHED_COLUMNS.map(() => `%${escaped}%`),
   };
-  collect(filters.root);
-  return [...columns].join(",\n    ");
 }
 export interface EventRecordCursor {
   readonly sortValue?: string | number;
@@ -176,24 +148,14 @@ function eventRecordCursorFilter(
   };
 }
 function eventRecordsSql(
+  source: string,
   filterClause: string,
   cursorClause: string,
   sort: ListSort<EventRecordSortKey>,
-  sourceColumns: string,
-  eventName?: string,
-  scopedDataset?: ScopedDatasetSql | null,
 ): string {
   return `
 WITH
-${
-  scopedDataset
-    ? scopedDataset.ctes
-    : `${buildVisitSourceCte()},
-${buildEventAnalyticsSourceCte({
-  eventName,
-  selectColumns: sourceColumns,
-})}`
-}
+${source}
 SELECT
   event_pk AS eventPk,
   event_id AS eventId,
@@ -218,7 +180,7 @@ SELECT
   device_type AS deviceType,
   node_count AS nodeCount,
   value_count AS valueCount
-FROM ${scopedDataset?.eventRelation ?? "event_source"} es
+FROM filtered_events es
 ${filterClause || "WHERE 1 = 1"}
 ${cursorClause}
 ORDER BY ${eventRecordOrderBy(sort)}
@@ -243,40 +205,20 @@ export async function queryEventRecordPageFromD1(
   },
 ): Promise<EventRecordPage> {
   const eventName = options.eventName?.trim() || undefined;
-  const scopedDataset = scopedDatasetFor(siteId, window, filters);
-  const filter = buildEventFilterSql(
-    scopedDataset ? EMPTY_FILTER_DOCUMENT : filters,
-    "es",
-    {
-      search: options.search,
-    },
-  );
-  const eventNameClause =
-    scopedDataset && eventName
-      ? `${filter.clause ? " AND" : "WHERE"} TRIM(COALESCE(es.event_name, '')) = ?`
-      : "";
+  const source = filteredEventsCte(siteId, window, filters, {
+    ...(eventName === undefined ? {} : { eventName }),
+    columns: EVENT_RECORD_SOURCE_COLUMNS.join(",\n    "),
+  });
+  const search = searchClause(options.search);
   const cursor = options.cursor
     ? eventRecordCursorFilter(options.cursor, options.sort)
     : { clause: "", bindings: [] };
   const rows = await queryD1All<EventRecordCursorRow>(
     env,
-    eventRecordsSql(
-      `${filter.clause}${eventNameClause}`,
-      cursor.clause,
-      options.sort,
-      eventRecordSourceColumns(filters),
-      eventName,
-      scopedDataset,
-    ),
+    eventRecordsSql(source.sql, search.clause, cursor.clause, options.sort),
     [
-      ...(scopedDataset
-        ? scopedDataset.bindings.map((binding) => binding.value)
-        : [
-            ...visitSourceBindings(siteId, window),
-            ...eventSourceBindings(siteId, window, eventName),
-          ]),
-      ...filter.bindings,
-      ...(scopedDataset && eventName ? [eventName] : []),
+      ...source.bindings,
+      ...search.bindings,
       ...cursor.bindings,
       options.limit + 1,
     ],

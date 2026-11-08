@@ -1,9 +1,5 @@
 import { shiftZonedRangeYears } from "@/lib/analytics/time-zone";
-import {
-  attachFilterScopePreference,
-  type FilterDocument,
-  filterScopePreferenceFromDocument,
-} from "@/lib/filter-contract";
+import type { FilterDocument } from "@/lib/filter-contract";
 
 import {
   type DashboardComparisonMode,
@@ -66,12 +62,10 @@ export function resolveDashboardComparisonQuery(
         : previousComparisonWindow(currentWindow);
   if (!comparisonWindow) return null;
 
-  const comparisonFilters = state.filterDocument.root
-    ? attachFilterScopePreference(
-        state.filterDocument,
-        filterScopePreferenceFromDocument(currentFilters) ?? "auto",
-      )
-    : currentFilters;
+  const comparisonFilters =
+    state.filterDocument.conditions.length > 0
+      ? state.filterDocument
+      : currentFilters;
 
   return {
     mode: state.mode,

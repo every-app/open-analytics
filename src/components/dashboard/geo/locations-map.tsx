@@ -11,7 +11,7 @@ import {
 import { fetchOverviewGeoPoints } from "@/lib/dashboard/client/data/index";
 import { filterQueryKey } from "@/lib/dashboard/filter-query-key";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
-import type { FilterDocument, FilterScope } from "@/lib/filter-contract/index";
+import type { FilterDocument } from "@/lib/filter-contract/index";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 
@@ -21,7 +21,6 @@ interface LocationsMapProps {
   siteId: string;
   window: TimeWindow;
   filters: FilterDocument;
-  resolvedScope?: FilterScope;
   selectedCountryCode: string | null;
   onCountrySelect: (countryCode: string | null) => void;
 }
@@ -36,7 +35,6 @@ export function LocationsMap({
   siteId,
   window,
   filters,
-  resolvedScope,
   selectedCountryCode,
   onCountrySelect,
 }: LocationsMapProps) {
@@ -51,13 +49,9 @@ export function LocationsMap({
       window.interval,
       window.timeZone,
       filtersKey,
-      resolvedScope ?? "auto",
     ],
     queryFn: ({ signal }) =>
-      fetchOverviewGeoPoints(siteId, window, filters, {
-        signal,
-        resolvedScope,
-      }),
+      fetchOverviewGeoPoints(siteId, window, filters, { signal }),
     enabled: typeof globalThis.window !== "undefined",
     placeholderData: keepPreviousData,
   });

@@ -10,7 +10,7 @@ import { LoadFailedContent } from "@/components/dashboard/common/table-states";
 import { useDashboardNavHref } from "@/components/dashboard/shell/dashboard-shell/navigation";
 import {
   fetchAllGoals,
-  fetchGoalSummary,
+  fetchGoalConversions,
 } from "@/lib/dashboard/client/data/index";
 import { filterQueryKey } from "@/lib/dashboard/filter-query-key";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
@@ -41,10 +41,11 @@ interface GoalConversionsCardProps {
 }
 
 /**
- * Each of the site's goals with its unique conversions, converting visits
+ * Each of the site's goals with its unique conversions, total conversions
  * ("—" for a scroll depth goal) and conversion rate for the range and
- * filters, and, once a goal has a currency, its revenue and average revenue.
- * Shown once a goal exists; a row opens the goal on Goals & funnels.
+ * filters, and, once a goal has a currency, its revenue and average revenue,
+ * all read in one request. Shown once a goal exists; a row opens the goal on
+ * Goals & funnels.
  */
 export function GoalConversionsCard({
   locale,
@@ -75,24 +76,15 @@ export function GoalConversionsCard({
   >(
     () =>
       async ({ signal }) => {
-        const list = goalList ?? [];
-        const results = await Promise.all(
-          list.map((goal) =>
-            fetchGoalSummary(siteId, goal.id, window, filters, {
-              signal,
-              goalSemanticFingerprint: goal.semanticFingerprint,
-            }),
-          ),
-        );
-        const summaries = new Map(
-          results.map((result) => [result.data.goal.id, result.data.summary]),
-        );
+        const { data } = await fetchGoalConversions(siteId, window, filters, {
+          signal,
+        });
         return {
-          items: goalConversionRows(list, summaries),
+          items: goalConversionRows(data.goals),
           pagination: { hasMore: false, nextCursor: null },
         };
       },
-    [filters, goalList, siteId, window],
+    [filters, siteId, window],
   );
 
   if (goals.isError) {

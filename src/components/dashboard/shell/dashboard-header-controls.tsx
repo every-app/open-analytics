@@ -1,7 +1,5 @@
 import type { CSSProperties } from "react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { AutoResizer } from "@insightflare/ui/auto-resizer";
-import { AutoTransition } from "@insightflare/ui/auto-transition";
 import { Button } from "@insightflare/ui/button";
 import {
   Drawer,
@@ -24,6 +22,7 @@ import {
 } from "@/components/dashboard/comparison/comparison-panel";
 import { FilterActiveCountBadge } from "@/components/dashboard/filters/filter-active-count-badge";
 import { FilterPanel } from "@/components/dashboard/filters/filter-panel";
+import { useApplyDashboardFilters } from "@/components/dashboard/filters/use-dashboard-filters";
 import { useDashboardQueryControls } from "@/components/dashboard/shell/dashboard-query-provider";
 import { useRealtimeChannelSelector } from "@/hooks/use-realtime-channel";
 import {
@@ -35,23 +34,13 @@ import {
   parseDashboardComparisonSearchParams,
   serializeDashboardSearchParams,
   withDashboardComparisonSearchParams,
-  withDashboardFilterSearchParams,
 } from "@/lib/dashboard/filter-state";
-import {
-  parseFilterDocumentFromSearchParams,
-  parseFilterScopeFromSearchParams,
-  serializeFilterScopeToSearchParams,
-} from "@/lib/dashboard/query-state";
+import { parseFilterDocumentFromSearchParams } from "@/lib/dashboard/query-state";
 import {
   analyticsFilterRegistry,
-  attachFilterScopePreference,
   type FilterDocument,
-  type FilterScope,
-  type FilterScopePreference,
-  filterScopePreferenceFromDocument,
   formatFilterDsl,
   parseFilterDsl,
-  serializeFilterParams,
 } from "@/lib/filter-contract/index";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
@@ -75,8 +64,6 @@ interface DashboardHeaderControlsProps {
   /** Filter; off where the page can't be filtered. */
   showFilter: boolean;
   filterAudience?: "private-dashboard" | "public-share";
-  /** Concrete scope selected by the active dashboard page for Auto filters. */
-  resolvedScope?: FilterScope;
   /** Real-time's page; given, the header shows the live count linking to it. */
   realtimeHref?: string;
 }
@@ -86,7 +73,6 @@ function FilterTrigger({
   compact = false,
   messages,
   onClick,
-  scopePreference,
   style,
 }: {
   activeFilterCount: number;
@@ -94,17 +80,9 @@ function FilterTrigger({
   compact?: boolean;
   messages: AppMessages;
   onClick: () => void;
-  scopePreference: FilterScopePreference;
   style?: CSSProperties;
 }) {
-  const filterButtonLabel =
-    scopePreference === "event"
-      ? messages.dashboardHeader.filterButtonEvent
-      : scopePreference === "session"
-        ? messages.dashboardHeader.filterButtonSession
-        : scopePreference === "visitor"
-          ? messages.dashboardHeader.filterButtonVisitor
-          : messages.dashboardHeader.filterButton;
+  const filterButtonLabel = messages.dashboardHeader.filterButton;
 
   return (
     <Button
@@ -124,24 +102,9 @@ function FilterTrigger({
         data-icon="inline-start"
         className={cn(activeFilterCount === 0 && "text-muted-foreground")}
       />
-      <AutoResizer
-        initial
-        animateWidth
-        animateHeight={false}
-        className="inline-flex min-w-0 items-center"
-      >
-        <AutoTransition
-          as="span"
-          className="hidden whitespace-nowrap sm:inline-block"
-          duration={0.2}
-          initial={false}
-          presenceMode="wait"
-          transitionKey={scopePreference}
-          type="fade"
-        >
-          {filterButtonLabel}
-        </AutoTransition>
-      </AutoResizer>
+      <span className="hidden whitespace-nowrap sm:inline-block">
+        {filterButtonLabel}
+      </span>
       <FilterActiveCountBadge
         count={activeFilterCount}
         className={
@@ -193,10 +156,11 @@ function comparisonSettingsFromSearchState(
   state: DashboardComparisonSearchState,
   currentFilterDsl: string,
 ): ComparisonSettings {
+  const custom = state.filterDocument.conditions.length > 0;
   return {
     period: state.mode ?? "previous",
-    filterMode: state.filterDocument.root ? "custom" : "current",
-    filterDsl: state.filterDocument.root
+    filterMode: custom ? "custom" : "current",
+    filterDsl: custom
       ? formatFilterDsl(state.filterDocument)
       : currentFilterDsl,
   };
@@ -209,28 +173,20 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
   showComparison,
   showFilter,
   filterAudience = "private-dashboard",
-  resolvedScope,
   realtimeHref,
 }: DashboardHeaderControlsProps) {
   const searchParams = useLiveSearchParams();
   const livePathname = usePathname() || "/";
-  const {
-    window,
-    setUiFilters,
-    scopePreference,
-    setScopePreference,
-    uiFilterDsl,
-  } = useDashboardQueryControls();
+  const { window } = useDashboardQueryControls();
   const searchParamsKey = searchParams.toString();
   const queryDocument = useMemo(
     () =>
       parseFilterDocumentFromSearchParams(new URLSearchParams(searchParamsKey)),
     [searchParamsKey],
   );
-  const urlScopePreference = useMemo(
-    () =>
-      parseFilterScopeFromSearchParams(new URLSearchParams(searchParamsKey)),
-    [searchParamsKey],
+  const currentFilterDsl = useMemo(
+    () => formatFilterDsl(queryDocument),
+    [queryDocument],
   );
   const comparisonSearchState = useMemo(
     () =>
@@ -239,11 +195,7 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
       ),
     [searchParamsKey],
   );
-  const activeFilterCount = useMemo(
-    () => serializeFilterParams(queryDocument, analyticsFilterRegistry).size,
-    [queryDocument],
-  );
-  const filterSuggestionScope = resolvedScope ?? "event";
+  const activeFilterCount = queryDocument.conditions.length;
   const hasActiveFilters = activeFilterCount > 0;
   const headerTriggerClassName =
     "gap-2 transition-[color,background-color,border-color,opacity]";
@@ -274,7 +226,7 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
     useState<ComparisonSettings>(() =>
       comparisonSettingsFromSearchState(
         comparisonSearchState,
-        uiFilterDsl ?? "",
+        currentFilterDsl,
       ),
     );
   const realtimeSiteId = siteId || undefined;
@@ -292,35 +244,13 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
   } = realtimeHeaderState;
 
   useEffect(() => {
-    if (scopePreference !== urlScopePreference) {
-      setScopePreference(urlScopePreference);
-    }
-  }, [scopePreference, setScopePreference, urlScopePreference]);
-
-  useEffect(() => {
     setComparisonSettings(
       comparisonSettingsFromSearchState(
         comparisonSearchState,
-        uiFilterDsl ?? "",
+        currentFilterDsl,
       ),
     );
-  }, [comparisonSearchState, uiFilterDsl]);
-
-  const handleScopeChange = useCallback(
-    (next: FilterScopePreference) => {
-      setScopePreference(next);
-      const params = queryDocument.root
-        ? serializeFilterScopeToSearchParams(searchParams, next)
-        : serializeFilterScopeToSearchParams(searchParams, "auto");
-      const updated = serializeDashboardSearchParams(params);
-      const current = serializeDashboardSearchParams(searchParams);
-      if (updated !== current) {
-        const target = updated ? `${livePathname}?${updated}` : livePathname;
-        replaceUrlWithoutNavigation(target);
-      }
-    },
-    [livePathname, queryDocument, searchParams, setScopePreference],
-  );
+  }, [comparisonSearchState, currentFilterDsl]);
 
   const handleComparisonApply = useCallback(
     (settings: ComparisonSettings) => {
@@ -350,13 +280,13 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
       setComparisonSettings(
         comparisonSettingsFromSearchState(
           parseDashboardComparisonSearchParams(params),
-          uiFilterDsl ?? "",
+          currentFilterDsl,
         ),
       );
       setMobileCompareDrawerOpen(false);
       setDesktopCompareSheetOpen(false);
     },
-    [livePathname, searchParams, uiFilterDsl],
+    [currentFilterDsl, livePathname, searchParams],
   );
 
   const handleComparisonCancel = () => {
@@ -364,48 +294,28 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
     setDesktopCompareSheetOpen(false);
   };
 
+  const applyFilters = useApplyDashboardFilters();
   const applyFilterDocument = useCallback(
     (
       nextDocument: FilterDocument,
-      rawDsl?: string,
       options?: { readonly closePanel?: boolean },
     ) => {
-      const nextScope =
-        filterScopePreferenceFromDocument(nextDocument) ?? scopePreference;
-      const scopedDocument = attachFilterScopePreference(
-        nextDocument,
-        nextScope,
-      );
-      setUiFilters(scopedDocument, rawDsl);
-      const filterParams = withDashboardFilterSearchParams(
-        searchParams,
-        scopedDocument,
-      );
-      const params = scopedDocument.root
-        ? serializeFilterScopeToSearchParams(filterParams, nextScope)
-        : serializeFilterScopeToSearchParams(filterParams, "auto");
-      const updated = serializeDashboardSearchParams(params);
-      const current = serializeDashboardSearchParams(searchParams);
-      if (updated !== current) {
-        const target = updated ? `${livePathname}?${updated}` : livePathname;
-        replaceUrlWithoutNavigation(target);
-      }
+      applyFilters(nextDocument);
       if (options?.closePanel !== false) {
         setMobileFilterDrawerOpen(false);
         setDesktopFilterSheetOpen(false);
       }
     },
-    [livePathname, scopePreference, searchParams, setUiFilters],
+    [applyFilters],
   );
 
   const comparisonPanel = (
     <ComparisonPanel
-      currentFilterDsl={uiFilterDsl ?? ""}
+      currentFilterDsl={currentFilterDsl}
       initialSettings={comparisonSettings}
       messages={messages}
       onApply={handleComparisonApply}
       onCancel={handleComparisonCancel}
-      resolvedScope={resolvedScope ?? "event"}
       siteId={siteId}
       timeWindow={window}
     />
@@ -414,15 +324,11 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
     <FilterPanel
       audience={filterAudience}
       document={queryDocument}
-      expressionText={uiFilterDsl}
       messages={messages}
       open={open}
-      resolvedScope={filterSuggestionScope}
       siteId={siteId}
-      scopePreference={scopePreference}
       window={window}
       onApply={applyFilterDocument}
-      onScopeChange={handleScopeChange}
     />
   );
   const realtimeBadge =
@@ -477,7 +383,6 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
               compact
               messages={messages}
               onClick={() => setMobileFilterDrawerOpen(true)}
-              scopePreference={scopePreference}
               style={filterTriggerStyle}
             />
             <DrawerContent
@@ -536,7 +441,6 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
               className={filterTriggerClassName}
               messages={messages}
               onClick={() => setDesktopFilterSheetOpen(true)}
-              scopePreference={scopePreference}
               style={filterTriggerStyle}
             />
             <SheetContent

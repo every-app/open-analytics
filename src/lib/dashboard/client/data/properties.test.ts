@@ -18,11 +18,7 @@ const window: TimeWindow = {
   interval: "hour",
   timeZone: "UTC",
 };
-const filters = setPropertyFilterValue(
-  { version: 1, root: null },
-  "author",
-  "Jane",
-);
+const filters = setPropertyFilterValue({ conditions: [] }, "author", "Jane");
 
 beforeEach(() => {
   mocks.fetchPrivateJson.mockReset().mockResolvedValue({ ok: true });

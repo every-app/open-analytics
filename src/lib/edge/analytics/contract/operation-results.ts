@@ -165,13 +165,22 @@ export interface CanonicalGoalRevenueSummary {
   readonly total: number;
   readonly average: number;
 }
+/** A goal's conversions in a period: Plausible's goal columns. */
+export interface CanonicalGoalConversionSummary {
+  readonly sessions: CanonicalGoalMetricSummary;
+  /** Unique conversions; the rate is against the period's visitors. */
+  readonly visitors: CanonicalGoalMetricSummary;
+  /** Total conversions: the page views or custom events that matched. */
+  readonly conversions: number;
+  readonly revenue: CanonicalGoalRevenueSummary | null;
+}
 export interface CanonicalGoalSummaryResult {
   readonly goal: GoalDefinition;
-  readonly summary: {
-    readonly sessions: CanonicalGoalMetricSummary;
-    readonly visitors: CanonicalGoalMetricSummary;
-    readonly revenue: CanonicalGoalRevenueSummary | null;
-  };
+  readonly summary: CanonicalGoalConversionSummary;
+}
+/** Every goal of the site with its conversions, read in one statement. */
+export interface CanonicalGoalConversionsResult {
+  readonly goals: readonly CanonicalGoalSummaryResult[];
 }
 export interface CanonicalGoalTimeseriesResult {
   readonly goal: GoalDefinition;

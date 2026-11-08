@@ -9,9 +9,12 @@ import {
 import { SITE_PK_FROM_SITE_ID_SQL } from "@/lib/edge/sites/identity-sql";
 import type { Env } from "@/lib/edge/types";
 
-import { queryD1All } from "./core-sources";
+import {
+  filteredEventsCte,
+  filteredVisitsCte,
+  queryD1All,
+} from "./core-sources";
 import type { QueryWindow } from "./core-types";
-import { scopedDatasetFor } from "./scoped-dataset";
 
 /** An event payload path's key, decoding its JSON pointer escapes. */
 const PATH_KEY_SQL =
@@ -29,7 +32,7 @@ interface PropertyRows {
  * Every page view's property and every event's top-level string payload
  * value in the window, with whose they were: one key's, or all keys'.
  * Unfiltered, it reads the property and payload indexes for the window;
- * filtered, only the rows of the filters' page views and events.
+ * filtered, only the rows of the filtered page views and events.
  */
 function propertyRows(
   siteId: string,
@@ -37,14 +40,23 @@ function propertyRows(
   filters: FilterDocument,
   key: string | null,
 ): PropertyRows {
-  const dataset = scopedDatasetFor(siteId, window, filters);
-  if (!dataset && filters.root !== null) {
-    throw new Error("scoped_dataset_required");
-  }
-  const visits = dataset?.visitRelation ?? "visits";
-  const events =
-    dataset?.eventRelation ??
-    `(SELECT ce.event_pk, v.visitor_id, v.session_id
+  const filtered = filters.conditions.length > 0;
+  const filteredSources = filtered
+    ? [
+        filteredVisitsCte(siteId, window, filters, {
+          name: "property_visits",
+          columns: "visit_id, visitor_id, session_id",
+        }),
+        filteredEventsCte(siteId, window, filters, {
+          name: "property_events",
+          columns: "ce.event_pk, v.visitor_id, v.session_id",
+        }),
+      ]
+    : [];
+  const visits = filtered ? "property_visits" : "visits";
+  const events = filtered
+    ? "property_events"
+    : `(SELECT ce.event_pk, v.visitor_id, v.session_id
       FROM custom_events ce
       INNER JOIN visits v ON v.visit_id = ce.visit_id)`;
   const range = [window.startMs, window.endExclusiveMs];
@@ -68,9 +80,9 @@ property_rows AS (
     AND val.occurred_at >= ? AND val.occurred_at < ?
 )`;
   return {
-    ctes: dataset ? `${dataset.ctes.trim()},${ctes}` : ctes,
+    ctes: [...filteredSources.map((source) => source.sql), ctes].join(","),
     bindings: [
-      ...(dataset?.bindings.map((binding) => binding.value as Binding) ?? []),
+      ...filteredSources.flatMap((source) => source.bindings as Binding[]),
       siteId,
       ...(key === null ? [] : [key]),
       ...range,

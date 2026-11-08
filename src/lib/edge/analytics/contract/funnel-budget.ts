@@ -21,5 +21,3 @@ export const FUNNEL_SQL_STRUCTURAL_BUDGET: FunnelSqlStructuralBudget =
     maxSqlLength: FUNNEL_SQL_MAX_LENGTH,
     maxBindings: FUNNEL_SQL_MAX_BINDINGS,
   });
-
-export const FUNNEL_SQL_BASE_DATASET_BINDINGS = 6;

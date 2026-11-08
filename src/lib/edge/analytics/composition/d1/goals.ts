@@ -10,10 +10,13 @@ import {
   typedQueryProviderFor,
 } from "@/lib/edge/analytics/application/provider-registry";
 import { EMPTY_FILTER_DOCUMENT } from "@/lib/edge/analytics/contract";
-import { readSiteGoalSummary } from "@/lib/edge/analytics/providers/d1/operations/site-goal-summary";
+import {
+  readSiteGoalConversions,
+  readSiteGoalSummary,
+} from "@/lib/edge/analytics/providers/d1/operations/site-goal-summary";
 import { readSiteGoalTimeseries } from "@/lib/edge/analytics/providers/d1/operations/site-goal-timeseries";
 
-import type { D1SiteRuntimeBindings } from "./shared";
+import { type D1SiteRuntimeBindings, timeWindow } from "./shared";
 export {
   archiveGoalDefinition,
   createGoalDefinition,
@@ -27,6 +30,18 @@ export function registerGoalProviders(
   options: D1SiteRuntimeBindings,
 ): void {
   registry.register(
+    "goal-conversions",
+    typedQueryProviderFor("goal-conversions", async (input) => ({
+      value: await readSiteGoalConversions({
+        env: options.env,
+        siteId: options.siteId,
+        window: timeWindow(input.time),
+        filters: input.filters ?? EMPTY_FILTER_DOCUMENT,
+        ...(options.diagnostics ? { diagnostics: options.diagnostics } : {}),
+      }),
+    })),
+  );
+  registry.register(
     "goal-summary",
     typedQueryProviderFor("goal-summary", async (input) => {
       if (!input || !input.time) throw new Error("goal_query_missing");
@@ -35,13 +50,9 @@ export function registerGoalProviders(
         env: options.env,
         siteId: options.siteId,
         goalId: request.goalId ?? "",
-        window: {
-          startMs: request.time.range.startMs,
-          endExclusiveMs: request.time.range.endExclusiveMs,
-          nowMs: request.time.capturedAtMs,
-          timeZone: request.time.reportingTimeZone,
-        },
+        window: timeWindow(request.time),
         filters: request.filters ?? EMPTY_FILTER_DOCUMENT,
+        ...(options.diagnostics ? { diagnostics: options.diagnostics } : {}),
       });
       return { value: result };
     }),
@@ -56,12 +67,7 @@ export function registerGoalProviders(
         siteId: options.siteId,
         goalId: request.goalId ?? "",
         interval: request.interval ?? "day",
-        window: {
-          startMs: request.time.range.startMs,
-          endExclusiveMs: request.time.range.endExclusiveMs,
-          nowMs: request.time.capturedAtMs,
-          timeZone: request.time.reportingTimeZone,
-        },
+        window: timeWindow(request.time),
         filters: request.filters ?? EMPTY_FILTER_DOCUMENT,
       });
       return { value: result };

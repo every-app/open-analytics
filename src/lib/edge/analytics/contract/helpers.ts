@@ -5,10 +5,6 @@ import {
   shiftZonedRangeYears,
   startOfZonedInterval,
 } from "@/lib/analytics/time-zone";
-import {
-  FILTER_DOCUMENT_VERSION,
-  type FilterDocument,
-} from "@/lib/filter-contract/filters";
 
 import type {
   CalendarBucket,
@@ -143,15 +139,6 @@ export function percentChange(
   if (!Number.isFinite(current) || !Number.isFinite(previous) || previous <= 0)
     return null;
   return ((current - previous) / previous) * 100;
-}
-export const EMPTY_FILTER_DOCUMENT: FilterDocument = Object.freeze({
-  version: FILTER_DOCUMENT_VERSION,
-  root: null,
-});
-export function hasFilters(
-  filters: FilterDocument | null | undefined,
-): boolean {
-  return Boolean(filters?.root);
 }
 export function buildCalendarBucketPlan(input: {
   readonly range: TimeRange;

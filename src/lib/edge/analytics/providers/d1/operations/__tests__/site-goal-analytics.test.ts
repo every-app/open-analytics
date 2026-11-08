@@ -1,19 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/edge/analytics/providers/d1/internal/goals", () => ({
+  queryAllGoalDefinitions: vi.fn(),
   queryGoalDefinition: vi.fn(),
 }));
-vi.mock("@/lib/edge/analytics/providers/d1/internal/goal-summary", () => ({
-  queryGoalSummaryFromD1: vi.fn(),
-}));
-vi.mock("@/lib/edge/analytics/providers/d1/internal/goal-timeseries", () => ({
+vi.mock("@/lib/edge/analytics/providers/d1/internal/goal-conversions", () => ({
+  queryGoalConversionsFromD1: vi.fn(),
   queryGoalTimeseriesFromD1: vi.fn(),
 }));
 
-import { queryGoalSummaryFromD1 } from "@/lib/edge/analytics/providers/d1/internal/goal-summary";
-import { queryGoalTimeseriesFromD1 } from "@/lib/edge/analytics/providers/d1/internal/goal-timeseries";
-import { queryGoalDefinition } from "@/lib/edge/analytics/providers/d1/internal/goals";
-import { readSiteGoalSummary } from "@/lib/edge/analytics/providers/d1/operations/site-goal-summary";
+import {
+  queryGoalConversionsFromD1,
+  queryGoalTimeseriesFromD1,
+} from "@/lib/edge/analytics/providers/d1/internal/goal-conversions";
+import {
+  queryAllGoalDefinitions,
+  queryGoalDefinition,
+} from "@/lib/edge/analytics/providers/d1/internal/goals";
+import {
+  readSiteGoalConversions,
+  readSiteGoalSummary,
+} from "@/lib/edge/analytics/providers/d1/operations/site-goal-summary";
 import { readSiteGoalTimeseries } from "@/lib/edge/analytics/providers/d1/operations/site-goal-timeseries";
 
 const inputBase = {
@@ -26,8 +33,25 @@ const inputBase = {
     nowMs: 180_000,
     timeZone: "UTC",
   },
-  filters: { version: 1 as const, root: null },
+  filters: { conditions: [] },
 };
+
+function aggregate(
+  totals: { sessions: number; visitors: number },
+  counts: {
+    sessions: number;
+    visitors: number;
+    conversions: number;
+    revenue: { total: number; events: number } | null;
+  },
+  goalId = "goal-1",
+) {
+  return {
+    totalSessions: totals.sessions,
+    totalVisitors: totals.visitors,
+    goals: new Map([[goalId, counts]]),
+  };
+}
 
 const goal = {
   id: "goal-1",
@@ -45,29 +69,35 @@ describe("site Goal analytics operations", () => {
 
   it("parses the persisted Goal filter and maps rates with a zero denominator", async () => {
     vi.mocked(queryGoalDefinition).mockResolvedValue(goal);
-    vi.mocked(queryGoalSummaryFromD1).mockResolvedValue({
-      totalSessions: 0,
-      convertedSessions: 0,
-      totalVisitors: 3,
-      convertedVisitors: 1,
-      revenue: null,
-    });
+    vi.mocked(queryGoalConversionsFromD1).mockResolvedValue(
+      aggregate(
+        { sessions: 0, visitors: 3 },
+        { sessions: 0, visitors: 1, conversions: 2, revenue: null },
+      ),
+    );
 
     await expect(readSiteGoalSummary(inputBase)).resolves.toEqual({
       goal,
       summary: {
         sessions: { total: 0, converted: 0, conversionRate: 0 },
         visitors: { total: 3, converted: 1, conversionRate: 1 / 3 },
+        conversions: 2,
         revenue: null,
       },
     });
-    expect(queryGoalSummaryFromD1).toHaveBeenCalledWith(
+    expect(queryGoalConversionsFromD1).toHaveBeenCalledWith(
       inputBase.env,
       inputBase.siteId,
       inputBase.window,
       inputBase.filters,
-      expect.objectContaining({ version: 1, root: expect.any(Object) }),
-      undefined,
+      [
+        {
+          id: "goal-1",
+          filter: {
+            conditions: [expect.objectContaining({ value: "purchase" })],
+          },
+        },
+      ],
       undefined,
     );
   });
@@ -75,21 +105,29 @@ describe("site Goal analytics operations", () => {
   it("averages a revenue goal's revenue over the events that carried it", async () => {
     const revenueGoal = { ...goal, currency: "USD" };
     vi.mocked(queryGoalDefinition).mockResolvedValue(revenueGoal);
-    vi.mocked(queryGoalSummaryFromD1)
-      .mockResolvedValueOnce({
-        totalSessions: 4,
-        convertedSessions: 3,
-        totalVisitors: 4,
-        convertedVisitors: 3,
-        revenue: { total: 30, events: 2 },
-      })
-      .mockResolvedValueOnce({
-        totalSessions: 4,
-        convertedSessions: 0,
-        totalVisitors: 4,
-        convertedVisitors: 0,
-        revenue: { total: 0, events: 0 },
-      });
+    vi.mocked(queryGoalConversionsFromD1)
+      .mockResolvedValueOnce(
+        aggregate(
+          { sessions: 4, visitors: 4 },
+          {
+            sessions: 3,
+            visitors: 3,
+            conversions: 3,
+            revenue: { total: 30, events: 2 },
+          },
+        ),
+      )
+      .mockResolvedValueOnce(
+        aggregate(
+          { sessions: 4, visitors: 4 },
+          {
+            sessions: 0,
+            visitors: 0,
+            conversions: 0,
+            revenue: { total: 0, events: 0 },
+          },
+        ),
+      );
 
     const result = await readSiteGoalSummary(inputBase);
     expect(result?.summary.revenue).toEqual({
@@ -97,7 +135,9 @@ describe("site Goal analytics operations", () => {
       total: 30,
       average: 15,
     });
-    expect(vi.mocked(queryGoalSummaryFromD1).mock.calls[0]?.[6]).toBe("USD");
+    expect(
+      vi.mocked(queryGoalConversionsFromD1).mock.calls[0]?.[4][0]?.currency,
+    ).toBe("USD");
     // No revenue events: an average of zero, not a division by zero.
     expect((await readSiteGoalSummary(inputBase))?.summary.revenue).toEqual({
       currency: "USD",
@@ -149,7 +189,39 @@ describe("site Goal analytics operations", () => {
     await expect(
       readSiteGoalTimeseries({ ...inputBase, interval: "day" }),
     ).resolves.toBeNull();
-    expect(queryGoalSummaryFromD1).not.toHaveBeenCalled();
+    expect(queryGoalConversionsFromD1).not.toHaveBeenCalled();
     expect(queryGoalTimeseriesFromD1).not.toHaveBeenCalled();
+  });
+
+  it("reads every goal's conversions in one call, and none for a site without goals", async () => {
+    const signup = {
+      ...goal,
+      id: "goal-2",
+      filterDsl: 'page.path eq "/signup"',
+    };
+    vi.mocked(queryAllGoalDefinitions).mockResolvedValueOnce([goal, signup]);
+    vi.mocked(queryGoalConversionsFromD1).mockResolvedValue({
+      totalSessions: 10,
+      totalVisitors: 8,
+      goals: new Map([
+        ["goal-1", { sessions: 2, visitors: 2, conversions: 3, revenue: null }],
+        ["goal-2", { sessions: 4, visitors: 4, conversions: 4, revenue: null }],
+      ]),
+    });
+
+    const result = await readSiteGoalConversions(inputBase);
+    expect(
+      result.goals.map(({ goal, summary }) => [goal.id, summary.visitors]),
+    ).toEqual([
+      ["goal-1", { total: 8, converted: 2, conversionRate: 0.25 }],
+      ["goal-2", { total: 8, converted: 4, conversionRate: 0.5 }],
+    ]);
+    expect(queryGoalConversionsFromD1).toHaveBeenCalledTimes(1);
+
+    vi.mocked(queryAllGoalDefinitions).mockResolvedValueOnce([]);
+    await expect(readSiteGoalConversions(inputBase)).resolves.toEqual({
+      goals: [],
+    });
+    expect(queryGoalConversionsFromD1).toHaveBeenCalledTimes(1);
   });
 });

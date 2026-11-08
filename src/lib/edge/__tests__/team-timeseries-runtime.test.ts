@@ -32,7 +32,7 @@ const input = {
   allowedSiteIds: ["site-1", "site-2"],
   window: { startMs: 0, endExclusiveMs: 1, nowMs: 1, timeZone: "UTC" },
   interval: "hour" as const,
-  filters: { version: 1 as const, root: null },
+  filters: { conditions: [] },
 };
 
 describe("team timeseries runtime", () => {

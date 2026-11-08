@@ -1,6 +1,8 @@
-import { filterConditionCount } from "@/lib/filter-contract/filters";
+import {
+  EMPTY_FILTER_DOCUMENT,
+  filterConditionCount,
+} from "@/lib/filter-contract/filters";
 
-import { EMPTY_FILTER_DOCUMENT } from "./helpers";
 import type { AnalyticsDomainError, QueryContext, QueryInput } from "./types";
 
 /** Enforces the caller policy's maximum filter complexity for a canonical query. */

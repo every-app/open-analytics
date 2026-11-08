@@ -1,11 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  prepareScopedQuery,
-  type QueryInput,
-  type QueryTime,
-  teamQueryContext,
-} from "@/lib/edge/analytics/contract";
 import type { Env } from "@/lib/edge/types";
 vi.mock("@/lib/edge/analytics/providers/d1/internal/rollup-queries", () => ({
   queryOverviewForSitesFromRollups: vi.fn(),
@@ -111,29 +105,6 @@ function makeEnv(results: Record<string, unknown>[] = []): Env {
 function makeWindow(startMs = 1000, endExclusiveMs = 2000) {
   return { startMs, endExclusiveMs, nowMs: 3000, timeZone: "UTC" };
 }
-function scopedTeamFilters(
-  scopePreference: "auto" | "session" | "visitor" = "auto",
-) {
-  const query = prepareScopedQuery("team-dashboard", {
-    context: teamQueryContext("team-1", "private-dashboard", ["s1"]),
-    time: {
-      range: { startMs: 1000, endExclusiveMs: 2000 },
-      reportingTimeZone: "UTC",
-      capturedAtMs: 3000,
-    } as unknown as QueryTime,
-    filters: {
-      version: 1,
-      root: {
-        kind: "condition",
-        target: { kind: "field", field: "page.path" },
-        operator: "eq",
-        value: "/docs",
-      },
-    },
-    scopePreference,
-  } as QueryInput & { time: QueryTime });
-  return query.filters!;
-}
 function makeUrl(path: string, params?: Record<string, string>): URL {
   const url = new URL(`https://app.test${path}`);
   if (params) {
@@ -229,88 +200,6 @@ describe("queryTeamTrendFromD1", () => {
     expect(sql).toContain("visit_source AS (...)\nSELECT");
     expect(sql).not.toMatch(/\),\s*SELECT/);
   });
-});
-describe("filtered team dashboard aggregates", () => {
-  beforeEach(() => {
-    queryOverviewMock.mockReset();
-    queryTrendMock.mockReset();
-    queryD1AllMock.mockReset();
-    queryD1AllMock.mockResolvedValue([]);
-  });
-
-  it("uses the scoped dataset for filtered current and previous data", async () => {
-    const filters = scopedTeamFilters();
-    const env = makeEnv();
-    const sites = [
-      {
-        id: "s1",
-        teamId: "t1",
-        name: "Site 1",
-        domain: "example.com",
-        publicEnabled: 1,
-        publicSlug: "s1",
-        createdAt: 1000,
-        updatedAt: 2000,
-      },
-    ];
-
-    const result = await queryTeamDashboardForTeam(
-      env,
-      "team-1",
-      makeWindow(),
-      "day",
-      ["s1"],
-      undefined,
-      sites,
-      filters,
-    );
-
-    expect(result.source).toBe("raw");
-    expect(queryOverviewMock).not.toHaveBeenCalled();
-    expect(queryTrendMock).not.toHaveBeenCalled();
-    expect(queryD1AllMock).toHaveBeenCalledTimes(3);
-    expect(
-      queryD1AllMock.mock.calls.every(([, sql]) =>
-        String(sql).includes("FROM scope_final_visits"),
-      ),
-    ).toBe(true);
-  });
-
-  it.each(["session", "visitor"] as const)(
-    "uses entity-scoped relations for %s filters",
-    async (scopePreference) => {
-      const filters = scopedTeamFilters(scopePreference);
-      const result = await queryTeamDashboardForTeam(
-        makeEnv(),
-        "team-1",
-        makeWindow(),
-        "day",
-        ["s1"],
-        undefined,
-        [
-          {
-            id: "s1",
-            teamId: "t1",
-            name: "Site 1",
-            domain: "example.com",
-            publicEnabled: 1,
-            publicSlug: "s1",
-            createdAt: 1000,
-            updatedAt: 2000,
-          },
-        ],
-        filters,
-      );
-
-      expect(result.source).toBe("raw");
-      expect(queryD1AllMock).toHaveBeenCalledTimes(3);
-      expect(
-        queryD1AllMock.mock.calls.every(([, sql]) =>
-          String(sql).includes("scope_membership_"),
-        ),
-      ).toBe(true);
-    },
-  );
 });
 describe("listTeamSites", () => {
   it("returns sites for a team", async () => {

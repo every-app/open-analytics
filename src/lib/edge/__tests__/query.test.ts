@@ -258,11 +258,8 @@ function overviewMatch(): SqlMatch {
   let index = 0;
   return {
     match: (sql) =>
-      sql.includes(
-        "COALESCE((SELECT count(*) FROM session_rollup WHERE visit_count = 1), 0) AS bounces",
-      ) &&
-      (sql.includes("FROM filtered_visits") ||
-        sql.includes("FROM scope_final_visits")),
+      sql.includes("visitor_sessions AS") &&
+      sql.includes("FROM page_view_groups"),
     first: undefined,
     run: undefined,
     get all() {
@@ -357,7 +354,7 @@ function sessionRow(overrides: Record<string, unknown> = {}) {
 function commonQueryMatches(): SqlMatch[] {
   return [
     overviewMatch(),
-    allMatch(["visit_bucket_rollup AS", "session_bucket_rollup AS"], trendRows),
+    allMatch(["visit_buckets AS", "session_buckets AS"], trendRows),
     allMatch(
       ["ranked_session_visits AS", "card_rows AS", "cardType"],
       [
@@ -1212,16 +1209,13 @@ describe("edge query handlers", () => {
       ]),
     );
     const aggregateStatement = statements.find((statement) =>
-      statement.sql.includes("session_rollup AS"),
+      statement.sql.includes("visitor_sessions AS"),
     );
     expect(aggregateStatement?.bindings).toEqual(
       expect.arrayContaining(["us", "example.com"]),
     );
-    expect(aggregateStatement?.sql).toContain("scope_matching_visits AS");
-    expect(aggregateStatement?.sql).toContain("scope_matching_events AS");
-    expect(aggregateStatement?.sql).toContain(
-      "LOWER(TRIM(COALESCE(v.referrer_host, ''))) = ''",
-    );
+    expect(aggregateStatement?.sql).toContain("FROM visits v");
+    expect(aggregateStatement?.sql).not.toContain("scope_");
   });
 
   it("rejects invalid private query windows after authorization", async () => {
@@ -1920,69 +1914,6 @@ describe("edge query handlers", () => {
         trend: [],
       },
     });
-  });
-
-  it("applies private team filters through the scoped dataset", async () => {
-    const { env, statements } = createEnv({
-      matches: [
-        allMatch(
-          ["FROM sites", "WHERE team_id = ?"],
-          [
-            {
-              id: "site-1",
-              teamId: "team-1",
-              name: "Main",
-              domain: "example.com",
-              publicEnabled: 1,
-              publicSlug: "main",
-              createdAt: 10,
-              updatedAt: 20,
-            },
-          ],
-        ),
-        allMatch(
-          ["FROM scope_final_visits", "GROUP BY siteId"],
-          [
-            {
-              siteId: "site-1",
-              views: 4,
-              sessions: 2,
-              visitors: 2,
-              bounces: 1,
-              totalDuration: 100,
-              durationViews: 2,
-            },
-          ],
-        ),
-        allMatch(
-          ["FROM scope_final_visits", "GROUP BY siteId, bucket"],
-          [{ siteId: "site-1", bucket: 0, views: 4, visitors: 2 }],
-        ),
-      ],
-    });
-
-    const response = await privateQuery(
-      `/api/private/team-dashboard?teamId=team-1&${windowParams}&filter[page.path]=/docs`,
-      env,
-    );
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
-      ok: true,
-      data: {
-        sites: [{ id: "site-1", overview: { views: 4 } }],
-        trend: [{ sites: [{ siteId: "site-1", views: 4 }] }],
-      },
-    });
-    const scopedStatements = statements.filter((statement) =>
-      statement.sql.includes("FROM scope_final_visits"),
-    );
-    expect(scopedStatements).toHaveLength(3);
-    expect(
-      scopedStatements.every((statement) =>
-        statement.bindings.includes("/docs"),
-      ),
-    ).toBe(true);
   });
 
   it("handles public query lookup, public privacy envelope, public-only route restrictions, and missing slugs", async () => {

@@ -5,16 +5,13 @@ import {
 import { propertyPath } from "@/lib/analytics/property-path";
 import {
   analyticsFilterRegistry,
-  attachFilterScopePreference,
   type CanonicalJsonPath,
-  FILTER_DOCUMENT_VERSION,
+  EMPTY_FILTER_DOCUMENT,
   type FilterCondition,
   type FilterDocument,
-  type FilterExpression,
   type FilterFieldId,
   filterFingerprint,
-  filterScopePreferenceFromDocument,
-  type FilterValue,
+  FilterOperator,
   normalizeFilterDocument,
   parseFilterParams,
   serializeFilterParams,
@@ -79,10 +76,7 @@ const FIELD_BY_CONTROL_KEY: Readonly<
   geoContinent: "geo.continent" as FilterFieldId,
   geoTimezone: "geo.timeZone" as FilterFieldId,
 };
-export const EMPTY_DASHBOARD_FILTER_DOCUMENT: FilterDocument = Object.freeze({
-  version: FILTER_DOCUMENT_VERSION,
-  root: null,
-});
+export const EMPTY_DASHBOARD_FILTER_DOCUMENT = EMPTY_FILTER_DOCUMENT;
 export const DASHBOARD_COMPARISON_MODES = ["same", "previous", "year"] as const;
 export type DashboardComparisonMode =
   (typeof DASHBOARD_COMPARISON_MODES)[number];
@@ -138,7 +132,7 @@ export function parseDashboardComparisonSearchParams(
 
   if (
     !isDashboardComparisonMode(mode) ||
-    (mode === "same" && !filterDocument.root)
+    (mode === "same" && filterDocument.conditions.length === 0)
   ) {
     return { filterDocument: EMPTY_DASHBOARD_FILTER_DOCUMENT };
   }
@@ -158,7 +152,7 @@ export function withDashboardComparisonSearchParams(
     }
   }
 
-  const hasComparisonFilter = Boolean(filterDocument?.root);
+  const hasComparisonFilter = (filterDocument?.conditions.length ?? 0) > 0;
   if (!mode || (mode === "same" && !hasComparisonFilter)) return next;
 
   next.set("compare", mode);
@@ -171,110 +165,60 @@ export function withDashboardComparisonSearchParams(
   }
   return next;
 }
-function visitExpression(
-  expression: FilterExpression | null,
-  visit: (condition: FilterCondition) => void,
-): void {
-  if (!expression) return;
-  if (expression.kind === "condition") {
-    visit(expression);
-    return;
-  }
-  if (expression.kind === "not") {
-    // A negated condition is a query constraint, not a single selected value
-    // that can be represented by a dashboard card's row highlight/filter.
-    return;
-  }
-  expression.children.forEach((child) => visitExpression(child, visit));
-}
+/** The value of the field's `eq` condition: what a card's row filters to. */
 function conditionValueForField(
   document: FilterDocument,
   field: FilterFieldId,
 ): string | undefined {
-  let value: string | undefined;
-  visitExpression(document.root, (condition) => {
-    if (
-      value !== undefined ||
-      condition.target.kind !== "field" ||
-      condition.target.field !== field ||
-      condition.operator !== "eq" ||
-      typeof condition.value !== "string"
-    ) {
-      return;
-    }
-    value = condition.value;
-  });
-  return value;
+  const value = document.conditions.find(
+    (condition) =>
+      condition.target.kind === "field" &&
+      condition.target.field === field &&
+      condition.operator === FilterOperator.Eq,
+  )?.value;
+  return typeof value === "string" ? value : undefined;
 }
 function withoutConditions(
-  expression: FilterExpression | null,
+  document: FilterDocument,
   matches: (condition: FilterCondition) => boolean,
-): FilterExpression | null {
-  if (!expression) return null;
-  if (expression.kind === "condition") {
-    return matches(expression) ? null : expression;
-  }
-  if (expression.kind === "not") {
-    const child = withoutConditions(expression.child, matches);
-    return child ? { kind: "not", child } : null;
-  }
-  const children = expression.children
-    .map((child) => withoutConditions(child, matches))
-    .filter((child): child is FilterExpression => child !== null);
-  if (children.length === 0) return null;
-  if (children.length === 1) return children[0]!;
-  return { kind: expression.kind, children };
+): readonly FilterCondition[] {
+  return document.conditions.filter((condition) => !matches(condition));
 }
 function normalizedDocument(
-  root: FilterExpression | null,
-  source?: FilterDocument,
+  conditions: readonly FilterCondition[],
 ): FilterDocument {
-  const normalized = normalizeFilterDocument(
-    { version: FILTER_DOCUMENT_VERSION, root },
-    analyticsFilterRegistry,
-  );
-  const preference = filterScopePreferenceFromDocument(source);
-  return preference
-    ? attachFilterScopePreference(normalized, preference)
-    : normalized;
+  return normalizeFilterDocument({ conditions }, analyticsFilterRegistry);
 }
-function geoConditions(value: string): FilterExpression | null {
+function fieldCondition(field: string, value: string): FilterCondition {
+  return {
+    target: { kind: "field", field: field as FilterFieldId },
+    operator: FilterOperator.Eq,
+    value,
+  };
+}
+function geoConditions(value: string): FilterCondition[] {
   const parsed = parseGeoLocationValue(value);
-  if (!parsed) return null;
-  const conditions: FilterCondition[] = [
-    {
-      kind: "condition",
-      target: { kind: "field", field: "geo.country" as FilterFieldId },
-      operator: "eq",
-      value: parsed.countryCode,
-    },
+  if (!parsed) return [];
+  return [
+    fieldCondition("geo.country", parsed.countryCode),
+    ...(parsed.level === "country"
+      ? []
+      : [
+          fieldCondition(
+            "geo.region",
+            parsed.regionName ||
+              parsed.regionCode ||
+              buildRegionLocationValue(
+                parsed.countryCode,
+                parsed.regionCode || parsed.regionName || "",
+                parsed.regionName || parsed.regionCode || "",
+              ),
+          ),
+        ]),
+    ...(parsed.level === "locality" && parsed.localityName
+      ? [fieldCondition("geo.city", parsed.localityName)]
+      : []),
   ];
-  if (parsed.level !== "country") {
-    conditions.push({
-      kind: "condition",
-      target: { kind: "field", field: "geo.region" as FilterFieldId },
-      operator: "eq",
-      value:
-        parsed.regionName ||
-        parsed.regionCode ||
-        buildRegionLocationValue(
-          parsed.countryCode,
-          parsed.regionCode || parsed.regionName || "",
-          parsed.regionName || parsed.regionCode || "",
-        ),
-    });
-  }
-  if (parsed.level === "locality" && parsed.localityName) {
-    conditions.push({
-      kind: "condition",
-      target: { kind: "field", field: "geo.city" as FilterFieldId },
-      operator: "eq",
-      value: parsed.localityName,
-    });
-  }
-  return conditions.length === 1
-    ? conditions[0]!
-    : { kind: "and", children: conditions };
 }
 function fieldsForControlKey(
   key: DashboardFilterControlKey,
@@ -336,11 +280,10 @@ export function withoutDashboardFilter(
   const fields = fieldsForControlKey(key);
   return normalizedDocument(
     withoutConditions(
-      document.root,
+      document,
       (condition) =>
         condition.target.kind === "field" && fields.has(condition.target.field),
     ),
-    document,
   );
 }
 export function setDashboardFilterValue(
@@ -353,23 +296,12 @@ export function setDashboardFilterValue(
     .slice(0, 240);
   const base = withoutDashboardFilter(document, key);
   if (!value) return base;
-  const expression =
-    key === "geo"
+  return normalizedDocument([
+    ...base.conditions,
+    ...(key === "geo"
       ? geoConditions(value)
-      : {
-          kind: "condition" as const,
-          target: { kind: "field" as const, field: FIELD_BY_CONTROL_KEY[key] },
-          operator: "eq" as const,
-          value: value as FilterValue,
-        };
-  return expression
-    ? normalizedDocument(
-        base.root
-          ? { kind: "and", children: [base.root, expression] }
-          : expression,
-        document,
-      )
-    : base;
+      : [fieldCondition(FIELD_BY_CONTROL_KEY[key], value)]),
+  ]);
 }
 function isPropertyCondition(condition: FilterCondition, path: string) {
   return (
@@ -386,19 +318,12 @@ export function propertyFilterValue(
   key: string,
 ): string | undefined {
   const path = propertyPath(key);
-  let value: string | undefined;
-  visitExpression(document.root, (condition) => {
-    if (
-      value !== undefined ||
-      !isPropertyCondition(condition, path) ||
-      condition.operator !== "eq" ||
-      typeof condition.value !== "string"
-    ) {
-      return;
-    }
-    value = condition.value;
-  });
-  return value;
+  const value = document.conditions.find(
+    (condition) =>
+      isPropertyCondition(condition, path) &&
+      condition.operator === FilterOperator.Eq,
+  )?.value;
+  return typeof value === "string" ? value : undefined;
 }
 /** The filters with `key` filtered to `value`, or not by `key` for null. */
 export function setPropertyFilterValue(
@@ -407,20 +332,18 @@ export function setPropertyFilterValue(
   value: string | null,
 ): FilterDocument {
   const path = propertyPath(key);
-  const base = withoutConditions(document.root, (condition) =>
+  const base = withoutConditions(document, (condition) =>
     isPropertyCondition(condition, path),
   );
-  if (value === null) return normalizedDocument(base, document);
-  const expression: FilterExpression = {
-    kind: "condition",
-    target: { kind: "event-payload", path: path as CanonicalJsonPath },
-    operator: "eq",
-    value,
-  };
-  return normalizedDocument(
-    base ? { kind: "and", children: [base, expression] } : expression,
-    document,
-  );
+  if (value === null) return normalizedDocument(base);
+  return normalizedDocument([
+    ...base,
+    {
+      target: { kind: "event-payload", path: path as CanonicalJsonPath },
+      operator: FilterOperator.Eq,
+      value,
+    },
+  ]);
 }
 export function dashboardFilterFingerprint(document: FilterDocument): string {
   return filterFingerprint(document, analyticsFilterRegistry);
@@ -444,9 +367,6 @@ export function withDashboardFilterSearchParams(
       next.delete(key);
     }
   }
-  // A scope preference only has meaning together with an active filter. Keep
-  // stale scope-only URLs from surviving when the last filter is removed.
-  if (!document.root) next.delete("scope");
   for (const [key, value] of serializeFilterParams(
     document,
     analyticsFilterRegistry,

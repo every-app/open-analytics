@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { FilterOperator } from "@/lib/filter-contract";
+
 vi.mock("@/lib/edge/analytics/providers/d1/internal/team", () => ({
   listTeamSites: vi.fn(),
 }));
@@ -37,7 +39,7 @@ const input = {
     nowMs: 1,
     timeZone: "UTC",
   },
-  filters: { version: 1 as const, root: null },
+  filters: { conditions: [] },
 };
 
 describe("team overview runtime", () => {
@@ -119,13 +121,13 @@ describe("team overview runtime", () => {
       readTeamOverview({
         ...input,
         filters: {
-          version: 1,
-          root: {
-            kind: "condition",
-            target: { kind: "field", field: "forbidden.field" as never },
-            operator: "eq",
-            value: "x",
-          },
+          conditions: [
+            {
+              target: { kind: "field", field: "forbidden.field" as never },
+              operator: FilterOperator.Eq,
+              value: "x",
+            },
+          ],
         },
       }),
     ).resolves.toMatchObject({ data: { views: 1 } });

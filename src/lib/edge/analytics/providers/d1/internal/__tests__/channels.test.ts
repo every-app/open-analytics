@@ -19,7 +19,7 @@ describe("channel aggregate query", () => {
         env,
         "site-1",
         { startMs: 10, endExclusiveMs: 20, nowMs: 20, timeZone: "UTC" },
-        { version: 1, root: null },
+        { conditions: [] },
         20,
       ),
     ).resolves.toEqual([

@@ -8,6 +8,7 @@ import type {
   CanonicalEventTrendResult,
   CanonicalEventTypeDetailResult,
   CanonicalEventTypeResult,
+  CanonicalGoalConversionsResult,
   CanonicalGoalSummaryResult,
   CanonicalGoalTimeseriesResult,
 } from "./operation-results";
@@ -137,32 +138,6 @@ export interface ChannelOverviewTabQuery extends BaseQuery {
 export type CanonicalChannelsQuery = ChannelListQuery | ChannelOverviewTabQuery;
 export type CanonicalChannelsResult = ChannelsResult | OverviewTabResult;
 
-export type CanonicalPagesQuery = Omit<PagesQuery, "limit"> & {
-  readonly variant?: "list" | "tabs";
-  readonly includeTabs?: boolean;
-  readonly limit?: number;
-  readonly cursor?: string;
-};
-export interface CanonicalPageTabs {
-  readonly path: readonly CanonicalPageTabItem[];
-  readonly title: readonly CanonicalPageTabItem[];
-  readonly hostname: readonly CanonicalPageTabItem[];
-  readonly entry: readonly CanonicalPageTabItem[];
-  readonly exit: readonly CanonicalPageTabItem[];
-}
-export interface CanonicalPageTabItem {
-  readonly value: string;
-  readonly views: number;
-  readonly sessions: number;
-  readonly visitors: number;
-}
-export type CanonicalPagesWithTabsResult = {
-  readonly pages: PagesResult;
-  readonly tabs: CanonicalPageTabs;
-};
-export type CanonicalPageTabsResult = CanonicalPageTabs;
-export type CanonicalPagesResult =
-  PagesResult | CanonicalPagesWithTabsResult | CanonicalPageTabsResult;
 export type CanonicalFunnelAnalysisResult =
   | PageResult<FunnelDefinition>
   | {
@@ -260,8 +235,8 @@ export interface CanonicalOperationMap {
     readonly result: CanonicalDimensionResult;
   };
   readonly pages: {
-    readonly query: CanonicalPagesQuery;
-    readonly result: CanonicalPagesResult;
+    readonly query: PagesQuery;
+    readonly result: PagesResult;
   };
   readonly "pages-dashboard": {
     readonly query: PagesDashboardQuery;
@@ -318,6 +293,10 @@ export interface CanonicalOperationMap {
   readonly "funnel-analysis": {
     readonly query: LegacyAnalysisQuery;
     readonly result: CanonicalFunnelAnalysisResult;
+  };
+  readonly "goal-conversions": {
+    readonly query: BaseQuery;
+    readonly result: CanonicalGoalConversionsResult;
   };
   readonly "goal-summary": {
     readonly query: LegacyAnalysisQuery;

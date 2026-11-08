@@ -5,7 +5,6 @@ import type {
   OverviewGeoDimensionTabsData as OverviewGeoDimensionTabsResponse,
   OverviewTabData,
   PagesDashboardData,
-  PagesData,
 } from "@/lib/dashboard-api/client/edge";
 import type {
   PagesDashboardMetric,
@@ -13,7 +12,6 @@ import type {
 } from "@/lib/dashboard-api/contract/types/pages";
 import type { AnalyticsFilterFieldId } from "@/lib/filter-contract";
 export type DashboardFilterOptionData = DashboardFilterOption;
-export type PageCardTabsData = NonNullable<PagesData["tabs"]>;
 export type OverviewClientDimensionTabsData =
   OverviewClientDimensionTabsResponse["tabs"];
 export type OverviewGeoDimensionTabsData =

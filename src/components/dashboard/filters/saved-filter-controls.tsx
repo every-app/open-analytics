@@ -22,11 +22,7 @@ import {
   systemFilterPresetFromOptionValue,
   systemFilterPresetOptionValue,
 } from "@/lib/dashboard/system-filter-presets";
-import {
-  type FilterDocument,
-  type FilterScope,
-  type FilterScopePreference,
-} from "@/lib/filter-contract/index";
+import type { FilterDocument } from "@/lib/filter-contract/index";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { formatI18nTemplate } from "@/lib/i18n/template";
 import type {
@@ -41,7 +37,6 @@ export const EMPTY_SAVED_FILTER_FORM = {
   name: "",
   description: "",
   visibility: "private",
-  scopePreference: "auto",
 } as const satisfies Omit<SavedFilterInput, "filterDsl">;
 export type SavedFilterForm = Omit<SavedFilterInput, "filterDsl">;
 export type SystemPresetCopy = {
@@ -53,24 +48,6 @@ export function systemPresetItem(
   preset: SystemFilterPreset,
 ): SystemPresetCopy {
   return messages.filterBuilder.systemPresetItems[preset.id];
-}
-export function systemPresetScopeLabel(
-  messages: AppMessages,
-  scope: SystemFilterPreset["scope"],
-): string {
-  return messages.filterBuilder.systemPresetScopes[scope];
-}
-export function systemPresetScopeForApply(
-  preset: SystemFilterPreset,
-  currentScope: FilterScopePreference,
-): FilterScopePreference {
-  return preset.scope === "preserve" ? currentScope : preset.scope;
-}
-export function systemPresetMatchesScope(
-  preset: SystemFilterPreset,
-  currentScope: FilterScopePreference,
-): boolean {
-  return preset.scope === "preserve" || preset.scope === currentScope;
 }
 export function SavedFilterSelect({
   audience,
@@ -197,21 +174,14 @@ export function SavedFilterSelect({
 export interface FilterPanelProps {
   readonly audience: FilterPanelAudience;
   readonly document: FilterDocument;
-  /** Raw DSL associated with the active query document, when available. */
-  readonly expressionText?: string;
   readonly messages: AppMessages;
   readonly open: boolean;
   readonly siteId?: string;
-  /** Concrete scope resolved by the parent page for the active operation. */
-  readonly resolvedScope?: FilterScope;
-  readonly scopePreference: FilterScopePreference;
   readonly window?: TimeWindow;
   readonly onApply: (
     document: FilterDocument,
-    rawDsl?: string,
     options?: { readonly closePanel?: boolean },
   ) => void;
-  readonly onScopeChange: (preference: FilterScopePreference) => void;
 }
 export function SavedFilterFormFields({
   form,
@@ -248,36 +218,6 @@ export function SavedFilterFormFields({
             onChange({ ...form, description: event.target.value })
           }
         />
-      </div>
-      <div className="space-y-1.5">
-        <Label>{messages.filterBuilder.scopeLabel}</Label>
-        <Select
-          value={form.scopePreference ?? "auto"}
-          onValueChange={(scopePreference) =>
-            onChange({
-              ...form,
-              scopePreference: scopePreference as FilterScopePreference,
-            })
-          }
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="auto">
-              {messages.filterBuilder.scopeAuto}
-            </SelectItem>
-            <SelectItem value="event">
-              {messages.filterBuilder.scopeEvent}
-            </SelectItem>
-            <SelectItem value="session">
-              {messages.filterBuilder.scopeSession}
-            </SelectItem>
-            <SelectItem value="visitor">
-              {messages.filterBuilder.scopeVisitor}
-            </SelectItem>
-          </SelectContent>
-        </Select>
       </div>
       <div className="space-y-1.5">
         <Label>{messages.filterBuilder.savedFilterVisibility}</Label>
@@ -384,53 +324,10 @@ export function FilterPanelHeader({
               <p>
                 {systemPresetItem(messages, matchedSystemPreset).description}
               </p>
-              <p>
-                {systemPresetScopeLabel(messages, matchedSystemPreset.scope)}
-              </p>
             </div>
           ) : null}
         </AutoTransition>
       </AutoResizer>
-    </div>
-  );
-}
-/** Which records a filter selects: events, sessions or visitors. */
-export function FilterScopeSelect({
-  messages,
-  scopePreference,
-  onScopeChange,
-}: {
-  messages: AppMessages;
-  scopePreference: FilterScopePreference;
-  onScopeChange: (preference: FilterScopePreference) => void;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <Label htmlFor="filter-panel-scope">
-        {messages.filterBuilder.scopeLabel}
-      </Label>
-      <Select
-        value={scopePreference}
-        onValueChange={(value) => onScopeChange(value as FilterScopePreference)}
-      >
-        <SelectTrigger id="filter-panel-scope" className="w-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="auto">
-            {messages.filterBuilder.scopeAuto}
-          </SelectItem>
-          <SelectItem value="event">
-            {messages.filterBuilder.scopeEvent}
-          </SelectItem>
-          <SelectItem value="session">
-            {messages.filterBuilder.scopeSession}
-          </SelectItem>
-          <SelectItem value="visitor">
-            {messages.filterBuilder.scopeVisitor}
-          </SelectItem>
-        </SelectContent>
-      </Select>
     </div>
   );
 }

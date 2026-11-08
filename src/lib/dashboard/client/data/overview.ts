@@ -75,7 +75,6 @@ export async function fetchPages(
           from: window.from,
           to: window.to,
           timeZone: window.timeZone,
-          details: 1,
         },
         options,
         100,

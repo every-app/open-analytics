@@ -2,7 +2,6 @@ import "@tanstack/react-start/server-only";
 
 import {
   analyticsFilterRegistry,
-  effectiveScopeForPagination,
   type FilterDocument,
   filterFingerprint,
   type QueryAudience,
@@ -49,7 +48,6 @@ async function cursorBinding(
     input.window.endExclusiveMs,
     input.window.timeZone,
     filterFingerprint(input.filters, analyticsFilterRegistry),
-    effectiveScopeForPagination(input.filters),
     input.search?.trim().toLowerCase() ?? null,
     eventName,
     input.sort,

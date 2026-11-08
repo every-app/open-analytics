@@ -1,4 +1,3 @@
-import { scopedFilterMetadata } from "@/lib/edge/analytics/contract";
 import type { Env } from "@/lib/edge/types";
 import { hasPagePathFilter } from "@/lib/filter-contract/filters";
 
@@ -12,26 +11,70 @@ import type {
 } from "./core";
 import {
   buildTimeBuckets,
-  buildVisitFilterSql,
-  buildVisitSourceCte,
+  filteredVisitsCte,
   queryD1All,
   timeBucketCase,
   timeBucketTimestamp,
-  visitSourceBindings,
 } from "./core";
-import {
-  type D1ReadDiagnostics,
-  recordScopedFilterDiagnostics,
-} from "./diagnostics";
+import type { D1ReadDiagnostics } from "./diagnostics";
 import {
   queryOverviewForSitesFromRollups,
   queryTrendForSitesFromRollups,
 } from "./rollup-queries";
-import {
-  scopedDatasetFor,
-  scopedDatasetForUnpreparedReader,
-} from "./scoped-dataset";
 import { scrollDepthOf, scrollDepthSql } from "./scroll-depth";
+
+const VALID_DURATION = "duration_ms IS NOT NULL AND duration_ms >= 0";
+
+/**
+ * The filtered page views grouped by session, visitor and `bucket`, with
+ * their views and durations: one pass over visits that every aggregate of
+ * the statement reads. With scroll depth the groups are per page too, and
+ * materialized, since two aggregates read them.
+ */
+function pageViewGroups(
+  siteId: string,
+  window: QueryWindow,
+  filters: FilterDocument,
+  options: {
+    readonly bucket?: string;
+    readonly withScrollDepth: boolean;
+  },
+) {
+  const source = filteredVisitsCte(siteId, window, filters, {
+    columns: `session_id, visitor_id, started_at, duration_ms${
+      options.withScrollDepth ? ", pathname, scroll_depth" : ""
+    }`,
+  });
+  const keys = [
+    "session_id",
+    "visitor_id",
+    ...(options.bucket ? ["bucket"] : []),
+    ...(options.withScrollDepth ? ["pathname"] : []),
+  ].join(", ");
+  const columns = [
+    "session_id",
+    "visitor_id",
+    ...(options.bucket ? [`${options.bucket} AS bucket`] : []),
+    ...(options.withScrollDepth ? ["pathname"] : []),
+  ].join(", ");
+  return {
+    sql: `${source.sql},
+page_view_groups AS${options.withScrollDepth ? " MATERIALIZED" : ""} (
+  SELECT
+    ${columns},
+    count(*) AS views,
+    MIN(started_at) AS first_at,
+    COALESCE(sum(CASE WHEN ${VALID_DURATION} THEN duration_ms ELSE 0 END), 0) AS total_duration,
+    COALESCE(sum(CASE WHEN ${VALID_DURATION} THEN 1 ELSE 0 END), 0) AS duration_views${
+      options.withScrollDepth ? ",\n    MAX(scroll_depth) AS depth" : ""
+    }
+  FROM filtered_visits
+  GROUP BY ${keys}
+)`,
+    bindings: source.bindings,
+  };
+}
+
 /**
  * The overview totals. With a page path filter they add the scroll depth of
  * the page views the filters match.
@@ -43,79 +86,48 @@ export async function queryOverviewFromD1(
   filters: FilterDocument,
   diagnostics?: D1ReadDiagnostics,
 ): Promise<OverviewAggregateRow> {
-  const scopedDataset =
-    scopedDatasetFor(siteId, window, filters) ??
-    scopedDatasetForUnpreparedReader(
-      "overview",
-      siteId,
-      window,
-      filters,
-      "session",
-    );
-  recordScopedFilterDiagnostics(diagnostics, scopedFilterMetadata(filters));
-  const filter = scopedDataset
-    ? { clause: "", bindings: [] as Array<string | number> }
-    : buildVisitFilterSql(filters, "visit_source", { window });
-  const visitSource = buildVisitSourceCte().replace(
-    "visit_source AS (",
-    "visit_source AS MATERIALIZED (",
-  );
-  const metricSource = scopedDataset
-    ? scopedDataset.visitRelation
-    : "filtered_visits";
-  const entityCounts = scopedDataset
-    ? `
-  (SELECT count(*) FROM ${scopedDataset.sessionRelation}) AS sessions,
-  (SELECT count(*) FROM ${scopedDataset.visitorRelation}) AS visitors,`
-    : `
-  count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
-  count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors,`;
-  const sourceSql = scopedDataset
-    ? `${scopedDataset.ctes},`
-    : `${visitSource},
-filtered_visits AS MATERIALIZED (
-  SELECT *
-  FROM visit_source
-  ${filter.clause}
-),`;
   const withScrollDepth = hasPagePathFilter(filters);
+  const groups = pageViewGroups(siteId, window, filters, { withScrollDepth });
   const sql = `
 WITH
-${sourceSql}
-session_rollup AS (
-  SELECT vs.session_id, count(*) AS visit_count
-  FROM ${metricSource} vs
-  WHERE vs.session_id != ''
-  GROUP BY vs.session_id
+${groups.sql},
+visitor_sessions AS (
+  SELECT
+    session_id,
+    visitor_id,
+    sum(views) AS views,
+    sum(total_duration) AS total_duration,
+    sum(duration_views) AS duration_views
+  FROM page_view_groups
+  GROUP BY session_id, visitor_id
 )${
     withScrollDepth
       ? `,
 scroll_depth AS (
-  ${scrollDepthSql({ from: metricSource, visitor: "visitor_id", depth: "scroll_depth" })}
+  ${scrollDepthSql({ from: "page_view_groups", visitor: "visitor_id", depth: "depth" })}
 )`
       : ""
   }
 SELECT
-  count(*) AS views,
-${entityCounts}
-  COALESCE((SELECT count(*) FROM session_rollup WHERE visit_count = 1), 0) AS bounces,
-  COALESCE(sum(CASE WHEN duration_ms IS NOT NULL AND duration_ms >= 0 THEN duration_ms ELSE 0 END), 0) AS totalDuration,
-  COALESCE(sum(CASE WHEN duration_ms IS NOT NULL AND duration_ms >= 0 THEN 1 ELSE 0 END), 0) AS durationViews${
+  COALESCE(sum(views), 0) AS views,
+  count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions,
+  count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors,
+  COALESCE(sum(CASE WHEN session_id != '' AND views = 1 THEN 1 ELSE 0 END), 0) AS bounces,
+  COALESCE(sum(total_duration), 0) AS totalDuration,
+  COALESCE(sum(duration_views), 0) AS durationViews${
     withScrollDepth
       ? `,
   (SELECT scrollDepth FROM scroll_depth) AS scrollDepth`
       : ""
   }
-FROM ${metricSource}
+FROM visitor_sessions
 `;
   const row =
     (
       await queryD1All<Record<string, unknown>>(
         env,
         sql,
-        scopedDataset
-          ? scopedDataset.bindings.map((binding) => binding.value)
-          : [...visitSourceBindings(siteId, window), ...filter.bindings],
+        groups.bindings,
         diagnostics,
       )
     )[0] ?? {};
@@ -131,8 +143,9 @@ FROM ${metricSource}
 }
 /**
  * Trend rows for the page views in `window`, counted into `buckets`, which
- * may belong to a larger window the caller reads in parts. With a page path
- * filter each bucket adds the scroll depth of its matching page views.
+ * may belong to a larger window the caller reads in parts. A session counts
+ * in the bucket of its first page view. With a page path filter each bucket
+ * adds the scroll depth of its matching page views.
  */
 async function queryTrendBucketsFromD1(
   env: Env,
@@ -142,150 +155,66 @@ async function queryTrendBucketsFromD1(
   filters: FilterDocument,
   diagnostics?: D1ReadDiagnostics,
 ): Promise<TrendAggregateRow[]> {
-  const scopedDataset =
-    scopedDatasetFor(siteId, window, filters) ??
-    scopedDatasetForUnpreparedReader(
-      "trend",
-      siteId,
-      window,
-      filters,
-      "session",
-    );
-  recordScopedFilterDiagnostics(diagnostics, scopedFilterMetadata(filters));
-  const filter = scopedDataset
-    ? { clause: "", bindings: [] as Array<string | number> }
-    : buildVisitFilterSql(filters, "visit_source", { window });
-  const visitSource = buildVisitSourceCte().replace(
-    "visit_source AS (",
-    "visit_source AS MATERIALIZED (",
-  );
-  const visitBucket = timeBucketCase(buckets, "started_at");
-  const scopedVisitorBucket = scopedDataset
-    ? timeBucketCase(buckets, "observed_at")
-    : null;
-  const sessionBucket = timeBucketCase(
-    buckets,
-    scopedDataset ? "session_observed_at" : "session_started_at",
-  );
-  const metricSource = scopedDataset
-    ? scopedDataset.visitRelation
-    : "filtered_visits";
-  const scopedEntityObservations = scopedDataset
-    ? `
-scope_entity_observations AS (
-  SELECT visitor_id, session_id, started_at AS observed_at, 1 AS is_visit_observation
-  FROM ${scopedDataset.visitRelation}
-  UNION ALL
-  SELECT visitor_id, session_id, occurred_at AS observed_at, 0 AS is_visit_observation
-  FROM ${scopedDataset.eventRelation}
-),`
-    : "";
-  const visitBucketRollup = scopedDataset
-    ? `
-visit_bucket_rollup AS (
-  SELECT
-    ${visitBucket.sql} AS bucket,
-    count(*) AS views,
-    0 AS visitors,
-    COALESCE(sum(CASE WHEN duration_ms IS NOT NULL AND duration_ms >= 0 THEN duration_ms ELSE 0 END), 0) AS totalDuration,
-    COALESCE(sum(CASE WHEN duration_ms IS NOT NULL AND duration_ms >= 0 THEN 1 ELSE 0 END), 0) AS durationViews
-  FROM ${metricSource}
-  GROUP BY bucket
-),`
-    : `
-visit_bucket_rollup AS (
-  SELECT
-    ${visitBucket.sql} AS bucket,
-    count(*) AS views,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors,
-    COALESCE(sum(CASE WHEN duration_ms IS NOT NULL AND duration_ms >= 0 THEN duration_ms ELSE 0 END), 0) AS totalDuration,
-    COALESCE(sum(CASE WHEN duration_ms IS NOT NULL AND duration_ms >= 0 THEN 1 ELSE 0 END), 0) AS durationViews
-  FROM ${metricSource}
-  GROUP BY bucket
-),`;
   const withScrollDepth = hasPagePathFilter(filters);
-  const scrollDepthRollup = withScrollDepth
-    ? `
-scroll_depth_rollup AS MATERIALIZED (
-  ${scrollDepthSql({
-    from: metricSource,
-    visitor: "visitor_id",
-    depth: "scroll_depth",
-    groupBy: { sql: visitBucket.sql, as: "bucket" },
-  })}
-),`
-    : "";
-  const scopedVisitorBucketRollup = scopedDataset
-    ? `
-visitor_bucket_rollup AS (
-  SELECT
-    ${scopedVisitorBucket?.sql} AS bucket,
-    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors
-  FROM scope_entity_observations
-  GROUP BY bucket
-),`
-    : "";
-  const sessionRollup = scopedDataset
-    ? `
-session_rollup AS (
-  SELECT
-    session_id,
-    MIN(observed_at) AS session_observed_at,
-    COUNT(CASE WHEN is_visit_observation = 1 THEN 1 END) AS visit_count
-  FROM scope_entity_observations
-  WHERE session_id != ''
-  GROUP BY session_id
-),`
-    : `
-session_rollup AS (
-  SELECT
-    vs.session_id,
-    MIN(vs.started_at) AS session_started_at,
-    count(*) AS visit_count
-  FROM ${metricSource} vs
-  WHERE vs.session_id != ''
-  GROUP BY vs.session_id
-),`;
-  const combined = scopedDataset
-    ? `
-combined AS (
-  SELECT bucket, views, visitors, 0 AS sessions, 0 AS bounces, totalDuration, durationViews FROM visit_bucket_rollup
-  UNION ALL
-  SELECT bucket, 0 AS views, visitors, 0 AS sessions, 0 AS bounces, 0 AS totalDuration, 0 AS durationViews FROM visitor_bucket_rollup
-  UNION ALL
-  SELECT bucket, 0 AS views, 0 AS visitors, sessions, bounces, 0 AS totalDuration, 0 AS durationViews FROM session_bucket_rollup
- )`
-    : `
-combined AS (
-  SELECT bucket, views, visitors, 0 AS sessions, 0 AS bounces, totalDuration, durationViews FROM visit_bucket_rollup
-  UNION ALL
-  SELECT bucket, 0 AS views, 0 AS visitors, sessions, bounces, 0 AS totalDuration, 0 AS durationViews FROM session_bucket_rollup
- )`;
-  const sourceSql = scopedDataset
-    ? `${scopedDataset.ctes},
-${scopedEntityObservations}`
-    : `${visitSource},
-filtered_visits AS MATERIALIZED (
-  SELECT *
-  FROM visit_source
-  ${filter.clause}
-),`;
+  const visitBucket = timeBucketCase(buckets, "started_at");
+  const sessionBucket = timeBucketCase(buckets, "MIN(first_at)");
+  const groups = pageViewGroups(siteId, window, filters, {
+    bucket: visitBucket.sql,
+    withScrollDepth,
+  });
+  // Each bucket's scroll depth is one more arm of the union, read once.
+  const depthColumn = (value: string) =>
+    withScrollDepth ? `, ${value} AS scrollDepth` : "";
   const sql = `
 WITH
-${sourceSql}
-${visitBucketRollup}
-${scrollDepthRollup}
-${scopedVisitorBucketRollup}
-${sessionRollup}
-session_bucket_rollup AS (
+${groups.sql},
+visit_buckets AS (
   SELECT
-    ${sessionBucket.sql} AS bucket,
-    count(*) AS sessions,
-    COALESCE(sum(CASE WHEN visit_count = 1 THEN 1 ELSE 0 END), 0) AS bounces
-  FROM session_rollup
+    bucket,
+    sum(views) AS views,
+    count(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id ELSE NULL END) AS visitors,
+    sum(total_duration) AS totalDuration,
+    sum(duration_views) AS durationViews
+  FROM page_view_groups
   GROUP BY bucket
 ),
-${combined}
+session_starts AS (
+  SELECT ${sessionBucket.sql} AS bucket, sum(views) AS views
+  FROM page_view_groups
+  WHERE session_id != ''
+  GROUP BY session_id
+),
+session_buckets AS (
+  SELECT
+    bucket,
+    count(*) AS sessions,
+    COALESCE(sum(CASE WHEN views = 1 THEN 1 ELSE 0 END), 0) AS bounces
+  FROM session_starts
+  GROUP BY bucket
+),${
+    withScrollDepth
+      ? `
+scroll_depth_buckets AS (
+  ${scrollDepthSql({
+    from: "page_view_groups",
+    visitor: "visitor_id",
+    depth: "depth",
+    groupBy: { sql: "bucket", as: "bucket" },
+  })}
+),`
+      : ""
+  }
+combined AS (
+  SELECT bucket, views, visitors, 0 AS sessions, 0 AS bounces, totalDuration, durationViews${depthColumn("NULL")} FROM visit_buckets
+  UNION ALL
+  SELECT bucket, 0 AS views, 0 AS visitors, sessions, bounces, 0 AS totalDuration, 0 AS durationViews${depthColumn("NULL")} FROM session_buckets${
+    withScrollDepth
+      ? `
+  UNION ALL
+  SELECT bucket, 0 AS views, 0 AS visitors, 0 AS sessions, 0 AS bounces, 0 AS totalDuration, 0 AS durationViews, scrollDepth FROM scroll_depth_buckets`
+      : ""
+  }
+)
 SELECT
   bucket,
   sum(views) AS views,
@@ -293,12 +222,7 @@ SELECT
   sum(sessions) AS sessions,
   sum(bounces) AS bounces,
   sum(totalDuration) AS totalDuration,
-  sum(durationViews) AS durationViews${
-    withScrollDepth
-      ? `,
-  (SELECT sd.scrollDepth FROM scroll_depth_rollup sd WHERE sd.bucket = combined.bucket) AS scrollDepth`
-      : ""
-  }
+  sum(durationViews) AS durationViews${depthColumn("MAX(scrollDepth)")}
 FROM combined
 GROUP BY bucket
 ORDER BY bucket ASC
@@ -307,15 +231,7 @@ ORDER BY bucket ASC
     await queryD1All<Record<string, unknown>>(
       env,
       sql,
-      [
-        ...(scopedDataset
-          ? scopedDataset.bindings.map((binding) => binding.value)
-          : [...visitSourceBindings(siteId, window), ...filter.bindings]),
-        ...visitBucket.bindings,
-        ...(withScrollDepth ? visitBucket.bindings : []),
-        ...(scopedVisitorBucket?.bindings ?? []),
-        ...sessionBucket.bindings,
-      ],
+      groups.bindings,
       diagnostics,
     )
   ).map((row) => ({
@@ -341,47 +257,19 @@ export async function queryLatestSiteActivity(
   filters: FilterDocument,
   diagnostics?: D1ReadDiagnostics,
 ): Promise<number | null> {
-  const scopedDataset =
-    scopedDatasetFor(siteId, window, filters) ??
-    scopedDatasetForUnpreparedReader(
-      "overview",
-      siteId,
-      window,
-      filters,
-      "session",
-    );
-  recordScopedFilterDiagnostics(diagnostics, scopedFilterMetadata(filters));
-  const filter = scopedDataset
-    ? { clause: "", bindings: [] as Array<string | number> }
-    : buildVisitFilterSql(filters, "visit_source", { window });
-  const visitSource = buildVisitSourceCte().replace(
-    "visit_source AS (",
-    "visit_source AS MATERIALIZED (",
-  );
-  const metricSource = scopedDataset
-    ? scopedDataset.visitRelation
-    : "filtered_visits";
-  const sourceSql = scopedDataset
-    ? `${scopedDataset.ctes},`
-    : `${visitSource},
-filtered_visits AS MATERIALIZED (
-  SELECT *
-  FROM visit_source
-  ${filter.clause}
-),`;
-  const sql = `
-WITH
-${sourceSql}
-SELECT MAX(last_activity_at) AS lastActivityAt
-FROM ${metricSource}
-`;
+  const source = filteredVisitsCte(siteId, window, filters, {
+    columns: "last_activity_at",
+  });
   const row = (
     await queryD1All<Record<string, unknown>>(
       env,
-      sql,
-      scopedDataset
-        ? scopedDataset.bindings.map((binding) => binding.value)
-        : [...visitSourceBindings(siteId, window), ...filter.bindings],
+      `
+WITH
+${source.sql}
+SELECT MAX(last_activity_at) AS lastActivityAt
+FROM filtered_visits
+`,
+      source.bindings,
       diagnostics,
     )
   )[0];
@@ -390,15 +278,9 @@ FROM ${metricSource}
   const value = Number(raw);
   return Number.isSafeInteger(value) ? value : null;
 }
-/** Unfiltered reads have nothing to scope, so they may use the rollups. */
-function readsRollups(
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
-) {
-  return (
-    filters.root === null && scopedDatasetFor(siteId, window, filters) === null
-  );
+/** Unfiltered reads may use the rollups. */
+function readsRollups(filters: FilterDocument) {
+  return filters.conditions.length === 0;
 }
 export async function queryOverviewAggregate(
   env: Env,
@@ -407,7 +289,7 @@ export async function queryOverviewAggregate(
   filters: FilterDocument,
   diagnostics?: D1ReadDiagnostics,
 ): Promise<PreferredSourceResult<OverviewAggregateRow>> {
-  if (readsRollups(siteId, window, filters)) {
+  if (readsRollups(filters)) {
     const rollup = await queryOverviewForSitesFromRollups(
       env,
       [siteId],
@@ -453,7 +335,7 @@ export async function queryTrendAggregate(
   diagnostics?: D1ReadDiagnostics,
 ): Promise<PreferredSourceResult<TrendAggregateRow[]>> {
   const buckets = buildTimeBuckets(window, interval);
-  if (readsRollups(siteId, window, filters)) {
+  if (readsRollups(filters)) {
     const rollup = await queryTrendForSitesFromRollups(
       env,
       [siteId],

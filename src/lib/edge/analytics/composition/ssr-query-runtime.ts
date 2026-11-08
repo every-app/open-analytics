@@ -1,9 +1,6 @@
 import { AnalyticsProviderRegistry } from "@/lib/edge/analytics/application/provider-registry";
 import { createAnalyticsQueryRuntime } from "@/lib/edge/analytics/composition/query-runtime";
-import type {
-  AnalyticsResult,
-  QueryInput,
-} from "@/lib/edge/analytics/contract";
+import type { AnalyticsResult } from "@/lib/edge/analytics/contract";
 import {
   readTeamDashboard,
   type ReadTeamDashboardInput,
@@ -26,12 +23,8 @@ export function createTeamDashboardQueryRuntime(
   input: SsrTeamDashboardRuntimeInput,
 ) {
   const registry = new AnalyticsProviderRegistry().register("team-dashboard", {
-    execute: async (query: QueryInput) => {
-      const dashboard = await readTeamDashboard({
-        ...input,
-        window: input.window,
-        filters: query.filters,
-      });
+    execute: async () => {
+      const dashboard = await readTeamDashboard(input);
       return {
         value: dashboard.data,
         source: dashboard.source,

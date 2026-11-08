@@ -12,8 +12,7 @@ import {
   comparisonReferenceWindow,
   normalizeReportingTimeZone,
 } from "@/lib/edge/analytics/contract/helpers";
-import type { FilterFieldId } from "@/lib/filter-contract";
-import { attachFilterScopePreference } from "@/lib/filter-contract";
+import { EMPTY_FILTER_DOCUMENT } from "@/lib/filter-contract";
 import type { AppMessages } from "@/lib/i18n/messages";
 const currentWindow = {
   preset: "7d" as const,
@@ -59,67 +58,33 @@ describe("resolveDashboardComparisonQuery", () => {
         "compare=same&compareFilter%5Bpage.path%5D=%2Fpricing",
       ),
       currentWindow,
-      attachFilterScopePreference(currentFilters, "session"),
+      currentFilters,
     );
 
     expect(result).toMatchObject({
       mode: "same",
       window: currentWindow,
-      filters: {
-        root: {
-          kind: "condition",
-          value: "/pricing",
-        },
-      },
+      filters: { conditions: [{ value: "/pricing" }] },
     });
   });
 
-  it("defaults a custom comparison filter to auto scope", () => {
+  it("uses a custom comparison filter instead of the current one", () => {
     const result = resolveDashboardComparisonQuery(
       new URLSearchParams(
         "compare=previous&compareFilter%5Bpage.path%5D=%2Fpricing",
       ),
       currentWindow,
-      parseFilterDocumentFromSearchParams(new URLSearchParams()),
+      currentFilters,
     );
 
-    expect(result?.filters.root).toMatchObject({
-      kind: "condition",
-      value: "/pricing",
-    });
-  });
-
-  it("falls back to auto scope when the current filter has no scope metadata", () => {
-    const result = resolveDashboardComparisonQuery(
-      new URLSearchParams(
-        "compare=previous&compareFilter%5Bpage.path%5D=%2Fpricing",
-      ),
-      currentWindow,
-      {
-        version: 1,
-        root: {
-          kind: "condition",
-          target: {
-            kind: "field",
-            field: "page.path" as FilterFieldId,
-          },
-          operator: "eq",
-          value: "/docs",
-        },
-      },
-    );
-
-    expect(result?.filters.root).toMatchObject({
-      kind: "condition",
-      value: "/pricing",
-    });
+    expect(result?.filters.conditions).toMatchObject([{ value: "/pricing" }]);
   });
 
   it("shifts previous-period comparison and follows current filters by default", () => {
     const result = resolveDashboardComparisonQuery(
       new URLSearchParams("compare=previous"),
       currentWindow,
-      attachFilterScopePreference(currentFilters, "visitor"),
+      currentFilters,
     );
 
     expect(result).toMatchObject({
@@ -283,7 +248,7 @@ describe("resolveDashboardComparisonQuery", () => {
     const comparisonQuery: DashboardComparisonQuery = {
       mode: "previous",
       window: currentWindow,
-      filters: { version: 1, root: null },
+      filters: EMPTY_FILTER_DOCUMENT,
     };
 
     expect(dashboardComparisonLabel(messages, comparisonQuery)).toBe(

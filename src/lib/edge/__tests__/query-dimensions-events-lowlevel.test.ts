@@ -5,11 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 import { createMigratedDatabase } from "@/../scripts/schema/database";
 import { applyD1Limits } from "@/lib/db/__tests__/sqlite-d1";
 import {
-  createQueryTime,
   EMPTY_FILTER_DOCUMENT,
   type FilterDocument,
-  prepareScopedQuery,
-  siteQueryContext,
 } from "@/lib/edge/analytics/contract";
 import {
   handleEventFieldValuesContract as handleEventTypeFieldValues,
@@ -29,7 +26,6 @@ import {
   decodeSessionPathDimensionCursor,
   queryDimensionFromD1,
   queryDimensionPageFromD1,
-  queryPageTabsFromD1,
   queryReferrersFromD1,
   querySessionBoundaryDimensionFromD1,
   querySessionPathDimensionFromD1,
@@ -110,6 +106,9 @@ function visitBindings(targetWindow = window): QueryBinding[] {
 }
 function eventBindings(targetWindow = window): QueryBinding[] {
   return [siteId, targetWindow.startMs, targetWindow.endExclusiveMs];
+}
+function windowBindings(targetWindow = window): QueryBinding[] {
+  return [targetWindow.startMs, targetWindow.endExclusiveMs];
 }
 function url(
   path: string,
@@ -218,22 +217,8 @@ describe("edge query dimensions low-level coverage", () => {
     expect(calls[1].sql).toContain("first_rank = 1");
     expect(calls[0].sql).not.toContain("SELECT COALESCE(fv2.pathname");
     expect(calls[0].sql).toContain("WHERE TRIM(value) != ''");
-    expect(calls[0].bindings).toEqual([
-      ...visitBindings(),
-      "Chrome",
-      window.startMs,
-      window.endExclusiveMs,
-      "Chrome",
-      5,
-    ]);
-    expect(calls[1].bindings).toEqual([
-      ...visitBindings(),
-      "Chrome",
-      window.startMs,
-      window.endExclusiveMs,
-      "Chrome",
-      3,
-    ]);
+    expect(calls[0].bindings).toEqual([...visitBindings(), "Chrome", 5]);
+    expect(calls[1].bindings).toEqual([...visitBindings(), "Chrome", 3]);
   });
 
   it("keeps entry and exit tab results while using one indexed visit source", async () => {
@@ -337,7 +322,6 @@ describe("edge query dimensions low-level coverage", () => {
         .prepare(`EXPLAIN QUERY PLAN ${pathCall?.sql ?? "SELECT 1"}`)
         .all(...(pathCall?.bindings ?? [])) as Array<{ detail: string }>;
       const planDetails = plan.map((row) => row.detail).join("\n");
-      expect(planDetails).toContain("MATERIALIZE filtered_visits");
       expect(planDetails).toContain("idx_visits_site_pk_started_at");
       expect(planDetails).not.toContain("CORRELATED SCALAR SUBQUERY");
     } finally {
@@ -345,232 +329,24 @@ describe("edge query dimensions low-level coverage", () => {
     }
   });
 
-  it("builds page tab entries while skipping rows without session ids or pathnames", async () => {
-    const { env } = createD1Env([
-      [
-        {},
-        {
-          cardType: "path",
-          value: "/first",
-          views: 1,
-          sessions: 1,
-          visitors: 1,
-        },
-        {
-          cardType: "path",
-          value: "/last",
-          views: 1,
-          sessions: 1,
-          visitors: 1,
-        },
-        {
-          cardType: "path",
-          value: "/anonymous",
-          views: 1,
-          sessions: 0,
-          visitors: 1,
-        },
-        {
-          cardType: "entry",
-          value: "/first",
-          views: 1,
-          sessions: 1,
-          visitors: 1,
-        },
-        {
-          cardType: "exit",
-          value: "/last",
-          views: 1,
-          sessions: 1,
-          visitors: 1,
-        },
-      ],
-    ]);
-
-    const tabs = await queryPageTabsFromD1(
-      env,
-      siteId,
-      window,
-      EMPTY_FILTER_DOCUMENT,
-      10,
-    );
-
-    expect(tabs.path).toEqual([
-      { value: "/first", views: 1, sessions: 1, visitors: 1 },
-      { value: "/last", views: 1, sessions: 1, visitors: 1 },
-      { value: "/anonymous", views: 1, sessions: 0, visitors: 1 },
-    ]);
-    expect(tabs.entry).toEqual([
-      { value: "/first", views: 1, sessions: 1, visitors: 1 },
-    ]);
-    expect(tabs.exit).toEqual([
-      { value: "/last", views: 1, sessions: 1, visitors: 1 },
-    ]);
-  });
-
-  it("materializes page tab visits once while preserving all tab results", async () => {
-    const database = createAnalyticsDatabase();
-    const calls: Array<{ sql: string; bindings: QueryBinding[] }> = [];
-    const env = {
-      DB: {
-        prepare: (sql: string) => ({
-          bind: (...bindings: QueryBinding[]) => {
-            calls.push({ sql, bindings });
-            return {
-              all: async () => ({
-                results: database.prepare(sql).all(...bindings) as D1Row[],
-              }),
-            };
-          },
-        }),
-      } as unknown as D1Database,
-    } as Env;
-    const insert = database.prepare(`
-      INSERT INTO visits (
-        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
-        last_activity_at, pathname, title, hostname
-      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, ?, ?)
-    `);
-
-    try {
-      insert.run(
-        "session-first",
-        siteId,
-        "visitor-a",
-        "session-a",
-        baseMs + 1,
-        baseMs + 1,
-        "/first",
-        "First page",
-        "app.example.test",
-      );
-      insert.run(
-        "session-last",
-        siteId,
-        "visitor-a",
-        "session-a",
-        baseMs + 2,
-        baseMs + 2,
-        "/last",
-        "Last page",
-        "app.example.test",
-      );
-      insert.run(
-        "anonymous",
-        siteId,
-        "visitor-b",
-        "",
-        baseMs + 3,
-        baseMs + 3,
-        "/anonymous",
-        "Anonymous page",
-        "other.example.test",
-      );
-      insert.run(
-        "outside-window",
-        siteId,
-        "visitor-outside",
-        "session-outside",
-        window.endExclusiveMs,
-        window.endExclusiveMs,
-        "/outside",
-        "Outside page",
-        "outside.example.test",
-      );
-
-      await expect(
-        queryPageTabsFromD1(env, siteId, window, EMPTY_FILTER_DOCUMENT, 10),
-      ).resolves.toEqual({
-        path: [
-          { value: "/first", views: 1, sessions: 1, visitors: 1 },
-          { value: "/last", views: 1, sessions: 1, visitors: 1 },
-          { value: "/anonymous", views: 1, sessions: 0, visitors: 1 },
-        ],
-        title: [
-          { value: "First page", views: 1, sessions: 1, visitors: 1 },
-          { value: "Last page", views: 1, sessions: 1, visitors: 1 },
-          { value: "Anonymous page", views: 1, sessions: 0, visitors: 1 },
-        ],
-        hostname: [
-          { value: "app.example.test", views: 2, sessions: 1, visitors: 1 },
-          { value: "other.example.test", views: 1, sessions: 0, visitors: 1 },
-        ],
-        entry: [{ value: "/first", views: 1, sessions: 1, visitors: 1 }],
-        exit: [{ value: "/last", views: 1, sessions: 1, visitors: 1 }],
-      });
-
-      await expect(
-        queryPageTabsFromD1(
-          env,
-          siteId,
-          window,
-          filterFixture({ path: "/last" }),
-          10,
-        ),
-      ).resolves.toMatchObject({
-        path: [{ value: "/last", views: 1, sessions: 1, visitors: 1 }],
-        entry: [{ value: "/first", views: 1, sessions: 1, visitors: 1 }],
-        exit: [{ value: "/last", views: 1, sessions: 1, visitors: 1 }],
-      });
-
-      expect(calls).toHaveLength(2);
-      expect(calls[0]?.sql).toContain("filtered_visits AS MATERIALIZED");
-      const plan = database
-        .prepare(`EXPLAIN QUERY PLAN ${calls[0]?.sql ?? "SELECT 1"}`)
-        .all(...(calls[0]?.bindings ?? [])) as Array<{ detail: string }>;
-      expect(
-        plan.filter((row) => row.detail.includes("SEARCH visits USING")),
-      ).toHaveLength(1);
-      expect(
-        plan.some((row) =>
-          row.detail.includes("idx_visits_site_pk_started_at"),
-        ),
-      ).toBe(true);
-    } finally {
-      database.close();
-    }
-  });
-
-  it("covers scoped, searched, unlimited, and empty legacy dimension readers", async () => {
+  it("covers filtered, searched, unlimited, and empty legacy dimension readers", async () => {
     const { env, calls } = createD1Env([
       [{ value: "pricing", views: 4, sessions: 2, visitors: 1 }],
       [{ value: "/pricing", views: 3, sessions: 2, visitors: 1 }],
       [{ referrer: "google.com", views: 2, sessions: 1, visitors: 1 }],
     ]);
-    const prepared = prepareScopedQuery("overview", {
-      context: siteQueryContext(siteId, "private-dashboard"),
-      time: createQueryTime(
-        window.startMs,
-        window.endExclusiveMs,
-        "UTC",
-        window.nowMs,
-      ),
-      filters: filterFixture({ path: "/pricing" }),
-      scopePreference: "visitor",
-    } as never);
+    const filters = filterFixture({ path: "/pricing" });
 
     await expect(
-      queryDimensionFromD1(
-        env,
-        siteId,
-        window,
-        prepared.filters!,
-        0,
-        "pathname",
-        { excludeEmpty: true, search: " Price% " },
-      ),
+      queryDimensionFromD1(env, siteId, window, filters, 0, "pathname", {
+        excludeEmpty: true,
+        search: " Price% ",
+      }),
     ).resolves.toEqual([
       { value: "pricing", views: 4, sessions: 2, visitors: 1 },
     ]);
     await expect(
-      querySessionPathDimensionFromD1(
-        env,
-        siteId,
-        window,
-        prepared.filters!,
-        0,
-        "entry",
-      ),
+      querySessionPathDimensionFromD1(env, siteId, window, filters, 0, "entry"),
     ).resolves.toEqual([
       { value: "/pricing", views: 3, sessions: 2, visitors: 1 },
     ]);
@@ -579,7 +355,7 @@ describe("edge query dimensions low-level coverage", () => {
         env,
         siteId,
         window,
-        prepared.filters!,
+        filters,
         2,
         true,
         undefined,
@@ -590,11 +366,12 @@ describe("edge query dimensions low-level coverage", () => {
     ]);
 
     expect(calls).toHaveLength(3);
-    expect(calls[0].sql).toContain("scope_final_visits");
+    for (const call of calls) {
+      expect(call.sql).toContain("FROM visits v");
+      expect(call.sql).not.toContain("scope_");
+    }
     expect(calls[0].sql).toContain("LOWER(value) LIKE");
     expect(calls[0].sql).not.toContain("LIMIT ?");
-    expect(calls[1].sql).toContain("scope_final_visits");
-    expect(calls[2].sql).toContain("scope_final_visits");
     expect(calls[2].sql).toContain("LOWER(referrer) LIKE");
   });
 });
@@ -655,8 +432,9 @@ describe("edge query event fields and records low-level coverage", () => {
     expect(calls[0].sql).toContain("GROUP BY path, valueType");
     expect(calls[0].bindings).toEqual([
       siteId,
+      siteId,
       "Signup",
-      ...eventBindings(),
+      ...windowBindings(),
       9,
     ]);
   });
@@ -706,8 +484,9 @@ describe("edge query event fields and records low-level coverage", () => {
     expect(calls[0].sql).toContain("LIKE ? ESCAPE '\\'");
     expect(calls[0].bindings).toEqual([
       siteId,
+      siteId,
       "Purchase",
-      ...eventBindings(),
+      ...windowBindings(),
       "mobile",
       "/amount",
       2,
@@ -921,11 +700,7 @@ describe("edge query event handlers low-level coverage", () => {
         },
       },
     });
-    expect(calls[0].bindings).toEqual([
-      ...eventBindings(),
-      ...eventBindings(),
-      5,
-    ]);
+    expect(calls[0].bindings).toEqual([...eventBindings(), 5]);
   });
 
   it("uses a keyset cursor for event records and maps current rows", async () => {
@@ -965,12 +740,12 @@ describe("edge query event handlers low-level coverage", () => {
       "ORDER BY occurredAt ASC, eventId ASC, eventPk ASC",
     );
     expect(calls[0].sql).not.toContain("OFFSET");
-    expect(calls[0].sql).toContain("FROM event_source es");
+    expect(calls[0].sql).toContain("FROM filtered_events es");
     expect(calls[0].bindings).toEqual([
-      ...visitBindings(),
+      siteId,
       siteId,
       "Signup",
-      ...eventBindings(),
+      ...windowBindings(),
       ...Array<string>(8).fill("%signup%"),
       2,
     ]);

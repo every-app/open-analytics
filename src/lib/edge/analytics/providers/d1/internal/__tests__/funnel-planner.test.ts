@@ -1,46 +1,106 @@
-import { DatabaseSync } from "node:sqlite";
+import type { DatabaseSync } from "node:sqlite";
 
 import { describe, expect, it } from "vitest";
 
-import { applyD1Limits } from "@/lib/db/__tests__/sqlite-d1";
+import {
+  createRollupTestEnv,
+  seedSites,
+} from "@/lib/edge/__tests__/rollup-fixtures";
 import {
   analyticsFilterRegistry,
+  EMPTY_FILTER_DOCUMENT,
+  type FilterDocument,
   type FunnelConfigV2,
 } from "@/lib/edge/analytics/contract";
 import {
   assertFunnelSqlShapeWithinBudget,
   assertFunnelStructuralBudget,
   buildFunnelSqlPlan,
-  FUNNEL_SQL_CTES_PER_STEP,
   FUNNEL_SQL_STRUCTURAL_BUDGET,
 } from "@/lib/edge/analytics/providers/d1/internal/funnel-planner";
-import {
-  applyObservationFilterToScopedDataset,
-  assertSafeScopedObservationCtePrefix,
-  type ScopedDatasetSql,
-} from "@/lib/edge/analytics/providers/d1/internal/scoped-dataset";
 import { parseFilterDsl } from "@/lib/filter-contract";
 
-const dataset: ScopedDatasetSql = {
-  ctes: `
-scope_final_visits(site_pk, session_id, visitor_id, started_at, visit_id, pathname) AS (
-  VALUES
-    (1, 'session-1', 'visitor-1', 100, 'visit-1', '/landing'),
-    (1, 'session-1', 'visitor-1', 200, 'visit-2', '/landing'),
-    (2, 'session-1', 'visitor-2', 100, 'visit-3', '/landing')
-),
-scope_final_events(event_pk, event_id, site_pk, session_id, visitor_id, occurred_at, sequence, event_name, pathname) AS (
-  VALUES
-    (1, 'event-1', 1, 'session-1', 'visitor-1', 160, 0, 'signup', '/landing'),
-    (2, 'event-2', 2, 'session-1', 'visitor-2', 160, 0, 'signup', '/landing')
-)`,
-  bindings: [],
-  visitRelation: "scope_final_visits",
-  eventRelation: "scope_final_events",
-  sessionRelation: "scope_final_sessions",
-  visitorRelation: "scope_final_visitors",
-  scope: "event",
-};
+interface Visit {
+  readonly id: string;
+  readonly sitePk?: number;
+  readonly session: string;
+  readonly visitor: string;
+  readonly at: number;
+  readonly path: string;
+  readonly country?: string;
+}
+interface CustomEvent {
+  readonly id: string;
+  readonly visit: string;
+  readonly sitePk?: number;
+  readonly name: string;
+  readonly at: number;
+  readonly sequence?: number;
+}
+
+function database(
+  visits: readonly Visit[],
+  events: readonly CustomEvent[] = [],
+): DatabaseSync {
+  const { database } = createRollupTestEnv();
+  seedSites(database, [
+    { siteId: "site-1", sitePk: 1 },
+    { siteId: "site-2", sitePk: 2 },
+  ]);
+  for (const visit of visits) {
+    database
+      .prepare(
+        `INSERT INTO visits (visit_id, site_id, site_pk, visitor_id, session_id, status,
+          started_at, last_activity_at, pathname, hostname, country)
+         VALUES (?, ?, ?, ?, ?, 'complete', ?, ?, ?, 'example.com', ?)`,
+      )
+      .run(
+        visit.id,
+        `site-${visit.sitePk ?? 1}`,
+        visit.sitePk ?? 1,
+        visit.visitor,
+        visit.session,
+        visit.at,
+        visit.at,
+        visit.path,
+        visit.country ?? "US",
+      );
+  }
+  const names = new Map<string, number>();
+  for (const event of events) {
+    const key = `${event.sitePk ?? 1}:${event.name}`;
+    if (!names.has(key)) {
+      names.set(key, names.size + 1);
+      database
+        .prepare(
+          "INSERT INTO custom_event_names (id, site_id, site_pk, name, last_seen_at) VALUES (?, ?, ?, ?, 0)",
+        )
+        .run(
+          names.get(key)!,
+          `site-${event.sitePk ?? 1}`,
+          event.sitePk ?? 1,
+          event.name,
+        );
+    }
+    database
+      .prepare(
+        `INSERT INTO custom_events (event_id, site_id, site_pk, visit_id, event_name_id,
+          occurred_at, received_at, sequence, node_count, value_count)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0)`,
+      )
+      .run(
+        event.id,
+        `site-${event.sitePk ?? 1}`,
+        event.sitePk ?? 1,
+        event.visit,
+        names.get(key)!,
+        event.at,
+        event.at,
+        event.sequence ?? 0,
+      );
+  }
+  return database;
+}
 
 function step(id: string, filterDsl: string) {
   return { id, filterDsl } as const;
@@ -51,123 +111,98 @@ function config(
   progressionScope: FunnelConfigV2["progressionScope"] = "session",
   conversionWindowMs: number | null = null,
 ): FunnelConfigV2 {
-  return {
-    filterDslVersion: 1,
-    progressionScope,
-    conversionWindowMs,
-    steps,
-  };
+  return { filterDslVersion: 1, progressionScope, conversionWindowMs, steps };
 }
 
-function runPlan(plan: ReturnType<typeof buildFunnelSqlPlan>) {
-  const database = applyD1Limits(new DatabaseSync(":memory:"));
-  try {
-    return database
-      .prepare(plan.sql)
-      .all(...plan.bindings.map((binding) => binding.value)) as Array<{
-      stepId: string;
-      stepIndex: number;
-      sessions: number;
-      visitors: number;
-    }>;
-  } finally {
-    database.close();
-  }
+function source(filters: FilterDocument = EMPTY_FILTER_DOCUMENT) {
+  return { siteId: "site-1", startMs: 0, endExclusiveMs: 1_000, filters };
 }
 
-describe("scoped observation filter primitive", () => {
-  it("projects a step filter onto final dataset relations only", () => {
-    const filter = parseFilterDsl(
-      'page.path eq "/landing"',
-      analyticsFilterRegistry,
-    );
-    const bundle = applyObservationFilterToScopedDataset(
-      dataset,
-      filter,
-      "step_0",
-    );
+function runPlan(
+  db: DatabaseSync,
+  plan: ReturnType<typeof buildFunnelSqlPlan>,
+) {
+  return db.prepare(plan.sql).all(...plan.bindings) as Array<{
+    stepId: string;
+    stepIndex: number;
+    sessions: number;
+    visitors: number;
+  }>;
+}
 
-    expect(bundle.matchedVisitRelation).toBe("step_0_matched_visits");
-    expect(bundle.matchedEventRelation).toBe("step_0_matched_events");
-    expect(bundle.sessionRelation).toBe("step_0_sessions");
-    expect(bundle.visitorRelation).toBe("step_0_visitors");
-    expect(bundle.ctes).toContain(
-      "FROM scope_final_visits step_0_visit_filter",
-    );
-    expect(bundle.ctes).toContain("FROM scope_final_events");
-    expect(bundle.ctes).not.toContain("scope_raw_visits");
-    expect(bundle.ctes).not.toContain("scope_raw_events");
-    expect(bundle.bindings.map((binding) => binding.value)).toEqual([
-      "/landing",
-      "/landing",
-    ]);
-
-    const unfiltered = applyObservationFilterToScopedDataset(
-      dataset,
-      { version: 1, root: null },
-      "step_all",
-    );
-    expect(unfiltered.ctes).toContain(
-      "step_all_matched_visits AS (SELECT * FROM scope_final_visits)",
-    );
-  });
-
-  it("rejects CTE-prefix interpolation that is not an identifier", () => {
-    expect(() =>
-      assertSafeScopedObservationCtePrefix("step_0; DROP TABLE visits"),
-    ).toThrow(/internal SQL identifier/iu);
-  });
-});
+const LANDING_THEN_SIGNUP = [
+  step("landing", 'page.path eq "/landing"'),
+  step("signup", 'event.name eq "signup"'),
+];
 
 describe("FunnelSqlPlan", () => {
-  it("runs session progression in one non-recursive query", () => {
-    const plan = buildFunnelSqlPlan(
-      config([
-        step("landing", 'page.path eq "/landing"'),
-        step("signup", 'event.name eq "signup"'),
-      ]),
-      dataset,
+  it("runs session progression in one non-recursive query over one site", () => {
+    const db = database(
+      [
+        {
+          id: "visit-1",
+          session: "s1",
+          visitor: "v1",
+          at: 100,
+          path: "/landing",
+        },
+        {
+          id: "visit-2",
+          session: "s1",
+          visitor: "v1",
+          at: 200,
+          path: "/landing",
+        },
+        // Another site's page view and event, with the same session id.
+        {
+          id: "visit-3",
+          sitePk: 2,
+          session: "s1",
+          visitor: "v2",
+          at: 100,
+          path: "/landing",
+        },
+      ],
+      [
+        { id: "event-1", visit: "visit-1", name: "signup", at: 160 },
+        { id: "event-2", visit: "visit-3", sitePk: 2, name: "signup", at: 160 },
+      ],
     );
-    const rows = runPlan(plan);
+    const plan = buildFunnelSqlPlan(config(LANDING_THEN_SIGNUP), source());
 
-    expect(rows).toEqual([
-      { stepIndex: 0, stepId: "landing", sessions: 2, visitors: 2 },
-      { stepIndex: 1, stepId: "signup", sessions: 2, visitors: 2 },
+    expect(runPlan(db, plan)).toEqual([
+      { stepIndex: 0, stepId: "landing", sessions: 1, visitors: 1 },
+      { stepIndex: 1, stepId: "signup", sessions: 1, visitors: 1 },
     ]);
     expect(plan.sql).not.toMatch(/WITH\s+RECURSIVE/iu);
-    expect(plan.sql).toMatch(/reached_0\s+AS/iu);
     expect(plan.sql).toMatch(/reached_1\s+AS/iu);
-    expect(plan.sql).toMatch(
-      /ORDER BY candidate\.observed_at ASC,\s+candidate\.observation_rank ASC,\s+candidate\.sequence ASC,\s+candidate\.source_id ASC/iu,
-    );
-    expect(plan.sql).toContain("candidate.session_id = previous.session_id");
-    expect(plan.sql).toContain("candidate.source_id > previous.last_source_id");
-    expect(plan.sql).toContain("FROM funnel_step_0_sessions");
-    expect(plan.sql).toContain("FROM funnel_step_0_visitors");
-    expect(plan.bindings.map((binding) => binding.value).slice(-2)).toEqual([
-      "landing",
-      "signup",
-    ]);
+    expect(plan.sql).not.toContain("scope_raw");
+    expect(plan.sql.match(/\bFROM visits v\b/gu)).toHaveLength(1);
+    expect(plan.bindings.slice(-2)).toEqual(["landing", "signup"]);
   });
 
-  it("does not let one observation complete two steps", () => {
-    const oneObservationDataset: ScopedDatasetSql = {
-      ...dataset,
-      ctes: `
-scope_final_visits(site_pk, session_id, visitor_id, started_at, visit_id, pathname) AS (
-  VALUES (1, 'session-1', 'visitor-1', 100, 'visit-1', '/landing')
-),
-scope_final_events(event_pk, event_id, site_pk, session_id, visitor_id, occurred_at, sequence, event_name, pathname) AS (
-  VALUES (1, 'event-1', 1, 'session-1', 'visitor-1', 100, 0, 'other', '/other')
-)`,
-    };
+  it("counts a custom event only for an event step, and a page view only for a page step", () => {
+    const db = database(
+      [
+        {
+          id: "visit-1",
+          session: "s1",
+          visitor: "v1",
+          at: 100,
+          path: "/landing",
+        },
+      ],
+      // On the landing page, but a page step's match is a page view.
+      [{ id: "event-1", visit: "visit-1", name: "other", at: 100 }],
+    );
     const rows = runPlan(
+      db,
       buildFunnelSqlPlan(
         config([
           step("first", 'page.path eq "/landing"'),
           step("second", 'page.path eq "/landing"'),
         ]),
-        oneObservationDataset,
+        source(),
       ),
     );
 
@@ -175,105 +210,175 @@ scope_final_events(event_pk, event_id, site_pk, session_id, visitor_id, occurred
     expect(rows[1]).toMatchObject({ sessions: 0, visitors: 0 });
   });
 
-  it("excludes blank identities and keeps progression keys site-scoped", () => {
-    const scopedIdentityDataset: ScopedDatasetSql = {
-      ...dataset,
-      ctes: `
-scope_final_visits(site_pk, session_id, visitor_id, started_at, visit_id, pathname) AS (
-  VALUES
-    (1, 'shared', 'shared-visitor', 100, 'site-1-visit', '/landing'),
-    (1, NULL, 'blank-session', 110, 'blank-session-visit', '/landing'),
-    (1, 'blank-visitor', NULL, 120, 'blank-visitor-visit', '/landing'),
-    (1, NULL, NULL, 130, 'blank-both-visit', '/landing')
-),
-scope_final_events(event_pk, event_id, site_pk, session_id, visitor_id, occurred_at, sequence, event_name, pathname) AS (
-  VALUES
-    (1, 'site-2-event', 2, 'shared', 'shared-visitor', 160, 0, 'signup', ''),
-    (2, 'blank-both-event', 1, NULL, NULL, 170, 0, 'signup', '')
-)`,
-    };
-
-    const sessionRows = runPlan(
-      buildFunnelSqlPlan(
-        config([
-          step("landing", 'page.path eq "/landing"'),
-          step("signup", 'event.name eq "signup"'),
-        ]),
-        scopedIdentityDataset,
-      ),
+  it("excludes blank identities", () => {
+    const db = database(
+      [
+        {
+          id: "visit-1",
+          session: "s1",
+          visitor: "v1",
+          at: 100,
+          path: "/landing",
+        },
+        {
+          id: "visit-2",
+          session: "",
+          visitor: "v2",
+          at: 110,
+          path: "/landing",
+        },
+        {
+          id: "visit-3",
+          session: "s3",
+          visitor: "",
+          at: 120,
+          path: "/landing",
+        },
+        { id: "visit-4", session: "", visitor: "", at: 130, path: "/landing" },
+      ],
+      [{ id: "event-1", visit: "visit-4", name: "signup", at: 170 }],
     );
-    expect(sessionRows).toEqual([
+
+    expect(
+      runPlan(db, buildFunnelSqlPlan(config(LANDING_THEN_SIGNUP), source())),
+    ).toEqual([
       { stepIndex: 0, stepId: "landing", sessions: 2, visitors: 2 },
       { stepIndex: 1, stepId: "signup", sessions: 0, visitors: 0 },
     ]);
-
-    const visitorRows = runPlan(
-      buildFunnelSqlPlan(
-        config(
-          [
-            step("landing", 'page.path eq "/landing"'),
-            step("signup", 'event.name eq "signup"'),
-          ],
-          "visitor",
-          1_000,
+    expect(
+      runPlan(
+        db,
+        buildFunnelSqlPlan(
+          config(LANDING_THEN_SIGNUP, "visitor", 1_000),
+          source(),
         ),
-        scopedIdentityDataset,
       ),
-    );
-    expect(visitorRows).toEqual([
+    ).toEqual([
       { stepIndex: 0, stepId: "landing", sessions: 2, visitors: 2 },
       { stepIndex: 1, stepId: "signup", sessions: 0, visitors: 0 },
     ]);
   });
 
-  it("deduplicates amplified witnesses by source id in SQL", () => {
-    const duplicateSourceDataset: ScopedDatasetSql = {
-      ...dataset,
-      ctes: `
-scope_final_visits(site_pk, session_id, visitor_id, started_at, visit_id, pathname) AS (
-  VALUES (1, 'session-1', 'visitor-1', 100, 'visit-1', '/landing')
-),
-scope_final_events(event_pk, event_id, site_pk, session_id, visitor_id, occurred_at, sequence, event_name, pathname) AS (
-  VALUES
-    (1, 'same-event', 1, 'session-1', 'visitor-1', 90, 0, 'signup', ''),
-    (2, 'same-event', 1, 'session-1', 'visitor-1', 120, 0, 'signup', '')
-)`,
-    };
-    const rows = runPlan(
-      buildFunnelSqlPlan(
-        config([
-          step("landing", 'page.path eq "/landing"'),
-          step("signup", 'event.name eq "signup"'),
-        ]),
-        duplicateSourceDataset,
-      ),
+  it("orders a step after the previous one, and an event after its page view", () => {
+    const db = database(
+      [
+        {
+          id: "visit-1",
+          session: "s1",
+          visitor: "v1",
+          at: 100,
+          path: "/landing",
+        },
+      ],
+      [
+        // Before the landing page: not a progression.
+        { id: "event-early", visit: "visit-1", name: "signup", at: 90 },
+      ],
     );
-    expect(rows[1]).toMatchObject({ sessions: 0, visitors: 0 });
+    expect(
+      runPlan(db, buildFunnelSqlPlan(config(LANDING_THEN_SIGNUP), source()))[1],
+    ).toMatchObject({ sessions: 0, visitors: 0 });
+
+    db.prepare(
+      `INSERT INTO custom_events (event_id, site_id, site_pk, visit_id, event_name_id,
+        occurred_at, received_at, sequence, node_count, value_count)
+       VALUES ('event-same-time', 'site-1', 1, 'visit-1', 1, 100, 100, 0, 0, 0)`,
+    ).run();
+    expect(
+      runPlan(db, buildFunnelSqlPlan(config(LANDING_THEN_SIGNUP), source()))[1],
+    ).toMatchObject({ sessions: 1, visitors: 1 });
   });
 
   it("carries visitor first observation through the total conversion window", () => {
-    const plan = buildFunnelSqlPlan(
-      config(
-        [
-          step("landing", 'page.path eq "/landing"'),
-          step("signup", 'event.name eq "signup"'),
-        ],
-        "visitor",
-        60,
-      ),
-      dataset,
+    const db = database(
+      [
+        {
+          id: "visit-1",
+          session: "s1",
+          visitor: "v1",
+          at: 100,
+          path: "/landing",
+        },
+        {
+          id: "visit-2",
+          session: "s2",
+          visitor: "v1",
+          at: 500,
+          path: "/other",
+        },
+        {
+          id: "visit-3",
+          session: "s3",
+          visitor: "v2",
+          at: 100,
+          path: "/landing",
+        },
+        {
+          id: "visit-4",
+          session: "s4",
+          visitor: "v2",
+          at: 140,
+          path: "/other",
+        },
+      ],
+      [
+        // Within 60 ms of v2's first landing page view, in another session.
+        { id: "event-1", visit: "visit-4", name: "signup", at: 150 },
+        // Too late for v1.
+        { id: "event-2", visit: "visit-2", name: "signup", at: 500 },
+      ],
     );
-    const rows = runPlan(plan);
+    const plan = buildFunnelSqlPlan(
+      config(LANDING_THEN_SIGNUP, "visitor", 60),
+      source(),
+    );
 
-    expect(rows).toEqual([
+    expect(runPlan(db, plan)).toEqual([
       { stepIndex: 0, stepId: "landing", sessions: 2, visitors: 2 },
-      { stepIndex: 1, stepId: "signup", sessions: 2, visitors: 2 },
+      { stepIndex: 1, stepId: "signup", sessions: 1, visitors: 1 },
     ]);
     expect(plan.sql).toContain("previous.first_observed_at");
-    expect(plan.sql).toContain("conversion_window_ms");
-    expect(plan.sql).toContain(
-      "PARTITION BY previous.site_pk, previous.visitor_id",
+    expect(plan.sql).toContain("PARTITION BY previous.visitor_id");
+  });
+
+  it("applies the dashboard's filter before the steps", () => {
+    const db = database(
+      [
+        {
+          id: "visit-us",
+          session: "s1",
+          visitor: "v1",
+          at: 100,
+          path: "/landing",
+        },
+        {
+          id: "visit-de",
+          session: "s2",
+          visitor: "v2",
+          at: 100,
+          path: "/landing",
+          country: "DE",
+        },
+      ],
+      [
+        { id: "event-us", visit: "visit-us", name: "signup", at: 150 },
+        { id: "event-de", visit: "visit-de", name: "signup", at: 150 },
+      ],
     );
+    const filters = parseFilterDsl(
+      'geo.country eq "DE"',
+      analyticsFilterRegistry,
+    );
+
+    expect(
+      runPlan(
+        db,
+        buildFunnelSqlPlan(config(LANDING_THEN_SIGNUP), source(filters)),
+      ),
+    ).toEqual([
+      { stepIndex: 0, stepId: "landing", sessions: 1, visitors: 1 },
+      { stepIndex: 1, stepId: "signup", sessions: 1, visitors: 1 },
+    ]);
   });
 
   it("enforces every reachable structural budget and config guard", () => {
@@ -301,82 +406,46 @@ scope_final_events(event_pk, event_id, site_pk, session_id, visitor_id, occurred
       assertFunnelSqlShapeWithinBudget(shape, { maxBindings: 0 }),
     ).toThrow("funnel_sql_binding_limit_exceeded");
 
+    const steps = [
+      step("first", 'page.path eq "/first"'),
+      step("second", 'page.path eq "/second"'),
+    ];
+    for (const allowHistoricalOverLimit of [false, true]) {
+      expect(() =>
+        buildFunnelSqlPlan(config(steps, "visitor", null), source(), {
+          allowHistoricalOverLimit,
+        }),
+      ).toThrow("visitor_funnel_conversion_window_must_be_positive");
+      expect(() =>
+        buildFunnelSqlPlan(config(steps, "session", 1), source(), {
+          allowHistoricalOverLimit,
+        }),
+      ).toThrow("session_funnel_conversion_window_must_be_null");
+    }
     expect(() =>
-      buildFunnelSqlPlan(
-        config(
-          [
-            step("first", 'page.path eq "/first"'),
-            step("second", 'page.path eq "/second"'),
-          ],
-          "visitor",
-          null,
-        ),
-        dataset,
-      ),
-    ).toThrow("visitor_funnel_conversion_window_must_be_positive");
-    expect(() =>
-      buildFunnelSqlPlan(
-        config(
-          [
-            step("first", 'page.path eq "/first"'),
-            step("second", 'page.path eq "/second"'),
-          ],
-          "session",
-          1,
-        ),
-        dataset,
-      ),
-    ).toThrow("session_funnel_conversion_window_must_be_null");
-    expect(() =>
-      buildFunnelSqlPlan(
-        config(
-          [
-            step("first", 'page.path eq "/first"'),
-            step("second", 'page.path eq "/second"'),
-          ],
-          "visitor",
-          null,
-        ),
-        dataset,
-        { allowHistoricalOverLimit: true },
-      ),
-    ).toThrow("visitor_funnel_conversion_window_must_be_positive");
-    expect(() =>
-      buildFunnelSqlPlan(
-        config(
-          [
-            step("first", 'page.path eq "/first"'),
-            step("second", 'page.path eq "/second"'),
-          ],
-          "session",
-          1,
-        ),
-        dataset,
-        { allowHistoricalOverLimit: true },
-      ),
-    ).toThrow("session_funnel_conversion_window_must_be_null");
+      buildFunnelSqlPlan(config([]), source(), {
+        allowHistoricalOverLimit: true,
+      }),
+    ).toThrow("funnel_steps_required");
   });
 
-  it("reports the ten-step structural shape and catches explicit overages", () => {
+  it("reports the ten-step shape and catches explicit overages", () => {
+    const db = database([]);
     const tenStepPlan = buildFunnelSqlPlan(
       config(
         Array.from({ length: 10 }, (_, index) =>
           step(`step-${index}`, `page.path eq "/step-${index}"`),
         ),
       ),
-      dataset,
+      source(),
     );
 
     expect(tenStepPlan.shape.stagedCteCount).toBe(10);
-    expect(tenStepPlan.shape.funnelCteCount).toBe(
-      10 * FUNNEL_SQL_CTES_PER_STEP,
-    );
     expect(tenStepPlan.sql.match(/\breached_\d+\s+AS/giu)).toHaveLength(10);
-    expect(runPlan(tenStepPlan).map((row) => row.stepId)).toEqual(
+    expect(runPlan(db, tenStepPlan).map((row) => row.stepId)).toEqual(
       Array.from({ length: 10 }, (_, index) => `step-${index}`),
     );
     expect(tenStepPlan.shape.sqlLength).toBe(tenStepPlan.sql.length);
-    expect(tenStepPlan.shape.bindingCount).toBe(30);
     expect(FUNNEL_SQL_STRUCTURAL_BUDGET.maxSteps).toBe(10);
 
     expect(() =>
@@ -384,26 +453,29 @@ scope_final_events(event_pk, event_id, site_pk, session_id, visitor_id, occurred
         maxSqlLength: tenStepPlan.shape.sqlLength - 1,
       }),
     ).toThrow("funnel_sql_length_exceeded");
+    const elevenSteps = config(
+      Array.from({ length: 11 }, (_, index) =>
+        step(`step-${index}`, `page.path eq "/step-${index}"`),
+      ),
+    );
+    expect(() => buildFunnelSqlPlan(elevenSteps, source())).toThrow(
+      "funnel_sql_step_limit_exceeded",
+    );
+    expect(
+      buildFunnelSqlPlan(elevenSteps, source(), {
+        allowHistoricalOverLimit: true,
+      }).shape.stepCount,
+    ).toBe(11);
     expect(() =>
       buildFunnelSqlPlan(
         config(
-          Array.from({ length: 11 }, (_, index) =>
+          Array.from({ length: 13 }, (_, index) =>
             step(`step-${index}`, `page.path eq "/step-${index}"`),
           ),
         ),
-        dataset,
+        source(),
+        { allowHistoricalOverLimit: true },
       ),
-    ).toThrow("funnel_sql_step_limit_exceeded");
-
-    const historicalPlan = buildFunnelSqlPlan(
-      config(
-        Array.from({ length: 11 }, (_, index) =>
-          step(`historical-${index}`, `page.path eq "/step-${index}"`),
-        ),
-      ),
-      dataset,
-      { allowHistoricalOverLimit: true },
-    );
-    expect(historicalPlan.shape.stepCount).toBe(11);
+    ).toThrow("funnel_historical_step_limit_exceeded");
   });
 });

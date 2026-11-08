@@ -200,14 +200,7 @@ async function loadReportDataUncached(
   if (!site) return null;
   const [overview, pages, referrers] = await Promise.all([
     loadOverviewAggregate(env, input.siteId, window, input.cache),
-    queryTopPagesFromD1(
-      env,
-      input.siteId,
-      window,
-      5,
-      false,
-      EMPTY_FILTER_DOCUMENT,
-    ),
+    queryTopPagesFromD1(env, input.siteId, window, EMPTY_FILTER_DOCUMENT, 5),
     queryTopReferrersFromD1(
       env,
       input.siteId,

@@ -4,13 +4,11 @@ import type {
   AnalyticsResult,
   CanonicalQuery,
   CanonicalResult,
-  FilterScope,
   QueryInput,
   QueryOperation,
   QueryTime,
 } from "@/lib/edge/analytics/contract";
 import { ComparisonDomainError } from "@/lib/edge/analytics/contract/comparison";
-import { prepareScopedQuery } from "@/lib/edge/analytics/contract/scoped-filter";
 import { InvalidCursorError } from "@/lib/pagination";
 
 import { AnalyticsProviderDomainError } from "./errors";
@@ -41,10 +39,6 @@ export interface QueryExecutionContext {
 export interface AnalyticsQueryEvent {
   readonly operation: string;
   readonly phase: "start" | "success" | "cancelled" | "deadline" | "failure";
-  readonly requestedScope?: string;
-  readonly resolvedScope?: FilterScope;
-  readonly requiredSources?: readonly string[];
-  readonly requiresRawSource?: boolean;
 }
 export type AnalyticsApplicationErrorHandler = (
   error: unknown,
@@ -88,21 +82,11 @@ function executionDomainError(
 function emit(
   context: QueryExecutionContext,
   phase: AnalyticsQueryEvent["phase"],
-  query?: QueryInput,
 ): void {
   try {
-    const plan = query?.scopePlan;
     context.onEvent?.({
       operation: context.operation ?? "unknown",
       phase,
-      ...(plan
-        ? {
-            requestedScope: query?.scopePreference ?? "auto",
-            resolvedScope: plan.scope,
-            requiredSources: [...plan.requiredSources].sort(),
-            requiresRawSource: plan.requiresRawSource,
-          }
-        : {}),
     });
   } catch {
     // Observability must never change query behavior.
@@ -134,57 +118,15 @@ export class TypedQueryApplicationService {
       return before;
     }
 
-    // Validate the caller's document before scope planning. Scope planning
-    // deliberately works with trusted FilterExpression nodes, while this
-    // boundary is also responsible for returning the public invalid-filter
-    // error for malformed documents.
-    const initialValidationError = validateTypedQueryInput(
-      invocation.operation,
-      invocation.query,
-    );
-    if (initialValidationError) {
-      emit(executionContext, "failure");
-      return { ok: false, error: initialValidationError };
-    }
-
-    let preparedQuery: QueryInput;
-    try {
-      preparedQuery = prepareScopedQuery(
-        invocation.operation,
-        invocation.query,
-      );
-    } catch (error) {
-      const code =
-        error instanceof Error ? error.message : "invalid_filter_scope";
-      emit(executionContext, "failure");
-      if (error instanceof InvalidCursorError) {
-        return {
-          ok: false,
-          error: { kind: "invalid-cursor", cursorKind: error.cursorKind },
-        };
-      }
-      return {
-        ok: false,
-        error: {
-          kind: "invalid-input",
-          issues: [
-            {
-              path: code.startsWith("filter_time_") ? "filters" : "scope",
-              code,
-            },
-          ],
-        },
-      };
-    }
-
     const validationError = validateTypedQueryInput(
       invocation.operation,
-      preparedQuery,
+      invocation.query,
     );
     if (validationError) {
       emit(executionContext, "failure");
       return { ok: false, error: validationError };
     }
+    const query: QueryInput = invocation.query;
 
     try {
       const provider = invocation.providerRegistry.resolve<Operation>(
@@ -200,10 +142,7 @@ export class TypedQueryApplicationService {
       const load = async (): Promise<
         TypedQueryProviderResult<CanonicalResult<Operation>>
       > =>
-        provider.execute(
-          preparedQuery as CanonicalQuery<Operation>,
-          executionContext,
-        );
+        provider.execute(query as CanonicalQuery<Operation>, executionContext);
       let result: TypedQueryProviderResult<CanonicalResult<Operation>>;
       if (!invocation.cache || !this.cache) {
         result = await load();
@@ -230,13 +169,13 @@ export class TypedQueryApplicationService {
         }
       }
       const time =
-        "time" in preparedQuery
-          ? (preparedQuery as QueryInput & { readonly time: QueryTime }).time
-          : "current" in preparedQuery &&
-              preparedQuery.current &&
-              typeof preparedQuery.current === "object" &&
-              "time" in preparedQuery.current
-            ? (preparedQuery.current as { readonly time: QueryTime }).time
+        "time" in query
+          ? (query as QueryInput & { readonly time: QueryTime }).time
+          : "current" in query &&
+              query.current &&
+              typeof query.current === "object" &&
+              "time" in query.current
+            ? (query.current as { readonly time: QueryTime }).time
             : undefined;
       if (!time) {
         emit(executionContext, "failure");
@@ -253,7 +192,7 @@ export class TypedQueryApplicationService {
         );
         return after;
       }
-      emit(executionContext, "success", preparedQuery);
+      emit(executionContext, "success");
       return {
         ok: true,
         data: result.value,
@@ -261,14 +200,6 @@ export class TypedQueryApplicationService {
           time,
           source: result.source ?? "raw",
           approximateVisitors: Boolean(result.approximateVisitors),
-          ...(preparedQuery.scopePlan
-            ? {
-                filterScope: {
-                  requested: preparedQuery.scopePreference ?? "auto",
-                  resolved: preparedQuery.scopePlan.scope,
-                },
-              }
-            : {}),
         },
       };
     } catch (error) {

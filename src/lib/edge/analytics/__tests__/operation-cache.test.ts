@@ -71,13 +71,13 @@ describe("OperationResultCache", () => {
     const queryAt = (capturedAtMs: number) => ({
       time: { capturedAtMs, range: { startMs: 0, endExclusiveMs: 10 } },
       filters: {
-        version: 1,
-        root: {
-          kind: "condition",
-          target: { kind: "time-anchor", anchor: "now" },
-          operator: "gte",
-          value: 1,
-        },
+        conditions: [
+          {
+            target: { kind: "time-anchor", anchor: "now" },
+            operator: "gte",
+            value: 1,
+          },
+        ],
       },
     });
     const first = await createOperationCacheKey({

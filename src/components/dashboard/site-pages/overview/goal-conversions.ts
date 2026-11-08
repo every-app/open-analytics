@@ -22,7 +22,7 @@ export interface GoalConversionRow {
   /** Visitors who converted. */
   uniques: number;
   /**
-   * Visits that converted. Null for a scroll depth goal, which, as in
+   * Total conversions. Null for a scroll depth goal, which, as in
    * Plausible, shows only its uniques and conversion rate.
    */
   total: number | null;
@@ -32,18 +32,15 @@ export interface GoalConversionRow {
   revenue: GoalRevenue | null;
 }
 
-/**
- * The card's rows, most unique conversions first, then by name. Each goal's
- * summary is in `summaries` by its id.
- */
+/** The card's rows, most unique conversions first, then by name. */
 export function goalConversionRows(
-  goals: readonly GoalDefinition[],
-  summaries: ReadonlyMap<string, GoalSummary>,
+  goals: readonly {
+    readonly goal: GoalDefinition;
+    readonly summary: GoalSummary;
+  }[],
 ): GoalConversionRow[] {
   return goals
-    .map((goal) => {
-      const summary = summaries.get(goal.id);
-      if (!summary) throw new Error(`goal_summary_missing:${goal.id}`);
+    .map(({ goal, summary }) => {
       return {
         key: goal.id,
         goalId: goal.id,
@@ -51,7 +48,7 @@ export function goalConversionRows(
         uniques: summary.visitors.converted,
         total:
           scrollDepthGoalFromDsl(goal.filterDsl) === null
-            ? summary.sessions.converted
+            ? summary.conversions
             : null,
         conversionRate: summary.visitors.conversionRate,
         revenue: summary.revenue,

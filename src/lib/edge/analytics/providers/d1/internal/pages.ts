@@ -1,6 +1,5 @@
 import {
   analyticsFilterRegistry,
-  effectiveScopeForPagination,
   filterFingerprint,
   type PagesDashboardSortKey,
   type QueryAudience,
@@ -17,7 +16,6 @@ import {
 } from "@/lib/pagination";
 
 import type {
-  DimensionRow,
   FilterDocument,
   Interval,
   PageCardAggregateRow,
@@ -27,21 +25,16 @@ import type {
   QueryWindow,
 } from "./core";
 import {
-  appendSqlConditions,
+  type BoundSql,
   buildTimeBuckets,
-  buildVisitFilterSql,
-  buildVisitSourceCte,
+  filteredVisitsCte,
   queryD1All,
   timeBucketCase,
   timeBucketTimestamp,
-  visitSourceBindings,
 } from "./core";
-import { queryPageTabsFromD1 } from "./dimensions";
 import { type PageDashboardCursor } from "./pages-dashboard";
-import {
-  scopedDatasetFor,
-  scopedDatasetForUnpreparedReader,
-} from "./scoped-dataset";
+import { dailyDimensionRows, rollupEdgeSource } from "./rollup-breakdowns";
+import { RollupDimension } from "./rollup-dimensions";
 import {
   NO_SCROLL_DEPTH_RANK,
   scrollDepthOf,
@@ -51,26 +44,16 @@ export interface PageAggregateCursor {
   readonly views: number;
   readonly sessions: number;
   readonly pathname: string;
-  readonly query: string;
-  readonly hash: string;
 }
 function pageAggregateCursor(value: unknown): PageAggregateCursor | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const candidate = value as Record<string, unknown>;
-  return hasExactKeys(candidate, [
-    "views",
-    "sessions",
-    "pathname",
-    "query",
-    "hash",
-  ]) &&
+  return hasExactKeys(candidate, ["views", "sessions", "pathname"]) &&
     typeof candidate.views === "number" &&
     Number.isFinite(candidate.views) &&
     typeof candidate.sessions === "number" &&
     Number.isFinite(candidate.sessions) &&
-    typeof candidate.pathname === "string" &&
-    typeof candidate.query === "string" &&
-    typeof candidate.hash === "string"
+    typeof candidate.pathname === "string"
     ? (candidate as unknown as PageAggregateCursor)
     : null;
 }
@@ -90,109 +73,78 @@ export function pageCursorBinding(
     window.endExclusiveMs,
     window.timeZone,
     filterFingerprint(filters, analyticsFilterRegistry),
-    effectiveScopeForPagination(filters),
     ...extra,
   ]);
 }
-export async function queryTopPagesFromD1(
+/**
+ * The `page_rollup` CTE: each pathname's views and sessions. An unfiltered
+ * read adds the rolled-up days to a raw grouping of the window's edges; a
+ * filtered one groups the plain scan of the window's matching page views.
+ */
+async function pageAggregate(
   env: Env,
   siteId: string,
   window: QueryWindow,
-  limit: number,
-  includeDetails: boolean,
   filters: FilterDocument,
-): Promise<PageRow[]> {
-  const scopedDataset = scopedDatasetFor(siteId, window, filters);
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
-  const queryExpr = includeDetails ? "query_string" : "''";
-  const hashExpr = includeDetails ? "hash_fragment" : "''";
-  const sql = `
-WITH
-${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS (
-  SELECT *
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-)
-SELECT
-  pathname,
-  ${queryExpr} AS queryValue,
-  ${hashExpr} AS hashValue,
-  count(*) AS views,
-  count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions
-FROM filtered_visits
-GROUP BY pathname, queryValue, hashValue
-ORDER BY views DESC, pathname ASC
-LIMIT ?
-`;
-  return (
-    await queryD1All<Record<string, unknown>>(env, sql, [
-      ...(scopedDataset
-        ? scopedDataset.bindings.map((binding) => binding.value)
-        : [
-            ...visitSourceBindings(siteId, window),
-            ...(filter?.bindings ?? []),
-          ]),
-      limit,
-    ])
-  ).map((row) => ({
-    pathname: String(row.pathname ?? ""),
-    query: String(row.queryValue ?? ""),
-    hash: String(row.hashValue ?? ""),
-    views: Number(row.views ?? 0),
-    sessions: Number(row.sessions ?? 0),
-  }));
+): Promise<BoundSql> {
+  const grouping = (relation: string) => `
+  SELECT
+    pathname,
+    count(*) AS views,
+    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions
+  FROM ${relation}
+  GROUP BY pathname`;
+  const rollup = await rollupEdgeSource(env, siteId, window, filters);
+  if (rollup) {
+    const daily = dailyDimensionRows(
+      siteId,
+      RollupDimension.PagePath,
+      rollup.split,
+    );
+    return {
+      sql: `${rollup.visitSource.sql},
+page_rollup AS (
+  SELECT pathname, SUM(views) AS views, SUM(sessions) AS sessions
+  FROM (${grouping("visit_source")}
+    UNION ALL
+    SELECT value AS pathname, views, sessions FROM (${daily.sql})
+  )
+  GROUP BY pathname
+)`,
+      bindings: [...rollup.visitSource.bindings, ...daily.bindings],
+    };
+  }
+  const source = filteredVisitsCte(siteId, window, filters);
+  return {
+    sql: `${source.sql},
+page_rollup AS (${grouping("filtered_visits")}
+)`,
+    bindings: source.bindings,
+  };
 }
-/** Keyset-paginated page aggregate. The legacy aggregate reader above remains
- * intentionally bounded for cards, reports, and other Top-N consumers. */
-export async function queryPagesPageFromD1(
+/** Pages by views, then sessions, then path; after `cursor` when given. */
+async function queryPageRows(
   env: Env,
   siteId: string,
   window: QueryWindow,
   filters: FilterDocument,
   limit: number,
-  includeDetails: boolean,
-  cursor?: PageAggregateCursor | null,
-  audience: QueryAudience = "private-dashboard",
-): Promise<PageResult<PageRow>> {
-  const scopedDataset = scopedDatasetFor(siteId, window, filters);
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
-  const queryExpr = includeDetails ? "query_string" : "''";
-  const hashExpr = includeDetails ? "hash_fragment" : "''";
+  cursor: PageAggregateCursor | null,
+): Promise<PageRow[]> {
+  const aggregate = await pageAggregate(env, siteId, window, filters);
   const cursorClause = cursor
     ? `
 WHERE views < ?
    OR (views = ? AND sessions < ?)
-   OR (views = ? AND sessions = ? AND pathname > ?)
-   OR (views = ? AND sessions = ? AND pathname = ? AND queryValue > ?)
-   OR (views = ? AND sessions = ? AND pathname = ? AND queryValue = ? AND hashValue > ?)`
+   OR (views = ? AND sessions = ? AND pathname > ?)`
     : "";
   const sql = `
 WITH
-${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS (
-  SELECT *
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-),
-rollup AS (
-  SELECT
-    pathname,
-    ${queryExpr} AS queryValue,
-    ${hashExpr} AS hashValue,
-    count(*) AS views,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions
-  FROM filtered_visits
-  GROUP BY pathname, queryValue, hashValue
-)
-SELECT pathname, queryValue, hashValue, views, sessions
-FROM rollup
+${aggregate.sql}
+SELECT pathname, views, sessions
+FROM page_rollup
 ${cursorClause}
-ORDER BY views DESC, sessions DESC, pathname ASC, queryValue ASC, hashValue ASC
+ORDER BY views DESC, sessions DESC, pathname ASC
 LIMIT ?
 `;
   const cursorBindings = cursor
@@ -203,38 +155,54 @@ LIMIT ?
         cursor.views,
         cursor.sessions,
         cursor.pathname,
-        cursor.views,
-        cursor.sessions,
-        cursor.pathname,
-        cursor.query,
-        cursor.views,
-        cursor.sessions,
-        cursor.pathname,
-        cursor.query,
-        cursor.hash,
       ]
     : [];
-  const rows = await queryD1All<Record<string, unknown>>(env, sql, [
-    ...(scopedDataset
-      ? scopedDataset.bindings.map((binding) => binding.value)
-      : [...visitSourceBindings(siteId, window), ...(filter?.bindings ?? [])]),
-    ...cursorBindings,
-    limit + 1,
-  ]);
-  const mapped = rows.map((row) => ({
+  return (
+    await queryD1All<Record<string, unknown>>(env, sql, [
+      ...aggregate.bindings,
+      ...cursorBindings,
+      limit,
+    ])
+  ).map((row) => ({
     pathname: String(row.pathname ?? ""),
-    query: String(row.queryValue ?? ""),
-    hash: String(row.hashValue ?? ""),
     views: Number(row.views ?? 0),
     sessions: Number(row.sessions ?? 0),
   }));
-  const page = pageResult(mapped, limit);
+}
+export function queryTopPagesFromD1(
+  env: Env,
+  siteId: string,
+  window: QueryWindow,
+  filters: FilterDocument,
+  limit: number,
+): Promise<PageRow[]> {
+  return queryPageRows(env, siteId, window, filters, limit, null);
+}
+/** Keyset-paginated pages report. */
+export async function queryPagesPageFromD1(
+  env: Env,
+  siteId: string,
+  window: QueryWindow,
+  filters: FilterDocument,
+  limit: number,
+  cursor: PageAggregateCursor | null,
+  audience: QueryAudience,
+): Promise<PageResult<PageRow>> {
+  const rows = await queryPageRows(
+    env,
+    siteId,
+    window,
+    filters,
+    limit + 1,
+    cursor,
+  );
+  const page = pageResult(rows, limit);
   const binding = await pageCursorBinding(
     "pages",
     siteId,
     window,
     filters,
-    [includeDetails],
+    [],
     audience,
   );
   const nextCursor =
@@ -243,8 +211,6 @@ LIMIT ?
           views: page.last.views,
           sessions: page.last.sessions,
           pathname: page.last.pathname,
-          query: page.last.query,
-          hash: page.last.hash,
         })
       : null;
   return {
@@ -262,348 +228,18 @@ export async function decodePagesCursor(
   siteId: string,
   window: QueryWindow,
   filters: FilterDocument,
-  includeDetails: boolean,
-  cursor?: string | null,
-  audience: QueryAudience = "private-dashboard",
+  cursor: string | null,
+  audience: QueryAudience,
 ): Promise<PageAggregateCursor | null> {
   const binding = await pageCursorBinding(
     "pages",
     siteId,
     window,
     filters,
-    [includeDetails],
+    [],
     audience,
   );
   return decodePageCursor(env, binding, cursor, "pages", pageAggregateCursor);
-}
-export async function queryPageTabsAggregate(
-  env: Env,
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
-  limit: number,
-): Promise<{
-  path: DimensionRow[];
-  title: DimensionRow[];
-  hostname: DimensionRow[];
-  entry: DimensionRow[];
-  exit: DimensionRow[];
-}> {
-  return queryPageTabsFromD1(env, siteId, window, filters, limit);
-}
-export interface PagesWithTabsResult {
-  readonly pages: PageResult<PageRow>;
-  readonly tabs: {
-    path: DimensionRow[];
-    title: DimensionRow[];
-    hostname: DimensionRow[];
-    entry: DimensionRow[];
-    exit: DimensionRow[];
-  };
-}
-/**
- * Reads the paginated page rows and the five page tabs from one materialized
- * visits relation. The protocol adapter uses this only when tabs are
- * requested, keeping the regular pages query and its cursor contract intact.
- */
-export async function queryPagesWithTabsFromD1(
-  env: Env,
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
-  limit: number,
-  includeDetails: boolean,
-  cursor?: PageAggregateCursor | null,
-  audience: QueryAudience = "private-dashboard",
-): Promise<PagesWithTabsResult> {
-  const preparedDataset = scopedDatasetFor(siteId, window, filters);
-  const expandedDataset =
-    preparedDataset ??
-    scopedDatasetForUnpreparedReader(
-      "pages",
-      siteId,
-      window,
-      filters,
-      "session",
-    );
-  const scopedDataset = preparedDataset ?? expandedDataset;
-  const filter = preparedDataset
-    ? null
-    : buildVisitFilterSql(filters, "rv", { window });
-  const observationVisitRelation = preparedDataset
-    ? preparedDataset.visitRelation
-    : expandedDataset
-      ? "scope_raw_visits"
-      : "visit_source";
-  const edgeVisitRelation =
-    preparedDataset || !expandedDataset
-      ? "filtered_visits"
-      : expandedDataset.visitRelation;
-  const queryExpr = includeDetails ? "query_string" : "''";
-  const hashExpr = includeDetails ? "hash_fragment" : "''";
-  const visitSource = buildVisitSourceCte().replace(
-    "visit_source AS (",
-    "visit_source AS MATERIALIZED (",
-  );
-  const cursorClause = cursor
-    ? `
-WHERE views < ?
-   OR (views = ? AND sessions < ?)
-   OR (views = ? AND sessions = ? AND pathname > ?)
-   OR (views = ? AND sessions = ? AND pathname = ? AND queryValue > ?)
-   OR (views = ? AND sessions = ? AND pathname = ? AND queryValue = ? AND hashValue > ?)`
-    : "";
-  const sql = `
-WITH
-${scopedDataset?.ctes ?? visitSource},
-filtered_visits AS MATERIALIZED (
-  SELECT
-    pathname,
-    ${queryExpr} AS queryValue,
-    ${hashExpr} AS hashValue,
-    TRIM(COALESCE(pathname, '')) AS pathValue,
-    session_id,
-    visitor_id,
-    started_at,
-    visit_id,
-    TRIM(COALESCE(title, '')) AS title,
-    TRIM(COALESCE(hostname, '')) AS hostname
-  FROM ${observationVisitRelation} rv
-  ${filter?.clause ?? ""}
-),
-page_rollup AS (
-  SELECT
-    pathname,
-    queryValue,
-    hashValue,
-    count(*) AS views,
-    count(DISTINCT CASE WHEN session_id != '' THEN session_id ELSE NULL END) AS sessions
-  FROM filtered_visits
-  GROUP BY pathname, queryValue, hashValue
-),
-page_candidates AS (
-  SELECT
-    pathname,
-    queryValue,
-    hashValue,
-    views,
-    sessions,
-    ROW_NUMBER() OVER (
-      ORDER BY views DESC, sessions DESC, pathname ASC, queryValue ASC, hashValue ASC
-    ) AS pageRank
-  FROM page_rollup
-  ${cursorClause}
-),
-page_rows AS (
-  SELECT
-    'page' AS rowType,
-    '' AS cardType,
-    pathname,
-    queryValue,
-    hashValue,
-    '' AS value,
-    views,
-    sessions,
-    0 AS visitors,
-    pageRank AS rowRank
-  FROM page_candidates
-  ORDER BY pageRank ASC
-  LIMIT ?
-),
-ranked_session_visits AS (
-  SELECT
-    vs.session_id,
-    vs.visitor_id,
-    TRIM(COALESCE(vs.pathname, '')) AS pathname,
-    ROW_NUMBER() OVER (
-      PARTITION BY vs.session_id
-      ORDER BY vs.started_at ASC, vs.visit_id ASC
-    ) AS first_rank,
-    ROW_NUMBER() OVER (
-      PARTITION BY vs.session_id
-      ORDER BY vs.started_at DESC, vs.visit_id DESC
-    ) AS latest_rank
-  FROM ${edgeVisitRelation} vs
-  WHERE vs.session_id != '' AND TRIM(COALESCE(vs.pathname, '')) != ''
-),
-session_edges AS (
-  SELECT
-    session_id,
-    MAX(CASE WHEN first_rank = 1 THEN visitor_id END) AS visitor_id,
-    MAX(CASE WHEN first_rank = 1 THEN pathname END) AS entry,
-    MAX(CASE WHEN latest_rank = 1 THEN pathname END) AS exit
-  FROM ranked_session_visits
-  GROUP BY session_id
-),
-card_rows AS (
-  SELECT
-    'path' AS card_type,
-    pathValue AS value,
-    COUNT(*) AS views,
-    COUNT(DISTINCT CASE WHEN session_id != '' THEN session_id END) AS sessions,
-    COUNT(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id END) AS visitors
-  FROM filtered_visits
-  WHERE pathValue != ''
-  GROUP BY pathValue
-  UNION ALL
-  SELECT
-    'title' AS card_type,
-    title AS value,
-    COUNT(*) AS views,
-    COUNT(DISTINCT CASE WHEN session_id != '' THEN session_id END) AS sessions,
-    COUNT(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id END) AS visitors
-  FROM filtered_visits
-  WHERE title != ''
-  GROUP BY title
-  UNION ALL
-  SELECT
-    'hostname' AS card_type,
-    hostname AS value,
-    COUNT(*) AS views,
-    COUNT(DISTINCT CASE WHEN session_id != '' THEN session_id END) AS sessions,
-    COUNT(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id END) AS visitors
-  FROM filtered_visits
-  WHERE hostname != ''
-  GROUP BY hostname
-  UNION ALL
-  SELECT
-    'entry' AS card_type,
-    entry AS value,
-    COUNT(*) AS views,
-    COUNT(*) AS sessions,
-    COUNT(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id END) AS visitors
-  FROM session_edges
-  WHERE entry != ''
-  GROUP BY entry
-  UNION ALL
-  SELECT
-    'exit' AS card_type,
-    exit AS value,
-    COUNT(*) AS views,
-    COUNT(*) AS sessions,
-    COUNT(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id END) AS visitors
-  FROM session_edges
-  WHERE exit != ''
-  GROUP BY exit
-),
-ranked_cards AS (
-  SELECT
-    card_type,
-    value,
-    views,
-    sessions,
-    visitors,
-    ROW_NUMBER() OVER (
-      PARTITION BY card_type
-      ORDER BY views DESC, sessions DESC, value ASC
-    ) AS cardRank
-  FROM card_rows
-)
-SELECT rowType, cardType, pathname, queryValue, hashValue, value,
-  views, sessions, visitors, rowRank
-FROM page_rows
-UNION ALL
-SELECT
-  'tab' AS rowType,
-  card_type AS cardType,
-  '' AS pathname,
-  '' AS queryValue,
-  '' AS hashValue,
-  value,
-  views,
-  sessions,
-  visitors,
-  cardRank AS rowRank
-FROM ranked_cards
-WHERE cardRank <= ?
-ORDER BY rowType ASC, cardType ASC, rowRank ASC, value ASC
-`;
-  const cursorBindings = cursor
-    ? [
-        cursor.views,
-        cursor.views,
-        cursor.sessions,
-        cursor.views,
-        cursor.sessions,
-        cursor.pathname,
-        cursor.views,
-        cursor.sessions,
-        cursor.pathname,
-        cursor.query,
-        cursor.views,
-        cursor.sessions,
-        cursor.pathname,
-        cursor.query,
-        cursor.hash,
-      ]
-    : [];
-  const rows = await queryD1All<Record<string, unknown>>(env, sql, [
-    ...(scopedDataset
-      ? scopedDataset.bindings.map((binding) => binding.value)
-      : [...visitSourceBindings(siteId, window)]),
-    ...(filter?.bindings ?? []),
-    ...cursorBindings,
-    limit + 1,
-    limit,
-  ]);
-  const pageRows = rows
-    .filter((row) => row.rowType === "page")
-    .map((row) => ({
-      pathname: String(row.pathname ?? ""),
-      query: String(row.queryValue ?? ""),
-      hash: String(row.hashValue ?? ""),
-      views: Number(row.views ?? 0),
-      sessions: Number(row.sessions ?? 0),
-    }));
-  const page = pageResult(pageRows, limit);
-  const binding = await pageCursorBinding(
-    "pages",
-    siteId,
-    window,
-    filters,
-    [includeDetails],
-    audience,
-  );
-  const nextCursor =
-    page.hasMore && page.last
-      ? await encodePageCursor(env, binding, {
-          views: page.last.views,
-          sessions: page.last.sessions,
-          pathname: page.last.pathname,
-          query: page.last.query,
-          hash: page.last.hash,
-        })
-      : null;
-  const byCard = new Map<string, DimensionRow[]>();
-  for (const row of rows.filter((item) => item.rowType === "tab")) {
-    const card = String(row.cardType ?? "");
-    const values = byCard.get(card) ?? [];
-    values.push({
-      value: String(row.value ?? ""),
-      views: Number(row.views ?? 0),
-      sessions: Number(row.sessions ?? 0),
-      visitors: Number(row.visitors ?? 0),
-    });
-    byCard.set(card, values);
-  }
-  return {
-    pages: {
-      items: page.rows,
-      pagination: {
-        limit,
-        returned: page.rows.length,
-        hasMore: page.hasMore,
-        nextCursor,
-      },
-    },
-    tabs: {
-      path: byCard.get("path") ?? [],
-      title: byCard.get("title") ?? [],
-      hostname: byCard.get("hostname") ?? [],
-      entry: byCard.get("entry") ?? [],
-      exit: byCard.get("exit") ?? [],
-    },
-  };
 }
 export async function queryPageCardMetricsFromD1(
   env: Env,
@@ -619,10 +255,7 @@ export async function queryPageCardMetricsFromD1(
     direction?: SortDirection;
   },
 ): Promise<PageCardAggregateRow[]> {
-  const scopedDataset = scopedDatasetFor(siteId, window, filters);
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
+  const source = filteredVisitsCte(siteId, window, filters);
   const requestedPathnames = Array.from(
     new Set(
       (options?.pathnames ?? [])
@@ -632,12 +265,8 @@ export async function queryPageCardMetricsFromD1(
   );
   const pathnameCondition =
     requestedPathnames.length > 0
-      ? `TRIM(COALESCE(pathname, '')) IN (${requestedPathnames.map(() => "?").join(", ")})`
+      ? "AND TRIM(COALESCE(pathname, '')) IN (SELECT value FROM json_each(?))"
       : "";
-  const filteredClause = appendSqlConditions(filter?.clause ?? "", [
-    `TRIM(COALESCE(pathname, '')) != ''`,
-    pathnameCondition,
-  ]);
   const hasLimit = typeof options?.limit === "number";
   const cursor = options?.cursor;
   const sort = options?.sort ?? "views";
@@ -668,16 +297,17 @@ export async function queryPageCardMetricsFromD1(
     : "";
   const sql = `
 WITH
-${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS MATERIALIZED (
+${source.sql},
+page_visits AS MATERIALIZED (
   SELECT
     pathname,
     session_id AS sessionId,
     visitor_id AS visitorId,
     duration_ms AS durationMs,
     scroll_depth AS scrollDepth
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filteredClause}
+  FROM filtered_visits
+  WHERE TRIM(COALESCE(pathname, '')) != ''
+  ${pathnameCondition}
 ),
 path_rollup AS (
   SELECT
@@ -686,12 +316,12 @@ path_rollup AS (
     count(DISTINCT CASE WHEN sessionId != '' THEN sessionId ELSE NULL END) AS sessions,
     count(DISTINCT CASE WHEN visitorId != '' THEN visitorId ELSE NULL END) AS visitors,
     COALESCE(sum(CASE WHEN durationMs IS NOT NULL AND durationMs >= 0 THEN durationMs ELSE 0 END), 0) AS totalDuration
-  FROM filtered_visits
+  FROM page_visits
   GROUP BY pathname
 ),
 path_scroll_depth AS (
   ${scrollDepthSql({
-    from: "filtered_visits",
+    from: "page_visits",
     visitor: "visitorId",
     depth: "scrollDepth",
     groupBy: { sql: "pathname", as: "pathname" },
@@ -702,7 +332,7 @@ path_session_rollup AS (
     pathname,
     sessionId,
     count(*) AS visitCount
-  FROM filtered_visits
+  FROM page_visits
   WHERE sessionId != ''
   GROUP BY pathname, sessionId
 ),
@@ -763,13 +393,10 @@ ${hasLimit ? "LIMIT ?" : ""}
     : [];
   return (
     await queryD1All<Record<string, unknown>>(env, sql, [
-      ...(scopedDataset
-        ? scopedDataset.bindings.map((binding) => binding.value)
-        : [
-            ...visitSourceBindings(siteId, window),
-            ...(filter?.bindings ?? []),
-          ]),
-      ...requestedPathnames,
+      ...source.bindings,
+      ...(requestedPathnames.length > 0
+        ? [JSON.stringify(requestedPathnames)]
+        : []),
       ...searchBindings,
       ...(cursor
         ? [
@@ -812,33 +439,27 @@ export async function queryPageCardDetailsFromD1(
   );
   if (requestedPathnames.length === 0) return { titles: [], trend: [] };
 
-  const scopedDataset = scopedDatasetFor(siteId, window, filters);
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
+  const source = filteredVisitsCte(siteId, window, filters);
   const buckets = buildTimeBuckets(window, interval);
   const bucket = timeBucketCase(buckets, "startedAt");
-  const filteredClause = appendSqlConditions(filter?.clause ?? "", [
-    `TRIM(COALESCE(pathname, '')) IN (${requestedPathnames.map(() => "?").join(", ")})`,
-  ]);
   const sql = `
 WITH
-${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS MATERIALIZED (
+${source.sql},
+page_visits AS MATERIALIZED (
   SELECT
     pathname,
     title,
     started_at AS startedAt,
     visitor_id AS visitorId
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filteredClause}
+  FROM filtered_visits
+  WHERE TRIM(COALESCE(pathname, '')) IN (SELECT value FROM json_each(?))
 ),
 title_rollup AS (
   SELECT
     pathname,
     TRIM(COALESCE(title, '')) AS title,
     count(*) AS views
-  FROM filtered_visits
+  FROM page_visits
   WHERE TRIM(COALESCE(title, '')) != ''
   GROUP BY pathname, TRIM(COALESCE(title, ''))
 ),
@@ -856,7 +477,7 @@ trend_rollup AS (
     ${bucket.sql} AS bucket,
     count(*) AS views,
     count(DISTINCT CASE WHEN visitorId != '' THEN visitorId ELSE NULL END) AS visitors
-  FROM filtered_visits
+  FROM page_visits
   GROUP BY pathname, bucket
 )
 SELECT
@@ -882,10 +503,8 @@ FROM trend_rollup
 ORDER BY rowKind ASC, pathname ASC, rowOrder ASC
 `;
   const rows = await queryD1All<Record<string, unknown>>(env, sql, [
-    ...(scopedDataset
-      ? scopedDataset.bindings.map((binding) => binding.value)
-      : [...visitSourceBindings(siteId, window), ...(filter?.bindings ?? [])]),
-    ...requestedPathnames,
+    ...source.bindings,
+    JSON.stringify(requestedPathnames),
     ...bucket.bindings,
     titleLimit,
   ]);

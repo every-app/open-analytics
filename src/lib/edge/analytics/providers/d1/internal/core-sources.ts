@@ -1,19 +1,30 @@
 import { createDatabaseRuntime } from "@/lib/db";
-import { scopedFilterMetadata } from "@/lib/edge/analytics/contract";
+import {
+  concat,
+  parameter,
+  type SqlFragment,
+  text,
+} from "@/lib/db/sql/fragment";
 import {
   currentD1Operation,
   currentInvocationLogger,
 } from "@/lib/edge/observability/logger";
-import {
-  SITE_PK_FROM_SITE_ID_SQL,
-  sitePksFromSiteIdsSql,
-} from "@/lib/edge/sites/identity-sql";
+import { sitePksFromSiteIdsSql } from "@/lib/edge/sites/identity-sql";
 import type { Env } from "@/lib/edge/types";
 
-import { buildEventFilterSql, usesSessionBoundaryFilter } from "./core-filters";
 import type { FilterDocument, QueryWindow } from "./core-types";
 import { type D1ReadDiagnostics, recordD1RowsRead } from "./diagnostics";
-import { compileScopedDatasetSql } from "./scoped-dataset";
+import {
+  eventFilterSql,
+  type FilterSqlScope,
+  sitePk,
+  visitFilterSql,
+} from "./filter-compiler";
+export interface BoundSql {
+  readonly sql: string;
+  readonly bindings: ReadonlyArray<string | number | null>;
+}
+
 export const VISIT_SOURCE_COLUMNS = `
     visit_id, site_id, site_pk, visitor_id, session_id, status, started_at, last_activity_at,
     ended_at, finalized_at, duration_ms, scroll_depth, duration_source, exit_reason,
@@ -23,31 +34,14 @@ export const VISIT_SOURCE_COLUMNS = `
     timezone, browser, browser_version,
     os, os_version, device_type, screen_width, screen_height, language
   `;
-export function buildVisitSourceCte(): string {
-  return `
-visit_source AS (
-  SELECT ${VISIT_SOURCE_COLUMNS}
-  FROM visits
-  WHERE site_pk = ${SITE_PK_FROM_SITE_ID_SQL}
-    AND started_at >= ? AND started_at < ?
-)`;
-}
-export function buildEventAnalyticsSourceCte(options?: {
-  eventName?: string;
-  eventNames?: string[];
-  cteName?: string;
-  selectColumns?: string;
-}): string {
-  const cteName = options?.cteName ?? "event_source";
-  const selectColumns =
-    options?.selectColumns ??
-    `
+
+/** A custom event's columns and, under the same names, its visit's. */
+export const EVENT_SOURCE_COLUMNS = `
     ce.event_pk,
     ce.event_id,
     ce.site_id,
     ce.site_pk,
     ce.visit_id,
-    '{}' AS event_data_json,
     cen.name AS event_name,
     ce.occurred_at,
     ce.received_at,
@@ -86,119 +80,131 @@ export function buildEventAnalyticsSourceCte(options?: {
     v.timezone,
     v.screen_width,
     v.screen_height`;
-  const eventNameSource = options?.eventName
-    ? `
-target_event_name AS MATERIALIZED (
-  SELECT id
-  FROM custom_event_names
-  WHERE site_pk = ${SITE_PK_FROM_SITE_ID_SQL} AND name = ?
-),`
-    : options?.eventNames?.length
+
+function scopeOf(siteId: string, window: QueryWindow): FilterSqlScope {
+  return {
+    siteId,
+    startMs: window.startMs,
+    endExclusiveMs: window.endExclusiveMs,
+  };
+}
+
+function andPredicate(predicate: SqlFragment | null): SqlFragment {
+  return predicate ? concat(text("\n    AND "), predicate) : text("");
+}
+
+/**
+ * The site's page views in the window that match the filter, as the CTE
+ * `name`: one scan of visits through its (site_pk, started_at) index.
+ * SQLite reads only the columns its readers use. A CTE that several
+ * aggregates read would be scanned once per reader, so such a reader
+ * selects only the `columns` it needs and asks for it `materialized`.
+ */
+export function filteredVisitsCte(
+  siteId: string,
+  window: QueryWindow,
+  filters: FilterDocument,
+  options: {
+    readonly name?: string;
+    readonly columns?: string;
+    /** For a narrow set of columns that several aggregates read. */
+    readonly materialized?: boolean;
+  } = {},
+): BoundSql {
+  const fragment = concat(
+    text(`
+${options.name ?? "filtered_visits"} AS${options.materialized ? " MATERIALIZED" : ""} (
+  SELECT ${options.columns ?? VISIT_SOURCE_COLUMNS}
+  FROM visits v
+  WHERE v.site_pk = `),
+    sitePk(siteId),
+    text("\n    AND v.started_at >= "),
+    parameter(window.startMs),
+    text(" AND v.started_at < "),
+    parameter(window.endExclusiveMs),
+    andPredicate(visitFilterSql(filters, scopeOf(siteId, window))),
+    text("\n)"),
+  );
+  return {
+    sql: fragment.text,
+    bindings: fragment.bindings as BoundSql["bindings"],
+  };
+}
+
+/**
+ * The site's custom events in the window that match the filter, as the CTE
+ * `name`, each with its visit's page view columns. `eventName` keeps one
+ * event name, read through the name's index. Visits are joined only when
+ * the columns or the filter read them.
+ */
+export function filteredEventsCte(
+  siteId: string,
+  window: QueryWindow,
+  filters: FilterDocument,
+  options: {
+    readonly name?: string;
+    readonly eventName?: string;
+    readonly columns?: string;
+    readonly materialized?: boolean;
+  } = {},
+): BoundSql {
+  const columns = options.columns ?? EVENT_SOURCE_COLUMNS;
+  const visitJoin =
+    columns.includes("v.") || filters.conditions.length > 0
       ? `
-target_event_names AS MATERIALIZED (
-  SELECT id
-  FROM custom_event_names
-  WHERE site_pk = ${SITE_PK_FROM_SITE_ID_SQL}
-    AND name IN (${options.eventNames.map(() => "?").join(", ")})
-),`
-      : "";
-  const eventNamePredicate = options?.eventName
-    ? "ce.event_name_id = (SELECT id FROM target_event_name) AND"
-    : options?.eventNames?.length
-      ? "ce.event_name_id IN (SELECT id FROM target_event_names) AND"
-      : "";
-  return `
-${eventNameSource}
-${cteName} AS (
-  SELECT ${selectColumns}
-  FROM custom_events ce
-  INNER JOIN custom_event_names cen
-    ON cen.id = ce.event_name_id
   INNER JOIN visits v
     ON v.site_pk = ce.site_pk
-   AND v.visit_id = ce.visit_id
-  WHERE ${eventNamePredicate} ce.site_pk = ${SITE_PK_FROM_SITE_ID_SQL}
-    AND ce.occurred_at >= ? AND ce.occurred_at < ?
-)`;
+   AND v.visit_id = ce.visit_id`
+      : "";
+  const fragment = concat(
+    text(`
+${options.name ?? "filtered_events"} AS${options.materialized ? " MATERIALIZED" : ""} (
+  SELECT ${columns}
+  FROM custom_events ce
+  INNER JOIN custom_event_names cen
+    ON cen.id = ce.event_name_id${visitJoin}
+  WHERE ce.site_pk = `),
+    sitePk(siteId),
+    ...(options.eventName === undefined
+      ? []
+      : [
+          text(
+            "\n    AND ce.event_name_id = (SELECT id FROM custom_event_names WHERE site_pk = ",
+          ),
+          sitePk(siteId),
+          text(" AND name = "),
+          parameter(options.eventName),
+          text(")"),
+        ]),
+    text("\n    AND ce.occurred_at >= "),
+    parameter(window.startMs),
+    text(" AND ce.occurred_at < "),
+    parameter(window.endExclusiveMs),
+    andPredicate(eventFilterSql(filters, scopeOf(siteId, window))),
+    text("\n)"),
+  );
+  return {
+    sql: fragment.text,
+    bindings: fragment.bindings as BoundSql["bindings"],
+  };
 }
+
+/**
+ * `WITH filtered_events AS (...)`: the filtered custom events, optionally of
+ * one name, for a statement to read.
+ */
 export function buildEventFilteredSourceCte(
   siteId: string,
   window: QueryWindow,
   filters: FilterDocument,
   eventName?: string,
-  options?: { materialize?: boolean },
-): {
-  cte: string;
-  bindings: Array<string | number | null>;
-} {
-  const scopedMetadata = scopedFilterMetadata(filters);
-  if (scopedMetadata) {
-    const dataset = compileScopedDatasetSql({
-      filters,
-      plan: scopedMetadata.plan,
-      siteIds: [siteId],
-      window,
-    });
-    const eventNameClause = eventName
-      ? "WHERE TRIM(COALESCE(es.event_name, '')) = ?"
-      : "";
-    return {
-      cte: `
-WITH
-${dataset.ctes},
-filtered_events ${options?.materialize ? "AS MATERIALIZED" : "AS"} (
-  SELECT *
-  FROM ${dataset.eventRelation} es
-  ${eventNameClause}
-)`,
-      bindings: [
-        ...dataset.bindings.map((binding) => binding.value),
-        ...(eventName ? [eventName] : []),
-      ],
-    };
-  }
-  const needsVisitSource = usesSessionBoundaryFilter(filters);
-  const filter = buildEventFilterSql(filters, "es", {
-    sessionSource: needsVisitSource ? "visit_source" : undefined,
+  options?: { readonly materialize?: boolean },
+): { readonly cte: string; readonly bindings: BoundSql["bindings"] } {
+  const source = filteredEventsCte(siteId, window, filters, {
+    ...(eventName === undefined ? {} : { eventName }),
+    materialized: options?.materialize ?? false,
   });
-  const sourceCtes = [
-    needsVisitSource ? buildVisitSourceCte() : "",
-    buildEventAnalyticsSourceCte({ eventName }),
-  ]
-    .filter(Boolean)
-    .join(",\n");
-  return {
-    cte: `
-WITH
-${sourceCtes},
-filtered_events ${options?.materialize ? "AS MATERIALIZED" : "AS"} (
-  SELECT *
-  FROM event_source es
-  ${filter.clause}
-)`,
-    bindings: [
-      ...(needsVisitSource ? visitSourceBindings(siteId, window) : []),
-      ...eventSourceBindings(siteId, window, eventName),
-      ...filter.bindings,
-    ],
-  };
-}
-export function visitSourceBindings(
-  siteId: string,
-  window: QueryWindow,
-): Array<string | number> {
-  return [siteId, window.startMs, window.endExclusiveMs];
-}
-export function eventSourceBindings(
-  siteId: string,
-  window: QueryWindow,
-  eventName?: string | string[],
-): Array<string | number> {
-  return typeof eventName === "string"
-    ? [siteId, eventName, siteId, window.startMs, window.endExclusiveMs]
-    : eventName?.length
-      ? [siteId, ...eventName, siteId, window.startMs, window.endExclusiveMs]
-      : [siteId, window.startMs, window.endExclusiveMs];
+  return { cte: `\nWITH\n${source.sql}`, bindings: source.bindings };
 }
 export function buildVisitSourceCteForSites(siteCount: number): string {
   return `
@@ -218,7 +224,7 @@ export function visitSourceBindingsForSites(
 export async function queryD1All<T extends object>(
   env: Env,
   sql: string,
-  bindings: Array<string | number | null>,
+  bindings: ReadonlyArray<string | number | null>,
   diagnostics?: D1ReadDiagnostics,
 ): Promise<T[]> {
   const logger = currentInvocationLogger();

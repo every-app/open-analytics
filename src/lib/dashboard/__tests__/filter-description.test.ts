@@ -1,21 +1,22 @@
 import { describe, expect, it } from "vitest";
 
-import { describeFilterExpression } from "@/lib/dashboard/filter-description";
+import {
+  describeFilter,
+  describeFilterCondition,
+} from "@/lib/dashboard/filter-description";
 import {
   analyticsFilterRegistry,
-  type CanonicalJsonPath,
-  type FilterExpression,
+  EMPTY_FILTER_DOCUMENT,
+  type FilterCondition,
   type FilterFieldId,
+  FilterOperator,
+  parseFilterDsl,
 } from "@/lib/filter-contract";
-
-const fieldId = (value: string) => value as FilterFieldId;
-const jsonPath = (value: string) => value as CanonicalJsonPath;
 
 const messages = {
   conditionDescription: {
     and: "and",
     or: "or",
-    not: "not ({description})",
     emptyFilter: "No filter conditions",
     filterEquals: "{field} equals {value}",
     filterNotEquals: "{field} does not equal {value}",
@@ -23,6 +24,7 @@ const messages = {
     filterNoneOf: "{field} is none of {values}",
     filterBetween: "{field} is between {from} and {to}",
     filterContains: "{field} contains {value}",
+    filterNotContains: "{field} does not contain {value}",
     filterStartsWith: "{field} starts with {value}",
     filterEndsWith: "{field} ends with {value}",
     filterGreaterThan: "{field} is greater than {value}",
@@ -45,245 +47,72 @@ const messages = {
       "page.durationMs": "Page duration",
       "event.name": "Event name",
     },
-    operatorLabels: {
-      eq: "equals",
-      gte: "is greater than or equal to",
-      in: "is one of",
-      between: "is between",
-      exists: "exists",
-    },
   },
 } as never;
 
+const describe_ = (source: string) =>
+  describeFilter(
+    parseFilterDsl(source, analyticsFilterRegistry),
+    analyticsFilterRegistry,
+    messages,
+  );
+
 describe("filter descriptions", () => {
-  it("describes nested filters with typed list and range values", () => {
+  it("joins every condition with and, in the filter's canonical order", () => {
     expect(
-      describeFilterExpression(
-        {
-          kind: "and",
-          children: [
-            {
-              kind: "condition",
-              target: { kind: "field", field: fieldId("page.path") },
-              operator: "eq",
-              value: "/pricing",
-            },
-            {
-              kind: "not",
-              child: {
-                kind: "or",
-                children: [
-                  {
-                    kind: "condition",
-                    target: {
-                      kind: "field",
-                      field: fieldId("referrer.domain"),
-                    },
-                    operator: "eq",
-                    value: "google.com",
-                  },
-                  {
-                    kind: "condition",
-                    target: {
-                      kind: "field",
-                      field: fieldId("client.deviceType"),
-                    },
-                    operator: "in",
-                    value: ["Mobile", "Tablet"],
-                  },
-                ],
-              },
-            },
-            {
-              kind: "condition",
-              target: { kind: "event-payload", path: jsonPath("/score") },
-              operator: "between",
-              value: [120, 130],
-            },
-          ],
-        },
-        analyticsFilterRegistry,
-        messages,
+      describe_(
+        'page.path eq "/pricing" AND client.deviceType notIn ["mobile", "tablet"] AND event.payload("/score") between [120, 130]',
       ),
     ).toBe(
-      'Page path equals "/pricing" and not (Referrer domain equals "google.com" or Device type is one of "Mobile" or "Tablet") and Event payload (/score) is between 120 and 130',
+      'Event payload (/score) is between 120 and 130 and Device type is none of "mobile" or "tablet" and Page path equals "/pricing"',
     );
   });
 
   it("uses the localized empty description", () => {
     expect(
-      describeFilterExpression(null, analyticsFilterRegistry, messages),
+      describeFilter(EMPTY_FILTER_DOCUMENT, analyticsFilterRegistry, messages),
     ).toBe("No filter conditions");
   });
 
-  it("uses localized word order for value collections", () => {
-    const chineseMessages = {
-      conditionDescription: {
-        and: "且",
-        or: "或",
-        not: "不满足（{description}）",
-        emptyFilter: "尚未设置筛选条件",
-        filterEquals: "{field} 为 {value}",
-        filterNotEquals: "{field} 不为 {value}",
-        filterAnyOf: "{field} 属于 {values} 中的任一值",
-        filterNoneOf: "{field} 不属于 {values} 中的任何值",
-        filterBetween: "{field} 介于 {from} 与 {to} 之间",
-        filterContains: "{field} 包含 {value}",
-        filterStartsWith: "{field} 以 {value} 开头",
-        filterEndsWith: "{field} 以 {value} 结尾",
-        filterGreaterThan: "{field} 大于 {value}",
-        filterGreaterThanOrEqual: "{field} 大于或等于 {value}",
-        filterLessThan: "{field} 小于 {value}",
-        filterLessThanOrEqual: "{field} 小于或等于 {value}",
-        filterExists: "{field} 存在",
-        filterNotExists: "{field} 不存在",
-        filterIsNull: "{field} 为 NULL",
-        filterNotNull: "{field} 不为 NULL",
-        filterIsEmpty: "{field} 为空",
-        filterNotEmpty: "{field} 不为空",
-      },
-      filterBuilder: {
-        fieldLabels: {
-          "page.path": "页面路径",
-          "referrer.domain": "来源域名",
-        },
-        operatorLabels: {},
-      },
-    } as never;
-
-    expect(
-      describeFilterExpression(
-        {
-          kind: "and",
-          children: [
-            {
-              kind: "condition",
-              target: { kind: "field", field: fieldId("page.path") },
-              operator: "startsWith",
-              value: "/docs",
-            },
-            {
-              kind: "condition",
-              target: { kind: "field", field: fieldId("referrer.domain") },
-              operator: "in",
-              value: ["google.com", "news.example.com"],
-            },
-          ],
-        },
-        analyticsFilterRegistry,
-        chineseMessages,
-      ),
-    ).toBe(
-      '页面路径 以 "/docs" 开头 且 来源域名 属于 "google.com" 或 "news.example.com" 中的任一值',
-    );
-  });
-
   it("naturalizes scalar comparisons and valueless operators", () => {
-    const expression: FilterExpression = {
-      kind: "and",
-      children: [
-        {
-          kind: "condition",
-          target: { kind: "field", field: fieldId("page.path") },
-          operator: "contains",
-          value: "docs",
-        },
-        {
-          kind: "condition",
-          target: { kind: "field", field: fieldId("page.durationMs") },
-          operator: "gte",
-          value: 1000,
-        },
-        {
-          kind: "condition",
-          target: { kind: "field", field: fieldId("event.name") },
-          operator: "exists",
-        },
-        {
-          kind: "condition",
-          target: { kind: "field", field: fieldId("page.path") },
-          operator: "notEmpty",
-        },
-      ],
-    };
-
     expect(
-      describeFilterExpression(expression, analyticsFilterRegistry, messages),
+      describe_(
+        'page.path contains "docs" AND page.durationMs gte 1000 AND event.name exists AND referrer.domain notEmpty',
+      ),
     ).toBe(
-      'Page path contains "docs" and Page duration is greater than or equal to 1000 and Event name exists and Page path is not empty',
+      'Event name exists and Page duration is greater than or equal to 1000 and Page path contains "docs" and Referrer domain is not empty',
     );
   });
 
-  it("formats advanced targets and expression values without exposing AST JSON", () => {
-    expect(
-      describeFilterExpression(
-        {
-          kind: "condition",
-          target: {
-            kind: "member",
-            object: { kind: "context-root", context: "current" },
-            member: "time",
-          },
-          operator: "gte",
-          value: { kind: "time-anchor", anchor: "range.start" },
-        },
-        analyticsFilterRegistry,
-        messages,
-      ),
-    ).toBe("time is greater than or equal to @range.start");
-  });
-
-  it("describes every legacy operator and retains typed advanced operands", () => {
-    const legacyCases = [
-      ["neq", "alpha", "does not equal"],
-      ["startsWith", "alpha", "starts with"],
-      ["endsWith", "alpha", "ends with"],
-      ["gt", 1, "greater than"],
-      ["lt", 2, "less than"],
-      ["lte", 2, "less than or equal to"],
-      ["notExists", undefined, "does not exist"],
-      ["isNull", undefined, "is null"],
-      ["notNull", undefined, "is not null"],
-      ["isEmpty", undefined, "is empty"],
-      ["notEmpty", undefined, "is not empty"],
-      ["notIn", ["a", "b"], "is none of"],
+  it("describes every operator, by the field's id when it has no label", () => {
+    const cases = [
+      [FilterOperator.Neq, "alpha", "does not equal"],
+      [FilterOperator.NotContains, "alpha", "does not contain"],
+      [FilterOperator.StartsWith, "alpha", "starts with"],
+      [FilterOperator.EndsWith, "alpha", "ends with"],
+      [FilterOperator.Gt, 1, "greater than"],
+      [FilterOperator.Lt, 2, "less than"],
+      [FilterOperator.Lte, 2, "less than or equal to"],
+      [FilterOperator.In, ["a", "b"], "is one of"],
+      [FilterOperator.NotExists, undefined, "does not exist"],
+      [FilterOperator.IsNull, undefined, "is null"],
+      [FilterOperator.NotNull, undefined, "is not null"],
+      [FilterOperator.IsEmpty, undefined, "is empty"],
     ] as const;
 
-    for (const [operator, value, expected] of legacyCases) {
-      const description = describeFilterExpression(
-        {
-          kind: "condition",
-          target: { kind: "field", field: fieldId("unknown.field") },
-          operator,
-          ...(value === undefined ? {} : { value }),
-        } as FilterExpression,
+    for (const [operator, value, expected] of cases) {
+      const condition = {
+        target: { kind: "field", field: "unknown.field" as FilterFieldId },
+        operator,
+        ...(value === undefined ? {} : { value }),
+      } as FilterCondition;
+      const description = describeFilterCondition(
+        condition,
         analyticsFilterRegistry,
         messages,
       );
       expect(description).toContain(expected);
       expect(description).toContain("unknown.field");
     }
-
-    const dynamic = describeFilterExpression(
-      {
-        kind: "condition",
-        target: {
-          kind: "arithmetic",
-          operator: "sub",
-          left: {
-            kind: "reducer",
-            reducer: "count",
-            input: { kind: "entity-root", entity: "event" },
-          },
-          right: { kind: "duration", amount: 1, unit: "h" },
-        },
-        operator: "between",
-        value: [1, 2],
-      },
-      analyticsFilterRegistry,
-      messages,
-    );
-    expect(dynamic).toContain("sub(count(EVENT), 1h)");
-    expect(dynamic).toContain("1 or 2");
   });
 });

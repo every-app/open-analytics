@@ -7,24 +7,19 @@ import {
   filterPickerGroups,
   isSelectablePayloadFieldType,
   payloadFieldTypeLabel,
-  registryFieldGroups,
 } from "@/components/dashboard/filters/filter-editor/field-catalog";
-import type {
-  EditorCondition,
-  EditorGroup,
+import {
+  defaultCondition,
+  type EditorCondition,
 } from "@/components/dashboard/filters/filter-editor/model";
+import { FilterOperator } from "@/lib/filter-contract";
 import type { RegisteredFilterField } from "@/lib/filter-contract/filter-registry";
 import type { AppMessages } from "@/lib/i18n/messages";
 
 const messages = {
-  analytics: { filters: { fields: { page: { path: "Page path" } } } },
   filterBuilder: {
-    expressionHelpOtherFields: "Other fields",
     fieldGroups: { page: "Pages", event: "Events" },
-    fieldLabels: {
-      "page.path": "Page path fallback",
-      "page.collection": "Page collection",
-    },
+    fieldLabels: { "page.path": "Page path" },
     valueKinds: { string: "String", number: "Number", boolean: "Boolean" },
   },
 } as unknown as AppMessages;
@@ -32,142 +27,94 @@ const messages = {
 function condition(
   field: string,
   valueText: string,
-  overrides: Partial<EditorCondition> = {},
+  operator = FilterOperator.Eq,
 ): EditorCondition {
   return {
-    id: field,
-    kind: "condition",
-    negated: false,
-    notCount: 0,
-    field,
-    payloadPath: "",
-    operator: "eq",
-    value: undefined,
-    listValues: undefined,
+    ...defaultCondition(() => field, field),
+    operator,
     valueText,
-    scalarKind: "string",
-    valueDirty: false,
-    ...overrides,
-  };
-}
-
-function group(children: EditorGroup["children"]): EditorGroup {
-  return {
-    id: "root",
-    kind: "group",
-    negated: false,
-    notCount: 0,
-    combinator: "and",
-    children,
   };
 }
 
 describe("filter field catalog", () => {
-  it("resolves registered labels and falls back when translations are absent", () => {
-    const pagePath = allowedFields("private-dashboard").find(
-      (field) => field.id === "page.path",
-    )!;
+  it("labels a field by its translation, or its id when there is none", () => {
+    const fields = allowedFields("private-dashboard");
+    const field = (id: string) => fields.find((item) => item.id === id)!;
 
-    expect(fieldLabel(pagePath, messages)).toBe("Page path");
-    expect(fieldLabel("page.collection", messages)).toBe("Page collection");
-    expect(fieldLabel("missing.field", messages)).toBe("missing.field");
+    expect(fieldLabel(field("page.path"), messages)).toBe("Page path");
+    expect(fieldLabel(field("page.title"), messages)).toBe("page.title");
   });
 
-  it("groups real fields and picker targets in the requested order", () => {
-    const fields = allowedFields("private-dashboard").filter((field) =>
-      ["page.path", "event.name"].includes(field.id),
-    );
-
+  it("keeps each audience to its fields", () => {
+    const ids = (audience: "public-share" | "private-dashboard") =>
+      allowedFields(audience).map((field) => field.id);
+    expect(ids("public-share")).not.toContain("page.query");
+    expect(ids("private-dashboard")).toContain("page.query");
     expect(
-      registryFieldGroups(fields, messages).map((item) => item.key),
-    ).toEqual(["page", "event"]);
-    expect(filterPickerGroups(fields, messages).slice(0, 2)).toEqual([
+      allowedFields("private-dashboard").find(
+        (field) => field.id === "page.scrollDepth",
+      ),
+    ).toMatchObject({ unit: "%", number: { min: 0, max: 100, step: 1 } });
+  });
+
+  it("groups the picker's fields in the registry's order", () => {
+    const fields = allowedFields("private-dashboard").filter((field) =>
+      ["page.path", "page.title", "event.name"].includes(field.id),
+    );
+    expect(filterPickerGroups(fields, messages)).toEqual([
       {
         key: "page",
         label: "Pages",
-        fields: expect.arrayContaining([
-          expect.objectContaining({ id: "page", label: "Page collection" }),
-          expect.objectContaining({ id: "page.path", label: "Page path" }),
-        ]),
+        fields: [
+          {
+            id: "page.path",
+            label: "Page path",
+            searchText: "Page path page.path",
+          },
+          {
+            id: "page.title",
+            label: "page.title",
+            searchText: "page.title page.title",
+          },
+        ],
       },
       {
         key: "event",
         label: "Events",
-        fields: expect.arrayContaining([
-          expect.objectContaining({ id: "event" }),
-          expect.objectContaining({ id: "event.name" }),
-        ]),
+        fields: [
+          {
+            id: "event.name",
+            label: "event.name",
+            searchText: "event.name event.name",
+          },
+        ],
       },
     ]);
-  });
-
-  it("uses fallback labels for unknown groups and keeps audience restrictions", () => {
     const ungrouped = {
       id: "unlisted.field",
-      group: undefined,
-      labelKey: "missing.translation",
+      group: "unlisted",
     } as unknown as RegisteredFilterField;
-    const groups = registryFieldGroups([ungrouped], messages);
-
-    expect(groups).toEqual([
-      {
-        key: "other",
-        label: "Other fields",
-        fields: [ungrouped],
-      },
-    ]);
-    expect(
-      allowedFields("public-share").some((field) => field.id === "page.query"),
-    ).toBe(false);
-    expect(
-      allowedFields("private-dashboard", true).some(
-        (field) => field.id === "session.views",
-      ),
-    ).toBe(false);
-    // The goal editor offers scroll depth goals.
-    expect(
-      allowedFields("private-dashboard", true).find(
-        (field) => field.id === "page.scrollDepth",
-      ),
-    ).toMatchObject({ unit: "%", number: { min: 0, max: 100, step: 1 } });
-    const emptyFieldGroups = filterPickerGroups([], messages);
-    expect(emptyFieldGroups.map((item) => item.key)).toEqual([
-      "page",
-      "event",
-      "session",
-      "visitor",
-      "time",
-      "aggregation",
-      "calculation",
-      "relation",
-    ]);
-    expect(
-      emptyFieldGroups.every((item) =>
-        item.fields.every((field) => field.registeredField === undefined),
-      ),
-    ).toBe(true);
+    expect(filterPickerGroups([ungrouped], messages)[0]?.label).toBe(
+      "unlisted",
+    );
   });
 
-  it("recognizes only one positive direct event-name condition", () => {
-    expect(directEventName(group([condition("event.name", "signup")]))).toBe(
+  it("recognizes only one direct event-name condition", () => {
+    expect(directEventName([condition("event.name", " signup ")])).toBe(
       "signup",
     );
-    expect(directEventName(group([]))).toBeUndefined();
+    expect(directEventName([])).toBeUndefined();
     expect(
-      directEventName(
-        group([
-          condition("event.name", "signup", { negated: true }),
-          condition("page.path", "/pricing"),
-        ]),
-      ),
+      directEventName([
+        condition("event.name", "signup", FilterOperator.Neq),
+        condition("page.path", "/pricing"),
+      ]),
     ).toBeUndefined();
     expect(
-      directEventName(
-        group([
-          condition("event.name", "signup"),
-          condition("event.name", "purchase"),
-        ]),
-      ),
+      directEventName([
+        condition("event.name", "signup"),
+        condition("event.name", "purchase"),
+      ]),
     ).toBeUndefined();
   });
 

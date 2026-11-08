@@ -116,6 +116,21 @@ export async function decodeGoalDefinitionCursor(
     goalDefinitionCursor,
   );
 }
+/** Every goal of the site, newest first. */
+export async function queryAllGoalDefinitions(
+  env: Env,
+  siteId: string,
+): Promise<GoalDefinition[]> {
+  const rows = await queryD1All<Record<string, unknown>>(
+    env,
+    `SELECT id, site_id, name, config_json, config_version, created_at, updated_at
+     FROM analysis_definitions
+     WHERE site_id = ? AND kind = ? AND archived_at IS NULL
+     ORDER BY created_at DESC, id DESC`,
+    [siteId, GOAL_ANALYSIS_KIND],
+  );
+  return Promise.all(rows.map(mapGoalDefinition));
+}
 export async function queryGoalDefinition(
   env: Env,
   siteId: string,

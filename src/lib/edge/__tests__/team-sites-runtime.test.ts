@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { FilterOperator } from "@/lib/filter-contract";
+
 vi.mock("@/lib/edge/analytics/providers/d1/internal/team", () => ({
   listTeamSites: vi.fn(),
   queryTeamSitesPageFromD1: vi.fn(),
@@ -40,7 +42,7 @@ const input = {
   allowedSiteIds: ["site-1"],
   window: { startMs: 0, endExclusiveMs: 1, nowMs: 1, timeZone: "UTC" },
   interval: "hour" as const,
-  filters: { version: 1 as const, root: null },
+  filters: { conditions: [] },
 };
 
 describe("team sites runtime", () => {
@@ -159,13 +161,13 @@ describe("team sites runtime", () => {
       readTeamSites({
         ...input,
         filters: {
-          version: 1,
-          root: {
-            kind: "condition",
-            target: { kind: "field", field: "forbidden.field" as never },
-            operator: "eq",
-            value: "x",
-          },
+          conditions: [
+            {
+              target: { kind: "field", field: "forbidden.field" as never },
+              operator: FilterOperator.Eq,
+              value: "x",
+            },
+          ],
         },
       }),
     ).rejects.toThrow("Unknown filter field");

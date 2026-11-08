@@ -19,10 +19,8 @@ import type {
   DashboardFilterOptionsData,
   OverviewTabData,
 } from "@/lib/dashboard-api/client/edge";
-import type { FilterDocument, FilterScope } from "@/lib/filter-contract";
-type OverviewTableRequestOptions = DashboardListRequestOptions & {
-  resolvedScope?: FilterScope;
-};
+import type { FilterDocument } from "@/lib/filter-contract";
+type OverviewTableRequestOptions = DashboardListRequestOptions;
 const clientPathByTab: Record<OverviewClientDimensionTab, string> = {
   browser: "browser",
   osVersion: "os-version",
@@ -55,7 +53,6 @@ export async function fetchOverviewPageCardTab(
           100,
         ),
         filters,
-        options?.resolvedScope,
       ),
       options?.comparison,
       {
@@ -97,7 +94,6 @@ export async function fetchOverviewSourceCardTab(
           100,
         ),
         filters,
-        options?.resolvedScope,
       ),
       options?.comparison,
       {
@@ -139,7 +135,6 @@ export async function fetchOverviewClientDimensionTab(
           100,
         ),
         filters,
-        options?.resolvedScope,
       ),
       options?.comparison,
       {
@@ -164,7 +159,6 @@ export async function fetchFilterValues(
     cursor?: string | null;
     search?: string;
     signal?: AbortSignal;
-    resolvedScope?: FilterScope;
   },
 ): Promise<DashboardFilterOptionsData["data"]> {
   const payload = await fetchPrivateJson<DashboardFilterOptionsData>(
@@ -183,7 +177,6 @@ export async function fetchFilterValues(
         200,
       ),
       filters,
-      options?.resolvedScope,
     ),
     { signal: options?.signal },
   ).catch(() => emptyDashboardFilterOptions());

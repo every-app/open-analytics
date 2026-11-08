@@ -288,7 +288,6 @@ describe("Dashboard route data loaders", () => {
       expect(teamDashboardExecute).toHaveBeenCalledWith(
         "team-dashboard",
         expect.objectContaining({
-          filters: { version: 1, root: null },
           time: expect.objectContaining({
             range: { startMs: 100, endExclusiveMs: 200 },
             reportingTimeZone: "Asia/Tokyo",
@@ -306,52 +305,6 @@ describe("Dashboard route data loaders", () => {
         } as never),
       ).rejects.toThrow("internal");
       expect(teamDashboardExecute).toHaveBeenCalled();
-    });
-
-    it("passes URL filters to the SSR team dashboard reader", async () => {
-      vi.mocked(getRequest).mockReturnValue(
-        headersOf(
-          { host: "app.test" },
-          "https://app.test/?filter%5Bpage.path%5D=%2Fdocs",
-        ) as never,
-      );
-
-      await loadTeamDashboardSnapshot({
-        data: { teamId: "team-requested" },
-      } as never);
-
-      expect(teamDashboardExecute).toHaveBeenCalledWith(
-        "team-dashboard",
-        expect.objectContaining({
-          filters: {
-            version: 1,
-            root: {
-              kind: "condition",
-              target: { kind: "field", field: "page.path" },
-              operator: "eq",
-              value: "/docs",
-            },
-          },
-        }),
-      );
-    });
-
-    it("loads unfiltered when the URL names a filter field that no longer exists", async () => {
-      vi.mocked(getRequest).mockReturnValue(
-        headersOf(
-          { host: "app.test" },
-          "https://app.test/?filter%5Buser.id%5D=eq%3Aalice",
-        ) as never,
-      );
-
-      await loadTeamDashboardSnapshot({
-        data: { teamId: "team-requested" },
-      } as never);
-
-      expect(teamDashboardExecute).toHaveBeenCalledWith(
-        "team-dashboard",
-        expect.objectContaining({ filters: { version: 1, root: null } }),
-      );
     });
   });
 

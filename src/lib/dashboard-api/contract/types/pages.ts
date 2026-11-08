@@ -2,8 +2,6 @@ import type { PaginatedCollection } from "./pagination";
 
 export interface PageItem {
   pathname: string;
-  query?: string;
-  hash?: string;
   views: number;
   sessions: number;
 }
@@ -11,33 +9,6 @@ export interface PageItem {
 export interface PagesData {
   ok: boolean;
   data: PaginatedCollection<PageItem>;
-  tabs?: {
-    path: Array<{
-      label: string;
-      views: number;
-      sessions: number;
-    }>;
-    title: Array<{
-      label: string;
-      views: number;
-      sessions: number;
-    }>;
-    hostname: Array<{
-      label: string;
-      views: number;
-      sessions: number;
-    }>;
-    entry: Array<{
-      label: string;
-      views: number;
-      sessions: number;
-    }>;
-    exit: Array<{
-      label: string;
-      views: number;
-      sessions: number;
-    }>;
-  };
 }
 
 export interface PagesDashboardMetrics {

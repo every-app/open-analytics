@@ -27,12 +27,11 @@ import {
   XIcon,
 } from "lucide-react";
 
-import { FilterEditor } from "@/components/dashboard/filters/filter-editor";
+import { FilterDslEditor } from "@/components/dashboard/filters/filter-editor";
 import { SavedFilterSelect } from "@/components/dashboard/filters/filter-panel";
 import { fetchSavedFilters } from "@/lib/dashboard/client/data/index";
 import type { DashboardComparisonMode } from "@/lib/dashboard/filter-state";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
-import type { FilterScope } from "@/lib/filter-contract/index";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
 export type ComparisonPeriod = DashboardComparisonMode;
@@ -48,7 +47,6 @@ interface ComparisonPanelProps {
   readonly messages: AppMessages;
   readonly onApply: (settings: ComparisonSettings) => void;
   readonly onCancel: () => void;
-  readonly resolvedScope: FilterScope;
   readonly siteId?: string;
   readonly timeWindow: TimeWindow;
 }
@@ -58,7 +56,6 @@ function ComparisonFilterDialog({
   onApply,
   onOpenChange,
   open,
-  resolvedScope,
   siteId,
   timeWindow,
 }: {
@@ -67,7 +64,6 @@ function ComparisonFilterDialog({
   readonly onApply: (filterDsl: string) => void;
   readonly onOpenChange: (open: boolean) => void;
   readonly open: boolean;
-  readonly resolvedScope: FilterScope;
   readonly siteId?: string;
   readonly timeWindow: TimeWindow;
 }) {
@@ -112,7 +108,8 @@ function ComparisonFilterDialog({
           scrollable={false}
           className="px-4 pb-2 md:px-0 md:pb-0"
         >
-          <FilterEditor
+          <FilterDslEditor
+            key={draftFilterDsl}
             className="min-h-0 flex-1"
             audience="private-dashboard"
             initialFilterDsl={draftFilterDsl}
@@ -121,7 +118,6 @@ function ComparisonFilterDialog({
             onCancel={() => onOpenChange(false)}
             applyLabel={messages.filterBuilder.apply}
             cancelLabel={messages.dashboardHeader.compareCancel}
-            resolvedScope={resolvedScope}
             siteId={siteId}
             window={timeWindow}
             headerContent={
@@ -184,7 +180,6 @@ export function ComparisonPanel({
   messages,
   onApply,
   onCancel,
-  resolvedScope,
   siteId,
   timeWindow,
 }: ComparisonPanelProps) {
@@ -338,7 +333,6 @@ export function ComparisonPanel({
         }}
         onOpenChange={setCustomFilterDialogOpen}
         open={customFilterDialogOpen}
-        resolvedScope={resolvedScope}
         siteId={siteId}
         timeWindow={timeWindow}
       />

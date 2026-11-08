@@ -1,12 +1,10 @@
 import {
   analyticsFilterRegistry,
-  FILTER_DOCUMENT_VERSION,
   type FilterCondition,
   type FilterDocument,
-  type FilterExpression,
   type FilterFieldId,
   filterFingerprint,
-  type FilterOperator,
+  FilterOperator,
   formatFilterDsl,
   parseFilterDsl,
 } from "@/lib/filter-contract";
@@ -50,12 +48,7 @@ function condition(
   operator: FilterOperator,
   value: FilterCondition["value"],
 ): FilterCondition {
-  return {
-    kind: "condition",
-    target: { kind: "field", field },
-    operator,
-    value,
-  };
+  return { target: { kind: "field", field }, operator, value };
 }
 
 function isThreshold(value: unknown): value is number {
@@ -93,32 +86,27 @@ function pathConditions(pagePath: string): FilterCondition[] | null {
   const pattern = pagePath.trim().replace(/\*+/g, WILDCARD);
   if (pattern === "" || pattern === WILDCARD) return [];
   const parts = pattern.split(WILDCARD);
-  if (parts.length === 1) return [condition(PAGE_PATH, "eq", pattern)];
+  if (parts.length === 1)
+    return [condition(PAGE_PATH, FilterOperator.Eq, pattern)];
   const [prefix, middle, suffix] = parts as [string, string, string?];
   if (parts.length === 2) {
-    if (middle === "") return [condition(PAGE_PATH, "startsWith", prefix)];
-    if (prefix === "") return [condition(PAGE_PATH, "endsWith", middle)];
+    if (middle === "")
+      return [condition(PAGE_PATH, FilterOperator.StartsWith, prefix)];
+    if (prefix === "")
+      return [condition(PAGE_PATH, FilterOperator.EndsWith, middle)];
     const overlaps = overlapPaths(prefix, middle);
     return [
-      condition(PAGE_PATH, "startsWith", prefix),
-      condition(PAGE_PATH, "endsWith", middle),
-      ...(overlaps.length > 0 ? [condition(PAGE_PATH, "notIn", overlaps)] : []),
+      condition(PAGE_PATH, FilterOperator.StartsWith, prefix),
+      condition(PAGE_PATH, FilterOperator.EndsWith, middle),
+      ...(overlaps.length > 0
+        ? [condition(PAGE_PATH, FilterOperator.NotIn, overlaps)]
+        : []),
     ];
   }
   if (parts.length === 3 && prefix === "" && suffix === "") {
-    return [condition(PAGE_PATH, "contains", middle)];
+    return [condition(PAGE_PATH, FilterOperator.Contains, middle)];
   }
   return null;
-}
-
-function filterOf(conditions: readonly FilterCondition[]): FilterDocument {
-  return {
-    version: FILTER_DOCUMENT_VERSION,
-    root:
-      conditions.length === 1
-        ? conditions[0]!
-        : { kind: "and", children: conditions },
-  };
 }
 
 /**
@@ -137,7 +125,12 @@ export function scrollDepthGoalFilter(goal: ScrollDepthGoal): FilterDocument {
       ScrollDepthGoalError.PathWildcardUnsupported,
     );
   }
-  return filterOf([...path, condition(SCROLL_DEPTH, "gte", goal.threshold)]);
+  return {
+    conditions: [
+      ...path,
+      condition(SCROLL_DEPTH, FilterOperator.Gte, goal.threshold),
+    ],
+  };
 }
 
 export function scrollDepthGoalFilterDsl(goal: ScrollDepthGoal): string {
@@ -145,35 +138,15 @@ export function scrollDepthGoalFilterDsl(goal: ScrollDepthGoal): string {
 }
 
 function fieldCondition(
-  expression: FilterExpression,
+  condition: FilterCondition,
   field: FilterFieldId,
   operator: FilterOperator,
 ): FilterCondition | undefined {
-  return expression.kind === "condition" &&
-    expression.target.kind === "field" &&
-    expression.target.field === field &&
-    expression.operator === operator
-    ? expression
+  return condition.target.kind === "field" &&
+    condition.target.field === field &&
+    condition.operator === operator
+    ? condition
     : undefined;
-}
-
-function conjuncts(root: FilterExpression | null): readonly FilterExpression[] {
-  return !root ? [] : root.kind === "and" ? root.children : [root];
-}
-
-/** The conditions' fingerprints, in a stable order. */
-function conjunctFingerprints(
-  expressions: readonly FilterExpression[],
-): string {
-  return expressions
-    .map((child) =>
-      filterFingerprint(
-        { version: FILTER_DOCUMENT_VERSION, root: child },
-        analyticsFilterRegistry,
-      ),
-    )
-    .sort()
-    .join("\n");
 }
 
 /**
@@ -184,22 +157,22 @@ function conjunctFingerprints(
 export function scrollDepthGoalFromFilter(
   document: FilterDocument,
 ): ScrollDepthGoal | null {
-  const children = conjuncts(document.root);
+  const conditions = document.conditions;
   const pathValue = (operator: FilterOperator) => {
-    const value = children
+    const value = conditions
       .map((child) => fieldCondition(child, PAGE_PATH, operator))
       .find(Boolean)?.value;
     return typeof value === "string" ? value : undefined;
   };
-  const threshold = children
-    .map((child) => fieldCondition(child, SCROLL_DEPTH, "gte"))
+  const threshold = conditions
+    .map((child) => fieldCondition(child, SCROLL_DEPTH, FilterOperator.Gte))
     .find(Boolean)?.value;
   if (!isThreshold(threshold)) return null;
 
-  const exact = pathValue("eq");
-  const contains = pathValue("contains");
-  const prefix = pathValue("startsWith");
-  const suffix = pathValue("endsWith");
+  const exact = pathValue(FilterOperator.Eq);
+  const contains = pathValue(FilterOperator.Contains);
+  const prefix = pathValue(FilterOperator.StartsWith);
+  const suffix = pathValue(FilterOperator.EndsWith);
   const pagePath =
     exact ??
     (contains !== undefined
@@ -209,10 +182,15 @@ export function scrollDepthGoalFromFilter(
         : `${prefix ?? ""}${WILDCARD}${suffix ?? ""}`);
   const path = pathConditions(pagePath);
   return path &&
-    conjunctFingerprints([
-      ...path,
-      condition(SCROLL_DEPTH, "gte", threshold),
-    ]) === conjunctFingerprints(children)
+    filterFingerprint(
+      {
+        conditions: [
+          ...path,
+          condition(SCROLL_DEPTH, FilterOperator.Gte, threshold),
+        ],
+      },
+      analyticsFilterRegistry,
+    ) === filterFingerprint(document, analyticsFilterRegistry)
     ? { threshold, pagePath }
     : null;
 }

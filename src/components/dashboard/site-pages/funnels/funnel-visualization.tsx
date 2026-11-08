@@ -11,7 +11,7 @@ import {
   type FunnelVisualizationSummary,
 } from "@insightflare/product-ui/funnel";
 
-import { describeFilterExpression } from "@/lib/dashboard/filter-description";
+import { describeFilter } from "@/lib/dashboard/filter-description";
 import type {
   FunnelAnalysis,
   FunnelAnalysisStep,
@@ -80,8 +80,8 @@ export function funnelStepLabel(
 
   try {
     const document = parseFilterDsl(step.filterDsl, analyticsFilterRegistry);
-    const description = describeFilterExpression(
-      document.root,
+    const description = describeFilter(
+      document,
       analyticsFilterRegistry,
       messages,
     );

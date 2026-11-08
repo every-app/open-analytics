@@ -105,9 +105,6 @@ export interface AppMessages {
     compareApply: string;
     compareCancel: string;
     filterButton: string;
-    filterButtonEvent: string;
-    filterButtonSession: string;
-    filterButtonVisitor: string;
     customHint: string;
     customPendingEnd: string;
     customApply: string;
@@ -130,7 +127,6 @@ export interface AppMessages {
   conditionDescription: {
     and: string;
     or: string;
-    not: string;
     emptyFilter: string;
     filterEquals: string;
     filterNotEquals: string;
@@ -138,6 +134,7 @@ export interface AppMessages {
     filterNoneOf: string;
     filterBetween: string;
     filterContains: string;
+    filterNotContains: string;
     filterStartsWith: string;
     filterEndsWith: string;
     filterGreaterThan: string;
@@ -153,36 +150,19 @@ export interface AppMessages {
   };
   filterBuilder: {
     fieldGroups: {
-      advanced: string;
       page: string;
       session: string;
-      visitor: string;
-      referrer: string;
-      campaign: string;
-      client: string;
-      geography: string;
       event: string;
       acquisition: string;
       device: string;
       geo: string;
-      performance: string;
-      user: string;
-      time: string;
-      aggregation: string;
-      calculation: string;
-      relation: string;
     };
     fieldLabels: Record<string, string>;
     operatorLabels: Record<string, string>;
-    valueType: string;
     valueKinds: {
       string: string;
-      enum: string;
       number: string;
       boolean: string;
-      date: string;
-      datetime: string;
-      "json-scalar": string;
     };
     booleanTrue: string;
     booleanFalse: string;
@@ -195,7 +175,6 @@ export interface AppMessages {
     rangeStartPlaceholder: string;
     rangeEndPlaceholder: string;
     unitAriaLabel: string;
-    durationUnit: string;
     units: {
       hours: string;
       minutes: string;
@@ -205,114 +184,10 @@ export interface AppMessages {
       perMille: string;
       pixels: string;
     };
-    jsonPointer: string;
     jsonPointerPlaceholder: string;
-    match: string;
-    expression: string;
-    expressionPlaceholder: string;
-    naturalLanguageDescription: string;
-    expressionInvalid: string;
-    expressionHelpTitle: string;
-    expressionHelpDescription: string;
-    expressionHelpSyntax: string;
-    expressionHelpLogicDescription: string;
-    expressionHelpValues: string;
-    expressionHelpValuesDescription: string;
-    expressionHelpOperators: string;
-    expressionHelpUnaryOperators: string;
-    expressionHelpFields: string;
-    expressionHelpFieldType: string;
-    expressionHelpFieldOperators: string;
-    expressionHelpOtherFields: string;
-    expressionHelpContextTitle: string;
-    expressionHelpContextDescription: string;
-    expressionHelpContextExamples: string;
-    advancedEditor: {
-      not: string;
-      removeNot: string;
-      matchAll: string;
-      matchAny: string;
-      addCondition: string;
-      addGroup: string;
-      wrapInNot: string;
-      remove: string;
-      condition: string;
-      literalValue: string;
-      compareWithExpression: string;
-      valuesAsJson: string;
-      scalarArrayHelp: string;
-      chooseValue: string;
-      filterValue: string;
-      durationAmount: string;
-      jsonPointer: string;
-      jsonPointerPlaceholder: string;
-      entityMember: string;
-      nthIndex: string;
-      fromStep: string;
-      toStep: string;
-      occurrenceKind: string;
-      occurrenceEntity: string;
-      occurrenceIndex: string;
-      correlationTarget: string;
-      periodItemCount: string;
-      nestedTooDeep: string;
-      applyOffset: string;
-      removeStep: string;
-      addStep: string;
-      excludedActivity: string;
-      fixedTime: string;
-      toggleOffsetSign: string;
-      timeUnits: {
-        milliseconds: string;
-        seconds: string;
-        minutes: string;
-        hours: string;
-        days: string;
-        weeks: string;
-        months: string;
-        years: string;
-      };
-      coreRelation: string;
-      coreRelationExpression: string;
-      structuredEditor: string;
-      unavailableForObservation: string;
-      targetKinds: {
-        time: string;
-        field: string;
-        "event-payload": string;
-        "entity-root": string;
-        "context-root": string;
-        "context-intrinsic": string;
-        "occurrence-time": string;
-        member: string;
-        selector: string;
-        projection: string;
-        reducer: string;
-        arithmetic: string;
-        duration: string;
-        "time-anchor": string;
-        "sequence-span": string;
-        "sequence-gap": string;
-        "sequence-same": string;
-        "period-items": string;
-        bucket: string;
-        window: string;
-        periods: string;
-        sequence: string;
-        adjacent: string;
-        without: string;
-      };
-    };
     savedFiltersLoading: string;
     noSavedFilter: string;
     systemPresets: string;
-    advanced: string;
-    systemPresetScopes: {
-      preserve: string;
-      event: string;
-      session: string;
-      visitor: string;
-    };
     systemPresetItems: {
       directTraffic: {
         name: string;
@@ -322,19 +197,7 @@ export interface AppMessages {
         name: string;
         description: string;
       };
-      campaignTaggedTraffic: {
-        name: string;
-        description: string;
-      };
       mobileTraffic: {
-        name: string;
-        description: string;
-      };
-      bouncedSessions: {
-        name: string;
-        description: string;
-      };
-      returningVisitors: {
         name: string;
         description: string;
       };
@@ -352,11 +215,6 @@ export interface AppMessages {
     manageSavedFilter: string;
     savedFilterName: string;
     savedFilterDescription: string;
-    scopeLabel: string;
-    scopeAuto: string;
-    scopeEvent: string;
-    scopeSession: string;
-    scopeVisitor: string;
     savedFilterVisibility: string;
     savedFilterVisibilityPrivate: string;
     savedFilterVisibilityTeam: string;
@@ -374,12 +232,7 @@ export interface AppMessages {
     savedFilterOperationFailed: string;
     apply: string;
     allConditions: string;
-    anyCondition: string;
     condition: string;
-    group: string;
-    invertCondition: string;
-    exclude: string;
-    addGroup: string;
     invalid: string;
   };
   realtime: {
@@ -1374,9 +1227,6 @@ const enMessages = {
     compareApply: "Apply comparison",
     compareCancel: "Cancel",
     filterButton: "Filter",
-    filterButtonEvent: "Filter (event)",
-    filterButtonSession: "Filter (session)",
-    filterButtonVisitor: "Filter (visitor)",
     customHint: "Select a start and end date.",
     customPendingEnd: "Now pick an end date.",
     customApply: "Apply date range",
@@ -1399,7 +1249,6 @@ const enMessages = {
   conditionDescription: {
     and: "and",
     or: "or",
-    not: "not ({description})",
     emptyFilter: "No filter conditions",
     filterEquals: "{field} equals {value}",
     filterNotEquals: "{field} does not equal {value}",
@@ -1407,6 +1256,7 @@ const enMessages = {
     filterNoneOf: "{field} is none of {values}",
     filterBetween: "{field} is between {from} and {to}",
     filterContains: "{field} contains {value}",
+    filterNotContains: "{field} does not contain {value}",
     filterStartsWith: "{field} starts with {value}",
     filterEndsWith: "{field} ends with {value}",
     filterGreaterThan: "{field} is greater than {value}",
@@ -1422,29 +1272,16 @@ const enMessages = {
   },
   filterBuilder: {
     fieldGroups: {
-      advanced: "Advanced",
       page: "Page",
       session: "Session",
-      visitor: "Visitor",
-      referrer: "Sources & channels",
-      campaign: "Campaign",
-      client: "Client",
-      geography: "Geography",
       event: "Event",
       acquisition: "Acquisition",
       device: "Device",
       geo: "Geography",
-      performance: "Performance",
-      user: "User",
-      time: "Time",
-      aggregation: "Aggregation",
-      calculation: "Calculation",
-      relation: "Behavior relations",
     },
     fieldLabels: {
       "page.path": "Page path",
       "page.title": "Page title",
-      "page.collection": "Page collection",
       "page.hostname": "Page domain",
       "page.query": "Query parameters",
       "page.hash": "URL hash",
@@ -1471,55 +1308,13 @@ const enMessages = {
       "geo.city": "City",
       "geo.continent": "Continent",
       "geo.timeZone": "Time zone",
-      "event.collection": "Event collection",
       "event.name": "Event name",
       "event.payload": "Properties",
       "page.durationMs": "Time on page",
       "page.scrollDepth": "Scroll depth",
-      "session.collection": "Session collection",
-      "session.durationMs": "Session duration",
-      "session.views": "Page views",
-      "session.events": "Event count",
-      "session.bounce": "Bounced",
-      "visitor.collection": "Visitor collection",
-      "visitor.sessions": "Session count",
-      "visitor.views": "Page views",
-      "visitor.events": "Event count",
-      "performance.ttfbMs": "TTFB",
-      "performance.fcpMs": "FCP",
-      "performance.lcpMs": "LCP",
-      "performance.cls": "CLS",
-      "performance.inpMs": "INP",
-      "user.id": "User ID",
-      "user.name": "User name",
       "client.screenWidth": "Screen width",
       "client.screenHeight": "Screen height",
       "geo.isEU": "EU region",
-      time: "Time",
-      "time(...)": "Occurrence time",
-      $items: "Items in period",
-      $span: "Sequence span",
-      "$gap(...)": "Gap between steps",
-      "$same(...)": "Same value across steps",
-      "bucket(...)": "Time bucket",
-      "window(...)": "Relative time window",
-      "periods(...)": "Period groups",
-      "count(...)": "Count",
-      "first(...)": "First",
-      "last(...)": "Last",
-      "nth(...)": "Nth",
-      "countDistinct(...)": "Distinct count",
-      "sum(...)": "Sum",
-      "avg(...)": "Average",
-      "min(...)": "Minimum",
-      "max(...)": "Maximum",
-      "add(...)": "Add",
-      "sub(...)": "Subtract",
-      "mul(...)": "Multiply",
-      "div(...)": "Divide",
-      "sequence(...)": "Behavior sequence",
-      "adjacent(...)": "Adjacent sequence",
-      "without(...)": "Exclude intermediate behavior",
     },
     operatorLabels: {
       eq: "Equals",
@@ -1527,6 +1322,7 @@ const enMessages = {
       in: "Is one of",
       notIn: "Is not one of",
       contains: "Contains",
+      notContains: "Does not contain",
       startsWith: "Starts with",
       endsWith: "Ends with",
       gt: "Greater than",
@@ -1541,15 +1337,10 @@ const enMessages = {
       isEmpty: "Is empty",
       notEmpty: "Is not empty",
     },
-    valueType: "Value type",
     valueKinds: {
       string: "Text",
-      enum: "Option",
       number: "Number",
       boolean: "Boolean",
-      date: "Date",
-      datetime: "Date and time",
-      "json-scalar": "JSON scalar",
     },
     booleanTrue: "True",
     booleanFalse: "False",
@@ -1562,7 +1353,6 @@ const enMessages = {
     rangeStartPlaceholder: "Lower bound",
     rangeEndPlaceholder: "Upper bound",
     unitAriaLabel: "Display unit",
-    durationUnit: "Duration unit",
     units: {
       hours: "Hours",
       minutes: "Minutes",
@@ -1572,120 +1362,10 @@ const enMessages = {
       perMille: "‰",
       pixels: "Pixels",
     },
-    jsonPointer: "JSON pointer",
     jsonPointerPlaceholder: "Search or enter a JSON pointer",
-    match: "Match",
-    expression: "Filter expression",
-    expressionPlaceholder: "Filter expression...",
-    naturalLanguageDescription: "Natural-language description",
-    expressionInvalid: "Invalid expression. Click to view syntax help.",
-    expressionHelpTitle: "Filter expression syntax",
-    expressionHelpDescription:
-      "The fields and operators you can use in a filter expression.",
-    expressionHelpSyntax: "Syntax",
-    expressionHelpLogicDescription:
-      "AND binds more tightly than OR. Use parentheses for nesting; AND(...) and OR(...) preserve an explicit one-condition group.",
-    expressionHelpValues: "Values",
-    expressionHelpValuesDescription:
-      "Strings use JSON double quotes. Numbers and booleans are unquoted. Use [value, value] for sets and exactly two ordered values with between.",
-    expressionHelpOperators: "Available operators",
-    expressionHelpUnaryOperators: "Operators without a value",
-    expressionHelpFields: "Available fields",
-    expressionHelpFieldType: "Type",
-    expressionHelpFieldOperators: "Operators",
-    expressionHelpOtherFields: "Other",
-    expressionHelpContextTitle: "Occurrence time and context intrinsics",
-    expressionHelpContextDescription:
-      "Lowercase dotted names are registered fields; uppercase PAGE, EVENT, SESSION, and VISITOR are entity collections. Inside an entity selector, $.member refers to its current entity, and -> explicitly projects a collection member. @ names a temporal anchor; Sequence and Period predicates also provide $span, $gap, and $items.",
-    expressionHelpContextExamples:
-      'time(last(PAGE)) gte @now-14d\nsequence([EVENT { $.name eq "signup" }, EVENT { $.name eq "purchase" }]) {\n  $span lte 14d AND $gap(1, 2) lte 7d AND $same($.payload("/productId"))\n} exists\nperiods(EVENT, 1w) { count($items) gte 3 } exists',
-    advancedEditor: {
-      not: "NOT",
-      removeNot: "Remove NOT",
-      matchAll: "Match all",
-      matchAny: "Match any",
-      addCondition: "Add condition",
-      addGroup: "Add group",
-      wrapInNot: "Wrap in NOT",
-      remove: "Remove",
-      condition: "Condition",
-      literalValue: "Literal value",
-      compareWithExpression: "Compare with expression",
-      valuesAsJson: "Filter values as JSON",
-      scalarArrayHelp: "Enter an array of JSON scalar values.",
-      chooseValue: "Choose a value",
-      filterValue: "Filter value",
-      durationAmount: "Duration amount",
-      jsonPointer: "Payload JSON pointer",
-      jsonPointerPlaceholder: "/property/path",
-      entityMember: "Entity member",
-      nthIndex: "Nth item index",
-      fromStep: "From step",
-      toStep: "To step",
-      occurrenceKind: "Occurrence selector",
-      occurrenceEntity: "Occurrence type",
-      occurrenceIndex: "Occurrence index",
-      correlationTarget: "Value shared by each step",
-      periodItemCount: "Items per period",
-      nestedTooDeep: "Expression is nested too deeply.",
-      applyOffset: "Apply offset",
-      removeStep: "Remove step",
-      addStep: "Add sequence step",
-      excludedActivity: "Excluded activity",
-      fixedTime: "Fixed time",
-      toggleOffsetSign: "Toggle time offset sign",
-      timeUnits: {
-        milliseconds: "milliseconds",
-        seconds: "seconds",
-        minutes: "minutes",
-        hours: "hours",
-        days: "days",
-        weeks: "weeks",
-        months: "months",
-        years: "years",
-      },
-      coreRelation: "Advanced filter",
-      coreRelationExpression: "Advanced filter expression",
-      structuredEditor: "Advanced filter controls",
-      unavailableForObservation:
-        "Advanced filters are unavailable for goal and funnel steps.",
-      targetKinds: {
-        time: "Time",
-        field: "Field",
-        "event-payload": "Event payload",
-        "entity-root": "Entity collection",
-        "context-root": "Context",
-        "context-intrinsic": "Context intrinsic",
-        "occurrence-time": "Occurrence time",
-        member: "Member",
-        selector: "Selector",
-        projection: "Projection",
-        reducer: "Reducer",
-        arithmetic: "Arithmetic",
-        duration: "Duration",
-        "time-anchor": "Relative time",
-        "sequence-span": "Sequence span",
-        "sequence-gap": "Sequence gap",
-        "sequence-same": "Sequence shared value",
-        "period-items": "Period items",
-        bucket: "Time bucket",
-        window: "Window",
-        periods: "Periods",
-        sequence: "Sequence",
-        adjacent: "Adjacent sequence",
-        without: "Sequence without",
-      },
-    },
     savedFiltersLoading: "Loading saved filters...",
     noSavedFilter: "No saved filter",
     systemPresets: "System presets",
-    advanced: "Advanced",
-    systemPresetScopes: {
-      preserve: "Keep current scope",
-      event: "Event scope",
-      session: "Session scope",
-      visitor: "Visitor scope",
-    },
     systemPresetItems: {
       directTraffic: {
         name: "Direct traffic",
@@ -1695,21 +1375,9 @@ const enMessages = {
         name: "Organic search discovery",
         description: "Search-engine referrals without campaign tags.",
       },
-      campaignTaggedTraffic: {
-        name: "Campaign-tagged traffic",
-        description: "Visits carrying a campaign source, medium, or name.",
-      },
       mobileTraffic: {
         name: "Mobile traffic",
         description: "Visits from mobile devices.",
-      },
-      bouncedSessions: {
-        name: "Bounced sessions",
-        description: "Sessions containing a single page view.",
-      },
-      returningVisitors: {
-        name: "Returning visitors",
-        description: "Visitors with at least two sessions.",
       },
     },
     savedFiltersPersonal: "Personal filters",
@@ -1725,11 +1393,6 @@ const enMessages = {
     manageSavedFilter: "Manage filter",
     savedFilterName: "Name",
     savedFilterDescription: "Notes",
-    scopeLabel: "Filter scope",
-    scopeAuto: "Automatically choose based on the current page",
-    scopeEvent: "Filter events matching these conditions",
-    scopeSession: "Filter sessions meeting these conditions",
-    scopeVisitor: "Filter visitors meeting these conditions",
     savedFilterVisibility: "Visibility",
     savedFilterVisibilityPrivate: "Only me",
     savedFilterVisibilityTeam: "Share with your organization",
@@ -1750,12 +1413,7 @@ const enMessages = {
     savedFilterOperationFailed: "Something went wrong. Try again.",
     apply: "Apply filters",
     allConditions: "All conditions",
-    anyCondition: "Any condition",
     condition: "Condition {index}",
-    group: "Group {index}",
-    invertCondition: "Invert this condition",
-    exclude: "Exclude",
-    addGroup: "Add group",
     invalid: "Complete each filter condition before applying.",
   },
   realtime: {

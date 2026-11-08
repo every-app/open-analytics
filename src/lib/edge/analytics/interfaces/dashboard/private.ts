@@ -123,7 +123,6 @@ export function executePrivateQuery(
         input.env,
         input.siteId,
         input.url,
-        true,
         ctx,
         queryContext,
       ),
@@ -368,6 +367,34 @@ export function executePrivateQuery(
       });
     })();
   }
+  if (input.pathname === "goal-conversions") {
+    return (async () => {
+      const window = parseWindow(input.url);
+      if (!window) return badRequest("Invalid time window");
+      const diagnostics = createAnalyticsReadDiagnostics();
+      const result = await createEdgeSiteAnalyticsRuntime({
+        env: input.env,
+        siteId: input.siteId,
+        diagnostics,
+      }).execute("goal-conversions", {
+        context: queryContext,
+        time: createQueryTime(
+          window.startMs,
+          window.endExclusiveMs,
+          window.timeZone,
+          window.nowMs,
+        ),
+        filters: parseFilterUrlForAudience("private-dashboard", input.url),
+      });
+      if (!result.ok) return queryErrorResponse(result.error);
+      return jsonResponseWith(
+        ctx!,
+        { ok: true, data: result.data },
+        200,
+        analyticsDiagnosticHeaders(result.meta.source, diagnostics),
+      );
+    })();
+  }
   if (input.pathname === "goals") {
     return import("./protocol/goals").then(({ handleGoal }) =>
       handleGoal(input.env, input.siteId, input.url, ctx, input.request),
@@ -452,7 +479,6 @@ export async function executePrivateTeamDashboard(
   const bucketError = teamDashboardBucketError(window, interval);
   if (bucketError) return bucketError;
   const diagnostics = createAnalyticsReadDiagnostics();
-  const filters = parseFilterUrlForAudience("private-dashboard", input.url);
   const result = await createTeamDashboardQueryRuntime({
     env: input.env,
     teamId: input.teamId,
@@ -472,7 +498,6 @@ export async function executePrivateTeamDashboard(
       window.timeZone,
       window.nowMs,
     ),
-    filters,
   });
   if (!result.ok) {
     return queryErrorResponse(result.error);

@@ -4,17 +4,15 @@ import {
   type FilterDocument,
   parseFilterDsl,
 } from "@/lib/filter-contract";
-import { analyticsFilterRegistry } from "@/lib/filter-contract/filter-registry";
+import {
+  analyticsFilterRegistry,
+  matchesOnlyCustomEvents,
+} from "@/lib/filter-contract/filter-registry";
 import {
   assertFilterAudience,
   filterFingerprint,
 } from "@/lib/filter-contract/filters";
 import { sha256Hex } from "@/lib/sha256";
-
-import {
-  assertObservationFilterCompatible,
-  planObservationFilter,
-} from "./observation-planner";
 
 export const GOAL_CONFIG_VERSION = 1 as const;
 export const GOAL_FILTER_DSL_VERSION = 1 as const;
@@ -86,7 +84,6 @@ function configFields(value: unknown): GoalConfigV1 {
 function parseAndAssertGoalFilter(filterDsl: string): FilterDocument {
   const document = parseFilterDsl(filterDsl, analyticsFilterRegistry);
   assertFilterAudience(document, analyticsFilterRegistry, "private-dashboard");
-  assertObservationFilterCompatible(document);
   return document;
 }
 
@@ -171,16 +168,6 @@ export function validateGoalConfigForWrite(config: GoalConfigV1): GoalConfigV1 {
     filterDsl: root.filterDsl,
     currency,
   };
-}
-
-/**
- * Whether every conversion of the goal is a custom event: its filter can't
- * match a page view, e.g. `event.name eq "Purchase"`, alone or AND-ed with
- * page conditions. Only these goals have revenue.
- */
-export function matchesOnlyCustomEvents(document: FilterDocument): boolean {
-  const plan = planObservationFilter(document.root);
-  return plan.visit.kind === "none" && plan.event.kind !== "none";
 }
 
 export function encodeGoalConfig(config: GoalConfigV1): EncodedGoalConfig {

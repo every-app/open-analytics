@@ -37,15 +37,16 @@ import {
  * The most D1 queries one rule takes, from its evaluation to its recorded
  * check; a rule starts only with this many left. A report reads its site,
  * the overview (rolled-up days, their totals and the raw days at both
- * edges), top pages and top referrers: 7. An alert reads its site and two
- * overviews: 5. Sending reads the recipient, creates the message and reads
- * it back, records its delivery and reads it back: 5. The check: 1. The
- * notification tick tests measure each type's longest path.
+ * edges), and top pages and top referrers (each its rolled-up days, then
+ * its rows): 8. An alert reads its site and two overviews: 5. Sending reads
+ * the recipient, creates the message and reads it back, records its
+ * delivery and reads it back: 5. The check: 1. The notification tick tests
+ * measure each type's longest path.
  */
 export const NOTIFICATION_RULE_D1_QUERIES: Record<
   NotificationRuleType,
   number
-> = { report: 13, change: 11 };
+> = { report: 14, change: 11 };
 
 export interface NotificationTaskSummary {
   rulesScanned: number;

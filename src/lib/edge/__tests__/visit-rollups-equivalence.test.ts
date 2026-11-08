@@ -2,7 +2,7 @@ import type { DatabaseSync } from "node:sqlite";
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import type { Interval } from "@/lib/edge/analytics/contract";
+import { type Interval, siteQueryContext } from "@/lib/edge/analytics/contract";
 import { handleSimpleDimensionContract } from "@/lib/edge/analytics/interfaces/dashboard/protocol/dimensions";
 import {
   handleOverviewContract,
@@ -13,6 +13,7 @@ import {
   handleOverviewTabContract,
   type OverviewTab,
 } from "@/lib/edge/analytics/interfaces/dashboard/protocol/overview-tabs";
+import { handlePagesContract } from "@/lib/edge/analytics/interfaces/dashboard/protocol/pages";
 import { queryTeamDashboardForTeam } from "@/lib/edge/analytics/providers/d1/internal/team";
 import { runVisitRollups } from "@/lib/edge/scheduled-tasks/visit-rollups";
 import type { Env } from "@/lib/edge/types";
@@ -212,6 +213,33 @@ async function allPages(
   return pages;
 }
 
+/** Every page of the pages report, following its cursors. */
+async function allReportPages(env: Env, read: ReadCase): Promise<unknown[]> {
+  const pages: unknown[] = [];
+  let cursor = "";
+  for (let page = 0; page < 50; page += 1) {
+    const result = (await body(
+      await handlePagesContract(
+        env,
+        read.siteId,
+        url({
+          from: read.from,
+          to: read.to,
+          timeZone: read.timeZone,
+          limit: 3,
+          ...(cursor ? { cursor } : {}),
+        }),
+        undefined,
+        siteQueryContext(read.siteId, "private-dashboard"),
+      ),
+    )) as { data: { pagination: { nextCursor: string | null } } };
+    pages.push(result);
+    if (!result.data.pagination.nextCursor) break;
+    cursor = result.data.pagination.nextCursor;
+  }
+  return pages;
+}
+
 /** Everything the Overview reads for one case, as the endpoints answer. */
 async function readOverview(env: Env, read: ReadCase) {
   const window = {
@@ -275,6 +303,7 @@ async function readOverview(env: Env, read: ReadCase) {
     "desc",
   );
   result.pagedEntries = await allPages(env, read, "page.entry", "views", "asc");
+  result.pagesReport = await allReportPages(env, read);
   result.pagedReferrers = await allPages(
     env,
     read,

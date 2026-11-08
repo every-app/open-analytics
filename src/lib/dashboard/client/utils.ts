@@ -12,10 +12,7 @@ import type { PagesDashboardMetric } from "@/lib/dashboard-api/contract/types/pa
 import {
   analyticsFilterRegistry,
   type FilterDocument,
-  type FilterScope,
-  filterScopePreferenceFromDocument,
   serializeFilterParams,
-  serializeFilterScopePreference,
 } from "@/lib/filter-contract";
 type DashboardComparisonRequest = NonNullable<
   DashboardListRequestOptions["comparison"]
@@ -128,21 +125,8 @@ export function normalizeOverviewRows(
 export function withFilters(
   params: PrivateRequestParams,
   filters?: FilterDocument,
-  resolvedScope?: FilterScope,
 ): PrivateRequestParams {
   const next = { ...params };
-  delete next.scope;
-  const scopePreference =
-    resolvedScope ??
-    (filters?.root ? filterScopePreferenceFromDocument(filters) : undefined);
-  if (scopePreference) {
-    const scopeParams = serializeFilterScopePreference(
-      new URLSearchParams(),
-      scopePreference,
-    );
-    const scope = scopeParams.get("scope");
-    if (scope) next.scope = scope;
-  }
   if (!filters) return next;
   for (const [key, value] of serializeFilterParams(
     filters,

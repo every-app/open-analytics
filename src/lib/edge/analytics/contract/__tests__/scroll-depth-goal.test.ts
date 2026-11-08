@@ -1,3 +1,5 @@
+import { DatabaseSync, type SQLInputValue } from "node:sqlite";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -8,11 +10,8 @@ import {
   scrollDepthGoalFromDsl,
   scrollDepthGoalFromFilter,
 } from "@/lib/edge/analytics/contract/scroll-depth-goal";
-import {
-  analyticsFilterRegistry,
-  evaluateFilterDocument,
-  parseFilterDsl,
-} from "@/lib/filter-contract";
+import { pageViewMatchSql } from "@/lib/edge/analytics/providers/d1/internal/filter-compiler";
+import { analyticsFilterRegistry, parseFilterDsl } from "@/lib/filter-contract";
 
 function dsl(pagePath: string, threshold = 75): string {
   return scrollDepthGoalFilterDsl({ threshold, pagePath });
@@ -40,29 +39,29 @@ function globMatches(pattern: string, path: string): boolean {
 
 /** The paths the goal's filter matches, scrolled all the way down. */
 function matchedPaths(pagePath: string, paths: readonly string[]): string[] {
-  const result = evaluateFilterDocument(
-    scrollDepthGoalFilter({ threshold: 50, pagePath }),
-    {
-      pages: paths.map((path, index) => ({
-        kind: "page",
-        id: String(index),
-        visitId: String(index),
-        sessionId: `s${index}`,
-        visitorId: `v${index}`,
-        time: 10,
-        fields: { "page.path": path, "page.scrollDepth": 100 },
-      })),
-      events: [],
-      coverageRange: { startMs: 0, endExclusiveMs: 100 },
-    },
-    {
-      scope: "event",
-      candidateRange: { startMs: 0, endExclusiveMs: 100 },
-      reportingTimeZone: "UTC",
-      capturedAtMs: 80,
-    },
-  );
-  return paths.filter((_, index) => result.matchingVisitIds.has(String(index)));
+  const database = new DatabaseSync(":memory:");
+  try {
+    database.exec(
+      "CREATE TABLE visits (visit_id TEXT, pathname TEXT, scroll_depth INTEGER)",
+    );
+    const insert = database.prepare(
+      "INSERT INTO visits (visit_id, pathname, scroll_depth) VALUES (?, ?, 100)",
+    );
+    paths.forEach((path, index) => insert.run(String(index), path));
+    const predicate = pageViewMatchSql(
+      scrollDepthGoalFilter({ threshold: 50, pagePath }),
+      { siteId: "site-1", startMs: 0, endExclusiveMs: 100 },
+    );
+    const matched = new Set(
+      database
+        .prepare(`SELECT visit_id FROM visits v WHERE ${predicate.text}`)
+        .all(...(predicate.bindings as SQLInputValue[]))
+        .map((row) => String(row.visit_id)),
+    );
+    return paths.filter((_, index) => matched.has(String(index)));
+  } finally {
+    database.close();
+  }
 }
 
 describe("scroll depth goal filter", () => {
@@ -196,11 +195,8 @@ describe("scroll depth goal detection", () => {
       'page.path eq "/pricing"',
       "page.scrollDepth gte 0",
       "page.scrollDepth gt 75",
-      "page.scrollDepth gte 75 AND page.scrollDepth gte 75",
-      "NOT page.scrollDepth gte 75",
-      'page.scrollDepth gte 75 OR page.path eq "/pricing"',
+      "page.scrollDepth gte 75 AND page.scrollDepth lte 90",
       'page.scrollDepth gte 75 AND page.hostname eq "example.com"',
-      'page.scrollDepth gte 75 AND (page.path eq "/a" AND page.path eq "/a")',
       'page.path eq "" AND page.scrollDepth gte 75',
       // A literal asterisk isn't a wildcard.
       'page.path eq "/a*b" AND page.scrollDepth gte 75',

@@ -25,7 +25,6 @@ import { ListFilterIcon, SaveIcon, XIcon } from "lucide-react";
 import { CURRENCY_CODES } from "@/lib/currency";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type { GoalDefinition } from "@/lib/dashboard-api/client/edge";
-import { matchesOnlyCustomEvents } from "@/lib/edge/analytics/contract/goal-config";
 import {
   SCROLL_DEPTH_THRESHOLD_MAX,
   SCROLL_DEPTH_THRESHOLD_MIN,
@@ -39,6 +38,7 @@ import {
   analyticsFilterRegistry,
   filterConditionCount,
   type FilterDocument,
+  matchesOnlyCustomEvents,
   parseFilterDsl,
 } from "@/lib/filter-contract/index";
 import type { AppMessages } from "@/lib/i18n/messages";

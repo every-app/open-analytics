@@ -44,6 +44,7 @@ const ALL_OPERATIONS: readonly QueryOperation[] = [
   "event-field-values",
   "event-records",
   "funnel-analysis",
+  "goal-conversions",
   "goal-summary",
   "goal-timeseries",
   "property-keys",

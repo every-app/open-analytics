@@ -32,14 +32,31 @@ import type { FilterDocument } from "@/lib/filter-contract/index";
 import type { Locale } from "@/lib/i18n/config";
 import { type AppMessages, getMessages } from "@/lib/i18n/messages";
 
-import { goalFilterSummary, goalSummaryQueryKey } from "./goal-card";
+import { goalFilterSummary } from "./goal-card";
 import { GoalTimeseriesChart } from "./goal-timeseries-chart";
+export function goalSummaryQueryKey(
+  siteId: string,
+  goal: Pick<GoalDefinition, "id" | "semanticFingerprint">,
+  window: TimeWindow,
+  filterKey: string,
+) {
+  return [
+    "dashboard",
+    "goal-summary",
+    siteId,
+    goal.id,
+    goal.semanticFingerprint,
+    window.from,
+    window.to,
+    window.timeZone,
+    filterKey,
+  ] as const;
+}
 export function goalTimeseriesQueryKey(
   siteId: string,
   goal: Pick<GoalDefinition, "id" | "semanticFingerprint">,
   window: TimeWindow,
   filterKey: string,
-  scope: string,
 ) {
   return [
     "dashboard",
@@ -52,7 +69,6 @@ export function goalTimeseriesQueryKey(
     window.timeZone,
     window.interval,
     filterKey,
-    scope,
   ] as const;
 }
 function updatedLabel(
@@ -215,7 +231,7 @@ export function GoalDetail({
     : "none";
   const summary = useQuery({
     queryKey: goal
-      ? goalSummaryQueryKey(siteId, goal, window, filterKey, "auto")
+      ? goalSummaryQueryKey(siteId, goal, window, filterKey)
       : [
           "dashboard",
           "goal-summary",
@@ -241,7 +257,6 @@ export function GoalDetail({
             goal,
             comparisonQuery.window,
             comparisonFilterKey,
-            "auto",
           )
         : ["dashboard", "goal-summary-comparison-disabled", siteId, goalId],
     queryFn: ({ signal }) => {
@@ -263,7 +278,7 @@ export function GoalDetail({
   });
   const timeseries = useQuery({
     queryKey: goal
-      ? goalTimeseriesQueryKey(siteId, goal, window, filterKey, "auto")
+      ? goalTimeseriesQueryKey(siteId, goal, window, filterKey)
       : [
           "dashboard",
           "goal-timeseries",
@@ -290,7 +305,6 @@ export function GoalDetail({
             goal,
             comparisonQuery.window,
             comparisonFilterKey,
-            "auto",
           )
         : ["dashboard", "goal-timeseries-comparison-disabled", siteId, goalId],
     queryFn: ({ signal }) => {

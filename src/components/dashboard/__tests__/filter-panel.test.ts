@@ -1,61 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { allowedFields } from "@/components/dashboard/filters/filter-editor/field-catalog";
-import {
-  systemPresetMatchesScope,
-  systemPresetScopeForApply,
-} from "@/components/dashboard/filters/filter-panel";
-import { resolveSuggestionScope } from "@/lib/dashboard/filter-suggestion-scope";
-import { SYSTEM_FILTER_PRESETS } from "@/lib/dashboard/system-filter-presets";
-describe("resolveSuggestionScope", () => {
-  it.each([
-    ["auto", "event", "event"],
-    ["auto", "session", "session"],
-    ["auto", "visitor", "visitor"],
-    ["event", "session", "event"],
-    ["event", "visitor", "event"],
-    ["session", "event", "session"],
-    ["visitor", "event", "visitor"],
-  ] as const)(
-    "uses %s preference with page scope %s as %s",
-    (scopePreference, pageResolvedScope, expected) => {
-      expect(resolveSuggestionScope(scopePreference, pageResolvedScope)).toBe(
-        expected,
-      );
-    },
-  );
 
-  it("leaves Auto unresolved when the page has no concrete scope", () => {
-    expect(resolveSuggestionScope("auto")).toBeUndefined();
-  });
-});
-describe("system preset scope behavior", () => {
-  it("uses a fixed scope when applying a preset", () => {
-    const preset = SYSTEM_FILTER_PRESETS.find(
-      (item) => item.id === "bouncedSessions",
-    )!;
-    expect(systemPresetScopeForApply(preset, "auto")).toBe("session");
-    expect(systemPresetScopeForApply(preset, "visitor")).toBe("session");
-  });
-
-  it("preserves the active scope for preserve presets", () => {
-    const preset = SYSTEM_FILTER_PRESETS.find(
-      (item) => item.id === "directTraffic",
-    )!;
-    expect(systemPresetScopeForApply(preset, "auto")).toBe("auto");
-    expect(systemPresetScopeForApply(preset, "visitor")).toBe("visitor");
-    expect(systemPresetMatchesScope(preset, "visitor")).toBe(true);
-  });
-
-  it("matches fixed presets only after the fixed scope is selected", () => {
-    const preset = SYSTEM_FILTER_PRESETS.find(
-      (item) => item.id === "returningVisitors",
-    )!;
-    expect(systemPresetMatchesScope(preset, "auto")).toBe(false);
-    expect(systemPresetMatchesScope(preset, "session")).toBe(false);
-    expect(systemPresetMatchesScope(preset, "visitor")).toBe(true);
-  });
-});
 describe("registry-driven editor metadata", () => {
   it("keeps fields in the explicit product order", () => {
     expect(allowedFields("private-dashboard").map((field) => field.id)).toEqual(
@@ -71,13 +17,6 @@ describe("registry-driven editor metadata", () => {
         "event.payload",
         "session.entryPath",
         "session.exitPath",
-        "session.durationMs",
-        "session.views",
-        "session.events",
-        "session.bounce",
-        "visitor.sessions",
-        "visitor.views",
-        "visitor.events",
         "referrer.domain",
         "referrer.url",
         "traffic.channel",
@@ -104,24 +43,6 @@ describe("registry-driven editor metadata", () => {
         "geo.isEU",
       ],
     );
-  });
-
-  it("limits observation-only fields to visit and event observations", () => {
-    const fields = allowedFields("private-dashboard", true);
-
-    expect(fields.map((field) => field.id)).toEqual(
-      allowedFields("private-dashboard")
-        .filter(
-          (field) =>
-            field.observationKinds.has("visit") ||
-            field.observationKinds.has("event"),
-        )
-        .map((field) => field.id),
-    );
-    expect(fields.map((field) => field.id)).not.toContain("session.views");
-    expect(fields.map((field) => field.id)).not.toContain("visitor.sessions");
-    expect(fields.map((field) => field.id)).toContain("event.name");
-    expect(fields.map((field) => field.id)).toContain("page.path");
   });
 
   it("exposes number fields with registry group and no-suggestion metadata", () => {

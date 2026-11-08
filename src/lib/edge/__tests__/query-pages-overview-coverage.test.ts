@@ -7,7 +7,6 @@ import {
   createQueryTime,
   EMPTY_FILTER_DOCUMENT,
   type FilterDocument,
-  prepareScopedQuery,
   siteQueryContext,
 } from "@/lib/edge/analytics/contract";
 import { handleFilterValuesContract } from "@/lib/edge/analytics/interfaces/dashboard/protocol/filter-values";
@@ -32,14 +31,7 @@ import {
   queryOverviewFromD1,
   queryTrendAggregate,
 } from "@/lib/edge/analytics/providers/d1/internal/overview";
-import {
-  decodePagesCursor,
-  queryPageCardMetricsFromD1,
-  queryPagesPageFromD1,
-  queryPagesWithTabsFromD1,
-  queryPageTabsAggregate,
-  queryTopPagesFromD1,
-} from "@/lib/edge/analytics/providers/d1/internal/pages";
+import { queryPageCardMetricsFromD1 } from "@/lib/edge/analytics/providers/d1/internal/pages";
 import { queryPagesDashboard } from "@/lib/edge/analytics/providers/d1/internal/pages-dashboard";
 import {
   decodeReferrersCursor,
@@ -134,394 +126,6 @@ function url(path: string, params: Record<string, string | number | boolean>) {
   return parsed;
 }
 describe("edge pages D1 queries", () => {
-  it("queries top pages with details, filters, numeric mapping, and limit binding", async () => {
-    const { env, calls } = createD1Env([
-      [
-        {
-          pathname: "/pricing",
-          queryValue: "plan=pro",
-          hashValue: "faq",
-          views: "12",
-          sessions: "5",
-        },
-      ],
-    ]);
-
-    await expect(
-      queryTopPagesFromD1(
-        env,
-        siteId,
-        window,
-        15,
-        true,
-        filterFixture({
-          country: "US",
-          hostname: "Example.COM",
-          path: "/pricing",
-        }),
-      ),
-    ).resolves.toEqual([
-      {
-        pathname: "/pricing",
-        query: "plan=pro",
-        hash: "faq",
-        views: 12,
-        sessions: 5,
-      },
-    ]);
-
-    expect(calls).toHaveLength(1);
-    expect(calls[0].sql).toContain("query_string AS queryValue");
-    expect(calls[0].sql).toContain("hash_fragment AS hashValue");
-    expect(calls[0].sql).toContain("GROUP BY pathname, queryValue, hashValue");
-    expect(calls[0].bindings).toEqual([
-      ...visitBindings(),
-      "us",
-      "example.com",
-      "/pricing",
-      window.startMs,
-      window.endExclusiveMs,
-      "us",
-      "example.com",
-      "/pricing",
-      15,
-    ]);
-  });
-
-  it("keeps the combined page and tabs reader read-only for empty and scoped pages", async () => {
-    const empty = createD1Env([[]]);
-    await expect(
-      queryPagesWithTabsFromD1(
-        empty.env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        5,
-        false,
-      ),
-    ).resolves.toEqual({
-      pages: {
-        items: [],
-        pagination: {
-          limit: 5,
-          returned: 0,
-          hasMore: false,
-          nextCursor: null,
-        },
-      },
-      tabs: { path: [], title: [], hostname: [], entry: [], exit: [] },
-    });
-    expect(empty.calls).toHaveLength(1);
-    expect(empty.calls[0]?.sql).toContain("filtered_visits AS MATERIALIZED");
-    expect(empty.calls[0]?.sql).toContain("'' AS queryValue");
-    expect(empty.calls[0]?.sql).toContain("'' AS hashValue");
-
-    const filtered = createD1Env([[]]);
-    await queryPagesWithTabsFromD1(
-      filtered.env,
-      siteId,
-      window,
-      filterFixture({ browser: "Chrome" }),
-      5,
-      true,
-    );
-    expect(filtered.calls[0]?.sql).not.toContain("matched_sessions");
-
-    const prepared = prepareScopedQuery("pages", {
-      context: siteQueryContext(siteId, "private-dashboard"),
-      time: createQueryTime(
-        window.startMs,
-        window.endExclusiveMs,
-        "UTC",
-        window.nowMs,
-      ),
-      filters: filterFixture({ path: "/docs" }),
-      scopePreference: "visitor",
-    } as never);
-    const scoped = createD1Env([
-      [
-        {
-          rowType: "page",
-          pathname: "/docs",
-          queryValue: "",
-          hashValue: "",
-          views: 2,
-          sessions: 1,
-        },
-        {
-          rowType: "page",
-          pathname: "/other",
-          queryValue: "",
-          hashValue: "",
-          views: 1,
-          sessions: 1,
-        },
-      ],
-    ]);
-    await expect(
-      queryPagesWithTabsFromD1(
-        scoped.env,
-        siteId,
-        window,
-        prepared.filters!,
-        1,
-        false,
-        {
-          views: 3,
-          sessions: 2,
-          pathname: "/before",
-          query: "",
-          hash: "",
-        },
-      ),
-    ).resolves.toMatchObject({
-      pages: {
-        items: [{ pathname: "/docs" }],
-        pagination: { limit: 1, returned: 1, hasMore: true },
-      },
-    });
-    expect(scoped.calls).toHaveLength(1);
-    expect(scoped.calls[0]?.sql).toContain("scope_raw_visits AS MATERIALIZED");
-    expect(scoped.calls[0]?.bindings.length).toBeGreaterThan(3);
-  });
-
-  it("keeps combined pages and tabs results identical to the legacy readers", async () => {
-    const { env, database, close } = createScopedOverviewSqliteEnv();
-    const insert = database.prepare(`
-      INSERT INTO visits (
-        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
-        last_activity_at, pathname, hostname, title, query_string, hash_fragment
-      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    try {
-      insert.run(
-        "pages-session-1-first",
-        siteId,
-        "visitor-1",
-        "session-1",
-        baseMs,
-        baseMs,
-        "/",
-        "example.test",
-        "Home",
-        "",
-        "",
-      );
-      insert.run(
-        "pages-session-1-last",
-        siteId,
-        "visitor-1",
-        "session-1",
-        baseMs + 1,
-        baseMs + 1,
-        "/pricing",
-        "example.test",
-        "Pricing",
-        "",
-        "",
-      );
-      insert.run(
-        "pages-session-2",
-        siteId,
-        "visitor-2",
-        "session-2",
-        baseMs + 2,
-        baseMs + 2,
-        "/pricing",
-        "example.test",
-        "Pricing",
-        "",
-        "",
-      );
-      insert.run(
-        "pages-outside-window",
-        siteId,
-        "visitor-outside",
-        "session-outside",
-        window.endExclusiveMs,
-        window.endExclusiveMs,
-        "/outside",
-        "outside.test",
-        "Outside",
-        "",
-        "",
-      );
-
-      const combined = await queryPagesWithTabsFromD1(
-        env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        10,
-        true,
-      );
-      const legacyPages = await queryPagesPageFromD1(
-        env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        10,
-        true,
-      );
-      const legacyTabs = await queryPageTabsAggregate(
-        env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        10,
-      );
-
-      expect(combined.pages).toEqual(legacyPages);
-      expect(combined.tabs).toEqual(legacyTabs);
-      expect(combined.pages.items).toEqual([
-        { pathname: "/pricing", query: "", hash: "", views: 2, sessions: 2 },
-        { pathname: "/", query: "", hash: "", views: 1, sessions: 1 },
-      ]);
-      expect(combined.tabs).toMatchObject({
-        path: [
-          { value: "/pricing", views: 2, sessions: 2, visitors: 2 },
-          { value: "/", views: 1, sessions: 1, visitors: 1 },
-        ],
-        entry: [
-          { value: "/", views: 1, sessions: 1, visitors: 1 },
-          { value: "/pricing", views: 1, sessions: 1, visitors: 1 },
-        ],
-        exit: [{ value: "/pricing", views: 2, sessions: 2, visitors: 2 }],
-      });
-    } finally {
-      close();
-    }
-  });
-
-  it("omits query and hash details when details are disabled", async () => {
-    const { env, calls } = createD1Env([[{ pathname: "/docs", views: 3 }]]);
-
-    await expect(
-      queryTopPagesFromD1(env, siteId, window, 5, false, EMPTY_FILTER_DOCUMENT),
-    ).resolves.toEqual([
-      { pathname: "/docs", query: "", hash: "", views: 3, sessions: 0 },
-    ]);
-
-    expect(calls[0].sql).toContain("'' AS queryValue");
-    expect(calls[0].sql).toContain("'' AS hashValue");
-    expect(calls[0].bindings).toEqual([...visitBindings(), 5]);
-  });
-
-  it("keeps the combined path tab normalization identical to the legacy reader", async () => {
-    const { env, database, close } = createScopedOverviewSqliteEnv();
-    const insert = database.prepare(`
-      INSERT INTO visits (
-        site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
-        last_activity_at, pathname, hostname, title, query_string, hash_fragment
-      ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    try {
-      insert.run(
-        "pages-trimmed-path",
-        siteId,
-        "visitor-trimmed",
-        "session-trimmed",
-        baseMs,
-        baseMs,
-        " /trimmed ",
-        "example.test",
-        "Trimmed",
-        "",
-        "",
-      );
-
-      const combined = await queryPagesWithTabsFromD1(
-        env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        10,
-        true,
-      );
-      const legacy = await queryPageTabsAggregate(
-        env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        10,
-      );
-
-      expect(combined.tabs).toEqual(legacy);
-      expect(combined.tabs.path).toEqual([
-        { value: "/trimmed", views: 1, sessions: 1, visitors: 1 },
-      ]);
-    } finally {
-      close();
-    }
-  });
-
-  it("normalizes sparse rows from the combined pages and tabs reader", async () => {
-    const { env } = createD1Env([
-      [
-        {
-          rowType: "page",
-          pathname: null,
-          queryValue: undefined,
-          hashValue: null,
-          views: undefined,
-          sessions: null,
-        },
-        {
-          rowType: "tab",
-          cardType: null,
-          value: null,
-          views: null,
-          sessions: undefined,
-          visitors: null,
-        },
-      ],
-    ]);
-
-    await expect(
-      queryPagesWithTabsFromD1(
-        env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        5,
-        false,
-      ),
-    ).resolves.toEqual({
-      pages: {
-        items: [{ pathname: "", query: "", hash: "", views: 0, sessions: 0 }],
-        pagination: {
-          limit: 5,
-          returned: 1,
-          hasMore: false,
-          nextCursor: null,
-        },
-      },
-      tabs: { path: [], title: [], hostname: [], entry: [], exit: [] },
-    });
-  });
-
-  it("normalizes sparse top page rows", async () => {
-    const { env } = createD1Env([
-      [
-        {
-          pathname: null,
-          queryValue: undefined,
-          hashValue: null,
-          views: undefined,
-          sessions: null,
-        },
-      ],
-    ]);
-
-    await expect(
-      queryTopPagesFromD1(env, siteId, window, 1, true, EMPTY_FILTER_DOCUMENT),
-    ).resolves.toEqual([
-      { pathname: "", query: "", hash: "", views: 0, sessions: 0 },
-    ]);
-  });
-
   it("dedupes page card path filters, applies pagination, and maps aggregate rows", async () => {
     const { env, calls } = createD1Env([
       [
@@ -563,17 +167,15 @@ describe("edge pages D1 queries", () => {
     ]);
 
     expect(calls[0].sql).toContain("path_bounce_rollup AS");
-    expect(calls[0].sql).toContain("TRIM(COALESCE(pathname, '')) IN (?, ?)");
+    expect(calls[0].sql).toContain(
+      "TRIM(COALESCE(pathname, '')) IN (SELECT value FROM json_each(?))",
+    );
     expect(calls[0].sql).toContain("LIMIT ?");
     expect(calls[0].sql).not.toContain("OFFSET");
     expect(calls[0].bindings).toEqual([
       ...visitBindings(),
       "Chrome",
-      window.startMs,
-      window.endExclusiveMs,
-      "Chrome",
-      "/pricing",
-      "/docs",
+      JSON.stringify(["/pricing", "/docs"]),
       10,
     ]);
   });
@@ -726,12 +328,12 @@ describe("edge pages D1 queries", () => {
       ]);
 
       expect(calls).toHaveLength(1);
-      expect(calls[0]?.sql).toContain("filtered_visits AS MATERIALIZED");
+      expect(calls[0]?.sql).toContain("page_visits AS MATERIALIZED");
       const plan = database
         .prepare(`EXPLAIN QUERY PLAN ${calls[0]?.sql ?? "SELECT 1"}`)
         .all(...(calls[0]?.bindings ?? [])) as Array<{ detail: string }>;
       expect(
-        plan.filter((row) => row.detail.includes("SEARCH visits USING INDEX")),
+        plan.filter((row) => row.detail.includes("SEARCH v USING INDEX")),
       ).toHaveLength(1);
       expect(
         plan.some((row) =>
@@ -743,168 +345,37 @@ describe("edge pages D1 queries", () => {
     }
   });
 
-  it("uses prepared scoped datasets for top pages and dashboard comparisons", async () => {
-    const prepared = prepareScopedQuery("pages", {
-      context: siteQueryContext("site-pages", "private-dashboard"),
-      time: createQueryTime(
-        window.startMs,
-        window.endExclusiveMs,
-        "UTC",
-        window.nowMs,
-      ),
-      filters: filterFixture({ path: "/pricing" }),
-      scopePreference: "visitor",
-    } as never);
-
-    const topPages = createD1Env([[]]);
-    await queryTopPagesFromD1(
-      topPages.env,
-      siteId,
-      window,
-      3,
-      false,
-      prepared.filters!,
-    );
-    expect(topPages.calls[0]?.sql).toContain("scope_final_visits");
-
-    const dashboard = createD1Env([
-      [
-        {
-          pathname: "/pricing",
-          current_views: 4,
-          current_sessions: 2,
-          current_visitors: 2,
-          current_bounces: 1,
-          current_total_duration: 2000,
-          current_duration_views: 0,
-          reference_views: 2,
-          reference_sessions: 1,
-          reference_visitors: 1,
-          reference_bounces: 1,
-          reference_total_duration: 1000,
-          reference_duration_views: 0,
-        },
-      ],
-      [],
-    ]);
+  it("filters each side of a dashboard comparison with its own scan", async () => {
+    const dashboard = createD1Env([[], []]);
+    const time = (startMs: number, endExclusiveMs: number) =>
+      createQueryTime(startMs, endExclusiveMs, "UTC", window.nowMs);
     await queryPagesDashboard(dashboard.env, siteId, {
       window,
-      filters: prepared.filters!,
+      filters: filterFixture({ path: "/pricing" }),
       interval: "day",
       page: { limit: 1, cursor: null },
       comparison: {
         current: {
-          time: createQueryTime(
-            window.startMs,
-            window.endExclusiveMs,
-            "UTC",
-            window.nowMs,
-          ),
-          filters: prepared.filters!,
+          time: time(window.startMs, window.endExclusiveMs),
+          filters: filterFixture({ path: "/pricing" }),
         },
         reference: {
-          time: createQueryTime(
-            window.startMs - 2 * 60 * 60 * 1000,
-            window.startMs,
-            "UTC",
-            window.nowMs,
-          ),
-          filters: prepared.filters!,
+          time: time(window.startMs - 2 * 60 * 60 * 1000, window.startMs),
+          filters: filterFixture({ path: "/docs" }),
         },
         metric: "views",
         sortBy: "current",
         direction: "desc",
       },
     });
-    expect(dashboard.calls[0]?.sql).toContain("current_scope_final_visits");
+    expect(dashboard.calls[0]?.sql).toContain("current_filtered_visits AS");
+    expect(dashboard.calls[0]?.sql).toContain("reference_filtered_visits AS");
+    expect(dashboard.calls[0]?.bindings).toEqual(
+      expect.arrayContaining(["/pricing", "/docs"]),
+    );
   });
 });
 describe("edge paginated page and referrer readers", () => {
-  it("returns a signed page cursor and accepts it on the next request", async () => {
-    const filters = EMPTY_FILTER_DOCUMENT;
-    const first = createD1Env([
-      [
-        { pathname: "/", queryValue: "", hashValue: "", views: 8, sessions: 5 },
-        {
-          pathname: "/docs",
-          queryValue: "lang=en",
-          hashValue: "intro",
-          views: 6,
-          sessions: 4,
-        },
-        {
-          pathname: "/pricing",
-          queryValue: "",
-          hashValue: "",
-          views: 4,
-          sessions: 3,
-        },
-      ],
-    ]);
-    const firstPage = await queryPagesPageFromD1(
-      first.env,
-      siteId,
-      window,
-      filters,
-      2,
-      true,
-    );
-
-    expect(firstPage.items).toHaveLength(2);
-    expect(firstPage.pagination).toMatchObject({
-      limit: 2,
-      returned: 2,
-      hasMore: true,
-      nextCursor: expect.any(String),
-    });
-    expect(first.calls[0].bindings.at(-1)).toBe(3);
-
-    const decoded = await decodePagesCursor(
-      first.env,
-      siteId,
-      window,
-      filters,
-      true,
-      firstPage.pagination.nextCursor,
-    );
-    expect(decoded).toEqual({
-      views: 6,
-      sessions: 4,
-      pathname: "/docs",
-      query: "lang=en",
-      hash: "intro",
-    });
-
-    const second = createD1Env([
-      [
-        {
-          pathname: "/pricing",
-          queryValue: "",
-          hashValue: "",
-          views: 4,
-          sessions: 3,
-        },
-      ],
-    ]);
-    await expect(
-      queryPagesPageFromD1(
-        second.env,
-        siteId,
-        window,
-        filters,
-        2,
-        true,
-        decoded,
-        "public-share",
-      ),
-    ).resolves.toMatchObject({
-      items: [{ pathname: "/pricing", views: 4 }],
-      pagination: { hasMore: false, nextCursor: null },
-    });
-    expect(second.calls[0].sql).toContain("query_string AS queryValue");
-    expect(second.calls[0].bindings).toContain(6);
-  });
-
   it("paginates referrers with search, alternate sorting, and full URLs", async () => {
     const filters = EMPTY_FILTER_DOCUMENT;
     const first = createD1Env([
@@ -999,19 +470,6 @@ describe("edge paginated page and referrer readers", () => {
   });
 
   it("keeps the legacy aggregate wrappers and enriches non-empty dashboard pages", async () => {
-    await expect(
-      queryPageTabsAggregate(
-        createD1Env([
-          [{ cardType: "path", value: "/docs", views: 4, sessions: 2 }],
-        ]).env,
-        siteId,
-        window,
-        EMPTY_FILTER_DOCUMENT,
-        10,
-      ),
-    ).resolves.toMatchObject({
-      path: [{ value: "/docs", views: 4, sessions: 2 }],
-    });
     await expect(
       queryTopReferrersFromD1(
         createD1Env([[{ referrer: "news.example", views: 3, sessions: 2 }]])
@@ -1370,90 +828,11 @@ describe("edge paginated page and referrer readers", () => {
   });
 });
 describe("edge pages handlers", () => {
-  it("maps pages and all tabs from D1 when includeTabs is enabled", async () => {
+  it("maps the filtered pages report from one plain scan", async () => {
     const { env, calls } = createD1Env([
       [
-        {
-          rowType: "page",
-          pathname: "/home",
-          queryValue: "x=1",
-          hashValue: "",
-          views: 7,
-          sessions: 2,
-          rowRank: 1,
-        },
-        {
-          rowType: "tab",
-          cardType: "path",
-          value: "/home",
-          views: 2,
-          sessions: 2,
-          visitors: 2,
-          rowRank: 1,
-        },
-        {
-          rowType: "tab",
-          cardType: "path",
-          value: "/pricing",
-          views: 1,
-          sessions: 1,
-          visitors: 1,
-          rowRank: 2,
-        },
-        {
-          rowType: "tab",
-          cardType: "title",
-          value: "Home",
-          views: 2,
-          sessions: 2,
-          visitors: 2,
-          rowRank: 1,
-        },
-        {
-          rowType: "tab",
-          cardType: "title",
-          value: "Pricing",
-          views: 1,
-          sessions: 1,
-          visitors: 1,
-          rowRank: 2,
-        },
-        {
-          rowType: "tab",
-          cardType: "hostname",
-          value: "example.com",
-          views: 3,
-          sessions: 2,
-          visitors: 2,
-          rowRank: 1,
-        },
-        {
-          rowType: "tab",
-          cardType: "entry",
-          value: "/home",
-          views: 2,
-          sessions: 2,
-          visitors: 2,
-          rowRank: 1,
-        },
-        {
-          rowType: "tab",
-          cardType: "exit",
-          value: "/home",
-          views: 1,
-          sessions: 1,
-          visitors: 1,
-          rowRank: 1,
-        },
-        {
-          rowType: "tab",
-          cardType: "exit",
-          value: "/pricing",
-          views: 1,
-          sessions: 1,
-          visitors: 1,
-          rowRank: 2,
-        },
+        { pathname: "/home", views: 7, sessions: 2 },
+        { pathname: "/pricing", views: null, sessions: undefined },
       ],
     ]);
 
@@ -1463,55 +842,31 @@ describe("edge pages handlers", () => {
       url("/pages", {
         from: window.startMs,
         to: window.endExclusiveMs,
-        details: true,
         "filter[geo.country]": "US",
         limit: 5,
       }),
-      true,
+      undefined,
+      siteQueryContext(siteId, "public-share"),
     );
 
     await expect(response.json()).resolves.toEqual({
       ok: true,
       data: {
         items: [
-          {
-            pathname: "/home",
-            query: "x=1",
-            hash: "",
-            views: 7,
-            sessions: 2,
-          },
+          { pathname: "/home", views: 7, sessions: 2 },
+          { pathname: "/pricing", views: 0, sessions: 0 },
         ],
         pagination: {
           limit: 5,
-          returned: 1,
+          returned: 2,
           hasMore: false,
           nextCursor: null,
         },
       },
-      tabs: {
-        path: [
-          { label: "/home", views: 2, sessions: 2, visitors: 2 },
-          { label: "/pricing", views: 1, sessions: 1, visitors: 1 },
-        ],
-        title: [
-          { label: "Home", views: 2, sessions: 2, visitors: 2 },
-          { label: "Pricing", views: 1, sessions: 1, visitors: 1 },
-        ],
-        hostname: [
-          { label: "example.com", views: 3, sessions: 2, visitors: 2 },
-        ],
-        entry: [{ label: "/home", views: 2, sessions: 2, visitors: 2 }],
-        exit: [
-          { label: "/home", views: 1, sessions: 1, visitors: 1 },
-          { label: "/pricing", views: 1, sessions: 1, visitors: 1 },
-        ],
-      },
     });
     expect(calls).toHaveLength(1);
-    expect(calls[0].bindings).toContain("us");
-    expect(calls[0].bindings.slice(-2)).toEqual([6, 5]);
-    expect(calls[0].sql).toContain("ranked_cards AS");
+    expect(calls[0].sql).toContain("FROM filtered_visits");
+    expect(calls[0].bindings).toEqual([...visitBindings(), "us", 6]);
   });
 
   it("maps referrer handler rows with full URL mode and filters", async () => {
@@ -1591,14 +946,7 @@ describe("edge pages handlers", () => {
       },
     ]);
     expect(calls[0].sql).toContain("COALESCE(browser, '') AS value");
-    expect(calls[0].bindings).toEqual([
-      ...visitBindings(),
-      "desktop",
-      window.startMs,
-      window.endExclusiveMs,
-      "desktop",
-      4,
-    ]);
+    expect(calls[0].bindings).toEqual([...visitBindings(), "desktop", 4]);
   });
 
   it("returns an empty dashboard page without loading previous, titles, or trend rows", async () => {
@@ -1630,26 +978,6 @@ describe("edge pages handlers", () => {
     });
     expect(calls).toHaveLength(1);
     expect(calls[0].bindings.at(-1)).toBe(5);
-  });
-
-  it("compiles URL visitor scope before invoking the page dashboard provider", async () => {
-    const { env, calls } = createD1Env([[]]);
-
-    const response = await handlePagesDashboard(
-      env,
-      siteId,
-      url("/pages/dashboard", {
-        from: window.startMs,
-        to: window.endExclusiveMs,
-        scope: "visitor",
-        "filter[page.path]": "/pricing",
-      }),
-    );
-
-    expect(response.status).toBe(200);
-    expect(calls).toHaveLength(1);
-    expect(calls[0].sql).toContain("scope_final_visits");
-    expect(calls[0].bindings.length).toBeGreaterThan(4);
   });
 
   it("parses dashboard comparison controls and custom reference filters", async () => {
@@ -1889,9 +1217,14 @@ describe("edge pages handlers", () => {
     });
     expect(calls).toHaveLength(3);
     expect(calls[0].bindings.slice(-2)).toEqual([window.endExclusiveMs, 3]);
-    expect(calls[1].bindings.slice(-2)).toEqual(["/pricing", "/docs"]);
-    expect(calls[2].bindings.slice(-3)).toEqual(["/pricing", "/docs", 3]);
-    expect(calls[2].sql).toContain("filtered_visits AS MATERIALIZED");
+    expect(calls[1].bindings.at(-1)).toBe(
+      JSON.stringify(["/pricing", "/docs"]),
+    );
+    expect(calls[2].bindings.slice(-2)).toEqual([
+      JSON.stringify(["/pricing", "/docs"]),
+      3,
+    ]);
+    expect(calls[2].sql).toContain("page_visits AS MATERIALIZED");
   });
 });
 describe("edge overview D1 queries and handlers", () => {
@@ -1914,13 +1247,7 @@ describe("edge overview D1 queries and handlers", () => {
     ).resolves.toBeNull();
     expect(calls).toHaveLength(3);
     expect(calls[0]?.sql).toContain("MAX(last_activity_at)");
-    expect(calls[0]?.bindings).toEqual([
-      ...visitBindings(),
-      "us",
-      window.startMs,
-      window.endExclusiveMs,
-      "us",
-    ]);
+    expect(calls[0]?.bindings).toEqual([...visitBindings(), "us"]);
   });
 
   it("maps overview aggregate fallback values and applies filters", async () => {
@@ -1945,19 +1272,11 @@ describe("edge overview D1 queries and handlers", () => {
       durationViews: 0,
     });
 
-    expect(calls[0].sql).toContain("session_rollup AS");
-    expect(calls[0].bindings).toEqual([
-      ...visitBindings(),
-      "Chrome",
-      "us",
-      window.startMs,
-      window.endExclusiveMs,
-      "Chrome",
-      "us",
-    ]);
+    expect(calls[0].sql).toContain("page_view_groups AS");
+    expect(calls[0].bindings).toEqual([...visitBindings(), "Chrome", "us"]);
   });
 
-  it("materializes filtered overview visits once while preserving aggregates", async () => {
+  it("reads a filtered overview from one scan of the matching page views", async () => {
     const database = createAnalyticsDatabase();
     const calls: QueryCall[] = [];
     const env = {
@@ -2040,23 +1359,24 @@ describe("edge overview D1 queries and handlers", () => {
           filterFixture({ path: "/docs" }),
         ),
       ).resolves.toEqual({
-        views: 2,
+        // Only the /docs page view matches, not the rest of its session.
+        views: 1,
         sessions: 1,
         visitors: 1,
-        bounces: 0,
-        totalDuration: 100,
-        durationViews: 1,
+        bounces: 1,
+        totalDuration: 0,
+        durationViews: 0,
         // A page filter reads the scroll depth; no page view reported one.
         scrollDepth: null,
       });
 
       expect(calls).toHaveLength(1);
-      expect(calls[0]?.sql).toContain("filtered_visits AS MATERIALIZED");
+      expect(calls[0]?.sql).toContain("page_view_groups AS MATERIALIZED");
       const plan = database
         .prepare(`EXPLAIN QUERY PLAN ${calls[0]?.sql ?? "SELECT 1"}`)
         .all(...(calls[0]?.bindings ?? [])) as Array<{ detail: string }>;
       expect(
-        plan.filter((row) => row.detail.includes("SEARCH visits USING INDEX")),
+        plan.filter((row) => row.detail.includes("SEARCH v USING INDEX")),
       ).toHaveLength(1);
       expect(
         plan.some((row) =>
@@ -2065,101 +1385,6 @@ describe("edge overview D1 queries and handlers", () => {
       ).toBe(true);
     } finally {
       database.close();
-    }
-  });
-
-  it("counts event-only Session entities in scoped overview and trend", async () => {
-    const sqlite = createScopedOverviewSqliteEnv();
-    const eventAt = baseMs + 15 * 60 * 1000;
-    try {
-      sqlite.database
-        .prepare(
-          `
-          INSERT INTO visits (
-            site_pk, visit_id, site_id, visitor_id, session_id, status, started_at,
-            last_activity_at, pathname, hostname
-          ) VALUES (1, ?, ?, ?, ?, 'closed', ?, ?, ?, 'example.test')
-        `,
-        )
-        .run(
-          "event-only-visit",
-          siteId,
-          "event-only-visitor",
-          "event-only-session",
-          baseMs - 60 * 60 * 1000,
-          baseMs - 60 * 60 * 1000,
-          "/event-only",
-        );
-      sqlite.database
-        .prepare(
-          "INSERT INTO custom_event_names (site_pk, id, site_id, name, last_seen_at) VALUES (1, ?, ?, ?, ?)",
-        )
-        .run(1, siteId, "signup", eventAt);
-      sqlite.database
-        .prepare(
-          `
-          INSERT INTO custom_events (
-            site_pk, event_pk, event_id, site_id, visit_id, event_name_id, occurred_at,
-            received_at, sequence, node_count, value_count
-          ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
-        )
-        .run(
-          1,
-          "event-only-event",
-          siteId,
-          "event-only-visit",
-          1,
-          eventAt,
-          eventAt,
-          0,
-          0,
-          0,
-        );
-
-      const prepared = prepareScopedQuery("overview", {
-        context: siteQueryContext(siteId, "private-dashboard"),
-        time: createQueryTime(
-          window.startMs,
-          window.endExclusiveMs,
-          window.timeZone,
-          window.nowMs,
-        ),
-        filters: {
-          version: 1,
-          root: {
-            kind: "condition",
-            target: { kind: "field", field: "event.name" as never },
-            operator: "eq",
-            value: "signup",
-          },
-        },
-        scopePreference: "session",
-      } as never);
-      const filters = prepared.filters!;
-
-      await expect(
-        queryOverviewFromD1(sqlite.env, siteId, window, filters),
-      ).resolves.toMatchObject({
-        views: 0,
-        sessions: 1,
-        visitors: 1,
-      });
-      await expect(
-        queryTrendAggregate(sqlite.env, siteId, window, "hour", filters).then(
-          ({ value }) => value,
-        ),
-      ).resolves.toEqual([
-        expect.objectContaining({
-          bucket: 0,
-          views: 0,
-          sessions: 1,
-          visitors: 1,
-          bounces: 0,
-        }),
-      ]);
-    } finally {
-      sqlite.close();
     }
   });
 
@@ -2254,7 +1479,7 @@ describe("edge overview D1 queries and handlers", () => {
         .prepare(`EXPLAIN QUERY PLAN ${calls[0]?.sql ?? "SELECT 1"}`)
         .all(...(calls[0]?.bindings ?? [])) as Array<{ detail: string }>;
       expect(plan.length).toBeGreaterThan(0);
-      expect(calls[0]?.sql).toContain("event_filter_source");
+      expect(calls[0]?.sql).toContain("boundary_rank");
     } finally {
       database.close();
     }
@@ -2315,21 +1540,17 @@ describe("edge overview D1 queries and handlers", () => {
       },
     ]);
 
-    expect(calls[0].sql).toContain("visit_bucket_rollup AS");
-    expect(calls[0].sql).toContain("session_bucket_rollup AS");
+    expect(calls[0].sql).toContain("visit_buckets AS");
+    expect(calls[0].sql).toContain("session_buckets AS");
     expect(calls[0].sql).toContain("CASE WHEN started_at >=");
     expect(calls[0].bindings).toEqual([
       ...visitBindings(),
       "mobile",
       "ref.example",
-      window.startMs,
-      window.endExclusiveMs,
-      "mobile",
-      "ref.example",
     ]);
   });
 
-  it("materializes filtered trend visits once while preserving bucket metrics", async () => {
+  it("reads a filtered trend from one scan of the matching page views", async () => {
     const database = createAnalyticsDatabase();
     const calls: QueryCall[] = [];
     const env = {
@@ -2410,25 +1631,26 @@ describe("edge overview D1 queries and handlers", () => {
         ).then(({ value }) => value),
       ).resolves.toEqual([
         {
+          // Only the /docs page view matches, not the rest of its session.
           bucket: 1,
           timestampMs: baseMs + 60 * 60 * 1000,
-          views: 2,
+          views: 1,
           visitors: 1,
           sessions: 1,
-          bounces: 0,
-          totalDuration: 500,
-          durationViews: 2,
+          bounces: 1,
+          totalDuration: 200,
+          durationViews: 1,
           scrollDepth: null,
         },
       ]);
 
       expect(calls).toHaveLength(1);
-      expect(calls[0]?.sql).toContain("filtered_visits AS MATERIALIZED");
+      expect(calls[0]?.sql).toContain("page_view_groups AS MATERIALIZED");
       const plan = database
         .prepare(`EXPLAIN QUERY PLAN ${calls[0]?.sql ?? "SELECT 1"}`)
         .all(...(calls[0]?.bindings ?? [])) as Array<{ detail: string }>;
       expect(
-        plan.filter((row) => row.detail.includes("SEARCH visits USING INDEX")),
+        plan.filter((row) => row.detail.includes("SEARCH v USING INDEX")),
       ).toHaveLength(1);
       expect(
         plan.some((row) =>

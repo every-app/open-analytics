@@ -43,7 +43,7 @@ import {
   setDashboardFilterValue,
 } from "@/lib/dashboard/filter-state";
 import { decodeUrlDisplayValue } from "@/lib/dashboard/url-display";
-import type { FilterDocument, FilterScope } from "@/lib/filter-contract/index";
+import type { FilterDocument } from "@/lib/filter-contract/index";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
@@ -97,7 +97,6 @@ interface OverviewReportCardsProps {
   filters: FilterDocument;
   /** The cards follow the page's filters, and some are set. */
   filtered: boolean;
-  resolvedScope?: FilterScope;
   /** Rows to show instead of fetching them: Realtime's live visits. */
   localData?: LocalCardData;
 }
@@ -123,10 +122,7 @@ const DEVICE_FILTER: Record<DeviceTab, DashboardFilterControlKey> = {
 };
 
 /** The list request for one of the remote reports. */
-function listOptions(
-  request: ReportRowsRequest,
-  resolvedScope?: FilterScope,
-): DashboardListRequestOptions & { resolvedScope?: FilterScope } {
+function listOptions(request: ReportRowsRequest): DashboardListRequestOptions {
   const key = request.sort.key;
   return {
     limit: request.limit,
@@ -141,7 +137,6 @@ function listOptions(
         ? key
         : undefined,
     signal: request.signal,
-    resolvedScope,
   };
 }
 
@@ -286,7 +281,6 @@ export function OverviewReportCards({
   siteDomain,
   filters,
   filtered,
-  resolvedScope,
   localData,
 }: OverviewReportCardsProps) {
   const { window } = useDashboardQuery();
@@ -302,7 +296,6 @@ export function OverviewReportCards({
     window.to,
     window.timeZone,
     filtersKey,
-    resolvedScope ?? "auto",
     comparison
       ? `${comparison.mode}:${comparison.window.from}:${comparison.window.to}:${filterQueryKey(comparison.filters)}`
       : "none",
@@ -345,7 +338,7 @@ export function OverviewReportCards({
             window,
             "domain",
             filters,
-            listOptions(request, resolvedScope),
+            listOptions(request),
           );
           return page(
             buildSourceRows(result.items, messages.overview.direct),
@@ -382,7 +375,7 @@ export function OverviewReportCards({
           window,
           "channel",
           filters,
-          listOptions(request, resolvedScope),
+          listOptions(request),
         );
         return page(
           buildChannelRows(result.items, channelLabels),
@@ -430,7 +423,6 @@ export function OverviewReportCards({
     labels,
     localData,
     messages,
-    resolvedScope,
     siteId,
     utmParam,
     window,
@@ -457,7 +449,7 @@ export function OverviewReportCards({
             window,
             value,
             filters,
-            listOptions(request, resolvedScope),
+            listOptions(request),
           );
           return page(buildPageRows(value, result.items), result.pagination);
         },
@@ -515,7 +507,6 @@ export function OverviewReportCards({
     localData,
     locale,
     messages,
-    resolvedScope,
     siteDomain,
     siteId,
     window,
@@ -542,7 +533,7 @@ export function OverviewReportCards({
             window,
             value,
             filters,
-            listOptions(request, resolvedScope),
+            listOptions(request),
           );
           return page(
             buildLocationRows(value, result.items, locale, messages),
@@ -571,7 +562,6 @@ export function OverviewReportCards({
     localData,
     locale,
     messages,
-    resolvedScope,
     siteId,
     window,
   ]);
@@ -597,7 +587,7 @@ export function OverviewReportCards({
             window,
             value,
             filters,
-            listOptions(request, resolvedScope),
+            listOptions(request),
           );
           return page(
             buildDeviceRows(value, result.items, messages),
@@ -627,16 +617,7 @@ export function OverviewReportCards({
       ),
       tab("deviceType", labels.tabs.devices, labels.columns.device),
     ];
-  }, [
-    countColumns,
-    filters,
-    labels,
-    localData,
-    messages,
-    resolvedScope,
-    siteId,
-    window,
-  ]);
+  }, [countColumns, filters, labels, localData, messages, siteId, window]);
 
   const selectedCountry = extractGeoCountryCodeFromFilterValue(
     dashboardFilterValue(filters, "geo") ?? null,
@@ -654,7 +635,6 @@ export function OverviewReportCards({
               siteId={siteId}
               window={window}
               filters={filters}
-              resolvedScope={resolvedScope}
               selectedCountryCode={selectedCountry}
               onCountrySelect={(country) =>
                 applyFilters(

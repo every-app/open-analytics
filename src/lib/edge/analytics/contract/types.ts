@@ -1,16 +1,10 @@
 import type { ZonedInterval } from "@/lib/analytics/time-zone";
-import type { FilterEvaluationDomain } from "@/lib/filter-contract/filter-history";
 import type { FilterDocument } from "@/lib/filter-contract/filters";
-import type {
-  FilterScope,
-  FilterScopePreference,
-} from "@/lib/filter-contract/scope-preference";
 import type { FilterAudience } from "@/lib/filter-contract/types";
 import type { PageRequest, PageResult, PaginationMeta } from "@/lib/pagination";
 import type { RealtimeEvent, RealtimeVisit } from "@/schemas/realtime";
 
 import type { FunnelProgressionScope, FunnelStepV2 } from "./funnel-config";
-import type { ScopedFilterPlan } from "./scoped-filter";
 /** Branded primitives keep protocol strings and unvalidated numbers out of the domain layer. */
 export type Brand<T, Name extends string> = T & {
   readonly __brand: Name;
@@ -26,14 +20,6 @@ export interface TimeRange {
 }
 export interface QueryTime {
   readonly range: TimeRange;
-  /** Top-level DSL `time` domain; absent means the query range. */
-  readonly filterRange?: FilterEvaluationDomain;
-  /** The top-level time intersection is empty. */
-  readonly filterRangeEmpty?: boolean;
-  /** Data read by the evaluator; may extend beyond filterRange for windows. */
-  readonly readRange?: TimeRange;
-  /** Derived by Filter History Analysis when complete retained history is needed. */
-  readonly fullHistory?: boolean;
   readonly reportingTimeZone: ReportingTimeZone;
   readonly capturedAtMs: EpochMs;
   /** API v1 raw-request identity used to keep preset cursors stable. */
@@ -114,6 +100,7 @@ export type QueryOperation =
   | "event-field-values"
   | "event-records"
   | "funnel-analysis"
+  | "goal-conversions"
   | "goal-summary"
   | "goal-timeseries"
   | "property-keys"
@@ -154,10 +141,6 @@ export interface QueryContext {
 export interface QueryInput {
   readonly context: QueryContext;
   readonly filters?: FilterDocument;
-  /** Missing scope is normalized to Auto at the application boundary. */
-  readonly scopePreference?: FilterScopePreference;
-  /** Internal compiled plan attached before a provider is invoked. */
-  readonly scopePlan?: ScopedFilterPlan;
 }
 export type SortDirection = "asc" | "desc";
 export interface Sort<Key extends string = string> {
@@ -169,10 +152,6 @@ export interface QueryResultMeta {
   readonly time: QueryTime;
   readonly source: QuerySource;
   readonly approximateVisitors: boolean;
-  readonly filterScope?: {
-    readonly requested: FilterScopePreference;
-    readonly resolved: FilterScope;
-  };
 }
 export interface InputIssue {
   readonly path: string;
@@ -241,7 +220,6 @@ export type ComparisonMetricKey = (typeof COMPARISON_METRIC_KEYS)[number];
 export interface ComparisonDatasetQuery {
   readonly time: QueryTime;
   readonly filters?: FilterDocument;
-  readonly scopePreference?: FilterScopePreference;
 }
 /**
  * The table comparison contract is intentionally smaller than the public
@@ -259,7 +237,6 @@ export interface OverviewTableComparisonQuery {
 }
 export interface ComparisonQuery {
   readonly context: QueryContext;
-  readonly scopePreference?: FilterScopePreference;
   readonly current: ComparisonDatasetQuery;
   readonly reference: ComparisonDatasetQuery;
   readonly metrics: readonly ComparisonMetricKey[];
@@ -458,8 +435,6 @@ export interface TrendResult {
 }
 export interface PageItem {
   readonly pathname: string;
-  readonly query: string;
-  readonly hash: string;
   readonly views: number;
   readonly sessions: number;
 }
@@ -476,9 +451,7 @@ export interface ChannelItem {
   readonly visitors: number;
 }
 export interface PagesQuery extends BaseQuery {
-  readonly limit: number;
-  readonly includeDetails: boolean;
-  readonly page?: PageRequest;
+  readonly page: PageRequest;
 }
 export interface ReferrersQuery extends BaseQuery {
   readonly limit: number;

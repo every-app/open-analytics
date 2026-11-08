@@ -2,10 +2,12 @@ import { createEdgeSiteAnalyticsRuntime } from "@/lib/edge/analytics/composition
 import { parseFilterUrlForAudience } from "@/lib/edge/analytics/contract";
 import {
   comparisonReferenceWindow,
+  EMPTY_FILTER_DOCUMENT,
   isComparisonMode,
   type PagesDashboardComparisonQuery,
   type PagesDashboardQuery,
   type PagesQuery,
+  type QueryContext,
   type ReferrersQuery,
   siteQueryContext,
 } from "@/lib/edge/analytics/contract";
@@ -27,69 +29,36 @@ import {
 import {
   mapPages,
   mapReferrers,
-  mapTabs,
 } from "@/lib/edge/analytics/interfaces/dashboard/protocol/serializers";
 import type { Env } from "@/lib/edge/types";
 export async function handlePagesContract(
   env: Env,
   siteId: string,
   url: URL,
-  includeTabs: boolean,
-  ctx?: ResponseContext,
-  queryContext = siteQueryContext(
-    siteId,
-    includeTabs ? "private-dashboard" : "public-share",
-  ),
+  ctx: ResponseContext | undefined,
+  queryContext: QueryContext,
 ): Promise<Response> {
   const window = parseWindow(url);
   if (!window) return badRequest("Invalid time window");
-  const filters = parseFilterUrlForAudience(queryContext.policy.audience, url);
   const limit = parseLimit(url, 20, 200);
   const cursor = url.searchParams.get("cursor");
-  const time = queryWindowToTime(window);
-  const includeDetails = parseBooleanFlag(url, "details");
-  const query = {
-    context: queryContext,
-    time,
-    filters,
-    limit,
-    includeDetails,
-    includeTabs,
-    page: { limit, ...(cursor ? { cursor } : {}) },
-  } as PagesQuery & { readonly includeTabs: boolean };
   const result = await createEdgeSiteAnalyticsRuntime({
     env,
     siteId,
-  }).execute("pages", query);
+  }).execute("pages", {
+    context: queryContext,
+    time: queryWindowToTime(window),
+    filters: parseFilterUrlForAudience(queryContext.policy.audience, url),
+    page: { limit, cursor },
+  } satisfies PagesQuery);
   if (!result.ok) return queryErrorResponse(result.error);
-  const pagesResult =
-    "pages" in result.data
-      ? result.data.pages
-      : "items" in result.data && "pagination" in result.data
-        ? result.data
-        : null;
-  if (!pagesResult) throw new Error("pages_result_shape_mismatch");
-  const payload: Record<string, unknown> = {
+  return jsonResponseWith(ctx, {
     ok: true,
     data: {
-      items: mapPages([...pagesResult.items]),
-      pagination: pagesResult.pagination,
+      items: mapPages([...result.data.items]),
+      pagination: result.data.pagination,
     },
-  };
-  if (includeTabs) {
-    if (!("tabs" in result.data)) {
-      throw new Error("pages_tabs_result_shape_mismatch");
-    }
-    const tabs = result.data.tabs;
-    payload.tabs = {
-      path: mapTabs(tabs.path),
-      title: mapTabs(tabs.title),
-      hostname: mapTabs(tabs.hostname),
-      entry: mapTabs(tabs.entry),
-      exit: mapTabs(tabs.exit),
-    };
-  }
-  return jsonResponseWith(ctx!, payload);
+  });
 }
 export async function handleReferrersContract(
   env: Env,
@@ -214,8 +183,8 @@ export async function handlePagesDashboardContract(
         )
       : compare !== "same"
         ? filters
-        : ({ version: 1, root: null } as typeof filters);
-    if (compare !== "same" || referenceFilters.root) {
+        : EMPTY_FILTER_DOCUMENT;
+    if (compare !== "same" || referenceFilters.conditions.length > 0) {
       const referenceWindow = comparisonReferenceWindow(compare, window);
       comparison = {
         current: { time: queryWindowToTime(window), filters },

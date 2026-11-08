@@ -16,10 +16,7 @@ import {
   EMPTY_FILTER_DOCUMENT,
   exclusiveRangeToInclusive,
   executeOverview,
-  executePages,
-  executeReferrers,
   executeTrend,
-  hasFilters,
   inclusiveRangeToExclusive,
   isComparisonMode,
   normalizeFilterDocument,
@@ -27,6 +24,7 @@ import {
   previousComparableRange,
   siteQueryContext,
 } from "@/lib/edge/analytics/contract/index";
+import { FilterOperator } from "@/lib/filter-contract";
 describe("query contract time helpers", () => {
   it("enforces half-open range boundaries", () => {
     const range = createTimeRange(100, 200);
@@ -130,92 +128,23 @@ describe("query contract time helpers", () => {
     ).toThrow("maxBuckets");
   });
 
-  it("uses typed document filter presence", () => {
-    expect(hasFilters(undefined)).toBe(false);
-    expect(hasFilters(EMPTY_FILTER_DOCUMENT)).toBe(false);
-    expect(
-      hasFilters(
-        normalizeFilterDocument(
-          {
-            version: 1,
-            root: {
-              kind: "condition",
-              target: { kind: "field", field: "geo.country" },
-              operator: "eq",
-              value: "US",
-            },
-          },
-          analyticsFilterRegistry,
-        ),
-      ),
-    ).toBe(true);
-  });
-
-  it("normalizes typed documents and rejects invalid versions", () => {
+  it("normalizes typed documents and rejects malformed ones", () => {
     const normalized = normalizeFilterDocument(
       {
-        version: 1,
-        root: {
-          kind: "and",
-          children: [
-            {
-              kind: "condition",
-              target: { kind: "field", field: "geo.country" },
-              operator: "eq",
-              value: "US",
-            },
-          ],
-        },
+        conditions: [
+          {
+            target: { kind: "field", field: "geo.country" },
+            operator: "eq",
+            value: "US",
+          },
+        ],
       },
       analyticsFilterRegistry,
     );
-    expect(normalized.root).toMatchObject({ kind: "condition", value: "us" });
+    expect(normalized.conditions).toMatchObject([{ value: "us" }]);
     expect(() =>
-      normalizeFilterDocument(
-        { version: 0, root: null },
-        analyticsFilterRegistry,
-      ),
-    ).toThrow("Expected filter document version 1");
-  });
-
-  it("denies public page and referrer detail before a reader is invoked", async () => {
-    const reader = {
-      readPages: async () => {
-        throw new Error("reader must not be called");
-      },
-      readReferrers: async () => {
-        throw new Error("reader must not be called");
-      },
-    };
-    const time = {
-      range: createTimeRange(100, 200),
-      reportingTimeZone: normalizeReportingTimeZone("UTC"),
-      capturedAtMs: 200 as never,
-    };
-    const context = siteQueryContext("site-1", "public-share");
-
-    await expect(
-      executePages(reader, {
-        context,
-        time,
-        limit: 20,
-        includeDetails: true,
-      }),
-    ).resolves.toMatchObject({
-      ok: false,
-      error: { kind: "capability-denied", capability: "page.query" },
-    });
-    await expect(
-      executeReferrers(reader, {
-        context,
-        time,
-        limit: 20,
-        includeFullUrl: true,
-      }),
-    ).resolves.toMatchObject({
-      ok: false,
-      error: { kind: "capability-denied", capability: "referrer.url" },
-    });
+      normalizeFilterDocument({ version: 1 }, analyticsFilterRegistry),
+    ).toThrow("Filter document must be a list of conditions.");
   });
 
   it("gates opaque query families before invoking their reader", async () => {
@@ -343,13 +272,13 @@ describe("query contract time helpers", () => {
         {
           ...input,
           filters: {
-            version: 1,
-            root: {
-              kind: "condition",
-              target: { kind: "field", field: "forbidden.field" as never },
-              operator: "eq",
-              value: "x",
-            },
+            conditions: [
+              {
+                target: { kind: "field", field: "forbidden.field" as never },
+                operator: FilterOperator.Eq,
+                value: "x",
+              },
+            ],
           },
         },
         createTypedQueryProviderRegistry("overview", async () => ({
@@ -371,16 +300,13 @@ describe("query contract time helpers", () => {
     });
     const privateContext = siteQueryContext("site-1", "private-dashboard");
     const oneClause = {
-      version: 1 as const,
-      root: {
-        kind: "condition" as const,
-        target: {
-          kind: "field" as const,
-          field: "page.path" as never,
+      conditions: [
+        {
+          target: { kind: "field" as const, field: "page.path" as never },
+          operator: FilterOperator.Eq,
+          value: "/",
         },
-        operator: "eq" as const,
-        value: "/",
-      },
+      ],
     };
     expect(
       validateTypedQueryFilters(
@@ -456,7 +382,7 @@ describe("query contract time helpers", () => {
           },
         },
         time,
-        filters: { version: 1, root: { kind: "invalid" } } as never,
+        filters: { conditions: [{ target: { kind: "invalid" } }] } as never,
       },
       createTypedQueryProviderRegistry(
         "event-records",
@@ -483,24 +409,18 @@ describe("query contract time helpers", () => {
 
     const twoConditions = normalizeFilterDocument(
       {
-        version: 1,
-        root: {
-          kind: "and",
-          children: [
-            {
-              kind: "condition",
-              target: { kind: "field", field: "geo.country" },
-              operator: "eq",
-              value: "US",
-            },
-            {
-              kind: "condition",
-              target: { kind: "field", field: "page.path" },
-              operator: "eq",
-              value: "/docs",
-            },
-          ],
-        },
+        conditions: [
+          {
+            target: { kind: "field", field: "geo.country" },
+            operator: "eq",
+            value: "US",
+          },
+          {
+            target: { kind: "field", field: "page.path" },
+            operator: "eq",
+            value: "/docs",
+          },
+        ],
       },
       analyticsFilterRegistry,
     );
@@ -615,7 +535,7 @@ describe("query contract time helpers", () => {
     expect(reader.readTrend).toHaveBeenCalledOnce();
   });
 
-  it("returns successful typed trend, pages, and referrer results", async () => {
+  it("returns a successful typed trend", async () => {
     const time = createQueryTime(100, 200, "UTC", 200);
     const context = siteQueryContext("site-1", "private-dashboard");
     const reader = {
@@ -625,40 +545,6 @@ describe("query contract time helpers", () => {
         source: "rollup",
         approximateVisitors: true,
       }),
-      readPages: vi.fn().mockResolvedValue({
-        value: {
-          items: [
-            {
-              pathname: "/docs",
-              query: "",
-              hash: "",
-              views: 3,
-              sessions: 2,
-            },
-          ],
-          pagination: {
-            limit: 20,
-            returned: 1,
-            hasMore: false,
-            nextCursor: null,
-          },
-        },
-        source: "raw",
-      }),
-      readReferrers: vi.fn().mockResolvedValue({
-        value: {
-          items: [
-            { referrer: "example.com", views: 3, sessions: 2, visitors: 2 },
-          ],
-          pagination: {
-            limit: 20,
-            returned: 1,
-            hasMore: false,
-            nextCursor: null,
-          },
-        },
-        source: "raw",
-      }),
     };
     await expect(
       executeTrend(reader, { context, time, interval: "hour" }),
@@ -666,28 +552,6 @@ describe("query contract time helpers", () => {
       ok: true,
       data: { interval: "hour", points: [] },
       meta: { source: "rollup", approximateVisitors: true },
-    });
-    await expect(
-      executePages(reader, {
-        context,
-        time,
-        limit: 20,
-        includeDetails: true,
-      }),
-    ).resolves.toMatchObject({
-      ok: true,
-      data: { items: [{ pathname: "/docs" }] },
-    });
-    await expect(
-      executeReferrers(reader, {
-        context,
-        time,
-        limit: 20,
-        includeFullUrl: true,
-      }),
-    ).resolves.toMatchObject({
-      ok: true,
-      data: { items: [{ referrer: "example.com" }] },
     });
   });
 });

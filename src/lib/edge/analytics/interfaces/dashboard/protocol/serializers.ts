@@ -7,8 +7,6 @@ interface DimensionValueRow {
 
 interface PageValueRow {
   readonly pathname: string;
-  readonly query: string;
-  readonly hash: string;
   readonly views: number;
   readonly sessions: number;
 }
@@ -22,8 +20,6 @@ interface ReferrerValueRow {
 export function mapPages(rows: readonly PageValueRow[]) {
   return rows.map((row) => ({
     pathname: row.pathname,
-    query: row.query,
-    hash: row.hash,
     views: row.views,
     sessions: row.sessions,
   }));

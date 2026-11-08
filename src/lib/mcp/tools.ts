@@ -29,6 +29,7 @@ import type { Env } from "@/lib/edge/types";
 import {
   analyticsFilterRegistry,
   FILTER_DSL_EXAMPLES,
+  FILTER_OPERATORS,
   FilterDslParseError,
   parseFilterDsl,
   serializeFilterParams,
@@ -86,7 +87,7 @@ const filterSchema = z
   .max(4_000)
   .optional()
   .describe(
-    `Filter expression. Fields: ${FILTER_FIELDS}. Examples: ${FILTER_DSL_EXAMPLES.slice(0, 5).join(" | ")}`,
+    `Filter: conditions joined by AND, each <field> <operator> <value>. A value is a JSON string, number, true, false or a [list] for in and notIn. Operators: ${FILTER_OPERATORS.join(", ")}. Fields: ${FILTER_FIELDS}; a custom property is event.payload("/<key>"). Examples: ${FILTER_DSL_EXAMPLES.join(" | ")}`,
   );
 
 /** A goal's filter DSL: its `filter`, or the scroll depth goal's. */
@@ -246,7 +247,7 @@ const SITE_REPORTS = {
     "Headline metrics: views, visitors, sessions, bounce rate, average duration; with a page.path filter, scroll depth too (in %)",
   trend:
     "Views, visitors and sessions per interval; with a page.path filter, scroll depth too (in %)",
-  pages: "Top pages",
+  pages: "Top pages by path, with views and sessions",
   referrers: "Top referrers",
   "overview-source-channel": "Traffic by channel (direct, search, social, ...)",
   "overview-source-domain": "Traffic by referring domain",
@@ -275,6 +276,8 @@ const SITE_REPORTS = {
   "event-type-fields": "Payload fields of a custom event (params: eventName)",
   funnels: "Funnels; with params.id, that funnel's conversion analysis",
   goals: "Goals; with params.id, one goal's definition",
+  "goal-conversions":
+    "Every goal with its unique and total conversions, conversion rate and revenue",
   "goal-summary":
     "A goal's conversions, and for a goal with a currency its revenue: total and average per event that carried revenue (params: id)",
   "goal-timeseries": "A goal's conversions per interval (params: id)",
@@ -340,15 +343,12 @@ export const tools = defineTools(
       description:
         "Compare every site at once: each site's views, visitors, sessions, bounce rate and duration with change rates, and the combined trend.",
       risk: "read",
-      input: z.object({ ...windowSchema, filter: filterSchema }),
+      input: z.object(windowSchema),
       handler: async (args, call) => {
         const params = new URLSearchParams({
           teamId: await organizationId(call),
           ...windowParams(args),
         });
-        for (const [key, value] of filterParams(args.filter)) {
-          params.append(key, value);
-        }
         return bounded({
           overview: await privateApi(
             call,
@@ -763,6 +763,6 @@ export const tools = defineTools(
   },
   {
     instructions:
-      "OpenAnalytics: privacy-friendly web analytics for the organization's sites. Call list_sites first; every site tool takes its site_id. Times default to the last 7 days. Filters use the filter expression language described on the filter argument. Every member reads every site; only the organization's owners and admins can create, change, share or delete sites, goals and funnels, and a member's call to those tools is refused. Deleting a site, funnel or goal can't be undone, and public sharing opens a site's dashboards to anyone with the link: confirm with the person before calling those tools.",
+      "OpenAnalytics: privacy-friendly web analytics for the organization's sites. Call list_sites first; every site tool takes its site_id. Times default to the last 7 days. A filter is conditions joined by AND, as the filter argument describes. Every member reads every site; only the organization's owners and admins can create, change, share or delete sites, goals and funnels, and a member's call to those tools is refused. Deleting a site, funnel or goal can't be undone, and public sharing opens a site's dashboards to anyone with the link: confirm with the person before calling those tools.",
   },
 );

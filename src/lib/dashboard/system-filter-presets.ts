@@ -7,20 +7,14 @@
 import {
   analyticsFilterRegistry,
   assertFilterAudience,
-  type FilterScope,
   parseFilterDsl,
 } from "@/lib/filter-contract";
-
-export type SystemFilterPresetScope = "preserve" | FilterScope;
 
 /** The handful of presets the filter panel offers. */
 export const SYSTEM_FILTER_PRESET_IDS = [
   "directTraffic",
   "organicSearchDiscovery",
-  "campaignTaggedTraffic",
   "mobileTraffic",
-  "bouncedSessions",
-  "returningVisitors",
 ] as const;
 
 export type SystemFilterPresetId = (typeof SYSTEM_FILTER_PRESET_IDS)[number];
@@ -28,42 +22,15 @@ export type SystemFilterPresetId = (typeof SYSTEM_FILTER_PRESET_IDS)[number];
 export interface SystemFilterPreset {
   readonly id: SystemFilterPresetId;
   readonly filterDsl: string;
-  /** preserve keeps the active scope; other values switch to that scope. */
-  readonly scope: SystemFilterPresetScope;
 }
 
 export const SYSTEM_FILTER_PRESETS: readonly SystemFilterPreset[] = [
-  {
-    id: "directTraffic",
-    filterDsl: 'referrer.domain eq "__direct__"',
-    scope: "preserve",
-  },
+  { id: "directTraffic", filterDsl: 'referrer.domain eq "__direct__"' },
   {
     id: "organicSearchDiscovery",
     filterDsl: 'traffic.channel eq "organic_search"',
-    scope: "preserve",
   },
-  {
-    id: "campaignTaggedTraffic",
-    filterDsl:
-      "(utm.source notEmpty OR utm.medium notEmpty OR utm.campaign notEmpty)",
-    scope: "preserve",
-  },
-  {
-    id: "mobileTraffic",
-    filterDsl: 'client.deviceType eq "mobile"',
-    scope: "preserve",
-  },
-  {
-    id: "bouncedSessions",
-    filterDsl: "session.bounce eq true",
-    scope: "session",
-  },
-  {
-    id: "returningVisitors",
-    filterDsl: "visitor.sessions gte 2",
-    scope: "visitor",
-  },
+  { id: "mobileTraffic", filterDsl: 'client.deviceType eq "mobile"' },
 ];
 
 const SYSTEM_FILTER_PRESET_BY_ID = new Map<

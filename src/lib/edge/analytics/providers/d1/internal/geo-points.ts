@@ -3,6 +3,7 @@ import {
   buildRegionLocationValue,
 } from "@/lib/analytics/geo-location";
 import type { Env } from "@/lib/edge/types";
+import { FilterOperator } from "@/lib/filter-contract/filters";
 
 import type {
   FilterDocument,
@@ -12,12 +13,7 @@ import type {
   GeoPointRow,
   QueryWindow,
 } from "./core";
-import {
-  buildVisitFilterSql,
-  buildVisitSourceCte,
-  queryD1All,
-  visitSourceBindings,
-} from "./core";
+import { filteredVisitsCte, queryD1All } from "./core";
 import type { D1ReadDiagnostics } from "./diagnostics";
 import {
   dailyDimensionRows,
@@ -26,7 +22,6 @@ import {
   rollupEdgeSource,
 } from "./rollup-breakdowns";
 import { RollupDimension } from "./rollup-dimensions";
-import { scopedDatasetFor } from "./scoped-dataset";
 // Ingest rounds coordinates to 1 decimal (about 11 km), so the page views of
 // a city share one point and group on their stored coordinates.
 const RAW_POINT_COLUMNS = `
@@ -160,43 +155,28 @@ export async function queryGeoPointsFromD1(
   if (rollup) {
     return queryRolledUpGeoPoints(env, siteId, rollup, diagnostics);
   }
-  const scopedDataset = scopedDatasetFor(siteId, window, filters);
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
-  const conditions =
-    filters.root?.kind === "and"
-      ? filters.root.children
-      : [filters.root].filter(Boolean);
   const valueFor = (field: string) => {
-    const condition = conditions.find(
+    const value = filters.conditions.find(
       (item) =>
-        item?.kind === "condition" &&
         item.target.kind === "field" &&
         item.target.field === field &&
-        item.operator === "eq" &&
-        typeof item.value === "string",
-    );
-    return condition?.kind === "condition" &&
-      typeof condition.value === "string"
-      ? condition.value
-      : undefined;
+        item.operator === FilterOperator.Eq,
+    )?.value;
+    return typeof value === "string" ? value : undefined;
   };
   const parsedGeo = {
     country: valueFor("geo.country"),
     regionCode: valueFor("geo.region"),
     city: valueFor("geo.city"),
   };
-  const coordinateClause = filter?.clause ? "AND" : "WHERE";
+  const source = filteredVisitsCte(siteId, window, filters);
   const pointsSql = `
 WITH
-${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS (
+${source.sql},
+points AS (
   SELECT ${RAW_POINT_COLUMNS}
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-  ${coordinateClause}
-    ${VALID_COORDINATES}
+  FROM filtered_visits
+  WHERE ${VALID_COORDINATES}
   GROUP BY ${POINT_GROUP}
 )
 SELECT
@@ -208,21 +188,14 @@ SELECT
   regionCode,
   city,
   point_count AS pointCount
-FROM filtered_visits
+FROM points
 ORDER BY timestampMs DESC
 `;
   const points = (
     await queryD1All<Record<string, unknown>>(
       env,
       pointsSql,
-      [
-        ...(scopedDataset
-          ? scopedDataset.bindings.map((binding) => binding.value)
-          : [
-              ...visitSourceBindings(siteId, window),
-              ...(filter?.bindings ?? []),
-            ]),
-      ],
+      source.bindings,
       diagnostics,
     )
   ).map(mapGeoPointRow);
@@ -232,17 +205,14 @@ ORDER BY timestampMs DESC
   const cityCounts: GeoDimensionCountRow[] = [];
 
   if (!parsedGeo?.country) {
+    const locations = filteredVisitsCte(siteId, window, filters, {
+      columns: `country,
+    session_id AS sessionId,
+    visitor_id AS visitorId`,
+    });
     const countrySql = `
 WITH
-${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS (
-  SELECT
-    country,
-    session_id AS sessionId,
-    visitor_id AS visitorId
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-)
+${locations.sql}
 SELECT
   country,
   count(*) AS views,
@@ -257,30 +227,22 @@ ORDER BY views DESC, sessions DESC, country ASC
         await queryD1All<Record<string, unknown>>(
           env,
           countrySql,
-          scopedDataset
-            ? scopedDataset.bindings.map((binding) => binding.value)
-            : [
-                ...visitSourceBindings(siteId, window),
-                ...(filter?.bindings ?? []),
-              ],
+          locations.bindings,
           diagnostics,
         )
       ).map(mapCountryCountRow),
     );
   } else if (!parsedGeo.regionCode) {
-    const regionSql = `
-WITH
-${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS (
-  SELECT
-    country,
+    const locations = filteredVisitsCte(siteId, window, filters, {
+      columns: `country,
     region,
     region_code AS regionCode,
     session_id AS sessionId,
-    visitor_id AS visitorId
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-)
+    visitor_id AS visitorId`,
+    });
+    const regionSql = `
+WITH
+${locations.sql}
 SELECT
   country,
   regionCode,
@@ -303,12 +265,7 @@ ORDER BY views DESC, sessions DESC, region ASC, regionCode ASC
         await queryD1All<Record<string, unknown>>(
           env,
           regionSql,
-          scopedDataset
-            ? scopedDataset.bindings.map((binding) => binding.value)
-            : [
-                ...visitSourceBindings(siteId, window),
-                ...(filter?.bindings ?? []),
-              ],
+          locations.bindings,
           diagnostics,
         )
       )
@@ -337,20 +294,17 @@ ORDER BY views DESC, sessions DESC, region ASC, regionCode ASC
         .filter((row): row is GeoDimensionCountRow => Boolean(row)),
     );
   } else {
-    const citySql = `
-WITH
-${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS (
-  SELECT
-    country,
+    const locations = filteredVisitsCte(siteId, window, filters, {
+      columns: `country,
     region,
     region_code AS regionCode,
     city,
     session_id AS sessionId,
-    visitor_id AS visitorId
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-)
+    visitor_id AS visitorId`,
+    });
+    const citySql = `
+WITH
+${locations.sql}
 SELECT
   country,
   regionCode,
@@ -371,12 +325,7 @@ ORDER BY views DESC, sessions DESC, city ASC
         await queryD1All<Record<string, unknown>>(
           env,
           citySql,
-          scopedDataset
-            ? scopedDataset.bindings.map((binding) => binding.value)
-            : [
-                ...visitSourceBindings(siteId, window),
-                ...(filter?.bindings ?? []),
-              ],
+          locations.bindings,
           diagnostics,
         )
       )

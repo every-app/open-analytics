@@ -1,6 +1,5 @@
 import {
   analyticsFilterRegistry,
-  effectiveScopeForPagination,
   filterFingerprint,
   type QueryAudience,
 } from "@/lib/edge/analytics/contract";
@@ -57,7 +56,6 @@ function eventTypeCursorBinding(
     window.endExclusiveMs,
     window.timeZone,
     filterFingerprint(filters, analyticsFilterRegistry),
-    effectiveScopeForPagination(filters),
     search?.trim().toLowerCase() ?? "",
   ]);
 }

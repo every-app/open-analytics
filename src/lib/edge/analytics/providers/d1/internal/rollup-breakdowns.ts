@@ -1,7 +1,7 @@
 import { SITE_PK_FROM_SITE_ID_SQL } from "@/lib/edge/sites/identity-sql";
 import type { Env } from "@/lib/edge/types";
 
-import { VISIT_SOURCE_COLUMNS } from "./core-sources";
+import { type BoundSql, VISIT_SOURCE_COLUMNS } from "./core-sources";
 import type { FilterDocument, QueryWindow } from "./core-types";
 import type { D1ReadDiagnostics } from "./diagnostics";
 import type { RollupDimension } from "./rollup-dimensions";
@@ -10,12 +10,6 @@ import {
   type RollupSplit,
   splitRollupWindow,
 } from "./rollup-window";
-import { scopedDatasetFor } from "./scoped-dataset";
-
-export interface BoundSql {
-  readonly sql: string;
-  readonly bindings: ReadonlyArray<string | number | null>;
-}
 
 /**
  * An unfiltered breakdown read from rollups plus raw edges. `visitSource`
@@ -68,9 +62,7 @@ export async function rollupEdgeSource(
   filters: FilterDocument,
   diagnostics?: D1ReadDiagnostics,
 ): Promise<RollupEdgeSource | null> {
-  if (filters.root !== null || scopedDatasetFor(siteId, window, filters)) {
-    return null;
-  }
+  if (filters.conditions.length > 0) return null;
   const days = (await readRollupDays(env, [siteId], diagnostics)).get(siteId);
   const split = days ? splitRollupWindow(window, days) : null;
   return split

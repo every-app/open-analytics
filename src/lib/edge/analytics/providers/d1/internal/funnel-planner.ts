@@ -1,7 +1,14 @@
 import { CompoundOperator, compoundSelectSql } from "@/lib/db";
 import {
+  concat,
+  join,
+  parameter,
+  type SqlFragment,
+  text,
+} from "@/lib/db/sql/fragment";
+import {
+  type FilterDocument,
   type FunnelConfigV2,
-  type FunnelStepV2,
   MAX_FUNNEL_STEPS,
   parseFunnelStepFilter,
 } from "@/lib/edge/analytics/contract";
@@ -13,13 +20,15 @@ import {
   type FunnelSqlStructuralBudget,
 } from "@/lib/edge/analytics/contract/funnel-budget";
 
-import type { ScopedDatasetSql, SqlBinding } from "./scoped-dataset";
+import {
+  eventMatchSql,
+  type FilterSqlScope,
+  pageViewMatchSql,
+  sitePk,
+  visitFilterSql,
+} from "./filter-compiler";
 export { FUNNEL_SQL_CTES_PER_STEP, FUNNEL_SQL_STRUCTURAL_BUDGET };
 export type { FunnelSqlStructuralBudget };
-import {
-  applyObservationFilterToScopedDataset,
-  type ScopedObservationFilterSql,
-} from "./scoped-dataset";
 /** D1's existing provider code treats one hundred parameters as the safe cap. */
 export const FUNNEL_SQL_MAX_BINDINGS = FUNNEL_CONFIG_MAX_SQL_BINDINGS;
 /** A bounded statement budget for a ten-step plan and its filter expansion. */
@@ -47,18 +56,25 @@ export interface FunnelSqlStepLayer {
   readonly stepIndex: number;
   readonly reachedRelation: string;
 }
-export interface FunnelSqlResultRow {
-  readonly stepId: string;
-  readonly stepIndex: number;
-  readonly sessions: number;
-  readonly visitors: number;
-}
 export interface FunnelSqlPlan {
   readonly sql: string;
-  readonly bindings: readonly SqlBinding[];
+  readonly bindings: readonly (string | number | null)[];
   readonly steps: readonly FunnelSqlStepLayer[];
   readonly shape: FunnelSqlShape;
 }
+/** The page views and custom events a funnel reads: one site's, in a window. */
+export interface FunnelSource {
+  readonly siteId: string;
+  readonly startMs: number;
+  readonly endExclusiveMs: number;
+  /**
+   * The dashboard's filter. It picks the sessions or visitors the funnel
+   * follows: those with a page view in the window that matches it. Their
+   * steps are read from all of their page views and events.
+   */
+  readonly filters: FilterDocument;
+}
+type Identity = "session_id" | "visitor_id";
 function mergedBudget(
   budget: Partial<FunnelSqlStructuralBudget>,
 ): FunnelSqlStructuralBudget {
@@ -102,16 +118,8 @@ export function assertFunnelSqlShapeWithinBudget(
     throw new Error("funnel_sql_binding_limit_exceeded");
   }
 }
-function identityColumn(
-  scope: FunnelConfigV2["progressionScope"],
-): "session_id" | "visitor_id" {
+function identityColumn(scope: FunnelConfigV2["progressionScope"]): Identity {
   return scope === "session" ? "session_id" : "visitor_id";
-}
-function identityPredicate(
-  alias: string,
-  identity: "session_id" | "visitor_id",
-): string {
-  return `TRIM(COALESCE(${alias}.${identity}, '')) != ''`;
 }
 function observationAfter(candidate: string, previous: string): string {
   return `(
@@ -134,75 +142,122 @@ function observationAfter(candidate: string, previous: string): string {
     )
   )`;
 }
-function witnessCte(
-  stepIndex: number,
-  filter: ScopedObservationFilterSql,
-  identity: "session_id" | "visitor_id",
-): string {
-  const name = `funnel_step_${stepIndex}_witnesses`;
-  return `
-${name} AS (
-  SELECT
-    deduped.site_pk,
-    deduped.session_id,
-    deduped.visitor_id,
-    deduped.observed_at,
-    deduped.observation_rank,
-    deduped.sequence,
-    deduped.source_id
-  FROM (
-    SELECT
-      candidates.*,
-      ROW_NUMBER() OVER (
-        PARTITION BY candidates.site_pk,
-                     candidates.observation_rank,
-                     candidates.source_id
-        ORDER BY candidates.observed_at ASC,
-                 candidates.observation_rank ASC,
-                 candidates.sequence ASC,
-                 candidates.source_id ASC
-      ) AS source_rank
-    FROM (
-      SELECT
-        v.site_pk,
-        v.session_id,
-        v.visitor_id,
-        v.started_at AS observed_at,
-        0 AS observation_rank,
-        0 AS sequence,
-        CAST(v.visit_id AS TEXT) AS source_id
-      FROM ${filter.matchedVisitRelation} v
-      WHERE v.site_pk IS NOT NULL
-        AND ${identityPredicate("v", identity)}
-        AND v.started_at IS NOT NULL
-        AND TRIM(COALESCE(CAST(v.visit_id AS TEXT), '')) != ''
-      UNION ALL
-      SELECT
-        e.site_pk,
-        e.session_id,
-        e.visitor_id,
-        e.occurred_at AS observed_at,
-        1 AS observation_rank,
-        e.sequence AS sequence,
-        CAST(e.event_id AS TEXT) AS source_id
-      FROM ${filter.matchedEventRelation} e
-      WHERE e.site_pk IS NOT NULL
-        AND ${identityPredicate("e", identity)}
-        AND e.occurred_at IS NOT NULL
-        AND TRIM(COALESCE(CAST(e.event_id AS TEXT), '')) != ''
-    ) candidates
-  ) deduped
-  WHERE deduped.source_rank = 1
-)`;
+function stepColumns(
+  steps: readonly FilterDocument[],
+  match: (filters: FilterDocument) => SqlFragment,
+): SqlFragment {
+  return join(
+    steps.map((step, index) =>
+      concat(text("("), match(step), text(`) AS step_${index}`)),
+    ),
+    text(",\n      "),
+  );
 }
-function reachedZeroCte(
-  filter: string,
-  identity: "session_id" | "visitor_id",
-): string {
+/**
+ * `filtered_identities`: the sessions or visitors with a page view in the
+ * window that matches the filter, from one scan of the window's page views.
+ * Null without a filter.
+ */
+function filteredIdentitiesCte(
+  source: FunnelSource,
+  identity: Identity,
+): SqlFragment | null {
+  const predicate = visitFilterSql(source.filters, source);
+  if (!predicate) return null;
+  return concat(
+    text(`
+filtered_identities AS MATERIALIZED (
+  SELECT DISTINCT v.${identity} AS identity
+  FROM visits v
+  WHERE v.site_pk = `),
+    sitePk(source.siteId),
+    text(" AND v.started_at >= "),
+    parameter(source.startMs),
+    text(" AND v.started_at < "),
+    parameter(source.endExclusiveMs),
+    text(`
+    AND v.${identity} != ''
+    AND `),
+    predicate,
+    text("\n),"),
+  );
+}
+/**
+ * Every page view and custom event of the window that matches a step, with
+ * a flag per step: one scan of visits and one of custom events, kept as a
+ * narrow table that every step reads. With a filter, only those of the
+ * filtered sessions or visitors.
+ */
+function observationsCte(
+  source: FunnelSource,
+  steps: readonly FilterDocument[],
+  identity: Identity,
+): SqlFragment {
+  const scope: FilterSqlScope = source;
+  const identities = filteredIdentitiesCte(source, identity);
+  const followed = text(
+    identities
+      ? `\n      AND v.${identity} IN (SELECT identity FROM filtered_identities)`
+      : "",
+  );
+  return concat(
+    identities ?? text(""),
+    text(`
+funnel_observations AS MATERIALIZED (
+  SELECT * FROM (
+    SELECT
+      v.session_id,
+      v.visitor_id,
+      v.started_at AS observed_at,
+      0 AS observation_rank,
+      0 AS sequence,
+      v.visit_id AS source_id,
+      `),
+    stepColumns(steps, (step) => pageViewMatchSql(step, scope)),
+    text(`
+    FROM visits v
+    WHERE v.site_pk = `),
+    sitePk(source.siteId),
+    text(" AND v.started_at >= "),
+    parameter(source.startMs),
+    text(" AND v.started_at < "),
+    parameter(source.endExclusiveMs),
+    followed,
+    text(`
+    UNION ALL
+    SELECT
+      v.session_id,
+      v.visitor_id,
+      ce.occurred_at AS observed_at,
+      1 AS observation_rank,
+      ce.sequence,
+      ce.event_id AS source_id,
+      `),
+    stepColumns(steps, (step) => eventMatchSql(step, scope)),
+    text(`
+    FROM custom_events ce
+    INNER JOIN custom_event_names cen
+      ON cen.id = ce.event_name_id
+    INNER JOIN visits v
+      ON v.site_pk = ce.site_pk
+     AND v.visit_id = ce.visit_id
+    WHERE ce.site_pk = `),
+    sitePk(source.siteId),
+    text(" AND ce.occurred_at >= "),
+    parameter(source.startMs),
+    text(" AND ce.occurred_at < "),
+    parameter(source.endExclusiveMs),
+    followed,
+    text(`
+  )
+  WHERE ${steps.map((_step, index) => `step_${index}`).join(" OR ")}
+)`),
+  );
+}
+function reachedZeroCte(identity: Identity): string {
   return `
 reached_0 AS (
   SELECT
-    ranked.site_pk,
     ranked.session_id,
     ranked.visitor_id,
     ranked.observed_at AS first_observed_at,
@@ -212,35 +267,34 @@ reached_0 AS (
     ranked.source_id AS last_source_id
   FROM (
     SELECT
-      witnesses.*,
+      observations.*,
       ROW_NUMBER() OVER (
-        PARTITION BY witnesses.site_pk, witnesses.${identity}
-        ORDER BY witnesses.observed_at ASC,
-                 witnesses.observation_rank ASC,
-                 witnesses.sequence ASC,
-                 witnesses.source_id ASC
+        PARTITION BY observations.${identity}
+        ORDER BY observations.observed_at ASC,
+                 observations.observation_rank ASC,
+                 observations.sequence ASC,
+                 observations.source_id ASC
       ) AS reached_rank
-    FROM ${filter} witnesses
+    FROM funnel_observations observations
+    WHERE observations.step_0
+      AND TRIM(COALESCE(observations.${identity}, '')) != ''
   ) ranked
   WHERE ranked.reached_rank = 1
 )`;
 }
 function reachedNextCte(
   stepIndex: number,
-  previous: string,
-  filter: string,
-  identity: "session_id" | "visitor_id",
+  identity: Identity,
   visitorWindow: boolean,
 ): string {
   const windowClause = visitorWindow
     ? `
-        AND candidate.observed_at <= previous.first_observed_at
-          + (SELECT conversion_window_ms FROM funnel_params)`
+     AND candidate.observed_at <= previous.first_observed_at
+       + (SELECT conversion_window_ms FROM funnel_params)`
     : "";
   return `
 reached_${stepIndex} AS (
   SELECT
-    ranked.site_pk,
     ranked.session_id,
     ranked.visitor_id,
     ranked.first_observed_at,
@@ -250,7 +304,6 @@ reached_${stepIndex} AS (
     ranked.source_id AS last_source_id
   FROM (
     SELECT
-      previous.site_pk,
       previous.session_id,
       previous.visitor_id,
       previous.first_observed_at,
@@ -259,121 +312,45 @@ reached_${stepIndex} AS (
       candidate.sequence,
       candidate.source_id,
       ROW_NUMBER() OVER (
-        PARTITION BY previous.site_pk, previous.${identity}
+        PARTITION BY previous.${identity}
         ORDER BY candidate.observed_at ASC,
                  candidate.observation_rank ASC,
                  candidate.sequence ASC,
                  candidate.source_id ASC
       ) AS reached_rank
     FROM reached_${stepIndex - 1} previous
-    INNER JOIN ${filter} candidate
-      ON candidate.site_pk = previous.site_pk
+    INNER JOIN funnel_observations candidate
+      ON candidate.step_${stepIndex}
      AND candidate.${identity} = previous.${identity}
-     AND ${observationAfter("candidate", "previous")}
-     ${windowClause}
+     AND ${observationAfter("candidate", "previous")}${windowClause}
   ) ranked
   WHERE ranked.reached_rank = 1
 )`;
 }
-function countRelation(
-  reached: string,
-  column: "session_id" | "visitor_id",
-): string {
-  return `(SELECT COUNT(*)
-    FROM (
-      SELECT DISTINCT site_pk, ${column}
-      FROM ${reached}
-      WHERE site_pk IS NOT NULL
-        AND TRIM(COALESCE(${column}, '')) != ''
-    ))`;
+function countDistinct(relation: string, column: Identity, where = ""): string {
+  return `(SELECT COUNT(DISTINCT ${column})
+    FROM ${relation}
+    WHERE TRIM(COALESCE(${column}, '')) != ''${where})`;
 }
-function resultSql(
-  steps: readonly FunnelStepV2[],
-  firstFilter: ScopedObservationFilterSql,
-): string {
-  const rows = steps.map(
-    (_step, index) => `
+/**
+ * One row per step: the sessions and visitors that reached it. The first
+ * step's are those of every observation that matches it.
+ */
+function resultSql(stepCount: number): string {
+  const rows = Array.from({ length: stepCount }, (_step, index) => {
+    const [relation, where] =
+      index === 0
+        ? ["funnel_observations", " AND step_0"]
+        : [`reached_${index}`, ""];
+    return `
 SELECT
   ${index} AS stepIndex,
   ? AS stepId,
-  ${countRelation(
-    index === 0 ? firstFilter.sessionRelation : `reached_${index}`,
-    "session_id",
-  )} AS sessions,
-  ${countRelation(
-    index === 0 ? firstFilter.visitorRelation : `reached_${index}`,
-    "visitor_id",
-  )} AS visitors`,
-  );
+  ${countDistinct(relation, "session_id", where)} AS sessions,
+  ${countDistinct(relation, "visitor_id", where)} AS visitors`;
+  });
   return `${compoundSelectSql(rows, CompoundOperator.UnionAll)}
 ORDER BY stepIndex ASC`;
-}
-interface FunnelCteParts {
-  readonly funnelCtes: readonly string[];
-  readonly filterBindings: readonly SqlBinding[];
-  readonly steps: readonly FunnelSqlStepLayer[];
-  readonly identity: "session_id" | "visitor_id";
-  readonly firstFilter: ScopedObservationFilterSql;
-}
-function buildFunnelCteParts(
-  config: FunnelConfigV2,
-  dataset: ScopedDatasetSql,
-  options: { readonly allowHistoricalOverLimit?: boolean } = {},
-): FunnelCteParts {
-  if (options.allowHistoricalOverLimit) {
-    assertHistoricalConfigShape(config);
-  } else {
-    assertConfigShape(config);
-  }
-  const identity = identityColumn(config.progressionScope);
-  const visitorWindow = config.progressionScope === "visitor";
-  const funnelCtes: string[] = [];
-  const filterBindings: SqlBinding[] = [];
-  const layers: FunnelSqlStepLayer[] = [];
-  let firstFilter: ScopedObservationFilterSql | undefined;
-
-  if (visitorWindow) {
-    funnelCtes.push("funnel_params AS (SELECT ? AS conversion_window_ms)");
-  }
-
-  config.steps.forEach((step, stepIndex) => {
-    const filter = applyObservationFilterToScopedDataset(
-      dataset,
-      parseFunnelStepFilter(step),
-      `funnel_step_${stepIndex}`,
-    );
-    funnelCtes.push(filter.ctes.trim());
-    filterBindings.push(...filter.bindings);
-    if (stepIndex === 0) firstFilter = filter;
-
-    const witnesses = `funnel_step_${stepIndex}_witnesses`;
-    funnelCtes.push(witnessCte(stepIndex, filter, identity));
-    funnelCtes.push(
-      stepIndex === 0
-        ? reachedZeroCte(witnesses, identity)
-        : reachedNextCte(
-            stepIndex,
-            `reached_${stepIndex - 1}`,
-            witnesses,
-            identity,
-            visitorWindow,
-          ),
-    );
-    layers.push({
-      stepId: step.id,
-      stepIndex,
-      reachedRelation: `reached_${stepIndex}`,
-    });
-  });
-
-  if (!firstFilter) throw new Error("funnel_steps_required");
-  return {
-    funnelCtes,
-    filterBindings,
-    steps: layers,
-    identity,
-    firstFilter,
-  };
 }
 export function assertFunnelStructuralBudget(stepCount: number): void {
   if (!Number.isSafeInteger(stepCount) || stepCount < 1) {
@@ -387,8 +364,7 @@ export function assertFunnelStructuralBudget(stepCount: number): void {
     throw new Error("funnel_sql_cte_limit_exceeded");
   }
 }
-function assertConfigShape(config: FunnelConfigV2): void {
-  assertFunnelStructuralBudget(config.steps.length);
+function assertConversionWindow(config: FunnelConfigV2): void {
   if (config.progressionScope === "visitor") {
     if (
       config.conversionWindowMs === null ||
@@ -401,55 +377,67 @@ function assertConfigShape(config: FunnelConfigV2): void {
     throw new Error("session_funnel_conversion_window_must_be_null");
   }
 }
-function assertHistoricalConfigShape(config: FunnelConfigV2): void {
-  if (!Number.isSafeInteger(config.steps.length) || config.steps.length < 1) {
+function assertConfigShape(
+  config: FunnelConfigV2,
+  allowHistoricalOverLimit: boolean,
+): void {
+  if (!allowHistoricalOverLimit) {
+    assertFunnelStructuralBudget(config.steps.length);
+  } else if (
+    !Number.isSafeInteger(config.steps.length) ||
+    config.steps.length < 1
+  ) {
     throw new Error("funnel_steps_required");
-  }
-  if (config.steps.length > MAX_HISTORICAL_FUNNEL_STEPS) {
+  } else if (config.steps.length > MAX_HISTORICAL_FUNNEL_STEPS) {
     throw new Error("funnel_historical_step_limit_exceeded");
   }
-  if (config.progressionScope === "visitor") {
-    if (
-      config.conversionWindowMs === null ||
-      !Number.isFinite(config.conversionWindowMs) ||
-      config.conversionWindowMs <= 0
-    ) {
-      throw new Error("visitor_funnel_conversion_window_must_be_positive");
-    }
-  } else if (config.conversionWindowMs !== null) {
-    throw new Error("session_funnel_conversion_window_must_be_null");
-  }
+  assertConversionWindow(config);
 }
 /**
- * Build one D1 statement for a Funnel v2 config over a prepared dataset.
- * Every step owns an independent observation-filter bundle.  The progression
- * CTEs consume only those bundles' final matched relations and never access
- * raw tables or alter the dataset window.
+ * One D1 statement for a funnel: the window's page views and custom events
+ * of the followed sessions or visitors are read once, each flagged with the
+ * steps it matches, and each step's progression starts after the previous
+ * step's.
  */
 export function buildFunnelSqlPlan(
   config: FunnelConfigV2,
-  dataset: ScopedDatasetSql,
+  source: FunnelSource,
   options: { readonly allowHistoricalOverLimit?: boolean } = {},
 ): FunnelSqlPlan {
-  const parts = buildFunnelCteParts(config, dataset, options);
+  assertConfigShape(config, options.allowHistoricalOverLimit ?? false);
+  const identity = identityColumn(config.progressionScope);
   const visitorWindow = config.progressionScope === "visitor";
-
-  const sql = `WITH
-${dataset.ctes.trim()},
-${parts.funnelCtes.join(",\n")}
-${resultSql(config.steps, parts.firstFilter)}`;
-  const bindings: SqlBinding[] = [
-    ...dataset.bindings,
-    ...(visitorWindow ? [{ value: config.conversionWindowMs! }] : []),
-    ...parts.filterBindings,
-    ...config.steps.map((step) => ({ value: step.id })),
+  const observations = observationsCte(
+    source,
+    config.steps.map(parseFunnelStepFilter),
+    identity,
+  );
+  const reached = config.steps.map((_step, index) =>
+    index === 0
+      ? reachedZeroCte(identity)
+      : reachedNextCte(index, identity, visitorWindow),
+  );
+  const sql = `WITH${
+    visitorWindow
+      ? "\nfunnel_params AS (SELECT ? AS conversion_window_ms),"
+      : ""
+  }${observations.text},
+${reached.join(",\n")}
+${resultSql(config.steps.length)}`;
+  const bindings = [
+    ...(visitorWindow ? [config.conversionWindowMs!] : []),
+    ...(observations.bindings as (string | number | null)[]),
+    ...config.steps.map((step) => step.id),
   ];
   const shape = measureFunnelSqlShape({
     sql,
     bindings,
     stepCount: config.steps.length,
     funnelCteCount:
-      config.steps.length * FUNNEL_SQL_CTES_PER_STEP + (visitorWindow ? 1 : 0),
+      1 +
+      reached.length +
+      (visitorWindow ? 1 : 0) +
+      (source.filters.conditions.length > 0 ? 1 : 0),
   });
   assertFunnelSqlShapeWithinBudget(
     shape,
@@ -457,11 +445,14 @@ ${resultSql(config.steps, parts.firstFilter)}`;
       ? FUNNEL_SQL_HISTORICAL_STRUCTURAL_BUDGET
       : FUNNEL_SQL_STRUCTURAL_BUDGET,
   );
-
   return {
     sql,
     bindings,
-    steps: parts.steps,
+    steps: config.steps.map((step, stepIndex) => ({
+      stepId: step.id,
+      stepIndex,
+      reachedRelation: `reached_${stepIndex}`,
+    })),
     shape,
   };
 }

@@ -35,7 +35,6 @@ import {
   fetchSavedFilters,
   updateSavedFilter,
 } from "@/lib/dashboard/client/data/index";
-import { resolveSuggestionScope } from "@/lib/dashboard/filter-suggestion-scope";
 import {
   SYSTEM_FILTER_PRESETS,
   type SystemFilterPreset,
@@ -44,25 +43,20 @@ import {
 } from "@/lib/dashboard/system-filter-presets";
 import {
   analyticsFilterRegistry,
-  attachFilterScopePreference,
+  type FilterDocument,
   filterFingerprint,
-  type FilterScopePreference,
-  FilterValidationError,
   parseFilterDsl,
 } from "@/lib/filter-contract/index";
 import type { SavedFilter } from "@/lib/saved-filters";
 
-import { allowedFields } from "./filter-editor/field-catalog";
-import type { EditorGroup } from "./filter-editor/model";
+import type { EditorCondition } from "./filter-editor/model";
 import {
   conditionIdFactory,
   documentFromEditor,
-  editorRootFromDocument,
-  emptyEditorGroup,
-  expressionTextFromEditor,
-  reconcileEditorRoot,
+  editorConditionsFromDocument,
+  filterDslFromEditor,
 } from "./filter-editor/model";
-import { FilterEditor } from "./filter-editor";
+import { FilterEditor, filterEditorError } from "./filter-editor";
 import type {
   FilterPanelProps,
   SavedFilterForm,
@@ -70,42 +64,39 @@ import type {
 import {
   EMPTY_SAVED_FILTER_FORM,
   FilterPanelHeader,
-  FilterScopeSelect,
   SavedFilterFormFields,
   systemPresetItem,
-  systemPresetMatchesScope,
-  systemPresetScopeForApply,
 } from "./saved-filter-controls";
-export {
-  SavedFilterSelect,
-  systemPresetMatchesScope,
-  systemPresetScopeForApply,
-} from "./saved-filter-controls";
+export { SavedFilterSelect } from "./saved-filter-controls";
+
+/** The fingerprint of a filter's DSL; undefined for one that doesn't parse. */
+function dslFingerprint(filterDsl: string): string | undefined {
+  try {
+    return filterFingerprint(
+      parseFilterDsl(filterDsl, analyticsFilterRegistry),
+      analyticsFilterRegistry,
+    );
+  } catch {
+    return undefined;
+  }
+}
+
 export function FilterPanel({
   audience,
   document,
-  expressionText: restoredExpressionText,
   messages,
   open,
-  resolvedScope: pageResolvedScope,
   siteId,
-  scopePreference,
   window,
   onApply,
-  onScopeChange,
 }: FilterPanelProps) {
   const nextIdRef = useRef(conditionIdFactory());
   const createId = useCallback(() => nextIdRef.current(), []);
   const queryClient = useQueryClient();
-  const documentKey = JSON.stringify(document);
-  const [root, setRoot] = useState<EditorGroup>(() =>
-    editorRootFromDocument(document, createId),
+  const [conditions, setConditions] = useState<readonly EditorCondition[]>(() =>
+    editorConditionsFromDocument(document, createId),
   );
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [expressionText, setExpressionText] = useState(() =>
-    expressionTextFromEditor(root),
-  );
-  const [expressionError, setExpressionError] = useState<string | null>(null);
   const [createSavedFilterOpen, setCreateSavedFilterOpen] = useState(false);
   const [manageSavedFilterOpen, setManageSavedFilterOpen] = useState(false);
   const [confirmSavedFilterDeleteOpen, setConfirmSavedFilterDeleteOpen] =
@@ -122,16 +113,6 @@ export function FilterPanel({
   const [savedFilterOperationError, setSavedFilterOperationError] = useState<
     string | null
   >(null);
-  const expressionUpdateRef = useRef(false);
-  const preservedDocumentKeyRef = useRef<string | null>(null);
-  const expressionRegistry = useMemo(
-    () => new Map(allowedFields(audience).map((field) => [field.id, field])),
-    [audience],
-  );
-  const suggestionScope = resolveSuggestionScope(
-    scopePreference,
-    pageResolvedScope,
-  );
   const savedFiltersEnabled =
     audience === "private-dashboard" && open && Boolean(siteId);
   const savedFiltersQuery = useQuery({
@@ -141,16 +122,15 @@ export function FilterPanel({
     staleTime: 60_000,
   });
   const savedFilters = savedFiltersQuery.data?.items ?? [];
-  const currentFilterFingerprint = useMemo(() => {
+  // The draft's DSL, or undefined while a condition is incomplete.
+  const draftDsl = useMemo(() => {
     try {
-      return filterFingerprint(
-        documentFromEditor(root),
-        analyticsFilterRegistry,
-      );
+      return filterDslFromEditor(conditions);
     } catch {
       return undefined;
     }
-  }, [root]);
+  }, [conditions]);
+  const draftFingerprint = draftDsl ? dslFingerprint(draftDsl) : undefined;
   const invalidateSavedFilters = useCallback(() => {
     if (!siteId) return Promise.resolve();
     return queryClient.invalidateQueries({
@@ -159,8 +139,8 @@ export function FilterPanel({
   }, [queryClient, siteId]);
   const createSavedFilterMutation = useMutation({
     mutationFn: async (form: SavedFilterForm) => {
-      if (!siteId) throw new Error("missing site id");
-      return createSavedFilter(siteId, { ...form, filterDsl: expressionText });
+      if (!siteId || !draftDsl) throw new Error("missing site id or filter");
+      return createSavedFilter(siteId, { ...form, filterDsl: draftDsl });
     },
     onSuccess: () => {
       setCreateSavedFilterOpen(false);
@@ -219,73 +199,27 @@ export function FilterPanel({
     },
   });
   const matchedSavedFilter = useMemo(() => {
-    if (expressionError || root.children.length === 0) return undefined;
-    const matches = savedFilters.filter((filter) => {
-      if (filter.scopePreference !== scopePreference) return false;
-      if (filter.filterDsl === expressionText) return true;
-      if (!currentFilterFingerprint) return false;
-      try {
-        return (
-          filterFingerprint(
-            parseFilterDsl(filter.filterDsl, analyticsFilterRegistry),
-            analyticsFilterRegistry,
-          ) === currentFilterFingerprint
-        );
-      } catch {
-        return false;
-      }
-    });
+    if (!draftFingerprint) return undefined;
+    const matches = savedFilters.filter(
+      (filter) => dslFingerprint(filter.filterDsl) === draftFingerprint,
+    );
     return matches.find((filter) => filter.isOwner) ?? matches[0];
-  }, [
-    currentFilterFingerprint,
-    expressionError,
-    expressionText,
-    root.children.length,
-    savedFilters,
-    scopePreference,
-  ]);
+  }, [draftFingerprint, savedFilters]);
   const matchedSystemPreset = useMemo(() => {
-    if (matchedSavedFilter || expressionError || root.children.length === 0) {
-      return undefined;
-    }
-
-    return SYSTEM_FILTER_PRESETS.find((preset) => {
-      if (!systemFilterPresetAvailableForAudience(preset, audience)) {
-        return false;
-      }
-      if (!systemPresetMatchesScope(preset, scopePreference)) return false;
-      if (preset.filterDsl === expressionText) return true;
-      if (!currentFilterFingerprint) return false;
-      try {
-        return (
-          filterFingerprint(
-            parseFilterDsl(preset.filterDsl, analyticsFilterRegistry),
-            analyticsFilterRegistry,
-          ) === currentFilterFingerprint
-        );
-      } catch {
-        return false;
-      }
-    });
-  }, [
-    currentFilterFingerprint,
-    expressionError,
-    expressionText,
-    audience,
-    matchedSavedFilter,
-    root.children.length,
-    scopePreference,
-  ]);
+    if (matchedSavedFilter || !draftFingerprint) return undefined;
+    return SYSTEM_FILTER_PRESETS.find(
+      (preset) =>
+        systemFilterPresetAvailableForAudience(preset, audience) &&
+        dslFingerprint(preset.filterDsl) === draftFingerprint,
+    );
+  }, [audience, draftFingerprint, matchedSavedFilter]);
   const managedSavedFilter = savedFilters.find(
     (filter) => filter.id === managedSavedFilterId && filter.isOwner,
   );
   const editingSavedFilter = savedFilters.find(
     (filter) => filter.id === editingSavedFilterId && filter.isOwner,
   );
-  const hasEffectiveFilter =
-    !expressionError &&
-    root.children.length > 0 &&
-    expressionText.trim().length > 0;
+  const hasEffectiveFilter = conditions.length > 0 && draftDsl !== undefined;
   const savedFilterPrimaryAction =
     !savedFiltersEnabled || savedFiltersQuery.isFetching || !hasEffectiveFilter
       ? undefined
@@ -311,184 +245,67 @@ export function FilterPanel({
         ? systemFilterPresetOptionValue(matchedSystemPreset.id)
         : "none";
 
+  // Opening the panel starts from the dashboard's current filter.
+  const documentKey = JSON.stringify(document);
   useEffect(() => {
     if (!open) return;
-    if (preservedDocumentKeyRef.current === documentKey) {
-      preservedDocumentKeyRef.current = null;
-      return;
-    }
-    let nextRoot = editorRootFromDocument(document, createId);
-    if (restoredExpressionText !== undefined) {
-      try {
-        nextRoot = editorRootFromDocument(
-          parseFilterDsl(restoredExpressionText, expressionRegistry),
-          createId,
-        );
-      } catch {
-        // The persisted source is advisory. The URL document remains usable.
-      }
-    }
-    expressionUpdateRef.current = true;
-    setRoot(nextRoot);
-    setExpressionText(
-      restoredExpressionText ?? expressionTextFromEditor(nextRoot),
-    );
-    setExpressionError(null);
+    setConditions(editorConditionsFromDocument(document, createId));
     setValidationError(null);
-  }, [
-    createId,
-    document,
-    documentKey,
-    expressionRegistry,
-    open,
-    restoredExpressionText,
-  ]);
+    // The document's identity changes on every render; its content doesn't.
+  }, [createId, documentKey, open]);
 
-  useEffect(() => {
-    if (expressionUpdateRef.current) {
-      expressionUpdateRef.current = false;
-      return;
-    }
-    setExpressionText(expressionTextFromEditor(root));
-    setExpressionError(null);
-  }, [root]);
-
-  const rootFromExpressionText = useCallback(
-    (source: string): EditorGroup | null => {
-      try {
-        return source.trim()
-          ? editorRootFromDocument(
-              parseFilterDsl(source, expressionRegistry),
-              createId,
-            )
-          : emptyEditorGroup(createId);
-      } catch {
-        setExpressionError(messages.filterBuilder.expressionInvalid);
-        return null;
-      }
-    },
-    [createId, expressionRegistry, messages.filterBuilder.expressionInvalid],
-  );
-
-  const setExpressionRoot = useCallback((nextRoot: EditorGroup) => {
-    setRoot((current) => {
-      const reconciled = reconcileEditorRoot(current, nextRoot);
-      if (reconciled !== current) expressionUpdateRef.current = true;
-      return reconciled;
-    });
+  const changeConditions = useCallback((next: readonly EditorCondition[]) => {
+    setConditions(next);
+    setValidationError(null);
   }, []);
-
-  const updateFromExpressionText = useCallback(
-    (source: string): EditorGroup | null => {
-      const nextRoot = rootFromExpressionText(source);
-      if (!nextRoot) return null;
-      setExpressionRoot(nextRoot);
-      setExpressionError(null);
-      setValidationError(null);
-      return nextRoot;
-    },
-    [rootFromExpressionText, setExpressionRoot],
-  );
-
-  const commitExpressionText = useCallback(() => {
-    const nextRoot = rootFromExpressionText(expressionText);
-    if (!nextRoot) return null;
-    setExpressionError(null);
-    setExpressionText(expressionTextFromEditor(nextRoot));
-    setExpressionRoot(nextRoot);
-    return nextRoot;
-  }, [expressionText, rootFromExpressionText, setExpressionRoot]);
-
   const apply = useCallback(() => {
-    const nextRoot = commitExpressionText();
-    if (!nextRoot) return;
     try {
-      onApply(documentFromEditor(nextRoot), expressionText);
+      onApply(documentFromEditor(conditions));
     } catch (error) {
-      setValidationError(
-        error instanceof FilterValidationError || error instanceof Error
-          ? error.message === "missing_value"
-            ? messages.filterBuilder.invalid
-            : error.message
-          : messages.filterBuilder.invalid,
-      );
+      setValidationError(filterEditorError(error, messages));
     }
-  }, [commitExpressionText, messages.filterBuilder.invalid, onApply]);
-
+  }, [conditions, messages, onApply]);
+  /**
+   * Applies a saved filter or preset and keeps the panel open on it. A saved
+   * filter whose DSL no longer parses is refused with the parse error.
+   */
   const applyFilterDsl = useCallback(
-    (
-      filterDsl: string,
-      scopeOverride: FilterScopePreference = scopePreference,
-    ) => {
-      const nextRoot = rootFromExpressionText(filterDsl);
-      if (!nextRoot) return;
+    (filterDsl: string) => {
+      let document: FilterDocument;
       try {
-        const nextDocument = attachFilterScopePreference(
-          documentFromEditor(nextRoot),
-          scopeOverride,
-        );
-        preservedDocumentKeyRef.current = JSON.stringify(nextDocument);
-        setExpressionText(filterDsl);
-        setExpressionRoot(nextRoot);
-        setExpressionError(null);
-        setValidationError(null);
-        onApply(nextDocument, filterDsl, { closePanel: false });
+        document = parseFilterDsl(filterDsl, analyticsFilterRegistry);
       } catch (error) {
-        setValidationError(
-          error instanceof FilterValidationError || error instanceof Error
-            ? error.message
-            : messages.filterBuilder.invalid,
-        );
+        setValidationError(filterEditorError(error, messages));
+        return;
       }
+      changeConditions(editorConditionsFromDocument(document, createId));
+      onApply(document, { closePanel: false });
     },
-    [
-      messages.filterBuilder.invalid,
-      onApply,
-      rootFromExpressionText,
-      scopePreference,
-      setExpressionRoot,
-    ],
+    [changeConditions, createId, messages, onApply],
   );
   const applySavedFilter = useCallback(
-    (filter: SavedFilter) => {
-      onScopeChange(filter.scopePreference);
-      applyFilterDsl(filter.filterDsl, filter.scopePreference);
-    },
-    [applyFilterDsl, onScopeChange],
+    (filter: SavedFilter) => applyFilterDsl(filter.filterDsl),
+    [applyFilterDsl],
   );
   const applySystemPreset = useCallback(
-    (preset: SystemFilterPreset) => {
-      const nextScope = systemPresetScopeForApply(preset, scopePreference);
-      if (nextScope !== scopePreference) onScopeChange(nextScope);
-      applyFilterDsl(preset.filterDsl, nextScope);
-    },
-    [applyFilterDsl, onScopeChange, scopePreference],
+    (preset: SystemFilterPreset) => applyFilterDsl(preset.filterDsl),
+    [applyFilterDsl],
   );
 
-  const openSavedFilterCreate = useCallback(
-    (source?: SavedFilter) => {
-      setSavedFilterForm({
-        name: source?.name ?? "",
-        description: source?.description ?? "",
-        visibility: "private",
-        scopePreference: source?.scopePreference ?? scopePreference,
-      });
-      setSavedFilterOperationError(null);
-      setCreateSavedFilterOpen(true);
-    },
-    [scopePreference],
-  );
+  const openSavedFilterCreate = useCallback((source?: SavedFilter) => {
+    setSavedFilterForm({
+      name: source?.name ?? "",
+      description: source?.description ?? "",
+      visibility: "private",
+    });
+    setSavedFilterOperationError(null);
+    setCreateSavedFilterOpen(true);
+  }, []);
 
   const clearSavedFilter = useCallback(() => {
-    const nextRoot = emptyEditorGroup(createId);
-    const nextDocument = documentFromEditor(nextRoot);
-    preservedDocumentKeyRef.current = JSON.stringify(nextDocument);
-    setExpressionText("");
-    setExpressionRoot(nextRoot);
-    setExpressionError(null);
-    setValidationError(null);
-    onApply(nextDocument, "", { closePanel: false });
-  }, [createId, onApply, setExpressionRoot]);
+    changeConditions([]);
+    onApply({ conditions: [] } satisfies FilterDocument, { closePanel: false });
+  }, [changeConditions, onApply]);
 
   const openSavedFilterManagement = useCallback((filter: SavedFilter) => {
     setManagedSavedFilterId(filter.id);
@@ -496,14 +313,13 @@ export function FilterPanel({
       name: filter.name,
       description: filter.description,
       visibility: filter.visibility,
-      scopePreference: filter.scopePreference,
     });
     setSavedFilterOperationError(null);
     setManageSavedFilterOpen(true);
   }, []);
 
   const finishSavedFilterEditing = useCallback(() => {
-    if (!editingSavedFilter) return;
+    if (!editingSavedFilter || !draftDsl) return;
     setSavedFilterOperationError(null);
     updateSavedFilterMutation.mutate({
       filterId: editingSavedFilter.id,
@@ -511,52 +327,23 @@ export function FilterPanel({
         name: editingSavedFilter.name,
         description: editingSavedFilter.description,
         visibility: editingSavedFilter.visibility,
-        scopePreference: savedFilterForm.scopePreference ?? "auto",
       },
-      filterDsl: expressionText,
+      filterDsl: draftDsl,
       finishEditing: true,
     });
-  }, [
-    editingSavedFilter,
-    expressionText,
-    savedFilterForm.scopePreference,
-    updateSavedFilterMutation,
-  ]);
+  }, [draftDsl, editingSavedFilter, updateSavedFilterMutation]);
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col">
       <FilterEditor
         audience={audience}
-        initialFilterDsl={expressionText}
+        conditions={conditions}
+        createId={createId}
         messages={messages}
         siteId={siteId}
-        resolvedScope={suggestionScope}
         window={window}
-        controlledRoot={root}
-        createEditorNodeId={createId}
-        controlledDocument={document}
-        controlledExpressionText={expressionText}
-        controlledExpressionError={expressionError}
-        controlledValidationError={validationError}
-        onControlledRootChange={(nextRoot) => {
-          const reconciledRoot = reconcileEditorRoot(root, nextRoot);
-          setRoot(reconciledRoot);
-          setExpressionText(expressionTextFromEditor(reconciledRoot));
-          setExpressionError(null);
-          setValidationError(null);
-        }}
-        onControlledExpressionChange={(source) => {
-          setExpressionText(source);
-          updateFromExpressionText(source);
-        }}
-        onControlledExpressionCommit={commitExpressionText}
-        onControlledClear={() => {
-          setRoot(emptyEditorGroup(createId));
-          setExpressionText("");
-          setExpressionError(null);
-          setValidationError(null);
-        }}
-        onControlledApply={apply}
+        validationError={validationError}
+        onChange={changeConditions}
         headerContent={
           <FilterPanelHeader
             audience={audience}
@@ -570,13 +357,6 @@ export function FilterPanel({
             onApplySavedFilter={applySavedFilter}
             onApplySystemPreset={applySystemPreset}
             onClearSavedFilter={clearSavedFilter}
-          />
-        }
-        advancedContent={
-          <FilterScopeSelect
-            messages={messages}
-            scopePreference={scopePreference}
-            onScopeChange={onScopeChange}
           />
         }
         footerActions={

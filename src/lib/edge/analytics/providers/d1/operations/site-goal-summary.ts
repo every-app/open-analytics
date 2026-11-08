@@ -3,103 +3,108 @@ import {
   type FilterDocument,
   parseGoalFilter,
 } from "@/lib/edge/analytics/contract";
+import type {
+  CanonicalGoalConversionSummary,
+  CanonicalGoalMetricSummary,
+} from "@/lib/edge/analytics/contract/operation-results";
 import type { QueryWindow } from "@/lib/edge/analytics/providers/d1/internal/core-types";
+import type { D1ReadDiagnostics } from "@/lib/edge/analytics/providers/d1/internal/diagnostics";
 import {
-  type GoalRevenueAggregate,
-  type GoalSummaryAggregateRow,
-  queryGoalSummaryFromD1,
-} from "@/lib/edge/analytics/providers/d1/internal/goal-summary";
-import { queryGoalDefinition } from "@/lib/edge/analytics/providers/d1/internal/goals";
-import type { ScopedDatasetSql } from "@/lib/edge/analytics/providers/d1/internal/scoped-dataset";
+  type GoalConversionCounts,
+  queryGoalConversionsFromD1,
+} from "@/lib/edge/analytics/providers/d1/internal/goal-conversions";
+import {
+  queryAllGoalDefinitions,
+  queryGoalDefinition,
+} from "@/lib/edge/analytics/providers/d1/internal/goals";
 import type { Env } from "@/lib/edge/types";
 
-export interface GoalMetricSummary {
-  readonly total: number;
-  readonly converted: number;
-  readonly conversionRate: number;
-}
-
-export interface GoalRevenueSummary {
-  readonly currency: string;
-  readonly total: number;
-  /** Plausible's average revenue: `total` per event that carried revenue. */
-  readonly average: number;
-}
-
-export interface SiteGoalSummaryInput {
+export interface SiteGoalReadInput {
   readonly env: Env;
   readonly siteId: string;
-  readonly goalId: string;
   readonly window: QueryWindow;
   readonly filters: FilterDocument;
-  readonly scopedDataset?: ScopedDatasetSql;
+  readonly diagnostics?: D1ReadDiagnostics;
 }
 
 export interface SiteGoalSummaryResult {
   readonly goal: GoalDefinition;
-  readonly summary: {
-    readonly sessions: GoalMetricSummary;
-    readonly visitors: GoalMetricSummary;
-    /** Null for a goal without a currency. */
-    readonly revenue: GoalRevenueSummary | null;
-  };
+  readonly summary: CanonicalGoalConversionSummary;
 }
 
-function metric(total: number, converted: number): GoalMetricSummary {
-  const safeTotal = Number.isFinite(total) && total > 0 ? Math.floor(total) : 0;
-  const safeConverted = Math.min(
-    safeTotal,
-    Number.isFinite(converted) && converted > 0 ? Math.floor(converted) : 0,
-  );
+function metric(total: number, converted: number): CanonicalGoalMetricSummary {
+  const safeConverted = Math.min(total, converted);
   return {
-    total: safeTotal,
+    total,
     converted: safeConverted,
-    conversionRate: safeTotal > 0 ? safeConverted / safeTotal : 0,
-  };
-}
-
-function revenueSummary(
-  currency: string,
-  revenue: GoalRevenueAggregate,
-): GoalRevenueSummary {
-  return {
-    currency,
-    total: revenue.total,
-    average: revenue.events > 0 ? revenue.total / revenue.events : 0,
+    conversionRate: total > 0 ? safeConverted / total : 0,
   };
 }
 
 function summary(
   goal: GoalDefinition,
-  row: GoalSummaryAggregateRow,
+  totals: { readonly sessions: number; readonly visitors: number },
+  counts: GoalConversionCounts,
 ): SiteGoalSummaryResult {
   return {
     goal,
     summary: {
-      sessions: metric(row.totalSessions, row.convertedSessions),
-      visitors: metric(row.totalVisitors, row.convertedVisitors),
+      sessions: metric(totals.sessions, counts.sessions),
+      visitors: metric(totals.visitors, counts.visitors),
+      conversions: counts.conversions,
       revenue:
-        goal.currency !== undefined && row.revenue
-          ? revenueSummary(goal.currency, row.revenue)
+        goal.currency !== undefined && counts.revenue
+          ? {
+              currency: goal.currency,
+              total: counts.revenue.total,
+              // Plausible's average revenue: per event that carried revenue.
+              average:
+                counts.revenue.events > 0
+                  ? counts.revenue.total / counts.revenue.events
+                  : 0,
+            }
           : null,
     },
   };
 }
 
-/** Runtime provider boundary for the typed Goal summary operation. */
-export async function readSiteGoalSummary(
-  input: SiteGoalSummaryInput,
-): Promise<SiteGoalSummaryResult | null> {
-  const goal = await queryGoalDefinition(input.env, input.siteId, input.goalId);
-  if (!goal) return null;
-  const aggregate = await queryGoalSummaryFromD1(
+async function readGoals(
+  input: SiteGoalReadInput,
+  goals: readonly GoalDefinition[],
+): Promise<SiteGoalSummaryResult[]> {
+  const aggregate = await queryGoalConversionsFromD1(
     input.env,
     input.siteId,
     input.window,
     input.filters,
-    parseGoalFilter(goal),
-    input.scopedDataset,
-    goal.currency,
+    goals.map((goal) => ({
+      id: goal.id,
+      filter: parseGoalFilter(goal),
+      ...(goal.currency === undefined ? {} : { currency: goal.currency }),
+    })),
+    input.diagnostics,
   );
-  return summary(goal, aggregate);
+  const totals = {
+    sessions: aggregate.totalSessions,
+    visitors: aggregate.totalVisitors,
+  };
+  return goals.map((goal) =>
+    summary(goal, totals, aggregate.goals.get(goal.id)!),
+  );
+}
+
+/** One goal's conversions, for its detail page. */
+export async function readSiteGoalSummary(
+  input: SiteGoalReadInput & { readonly goalId: string },
+): Promise<SiteGoalSummaryResult | null> {
+  const goal = await queryGoalDefinition(input.env, input.siteId, input.goalId);
+  return goal ? (await readGoals(input, [goal]))[0]! : null;
+}
+
+/** Every goal of the site with its conversions, in one statement. */
+export async function readSiteGoalConversions(
+  input: SiteGoalReadInput,
+): Promise<{ readonly goals: readonly SiteGoalSummaryResult[] }> {
+  const goals = await queryAllGoalDefinitions(input.env, input.siteId);
+  return { goals: goals.length > 0 ? await readGoals(input, goals) : [] };
 }

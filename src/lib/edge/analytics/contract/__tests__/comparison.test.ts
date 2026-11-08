@@ -67,8 +67,8 @@ describe("typed comparison contract", () => {
   it("sorts a complete breakdown union before applying the limit", async () => {
     const query: ComparisonBreakdownQuery = {
       context,
-      current: { time, filters: { version: 1, root: null } },
-      reference: { time, filters: { version: 1, root: null } },
+      current: { time, filters: { conditions: [] } },
+      reference: { time, filters: { conditions: [] } },
       metrics: ["views", "sessions", "visitors"],
       dimension: "page.path",
       limit: 2,

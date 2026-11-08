@@ -38,10 +38,8 @@ import {
 import { bad, forb, jsonResponseFor, na, nf } from "@/lib/response";
 import {
   SAVED_FILTER_DSL_VERSION,
-  SAVED_FILTER_SCOPE_PREFERENCES,
   SAVED_FILTER_VISIBILITIES,
   type SavedFilter,
-  type SavedFilterScopePreference,
   type SavedFilterVisibility,
 } from "@/lib/saved-filters";
 const MAX_FILTER_ID_LENGTH = 120;
@@ -53,7 +51,6 @@ interface SavedFilterRow {
   ownerUserId: string;
   authorName: string;
   visibility: SavedFilterVisibility;
-  scopePreference?: SavedFilterScopePreference | null;
   name: string;
   description: string;
   filterDsl: string;
@@ -80,7 +77,6 @@ function savedFilterProjection(
     authorDisplayName: relation.columns.right_name,
     authorEmail: relation.columns.right_email,
     visibility: relation.columns.left_visibility,
-    scopePreference: relation.columns.left_scope_preference,
     name: relation.columns.left_name,
     description: relation.columns.left_description,
     filterDsl: relation.columns.left_filter_dsl,
@@ -101,14 +97,6 @@ function savedFilterRow(row: SavedFilterQueryRow): SavedFilterRow {
   ) {
     throw new Error("saved filter row has invalid visibility");
   }
-  const scopePreference = row.scopePreference ?? "auto";
-  if (
-    !SAVED_FILTER_SCOPE_PREFERENCES.includes(
-      scopePreference as SavedFilterScopePreference,
-    )
-  ) {
-    throw new Error("saved filter row has invalid scope preference");
-  }
   return {
     id: row.id,
     siteId: row.siteId,
@@ -120,7 +108,6 @@ function savedFilterRow(row: SavedFilterQueryRow): SavedFilterRow {
           ? row.authorEmail
           : "Unknown",
     visibility: row.visibility as SavedFilterVisibility,
-    scopePreference: scopePreference as SavedFilterScopePreference,
     name: row.name,
     description: row.description,
     filterDsl: row.filterDsl,
@@ -133,7 +120,6 @@ interface SavedFilterInput {
   readonly name: string;
   readonly description: string;
   readonly visibility: SavedFilterVisibility;
-  readonly scopePreference: SavedFilterScopePreference;
   readonly filterDsl: string;
 }
 interface SavedFilterCursor {
@@ -155,11 +141,7 @@ function parseListLimit(url: URL): number {
     : 100;
 }
 function asSavedFilter(row: SavedFilterRow, actorUserId: string): SavedFilter {
-  return {
-    ...row,
-    scopePreference: row.scopePreference ?? "auto",
-    isOwner: row.ownerUserId === actorUserId,
-  };
+  return { ...row, isOwner: row.ownerUserId === actorUserId };
 }
 function text(value: unknown, maxLength: number): string | null {
   if (typeof value !== "string" || value.length > maxLength) return null;
@@ -179,8 +161,6 @@ function savedFilterInput(
   );
   const rawDsl = text(body.filterDsl, FILTER_DSL_MAX_LENGTH);
   const rawVisibility = body.visibility;
-  const rawScopePreference =
-    body.scopePreference === undefined ? "auto" : body.scopePreference;
   if (rawName === null || !rawName.trim()) {
     return bad("name is required", "invalid_saved_filter_name");
   }
@@ -193,23 +173,12 @@ function savedFilterInput(
   ) {
     return bad("visibility is invalid", "invalid_saved_filter_visibility");
   }
-  if (
-    typeof rawScopePreference !== "string" ||
-    !SAVED_FILTER_SCOPE_PREFERENCES.includes(
-      rawScopePreference as SavedFilterScopePreference,
-    )
-  ) {
-    return bad(
-      "scopePreference is invalid",
-      "invalid_saved_filter_scope_preference",
-    );
-  }
   if (rawDsl === null) {
     return bad("filterDsl is invalid", "invalid_saved_filter_dsl");
   }
   try {
     const document = parseFilterDsl(rawDsl, analyticsFilterRegistry);
-    if (!document.root) {
+    if (document.conditions.length === 0) {
       return bad("filterDsl must contain a filter", "empty_saved_filter_dsl");
     }
     assertFilterAudience(
@@ -224,7 +193,6 @@ function savedFilterInput(
     name: rawName.trim(),
     description: rawDescription,
     visibility: rawVisibility as SavedFilterVisibility,
-    scopePreference: rawScopePreference as SavedFilterScopePreference,
     filterDsl: rawDsl,
   };
 }
@@ -348,10 +316,6 @@ export async function handleSavedFilters(
         eq(savedFilters.columns.site_id, param(siteId)),
         eq(savedFilters.columns.owner_user_id, param(session.userId)),
         eq(savedFilters.columns.filter_dsl, param(parsed.filterDsl)),
-        eq(
-          savedFilters.columns.scope_preference,
-          param(parsed.scopePreference),
-        ),
       ),
     );
     const duplicateLimit = queryLimit(duplicateMatches, 1);
@@ -380,7 +344,6 @@ export async function handleSavedFilters(
           visibility: parsed.visibility,
           name: parsed.name,
           description: parsed.description,
-          scope_preference: parsed.scopePreference,
           filter_dsl: parsed.filterDsl,
           filter_dsl_version: SAVED_FILTER_DSL_VERSION,
           created_at: unixepoch(),
@@ -430,10 +393,6 @@ export async function handleSavedFilters(
         eq(savedFilters.columns.site_id, param(siteId)),
         eq(savedFilters.columns.owner_user_id, param(session.userId)),
         eq(savedFilters.columns.filter_dsl, param(parsed.filterDsl)),
-        eq(
-          savedFilters.columns.scope_preference,
-          param(parsed.scopePreference),
-        ),
         neq(savedFilters.columns.id, param(id)),
       ),
     );
@@ -458,7 +417,6 @@ export async function handleSavedFilters(
         update(schema.saved_filters, (columns) => ({
           set: {
             visibility: parsed.visibility,
-            scope_preference: parsed.scopePreference,
             name: parsed.name,
             description: parsed.description,
             filter_dsl: parsed.filterDsl,

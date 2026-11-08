@@ -1,35 +1,37 @@
-import type {
-  FilterConditionEntity,
-  FilterFieldDefinition,
+import {
+  EVENT_PAYLOAD_FIELD,
+  type FilterDocument,
+  type FilterFieldDefinition,
   FilterOperator,
-  FilterValueKind,
+  type FilterValueKind,
+  targetFieldId,
 } from "./filters";
 import type { FilterAudience } from "./types";
 
-export type FilterStorageProfile =
-  | "case-folded-text"
-  | "direct-referrer"
-  | "event-payload"
-  | "session-boundary"
-  | "trimmed-text";
-
 /**
- * Storage semantics are part of the field contract. Readers and compilers
- * must use these declarations instead of re-inventing NULL/empty handling.
+ * Where a field's value lives, which is all the SQL compiler needs to know
+ * to filter visits and custom events by it.
  */
-export type FilterFieldSource =
-  "visit" | "event" | "session" | "visitor" | "payload";
-export type FilterObservationKind = "visit" | "event";
-export type FilterPresenceSemantics =
-  "non-null-column" | "derived-session-value" | "json-pointer";
-export type FilterEmptySemantics = "raw-empty-string" | "unsupported";
-export type FilterComparisonSemantics = "case-sensitive" | "case-insensitive";
-export type FilterEvaluation =
-  "observation" | "session-fact" | "visitor-fact" | "event-payload" | "derived";
-export type FilterNativeEntity = "visit" | "event" | "session" | "visitor";
-export type FilterSuggestionMode = "discrete" | "search" | "boolean" | "none";
+export enum FilterFieldSource {
+  /** A column of the page view. A custom event takes it from its visit. */
+  Visit = "visit",
+  /** The first or last page of the visit's session. */
+  SessionBoundary = "session-boundary",
+  /** The custom event's name: a visit matches through one of its events. */
+  EventName = "event-name",
+  /** A page view's custom property or a custom event's payload value. */
+  Payload = "payload",
+}
+
+/** How a text field compares: as stored, or lowercased. */
+export enum FilterTextComparison {
+  CaseSensitive = "case-sensitive",
+  CaseInsensitive = "case-insensitive",
+}
+
+type FilterSuggestionMode = "discrete" | "search" | "boolean" | "none";
 export type FilterFieldGroup =
-  "page" | "session" | "visitor" | "acquisition" | "device" | "geo" | "event";
+  "page" | "session" | "acquisition" | "device" | "geo" | "event";
 
 /**
  * Strategy keys are intentionally not SQL expressions. The compiler owns the
@@ -63,14 +65,7 @@ export type FilterColumnStrategy =
   | "column.scroll_depth"
   | "column.screen_width"
   | "column.screen_height"
-  | "column.is_eu"
-  | "fact.session_duration_ms"
-  | "fact.session_views"
-  | "fact.session_events"
-  | "fact.session_bounce"
-  | "fact.visitor_sessions"
-  | "fact.visitor_views"
-  | "fact.visitor_events";
+  | "column.is_eu";
 
 export type FilterCompilerStrategy =
   | FilterColumnStrategy
@@ -82,200 +77,103 @@ export type FilterCompilerStrategy =
   | "event.name"
   | "event.payload";
 
-function readonlySet<T>(values: Iterable<T>): ReadonlySet<T> {
-  const set = new Set(values);
-  const result: ReadonlySet<T> = {
-    get size() {
-      return set.size;
-    },
-    has: (value) => set.has(value),
-    entries: () => set.entries(),
-    keys: () => set.keys(),
-    values: () => set.values(),
-    forEach: (callback, thisArg) => set.forEach(callback, thisArg),
-    [Symbol.iterator]: () => set[Symbol.iterator](),
-  };
-  return Object.freeze(result);
-}
-
-function readonlyMap<K, V>(
-  entries: Iterable<readonly [K, V]>,
-): ReadonlyMap<K, V> {
-  const map = new Map(entries);
-  const result: ReadonlyMap<K, V> = {
-    get size() {
-      return map.size;
-    },
-    get: (key) => map.get(key),
-    has: (key) => map.has(key),
-    entries: () => map.entries(),
-    keys: () => map.keys(),
-    values: () => map.values(),
-    forEach: (callback, thisArg) => map.forEach(callback, thisArg),
-    [Symbol.iterator]: () => map[Symbol.iterator](),
-  };
-  return Object.freeze(result);
-}
-
 export interface RegisteredFilterField extends FilterFieldDefinition {
-  readonly profile: FilterStorageProfile;
   readonly source: FilterFieldSource;
-  /** Observations on which this field has filter meaning. */
-  readonly observationKinds: ReadonlySet<FilterObservationKind>;
-  readonly presence: FilterPresenceSemantics;
-  readonly empty: FilterEmptySemantics;
-  readonly comparison: FilterComparisonSemantics;
+  readonly comparison: FilterTextComparison;
+  /** A referrer field, whose empty value is the "Direct" traffic. */
+  readonly directReferrer: boolean;
   readonly group: FilterFieldGroup;
-  readonly labelKey: string;
-  readonly descriptionKey?: string;
-  readonly evaluation: FilterEvaluation;
-  readonly nativeEntity: FilterNativeEntity;
-  readonly nullable: boolean;
-  readonly unit?: "ms" | "px" | "ratio" | "%";
   readonly suggestionMode: FilterSuggestionMode;
   readonly compilerStrategy: FilterCompilerStrategy;
 }
 
-/** Canonical registry entries always carry the complete v4 metadata contract. */
-export type AnalyticsFilterRegistryField = RegisteredFilterField;
-
-const PUBLIC_AUDIENCES = readonlySet<FilterAudience>([
+const PUBLIC_AUDIENCES: ReadonlySet<FilterAudience> = new Set([
   "private-dashboard",
   "public-share",
 ]);
-const PRIVATE_AUDIENCES = readonlySet<FilterAudience>(["private-dashboard"]);
-const VISIT_AND_EVENT_OBSERVATIONS = readonlySet<FilterObservationKind>([
-  "visit",
-  "event",
+const PRIVATE_AUDIENCES: ReadonlySet<FilterAudience> = new Set([
+  "private-dashboard",
 ]);
-const EVENT_OBSERVATIONS = readonlySet<FilterObservationKind>(["event"]);
-const NO_OBSERVATIONS = readonlySet<FilterObservationKind>([]);
 
 const OPERATORS_BY_VALUE_KIND: Readonly<
-  Record<FilterValueKind, ReadonlySet<FilterOperator>>
+  Record<FilterValueKind, readonly FilterOperator[]>
 > = {
-  string: readonlySet([
-    "eq",
-    "neq",
-    "in",
-    "notIn",
-    "contains",
-    "startsWith",
-    "endsWith",
-    "exists",
-    "notExists",
-    "isNull",
-    "notNull",
-    "isEmpty",
-    "notEmpty",
-  ]),
-  enum: readonlySet([
-    "eq",
-    "neq",
-    "in",
-    "notIn",
-    "exists",
-    "notExists",
-    "isNull",
-    "notNull",
-    "isEmpty",
-    "notEmpty",
-  ]),
-  number: readonlySet([
-    "eq",
-    "neq",
-    "in",
-    "notIn",
-    "gt",
-    "gte",
-    "lt",
-    "lte",
-    "between",
-    "exists",
-    "notExists",
-    "isNull",
-    "notNull",
-  ]),
-  boolean: readonlySet([
-    "eq",
-    "neq",
-    "exists",
-    "notExists",
-    "isNull",
-    "notNull",
-  ]),
-  date: readonlySet([
-    "eq",
-    "neq",
-    "in",
-    "notIn",
-    "gt",
-    "gte",
-    "lt",
-    "lte",
-    "between",
-    "exists",
-    "notExists",
-    "isNull",
-    "notNull",
-  ]),
-  datetime: readonlySet([
-    "eq",
-    "neq",
-    "in",
-    "notIn",
-    "gt",
-    "gte",
-    "lt",
-    "lte",
-    "between",
-    "exists",
-    "notExists",
-    "isNull",
-    "notNull",
-  ]),
-  "json-scalar": readonlySet([
-    "eq",
-    "neq",
-    "in",
-    "notIn",
-    "contains",
-    "startsWith",
-    "endsWith",
-    "gt",
-    "gte",
-    "lt",
-    "lte",
-    "between",
-    "exists",
-    "notExists",
-    "isNull",
-    "notNull",
-    "isEmpty",
-    "notEmpty",
-  ]),
+  string: [
+    FilterOperator.Eq,
+    FilterOperator.Neq,
+    FilterOperator.In,
+    FilterOperator.NotIn,
+    FilterOperator.Contains,
+    FilterOperator.NotContains,
+    FilterOperator.StartsWith,
+    FilterOperator.EndsWith,
+    FilterOperator.Exists,
+    FilterOperator.NotExists,
+    FilterOperator.IsNull,
+    FilterOperator.NotNull,
+    FilterOperator.IsEmpty,
+    FilterOperator.NotEmpty,
+  ],
+  enum: [
+    FilterOperator.Eq,
+    FilterOperator.Neq,
+    FilterOperator.In,
+    FilterOperator.NotIn,
+    FilterOperator.Exists,
+    FilterOperator.NotExists,
+    FilterOperator.IsNull,
+    FilterOperator.NotNull,
+    FilterOperator.IsEmpty,
+    FilterOperator.NotEmpty,
+  ],
+  number: [
+    FilterOperator.Eq,
+    FilterOperator.Neq,
+    FilterOperator.In,
+    FilterOperator.NotIn,
+    FilterOperator.Gt,
+    FilterOperator.Gte,
+    FilterOperator.Lt,
+    FilterOperator.Lte,
+    FilterOperator.Between,
+    FilterOperator.Exists,
+    FilterOperator.NotExists,
+    FilterOperator.IsNull,
+    FilterOperator.NotNull,
+  ],
+  boolean: [
+    FilterOperator.Eq,
+    FilterOperator.Neq,
+    FilterOperator.Exists,
+    FilterOperator.NotExists,
+    FilterOperator.IsNull,
+    FilterOperator.NotNull,
+  ],
+  "json-scalar": [
+    FilterOperator.Eq,
+    FilterOperator.Neq,
+    FilterOperator.In,
+    FilterOperator.NotIn,
+    FilterOperator.Contains,
+    FilterOperator.NotContains,
+    FilterOperator.StartsWith,
+    FilterOperator.EndsWith,
+    FilterOperator.Gt,
+    FilterOperator.Gte,
+    FilterOperator.Lt,
+    FilterOperator.Lte,
+    FilterOperator.Between,
+    FilterOperator.Exists,
+    FilterOperator.NotExists,
+    FilterOperator.IsNull,
+    FilterOperator.NotNull,
+    FilterOperator.IsEmpty,
+    FilterOperator.NotEmpty,
+  ],
 };
 
-function operatorsFor(
-  valueKind: FilterValueKind,
-  restrictTo?: readonly FilterOperator[],
-): ReadonlySet<FilterOperator> {
-  const base = OPERATORS_BY_VALUE_KIND[valueKind];
-  return restrictTo
-    ? readonlySet(restrictTo.filter((operator) => base.has(operator)))
-    : base;
-}
-
-export function operatorsForValueKind(
-  valueKind: FilterValueKind,
-): ReadonlySet<FilterOperator> {
-  return OPERATORS_BY_VALUE_KIND[valueKind];
-}
-
 function groupFor(id: string): FilterFieldGroup {
-  if (id.startsWith("page.")) return "page";
   if (id.startsWith("session.")) return "session";
-  if (id.startsWith("visitor.")) return "visitor";
   if (
     id.startsWith("utm.") ||
     id.startsWith("referrer.") ||
@@ -288,513 +186,167 @@ function groupFor(id: string): FilterFieldGroup {
   return "page";
 }
 
-type FieldMetadataOverrides = Partial<
-  Pick<
-    RegisteredFilterField,
-    | "conditionEntity"
-    | "source"
-    | "observationKinds"
-    | "presence"
-    | "empty"
-    | "comparison"
-    | "group"
-    | "labelKey"
-    | "descriptionKey"
-    | "evaluation"
-    | "nativeEntity"
-    | "nullable"
-    | "unit"
-    | "suggestionMode"
-  >
->;
-
-type DefinedFilterField<Id extends string> = RegisteredFilterField & {
-  readonly id: Id;
-};
-
-function text<const Id extends string>(
-  id: Id,
-  audiences: ReadonlySet<FilterAudience>,
-  compilerStrategy: FilterCompilerStrategy,
-  profile: "trimmed-text" | "case-folded-text" = "trimmed-text",
-  options: FieldMetadataOverrides = {},
-): DefinedFilterField<Id> {
-  const source = options.source ?? "visit";
-  const nativeEntity =
-    options.nativeEntity ??
-    (source === "event"
-      ? "event"
-      : source === "session"
-        ? "session"
-        : source === "visitor"
-          ? "visitor"
-          : "visit");
-  return {
-    id,
-    valueKind: "string",
-    operators: operatorsFor("string"),
-    audiences,
-    ...(options.conditionEntity
-      ? { conditionEntity: options.conditionEntity }
-      : {}),
-    profile,
-    singletonSetEquivalent: true,
-    source,
-    observationKinds: options.observationKinds ?? VISIT_AND_EVENT_OBSERVATIONS,
-    presence: options.presence ?? "non-null-column",
-    empty: options.empty ?? "raw-empty-string",
-    comparison:
-      options.comparison ??
-      (profile === "case-folded-text" ? "case-insensitive" : "case-sensitive"),
-    group: options.group ?? groupFor(id),
-    labelKey: options.labelKey ?? `analytics.filters.fields.${id}`,
-    ...(options.descriptionKey
-      ? { descriptionKey: options.descriptionKey }
-      : {}),
-    evaluation:
-      options.evaluation ??
-      (source === "session" || source === "visitor"
-        ? "derived"
-        : "observation"),
-    nativeEntity,
-    nullable: options.nullable ?? true,
-    ...(options.unit ? { unit: options.unit } : {}),
-    suggestionMode: options.suggestionMode ?? "search",
-    compilerStrategy,
-    canonicalize: (value) =>
-      profile === "case-folded-text"
-        ? String(value).trim().toLowerCase()
-        : String(value).trim(),
-  };
-}
-
-function enumField<const Id extends string>(
-  id: Id,
-  audiences: ReadonlySet<FilterAudience>,
-  compilerStrategy: FilterCompilerStrategy,
-  options: FieldMetadataOverrides = {},
-): DefinedFilterField<Id> {
-  return {
-    ...text(id, audiences, compilerStrategy, "case-folded-text", options),
-    valueKind: "enum",
-    operators: operatorsFor("enum"),
-  };
-}
-
-type NumericOptions = FieldMetadataOverrides & {
+interface FieldOptions {
+  readonly audiences?: ReadonlySet<FilterAudience>;
+  readonly source?: FilterFieldSource;
+  readonly comparison?: FilterTextComparison;
+  readonly directReferrer?: boolean;
+  readonly suggestionMode?: FilterSuggestionMode;
+  readonly operators?: readonly FilterOperator[];
   readonly number?: FilterFieldDefinition["number"];
-};
+  readonly unit?: FilterFieldDefinition["unit"];
+}
 
-function numeric<const Id extends string>(
+function field<const Id extends string>(
   id: Id,
-  audiences: ReadonlySet<FilterAudience>,
+  valueKind: FilterValueKind,
   compilerStrategy: FilterCompilerStrategy,
-  options: NumericOptions = {},
-): DefinedFilterField<Id> {
-  const evaluation = options.evaluation ?? "observation";
-  const nativeEntity = options.nativeEntity ?? "visit";
-  const source = options.source ?? nativeEntity;
+  options: FieldOptions = {},
+): RegisteredFilterField & { readonly id: Id } {
+  const comparison =
+    options.comparison ??
+    (valueKind === "enum"
+      ? FilterTextComparison.CaseInsensitive
+      : FilterTextComparison.CaseSensitive);
+  const isText = valueKind === "string" || valueKind === "enum";
   return {
     id,
-    valueKind: "number",
-    operators: operatorsFor("number"),
-    audiences,
-    ...(options.conditionEntity
-      ? { conditionEntity: options.conditionEntity }
-      : {}),
-    profile: "trimmed-text",
-    source,
-    observationKinds:
-      options.observationKinds ??
-      (evaluation === "observation"
-        ? VISIT_AND_EVENT_OBSERVATIONS
-        : NO_OBSERVATIONS),
-    presence: options.presence ?? "non-null-column",
-    empty: options.empty ?? "unsupported",
-    comparison: options.comparison ?? "case-sensitive",
-    group: options.group ?? groupFor(id),
-    labelKey: options.labelKey ?? `analytics.filters.fields.${id}`,
-    ...(options.descriptionKey
-      ? { descriptionKey: options.descriptionKey }
-      : {}),
-    evaluation,
-    nativeEntity,
-    nullable: options.nullable ?? true,
-    ...(options.unit ? { unit: options.unit } : {}),
-    suggestionMode: options.suggestionMode ?? "none",
+    valueKind,
+    operators: new Set(options.operators ?? OPERATORS_BY_VALUE_KIND[valueKind]),
+    audiences: options.audiences ?? PUBLIC_AUDIENCES,
+    source: options.source ?? FilterFieldSource.Visit,
+    comparison,
+    directReferrer: options.directReferrer ?? false,
+    group: groupFor(id),
+    suggestionMode:
+      options.suggestionMode ??
+      (valueKind === "boolean" ? "boolean" : isText ? "search" : "none"),
     compilerStrategy,
     ...(options.number ? { number: options.number } : {}),
+    ...(options.unit ? { unit: options.unit } : {}),
+    ...(isText
+      ? {
+          canonicalize: (value) =>
+            comparison === FilterTextComparison.CaseInsensitive
+              ? String(value).trim().toLowerCase()
+              : String(value).trim(),
+        }
+      : {}),
   };
 }
 
-function booleanField<const Id extends string>(
-  id: Id,
-  audiences: ReadonlySet<FilterAudience>,
-  compilerStrategy: FilterCompilerStrategy,
-  options: NumericOptions = {},
-): DefinedFilterField<Id> {
-  return {
-    ...numeric(id, audiences, compilerStrategy, options),
-    valueKind: "boolean",
-    operators: operatorsFor("boolean"),
-    suggestionMode: options.suggestionMode ?? "boolean",
-  };
-}
+const CASE_INSENSITIVE = { comparison: FilterTextComparison.CaseInsensitive };
+const DISCRETE = { suggestionMode: "discrete" } as const;
+const PRIVATE = { audiences: PRIVATE_AUDIENCES };
+const SESSION_BOUNDARY = {
+  source: FilterFieldSource.SessionBoundary,
+  operators: [
+    FilterOperator.Eq,
+    FilterOperator.Neq,
+    FilterOperator.In,
+    FilterOperator.NotIn,
+  ],
+};
 
-/** The only hand-maintained field list. All public IDs and registry entries derive from it. */
+/**
+ * The only hand-maintained field list, in the order field pickers show it.
+ * All public IDs and registry entries derive from it.
+ */
 const FIELDS = [
-  text("page.path", PUBLIC_AUDIENCES, "column.pathname", "trimmed-text", {
-    conditionEntity: "page",
-  }),
-  text("page.title", PUBLIC_AUDIENCES, "column.title", "trimmed-text", {
-    conditionEntity: "page",
-  }),
-  text(
-    "page.hostname",
-    PUBLIC_AUDIENCES,
-    "column.hostname",
-    "case-folded-text",
-    { conditionEntity: "page" },
-  ),
-  text("page.query", PRIVATE_AUDIENCES, "column.query_string", "trimmed-text", {
-    conditionEntity: "page",
-  }),
-  text("page.hash", PRIVATE_AUDIENCES, "column.hash_fragment", "trimmed-text", {
-    conditionEntity: "page",
-  }),
-  {
-    ...text(
-      "session.entryPath",
-      PUBLIC_AUDIENCES,
-      "session.boundary.entry",
-      "trimmed-text",
-      {
-        source: "session",
-        presence: "derived-session-value",
-        empty: "unsupported",
-        evaluation: "derived",
-        nativeEntity: "session",
-        suggestionMode: "search",
-      },
-    ),
-    operators: operatorsFor("string", ["eq", "neq", "in", "notIn"]),
-    profile: "session-boundary" as const,
-  },
-  {
-    ...text(
-      "session.exitPath",
-      PUBLIC_AUDIENCES,
-      "session.boundary.exit",
-      "trimmed-text",
-      {
-        source: "session",
-        presence: "derived-session-value",
-        empty: "unsupported",
-        evaluation: "derived",
-        nativeEntity: "session",
-        suggestionMode: "search",
-      },
-    ),
-    operators: operatorsFor("string", ["eq", "neq", "in", "notIn"]),
-    profile: "session-boundary" as const,
-  },
-  {
-    ...text(
-      "referrer.domain",
-      PUBLIC_AUDIENCES,
-      "column.referrer_host",
-      "case-folded-text",
-    ),
-    profile: "direct-referrer" as const,
-    suggestionMode: "search" as const,
-  },
-  {
-    ...text(
-      "referrer.url",
-      PRIVATE_AUDIENCES,
-      "column.referrer_url",
-      "case-folded-text",
-    ),
-    profile: "direct-referrer" as const,
-    suggestionMode: "search" as const,
-  },
-  enumField("traffic.channel", PUBLIC_AUDIENCES, "column.channel", {
-    suggestionMode: "discrete",
-  }),
-  text("utm.source", PUBLIC_AUDIENCES, "column.utm_source", "trimmed-text", {
-    suggestionMode: "discrete",
-  }),
-  text("utm.medium", PUBLIC_AUDIENCES, "column.utm_medium", "trimmed-text", {
-    suggestionMode: "discrete",
-  }),
-  text(
-    "utm.campaign",
-    PUBLIC_AUDIENCES,
-    "column.utm_campaign",
-    "trimmed-text",
-    { suggestionMode: "discrete" },
-  ),
-  text("utm.term", PUBLIC_AUDIENCES, "column.utm_term", "trimmed-text", {
-    suggestionMode: "discrete",
-  }),
-  text("utm.content", PUBLIC_AUDIENCES, "column.utm_content", "trimmed-text", {
-    suggestionMode: "discrete",
-  }),
-  text("client.browser", PUBLIC_AUDIENCES, "column.browser", "trimmed-text", {
-    suggestionMode: "discrete",
-  }),
-  text(
-    "client.browserVersion",
-    PUBLIC_AUDIENCES,
-    "column.browser_version",
-    "trimmed-text",
-    { suggestionMode: "search" },
-  ),
-  text(
-    "client.browserEngine",
-    PUBLIC_AUDIENCES,
-    "derived.browserEngine",
-    "trimmed-text",
-    { suggestionMode: "discrete" },
-  ),
-  text("client.os", PUBLIC_AUDIENCES, "column.os", "trimmed-text", {
-    suggestionMode: "discrete",
-  }),
-  text(
-    "client.osVersion",
-    PUBLIC_AUDIENCES,
-    "derived.osVersion",
-    "trimmed-text",
-    { suggestionMode: "search" },
-  ),
-  enumField("client.deviceType", PUBLIC_AUDIENCES, "column.device_type", {
-    suggestionMode: "discrete",
-  }),
-  text("client.language", PUBLIC_AUDIENCES, "column.language", "trimmed-text", {
-    suggestionMode: "discrete",
-  }),
-  text(
-    "client.screenSize",
-    PUBLIC_AUDIENCES,
-    "derived.screenSize",
-    "trimmed-text",
-    { suggestionMode: "discrete" },
-  ),
-  enumField("geo.country", PUBLIC_AUDIENCES, "column.country", {
-    suggestionMode: "discrete",
-  }),
-  text("geo.region", PRIVATE_AUDIENCES, "column.region", "case-folded-text"),
-  text("geo.city", PRIVATE_AUDIENCES, "column.city", "case-folded-text"),
-  enumField("geo.continent", PUBLIC_AUDIENCES, "column.continent", {
-    suggestionMode: "discrete",
-  }),
-  text("geo.timeZone", PUBLIC_AUDIENCES, "column.timezone", "trimmed-text", {
-    suggestionMode: "discrete",
-  }),
-  text("event.name", PRIVATE_AUDIENCES, "event.name", "trimmed-text", {
-    source: "event",
-    observationKinds: EVENT_OBSERVATIONS,
-    nativeEntity: "event",
-    suggestionMode: "search",
-    nullable: false,
-  }),
-  {
-    id: "event.payload" as const,
-    valueKind: "json-scalar" as const,
-    operators: operatorsFor("json-scalar"),
-    audiences: PRIVATE_AUDIENCES,
-    profile: "event-payload" as const,
-    source: "payload" as const,
-    // A path names an event's payload value or, at the top level, a page
-    // view's custom property.
-    observationKinds: VISIT_AND_EVENT_OBSERVATIONS,
-    presence: "json-pointer" as const,
-    empty: "raw-empty-string" as const,
-    comparison: "case-sensitive" as const,
-    group: "event" as const,
-    labelKey: "analytics.filters.fields.event.payload",
-    evaluation: "event-payload" as const,
-    nativeEntity: "event" as const,
-    nullable: true,
-    suggestionMode: "none" as const,
-    compilerStrategy: "event.payload" as const,
-  },
-  numeric("page.durationMs", PUBLIC_AUDIENCES, "column.duration_ms", {
-    conditionEntity: "page",
+  field("page.path", "string", "column.pathname"),
+  field("page.title", "string", "column.title"),
+  field("page.hostname", "string", "column.hostname", CASE_INSENSITIVE),
+  field("page.durationMs", "number", "column.duration_ms", {
     unit: "ms",
     number: { min: 0 },
   }),
-  numeric("page.scrollDepth", PUBLIC_AUDIENCES, "column.scroll_depth", {
-    conditionEntity: "page",
+  field("page.scrollDepth", "number", "column.scroll_depth", {
     unit: "%",
     number: { min: 0, max: 100, step: 1 },
   }),
-  numeric("session.durationMs", PUBLIC_AUDIENCES, "fact.session_duration_ms", {
-    source: "session",
-    evaluation: "session-fact",
-    nativeEntity: "session",
-    nullable: false,
-    unit: "ms",
-    number: { min: 0 },
+  field("page.query", "string", "column.query_string", PRIVATE),
+  field("page.hash", "string", "column.hash_fragment", PRIVATE),
+  field("event.name", "string", "event.name", {
+    ...PRIVATE,
+    source: FilterFieldSource.EventName,
   }),
-  numeric("session.views", PUBLIC_AUDIENCES, "fact.session_views", {
-    source: "session",
-    evaluation: "session-fact",
-    nativeEntity: "session",
-    nullable: false,
-    number: { min: 0, step: 1 },
+  field(EVENT_PAYLOAD_FIELD, "json-scalar", "event.payload", {
+    ...PRIVATE,
+    source: FilterFieldSource.Payload,
   }),
-  numeric("session.events", PUBLIC_AUDIENCES, "fact.session_events", {
-    source: "session",
-    evaluation: "session-fact",
-    nativeEntity: "session",
-    nullable: false,
-    number: { min: 0, step: 1 },
+  field(
+    "session.entryPath",
+    "string",
+    "session.boundary.entry",
+    SESSION_BOUNDARY,
+  ),
+  field(
+    "session.exitPath",
+    "string",
+    "session.boundary.exit",
+    SESSION_BOUNDARY,
+  ),
+  field("referrer.domain", "string", "column.referrer_host", {
+    ...CASE_INSENSITIVE,
+    directReferrer: true,
   }),
-  booleanField("session.bounce", PUBLIC_AUDIENCES, "fact.session_bounce", {
-    source: "session",
-    evaluation: "session-fact",
-    nativeEntity: "session",
-    nullable: false,
+  field("referrer.url", "string", "column.referrer_url", {
+    ...PRIVATE,
+    ...CASE_INSENSITIVE,
+    directReferrer: true,
   }),
-  numeric("visitor.sessions", PUBLIC_AUDIENCES, "fact.visitor_sessions", {
-    source: "visitor",
-    evaluation: "visitor-fact",
-    nativeEntity: "visitor",
-    nullable: false,
-    number: { min: 0, step: 1 },
-  }),
-  numeric("visitor.views", PUBLIC_AUDIENCES, "fact.visitor_views", {
-    source: "visitor",
-    evaluation: "visitor-fact",
-    nativeEntity: "visitor",
-    nullable: false,
-    number: { min: 0, step: 1 },
-  }),
-  numeric("visitor.events", PUBLIC_AUDIENCES, "fact.visitor_events", {
-    source: "visitor",
-    evaluation: "visitor-fact",
-    nativeEntity: "visitor",
-    nullable: false,
-    number: { min: 0, step: 1 },
-  }),
-  numeric("client.screenWidth", PUBLIC_AUDIENCES, "column.screen_width", {
+  field("traffic.channel", "enum", "column.channel", DISCRETE),
+  field("utm.source", "string", "column.utm_source", DISCRETE),
+  field("utm.medium", "string", "column.utm_medium", DISCRETE),
+  field("utm.campaign", "string", "column.utm_campaign", DISCRETE),
+  field("utm.term", "string", "column.utm_term", DISCRETE),
+  field("utm.content", "string", "column.utm_content", DISCRETE),
+  field("client.deviceType", "enum", "column.device_type", DISCRETE),
+  field("client.browser", "string", "column.browser", DISCRETE),
+  field("client.browserVersion", "string", "column.browser_version"),
+  field("client.browserEngine", "string", "derived.browserEngine", DISCRETE),
+  field("client.os", "string", "column.os", DISCRETE),
+  field("client.osVersion", "string", "derived.osVersion"),
+  field("client.language", "string", "column.language", DISCRETE),
+  field("client.screenSize", "string", "derived.screenSize", DISCRETE),
+  field("client.screenWidth", "number", "column.screen_width", {
     unit: "px",
     number: { min: 0, step: 1 },
   }),
-  numeric("client.screenHeight", PUBLIC_AUDIENCES, "column.screen_height", {
+  field("client.screenHeight", "number", "column.screen_height", {
     unit: "px",
     number: { min: 0, step: 1 },
   }),
-  booleanField("geo.isEU", PUBLIC_AUDIENCES, "column.is_eu", {
-    nullable: false,
+  field("geo.country", "enum", "column.country", DISCRETE),
+  field("geo.region", "string", "column.region", {
+    ...PRIVATE,
+    ...CASE_INSENSITIVE,
   }),
-] as const satisfies readonly RegisteredFilterField[];
+  field("geo.city", "string", "column.city", {
+    ...PRIVATE,
+    ...CASE_INSENSITIVE,
+  }),
+  field("geo.continent", "enum", "column.continent", DISCRETE),
+  field("geo.timeZone", "string", "column.timezone", DISCRETE),
+  field("geo.isEU", "boolean", "column.is_eu"),
+] as const;
 
-type FieldIdTuple<T extends readonly { readonly id: string }[]> = {
-  readonly [K in keyof T]: T[K] extends { readonly id: infer Id } ? Id : never;
-};
-
-/** Derived from FIELDS so IDs cannot drift from their canonical definitions. */
-export const ANALYTICS_FILTER_FIELD_IDS = FIELDS.map(
-  (field) => field.id,
-) as unknown as FieldIdTuple<typeof FIELDS>;
-
-export type AnalyticsFilterFieldId =
-  (typeof ANALYTICS_FILTER_FIELD_IDS)[number];
-
-/** Stable product order for field selectors and expression help. */
-export const ANALYTICS_FILTER_FIELD_DISPLAY_ORDER = [
-  "page.path",
-  "page.title",
-  "page.hostname",
-  "page.durationMs",
-  "page.scrollDepth",
-  "page.query",
-  "page.hash",
-  "event.name",
-  "event.payload",
-  "session.entryPath",
-  "session.exitPath",
-  "session.durationMs",
-  "session.views",
-  "session.events",
-  "session.bounce",
-  "visitor.sessions",
-  "visitor.views",
-  "visitor.events",
-  "referrer.domain",
-  "referrer.url",
-  "traffic.channel",
-  "utm.source",
-  "utm.medium",
-  "utm.campaign",
-  "utm.term",
-  "utm.content",
-  "client.deviceType",
-  "client.browser",
-  "client.browserVersion",
-  "client.browserEngine",
-  "client.os",
-  "client.osVersion",
-  "client.language",
-  "client.screenSize",
-  "client.screenWidth",
-  "client.screenHeight",
-  "geo.country",
-  "geo.region",
-  "geo.city",
-  "geo.continent",
-  "geo.timeZone",
-  "geo.isEU",
-] as const satisfies readonly AnalyticsFilterFieldId[];
-
-const displayOrderIds = new Set(ANALYTICS_FILTER_FIELD_DISPLAY_ORDER);
-if (
-  displayOrderIds.size !== ANALYTICS_FILTER_FIELD_DISPLAY_ORDER.length ||
-  displayOrderIds.size !== FIELDS.length ||
-  FIELDS.some((field) => !displayOrderIds.has(field.id))
-) {
-  throw new Error(
-    "Analytics filter display order is incomplete or duplicated.",
-  );
-}
-
-export const analyticsFilterFieldDisplayOrder: ReadonlyMap<string, number> =
-  readonlyMap(
-    ANALYTICS_FILTER_FIELD_DISPLAY_ORDER.map(
-      (field, index) => [field, index] as const,
-    ),
-  );
+export type AnalyticsFilterFieldId = (typeof FIELDS)[number]["id"];
 
 /** Bump when canonical IDs, value kinds, or operator semantics change. */
-export const ANALYTICS_FILTER_REGISTRY_REVISION = "analytics-filter-v7";
-
-const REGISTERED_FIELDS: readonly RegisteredFilterField[] = FIELDS.map(
-  (field) => Object.freeze(field),
-);
-const registryEntries = REGISTERED_FIELDS.map(
-  (field) => [field.id, field] as const,
-);
-
-if (
-  new Set(REGISTERED_FIELDS.map((field) => field.id)).size !==
-  REGISTERED_FIELDS.length
-) {
-  throw new Error("Analytics filter registry contains duplicate field IDs.");
-}
+export const ANALYTICS_FILTER_REGISTRY_REVISION = "analytics-filter-v8";
 
 export const analyticsFilterRegistry: ReadonlyMap<
   string,
-  AnalyticsFilterRegistryField
-> = readonlyMap(registryEntries);
+  RegisteredFilterField
+> = new Map(FIELDS.map((definition) => [definition.id, definition]));
 
 export function filterIdsForAudience(
   audience: FilterAudience,
 ): ReadonlySet<string> {
-  return readonlySet(
-    REGISTERED_FIELDS.filter((field) => field.audiences.has(audience)).map(
-      (field) => field.id,
+  return new Set(
+    FIELDS.filter((definition) => definition.audiences.has(audience)).map(
+      (definition) => definition.id,
     ),
   );
 }
@@ -805,30 +357,30 @@ export function analyticsFilterDefinition(
   return analyticsFilterRegistry.get(fieldId);
 }
 
-/** Resolve where a registered condition is anchored independently of the storage source. */
-export function filterConditionEntity(
-  definition: FilterFieldDefinition | undefined,
-): FilterConditionEntity | undefined {
-  if (!definition) return undefined;
-  const metadata = definition as FilterFieldDefinition & {
-    readonly nativeEntity?: FilterNativeEntity;
-    readonly observationKinds?: ReadonlySet<FilterObservationKind>;
-  };
-  if (definition.conditionEntity) return definition.conditionEntity;
-  if (metadata.nativeEntity === "session") return "session";
-  if (metadata.nativeEntity === "visitor") return "visitor";
-  if (metadata.nativeEntity === "event") return "event";
-  if (metadata.nativeEntity === "visit") {
-    const observations = metadata.observationKinds;
-    return observations?.size === 1 && observations.has("visit")
-      ? "page"
-      : "activity";
-  }
-  return undefined;
+/**
+ * Whether the filter names custom events, so only custom events match it:
+ * e.g. `event.name eq "Purchase"`, alone or with page view conditions.
+ */
+export function matchesOnlyCustomEvents(document: FilterDocument): boolean {
+  return document.conditions.some(
+    (condition) =>
+      analyticsFilterDefinition(targetFieldId(condition.target))?.source ===
+      FilterFieldSource.EventName,
+  );
 }
 
-export function analyticsFilterOperators(
-  fieldId: string,
-): ReadonlySet<FilterOperator> | undefined {
-  return analyticsFilterDefinition(fieldId)?.operators;
+/**
+ * Whether the filter is custom properties alone, e.g.
+ * `event.payload("/plan") eq "pro"`: page views and custom events both
+ * carry properties, so both match it.
+ */
+export function matchesOnlyProperties(document: FilterDocument): boolean {
+  return (
+    document.conditions.length > 0 &&
+    document.conditions.every(
+      (condition) =>
+        analyticsFilterDefinition(targetFieldId(condition.target))?.source ===
+        FilterFieldSource.Payload,
+    )
+  );
 }

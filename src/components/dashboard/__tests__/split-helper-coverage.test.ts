@@ -23,14 +23,6 @@ import {
   sanitizeCsvFilename,
 } from "@/components/dashboard/common/tabbed-data-table-card/utils";
 import {
-  allowedFields,
-  directEventName,
-  fieldLabel,
-  isSelectablePayloadFieldType,
-  payloadFieldTypeLabel,
-  registryFieldGroups,
-} from "@/components/dashboard/filters/filter-editor/field-catalog";
-import {
   leadingLabelLetter,
   resolveFaviconUrlForLabel,
   sanitizeHostname,
@@ -61,9 +53,6 @@ const messages = {
   },
   filterBuilder: {
     fieldLabels: { "page.path": "Page path" },
-    expressionHelpOtherFields: "Other fields",
-    fieldGroups: { page: "Page fields" },
-    valueKinds: { string: "String", number: "Number", boolean: "Boolean" },
   },
   systemPerformance: {
     range15m: "15m",
@@ -161,77 +150,6 @@ describe("recently split dashboard helpers", () => {
       method: "PATCH",
       body: { teamId: "team-1" },
     });
-  });
-
-  it("provides filter catalog labels, groups, and event-name detection", () => {
-    expect(fieldLabel("page.path", messages)).toBe("Page path");
-    expect(fieldLabel("unknown.field", messages)).toBe("unknown.field");
-    const fields = allowedFields("private-dashboard");
-    expect(fields.length).toBeGreaterThan(0);
-    expect(allowedFields("private-dashboard", true).length).toBeLessThanOrEqual(
-      fields.length,
-    );
-    expect(
-      registryFieldGroups(
-        [
-          { id: "page.path", group: "page" },
-          { id: "custom", group: "other" },
-          { id: "ungrouped" },
-        ] as never,
-        messages,
-      ),
-    ).toEqual([
-      {
-        key: "page",
-        label: "Page fields",
-        fields: [{ id: "page.path", group: "page" }],
-      },
-      {
-        key: "other",
-        label: "Other fields",
-        fields: [{ id: "custom", group: "other" }, { id: "ungrouped" }],
-      },
-    ]);
-    const condition = (
-      field: string,
-      valueText: string,
-      options: Partial<{ negated: boolean; operator: string }> = {},
-    ) => ({
-      kind: "condition",
-      field,
-      valueText,
-      negated: options.negated ?? false,
-      operator: options.operator ?? "eq",
-    });
-    expect(
-      directEventName({
-        children: [condition("event.name", " Purchase ")],
-      } as never),
-    ).toBe("Purchase");
-    expect(
-      directEventName({
-        children: [
-          condition("event.name", "Purchase"),
-          condition("event.name", "Signup"),
-        ],
-      } as never),
-    ).toBeUndefined();
-    expect(
-      directEventName({
-        children: [condition("event.name", "Purchase", { negated: true })],
-      } as never),
-    ).toBeUndefined();
-    expect(
-      directEventName({
-        children: [condition("event.name", "Purchase", { operator: "in" })],
-      } as never),
-    ).toBeUndefined();
-    expect(isSelectablePayloadFieldType("string")).toBe(true);
-    expect(isSelectablePayloadFieldType("number")).toBe(true);
-    expect(isSelectablePayloadFieldType("boolean")).toBe(true);
-    expect(isSelectablePayloadFieldType("object")).toBe(false);
-    expect(payloadFieldTypeLabel("string", messages)).toBe("String");
-    expect(payloadFieldTypeLabel("object", messages)).toBe("object");
   });
 
   it("creates tabs, selects columns, exports labels, and serializes CSV", () => {

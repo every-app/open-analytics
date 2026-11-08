@@ -2,7 +2,6 @@ import "@tanstack/react-start/server-only";
 
 import {
   analyticsFilterRegistry,
-  effectiveScopeForPagination,
   type FilterDocument,
   filterFingerprint,
   type QueryAudience,
@@ -65,7 +64,6 @@ async function teamSitesCursorBinding(
     input.window.endExclusiveMs,
     input.window.timeZone,
     filterFingerprint(input.filters, analyticsFilterRegistry),
-    effectiveScopeForPagination(input.filters),
     input.interval ?? null,
     allowedSiteBinding(input.allowedSiteIds),
     "createdAt:desc,id:asc",

@@ -22,7 +22,6 @@ import {
 } from "@/lib/dashboard/client/data";
 import { withComparison } from "@/lib/dashboard/client/utils";
 import { dashboardFilterDocumentFromPresentation } from "@/lib/dashboard/filter-state";
-import { attachFilterScopePreference } from "@/lib/filter-contract";
 describe("Dashboard Client Data Processing Utilities", () => {
   const emptyPaginatedCollection = {
     items: [],
@@ -149,20 +148,15 @@ describe("Dashboard Client Data Processing Utilities", () => {
       expect(withResult["filter[page.path]"]).toBe("/docs");
     });
 
-    it("passes the resolved scope alongside the filter expression", () => {
-      const filters = attachFilterScopePreference(
-        dashboardFilterDocumentFromPresentation({ path: "/docs" }),
-        "visitor",
-      );
+    it("adds the filter's parameters to the request", () => {
+      const filters = dashboardFilterDocumentFromPresentation({
+        path: "/docs",
+      });
 
-      expect(withFilters({ siteId: "123" }, filters)).toMatchObject({
+      expect(withFilters({ siteId: "123" }, filters)).toEqual({
         siteId: "123",
-        scope: "visitor",
         "filter[page.path]": "/docs",
       });
-      expect(
-        withFilters({ siteId: "123", scope: "event" }, filters, "session"),
-      ).toMatchObject({ scope: "session" });
     });
 
     it("should skip mapping filters if filters object is empty or undefined", () => {
@@ -170,15 +164,13 @@ describe("Dashboard Client Data Processing Utilities", () => {
       expect(withFilters(baseParams, undefined)).toEqual(baseParams);
     });
 
-    it("should omit a scope preference when the filter document is empty", () => {
-      const filters = attachFilterScopePreference(
-        dashboardFilterDocumentFromPresentation({}),
-        "visitor",
-      );
-
-      expect(withFilters({ siteId: "123" }, filters)).toEqual({
-        siteId: "123",
-      });
+    it("adds nothing for an empty filter", () => {
+      expect(
+        withFilters(
+          { siteId: "123" },
+          dashboardFilterDocumentFromPresentation({}),
+        ),
+      ).toEqual({ siteId: "123" });
     });
 
     it("should serialize comparison filters without leaking stale parameters", () => {

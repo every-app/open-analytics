@@ -9,9 +9,8 @@ import {
   parseFunnelStepFilter,
   validateFunnelConfigForWrite,
 } from "@/lib/edge/analytics/contract/funnel-config";
-import { parseFilterDsl } from "@/lib/filter-contract";
+import { FilterDslParseError, parseFilterDsl } from "@/lib/filter-contract";
 import { analyticsFilterRegistry } from "@/lib/filter-contract/filter-registry";
-import { FilterValidationError } from "@/lib/filter-contract/filters";
 
 const step = (id: string, filterDsl: string) => ({ id, filterDsl });
 
@@ -72,7 +71,7 @@ describe("funnel v2 config contract", () => {
     );
   });
 
-  it("accepts observation-backed page, event, and payload step filters", () => {
+  it("accepts page, event, and payload step filters", () => {
     const config = writeConfig({
       steps: [
         step("page", 'page.path eq "/pricing"'),
@@ -85,12 +84,10 @@ describe("funnel v2 config contract", () => {
     expect(() => parseFunnelStepFilter(config.steps[2]!)).not.toThrow();
   });
 
-  it("rejects fact and observation/fact mixed step filters", () => {
+  it("rejects a step filter that doesn't parse", () => {
     for (const filterDsl of [
       "session.durationMs gt 1000",
-      "visitor.sessions gte 2",
-      'page.path eq "/pricing" AND session.durationMs gt 1000',
-      'event.name eq "purchase" OR visitor.sessions gte 2',
+      'event.name eq "purchase" OR page.path eq "/pricing"',
     ]) {
       const config = writeConfig({
         steps: [step("first", filterDsl), writeConfig().steps[1]!],
@@ -98,15 +95,9 @@ describe("funnel v2 config contract", () => {
       expect(() => validateFunnelConfigForWrite(config)).toThrow(
         "funnel_filter_dsl_invalid:0",
       );
-      try {
-        parseFunnelStepFilter(config.steps[0]!);
-        throw new Error(`Expected ${filterDsl} to be incompatible.`);
-      } catch (error) {
-        expect(error).toBeInstanceOf(FilterValidationError);
-        expect((error as FilterValidationError).code).toBe(
-          "observation_incompatible",
-        );
-      }
+      expect(() => parseFunnelStepFilter(config.steps[0]!)).toThrow(
+        FilterDslParseError,
+      );
     }
   });
 

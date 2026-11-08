@@ -1,6 +1,5 @@
 import {
   analyticsFilterRegistry,
-  effectiveScopeForPagination,
   filterFingerprint,
   type QueryAudience,
 } from "@/lib/edge/analytics/contract";
@@ -20,27 +19,13 @@ import type {
   QueryWindow,
   ReferrerRow,
 } from "./core";
-import {
-  buildVisitFilterSql,
-  buildVisitSourceCte,
-  queryD1All,
-  visitSourceBindings,
-} from "./core";
+import { type BoundSql, filteredVisitsCte, queryD1All } from "./core";
 import type { D1ReadDiagnostics } from "./diagnostics";
-import {
-  type BoundSql,
-  dailyDimensionRows,
-  rollupEdgeSource,
-} from "./rollup-breakdowns";
+import { dailyDimensionRows, rollupEdgeSource } from "./rollup-breakdowns";
 import {
   rollupDimensionForExpression,
   sessionRollupDimension,
 } from "./rollup-dimensions";
-import type { ScopedDatasetSql } from "./scoped-dataset";
-import {
-  scopedDatasetFor,
-  scopedDatasetForUnpreparedReader,
-} from "./scoped-dataset";
 
 export interface DimensionAggregateCursor {
   /** The first two values are the concrete ORDER BY metrics. */
@@ -136,20 +121,11 @@ function dimensionCursorBinding(
     window.endExclusiveMs,
     window.timeZone,
     filterFingerprint(filters, analyticsFilterRegistry),
-    effectiveScopeForPagination(filters),
     selectExpr,
     search?.trim().toLowerCase() ?? "",
     sortBy,
     sortDirection,
   ]);
-}
-
-function scopedVisitDataset(
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
-): ScopedDatasetSql | null {
-  return scopedDatasetFor(siteId, window, filters);
 }
 
 function searchBinding(search: string): string {
@@ -201,22 +177,12 @@ dimension_rollup AS (
       bindings: [...rollup.visitSource.bindings, ...daily.bindings],
     };
   }
-  const scopedDataset = scopedVisitDataset(siteId, window, filters);
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
+  const source = filteredVisitsCte(siteId, window, filters);
   return {
-    sql: `${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS (
-  SELECT *
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-),
+    sql: `${source.sql},
 dimension_rollup AS (${grouping("filtered_visits")}
 )`,
-    bindings: scopedDataset
-      ? scopedDataset.bindings.map((binding) => binding.value)
-      : [...visitSourceBindings(siteId, window), ...(filter?.bindings ?? [])],
+    bindings: source.bindings,
   };
 }
 
@@ -521,37 +487,16 @@ session_path_rollup AS (
       bindings: [...rollup.visitSource.bindings, ...daily.bindings],
     };
   }
-  const scopedDataset =
-    scopedVisitDataset(siteId, window, filters) ??
-    scopedDatasetForUnpreparedReader(
-      "dimension",
-      siteId,
-      window,
-      filters,
-      "session",
-    );
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
-  const visitSource = buildVisitSourceCte().replace(
-    "visit_source AS (",
-    "visit_source AS MATERIALIZED (",
-  );
+  const source = filteredVisitsCte(siteId, window, filters, {
+    columns: "visitor_id, session_id, started_at, visit_id, pathname",
+  });
   return {
-    sql: `${scopedDataset?.ctes ?? visitSource},
-filtered_visits AS MATERIALIZED (
-  SELECT visitor_id, session_id, started_at, visit_id,
-    TRIM(COALESCE(pathname, '')) AS pathname
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-),
+    sql: `${source.sql},
 ${grouping("filtered_visits")},
 session_path_rollup AS (
   SELECT value, views, sessions, visitors FROM raw_session_paths
 )`,
-    bindings: scopedDataset
-      ? scopedDataset.bindings.map((binding) => binding.value)
-      : [...visitSourceBindings(siteId, window), ...(filter?.bindings ?? [])],
+    bindings: source.bindings,
   };
 }
 
@@ -725,7 +670,6 @@ LIMIT ?
     window.endExclusiveMs,
     window.timeZone,
     filterFingerprint(filters, analyticsFilterRegistry),
-    effectiveScopeForPagination(filters),
     search?.trim().toLowerCase() ?? "",
     audience,
     effectiveSortBy,
@@ -779,7 +723,6 @@ export async function decodeSessionPathDimensionCursor(
       window.endExclusiveMs,
       window.timeZone,
       filterFingerprint(filters, analyticsFilterRegistry),
-      effectiveScopeForPagination(filters),
       search?.trim().toLowerCase() ?? "",
       audience,
       effectiveSortBy,
@@ -822,183 +765,6 @@ export async function querySessionBoundaryDimensionFromD1(
   );
 }
 
-export async function queryPageTabsFromD1(
-  env: Env,
-  siteId: string,
-  window: QueryWindow,
-  filters: FilterDocument,
-  limit: number,
-): Promise<{
-  path: DimensionRow[];
-  title: DimensionRow[];
-  hostname: DimensionRow[];
-  entry: DimensionRow[];
-  exit: DimensionRow[];
-}> {
-  const preparedDataset = scopedVisitDataset(siteId, window, filters);
-  const expandedDataset =
-    preparedDataset ??
-    scopedDatasetForUnpreparedReader(
-      "pages",
-      siteId,
-      window,
-      filters,
-      "session",
-    );
-  const scopedDataset = preparedDataset ?? expandedDataset;
-  const filter = preparedDataset
-    ? null
-    : buildVisitFilterSql(filters, "rv", { window });
-  const observationVisitRelation = preparedDataset
-    ? preparedDataset.visitRelation
-    : expandedDataset
-      ? "scope_raw_visits"
-      : "visit_source";
-  const edgeVisitRelation =
-    preparedDataset || !expandedDataset
-      ? "filtered_visits"
-      : expandedDataset.visitRelation;
-  const visitSource = buildVisitSourceCte().replace(
-    "visit_source AS (",
-    "visit_source AS MATERIALIZED (",
-  );
-  const sql = `
-WITH
-${scopedDataset?.ctes ?? visitSource},
-filtered_visits AS MATERIALIZED (
-  SELECT
-    visitor_id,
-    session_id,
-    started_at,
-    visit_id,
-    TRIM(COALESCE(pathname, '')) AS pathname,
-    TRIM(COALESCE(title, '')) AS title,
-    TRIM(COALESCE(hostname, '')) AS hostname
-  FROM ${observationVisitRelation} rv
-  ${filter?.clause ?? ""}
-),
-ranked_session_visits AS (
-  SELECT
-    vs.session_id,
-    vs.visitor_id,
-    TRIM(COALESCE(vs.pathname, '')) AS pathname,
-    ROW_NUMBER() OVER (
-      PARTITION BY vs.session_id
-      ORDER BY vs.started_at ASC, vs.visit_id ASC
-    ) AS first_rank,
-    ROW_NUMBER() OVER (
-      PARTITION BY vs.session_id
-      ORDER BY vs.started_at DESC, vs.visit_id DESC
-    ) AS latest_rank
-  FROM ${edgeVisitRelation} vs
-  WHERE vs.session_id != '' AND TRIM(COALESCE(vs.pathname, '')) != ''
-),
-session_edges AS (
-  SELECT
-    session_id,
-    MAX(CASE WHEN first_rank = 1 THEN visitor_id END) AS visitor_id,
-    MAX(CASE WHEN first_rank = 1 THEN pathname END) AS entry,
-    MAX(CASE WHEN latest_rank = 1 THEN pathname END) AS exit
-  FROM ranked_session_visits
-  GROUP BY session_id
-),
-card_rows AS (
-  SELECT
-    'path' AS card_type,
-    pathname AS value,
-    COUNT(*) AS views,
-    COUNT(DISTINCT CASE WHEN session_id != '' THEN session_id END) AS sessions,
-    COUNT(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id END) AS visitors
-  FROM filtered_visits
-  WHERE pathname != ''
-  GROUP BY pathname
-  UNION ALL
-  SELECT
-    'title' AS card_type,
-    title AS value,
-    COUNT(*) AS views,
-    COUNT(DISTINCT CASE WHEN session_id != '' THEN session_id END) AS sessions,
-    COUNT(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id END) AS visitors
-  FROM filtered_visits
-  WHERE title != ''
-  GROUP BY title
-  UNION ALL
-  SELECT
-    'hostname' AS card_type,
-    hostname AS value,
-    COUNT(*) AS views,
-    COUNT(DISTINCT CASE WHEN session_id != '' THEN session_id END) AS sessions,
-    COUNT(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id END) AS visitors
-  FROM filtered_visits
-  WHERE hostname != ''
-  GROUP BY hostname
-  UNION ALL
-  SELECT
-    'entry' AS card_type,
-    entry AS value,
-    COUNT(*) AS views,
-    COUNT(*) AS sessions,
-    COUNT(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id END) AS visitors
-  FROM session_edges
-  WHERE entry != ''
-  GROUP BY entry
-  UNION ALL
-  SELECT
-    'exit' AS card_type,
-    exit AS value,
-    COUNT(*) AS views,
-    COUNT(*) AS sessions,
-    COUNT(DISTINCT CASE WHEN visitor_id != '' THEN visitor_id END) AS visitors
-  FROM session_edges
-  WHERE exit != ''
-  GROUP BY exit
-),
-ranked_cards AS (
-  SELECT
-    card_type,
-    value,
-    views,
-    sessions,
-    visitors,
-    ROW_NUMBER() OVER (
-      PARTITION BY card_type
-      ORDER BY views DESC, sessions DESC, value ASC
-    ) AS card_rank
-  FROM card_rows
-)
-SELECT card_type AS cardType, value, views, sessions, visitors
-FROM ranked_cards
-WHERE card_rank <= ?
-ORDER BY card_type ASC, card_rank ASC
-`;
-  const rows = await queryD1All<Record<string, unknown>>(env, sql, [
-    ...(scopedDataset
-      ? scopedDataset.bindings.map((binding) => binding.value)
-      : [...visitSourceBindings(siteId, window)]),
-    ...(filter?.bindings ?? []),
-    limit,
-  ]);
-  const byCard = new Map<string, DimensionRow[]>();
-  for (const row of rows) {
-    const card = String(row.cardType ?? "");
-    const values = byCard.get(card) ?? [];
-    values.push({
-      value: String(row.value ?? ""),
-      views: Number(row.views ?? 0),
-      sessions: Number(row.sessions ?? 0),
-      visitors: Number(row.visitors ?? 0),
-    });
-    byCard.set(card, values);
-  }
-  return {
-    path: byCard.get("path") ?? [],
-    title: byCard.get("title") ?? [],
-    hostname: byCard.get("hostname") ?? [],
-    entry: byCard.get("entry") ?? [],
-    exit: byCard.get("exit") ?? [],
-  };
-}
-
 export async function queryReferrersFromD1(
   env: Env,
   siteId: string,
@@ -1009,19 +775,11 @@ export async function queryReferrersFromD1(
   diagnostics?: D1ReadDiagnostics,
   search?: string,
 ): Promise<ReferrerRow[]> {
-  const scopedDataset = scopedVisitDataset(siteId, window, filters);
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
+  const source = filteredVisitsCte(siteId, window, filters);
   const keyExpr = includeFullUrl ? "referrer_url" : "referrer_host";
   const sql = `
 WITH
-${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS (
-  SELECT *
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-)
+${source.sql}
 SELECT
   COALESCE(${keyExpr}, '') AS referrer,
   count(*) AS views,
@@ -1038,12 +796,7 @@ LIMIT ?
       env,
       sql,
       [
-        ...(scopedDataset
-          ? scopedDataset.bindings.map((binding) => binding.value)
-          : [
-              ...visitSourceBindings(siteId, window),
-              ...(filter?.bindings ?? []),
-            ]),
+        ...source.bindings,
         ...(search
           ? [
               `%${search

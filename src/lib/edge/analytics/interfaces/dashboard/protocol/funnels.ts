@@ -1,5 +1,6 @@
 import { createEdgeSiteAnalyticsRuntime } from "@/lib/edge/analytics/composition";
 import {
+  EMPTY_FILTER_DOCUMENT,
   type FunnelConfigV2,
   parseFilterUrlForAudience,
   type QueryWindow,
@@ -51,7 +52,7 @@ export async function handleFunnelAnalysisContract(
       // Definition listing has no analytic time range. Keep it contract-bound
       // to the default dashboard range without altering its source query.
       time: queryWindowToTime(listWindow),
-      filters: { version: 1, root: null },
+      filters: EMPTY_FILTER_DOCUMENT,
       page: {
         limit: parseLimit(url, 50, 200),
         cursor: url.searchParams.get("cursor") ?? undefined,

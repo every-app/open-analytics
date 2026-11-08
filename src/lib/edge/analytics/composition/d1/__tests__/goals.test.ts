@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock(
   "@/lib/edge/analytics/providers/d1/operations/site-goal-summary",
   () => ({
+    readSiteGoalConversions: vi.fn(),
     readSiteGoalSummary: vi.fn(),
   }),
 );
@@ -15,7 +16,10 @@ vi.mock(
 
 import { AnalyticsProviderRegistry } from "@/lib/edge/analytics/application/provider-registry";
 import { registerGoalProviders } from "@/lib/edge/analytics/composition/d1/goals";
-import { readSiteGoalSummary } from "@/lib/edge/analytics/providers/d1/operations/site-goal-summary";
+import {
+  readSiteGoalConversions,
+  readSiteGoalSummary,
+} from "@/lib/edge/analytics/providers/d1/operations/site-goal-summary";
 import { readSiteGoalTimeseries } from "@/lib/edge/analytics/providers/d1/operations/site-goal-timeseries";
 
 const input = {
@@ -26,7 +30,7 @@ const input = {
     capturedAtMs: 3_000,
     reportingTimeZone: "UTC",
   },
-  filters: { version: 1 as const, root: null },
+  filters: { conditions: [] },
 };
 
 describe("D1 Goal provider composition", () => {
@@ -80,6 +84,29 @@ describe("D1 Goal provider composition", () => {
     });
   });
 
+  it("registers every goal's conversions as one provider call", async () => {
+    const conversions = { goals: [] };
+    vi.mocked(readSiteGoalConversions).mockResolvedValue(conversions);
+    const registry = new AnalyticsProviderRegistry();
+    const env = {} as never;
+    registerGoalProviders(registry, { env, siteId: "site-1" } as never);
+
+    await expect(
+      registry.resolve("goal-conversions")?.execute(input as never),
+    ).resolves.toEqual({ value: conversions });
+    expect(readSiteGoalConversions).toHaveBeenCalledWith({
+      env,
+      siteId: "site-1",
+      window: {
+        startMs: 1_000,
+        endExclusiveMs: 3_000,
+        nowMs: 3_000,
+        timeZone: "UTC",
+      },
+      filters: input.filters,
+    });
+  });
+
   it("rejects missing provider input instead of creating an unscoped query", async () => {
     const registry = new AnalyticsProviderRegistry();
     registerGoalProviders(registry, {
@@ -118,14 +145,14 @@ describe("D1 Goal provider composition", () => {
     expect(readSiteGoalSummary).toHaveBeenCalledWith(
       expect.objectContaining({
         goalId: "",
-        filters: { version: 1, root: null },
+        filters: { conditions: [] },
       }),
     );
     expect(readSiteGoalTimeseries).toHaveBeenCalledWith(
       expect.objectContaining({
         goalId: "",
         interval: "day",
-        filters: { version: 1, root: null },
+        filters: { conditions: [] },
       }),
     );
   });

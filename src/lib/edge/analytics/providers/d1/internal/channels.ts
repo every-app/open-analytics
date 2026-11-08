@@ -2,13 +2,7 @@ import type { TrafficChannelId } from "@/lib/analytics/traffic-channel-rules";
 import type { Env } from "@/lib/edge/types";
 
 import type { FilterDocument, QueryWindow } from "./core";
-import {
-  buildVisitFilterSql,
-  buildVisitSourceCte,
-  queryD1All,
-  visitSourceBindings,
-} from "./core";
-import { scopedDatasetFor } from "./scoped-dataset";
+import { filteredVisitsCte, queryD1All } from "./core";
 
 export interface ChannelAggregateRow {
   readonly channel: TrafficChannelId;
@@ -24,18 +18,10 @@ export async function queryChannelsFromD1(
   filters: FilterDocument,
   limit: number,
 ): Promise<ChannelAggregateRow[]> {
-  const scopedDataset = scopedDatasetFor(siteId, window, filters);
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
+  const source = filteredVisitsCte(siteId, window, filters);
   const sql = `
 WITH
-${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS (
-  SELECT *
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-),
+${source.sql},
 channel_rollup AS (
   SELECT
     channel,
@@ -53,12 +39,7 @@ LIMIT ?
 
   return (
     await queryD1All<Record<string, unknown>>(env, sql, [
-      ...(scopedDataset
-        ? scopedDataset.bindings.map((binding) => binding.value)
-        : [
-            ...visitSourceBindings(siteId, window),
-            ...(filter?.bindings ?? []),
-          ]),
+      ...source.bindings,
       limit,
     ])
   ).map((row) => ({

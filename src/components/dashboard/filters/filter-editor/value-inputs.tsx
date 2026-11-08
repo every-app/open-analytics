@@ -40,13 +40,12 @@ import {
 } from "@/lib/dashboard/client/data/index";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type { EventField } from "@/lib/dashboard-api/client/edge";
-import { type RegisteredFilterField } from "@/lib/filter-contract/filter-registry";
 import {
   analyticsFilterRegistry,
   type FilterDocument,
-  type FilterScope,
   type FilterValue,
   type FilterValueKind,
+  type RegisteredFilterField,
 } from "@/lib/filter-contract/index";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { formatI18nTemplate } from "@/lib/i18n/template";
@@ -85,7 +84,6 @@ export function SearchablePayloadPathInput({
   needsValue,
   onChange,
   onSelect,
-  resolvedScope,
   siteId,
   window,
 }: {
@@ -96,14 +94,13 @@ export function SearchablePayloadPathInput({
   needsValue: boolean;
   onChange: (payloadPath: string) => void;
   onSelect: (field: EventField) => void;
-  resolvedScope?: FilterScope;
   siteId: string | undefined;
   window: TimeWindow | undefined;
 }) {
   const [open, setOpen] = useState(false);
   const [searchToken, setSearchToken] = useState("");
   const deferredSearchToken = useDeferredValue(searchToken);
-  const canSearch = Boolean(siteId && window && resolvedScope);
+  const canSearch = Boolean(siteId && window);
   const suggestionFilters = useMemo(
     () =>
       stripSuggestionFacet(document, condition.field, condition.payloadPath),
@@ -118,7 +115,6 @@ export function SearchablePayloadPathInput({
       window?.to,
       window?.timeZone,
       eventName,
-      resolvedScope ?? "unresolved",
       suggestionFilters,
       needsValue,
     ],
@@ -128,7 +124,6 @@ export function SearchablePayloadPathInput({
         limit: 100,
         cursor: pageParam,
         signal,
-        resolvedScope,
       }),
     enabled: open && canSearch,
     getNextPageParam: (lastPage) =>
@@ -341,7 +336,6 @@ export function SearchableValueInput({
   messages,
   onChange,
   onListChange,
-  resolvedScope,
   siteId,
   valueKind,
   window,
@@ -353,7 +347,6 @@ export function SearchableValueInput({
   messages: AppMessages;
   onChange: (valueText: string) => void;
   onListChange: (values: readonly FilterValue[]) => void;
-  resolvedScope?: FilterScope;
   siteId: string | undefined;
   valueKind: FilterValueKind;
   window: TimeWindow | undefined;
@@ -381,7 +374,6 @@ export function SearchableValueInput({
   const canSearch = Boolean(
     siteId &&
     window &&
-    resolvedScope &&
     (isPayload
       ? condition.payloadPath.trim()
       : condition.field !== "event.payload"),
@@ -399,7 +391,6 @@ export function SearchableValueInput({
         : [condition.field]),
       suggestionMode,
       deferredSearchToken,
-      resolvedScope ?? "unresolved",
       suggestionFilters,
     ],
     initialPageParam: null as string | null,
@@ -417,7 +408,6 @@ export function SearchableValueInput({
             cursor: pageParam as string | null,
             search: deferredSearchToken,
             signal,
-            resolvedScope,
           },
         ).then((result) => ({
           items: result.data.items.map((item) => ({
@@ -438,7 +428,6 @@ export function SearchableValueInput({
           cursor: pageParam as string | null,
           search: deferredSearchToken,
           signal,
-          resolvedScope,
         },
       ).then((result) => ({
         items: result.items,
@@ -461,11 +450,7 @@ export function SearchableValueInput({
   const inputType =
     valueKind === "number" || condition.scalarKind === "number"
       ? "number"
-      : valueKind === "date"
-        ? "date"
-        : valueKind === "datetime"
-          ? "datetime-local"
-          : "text";
+      : "text";
   const numberMetadata = definition?.number;
   const numberUnit = valueKind === "number" ? definition?.unit : undefined;
   const [selectedDisplayUnit, setSelectedDisplayUnit] = useState<

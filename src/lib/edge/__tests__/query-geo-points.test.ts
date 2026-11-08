@@ -120,7 +120,7 @@ describe("geo point D1 queries", () => {
     expect(calls[0].sql).not.toContain(
       "WHERE LOWER(TRIM(COALESCE(country, ''))) = ?\n  WHERE",
     );
-    expect(calls[0].sql).toContain("WHERE\n    latitude IS NOT NULL");
+    expect(calls[0].sql).toContain("WHERE latitude IS NOT NULL");
     expect(calls[1].sql).toContain("GROUP BY country");
   });
 

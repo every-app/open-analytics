@@ -7,7 +7,6 @@ import { DashboardQueryProvider } from "@/components/dashboard/shell/dashboard-q
 import { PageTransition } from "@/components/page-transition";
 import { publicDashboardSiteId } from "@/lib/dashboard/client/request";
 import { parseFilterDocumentFromSearchParams } from "@/lib/dashboard/query-state";
-import { parseFilterScopePreference } from "@/lib/filter-contract/index";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { useSearchParams } from "@/lib/router";
@@ -36,14 +35,12 @@ export function ShareDashboardShell({
   const publicSiteId = publicDashboardSiteId(slug);
   const routeSearchParams = useSearchParams();
   const initialFilters = parseFilterDocumentFromSearchParams(routeSearchParams);
-  const initialScopePreference = parseFilterScopePreference(routeSearchParams);
 
   return (
     <DashboardQueryProvider
       scopeKey={publicSiteId}
       dataStart={firstDataAt}
       initialFilters={initialFilters}
-      initialScopePreference={initialScopePreference}
     >
       <div className="flex min-h-svh flex-col bg-background text-foreground">
         <div className="sticky top-0 z-20 shrink-0 border-b border-border bg-background/90 backdrop-blur">

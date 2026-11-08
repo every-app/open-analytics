@@ -11,7 +11,7 @@ const base = {
   env: { MAIN_SECRET: "cursor-secret" } as never,
   siteId: "site-1",
   window: { startMs: 0, endExclusiveMs: 100, nowMs: 100, timeZone: "UTC" },
-  filters: { version: 1 as const, root: null },
+  filters: { conditions: [] },
 };
 
 describe("site event-record runtime", () => {

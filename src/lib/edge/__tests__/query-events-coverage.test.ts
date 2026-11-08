@@ -268,8 +268,8 @@ describe("edge query events summary coverage", () => {
     const [, sql, bindings] = queryD1AllMock.mock.calls[0];
     expect(sql).not.toContain("LEFT JOIN visit_source vs");
     expect(sql).toContain("FROM event_rollup");
-    expect(sql).toContain("LOWER(TRIM(COALESCE(es.referrer_host, ''))) = ?");
-    expect(sql).toContain("LOWER(TRIM(COALESCE(es.device_type, ''))) = ?");
+    expect(sql).toContain("LOWER(TRIM(COALESCE(v.referrer_host, ''))) = ?");
+    expect(sql).toContain("LOWER(TRIM(COALESCE(v.device_type, ''))) = ?");
     expect(bindings).toEqual([
       siteId,
       window.startMs,

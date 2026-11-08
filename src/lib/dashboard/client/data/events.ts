@@ -12,7 +12,7 @@ import type {
   EventFieldValueStat,
   EventTypeFieldsData,
 } from "@/lib/dashboard-api/client/edge";
-import type { FilterDocument, FilterScope } from "@/lib/filter-contract";
+import type { FilterDocument } from "@/lib/filter-contract";
 function fallbackUnlessAborted<T>(error: unknown, fallback: () => T): T {
   if (error instanceof Error && error.name === "AbortError") throw error;
   if (
@@ -32,7 +32,6 @@ export async function fetchEventTypeFields(
     limit?: number;
     cursor?: string | null;
     signal?: AbortSignal;
-    resolvedScope?: FilterScope;
   },
 ): Promise<EventTypeFieldsData> {
   const normalizedEventName = eventName?.trim() ?? "";
@@ -51,7 +50,6 @@ export async function fetchEventTypeFields(
         100,
       ),
       filters,
-      options?.resolvedScope,
     ),
     { signal: options?.signal },
   ).catch((error) =>
@@ -91,7 +89,6 @@ export async function fetchEventTypeFieldValues(
     cursor?: string | null;
     search?: string;
     signal?: AbortSignal;
-    resolvedScope?: FilterScope;
   },
 ): Promise<EventFieldValuesData> {
   const normalizedEventName = eventName?.trim() ?? "";
@@ -117,7 +114,6 @@ export async function fetchEventTypeFieldValues(
         25,
       ),
       filters,
-      options?.resolvedScope,
     ),
     { signal: options?.signal },
   ).catch((error) =>

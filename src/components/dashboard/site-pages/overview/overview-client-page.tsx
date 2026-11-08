@@ -1,8 +1,4 @@
-import { useMemo } from "react";
-
 import { useDashboardQuery } from "@/components/dashboard/shell/dashboard-query-provider";
-import { resolveFilterScope } from "@/lib/edge/analytics/contract/scoped-filter";
-import { attachFilterScopePreference } from "@/lib/filter-contract";
 
 import { GoalConversionsCard } from "./goal-conversions-card";
 import { OverviewMetricsSection } from "./metrics";
@@ -23,17 +19,7 @@ export function OverviewClientPage({
   siteDomain,
   goalsPath,
 }: OverviewClientPageProps) {
-  const { window, filters, scopePreference } = useDashboardQuery();
-  const resolvedScope = resolveFilterScope("overview", scopePreference);
-  // Auto scope is resolved once for the dashboard and passed to every
-  // request; the address stays Auto.
-  const requestFilters = useMemo(
-    () =>
-      resolvedScope
-        ? attachFilterScopePreference(filters, resolvedScope)
-        : filters,
-    [filters, resolvedScope],
-  );
+  const { window, filters } = useDashboardQuery();
 
   return (
     <div className="space-y-6">
@@ -42,16 +28,15 @@ export function OverviewClientPage({
         messages={messages}
         siteId={siteId}
         window={window}
-        filters={requestFilters}
+        filters={filters}
       />
       <OverviewReportCards
         locale={locale}
         messages={messages}
         siteId={siteId}
         siteDomain={siteDomain}
-        filters={requestFilters}
-        filtered={Boolean(filters.root)}
-        resolvedScope={resolvedScope ?? undefined}
+        filters={filters}
+        filtered={filters.conditions.length > 0}
       />
       {goalsPath ? (
         // Each card shows only when it has rows; one alone is full width.
@@ -69,8 +54,8 @@ export function OverviewClientPage({
             messages={messages}
             siteId={siteId}
             window={window}
-            filters={requestFilters}
-            filtered={Boolean(filters.root)}
+            filters={filters}
+            filtered={filters.conditions.length > 0}
           />
         </section>
       ) : null}

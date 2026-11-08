@@ -24,7 +24,7 @@ const window = {
   nowMs: 200,
   timeZone: "UTC",
 };
-const filters = { version: 1 as const, root: null };
+const filters = { conditions: [] };
 
 describe("D1 overview reader", () => {
   beforeEach(() => vi.clearAllMocks());

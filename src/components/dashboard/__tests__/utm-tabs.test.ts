@@ -13,8 +13,6 @@ import {
 import type { DimensionRow } from "@/lib/dashboard-api/client/edge";
 import {
   analyticsFilterRegistry,
-  attachFilterScopePreference,
-  filterScopePreferenceFromDocument,
   formatFilterDsl,
   parseFilterDsl,
 } from "@/lib/filter-contract/index";
@@ -41,18 +39,6 @@ describe("Sources card UTM tabs", () => {
     expect(formatFilterDsl(withUtmTag(filters, "source"))).toBe(
       'client.deviceType eq "mobile" AND utm.source notEmpty',
     );
-  });
-
-  it("keeps the Overview's scope on the tagged filters", () => {
-    for (const filters of [
-      EMPTY_DASHBOARD_FILTER_DOCUMENT,
-      parseFilterDsl('client.deviceType eq "mobile"', analyticsFilterRegistry),
-    ]) {
-      const scoped = attachFilterScopePreference(filters, "session");
-      expect(
-        filterScopePreferenceFromDocument(withUtmTag(scoped, "campaign")),
-      ).toBe("session");
-    }
   });
 
   it("reads rows as the UTM reports send them: a label and no value", () => {

@@ -7,7 +7,7 @@ import {
 } from "@insightflare/ui/responsive-dialog";
 import { ListFilterIcon } from "lucide-react";
 
-import { FilterEditor } from "@/components/dashboard/filters/filter-editor";
+import { FilterDslEditor } from "@/components/dashboard/filters/filter-editor";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type { AppMessages } from "@/lib/i18n/messages";
 export function FunnelStepFilterDialog({
@@ -44,18 +44,14 @@ export function FunnelStepFilterDialog({
           scrollable={false}
           className="px-4 pb-2 md:px-0 md:pb-0"
         >
-          <FilterEditor
+          <FilterDslEditor
             className="min-h-0 flex-1"
             audience="private-dashboard"
             initialFilterDsl={filterDsl}
             messages={messages}
-            observationOnly
             siteId={siteId}
-            resolvedScope="event"
             window={timeWindow}
-            onApply={(next) => {
-              onApply(next);
-            }}
+            onApply={onApply}
             onCancel={() => onOpenChange(false)}
             applyLabel={labels.apply}
             cancelLabel={labels.cancel}

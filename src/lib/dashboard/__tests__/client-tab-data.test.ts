@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchFilterValues } from "@/lib/dashboard/client/data/tabs";
 import { fetchPrivateJson } from "@/lib/dashboard/client/request";
 import { dashboardFilterDocumentFromPresentation } from "@/lib/dashboard/filter-state";
-import { attachFilterScopePreference } from "@/lib/filter-contract";
 
 vi.mock("@/lib/dashboard/client/request", () => ({
   fetchPrivateJson: vi.fn(),
@@ -54,7 +53,7 @@ describe("fetchFilterValues", () => {
     );
   });
 
-  it("passes the resolved scope with the inherited filter document", async () => {
+  it("passes the inherited filter document", async () => {
     fetchPrivateJsonMock.mockResolvedValue({
       data: {
         items: [],
@@ -66,21 +65,15 @@ describe("fetchFilterValues", () => {
         },
       },
     } as any);
-    const filters = attachFilterScopePreference(
-      dashboardFilterDocumentFromPresentation({ path: "/pricing" }),
-      "visitor",
-    );
-
-    await fetchFilterValues("site-1", window, "geo.country", filters, {
-      resolvedScope: "session",
+    const filters = dashboardFilterDocumentFromPresentation({
+      path: "/pricing",
     });
+
+    await fetchFilterValues("site-1", window, "geo.country", filters);
 
     expect(fetchPrivateJsonMock).toHaveBeenCalledWith(
       "/api/private/filter-values",
-      expect.objectContaining({
-        scope: "session",
-        "filter[page.path]": "/pricing",
-      }),
+      expect.objectContaining({ "filter[page.path]": "/pricing" }),
       expect.anything(),
     );
   });

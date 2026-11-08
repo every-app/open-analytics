@@ -12,7 +12,7 @@ import {
   serializeFilterParams,
 } from "@/lib/filter-contract";
 
-const EMPTY: FilterDocument = { version: 1, root: null };
+const EMPTY: FilterDocument = { conditions: [] };
 
 describe("custom property filters", () => {
   it("names a key by a top-level JSON pointer and back", () => {
@@ -53,7 +53,7 @@ describe("custom property filters", () => {
         setPropertyFilterValue(EMPTY, "author", "Jane"),
         "author",
         null,
-      ).root,
-    ).toBeNull();
+      ).conditions,
+    ).toEqual([]);
   });
 });

@@ -1,7 +1,7 @@
 import { type FilterDocument } from "@/lib/filter-contract/filters";
+import { EMPTY_FILTER_DOCUMENT } from "@/lib/filter-contract/filters";
 
 import { validateTypedQueryFilters } from "./filter-validation";
-import { EMPTY_FILTER_DOCUMENT } from "./helpers";
 import { assertOperationAllowed } from "./policy";
 import type {
   AnalyticsResult,

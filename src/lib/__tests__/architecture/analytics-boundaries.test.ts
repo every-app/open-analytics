@@ -178,7 +178,7 @@ describe("analytics architecture", () => {
     }
   });
 
-  it("keeps filter compilation behind the canonical application and dataset layers", () => {
+  it("keeps filter compilation in the D1 provider", () => {
     const boundaryFiles = [
       ...productionFiles("src/lib/hono/routes"),
       ...productionFiles("src/lib/edge/analytics/interfaces"),
@@ -187,24 +187,18 @@ describe("analytics architecture", () => {
       const content = readFileSync(file, "utf8");
       expect(
         content,
-        `${file} bypasses the canonical filter runtime`,
+        `${file} compiles filters outside the D1 provider`,
       ).not.toMatch(
-        /(?:compileFilterDocument|buildVisitFilterSql|buildEventFilterSql|scopedDatasetFor|compileScopedDatasetSql|analytics\/providers\/d1\/internal\/(?:core-filters|scoped-dataset))/u,
+        /(?:visitFilterSql|eventFilterSql|pageViewMatchSql|eventMatchSql|analytics\/providers\/d1\/internal\/(?:filter-compiler|core-filters|core-sources))/u,
       );
     }
 
-    expect(source("src/lib/edge/analytics/application/service.ts")).toContain(
-      "prepareScopedQuery",
-    );
     expect(
       source("src/lib/edge/analytics/composition/query-runtime.ts"),
     ).toContain("createAnalyticsQueryApplicationService");
     expect(
       source("src/lib/edge/analytics/composition/query-application-service.ts"),
     ).toContain("TypedQueryApplicationService");
-    expect(
-      source("src/lib/edge/analytics/providers/d1/internal/scoped-dataset.ts"),
-    ).toContain("planObservationFilter");
 
     const coreFilters = source(
       "src/lib/edge/analytics/providers/d1/internal/core-filters.ts",
@@ -235,6 +229,8 @@ describe("analytics architecture", () => {
       /scope_event_source/u,
       /scope_set_/u,
       /scope_empty/u,
+      /scope_raw_/u,
+      /scope_final_/u,
       /entity_membership/u,
     ];
     for (const file of productionFiles(

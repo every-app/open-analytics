@@ -1,4 +1,3 @@
-import { SITE_PK_FROM_SITE_ID_SQL } from "@/lib/edge/sites/identity-sql";
 import type { Env } from "@/lib/edge/types";
 
 import type {
@@ -8,13 +7,10 @@ import type {
   QueryWindow,
 } from "./core";
 import {
-  buildEventAnalyticsSourceCte,
   buildEventFilteredSourceCte,
-  buildEventFilterSql,
+  filteredEventsCte,
   queryD1All,
-  usesSessionBoundaryFilter,
 } from "./core";
-import { scopedDatasetFor } from "./scoped-dataset";
 export async function queryEventTypeOverviewFromD1(
   env: Env,
   siteId: string,
@@ -24,68 +20,25 @@ export async function queryEventTypeOverviewFromD1(
   options?: { includeBreakdowns?: boolean },
 ) {
   const includeBreakdowns = options?.includeBreakdowns !== false;
-  const scopedDataset = scopedDatasetFor(siteId, window, filters);
-  const needsVisitSource = usesSessionBoundaryFilter(filters);
-  const eventFilter = scopedDataset
-    ? { clause: "", bindings: [] as Array<string | number> }
-    : buildEventFilterSql(filters, "es", {
-        sessionSource: needsVisitSource ? "visit_source" : undefined,
-      });
-  const hasEventFilter = eventFilter.clause.length > 0;
-  const source = scopedDataset
-    ? {
-        cte: `
-WITH
-${scopedDataset.ctes},
-filtered_events AS MATERIALIZED (
-  SELECT *
-  FROM ${scopedDataset.eventRelation} es
-  WHERE TRIM(COALESCE(es.event_name, '')) = ?
-)`,
-        bindings: [
-          ...scopedDataset.bindings.map((binding) => binding.value),
-          eventName,
-        ],
-      }
-    : buildEventFilteredSourceCte(siteId, window, filters, eventName, {
-        materialize: true,
-      });
-  const bindings = [
-    ...source.bindings,
-    ...(!scopedDataset && hasEventFilter
-      ? [siteId, window.startMs, window.endExclusiveMs, ...eventFilter.bindings]
-      : !scopedDataset
-        ? [siteId, window.startMs, window.endExclusiveMs]
-        : []),
-  ];
-  const scopedSummaryCte = scopedDataset
-    ? `
-scoped_summary AS (
-  SELECT count(*) AS events
-  FROM ${scopedDataset.eventRelation}
-)`
-    : hasEventFilter
-      ? `
-${buildEventAnalyticsSourceCte({ cteName: "scoped_event_source" })},
-scoped_events AS (
-  SELECT *
-  FROM scoped_event_source es
-  ${eventFilter.clause}
-),
+  const source = buildEventFilteredSourceCte(
+    siteId,
+    window,
+    filters,
+    eventName,
+    { materialize: true },
+  );
+  const allEvents = filteredEventsCte(siteId, window, filters, {
+    name: "scoped_events",
+    columns: "ce.event_pk",
+  });
+  const bindings = [...source.bindings, ...allEvents.bindings];
+  const baseCte = `
+${source.cte},
+${allEvents.sql},
 scoped_summary AS (
   SELECT count(*) AS events
   FROM scoped_events
-)`
-      : `
-scoped_summary AS (
-  SELECT count(*) AS events
-  FROM custom_events
-  WHERE site_pk = ${SITE_PK_FROM_SITE_ID_SQL}
-    AND occurred_at >= ? AND occurred_at < ?
 )`;
-  const baseCte = `
-${source.cte},
-${scopedSummaryCte}`;
   type OverviewCardRow = EventSummaryRow & {
     cardType: "summary" | "page" | "country" | "device" | "browser";
     value: string | null;

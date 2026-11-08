@@ -9,6 +9,7 @@ import {
   type ComparisonRawMetrics,
   type ComparisonRawTrendResult,
   type ComparisonTrendQuery,
+  EMPTY_FILTER_DOCUMENT,
   type FilterDocument,
   type QuerySource,
   type QueryTime,
@@ -28,10 +29,8 @@ export interface ComparisonProviderOptions {
   readonly allowedSiteIds?: readonly string[];
 }
 
-const EMPTY_FILTER: FilterDocument = { version: 1, root: null };
-
 function filtersOf(time: QueryTime, filters: FilterDocument | undefined) {
-  return { time, filters: filters ?? EMPTY_FILTER };
+  return { time, filters: filters ?? EMPTY_FILTER_DOCUMENT };
 }
 
 function windowOf(time: QueryTime): QueryWindow {
@@ -360,12 +359,12 @@ export function createComparisonProviders(options: ComparisonProviderOptions) {
       ? await readSiteMetrics(
           options,
           query.time,
-          query.filters ?? EMPTY_FILTER,
+          query.filters ?? EMPTY_FILTER_DOCUMENT,
         )
       : await readTeamMetrics(
           options,
           query.time,
-          query.filters ?? EMPTY_FILTER,
+          query.filters ?? EMPTY_FILTER_DOCUMENT,
         );
     return {
       value: result.data,
@@ -381,13 +380,13 @@ export function createComparisonProviders(options: ComparisonProviderOptions) {
       ? await readSiteTrend(
           options,
           query.time,
-          query.filters ?? EMPTY_FILTER,
+          query.filters ?? EMPTY_FILTER_DOCUMENT,
           comparison.interval,
         )
       : await readTeamTrend(
           options,
           query.time,
-          query.filters ?? EMPTY_FILTER,
+          query.filters ?? EMPTY_FILTER_DOCUMENT,
           comparison.interval,
         );
     return {
@@ -403,7 +402,7 @@ export function createComparisonProviders(options: ComparisonProviderOptions) {
     value: await readBreakdownForSites(
       options,
       query.time,
-      query.filters ?? EMPTY_FILTER,
+      query.filters ?? EMPTY_FILTER_DOCUMENT,
       comparison.dimension,
     ),
     source: "raw",

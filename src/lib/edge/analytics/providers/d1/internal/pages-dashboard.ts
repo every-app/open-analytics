@@ -4,7 +4,6 @@ import type {
 } from "@/lib/edge/analytics/contract";
 import {
   analyticsFilterRegistry,
-  effectiveScopeForPagination,
   filterFingerprint,
   type PagesDashboardMetric,
   type PagesDashboardSortBy,
@@ -24,21 +23,18 @@ import type {
   QueryWindow,
 } from "./core";
 import {
-  buildVisitFilterSql,
-  buildVisitSourceCte,
   emptyOverviewAggregateRow,
+  filteredVisitsCte,
   mapPageCardMetrics,
   normalizePathname,
   percentChange,
   queryD1All,
-  visitSourceBindings,
 } from "./core";
 import {
   pageCursorBinding,
   queryPageCardDetailsFromD1,
   queryPageCardMetricsFromD1,
 } from "./pages";
-import { scopedDatasetFor } from "./scoped-dataset";
 import {
   NO_SCROLL_DEPTH_RANK,
   scrollDepthOf,
@@ -103,24 +99,7 @@ function queryWindowFromTime(time: {
 interface PageDashboardComparisonSide {
   readonly ctes: string;
   readonly relation: string;
-  readonly filterClause: string;
   readonly bindings: readonly (string | number | null)[];
-}
-function renamedPageDashboardScopedDataset(
-  dataset: ReturnType<typeof scopedDatasetFor>,
-  prefix: string,
-): PageDashboardComparisonSide | null {
-  if (!dataset) return null;
-  const rename = (value: string) =>
-    value
-      .replace(/\bscope_[A-Za-z0-9_]*/g, (name) => `${prefix}_${name}`)
-      .replace(/\bvisit_source\b/g, `${prefix}_visit_source`);
-  return {
-    ctes: rename(dataset.ctes),
-    relation: rename(dataset.visitRelation),
-    filterClause: "",
-    bindings: dataset.bindings.map((binding) => binding.value),
-  };
 }
 function pageDashboardComparisonSide(
   siteId: string,
@@ -128,19 +107,11 @@ function pageDashboardComparisonSide(
   filters: FilterDocument,
   prefix: string,
 ): PageDashboardComparisonSide {
-  const scoped = renamedPageDashboardScopedDataset(
-    scopedDatasetFor(siteId, window, filters),
-    prefix,
-  );
-  if (scoped) return scoped;
-  const relation = `${prefix}_visit_source`;
-  const filter = buildVisitFilterSql(filters, relation, { window });
-  return {
-    ctes: buildVisitSourceCte().replace(/\bvisit_source\b/g, relation),
-    relation,
-    filterClause: filter.clause,
-    bindings: [...visitSourceBindings(siteId, window), ...filter.bindings],
-  };
+  const relation = `${prefix}_filtered_visits`;
+  const source = filteredVisitsCte(siteId, window, filters, {
+    name: relation,
+  });
+  return { ctes: source.sql, relation, bindings: source.bindings };
 }
 function pageDashboardMetricColumn(
   metric: PagesDashboardMetric,
@@ -215,7 +186,6 @@ async function pagesDashboardComparisonCursorBinding(
       reference.endExclusiveMs,
       reference.timeZone,
       filterFingerprint(referenceFilters, analyticsFilterRegistry),
-      effectiveScopeForPagination(referenceFilters),
     ],
     input.audience ?? "private-dashboard",
   );
@@ -291,8 +261,7 @@ ${prefix}_visits AS MATERIALIZED (
   SELECT pathname, session_id AS sessionId, visitor_id AS visitorId,
     duration_ms AS durationMs, scroll_depth AS scrollDepth
   FROM ${side.relation}
-  ${side.filterClause || "WHERE 1 = 1"}
-  AND TRIM(COALESCE(pathname, '')) != ''
+  WHERE TRIM(COALESCE(pathname, '')) != ''
 ),
 ${prefix}_path_rollup AS (
   SELECT pathname,

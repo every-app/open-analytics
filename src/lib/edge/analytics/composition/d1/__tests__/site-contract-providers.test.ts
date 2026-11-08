@@ -21,7 +21,6 @@ vi.mock("@/lib/edge/analytics/providers/d1/internal/geo-points", () => ({
 vi.mock("@/lib/edge/analytics/providers/d1/internal/pages", () => ({
   decodePagesCursor: vi.fn(),
   queryPageCardMetricsFromD1: vi.fn(),
-  queryPageTabsAggregate: vi.fn(),
   queryPagesPageFromD1: vi.fn(),
 }));
 vi.mock("@/lib/edge/analytics/providers/d1/internal/referrers", () => ({
@@ -54,7 +53,6 @@ import { queryGeoPointsFromD1 } from "@/lib/edge/analytics/providers/d1/internal
 import {
   decodePagesCursor,
   queryPagesPageFromD1,
-  queryPageTabsAggregate,
 } from "@/lib/edge/analytics/providers/d1/internal/pages";
 import { queryPagesDashboard } from "@/lib/edge/analytics/providers/d1/internal/pages-dashboard";
 import {
@@ -120,22 +118,13 @@ describe("D1 site contract provider pagination routing", () => {
       pagination: pathPage.pagination,
     });
     vi.mocked(queryPagesPageFromD1).mockResolvedValue({
-      items: [
-        { pathname: "/docs", query: "", hash: "", views: 4, sessions: 3 },
-      ],
+      items: [{ pathname: "/docs", views: 4, sessions: 3 }],
       pagination: pathPage.pagination,
     });
     vi.mocked(queryReferrersPageFromD1).mockResolvedValue(referrerPage);
     vi.mocked(queryChannelAggregate).mockResolvedValue([
       { channel: "organic_search", views: 5, sessions: 3, visitors: 2 },
     ]);
-    vi.mocked(queryPageTabsAggregate).mockResolvedValue({
-      path: [],
-      title: [],
-      hostname: [],
-      entry: [],
-      exit: [],
-    });
     vi.mocked(queryPagesDashboard).mockResolvedValue({
       interval: "day",
       items: [],
@@ -190,11 +179,7 @@ describe("D1 site contract provider pagination routing", () => {
     await registry
       .resolve("filter-values")!
       .execute(input({ field: "country", search: "us", page: { limit: 1 } }));
-    await registry.resolve("pages")!.execute(input({ variant: "tabs" }));
-    await registry.resolve("pages")!.execute(input({ includeDetails: true }));
-    await registry
-      .resolve("pages")!
-      .execute(input({ includeDetails: true, page: { limit: 1 } }));
+    await registry.resolve("pages")!.execute(input({ page: { limit: 1 } }));
     await registry
       .resolve("referrers")!
       .execute(input({ includeFullUrl: true }));
@@ -213,7 +198,6 @@ describe("D1 site contract provider pagination routing", () => {
     expect(queryDimensionPageFromD1).toHaveBeenCalled();
     expect(queryChannelAggregate).toHaveBeenCalled();
     expect(queryFilterValuesPageFromD1).toHaveBeenCalled();
-    expect(queryPageTabsAggregate).toHaveBeenCalled();
     expect(queryPagesPageFromD1).toHaveBeenCalled();
     expect(queryReferrersPageFromD1).toHaveBeenCalled();
     expect(queryPagesDashboard).toHaveBeenCalled();
@@ -225,8 +209,6 @@ describe("D1 site contract provider pagination routing", () => {
       views: 4,
       sessions: 3,
       pathname: "/docs",
-      query: "",
-      hash: "",
     });
     await registry
       .resolve("pages")!
@@ -237,7 +219,6 @@ describe("D1 site contract provider pagination routing", () => {
       expect.anything(),
       EMPTY_FILTER_DOCUMENT,
       1,
-      false,
       expect.objectContaining({ pathname: "/docs" }),
       "public-share",
     );

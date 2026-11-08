@@ -1,57 +1,39 @@
 import { propertyKeyOf } from "@/lib/analytics/property-path";
 import { browserEngineCaseSql } from "@/lib/browser-engine";
 import {
+  concat,
+  join,
+  parameter,
+  parenthesize,
+  type SqlFragment,
+  text,
+} from "@/lib/db/sql/fragment";
+import {
   analyticsFilterDefinition,
-  analyticsFilterRegistry,
   type FilterColumnStrategy,
-  type FilterCompilerStrategy,
-  type FilterObservationKind,
+  FilterFieldSource,
+  FilterTextComparison,
+  matchesOnlyCustomEvents,
+  matchesOnlyProperties,
   type RegisteredFilterField,
 } from "@/lib/filter-contract/filter-registry";
 import {
   type FilterCondition,
   type FilterDocument,
-  type FilterExpression,
-  type FilterOperator,
+  FilterOperator,
   type FilterValue,
-  isLegacyFilterTarget,
-  legacyConditionValue,
-  normalizeFilterDocument,
+  NEGATED_FILTER_OPERATORS,
+  targetFieldId,
 } from "@/lib/filter-contract/filters";
 
-export type FilterSqlBinding = string | number;
+import { DIRECT_REFERRER_FILTER_VALUE } from "./core-types";
 
-/** Keep small predicates simple; use one JSON binding when the set is large. */
-export const JSON_EACH_SET_THRESHOLD = 8;
-
-export interface FilterSql {
-  readonly clause: string;
-  readonly bindings: readonly FilterSqlBinding[];
+/** What a filtered read covers: one site's rows in the query window. */
+export interface FilterSqlScope {
+  readonly siteId: string;
+  readonly startMs: number;
+  readonly endExclusiveMs: number;
 }
-
-export interface FilterCompilerOptions {
-  readonly alias?: string;
-  readonly sessionSource?: string;
-  readonly eventAlias?: string;
-  /**
-   * What the alias's rows are, page views or events (the default). A
-   * payload condition reads a page view's custom properties and an event's
-   * payload.
-   */
-  readonly observation?: FilterObservationKind;
-}
-
-type Compiler = {
-  readonly alias: string;
-  readonly sessionSource: string;
-  readonly eventAlias: string;
-  readonly observation: FilterObservationKind;
-  readonly bindings: FilterSqlBinding[];
-  payloadIndex: number;
-  orLikeIndex: number;
-};
-
-const FILTER_SQL_CACHE = new WeakMap<FilterDocument, Map<string, FilterSql>>();
 
 const COLUMN_STRATEGY_COLUMNS: Readonly<Record<FilterColumnStrategy, string>> =
   {
@@ -83,391 +65,210 @@ const COLUMN_STRATEGY_COLUMNS: Readonly<Record<FilterColumnStrategy, string>> =
     "column.screen_width": "screen_width",
     "column.screen_height": "screen_height",
     "column.is_eu": "is_eu",
-    "fact.session_duration_ms": "session_duration_ms",
-    "fact.session_views": "session_views",
-    "fact.session_events": "session_events",
-    "fact.session_bounce": "session_bounce",
-    "fact.visitor_sessions": "visitor_sessions",
-    "fact.visitor_views": "visitor_views",
-    "fact.visitor_events": "visitor_events",
   };
 
-function validAlias(value: string, label: string): string {
+const COMPARISON_SQL: Partial<Record<FilterOperator, string>> = {
+  [FilterOperator.Eq]: "=",
+  [FilterOperator.Neq]: "!=",
+  [FilterOperator.Gt]: ">",
+  [FilterOperator.Gte]: ">=",
+  [FilterOperator.Lt]: "<",
+  [FilterOperator.Lte]: "<=",
+};
+
+/** The operator that matches what a negated operator excludes. */
+const POSITIVE_OPERATOR: Partial<Record<FilterOperator, FilterOperator>> = {
+  [FilterOperator.Neq]: FilterOperator.Eq,
+  [FilterOperator.NotIn]: FilterOperator.In,
+  [FilterOperator.NotContains]: FilterOperator.Contains,
+  [FilterOperator.NotExists]: FilterOperator.Exists,
+};
+
+function definitionOf(condition: FilterCondition): RegisteredFilterField {
+  const definition = analyticsFilterDefinition(targetFieldId(condition.target));
+  if (!definition) {
+    throw new TypeError(
+      `No filter definition for ${targetFieldId(condition.target)}.`,
+    );
+  }
+  return definition;
+}
+
+function validAlias(value: string): string {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
-    throw new TypeError(`${label} must be an internal SQL identifier.`);
+    throw new TypeError("Filter aliases must be internal SQL identifiers.");
   }
   return value;
 }
 
-function column(compiler: Compiler, name: string): string {
-  return `${compiler.alias}.${name}`;
+function columnExpression(field: RegisteredFilterField, visit: string): string {
+  const column = (name: string) => `${visit}.${name}`;
+  switch (field.compilerStrategy) {
+    case "derived.browserEngine":
+      return browserEngineCaseSql(column("browser"), column("os"));
+    case "derived.osVersion":
+      return `TRIM(CASE WHEN ${column("os")} != '' AND ${column("os_version")} != '' THEN ${column("os")} || ' ' || ${column("os_version")} WHEN ${column("os")} != '' THEN ${column("os")} WHEN ${column("os_version")} != '' THEN ${column("os_version")} ELSE '' END)`;
+    case "derived.screenSize":
+      return `CASE WHEN ${column("screen_width")} IS NOT NULL AND ${column("screen_height")} IS NOT NULL THEN CAST(${column("screen_width")} AS TEXT) || 'x' || CAST(${column("screen_height")} AS TEXT) ELSE '' END`;
+    case "session.boundary.entry":
+    case "session.boundary.exit":
+    case "event.name":
+    case "event.payload":
+      throw new TypeError(`${field.id} is not a page view column.`);
+    default:
+      return column(COLUMN_STRATEGY_COLUMNS[field.compilerStrategy]);
+  }
 }
 
-function compilerStrategyFor(
-  field: RegisteredFilterField,
-): FilterCompilerStrategy {
-  if (!field.compilerStrategy) {
-    throw new TypeError(`No compiler strategy registered for ${field.id}.`);
-  }
-  return field.compilerStrategy;
-}
-
-function directColumn(
-  compiler: Compiler,
-  strategy: FilterCompilerStrategy,
-): string {
-  if (strategy === "event.name") return `${compiler.eventAlias}.event_name`;
-  if (strategy === "derived.browserEngine") {
-    return browserEngineCaseSql(
-      column(compiler, "browser"),
-      column(compiler, "os"),
-    );
-  }
-  if (strategy === "derived.osVersion") {
-    return `TRIM(CASE WHEN ${column(compiler, "os")} != '' AND ${column(compiler, "os_version")} != '' THEN ${column(compiler, "os")} || ' ' || ${column(compiler, "os_version")} WHEN ${column(compiler, "os")} != '' THEN ${column(compiler, "os")} WHEN ${column(compiler, "os_version")} != '' THEN ${column(compiler, "os_version")} ELSE '' END)`;
-  }
-  if (strategy === "derived.screenSize") {
-    return `CASE WHEN ${column(compiler, "screen_width")} IS NOT NULL AND ${column(compiler, "screen_height")} IS NOT NULL THEN CAST(${column(compiler, "screen_width")} AS TEXT) || 'x' || CAST(${column(compiler, "screen_height")} AS TEXT) ELSE '' END`;
-  }
-  const name = COLUMN_STRATEGY_COLUMNS[strategy as FilterColumnStrategy];
-  if (!name)
-    throw new TypeError(`No SQL column strategy registered for ${strategy}.`);
-  return column(compiler, name);
-}
-
-function normalizedColumn(
-  field: RegisteredFilterField,
-  expression: string,
-): string {
-  if (field.valueKind === "number" || field.valueKind === "boolean") {
+/** The stored value a text field compares: trimmed, and lowercased if it folds case. */
+function normalizedText(field: RegisteredFilterField, expression: string) {
+  if (field.valueKind === "number" || field.valueKind === "boolean")
     return expression;
-  }
   const trimmed = `TRIM(COALESCE(${expression}, ''))`;
-  return field.comparison === "case-insensitive"
+  return field.comparison === FilterTextComparison.CaseInsensitive
     ? `LOWER(${trimmed})`
     : trimmed;
 }
 
-function push(compiler: Compiler, value: FilterSqlBinding): string {
-  compiler.bindings.push(value);
-  return "?";
-}
-
-function jsonSet(values: readonly FilterValue[]): string {
-  const encoded = JSON.stringify(values.map((value) => scalar(value)));
-  if (encoded === undefined) {
-    throw new TypeError("Filter set values must be JSON serializable.");
+function binding(field: RegisteredFilterField, value: FilterValue) {
+  if (value === null) {
+    throw new TypeError("This SQL predicate requires a non-null value.");
   }
-  return encoded;
-}
-
-function jsonBindingSet(values: readonly FilterSqlBinding[]): string {
-  const encoded = JSON.stringify(values);
-  if (encoded === undefined) {
-    throw new TypeError("Filter set values must be JSON serializable.");
-  }
-  return encoded;
-}
-
-function setComparison(
-  compiler: Compiler,
-  normalized: string,
-  operator: FilterOperator,
-  values: readonly FilterSqlBinding[],
-): string {
-  const sqlOperator = operator === "notIn" ? "NOT IN" : "IN";
-  if (values.length >= JSON_EACH_SET_THRESHOLD) {
-    return `${normalized} ${sqlOperator} (SELECT value FROM json_each(${push(compiler, jsonBindingSet(values))}))`;
-  }
-  const placeholders = values.map((item) => push(compiler, item)).join(", ");
-  return `${normalized} ${sqlOperator} (${placeholders})`;
-}
-
-function scalar(value: FilterValue): FilterSqlBinding {
-  if (value === null || typeof value === "boolean") {
-    throw new TypeError(
-      "This SQL predicate requires a non-null scalar binding.",
-    );
-  }
+  if (typeof value === "boolean") return value ? 1 : 0;
+  // The dashboard's "Direct" referrer is a page view with none.
+  if (field.directReferrer && value === DIRECT_REFERRER_FILTER_VALUE) return "";
   return value;
 }
 
-function fieldScalar(
+function valueList(
   field: RegisteredFilterField,
-  value: FilterValue,
-): FilterSqlBinding {
-  if (value === null) {
-    throw new TypeError(
-      "This SQL predicate requires a non-null scalar binding.",
-    );
-  }
-  if (field.valueKind === "boolean") {
-    if (typeof value !== "boolean")
-      throw new TypeError("Boolean filter values must be boolean.");
-    return value ? 1 : 0;
-  }
-  if (field.valueKind === "number") {
-    if (typeof value !== "number" || !Number.isFinite(value))
-      throw new TypeError("Numeric filter values must be finite numbers.");
-    return value;
-  }
-  return scalar(value);
-}
-
-function stringMatchExpression(
-  left: string,
-  right: string,
-  operator: "contains" | "startsWith" | "endsWith",
-): string {
-  if (operator === "contains") return `INSTR(${left}, ${right}) > 0`;
-  if (operator === "startsWith")
-    return `SUBSTR(${left}, 1, LENGTH(${right})) = ${right}`;
-  return `(LENGTH(${right}) = 0 OR SUBSTR(${left}, -LENGTH(${right})) = ${right})`;
-}
-
-function boundStringMatch(
-  compiler: Compiler,
-  left: string,
-  value: string,
-  operator: "contains" | "startsWith" | "endsWith",
-): string {
-  if (operator === "contains")
-    return `INSTR(${left}, ${push(compiler, value)}) > 0`;
-  if (operator === "startsWith") {
-    const lengthValue = push(compiler, value);
-    const compareValue = push(compiler, value);
-    return `SUBSTR(${left}, 1, LENGTH(${lengthValue})) = ${compareValue}`;
-  }
-  const emptyValue = push(compiler, value);
-  const lengthValue = push(compiler, value);
-  const compareValue = push(compiler, value);
-  return `(LENGTH(${emptyValue}) = 0 OR SUBSTR(${left}, -LENGTH(${lengthValue})) = ${compareValue})`;
-}
-
-type OrVectorOperator = "eq" | "contains" | "startsWith" | "endsWith";
-
-type OrVectorCondition = {
-  readonly field: RegisteredFilterField;
-  readonly source: string;
-  readonly operator: OrVectorOperator;
-  readonly value: string | number;
-};
-
-function storedComparisonValue(
-  field: RegisteredFilterField,
-  value: string | number,
-  operator: FilterOperator,
-): string | number {
-  return field.profile === "direct-referrer" &&
-    value === "__direct__" &&
-    ["eq", "neq", "in", "notIn"].includes(operator)
-    ? ""
-    : value;
-}
-
-function orVectorCondition(
-  compiler: Compiler,
-  item: FilterExpression,
-): OrVectorCondition | undefined {
-  if (item.kind !== "condition" || item.target.kind !== "field") {
-    return undefined;
-  }
-  const field = analyticsFilterDefinition(item.target.field);
-  if (
-    !field ||
-    field.profile === "session-boundary" ||
-    (item.operator !== "eq" &&
-      item.operator !== "contains" &&
-      item.operator !== "startsWith" &&
-      item.operator !== "endsWith") ||
-    Array.isArray(item.value) ||
-    (typeof item.value !== "string" && typeof item.value !== "number")
-  ) {
-    return undefined;
-  }
-  if (item.operator !== "eq" && typeof item.value !== "string") {
-    return undefined;
-  }
-  return {
-    field,
-    source: directColumn(compiler, compilerStrategyFor(field)),
-    operator: item.operator,
-    value: storedComparisonValue(field, item.value, item.operator),
-  };
-}
-
-function vectorKey(item: OrVectorCondition): string {
-  return `${item.field.id}\u0000${item.operator}`;
-}
-
-function jsonOrStringComparison(
-  compiler: Compiler,
-  item: OrVectorCondition,
-  values: readonly string[],
-): string {
-  if (item.operator === "eq")
-    throw new TypeError("Equality uses the scalar JSON set comparison.");
-  const normalized = normalizedColumn(item.field, item.source);
-  const alias = `filter_or_like_${compiler.orLikeIndex}`;
-  compiler.orLikeIndex += 1;
-  const value =
-    item.field.comparison === "case-insensitive"
-      ? `LOWER(TRIM(${alias}.value))`
-      : `TRIM(${alias}.value)`;
-  return `EXISTS (
-    SELECT 1
-    FROM json_each(${push(compiler, JSON.stringify(values))}) AS ${alias}
-    WHERE ${stringMatchExpression(normalized, value, item.operator)}
-  )`;
-}
-
-function vectorOrComparison(
-  compiler: Compiler,
-  item: OrVectorCondition,
-  values: readonly (string | number)[],
-): string {
-  const normalized = normalizedColumn(item.field, item.source);
-  if (item.operator === "eq") {
-    return `${normalized} IN (SELECT value FROM json_each(${push(compiler, jsonSet(values))}))`;
-  }
-  return jsonOrStringComparison(compiler, item, values as readonly string[]);
-}
-
-function orExpression(
-  compiler: Compiler,
-  children: readonly FilterExpression[],
-): string {
-  const vectors = children.map((child) => orVectorCondition(compiler, child));
-  const groups = new Map<string, number[]>();
-  for (const [index, vector] of vectors.entries()) {
-    if (!vector) continue;
-    const key = vectorKey(vector);
-    const entries = groups.get(key) ?? [];
-    entries.push(index);
-    groups.set(key, entries);
-  }
-  const groupedIndexes = new Set(
-    [...groups.values()].flatMap((indexes) =>
-      indexes.length > 1 ? indexes.slice(1) : [],
-    ),
+  values: readonly FilterValue[],
+) {
+  return parameter(
+    JSON.stringify(values.map((value) => binding(field, value))),
   );
-  const clauses: string[] = [];
-  for (const [index, child] of children.entries()) {
-    if (groupedIndexes.has(index)) continue;
-    const vector = vectors[index];
-    const indexes = vector ? groups.get(vectorKey(vector)) : undefined;
-    if (vector && indexes && indexes.length > 1) {
-      clauses.push(
-        vectorOrComparison(
-          compiler,
-          vector,
-          indexes.map((itemIndex) => vectors[itemIndex]!.value),
-        ),
-      );
-    } else {
-      clauses.push(expression(compiler, child));
-    }
-  }
-  return `(${clauses.join(" OR ")})`;
 }
 
+function stringMatch(
+  left: string,
+  operator: FilterOperator,
+  value: string,
+): SqlFragment {
+  switch (operator) {
+    case FilterOperator.Contains:
+      return concat(text(`INSTR(${left}, `), parameter(value), text(") > 0"));
+    case FilterOperator.NotContains:
+      return concat(text(`INSTR(${left}, `), parameter(value), text(") = 0"));
+    case FilterOperator.StartsWith:
+      return concat(text(`INSTR(${left}, `), parameter(value), text(") = 1"));
+    default:
+      return value === ""
+        ? text("1")
+        : concat(
+            text(`SUBSTR(${left}, -LENGTH(`),
+            parameter(value),
+            text(")) = "),
+            parameter(value),
+          );
+  }
+}
+
+/** A comparison of a page view column, or a derived value of it. */
 function comparison(
-  compiler: Compiler,
   field: RegisteredFilterField,
   source: string,
-  operator: FilterOperator,
-  value: FilterValue | readonly FilterValue[] | undefined,
-): string {
-  const normalized = normalizedColumn(field, source);
-  if (
-    field.profile === "direct-referrer" &&
-    typeof value === "string" &&
-    value === "__direct__" &&
-    (operator === "eq" || operator === "neq")
-  ) {
-    return `${normalized} ${operator === "eq" ? "=" : "!="} ''`;
-  }
-  if (operator === "exists" || operator === "notNull")
-    return `${source} IS NOT NULL`;
-  if (operator === "notExists" || operator === "isNull")
-    return `${source} IS NULL`;
-  if (operator === "isEmpty") return `${source} IS NOT NULL AND ${source} = ''`;
-  if (operator === "notEmpty")
-    return `${source} IS NOT NULL AND ${source} != ''`;
-  if (Array.isArray(value)) {
-    if (operator === "between") {
-      return `${normalized} BETWEEN ${push(compiler, fieldScalar(field, value[0]!))} AND ${push(compiler, fieldScalar(field, value[1]!))}`;
+  condition: FilterCondition,
+): SqlFragment {
+  const { operator, value } = condition;
+  const normalized = normalizedText(field, source);
+  switch (operator) {
+    case FilterOperator.Exists:
+    case FilterOperator.NotNull:
+      return text(`${source} IS NOT NULL`);
+    case FilterOperator.NotExists:
+    case FilterOperator.IsNull:
+      return text(`${source} IS NULL`);
+    case FilterOperator.IsEmpty:
+      return text(`${source} IS NOT NULL AND ${source} = ''`);
+    case FilterOperator.NotEmpty:
+      return text(`${source} IS NOT NULL AND ${source} != ''`);
+    case FilterOperator.In:
+    case FilterOperator.NotIn:
+      return concat(
+        text(
+          `${normalized} ${operator === FilterOperator.NotIn ? "NOT IN" : "IN"} (SELECT value FROM json_each(`,
+        ),
+        valueList(field, value as readonly FilterValue[]),
+        text("))"),
+      );
+    case FilterOperator.Between: {
+      const [lower, upper] = value as readonly FilterValue[];
+      return concat(
+        text(`${normalized} BETWEEN `),
+        parameter(binding(field, lower!)),
+        text(" AND "),
+        parameter(binding(field, upper!)),
+      );
     }
-    const storedValues =
-      field.profile === "direct-referrer"
-        ? value.map((item) => (item === "__direct__" ? "" : item))
-        : value;
-    return setComparison(
-      compiler,
-      normalized,
-      operator,
-      storedValues.map((item) => fieldScalar(field, item)),
-    );
+    case FilterOperator.Contains:
+    case FilterOperator.NotContains:
+    case FilterOperator.StartsWith:
+    case FilterOperator.EndsWith:
+      return stringMatch(normalized, operator, value as string);
+    default:
+      return concat(
+        text(`${normalized} ${COMPARISON_SQL[operator]!} `),
+        parameter(binding(field, value as FilterValue)),
+      );
   }
-  const binding = fieldScalar(field, value as FilterValue);
-  if (
-    operator === "contains" ||
-    operator === "startsWith" ||
-    operator === "endsWith"
-  ) {
-    return boundStringMatch(compiler, normalized, String(binding), operator);
-  }
-  const sqlOperator: Record<string, string> = {
-    eq: "=",
-    neq: "!=",
-    gt: ">",
-    gte: ">=",
-    lt: "<",
-    lte: "<=",
-  };
-  return `${normalized} ${sqlOperator[operator]!} ${push(compiler, binding)}`;
 }
 
-function sessionBoundary(
-  compiler: Compiler,
-  condition: FilterCondition,
-  kind: "entry" | "exit",
-): string {
-  const field = analyticsFilterDefinition(
-    kind === "entry" ? "session.entryPath" : "session.exitPath",
-  )!;
-  const rankOrder = kind === "entry" ? "ASC" : "DESC";
-  const rank = kind === "entry" ? "entry_rank" : "exit_rank";
-  const boundary = kind === "entry" ? "entry_path" : "exit_path";
-  const predicate = comparison(
-    compiler,
-    field,
-    boundary,
-    condition.operator,
-    legacyConditionValue(condition.value),
+/** The site's primary key, looked up in the statement from its id. */
+export function sitePk(siteId: string): SqlFragment {
+  return concat(
+    text("(SELECT site_pk FROM site_identities WHERE site_id = "),
+    parameter(siteId),
+    text(")"),
   );
-  return `(${column(compiler, "site_pk")}, ${column(compiler, "session_id")}) IN (
-    SELECT site_pk, session_id FROM (
-      SELECT site_pk, session_id, MAX(CASE WHEN ${rank} = 1 THEN pathname END) AS ${boundary}
-      FROM (
-        SELECT edge.site_pk, edge.session_id, edge.pathname,
-          ROW_NUMBER() OVER (PARTITION BY edge.site_pk, edge.session_id ORDER BY edge.started_at ${rankOrder}, edge.visit_id ${rankOrder}) AS ${rank}
-        FROM ${compiler.sessionSource} edge
-        WHERE TRIM(COALESCE(edge.site_pk, '')) != ''
-          AND TRIM(COALESCE(edge.session_id, '')) != ''
-      ) session_edges
-      GROUP BY site_pk, session_id
-    ) session_boundaries
-    WHERE ${predicate}
-  )`;
+}
+
+/**
+ * The page views of the visit's session whose first (entry) or last (exit)
+ * page matches: the session's edges among its page views in the window.
+ */
+function sessionBoundary(
+  field: RegisteredFilterField,
+  condition: FilterCondition,
+  scope: FilterSqlScope,
+  visit: string,
+): SqlFragment {
+  const order =
+    field.compilerStrategy === "session.boundary.entry" ? "ASC" : "DESC";
+  return concat(
+    text(`${visit}.session_id IN (
+    SELECT session_id FROM (
+      SELECT session_id, pathname,
+        ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY started_at ${order}, visit_id ${order}) AS boundary_rank
+      FROM visits
+      WHERE site_pk = `),
+    sitePk(scope.siteId),
+    text(" AND started_at >= "),
+    parameter(scope.startMs),
+    text(" AND started_at < "),
+    parameter(scope.endExclusiveMs),
+    text(` AND session_id != ''
+    ) session_edges
+    WHERE boundary_rank = 1 AND `),
+    comparison(field, "session_edges.pathname", condition),
+    text(")"),
+  );
 }
 
 function payloadValueType(value: FilterValue): number {
   if (value === null) return 0;
   if (typeof value === "string") return 1;
   if (typeof value === "number") return 2;
-  if (typeof value === "boolean") return 3;
-  throw new TypeError("Event payload values must be JSON scalars.");
+  return 3;
 }
 
 function payloadValueColumn(alias: string, value: FilterValue): string {
@@ -477,206 +278,377 @@ function payloadValueColumn(alias: string, value: FilterValue): string {
   return `${alias}.value_type`;
 }
 
-/** The payload value rows at `path`: their FROM and WHERE clauses. */
-interface PayloadValues {
+/** The custom property rows at the condition's path, as FROM and WHERE. */
+interface PropertyRows {
   readonly from: string;
-  readonly where: string;
+  readonly where: SqlFragment;
 }
 
-function eventPayloadValues(
-  compiler: Compiler,
-  valueAlias: string,
-  path: string,
-): PayloadValues {
-  const pathAlias = `filter_payload_path_${compiler.payloadIndex}`;
+/** A page view's custom properties: strings at top-level paths. */
+function pageViewProperties(path: string, visit: string): PropertyRows {
+  const key = propertyKeyOf(path);
   return {
-    from: `custom_event_json_values ${valueAlias} INNER JOIN custom_event_json_paths ${pathAlias} ON ${pathAlias}.id = ${valueAlias}.path_id`,
-    where: `${valueAlias}.event_pk = ${compiler.eventAlias}.event_pk AND ${valueAlias}.site_pk = ${compiler.eventAlias}.site_pk AND ${pathAlias}.site_pk = ${compiler.eventAlias}.site_pk AND ${pathAlias}.path = ${push(compiler, path)}`,
+    from: `(SELECT visit_id, key, 1 AS value_type, value AS string_value, NULL AS number_value, NULL AS boolean_value FROM visit_properties) property_value`,
+    where:
+      key === null
+        ? text("0")
+        : concat(
+            text(
+              `property_value.visit_id = ${visit}.visit_id AND property_value.key = `,
+            ),
+            parameter(key),
+          ),
+  };
+}
+
+function eventPayloadValues(path: string, event: string): PropertyRows {
+  return {
+    from: "custom_event_json_values property_value INNER JOIN custom_event_json_paths property_path ON property_path.id = property_value.path_id",
+    where: concat(
+      text(
+        `property_value.event_pk = ${event}.event_pk AND property_value.site_pk = ${event}.site_pk AND property_path.site_pk = ${event}.site_pk AND property_path.path = `,
+      ),
+      parameter(path),
+    ),
+  };
+}
+
+function propertyComparison(
+  condition: FilterCondition,
+  rows: PropertyRows,
+): SqlFragment {
+  const exists = (extra: SqlFragment = text("")) =>
+    concat(
+      text(`EXISTS (SELECT 1 FROM ${rows.from} WHERE `),
+      rows.where,
+      extra,
+      text(")"),
+    );
+  const { operator, value } = condition;
+  switch (operator) {
+    case FilterOperator.Exists:
+      return exists();
+    case FilterOperator.NotExists:
+      return concat(text("NOT "), exists());
+    case FilterOperator.IsNull:
+      return exists(text(" AND property_value.value_type = 0"));
+    case FilterOperator.NotNull:
+      return exists(text(" AND property_value.value_type != 0"));
+    case FilterOperator.IsEmpty:
+      return exists(
+        text(
+          " AND property_value.value_type = 1 AND property_value.string_value = ''",
+        ),
+      );
+    case FilterOperator.NotEmpty:
+      return exists(
+        text(
+          " AND property_value.value_type = 1 AND property_value.string_value != ''",
+        ),
+      );
+    default:
+      break;
+  }
+  const values = Array.isArray(value) ? value : [value as FilterValue];
+  const types = new Set(values.map(payloadValueType));
+  if (types.size !== 1) {
+    throw new TypeError("Custom property lists need values of one JSON type.");
+  }
+  const type = text(` AND property_value.value_type = ${[...types][0]}`);
+  const column = payloadValueColumn("property_value", values[0]!);
+  const scalar = (item: FilterValue) =>
+    parameter(typeof item === "boolean" ? (item ? 1 : 0) : item);
+  switch (operator) {
+    case FilterOperator.In:
+    case FilterOperator.NotIn:
+      return exists(
+        concat(
+          type,
+          text(
+            ` AND ${column} ${operator === FilterOperator.NotIn ? "NOT IN" : "IN"} (SELECT value FROM json_each(`,
+          ),
+          parameter(
+            JSON.stringify(
+              values.map((item) =>
+                typeof item === "boolean" ? (item ? 1 : 0) : item,
+              ),
+            ),
+          ),
+          text("))"),
+        ),
+      );
+    case FilterOperator.Between:
+      return exists(
+        concat(
+          type,
+          text(` AND ${column} BETWEEN `),
+          scalar(values[0]!),
+          text(" AND "),
+          scalar(values[1]!),
+        ),
+      );
+    case FilterOperator.Contains:
+    case FilterOperator.NotContains:
+    case FilterOperator.StartsWith:
+    case FilterOperator.EndsWith:
+      return exists(
+        concat(
+          type,
+          text(" AND "),
+          stringMatch("property_value.string_value", operator, value as string),
+        ),
+      );
+    default:
+      return value === null
+        ? exists(
+            text(
+              ` AND property_value.value_type ${COMPARISON_SQL[operator]!} 0`,
+            ),
+          )
+        : exists(
+            concat(
+              type,
+              text(` AND ${column} ${COMPARISON_SQL[operator]!} `),
+              scalar(value as FilterValue),
+            ),
+          );
+  }
+}
+
+/**
+ * A condition on a page view field: its column, its session's entry or
+ * exit page, or, for a custom property, the page view's own property.
+ */
+function pageViewCondition(
+  condition: FilterCondition,
+  scope: FilterSqlScope,
+  visit: string,
+): SqlFragment {
+  const field = definitionOf(condition);
+  switch (field.source) {
+    case FilterFieldSource.Visit:
+      return comparison(field, columnExpression(field, visit), condition);
+    case FilterFieldSource.SessionBoundary:
+      return sessionBoundary(field, condition, scope, visit);
+    case FilterFieldSource.Payload:
+      return propertyComparison(
+        condition,
+        pageViewProperties(
+          condition.target.kind === "event-payload"
+            ? condition.target.path
+            : "",
+          visit,
+        ),
+      );
+    case FilterFieldSource.EventName:
+      throw new TypeError("event.name is not a page view field.");
+  }
+}
+
+/**
+ * A condition on a custom event: its name and payload are its own, and the
+ * page view fields are those of the visit it was sent from.
+ */
+function eventCondition(
+  condition: FilterCondition,
+  scope: FilterSqlScope,
+  event: string,
+  eventName: string,
+  visit: string,
+): SqlFragment {
+  const field = definitionOf(condition);
+  switch (field.source) {
+    case FilterFieldSource.EventName:
+      return comparison(field, eventName, condition);
+    case FilterFieldSource.Payload:
+      return propertyComparison(
+        condition,
+        eventPayloadValues(
+          condition.target.kind === "event-payload"
+            ? condition.target.path
+            : "",
+          event,
+        ),
+      );
+    default:
+      return pageViewCondition(condition, scope, visit);
+  }
+}
+
+function and(parts: readonly SqlFragment[]): SqlFragment | null {
+  return parts.length === 0
+    ? null
+    : join(parts.map(parenthesize), text(" AND "));
+}
+
+/** The visit's custom events in the window that match every condition. */
+function visitHasEvent(
+  conditions: readonly FilterCondition[],
+  scope: FilterSqlScope,
+  visit: string,
+): SqlFragment {
+  const predicate = and(
+    conditions.map((condition) =>
+      eventCondition(
+        condition,
+        scope,
+        "visit_event",
+        "visit_event_name.name",
+        visit,
+      ),
+    ),
+  );
+  return concat(
+    text(`EXISTS (
+    SELECT 1
+    FROM custom_events visit_event
+    INNER JOIN custom_event_names visit_event_name
+      ON visit_event_name.id = visit_event.event_name_id
+    WHERE visit_event.visit_id = ${visit}.visit_id
+      AND visit_event.occurred_at >= `),
+    parameter(scope.startMs),
+    text(" AND visit_event.occurred_at < "),
+    parameter(scope.endExclusiveMs),
+    ...(predicate ? [text(" AND "), predicate] : []),
+    text(")"),
+  );
+}
+
+function bySource(conditions: readonly FilterCondition[]) {
+  const source = (condition: FilterCondition) => definitionOf(condition).source;
+  const isEventName = (condition: FilterCondition) =>
+    source(condition) === FilterFieldSource.EventName;
+  return {
+    pageView: conditions.filter(
+      (condition) =>
+        source(condition) === FilterFieldSource.Visit ||
+        source(condition) === FilterFieldSource.SessionBoundary,
+    ),
+    payload: conditions.filter(
+      (condition) => source(condition) === FilterFieldSource.Payload,
+    ),
+    eventNames: conditions.filter(
+      (condition) =>
+        isEventName(condition) &&
+        !NEGATED_FILTER_OPERATORS.has(condition.operator),
+    ),
+    excludedEventNames: conditions.filter(
+      (condition) =>
+        isEventName(condition) &&
+        NEGATED_FILTER_OPERATORS.has(condition.operator),
+    ),
   };
 }
 
 /**
- * A page view's custom properties as payload values: each a string (JSON
- * type 1) at a top-level path, so a nested path selects none.
+ * The filter as a predicate on a visits row aliased `visit`. Page view
+ * fields compare its columns. A custom event name matches the visits with
+ * such an event, and a negated one ("is not") the visits without; a custom
+ * property matches the page view's own or one of its events'.
  */
-function pagePropertyValues(
-  compiler: Compiler,
-  valueAlias: string,
-  path: string,
-): PayloadValues {
-  const key = propertyKeyOf(path);
-  return {
-    from: `(SELECT visit_id, key, 1 AS value_type, value AS string_value, NULL AS number_value, NULL AS boolean_value FROM visit_properties) ${valueAlias}`,
-    where:
-      key === null
-        ? "0"
-        : `${valueAlias}.visit_id = ${column(compiler, "visit_id")} AND ${valueAlias}.key = ${push(compiler, key)}`,
-  };
+export function visitFilterSql(
+  filters: FilterDocument,
+  scope: FilterSqlScope,
+  visit = "v",
+): SqlFragment | null {
+  const alias = validAlias(visit);
+  const { pageView, payload, eventNames, excludedEventNames } = bySource(
+    filters.conditions,
+  );
+  const parts = pageView.map((condition) =>
+    pageViewCondition(condition, scope, alias),
+  );
+  if (eventNames.length > 0) {
+    parts.push(visitHasEvent([...eventNames, ...payload], scope, alias));
+  } else if (payload.length > 0) {
+    parts.push(
+      join(
+        [
+          and(
+            payload.map((condition) =>
+              pageViewCondition(condition, scope, alias),
+            ),
+          )!,
+          visitHasEvent(payload, scope, alias),
+        ].map(parenthesize),
+        text(" OR "),
+      ),
+    );
+  }
+  for (const condition of excludedEventNames) {
+    parts.push(
+      concat(
+        text("NOT "),
+        visitHasEvent(
+          [
+            {
+              ...condition,
+              operator: POSITIVE_OPERATOR[condition.operator]!,
+            },
+          ],
+          scope,
+          alias,
+        ),
+      ),
+    );
+  }
+  return and(parts);
 }
 
-function payloadComparison(
-  compiler: Compiler,
-  condition: FilterCondition,
-): string {
-  if (condition.target.kind !== "event-payload")
-    throw new TypeError("Payload compiler requires an event-payload target.");
-  const valueAlias = `filter_payload_value_${compiler.payloadIndex}`;
-  const rows =
-    compiler.observation === "visit"
-      ? pagePropertyValues(compiler, valueAlias, condition.target.path)
-      : eventPayloadValues(compiler, valueAlias, condition.target.path);
-  compiler.payloadIndex += 1;
-  const conditionValue = legacyConditionValue(condition.value);
-  const exists = (extra = "") =>
-    `EXISTS (SELECT 1 FROM ${rows.from} WHERE ${rows.where}${extra})`;
-  if (condition.operator === "exists") return exists();
-  if (condition.operator === "notExists") return `NOT ${exists()}`;
-  if (condition.operator === "isNull")
-    return exists(` AND ${valueAlias}.value_type = 0`);
-  if (condition.operator === "notNull")
-    return exists(` AND ${valueAlias}.value_type != 0`);
-  if (condition.operator === "isEmpty")
-    return exists(
-      ` AND ${valueAlias}.value_type = 1 AND ${valueAlias}.string_value = ''`,
-    );
-  if (condition.operator === "notEmpty")
-    return exists(
-      ` AND ${valueAlias}.value_type = 1 AND ${valueAlias}.string_value != ''`,
-    );
-  const values = Array.isArray(conditionValue)
-    ? conditionValue
-    : [conditionValue!];
-  const types = [...new Set(values.map(payloadValueType))];
-  if (types.length !== 1)
-    throw new TypeError("Payload set filters require values of one JSON type.");
-  const type = types[0]!;
-  const valueColumn = payloadValueColumn(valueAlias, values[0]!);
-  if (condition.operator === "between") {
-    return exists(
-      ` AND ${valueAlias}.value_type = ${push(compiler, type)} AND ${valueColumn} BETWEEN ${push(compiler, scalar(values[0]!))} AND ${push(compiler, scalar(values[1]!))}`,
-    );
-  }
-  if (condition.operator === "in" || condition.operator === "notIn") {
-    if (values.length >= JSON_EACH_SET_THRESHOLD) {
-      const valueSet = push(compiler, jsonSet(values));
-      const typeBinding = push(compiler, type);
-      return exists(
-        ` AND ${valueColumn} ${condition.operator === "in" ? "IN" : "NOT IN"} (SELECT value FROM json_each(${valueSet})) AND ${valueAlias}.value_type = ${typeBinding}`,
-      );
-    }
-    // Bound in the order of their placeholders: the type, then the set.
-    const typeBinding = push(compiler, type);
-    const bindings = values
-      .map((value) => push(compiler, scalar(value)))
-      .join(", ");
-    return exists(
-      ` AND ${valueAlias}.value_type = ${typeBinding} AND ${valueColumn} ${condition.operator === "in" ? "IN" : "NOT IN"} (${bindings})`,
-    );
-  }
-  const value = values[0]!;
-  if (
-    condition.operator === "contains" ||
-    condition.operator === "startsWith" ||
-    condition.operator === "endsWith"
-  ) {
-    if (typeof value !== "string")
-      throw new TypeError("Payload string matching requires a string.");
-    return exists(
-      ` AND ${valueAlias}.value_type = 1 AND ${boundStringMatch(compiler, `${valueAlias}.string_value`, value, condition.operator)}`,
-    );
-  }
-  const operator: Record<string, string> = {
-    eq: "=",
-    neq: "!=",
-    gt: ">",
-    gte: ">=",
-    lt: "<",
-    lte: "<=",
-  };
-  if (value === null)
-    return exists(
-      ` AND ${valueAlias}.value_type ${operator[condition.operator]!} ${push(compiler, 0)}`,
-    );
-  const binding = typeof value === "boolean" ? (value ? 1 : 0) : scalar(value);
-  return exists(
-    ` AND ${valueAlias}.value_type = ${push(compiler, type)} AND ${valueColumn} ${operator[condition.operator]!} ${push(compiler, binding)}`,
+/**
+ * The filter as a predicate on a custom event row aliased `event`, with its
+ * name at `eventName` and its visit aliased `visit`.
+ */
+export function eventFilterSql(
+  filters: FilterDocument,
+  scope: FilterSqlScope,
+  aliases: {
+    readonly event: string;
+    readonly eventName: string;
+    readonly visit: string;
+  } = { event: "ce", eventName: "cen.name", visit: "v" },
+): SqlFragment | null {
+  const event = validAlias(aliases.event);
+  const visit = validAlias(aliases.visit);
+  return and(
+    filters.conditions.map((condition) =>
+      eventCondition(condition, scope, event, aliases.eventName, visit),
+    ),
   );
 }
 
-function condition(compiler: Compiler, item: FilterCondition): string {
-  if (!isLegacyFilterTarget(item.target)) {
-    throw new TypeError("unsupported_filter_expression");
-  }
-  if (item.target.kind === "event-payload")
-    return payloadComparison(compiler, item);
-  const field = analyticsFilterDefinition(item.target.field);
-  if (!field)
-    throw new TypeError(`No filter definition for ${item.target.field}.`);
-  const strategy = compilerStrategyFor(field);
-  if (strategy === "session.boundary.entry")
-    return sessionBoundary(compiler, item, "entry");
-  if (strategy === "session.boundary.exit")
-    return sessionBoundary(compiler, item, "exit");
-  return comparison(
-    compiler,
-    field,
-    directColumn(compiler, strategy),
-    item.operator,
-    legacyConditionValue(item.value),
+/**
+ * Whether a page view row is a conversion of a goal or funnel step: one
+ * that names no custom event and whose every condition the page view
+ * matches, a custom property being the page view's own.
+ */
+export function pageViewMatchSql(
+  filters: FilterDocument,
+  scope: FilterSqlScope,
+  visit = "v",
+): SqlFragment {
+  if (matchesOnlyCustomEvents(filters)) return text("0");
+  const alias = validAlias(visit);
+  return (
+    and(
+      filters.conditions.map((condition) =>
+        pageViewCondition(condition, scope, alias),
+      ),
+    ) ?? text("1")
   );
 }
 
-function expression(compiler: Compiler, item: FilterExpression): string {
-  if (item.kind === "condition") return condition(compiler, item);
-  if (item.kind === "not") return `(NOT (${expression(compiler, item.child)}))`;
-  if (item.kind === "or") return orExpression(compiler, item.children);
-  const operator = item.kind === "and" ? " AND " : " OR ";
-  return `(${item.children.map((child) => expression(compiler, child)).join(operator)})`;
-}
-
-export function compileFilterDocument(
-  document: FilterDocument,
-  options: FilterCompilerOptions = {},
-): FilterSql {
-  const cacheKey = [
-    options.alias ?? "visit_source",
-    options.sessionSource ?? "visit_source",
-    options.eventAlias ?? options.alias ?? "event_source",
-    options.observation ?? "event",
-  ].join("\u0000");
-  const cachedByOptions = FILTER_SQL_CACHE.get(document);
-  const cached = cachedByOptions?.get(cacheKey);
-  if (cached) return cached;
-
-  const normalized = normalizeFilterDocument(document, analyticsFilterRegistry);
-  if (!normalized.root) {
-    const result = { clause: "", bindings: [] } as const;
-    (cachedByOptions ?? new Map()).set(cacheKey, result);
-    if (!cachedByOptions)
-      FILTER_SQL_CACHE.set(document, new Map([[cacheKey, result]]));
-    return result;
-  }
-  const compiler: Compiler = {
-    alias: validAlias(options.alias ?? "visit_source", "alias"),
-    sessionSource: validAlias(
-      options.sessionSource ?? "visit_source",
-      "session source",
-    ),
-    eventAlias: validAlias(
-      options.eventAlias ?? options.alias ?? "event_source",
-      "event alias",
-    ),
-    observation: options.observation ?? "event",
-    bindings: [],
-    payloadIndex: 0,
-    orLikeIndex: 0,
-  };
-  const result = {
-    clause: `WHERE ${expression(compiler, normalized.root)}`,
-    bindings: compiler.bindings,
-  };
-  const optionsCache = cachedByOptions ?? new Map<string, FilterSql>();
-  optionsCache.set(cacheKey, result);
-  if (!cachedByOptions) FILTER_SQL_CACHE.set(document, optionsCache);
-  return result;
+/**
+ * Whether a custom event row is a conversion of a goal or funnel step: one
+ * that names a custom event, or is custom properties alone, and whose every
+ * condition the event matches.
+ */
+export function eventMatchSql(
+  filters: FilterDocument,
+  scope: FilterSqlScope,
+  aliases?: Parameters<typeof eventFilterSql>[2],
+): SqlFragment {
+  return matchesOnlyCustomEvents(filters) || matchesOnlyProperties(filters)
+    ? eventFilterSql(filters, scope, aliases)!
+    : text("0");
 }

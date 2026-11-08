@@ -91,7 +91,6 @@ describe("paginated dashboard client requests", () => {
     expect(pagesUrl.pathname).toBe("/api/public/share/team%20site%2Fone/pages");
     expect(pagesUrl.searchParams.get("limit")).toBe("17");
     expect(pagesUrl.searchParams.get("cursor")).toBe("page-cursor");
-    expect(pagesUrl.searchParams.get("details")).toBe("1");
     expect(pagesUrl.searchParams.has("siteId")).toBe(false);
     expect(fetchMock.mock.calls[0][1]).toMatchObject({
       credentials: "omit",

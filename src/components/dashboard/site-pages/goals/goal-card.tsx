@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import {
   Card,
   CardContent,
@@ -6,17 +5,14 @@ import {
   CardTitle,
 } from "@insightflare/ui/card";
 import { Skeleton } from "@insightflare/ui/skeleton";
-import { useQuery } from "@tanstack/react-query";
 
-import { fetchGoalSummary } from "@/lib/dashboard/client/data/index";
-import type { DashboardComparisonQuery } from "@/lib/dashboard/comparison-query";
-import { describeFilterExpression } from "@/lib/dashboard/filter-description";
-import { filterQueryKey } from "@/lib/dashboard/filter-query-key";
-import type { TimeWindow } from "@/lib/dashboard/query-state";
-import type { GoalDefinition } from "@/lib/dashboard-api/client/edge";
+import { describeFilter } from "@/lib/dashboard/filter-description";
+import type {
+  GoalDefinition,
+  GoalSummary,
+} from "@/lib/dashboard-api/client/edge";
 import {
   analyticsFilterRegistry,
-  type FilterDocument,
   parseFilterDsl,
 } from "@/lib/filter-contract/index";
 import type { Locale } from "@/lib/i18n/config";
@@ -30,8 +26,8 @@ export function goalFilterSummary(
   messages: Pick<AppMessages, "conditionDescription" | "filterBuilder">,
 ): string {
   try {
-    return describeFilterExpression(
-      parseFilterDsl(goal.filterDsl, analyticsFilterRegistry).root,
+    return describeFilter(
+      parseFilterDsl(goal.filterDsl, analyticsFilterRegistry),
       analyticsFilterRegistry,
       messages,
     );
@@ -73,124 +69,43 @@ export function GoalCardSkeleton({
     </Card>
   );
 }
-export function goalSummaryQueryKey(
-  siteId: string,
-  goal: Pick<GoalDefinition, "id" | "semanticFingerprint">,
-  window: TimeWindow,
-  filterKey: string,
-  scope: string,
-) {
-  return [
-    "dashboard",
-    "goal-summary",
-    siteId,
-    goal.id,
-    goal.semanticFingerprint,
-    window.from,
-    window.to,
-    window.timeZone,
-    filterKey,
-    scope,
-  ] as const;
-}
-function useNearViewport() {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [near, setNear] = useState(false);
-  useEffect(() => {
-    if (near || typeof IntersectionObserver === "undefined") {
-      if (typeof IntersectionObserver === "undefined") setNear(true);
-      return;
-    }
-    const element = ref.current;
-    if (!element) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setNear(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "400px 0px" },
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [near]);
-  return { ref, near };
-}
+/**
+ * A goal on Goals & funnels: its conversions, which the page reads for all
+ * of its goals at once.
+ */
 export function GoalCard({
   goal,
-  siteId,
   locale,
   labels,
   messages,
-  window,
-  filters,
-  filterKey,
-  comparisonQuery,
+  summary,
+  comparisonSummary,
+  comparing,
+  loadError,
   canManage,
   onOpen,
   onEdit,
   onDelete,
 }: {
   readonly goal: GoalDefinition;
-  readonly siteId: string;
   readonly locale: Locale;
   readonly labels: AppMessages["goals"];
   readonly messages: Pick<
     AppMessages,
     "conditionDescription" | "filterBuilder"
   >;
-  readonly window: TimeWindow;
-  readonly filters: FilterDocument;
-  readonly filterKey: string;
-  readonly comparisonQuery?: DashboardComparisonQuery | null;
+  /** Undefined while loading. */
+  readonly summary: GoalSummary | undefined;
+  readonly comparisonSummary: GoalSummary | undefined;
+  readonly comparing: boolean;
+  readonly loadError: boolean;
   readonly canManage: boolean;
   readonly onOpen: () => void;
   readonly onEdit: () => void;
   readonly onDelete: () => void;
 }) {
-  const { ref, near } = useNearViewport();
-  const comparisonFilterKey = comparisonQuery
-    ? filterQueryKey(comparisonQuery.filters)
-    : "none";
-  const summary = useQuery({
-    queryKey: goalSummaryQueryKey(siteId, goal, window, filterKey, "auto"),
-    queryFn: ({ signal }) =>
-      fetchGoalSummary(siteId, goal.id, window, filters, {
-        signal,
-        goalSemanticFingerprint: goal.semanticFingerprint,
-      }),
-    enabled: near,
-  });
-  const comparisonSummary = useQuery({
-    queryKey: comparisonQuery
-      ? goalSummaryQueryKey(
-          siteId,
-          goal,
-          comparisonQuery.window,
-          comparisonFilterKey,
-          "auto",
-        )
-      : ["dashboard", "goal-summary-comparison-disabled", siteId, goal.id],
-    queryFn: ({ signal }) => {
-      if (!comparisonQuery) {
-        throw new Error("Comparison query is not enabled");
-      }
-      return fetchGoalSummary(
-        siteId,
-        goal.id,
-        comparisonQuery.window,
-        comparisonQuery.filters,
-        {
-          signal,
-          goalSemanticFingerprint: goal.semanticFingerprint,
-        },
-      );
-    },
-    enabled: near && Boolean(comparisonQuery),
-  });
   return (
-    <div ref={ref} className="h-full min-w-0">
+    <div className="h-full min-w-0">
       <Card className="relative h-full min-w-0">
         <div
           className="-my-4 flex min-h-0 min-w-0 flex-1 cursor-pointer flex-col space-y-4 py-4 transition-colors hover:bg-accent/30 focus-visible:ring-2 focus-visible:ring-ring"
@@ -215,20 +130,18 @@ export function GoalCard({
             <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">
               {goalFilterSummary(goal, messages)}
             </p>
-            {summary.isError ? (
+            {loadError ? (
               <p className="text-sm text-muted-foreground">
                 {labels.detailLoadError}
               </p>
             ) : (
               <GoalVisualizationAdapter
-                summary={summary.data?.data.summary}
-                comparisonSummary={comparisonSummary.data?.data.summary}
+                summary={summary}
+                comparisonSummary={comparisonSummary}
                 locale={locale}
                 labels={labels}
-                loading={!summary.data}
-                comparisonLoading={
-                  Boolean(comparisonQuery) && !comparisonSummary.data
-                }
+                loading={!summary}
+                comparisonLoading={comparing && !comparisonSummary}
               />
             )}
           </CardContent>

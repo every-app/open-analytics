@@ -54,8 +54,8 @@ describe("top stats", () => {
     for (const source of [
       'page.path eq "/pricing"',
       'page.path contains "/blog"',
-      'geo.country eq "US" OR page.path startsWith "/docs"',
-      'NOT page.path eq "/"',
+      'geo.country eq "US" AND page.path startsWith "/docs"',
+      'page.path neq "/"',
     ]) {
       expect(topStats(filters(source))).toEqual([
         TopStat.Visitors,
@@ -66,10 +66,10 @@ describe("top stats", () => {
         TopStat.VisitDuration,
       ]);
     }
-    // A path inside an advanced selector isn't a page filter.
-    expect(
-      topStats(filters('count(PAGE { $.path eq "/docs" }) gte 2')),
-    ).toEqual(SITE_STATS);
+    // An entry page isn't a page filter.
+    expect(topStats(filters('session.entryPath eq "/docs"'))).toEqual(
+      SITE_STATS,
+    );
   });
 
   it("keeps the graphed stat in the address, leaving out the default", () => {

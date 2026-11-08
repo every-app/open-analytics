@@ -1,596 +1,170 @@
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { AutoResizer } from "@insightflare/ui/auto-resizer";
-import { AutoTransition } from "@insightflare/ui/auto-transition";
+import { type ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import { Button } from "@insightflare/ui/button";
-import { Clickable } from "@insightflare/ui/clickable";
-import { Input } from "@insightflare/ui/input";
-import { OverlayScrollbar } from "@insightflare/ui/overlay-scrollbar";
 import { VerticalScrollMask } from "@insightflare/ui/vertical-scroll-mask";
-import {
-  CheckIcon,
-  ChevronRightIcon,
-  CircleAlertIcon,
-  FunnelXIcon,
-  MessageSquareQuoteIcon,
-  XIcon,
-} from "lucide-react";
+import { CheckIcon, FunnelXIcon, XIcon } from "lucide-react";
 
-import { describeFilterExpression } from "@/lib/dashboard/filter-description";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import {
-  filterConditionCount,
+  EMPTY_FILTER_DOCUMENT,
   type FilterDocument,
-  filterDocumentUsesAdvancedExpressions,
-  type FilterEntityRoot,
-  FilterValidationError,
-  parseFilterDsl,
 } from "@/lib/filter-contract/index";
 import type { AppMessages } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
 
-import { GroupEditor } from "./filter-editor/editors";
-import {
-  allowedFields,
-  defaultFieldForEntityRoot,
-  directEventName,
-} from "./filter-editor/field-catalog";
-import { FilterExpressionHelpDialog } from "./filter-editor/help-dialog";
+import { ConditionListEditor } from "./filter-editor/editors";
+import { directEventName } from "./filter-editor/field-catalog";
 import type {
-  EditorGroup,
-  EditorNode,
+  EditorCondition,
   FilterPanelAudience,
 } from "./filter-editor/model";
 import {
-  appendEditorNode,
   conditionIdFactory,
-  defaultCondition,
-  defaultGroup,
-  displayRootExpression,
   documentFromEditor,
-  editorRootFromDocument,
-  emptyEditorGroup,
-  expressionTextFromEditor,
-  removeEditorNode,
-  updateEditorNode,
+  editorConditionsFromDsl,
+  EditorError,
+  filterDslFromEditor,
 } from "./filter-editor/model";
+
 export interface FilterEditorProps {
   readonly audience: FilterPanelAudience;
-  readonly initialFilterDsl: string;
-  readonly id?: string;
-  readonly className?: string;
+  readonly conditions: readonly EditorCondition[];
+  readonly createId: () => string;
   readonly messages: AppMessages;
-  readonly onApply?: (filterDsl: string, conditionCount: number) => void;
-  readonly onDraftChange?: (filterDsl: string) => void;
-  readonly onCancel?: () => void;
-  readonly applyLabel?: string;
-  readonly cancelLabel?: string;
-  readonly expressionLabel?: string;
-  readonly invalidFilterLabel?: string;
-  readonly placeholder?: string;
-  readonly observationOnly?: boolean;
+  readonly className?: string;
   readonly siteId?: string;
-  readonly resolvedScope?: "event" | "session" | "visitor";
   readonly window?: TimeWindow;
-  readonly controlledRoot?: EditorGroup;
-  readonly createEditorNodeId?: () => string;
-  readonly controlledDocument?: FilterDocument;
-  readonly controlledExpressionText?: string;
-  readonly controlledExpressionError?: string | null;
-  readonly controlledValidationError?: string | null;
-  readonly onControlledRootChange?: (root: EditorGroup) => void;
-  readonly onControlledExpressionChange?: (source: string) => void;
-  readonly onControlledExpressionCommit?: () => void;
-  readonly onControlledClear?: () => void;
-  readonly onControlledApply?: () => void;
+  readonly validationError?: string | null;
   readonly headerContent?: ReactNode;
-  /** Extra controls shown with the expression under Advanced. */
-  readonly advancedContent?: ReactNode;
-  readonly footerActions?: ReactNode;
+  /** The buttons beside Clear: Cancel and Apply, or the panel's own. */
+  readonly footerActions: ReactNode;
+  readonly onChange: (conditions: readonly EditorCondition[]) => void;
 }
-function containsAdvancedEditorNode(node: EditorNode): boolean {
-  if (node.kind === "group")
-    return node.children.some(containsAdvancedEditorNode);
-  if (node.advancedExpression) {
-    return filterDocumentUsesAdvancedExpressions({
-      version: 1,
-      root: node.advancedExpression,
-    });
-  }
-  return node.advancedText !== undefined;
-}
+
 /**
- * Shared visual filter editor. The global filter panel and funnel step
- * dialogs use the same match/group/condition editor and expression footer.
+ * The visual filter editor shared by the filter panel, comparison filters,
+ * goals and funnel steps: conditions that must all match.
  */
 export function FilterEditor({
   audience,
-  initialFilterDsl,
-  id = "filter-editor-expression",
-  className,
+  conditions,
+  createId,
   messages,
-  onApply,
-  onDraftChange,
-  onCancel,
-  applyLabel = "Apply",
-  cancelLabel = "Cancel",
-  expressionLabel = messages.filterBuilder.expression,
-  invalidFilterLabel = messages.filterBuilder.expressionInvalid,
-  placeholder = messages.filterBuilder.expressionPlaceholder,
-  observationOnly = false,
+  className,
   siteId,
-  resolvedScope,
   window,
-  controlledRoot,
-  createEditorNodeId,
-  controlledDocument,
-  controlledExpressionText,
-  controlledExpressionError,
-  controlledValidationError,
-  onControlledRootChange,
-  onControlledExpressionChange,
-  onControlledExpressionCommit,
-  onControlledClear,
-  onControlledApply,
+  validationError,
   headerContent,
-  advancedContent,
   footerActions,
+  onChange,
 }: FilterEditorProps) {
-  const isControlled = controlledRoot !== undefined;
-  const nextIdRef = useRef(conditionIdFactory());
-  const createLocalId = useCallback(() => nextIdRef.current(), []);
-  const createId = createEditorNodeId ?? createLocalId;
-  const expressionRegistry = useMemo(
-    () => new Map(allowedFields(audience).map((field) => [field.id, field])),
-    [audience, observationOnly],
-  );
-  const [root, setRoot] = useState<EditorGroup>(() => {
+  // Value suggestions are narrowed by the conditions already complete.
+  const document = useMemo(() => {
     try {
-      return editorRootFromDocument(
-        parseFilterDsl(initialFilterDsl, expressionRegistry),
-        createId,
-      );
+      return documentFromEditor(conditions);
     } catch {
-      return emptyEditorGroup(createId);
+      return EMPTY_FILTER_DOCUMENT;
     }
-  });
-  const [expressionText, setExpressionText] = useState(initialFilterDsl);
-  const [expressionError, setExpressionError] = useState<string | null>(() => {
-    try {
-      parseFilterDsl(initialFilterDsl, expressionRegistry);
-      return null;
-    } catch {
-      return invalidFilterLabel;
-    }
-  });
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [expressionHelpOpen, setExpressionHelpOpen] = useState(false);
-  // The expression, its plain-language reading and any extra controls stay
-  // folded away; the visual editor is the default.
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const expressionUpdateRef = useRef(false);
-
-  useEffect(() => {
-    if (isControlled) return;
-    let nextRoot: EditorGroup;
-    let nextError: string | null = null;
-    try {
-      nextRoot = editorRootFromDocument(
-        parseFilterDsl(initialFilterDsl, expressionRegistry),
-        createId,
-      );
-    } catch {
-      nextRoot = emptyEditorGroup(createId);
-      nextError = invalidFilterLabel;
-    }
-    expressionUpdateRef.current = true;
-    setRoot(nextRoot);
-    setExpressionText(initialFilterDsl);
-    setExpressionError(nextError);
-    setValidationError(null);
-  }, [
-    createId,
-    expressionRegistry,
-    initialFilterDsl,
-    invalidFilterLabel,
-    isControlled,
-  ]);
-
-  useEffect(() => {
-    if (isControlled) return;
-    // A source that cannot be parsed must remain visible until the user fixes
-    // it. Formatting the empty fallback tree here would silently erase it.
-    if (expressionError) return;
-    if (expressionUpdateRef.current) {
-      expressionUpdateRef.current = false;
-      return;
-    }
-    setExpressionText(expressionTextFromEditor(root));
-  }, [expressionError, isControlled, root]);
-
-  const renderedRoot = controlledRoot ?? root;
-  const renderedExpressionText = controlledExpressionText ?? expressionText;
-  const renderedExpressionError = isControlled
-    ? (controlledExpressionError ?? null)
-    : expressionError;
-  const renderedValidationError = isControlled
-    ? (controlledValidationError ?? null)
-    : validationError;
-  // Open Advanced when the expression needs fixing, or holds parts only the
-  // expression can show.
-  const needsAdvanced =
-    Boolean(renderedExpressionError) ||
-    containsAdvancedEditorNode(renderedRoot);
-  useEffect(() => {
-    if (needsAdvanced) setAdvancedOpen(true);
-  }, [needsAdvanced]);
-
-  const naturalLanguageDescription = useMemo(
-    () =>
-      describeFilterExpression(
-        displayRootExpression(renderedRoot),
-        expressionRegistry,
-        messages,
-      ),
-    [expressionRegistry, messages, renderedRoot],
-  );
-  const editorDocument = useMemo(() => {
-    try {
-      return controlledDocument ?? documentFromEditor(renderedRoot);
-    } catch {
-      return { version: 1 as const, root: null };
-    }
-  }, [controlledDocument, renderedRoot]);
-  const eventName = directEventName(renderedRoot);
-
-  const rootFromExpressionText = useCallback(
-    (source: string): EditorGroup | null => {
-      try {
-        return source.trim()
-          ? editorRootFromDocument(
-              parseFilterDsl(source, expressionRegistry),
-              createId,
-            )
-          : emptyEditorGroup(createId);
-      } catch {
-        setExpressionError(invalidFilterLabel);
-        return null;
-      }
-    },
-    [createId, expressionRegistry, invalidFilterLabel],
-  );
-
-  const updateFromExpressionText = useCallback(
-    (source: string) => {
-      const nextRoot = rootFromExpressionText(source);
-      if (!nextRoot) return;
-      expressionUpdateRef.current = true;
-      setRoot(nextRoot);
-      setExpressionError(null);
-      setValidationError(null);
-    },
-    [rootFromExpressionText],
-  );
-
-  const updateNode = useCallback(
-    (nodeId: string, update: (node: EditorNode) => EditorNode) => {
-      const nextRoot = updateEditorNode(
-        renderedRoot,
-        nodeId,
-        update,
-      ) as EditorGroup;
-      if (isControlled) onControlledRootChange?.(nextRoot);
-      else setRoot(nextRoot);
-      setExpressionError(null);
-      setValidationError(null);
-    },
-    [isControlled, onControlledRootChange, renderedRoot],
-  );
-
-  const addCondition = useCallback(
-    (parentId: string, entityRoot?: FilterEntityRoot) => {
-      const nextRoot = appendEditorNode(
-        renderedRoot,
-        parentId,
-        defaultCondition(
-          createId,
-          entityRoot
-            ? defaultFieldForEntityRoot(entityRoot, audience)
-            : undefined,
-        ),
-      ) as EditorGroup;
-      if (isControlled) onControlledRootChange?.(nextRoot);
-      else setRoot(nextRoot);
-      setExpressionError(null);
-      setValidationError(null);
-    },
-    [audience, createId, isControlled, onControlledRootChange, renderedRoot],
-  );
-
-  const addGroup = useCallback(
-    (parentId: string, entityRoot?: FilterEntityRoot) => {
-      const nextRoot = appendEditorNode(
-        renderedRoot,
-        parentId,
-        defaultGroup(
-          createId,
-          entityRoot
-            ? defaultFieldForEntityRoot(entityRoot, audience)
-            : undefined,
-        ),
-      ) as EditorGroup;
-      if (isControlled) onControlledRootChange?.(nextRoot);
-      else setRoot(nextRoot);
-      setExpressionError(null);
-      setValidationError(null);
-    },
-    [audience, createId, isControlled, onControlledRootChange, renderedRoot],
-  );
-
-  const removeNode = useCallback(
-    (nodeId: string) => {
-      const nextRoot =
-        (removeEditorNode(renderedRoot, nodeId) as EditorGroup | null) ??
-        emptyEditorGroup(createId);
-      if (isControlled) onControlledRootChange?.(nextRoot);
-      else setRoot(nextRoot);
-      setExpressionError(null);
-      setValidationError(null);
-    },
-    [createId, isControlled, onControlledRootChange, renderedRoot],
-  );
-
-  const commitExpressionText = useCallback(() => {
-    if (isControlled) {
-      onControlledExpressionCommit?.();
-      return renderedRoot;
-    }
-    const nextRoot = rootFromExpressionText(expressionText);
-    if (!nextRoot) return null;
-    const formatted = expressionTextFromEditor(nextRoot);
-    setRoot(nextRoot);
-    setExpressionText(formatted);
-    setExpressionError(null);
-    return nextRoot;
-  }, [
-    expressionText,
-    isControlled,
-    onControlledExpressionCommit,
-    renderedRoot,
-    rootFromExpressionText,
-  ]);
-
-  const clear = useCallback(() => {
-    if (isControlled) {
-      onControlledClear?.();
-      return;
-    }
-    setRoot(emptyEditorGroup(createId));
-    setExpressionText("");
-    setExpressionError(null);
-    setValidationError(null);
-    onDraftChange?.("");
-  }, [createId, isControlled, onControlledClear, onDraftChange]);
-
-  const apply = useCallback(() => {
-    if (isControlled) {
-      onControlledApply?.();
-      return;
-    }
-    const nextRoot = commitExpressionText();
-    if (!nextRoot) return;
-    if (observationOnly && containsAdvancedEditorNode(nextRoot)) {
-      setValidationError(messages.filterBuilder.expressionInvalid);
-      return;
-    }
-    try {
-      const document: FilterDocument = documentFromEditor(nextRoot);
-      onApply?.(
-        expressionTextFromEditor(nextRoot),
-        filterConditionCount(document),
-      );
-    } catch (error) {
-      setValidationError(
-        error instanceof FilterValidationError || error instanceof Error
-          ? error.message === "missing_value"
-            ? messages.filterBuilder.invalid
-            : error.message
-          : invalidFilterLabel,
-      );
-    }
-  }, [
-    commitExpressionText,
-    isControlled,
-    messages.filterBuilder.expressionInvalid,
-    invalidFilterLabel,
-    messages.filterBuilder.invalid,
-    onApply,
-    onControlledApply,
-  ]);
-
+  }, [conditions]);
   return (
     <div className={cn("flex h-full min-h-0 min-w-0 flex-col", className)}>
       <VerticalScrollMask
-        syncKey={naturalLanguageDescription}
         className="min-h-0 min-w-0 flex-1"
         contentClassName="min-h-0 min-w-0 pb-4"
       >
         {headerContent}
-        <GroupEditor
+        <ConditionListEditor
           audience={audience}
+          conditions={conditions}
           createId={createId}
-          document={editorDocument}
-          eventName={eventName}
-          group={renderedRoot}
-          isRoot
+          document={document}
+          eventName={directEventName(conditions)}
           messages={messages}
-          observationOnly={observationOnly}
-          path={[]}
-          resolvedScope={resolvedScope}
-          onAddCondition={addCondition}
-          onAddGroup={addGroup}
-          onChange={updateNode}
-          onRemove={removeNode}
           siteId={siteId}
           window={window}
+          onChange={onChange}
         />
-        {renderedValidationError ? (
+        {validationError ? (
           <p className="mt-4 border-l-2 border-destructive px-2 text-xs text-destructive">
-            {renderedValidationError}
+            {validationError}
           </p>
         ) : null}
       </VerticalScrollMask>
-
-      <div className="sticky bottom-0 z-10 -mx-4 min-w-0 border-t bg-background">
-        <button
-          type="button"
-          aria-expanded={advancedOpen}
-          className="flex w-full items-center gap-1.5 border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-          onClick={() => setAdvancedOpen((open) => !open)}
-        >
-          <ChevronRightIcon
-            aria-hidden
-            className={cn(
-              "size-3.5 transition-transform",
-              advancedOpen && "rotate-90",
-            )}
-          />
-          {messages.filterBuilder.advanced}
-        </button>
-        <AutoResizer initial={false} duration={0.18}>
-          {advancedOpen ? (
-            <div>
-              {advancedContent ? (
-                <div className="min-w-0 border-b border-border px-4 py-3">
-                  {advancedContent}
-                </div>
-              ) : null}
-              <div className="min-w-0 border-b border-border bg-muted/20">
-                <AutoResizer initial={false} duration={0.18}>
-                  <AutoTransition
-                    transitionKey={naturalLanguageDescription}
-                    type="fade"
-                    duration={0.18}
-                    initial={false}
-                  >
-                    <VerticalScrollMask
-                      syncKey={naturalLanguageDescription}
-                      className="max-h-28"
-                      contentClassName="max-h-28"
-                      maskClassName="from-muted/20 via-muted/10 to-transparent"
-                    >
-                      <div
-                        aria-label={
-                          messages.filterBuilder.naturalLanguageDescription
-                        }
-                        className="min-h-8 px-4 py-2 text-xs leading-4 text-muted-foreground"
-                      >
-                        <MessageSquareQuoteIcon
-                          className="mr-2 inline-block size-4 align-text-bottom"
-                          aria-hidden
-                        />
-                        <span className="break-words">
-                          {naturalLanguageDescription}
-                        </span>
-                      </div>
-                    </VerticalScrollMask>
-                  </AutoTransition>
-                </AutoResizer>
-              </div>
-              <div className="min-w-0 border-b border-border">
-                <OverlayScrollbar
-                  axis="horizontal"
-                  syncKey={renderedExpressionText}
-                  className="w-full min-w-0"
-                >
-                  <Input
-                    id={id}
-                    aria-label={expressionLabel}
-                    aria-invalid={renderedExpressionError ? true : undefined}
-                    className="h-8 min-w-full border-0 bg-transparent px-4 font-mono text-xs shadow-none focus-visible:ring-0 dark:bg-transparent"
-                    placeholder={placeholder}
-                    style={{
-                      width: `${Math.max(32, renderedExpressionText.length + 3)}ch`,
-                    }}
-                    value={renderedExpressionText}
-                    onChange={(event) => {
-                      const source = event.target.value;
-                      if (isControlled) {
-                        onControlledExpressionChange?.(source);
-                      } else {
-                        setExpressionText(source);
-                        updateFromExpressionText(source);
-                        onDraftChange?.(source);
-                      }
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key !== "Enter") return;
-                      event.preventDefault();
-                      if (isControlled) onControlledExpressionCommit?.();
-                      else commitExpressionText();
-                    }}
-                  />
-                </OverlayScrollbar>
-              </div>
-            </div>
-          ) : null}
-        </AutoResizer>
-        <AutoResizer initial={false} duration={0.18}>
-          <AutoTransition
-            transitionKey={renderedExpressionError ? "invalid" : "valid"}
-            type="slideDown"
-            duration={0.18}
-            initial={false}
-          >
-            {renderedExpressionError ? (
-              <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-destructive">
-                <CircleAlertIcon className="size-4 shrink-0" aria-hidden />
-                <Clickable
-                  className="justify-start text-left text-destructive"
-                  hoverScale={1.05}
-                  onClick={() => setExpressionHelpOpen(true)}
-                >
-                  {renderedExpressionError}
-                </Clickable>
-              </div>
-            ) : null}
-          </AutoTransition>
-        </AutoResizer>
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-          <Button type="button" variant="ghost" onClick={clear}>
-            <FunnelXIcon data-icon="inline-start" />
-            {messages.filters.clear}
-          </Button>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {footerActions ??
-              (onCancel ? (
-                <Button type="button" variant="outline" onClick={onCancel}>
-                  <XIcon data-icon="inline-start" />
-                  {cancelLabel}
-                </Button>
-              ) : null)}
-            {!footerActions ? (
-              <Button type="button" onClick={apply}>
-                <CheckIcon data-icon="inline-start" />
-                {applyLabel}
-              </Button>
-            ) : null}
-          </div>
+      <div className="sticky bottom-0 z-10 -mx-4 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t bg-background px-4 py-3">
+        <Button type="button" variant="ghost" onClick={() => onChange([])}>
+          <FunnelXIcon data-icon="inline-start" />
+          {messages.filters.clear}
+        </Button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {footerActions}
         </div>
       </div>
-      <FilterExpressionHelpDialog
-        audience={audience}
-        messages={messages}
-        observationOnly={observationOnly}
-        open={expressionHelpOpen}
-        onOpenChange={setExpressionHelpOpen}
-      />
     </div>
+  );
+}
+
+/** The message for a filter that can't be applied yet. */
+export function filterEditorError(error: unknown, messages: AppMessages) {
+  return error instanceof Error && error.message !== EditorError.MissingValue
+    ? error.message
+    : messages.filterBuilder.invalid;
+}
+
+/**
+ * The editor for a goal, a funnel step or a comparison: it starts from a
+ * filter's DSL and applies the DSL of its conditions.
+ */
+export function FilterDslEditor({
+  initialFilterDsl,
+  applyLabel,
+  cancelLabel,
+  onApply,
+  onCancel,
+  ...props
+}: Omit<
+  FilterEditorProps,
+  "conditions" | "createId" | "footerActions" | "onChange"
+> & {
+  readonly initialFilterDsl: string;
+  readonly applyLabel: string;
+  readonly cancelLabel: string;
+  readonly onApply: (filterDsl: string, document: FilterDocument) => void;
+  readonly onCancel: () => void;
+}) {
+  const nextIdRef = useRef(conditionIdFactory());
+  const createId = useCallback(() => nextIdRef.current(), []);
+  const [conditions, setConditions] = useState<readonly EditorCondition[]>(() =>
+    editorConditionsFromDsl(initialFilterDsl, createId),
+  );
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const apply = () => {
+    try {
+      onApply(filterDslFromEditor(conditions), documentFromEditor(conditions));
+    } catch (error) {
+      setValidationError(filterEditorError(error, props.messages));
+    }
+  };
+  return (
+    <FilterEditor
+      {...props}
+      conditions={conditions}
+      createId={createId}
+      validationError={validationError}
+      onChange={(next) => {
+        setConditions(next);
+        setValidationError(null);
+      }}
+      footerActions={
+        <>
+          <Button type="button" variant="outline" onClick={onCancel}>
+            <XIcon data-icon="inline-start" />
+            {cancelLabel}
+          </Button>
+          <Button type="button" onClick={apply}>
+            <CheckIcon data-icon="inline-start" />
+            {applyLabel}
+          </Button>
+        </>
+      }
+    />
   );
 }

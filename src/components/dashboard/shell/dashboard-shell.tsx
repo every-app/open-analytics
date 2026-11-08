@@ -18,10 +18,6 @@ import {
   type TimeWindow,
 } from "@/lib/dashboard/query-state";
 import { type TeamData } from "@/lib/dashboard-api/client/edge";
-import {
-  type FilterScope,
-  parseFilterScopePreference,
-} from "@/lib/filter-contract/index";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppMessages } from "@/lib/i18n/messages";
 import Link from "@/lib/router";
@@ -29,7 +25,6 @@ import { usePathname, useSearchParams } from "@/lib/router";
 
 import {
   parseShellRouteState,
-  type ShellRouteState,
   type SidebarSite,
   siteNavLabel,
 } from "./dashboard-shell/navigation";
@@ -55,12 +50,6 @@ interface DashboardShellProps {
   children: ReactNode;
 }
 
-function filterScopeFor(routeState: ShellRouteState): FilterScope | undefined {
-  if (!routeState.siteSlug) return undefined;
-  if (routeState.siteSection === "realtime") return undefined;
-  return "event";
-}
-
 export function DashboardShell({
   locale,
   pathname,
@@ -78,7 +67,6 @@ export function DashboardShell({
   const livePathname = usePathname() || pathname;
   const routeSearchParams = useSearchParams();
   const initialFilters = parseFilterDocumentFromSearchParams(routeSearchParams);
-  const initialScopePreference = parseFilterScopePreference(routeSearchParams);
   const canManage = canManageTeam(team.membershipRole);
   const routeState = useMemo(
     () => parseShellRouteState(livePathname),
@@ -171,7 +159,6 @@ export function DashboardShell({
       }
       initialWindow={initialQueryWindow}
       initialFilters={initialFilters}
-      initialScopePreference={initialScopePreference}
     >
       <AppShellLayout
         sidebar={
@@ -206,7 +193,6 @@ export function DashboardShell({
                       locale={locale}
                       messages={messages}
                       siteId={activeSite?.id ?? ""}
-                      resolvedScope={filterScopeFor(routeState)}
                       showDateControls={section !== "realtime"}
                       showComparison={
                         Boolean(routeState.siteSlug) && section !== "realtime"

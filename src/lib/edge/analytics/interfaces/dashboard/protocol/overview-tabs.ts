@@ -3,6 +3,7 @@ import {
   type CanonicalChannelsQuery,
   type CanonicalDimensionQuery,
   comparisonReferenceWindow,
+  EMPTY_FILTER_DOCUMENT,
   type FilterDocument,
   isComparisonMode,
   type OverviewTableComparisonQuery,
@@ -98,8 +99,11 @@ export async function handleOverviewTabContract(
         )
       : compare !== "same"
         ? filters
-        : ({ version: 1, root: null } as FilterDocument);
-    if (compare === "same" && !referenceComparisonFilters.root) {
+        : EMPTY_FILTER_DOCUMENT;
+    if (
+      compare === "same" &&
+      referenceComparisonFilters.conditions.length === 0
+    ) {
       comparison = undefined;
     } else {
       const referenceWindow = comparisonReferenceWindow(compare, window);

@@ -9,22 +9,12 @@ import {
 } from "@/lib/pagination";
 
 import type { FilterDocument, QueryWindow, ReferrerRow } from "./core";
-import {
-  buildVisitFilterSql,
-  buildVisitSourceCte,
-  queryD1All,
-  visitSourceBindings,
-} from "./core";
+import { type BoundSql, filteredVisitsCte, queryD1All } from "./core";
 import type { D1ReadDiagnostics } from "./diagnostics";
 import { queryReferrersFromD1 } from "./dimensions";
 import { pageCursorBinding } from "./pages";
-import {
-  type BoundSql,
-  dailyDimensionRows,
-  rollupEdgeSource,
-} from "./rollup-breakdowns";
+import { dailyDimensionRows, rollupEdgeSource } from "./rollup-breakdowns";
 import { RollupDimension } from "./rollup-dimensions";
-import { scopedDatasetFor } from "./scoped-dataset";
 export interface ReferrerAggregateCursor {
   /** The first two values are the concrete ORDER BY metrics. */
   readonly primary: number;
@@ -129,29 +119,13 @@ rollup AS (
       ],
     };
   }
-  const scopedDataset = scopedDatasetFor(siteId, window, filters);
-  const filter = scopedDataset
-    ? null
-    : buildVisitFilterSql(filters, "visit_source", { window });
+  const source = filteredVisitsCte(siteId, window, filters);
   return {
-    sql: `${scopedDataset?.ctes ?? buildVisitSourceCte()},
-filtered_visits AS (
-  SELECT *
-  FROM ${scopedDataset?.visitRelation ?? "visit_source"}
-  ${filter?.clause ?? ""}
-),
+    sql: `${source.sql},
 rollup AS (${grouping("filtered_visits")}
   ${having}
 )`,
-    bindings: [
-      ...(scopedDataset
-        ? scopedDataset.bindings.map((binding) => binding.value)
-        : [
-            ...visitSourceBindings(siteId, window),
-            ...(filter?.bindings ?? []),
-          ]),
-      ...searchBindings,
-    ],
+    bindings: [...source.bindings, ...searchBindings],
   };
 }
 /** Keyset-paginated referrer aggregate. */

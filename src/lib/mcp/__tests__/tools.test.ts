@@ -291,17 +291,14 @@ describe("MCP tools", () => {
     expect(settings).not.toContain("performance_sample_rate");
   });
 
-  it("compares the organization's sites over the period and filter", async () => {
-    await callTool("get_organization_overview", {
-      period: "24h",
-      filter: 'utm.source eq "newsletter"',
-    });
+  it("compares the organization's sites over the period", async () => {
+    await callTool("get_organization_overview", { period: "24h" });
 
     const [call] = forwardedCalls();
     expect(call).toMatchObject({
       method: "GET",
       path: "/api/private/team-dashboard",
-      params: { teamId: "org-1", "filter[utm.source]": "newsletter" },
+      params: { teamId: "org-1" },
     });
     expect(Number(call!.params.to) - Number(call!.params.from)).toBe(
       24 * 60 * 60 * 1000,

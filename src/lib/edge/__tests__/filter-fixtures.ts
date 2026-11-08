@@ -29,7 +29,7 @@ const fields: Readonly<Record<string, string>> = {
 export function filterFixture(
   input: Readonly<Record<string, unknown>>,
 ): FilterDocument {
-  const children: unknown[] = [];
+  const conditions: unknown[] = [];
   for (const [key, value] of Object.entries(input)) {
     if (value === undefined) continue;
     if (key === "geo" && typeof value === "string") {
@@ -40,8 +40,7 @@ export function filterFixture(
         ["geo.city", city],
       ] as const) {
         if (part)
-          children.push({
-            kind: "condition",
+          conditions.push({
             target: { kind: "field", field },
             operator: "eq",
             value: part,
@@ -52,23 +51,11 @@ export function filterFixture(
     const field = fields[key];
     if (!field || !["string", "number", "boolean"].includes(typeof value))
       continue;
-    children.push({
-      kind: "condition",
+    conditions.push({
       target: { kind: "field", field },
       operator: "eq",
       value,
     });
   }
-  return normalizeFilterDocument(
-    {
-      version: 1,
-      root:
-        children.length === 0
-          ? null
-          : children.length === 1
-            ? children[0]
-            : { kind: "and", children },
-    },
-    analyticsFilterRegistry,
-  );
+  return normalizeFilterDocument({ conditions }, analyticsFilterRegistry);
 }

@@ -66,8 +66,6 @@ export interface EventSummaryCards {
 }
 export interface PageRow {
   pathname: string;
-  query: string;
-  hash: string;
   views: number;
   sessions: number;
 }

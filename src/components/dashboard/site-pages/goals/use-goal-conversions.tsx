@@ -24,6 +24,7 @@ import type { ConversionList } from "@/components/dashboard/site-pages/funnels/c
 import {
   createGoal,
   deleteGoal,
+  fetchGoalConversions,
   fetchGoalDefinition,
   fetchGoals,
   updateGoal,
@@ -34,6 +35,7 @@ import {
   useLiveSearchParams,
 } from "@/lib/dashboard/client/history";
 import type { DashboardComparisonQuery } from "@/lib/dashboard/comparison-query";
+import { filterQueryKey } from "@/lib/dashboard/filter-query-key";
 import { serializeDashboardSearchParams } from "@/lib/dashboard/filter-state";
 import { GOAL_QUERY_PARAM } from "@/lib/dashboard/paths";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
@@ -48,6 +50,31 @@ import { GoalEditor } from "./goal-editor";
 
 export function goalDefinitionQueryKey(siteId: string, goalId: string) {
   return ["dashboard", "goal-definition", siteId, goalId] as const;
+}
+
+/** Every goal's conversions for a window and filter: one request. */
+function useGoalConversionsQuery(
+  siteId: string,
+  window: TimeWindow,
+  filters: FilterDocument,
+  enabled: boolean,
+) {
+  return useQuery({
+    queryKey: [
+      "dashboard",
+      "goal-conversions",
+      siteId,
+      window.from,
+      window.to,
+      window.timeZone,
+      filterQueryKey(filters),
+    ],
+    queryFn: ({ signal }) =>
+      fetchGoalConversions(siteId, window, filters, { signal }),
+    enabled: enabled && typeof globalThis.window !== "undefined",
+    select: (result) =>
+      new Map(result.data.goals.map(({ goal, summary }) => [goal.id, summary])),
+  });
 }
 
 /**
@@ -102,6 +129,18 @@ export function useGoalConversions({
         : undefined,
   });
   const goals = list.data?.pages.flatMap((page) => page.data.items) ?? [];
+  const conversions = useGoalConversionsQuery(siteId, window, filters, true);
+  const comparisonConversions = useGoalConversionsQuery(
+    siteId,
+    comparisonQuery?.window ?? window,
+    comparisonQuery?.filters ?? filters,
+    Boolean(comparisonQuery),
+  );
+  // Without a comparison its disabled query shares the current one's key,
+  // and so its data: read it only while comparing.
+  const comparisonSummaries = comparisonQuery
+    ? comparisonConversions.data
+    : undefined;
   const selected = goals.find((goal) => goal.id === detailId);
   const detailDefinition = useQuery({
     queryKey: goalDefinitionQueryKey(siteId, detailId),
@@ -151,6 +190,9 @@ export function useGoalConversions({
           ? await updateGoal(siteId, editing.id, input)
           : await createGoal(siteId, input);
         await queryClient.invalidateQueries({ queryKey: listKey });
+        await queryClient.invalidateQueries({
+          queryKey: ["dashboard", "goal-conversions", siteId],
+        });
         if (editing) {
           await queryClient.invalidateQueries({
             queryKey: goalDefinitionQueryKey(siteId, editing.id),
@@ -198,6 +240,9 @@ export function useGoalConversions({
     try {
       await deleteGoal(siteId, deleteTarget.id);
       await queryClient.invalidateQueries({ queryKey: listKey });
+      await queryClient.invalidateQueries({
+        queryKey: ["dashboard", "goal-conversions", siteId],
+      });
       queryClient.removeQueries({
         queryKey: ["dashboard", "goal-summary", siteId, deleteTarget.id],
       });
@@ -236,14 +281,13 @@ export function useGoalConversions({
     <GoalCard
       key={`goal:${goal.id}`}
       goal={goal}
-      siteId={siteId}
       locale={locale}
       labels={labels}
       messages={messages}
-      window={window}
-      filters={filters}
-      filterKey={filterKey}
-      comparisonQuery={comparisonQuery}
+      summary={conversions.data?.get(goal.id)}
+      comparisonSummary={comparisonSummaries?.get(goal.id)}
+      comparing={Boolean(comparisonQuery)}
+      loadError={conversions.isError}
       canManage={canManage}
       onOpen={() => openDetail(goal.id)}
       onEdit={() => openEdit(goal)}

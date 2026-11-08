@@ -43,7 +43,7 @@ export function dashboardComparisonLabel(
   messages: AppMessages,
   comparisonQuery: DashboardComparisonQuery | null | undefined,
 ): string {
-  if (!comparisonQuery || comparisonQuery.filters.root) {
+  if (!comparisonQuery || comparisonQuery.filters.conditions.length > 0) {
     return messages.dashboardHeader.compareButton;
   }
   if (comparisonQuery.mode === "previous") {

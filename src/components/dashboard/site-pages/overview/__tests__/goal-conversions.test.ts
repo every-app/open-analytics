@@ -31,13 +31,14 @@ function goal(
 
 function summary(
   uniques: number,
-  visits: number,
+  conversions: number,
   rate: number,
   revenue: GoalSummary["revenue"] = null,
 ): GoalSummary {
   return {
     visitors: { total: 100, converted: uniques, conversionRate: rate },
-    sessions: { total: 120, converted: visits, conversionRate: 0 },
+    sessions: { total: 120, converted: uniques, conversionRate: 0 },
+    conversions,
     revenue,
   };
 }
@@ -50,13 +51,20 @@ describe("goal conversion rows", () => {
       goal("docs", "Read docs"),
     ];
     const revenue = { currency: "USD", total: 59.5, average: 11.9 };
-    const summaries = new Map([
-      ["signup", summary(4, 5, 0.04, revenue)],
-      ["pricing", summary(20, 26, 0.2)],
-      ["docs", summary(4, 4, 0.04)],
-    ]);
+    const summaries = [
+      summary(4, 5, 0.04, revenue),
+      summary(20, 26, 0.2),
+      summary(4, 4, 0.04),
+    ];
 
-    expect(goalConversionRows(goals, summaries)).toEqual([
+    expect(
+      goalConversionRows(
+        goals.map((item, index) => ({
+          goal: item,
+          summary: summaries[index]!,
+        })),
+      ),
+    ).toEqual([
       {
         key: "pricing",
         goalId: "pricing",
@@ -86,13 +94,10 @@ describe("goal conversion rows", () => {
       ),
       goal("pricing", "Visited pricing"),
     ];
-    const rows = goalConversionRows(
-      goals,
-      new Map([
-        ["scroll", summary(12, 15, 0.12)],
-        ["pricing", summary(3, 4, 0.03)],
-      ]),
-    );
+    const rows = goalConversionRows([
+      { goal: goals[0]!, summary: summary(12, 15, 0.12) },
+      { goal: goals[1]!, summary: summary(3, 4, 0.03) },
+    ]);
     expect(rows[0]).toEqual({
       key: "scroll",
       goalId: "scroll",
@@ -144,12 +149,6 @@ describe("goal conversion rows", () => {
         );
     expect(cells(row)).toEqual(["$59.50", "$11.90"]);
     expect(cells({ ...row, revenue: null })).toEqual(["—", "—"]);
-  });
-
-  it("refuses a goal without its summary instead of showing zeros", () => {
-    expect(() =>
-      goalConversionRows([goal("missing", "Missing")], new Map()),
-    ).toThrow("goal_summary_missing:missing");
   });
 
   it("links a row to its goal on Goals & funnels, keeping the page's state", () => {

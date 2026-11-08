@@ -170,8 +170,20 @@ describe("typed query adapter validation branches", () => {
         siteId,
         new URL(`${base}&applyGeoFilter=true`),
       ),
-      handlePagesContract(env, siteId, new URL(`${base}&details=true`), true),
-      handlePagesContract(env, siteId, new URL(`${base}&details=true`), false),
+      handlePagesContract(
+        env,
+        siteId,
+        new URL(base),
+        undefined,
+        siteQueryContext(siteId, "private-dashboard"),
+      ),
+      handlePagesContract(
+        env,
+        siteId,
+        new URL(base),
+        undefined,
+        siteQueryContext(siteId, "public-share"),
+      ),
       handleReferrersContract(
         env,
         siteId,
@@ -200,8 +212,9 @@ describe("typed query adapter validation branches", () => {
         handlePagesContract(
           env,
           siteId,
-          new URL(`${base}&details=false&cursor=opaque`),
-          true,
+          new URL(`${base}&cursor=opaque`),
+          undefined,
+          siteQueryContext(siteId, "private-dashboard"),
         ),
         handleReferrersContract(
           env,

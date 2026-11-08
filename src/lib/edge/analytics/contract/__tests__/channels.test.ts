@@ -25,7 +25,7 @@ describe("channels query contract", () => {
       executeChannels(reader, {
         context: siteQueryContext("site-1", "private-dashboard"),
         time,
-        filters: { version: 1, root: null },
+        filters: { conditions: [] },
         limit: 20,
       }),
     ).resolves.toMatchObject({
@@ -46,7 +46,7 @@ describe("channels query contract", () => {
     const result = await executeChannels(reader, {
       context: siteQueryContext("site-1", "public-share"),
       time,
-      filters: { version: 1, root: null },
+      filters: { conditions: [] },
       limit: 20,
     });
 

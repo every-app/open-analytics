@@ -18,7 +18,7 @@ const input = {
   window: { startMs: 0, endExclusiveMs: 1, nowMs: 1, timeZone: "UTC" },
   dimension: "page.path",
   limit: 2,
-  filters: { version: 1 as const, root: null },
+  filters: { conditions: [] },
 };
 
 describe("team breakdown runtime", () => {

@@ -28,13 +28,6 @@ export interface TypedQueryProvider<
   ): Promise<TypedQueryProviderResult<Result>>;
 }
 
-export type TypedQueryProviderMiddleware = (
-  operation: QueryOperation,
-  input: unknown,
-  next: (input: unknown) => Promise<unknown>,
-  execution?: { readonly signal?: AbortSignal },
-) => Promise<unknown>;
-
 type AnyTypedQueryProvider = {
   [Operation in QueryOperation]: TypedQueryProvider<Operation>;
 }[QueryOperation];
@@ -48,12 +41,6 @@ type AnyTypedQueryProvider = {
  */
 export class AnalyticsProviderRegistry {
   private readonly providers = new Map<QueryOperation, AnyTypedQueryProvider>();
-  private readonly middlewares: TypedQueryProviderMiddleware[] = [];
-
-  useMiddleware(middleware: TypedQueryProviderMiddleware): this {
-    this.middlewares.push(middleware);
-    return this;
-  }
 
   register<Operation extends QueryOperation>(
     operation: Operation,
@@ -66,31 +53,8 @@ export class AnalyticsProviderRegistry {
   resolve<Operation extends QueryOperation>(
     operation: Operation,
   ): TypedQueryProvider<Operation> | undefined {
-    const provider = this.providers.get(operation) as
+    return this.providers.get(operation) as
       TypedQueryProvider<Operation> | undefined;
-    if (!provider || this.middlewares.length === 0) return provider;
-    return {
-      execute: (input, execution) => {
-        const dispatch = async (
-          index: number,
-          current: unknown,
-        ): Promise<unknown> => {
-          if (index >= this.middlewares.length) {
-            return provider.execute(
-              current as CanonicalQuery<Operation>,
-              execution,
-            );
-          }
-          return this.middlewares[index]!(
-            operation,
-            current,
-            (nextInput) => dispatch(index + 1, nextInput),
-            execution,
-          );
-        };
-        return dispatch(0, input) as ReturnType<typeof provider.execute>;
-      },
-    };
   }
 }
 

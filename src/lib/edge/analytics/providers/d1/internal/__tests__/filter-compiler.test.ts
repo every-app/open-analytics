@@ -1,831 +1,359 @@
-import { DatabaseSync } from "node:sqlite";
+import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 
 import { describe, expect, it } from "vitest";
 
 import { createMigratedDatabase } from "@/../scripts/schema/database";
-import { applyD1Limits } from "@/lib/db/__tests__/sqlite-d1";
-import { compileFilterDocument } from "@/lib/edge/analytics/providers/d1/internal/filter-compiler";
+import type { SqlFragment } from "@/lib/db/sql/fragment";
+import {
+  eventFilterSql,
+  eventMatchSql,
+  type FilterSqlScope,
+  pageViewMatchSql,
+  visitFilterSql,
+} from "@/lib/edge/analytics/providers/d1/internal/filter-compiler";
 import {
   analyticsFilterRegistry,
-  normalizeFilterDocument,
+  type FilterDocument,
+  parseFilterDsl,
 } from "@/lib/filter-contract";
 
-function document(root: unknown) {
-  return normalizeFilterDocument({ version: 1, root }, analyticsFilterRegistry);
+const SITE_ID = "site-1";
+const scope: FilterSqlScope = {
+  siteId: SITE_ID,
+  startMs: 0,
+  endExclusiveMs: 1_000,
+};
+
+function dsl(source: string): FilterDocument {
+  return parseFilterDsl(source, analyticsFilterRegistry);
 }
 
-describe("filter SQL compiler", () => {
-  it("compiles numeric and boolean observation fields without text coercion", () => {
-    const numeric = compileFilterDocument(
-      document({
-        kind: "condition",
-        target: { kind: "field", field: "client.screenWidth" },
-        operator: "gte",
-        value: 1024,
-      }),
-      { alias: "vs" },
-    );
-    expect(numeric.clause).toContain("vs.screen_width >= ?");
-    expect(numeric.clause).not.toContain("TRIM(COALESCE");
-    expect(numeric.bindings).toEqual([1024]);
+type PayloadValue = string | number | boolean | null;
 
-    const boolean = compileFilterDocument(
-      document({
-        kind: "condition",
-        target: { kind: "field", field: "geo.isEU" },
-        operator: "eq",
-        value: true,
-      }),
-      { alias: "vs" },
-    );
-    expect(boolean.clause).toContain("vs.is_eu = ?");
-    expect(boolean.bindings).toEqual([1]);
-  });
-
-  it("preserves nullable numeric presence predicates", () => {
-    const result = compileFilterDocument(
-      document({
-        kind: "and",
-        children: [
-          {
-            kind: "condition",
-            target: { kind: "field", field: "page.durationMs" },
-            operator: "isNull",
-          },
-          {
-            kind: "condition",
-            target: { kind: "field", field: "client.screenWidth" },
-            operator: "notNull",
-          },
-        ],
-      }),
-      { alias: "vs" },
-    );
-    expect(result.clause).toContain("vs.duration_ms IS NULL");
-    expect(result.clause).toContain("vs.screen_width IS NOT NULL");
-  });
-
-  it("compiles traffic channel filters against the stored channel", () => {
-    const result = compileFilterDocument(
-      document({
-        kind: "condition",
-        target: { kind: "field", field: "traffic.channel" },
-        operator: "eq",
-        value: "organic_search",
-      }),
-      { alias: "vs" },
-    );
-
-    expect(result.clause).toContain("vs.channel");
-    expect(result.clause).not.toContain("referrer_host");
-    expect(result.clause).toContain("= ?");
-    expect(result.bindings).toEqual(["organic_search"]);
-  });
-
-  it("matches strict root-or-subdomain predicates with generic JSON-bound OR sets", () => {
-    const database = applyD1Limits(new DatabaseSync(":memory:"));
-    try {
-      database.exec(`
-        CREATE TABLE visits (id TEXT PRIMARY KEY, referrer_host TEXT);
-      `);
-      const insert = database.prepare(
-        "INSERT INTO visits (id, referrer_host) VALUES (?, ?)",
-      );
-      for (const [id, referrerHost] of [
-        ["root", "google.com"],
-        ["subdomain", "www.google.com"],
-        ["regional-subdomain", "www.google.com.hk"],
-        ["other-root", "bing.com"],
-        ["other-subdomain", "cn.bing.com"],
-        ["case-and-space", "  WWW.Google.Com  "],
-        ["false-prefix", "evilgoogle.com"],
-        ["false-suffix", "evil.google.com.evil"],
-        ["literal-percent", "sub.literal%domain.test"],
-        ["literal-underscore", "sub.literal_domain.test"],
-        ["literal-backslash", "sub.literal\\domain.test"],
-        ["direct", "__direct__"],
-        ["empty", ""],
-        ["null", null],
-      ] as const) {
-        insert.run(id, referrerHost);
-      }
-
-      const roots = [
-        "google.com",
-        "google.com.hk",
-        "bing.com",
-        "literal%domain.test",
-        "literal_domain.test",
-        "literal\\domain.test",
-      ];
-      const normalized = "LOWER(TRIM(COALESCE(referrer_host, '')))";
-      const baselineClause = roots
-        .map(() => `(${normalized} = ? OR ${normalized} LIKE ? ESCAPE '\\')`)
-        .join(" OR ");
-      const baselineBindings = roots.flatMap((root) => [
-        root,
-        `%.${root.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_")}`,
-      ]);
-      const escapedRoot = `REPLACE(REPLACE(REPLACE(roots.value, '\\', '\\\\'), '%', '\\%'), '_', '\\_')`;
-      const optimizedClause = `(
-        ${normalized} IN (SELECT value FROM json_each(?))
-        OR EXISTS (
-          SELECT 1
-          FROM json_each(?) AS roots
-          WHERE ${normalized} LIKE '%' || ${escapedRoot} ESCAPE '\\'
-        )
-      )`;
-
-      const queryIds = (clause: string, bindings: readonly string[]) =>
-        database
-          .prepare(`SELECT id FROM visits WHERE ${clause} ORDER BY id`)
-          .all(...bindings)
-          .map((row) => (row as { id: string }).id);
-      const baseline = queryIds(baselineClause, baselineBindings);
-      const optimized = queryIds(optimizedClause, [
-        JSON.stringify(roots),
-        JSON.stringify(roots.map((root) => `.${root}`)),
-      ]);
-      const compiled = compileFilterDocument(
-        document({
-          kind: "or",
-          children: roots.flatMap((root) => [
-            {
-              kind: "condition",
-              target: { kind: "field", field: "referrer.domain" },
-              operator: "eq",
-              value: root,
-            },
-            {
-              kind: "condition",
-              target: { kind: "field", field: "referrer.domain" },
-              operator: "endsWith",
-              value: `.${root}`,
-            },
-          ]),
-        }),
-      );
-      const compiledIds = database
-        .prepare(
-          `SELECT id FROM visits AS visit_source ${compiled.clause} ORDER BY id`,
-        )
-        .all(...compiled.bindings)
-        .map((row) => (row as { id: string }).id);
-
-      expect(optimized).toEqual(baseline);
-      expect(compiledIds).toEqual(baseline);
-      expect(compiled.clause).toContain("json_each(?)");
-      expect(compiled.bindings).toHaveLength(7);
-      expect(
-        new Set([
-          ...compiled.bindings.flatMap((binding) =>
-            typeof binding === "string" && binding.startsWith("[")
-              ? JSON.parse(binding)
-              : [binding],
-          ),
-        ]),
-      ).toEqual(new Set([...roots, ...roots.map((root) => `.${root}`)]));
-      expect(optimized).toEqual([
-        "case-and-space",
-        "literal-backslash",
-        "literal-percent",
-        "literal-underscore",
-        "other-root",
-        "other-subdomain",
-        "regional-subdomain",
-        "root",
-        "subdomain",
-      ]);
-      expect(
-        database
-          .prepare(
-            `EXPLAIN QUERY PLAN SELECT id FROM visits WHERE ${optimizedClause}`,
-          )
-          .all(JSON.stringify(roots), JSON.stringify(roots))
-          .map((row) => (row as { detail: string }).detail)
-          .join("\n"),
-      ).toContain("SCAN roots VIRTUAL TABLE");
-    } finally {
-      database.close();
+/**
+ * Four page views in two sessions, the custom events sent from them with
+ * their payloads, and one page view property.
+ */
+function database(): DatabaseSync {
+  const db = createMigratedDatabase();
+  db.exec(`
+    INSERT INTO site_identities (site_pk, site_id) VALUES (1, '${SITE_ID}');
+    INSERT INTO visits (visit_id, site_id, site_pk, visitor_id, session_id,
+      status, started_at, last_activity_at, pathname, hostname, title,
+      referrer_host, country, screen_width, is_eu, duration_ms, channel)
+    VALUES
+      ('home', '${SITE_ID}', 1, 'v1', 's1', 'complete', 1, 1, '/Docs/100%_ready\\go',
+        'WWW.Example.com', 'Home', 'google.com', 'DE', 1280, 1, 500, 'organic_search'),
+      ('pricing', '${SITE_ID}', 1, 'v1', 's1', 'complete', 2, 2, '/docs/100%_ready\\go',
+        'example.com', 'Pricing', '', 'DE', 1280, 1, NULL, 'direct'),
+      ('signup', '${SITE_ID}', 1, 'v2', 's2', 'complete', 3, 3, '/Docs/100Xready\\go',
+        'example.com', 'Sign up', 'bing.com', 'US', 390, 0, 20, 'organic_search'),
+      ('outside', '${SITE_ID}', 1, 'v3', 's3', 'complete', 5_000, 5_000, '/late',
+        'example.com', 'Late', '', 'US', 390, 0, 20, 'direct');
+    INSERT INTO visit_properties (visit_id, key, value, site_pk, started_at)
+    VALUES ('home', 'author', 'Jane', 1, 1), ('home', 'a/b', 'slash', 1, 1);
+    INSERT INTO custom_event_names (id, site_id, site_pk, name, last_seen_at)
+    VALUES (1, '${SITE_ID}', 1, 'purchase', 0), (2, '${SITE_ID}', 1, 'signup', 0);
+    INSERT INTO custom_events (event_pk, event_id, site_id, site_pk, visit_id,
+      event_name_id, occurred_at, received_at, node_count, value_count)
+    VALUES
+      (1, 'buy-pro', '${SITE_ID}', 1, 'pricing', 1, 10, 10, 0, 0),
+      (2, 'buy-free', '${SITE_ID}', 1, 'signup', 1, 11, 11, 0, 0),
+      (3, 'signed-up', '${SITE_ID}', 1, 'signup', 2, 12, 12, 0, 0),
+      (4, 'late-buy', '${SITE_ID}', 1, 'home', 1, 5_000, 5_000, 0, 0);
+  `);
+  const payloads: ReadonlyArray<readonly [number, string, PayloadValue]> = [
+    [1, "/plan", "pro"],
+    [1, "/seats", 5],
+    [1, "/paid", true],
+    [1, "/note", ""],
+    [2, "/plan", "free"],
+    [2, "/seats", 0],
+    [2, "/paid", false],
+    [2, "/note", null],
+    [4, "/plan", "pro"],
+  ];
+  const paths = new Map<string, number>();
+  for (const [eventPk, path, value] of payloads) {
+    if (!paths.has(path)) {
+      paths.set(path, paths.size + 1);
+      db.prepare(
+        "INSERT INTO custom_event_json_paths (id, site_id, site_pk, path, last_seen_at) VALUES (?, ?, 1, ?, 0)",
+      ).run(paths.get(path)!, SITE_ID, path);
     }
+    const valueType =
+      value === null
+        ? 0
+        : typeof value === "string"
+          ? 1
+          : typeof value === "number"
+            ? 2
+            : 3;
+    const nodeId = paths.get(path)!;
+    db.prepare(
+      "INSERT INTO custom_event_json_nodes (event_pk, node_id, path_id, value_type, depth) VALUES (?, ?, ?, ?, 1)",
+    ).run(eventPk, nodeId, paths.get(path)!, valueType);
+    db.prepare(
+      `INSERT INTO custom_event_json_values (event_pk, node_id, site_id, site_pk,
+        event_name_id, path_id, occurred_at, value_type, string_value,
+        number_value, boolean_value)
+       VALUES (?, ?, ?, 1, 1, ?, 0, ?, ?, ?, ?)`,
+    ).run(
+      eventPk,
+      nodeId,
+      SITE_ID,
+      paths.get(path)!,
+      valueType,
+      typeof value === "string" ? value : null,
+      typeof value === "number" ? value : null,
+      typeof value === "boolean" ? (value ? 1 : 0) : null,
+    );
+  }
+  return db;
+}
+
+function ids(
+  db: DatabaseSync,
+  sql: string,
+  predicate: SqlFragment | null,
+): string[] {
+  return db
+    .prepare(`${sql} WHERE ${predicate?.text ?? "1"} ORDER BY 1`)
+    .all(...((predicate?.bindings ?? []) as SQLInputValue[]))
+    .map((row) => String(Object.values(row)[0]));
+}
+
+const EVENTS =
+  "SELECT ce.event_id FROM custom_events ce JOIN custom_event_names cen ON cen.id = ce.event_name_id JOIN visits v ON v.visit_id = ce.visit_id";
+
+/** The page views in the window that match. */
+function visits(db: DatabaseSync, source: string): string[] {
+  const predicate = visitFilterSql(dsl(source), scope);
+  return ids(db, "SELECT v.visit_id FROM visits v", {
+    text: `v.started_at < ${scope.endExclusiveMs} AND (${predicate?.text ?? "1"})`,
+    bindings: predicate?.bindings ?? [],
+  });
+}
+
+function events(db: DatabaseSync, source: string): string[] {
+  return ids(db, EVENTS, eventFilterSql(dsl(source), scope));
+}
+
+describe("visitFilterSql", () => {
+  it("matches every page view when there is no condition", () => {
+    expect(visitFilterSql({ conditions: [] }, scope)).toBeNull();
   });
 
-  it("preserves SQLite results when finite-set logic is normalized", () => {
-    const database = applyD1Limits(new DatabaseSync(":memory:"));
-    try {
-      database.exec("CREATE TABLE visits (id TEXT PRIMARY KEY, pathname TEXT)");
-      const insert = database.prepare(
-        "INSERT INTO visits (id, pathname) VALUES (?, ?)",
-      );
-      for (const [id, pathname] of [
-        ["docs", "/docs"],
-        ["pricing", "/pricing"],
-        ["guide", "/guide"],
-        ["home", "/home"],
-        ["internal", "/internal"],
-        ["preview", "/preview"],
-        ["other", "/other"],
-      ]) {
-        insert.run(id, pathname);
-      }
-      const raw = {
-        version: 1,
-        root: {
-          kind: "and",
-          children: [
-            {
-              kind: "or",
-              children: [
-                {
-                  kind: "condition",
-                  target: { kind: "field", field: "page.path" },
-                  operator: "eq",
-                  value: "/docs",
-                },
-                {
-                  kind: "condition",
-                  target: { kind: "field", field: "page.path" },
-                  operator: "in",
-                  value: ["/pricing", "/guide"],
-                },
-              ],
-            },
-            {
-              kind: "condition",
-              target: { kind: "field", field: "page.path" },
-              operator: "notIn",
-              value: ["/internal"],
-            },
-            {
-              kind: "condition",
-              target: { kind: "field", field: "page.path" },
-              operator: "notIn",
-              value: ["/preview"],
-            },
-          ],
-        },
-      } as const;
-      const normalized = document(raw.root);
-      const compiled = compileFilterDocument(normalized);
-      const ids = (sql: string, bindings: readonly string[]) =>
-        database
-          .prepare(sql)
-          .all(...bindings)
-          .map((row) => (row as { id: string }).id);
-      const baseline = ids(
-        `SELECT id FROM visits WHERE
-          (TRIM(COALESCE(pathname, '')) = ? OR TRIM(COALESCE(pathname, '')) IN (?, ?))
-          AND TRIM(COALESCE(pathname, '')) NOT IN (?)
-          AND TRIM(COALESCE(pathname, '')) NOT IN (?)
-          ORDER BY id`,
-        ["/docs", "/pricing", "/guide", "/internal", "/preview"],
-      );
-      const optimized = ids(
-        `SELECT id FROM visits AS visit_source ${compiled.clause} ORDER BY id`,
-        compiled.bindings as readonly string[],
-      );
-
-      expect(optimized).toEqual(baseline);
-      expect(optimized).toEqual(["docs", "guide", "pricing"]);
-      expect(compiled.bindings).toHaveLength(5);
-      expect(compiled.clause).toContain(" IN (?");
-      expect(compiled.clause).toContain("NOT IN (?, ?)");
-    } finally {
-      database.close();
-    }
+  it("compares page view columns, folding case only where the field does", () => {
+    const db = database();
+    expect(visits(db, 'page.path startsWith "/Docs"')).toEqual([
+      "home",
+      "signup",
+    ]);
+    expect(visits(db, 'page.path contains "%_ready"')).toEqual([
+      "home",
+      "pricing",
+    ]);
+    expect(visits(db, 'page.path endsWith "ready\\\\go"')).toEqual([
+      "home",
+      "pricing",
+      "signup",
+    ]);
+    expect(visits(db, 'page.title notContains "i"')).toEqual(["home"]);
+    expect(visits(db, 'page.hostname eq "www.example.COM"')).toEqual(["home"]);
+    expect(visits(db, 'geo.country neq "DE"')).toEqual(["signup"]);
   });
 
-  it("lowers compatible OR leaves by typed AST shape rather than field identity", () => {
-    const result = compileFilterDocument(
-      document({
-        kind: "or",
-        children: [
-          {
-            kind: "condition",
-            target: { kind: "field", field: "page.path" },
-            operator: "eq",
-            value: "/docs",
-          },
-          {
-            kind: "condition",
-            target: { kind: "field", field: "page.path" },
-            operator: "eq",
-            value: "/pricing",
-          },
-          {
-            kind: "condition",
-            target: { kind: "field", field: "page.title" },
-            operator: "contains",
-            value: "Pricing",
-          },
-          {
-            kind: "condition",
-            target: { kind: "field", field: "page.title" },
-            operator: "contains",
-            value: "Compare",
-          },
-        ],
-      }),
-      { alias: "vs" },
-    );
-
-    expect(result.clause).toContain(
-      "TRIM(COALESCE(vs.pathname, '')) IN (?, ?)",
-    );
-    expect(result.clause).toContain("FROM json_each(?) AS filter_or_like_0");
-    expect(result.bindings).toHaveLength(3);
+  it("compares numbers and booleans without text coercion", () => {
+    const db = database();
+    const predicate = visitFilterSql(dsl("client.screenWidth gte 1024"), scope);
+    expect(predicate?.text).toBe("(v.screen_width >= ?)");
+    expect(predicate?.bindings).toEqual([1024]);
+    expect(visits(db, "client.screenWidth gte 1024")).toEqual([
+      "home",
+      "pricing",
+    ]);
+    expect(visits(db, "client.screenWidth between [300, 400]")).toEqual([
+      "signup",
+    ]);
+    expect(visits(db, "geo.isEU eq true")).toEqual(["home", "pricing"]);
+    expect(visits(db, "page.durationMs isNull")).toEqual(["pricing"]);
+    expect(visits(db, "page.durationMs notNull")).toEqual(["home", "signup"]);
   });
 
-  it("lowers startsWith OR leaves with literal JSON set matching", () => {
-    const result = compileFilterDocument(
-      document({
-        kind: "or",
-        children: [
-          {
-            kind: "condition",
-            target: { kind: "field", field: "page.path" },
-            operator: "startsWith",
-            value: "/docs",
-          },
-          {
-            kind: "condition",
-            target: { kind: "field", field: "page.path" },
-            operator: "startsWith",
-            value: "/guide",
-          },
-        ],
-      }),
-    );
-
-    expect(result.clause).toContain("SUBSTR(");
-    expect(result.clause).toContain("LENGTH(TRIM(filter_or_like_0.value))");
-    expect(result.clause).not.toContain("LIKE");
-    expect(result.bindings).toHaveLength(1);
-  });
-
-  it("falls back per leaf when an OR group contains non-vector conditions", () => {
-    const result = compileFilterDocument(
-      document({
-        kind: "or",
-        children: [
-          {
-            kind: "not",
-            child: {
-              kind: "condition",
-              target: { kind: "field", field: "page.path" },
-              operator: "eq",
-              value: "/private",
-            },
-          },
-          {
-            kind: "condition",
-            target: { kind: "field", field: "session.entryPath" },
-            operator: "eq",
-            value: "/landing",
-          },
-          {
-            kind: "condition",
-            target: { kind: "field", field: "session.entryPath" },
-            operator: "eq",
-            value: "/home",
-          },
-        ],
-      }),
-    );
-
-    expect(result.clause).toContain("NOT (");
-    expect(result.clause).toContain("ROW_NUMBER() OVER");
-    expect(result.clause).not.toContain("json_each(?)");
-  });
-
-  it("compiles nested visit predicates with case-aware literal string matching", () => {
-    const result = compileFilterDocument(
-      document({
-        kind: "and",
-        children: [
-          {
-            kind: "condition",
-            target: { kind: "field", field: "geo.country" },
-            operator: "eq",
-            value: "US",
-          },
-          {
-            kind: "not",
-            child: {
-              kind: "condition",
-              target: { kind: "field", field: "page.title" },
-              operator: "contains",
-              value: "100%_ready\\go",
-            },
-          },
-        ],
-      }),
-      { alias: "vs" },
-    );
-
-    expect(result.clause).toContain("WHERE (");
-    expect(result.clause).toContain(
-      "LOWER(TRIM(COALESCE(vs.country, ''))) = ?",
-    );
-    expect(result.clause).toContain(
-      "INSTR(TRIM(COALESCE(vs.title, '')), ?) > 0",
-    );
-    expect(result.clause).not.toContain("LIKE");
-    expect(result.clause).toContain("NOT (");
-    expect(result.bindings).toEqual(["100%_ready\\go", "us"]);
-  });
-
-  it("executes string operators with registry case rules and literal wildcards", () => {
-    const database = applyD1Limits(new DatabaseSync(":memory:"));
-    try {
-      database.exec("CREATE TABLE visits (id TEXT, pathname TEXT)");
-      const insert = database.prepare(
-        "INSERT INTO visits (id, pathname) VALUES (?, ?)",
-      );
-      insert.run("upper", "/Docs/100%_ready\\go");
-      insert.run("lower", "/docs/100%_ready\\go");
-      insert.run("wildcard-only", "/Docs/100Xready\\go");
-
-      const prefix = compileFilterDocument(
-        document({
-          kind: "condition",
-          target: { kind: "field", field: "page.path" },
-          operator: "startsWith",
-          value: "/Docs",
-        }),
-        { alias: "vs" },
-      );
-      const literalContains = compileFilterDocument(
-        document({
-          kind: "condition",
-          target: { kind: "field", field: "page.path" },
-          operator: "contains",
-          value: "%_ready",
-        }),
-        { alias: "vs" },
-      );
-      const prefixed = database
-        .prepare(`SELECT id FROM visits vs ${prefix.clause}`)
-        .all(...prefix.bindings) as Array<{ id: string }>;
-      const containing = database
-        .prepare(`SELECT id FROM visits vs ${literalContains.clause}`)
-        .all(...literalContains.bindings) as Array<{ id: string }>;
-
-      expect(prefixed.map((row) => row.id)).toEqual(["upper", "wildcard-only"]);
-      expect(containing.map((row) => row.id)).toEqual(["upper", "lower"]);
-    } finally {
-      database.close();
-    }
-  });
-
-  it("compresses large sets into one json_each binding", () => {
-    const values = Array.from({ length: 8 }, (_, index) => `/path-${index}`);
-    const result = compileFilterDocument(
-      document({
-        kind: "condition",
-        target: { kind: "field", field: "page.path" },
-        operator: "in",
-        value: values,
-      }),
-      { alias: "vs" },
-    );
-
-    expect(result.clause).toContain(
-      "TRIM(COALESCE(vs.pathname, '')) IN (SELECT value FROM json_each(?))",
-    );
-    expect(result.clause).not.toContain("pathname IN (?,");
-    expect(result.bindings).toEqual([JSON.stringify(values)]);
-  });
-
-  it("keeps payload set type checks while compressing string sets", () => {
-    const values = Array.from({ length: 8 }, (_, index) => `value-${index}`);
-    const result = compileFilterDocument(
-      document({
-        kind: "condition",
-        target: { kind: "event-payload", path: "/plan" },
-        operator: "in",
-        value: values,
-      }),
-      { alias: "es", eventAlias: "es" },
-    );
-
-    expect(result.clause).toContain("json_each(?)");
-    expect(result.bindings).toEqual(["/plan", JSON.stringify(values), 1]);
-  });
-
-  it("keeps small direct sets scalar-bound", () => {
-    const result = compileFilterDocument(
-      document({
-        kind: "condition",
-        target: { kind: "field", field: "page.path" },
-        operator: "in",
-        value: ["/docs", "/pricing"],
-      }),
-    );
-
-    expect(result.clause).toContain(" IN (?, ?)");
-    expect(result.clause).not.toContain("json_each(?)");
-    expect(result.bindings).toEqual(["/docs", "/pricing"]);
-  });
-
-  it("keeps small payload NOT IN sets typed and rejects mixed payload sets", () => {
-    const result = compileFilterDocument(
-      document({
-        kind: "condition",
-        target: { kind: "event-payload", path: "/plan" },
-        operator: "notIn",
-        value: ["free", "trial"],
-      }),
-      { alias: "es", eventAlias: "es" },
-    );
-    expect(result.clause).toContain("value_type = ? AND");
-    expect(result.clause).toContain("NOT IN (?, ?)");
-    expect(result.bindings).toEqual(["/plan", 1, "free", "trial"]);
-
-    expect(() =>
-      compileFilterDocument(
-        document({
-          kind: "condition",
-          target: { kind: "event-payload", path: "/score" },
-          operator: "in",
-          value: ["free", 1],
-        }),
-      ),
-    ).toThrow("one JSON type");
-
-    expect(() =>
-      compileFilterDocument(
-        document({
-          kind: "condition",
-          target: { kind: "event-payload", path: "/score" },
-          operator: "contains",
-          value: 42,
-        }),
-      ),
-    ).toThrow("requires a string");
-  });
-
-  it("binds true JSON payload values as booleans", () => {
-    const result = compileFilterDocument(
-      document({
-        kind: "condition",
-        target: { kind: "event-payload", path: "/enabled" },
-        operator: "eq",
-        value: true,
-      }),
-      { alias: "es", eventAlias: "es" },
-    );
-    expect(result.bindings).toEqual(["/enabled", 3, 1]);
-  });
-
-  it("compiles null payload sets and typed payload ranges", () => {
-    expect(() =>
-      compileFilterDocument(
-        document({
-          kind: "condition",
-          target: { kind: "event-payload", path: "/nullable" },
-          operator: "in",
-          value: [null],
-        }),
-        { alias: "es", eventAlias: "es" },
-      ),
-    ).toThrow("non-null scalar");
-
-    const range = compileFilterDocument(
-      document({
-        kind: "condition",
-        target: { kind: "event-payload", path: "/score" },
-        operator: "between",
-        value: [10, 20],
-      }),
-      { alias: "es", eventAlias: "es" },
-    );
-    expect(range.clause).toContain("BETWEEN");
-    expect(range.bindings).toEqual(["/score", 2, 10, 20]);
-  });
-
-  it("keeps payload missing, JSON null, empty, false, and zero distinct", () => {
-    const result = compileFilterDocument(
-      document({
-        kind: "and",
-        children: [
-          {
-            kind: "condition",
-            target: { kind: "event-payload", path: "/missing" },
-            operator: "notExists",
-          },
-          {
-            kind: "condition",
-            target: { kind: "event-payload", path: "/null" },
-            operator: "isNull",
-          },
-          {
-            kind: "condition",
-            target: { kind: "event-payload", path: "/empty" },
-            operator: "isEmpty",
-          },
-          {
-            kind: "condition",
-            target: { kind: "event-payload", path: "/paid" },
-            operator: "eq",
-            value: false,
-          },
-          {
-            kind: "condition",
-            target: { kind: "event-payload", path: "/score" },
-            operator: "eq",
-            value: 0,
-          },
-        ],
-      }),
-      { alias: "es", eventAlias: "es" },
-    );
-
-    expect(result.clause).toContain("NOT EXISTS");
-    expect(result.clause).toContain("value_type = 0");
-    expect(result.clause).toContain("string_value = ''");
-    expect(result.clause).toContain("boolean_value = ?");
-    expect(result.clause).toContain("number_value = ?");
-    expect(result.bindings).toEqual([
-      "/empty",
-      "/missing",
-      "/null",
-      "/paid",
-      3,
-      0,
-      "/score",
-      2,
-      0,
+  it("binds a list as one JSON array", () => {
+    const db = database();
+    const paths = Array.from({ length: 20 }, (_, index) => `/other-${index}`);
+    const source = `page.title in ${JSON.stringify(["Home", "Pricing", ...paths])}`;
+    const predicate = visitFilterSql(dsl(source), scope);
+    expect(predicate?.text).toContain("IN (SELECT value FROM json_each(?))");
+    expect(predicate?.bindings).toHaveLength(1);
+    expect(visits(db, source)).toEqual(["home", "pricing"]);
+    expect(visits(db, 'page.title notIn ["Home", "Pricing"]')).toEqual([
+      "signup",
     ]);
   });
 
-  it("uses the stable session-boundary strategy and rejects dynamic aliases", () => {
-    const entry = compileFilterDocument(
-      document({
-        kind: "condition",
-        target: { kind: "field", field: "session.entryPath" },
-        operator: "eq",
-        value: "/pricing",
-      }),
-      { alias: "visit_source" },
+  it("reads the stored channel", () => {
+    const db = database();
+    const predicate = visitFilterSql(
+      dsl('traffic.channel eq "organic_search"'),
+      scope,
     );
-    expect(entry.clause).toContain("ROW_NUMBER() OVER");
-    expect(entry.clause).toContain(
-      "ORDER BY edge.started_at ASC, edge.visit_id ASC",
+    expect(predicate?.text).toContain("v.channel");
+    expect(predicate?.text).not.toContain("referrer_host");
+    expect(visits(db, 'traffic.channel eq "organic_search"')).toEqual([
+      "home",
+      "signup",
+    ]);
+  });
+
+  it("matches direct traffic as an empty referrer", () => {
+    const db = database();
+    expect(visits(db, 'referrer.domain eq "__direct__"')).toEqual(["pricing"]);
+    expect(
+      visits(db, 'referrer.domain in ["__direct__", "GOOGLE.com"]'),
+    ).toEqual(["home", "pricing"]);
+  });
+
+  it("matches the page views of sessions that entered or left on a page", () => {
+    const db = database();
+    expect(visits(db, 'session.entryPath eq "/Docs/100%_ready\\\\go"')).toEqual(
+      ["home", "pricing"],
     );
-    expect(entry.bindings).toEqual(["/pricing"]);
-    expect(() =>
-      compileFilterDocument(
-        document({
-          kind: "condition",
-          target: { kind: "field", field: "page.path" },
-          operator: "eq",
-          value: "/",
-        }),
-        {
-          alias: "vs; drop table visits",
-        },
+    expect(visits(db, 'session.exitPath eq "/Docs/100%_ready\\\\go"')).toEqual(
+      [],
+    );
+    expect(visits(db, 'session.exitPath neq "/docs/100%_ready\\\\go"')).toEqual(
+      ["signup"],
+    );
+  });
+
+  it("matches the visits that sent a custom event in the window", () => {
+    const db = database();
+    expect(visits(db, 'event.name eq "purchase"')).toEqual([
+      "pricing",
+      "signup",
+    ]);
+    expect(visits(db, 'event.name neq "purchase"')).toEqual(["home"]);
+    expect(visits(db, 'event.name notIn ["purchase", "signup"]')).toEqual([
+      "home",
+    ]);
+    expect(
+      visits(
+        db,
+        'event.name eq "purchase" AND event.payload("/plan") eq "pro"',
       ),
+    ).toEqual(["pricing"]);
+    expect(
+      visits(db, 'event.name eq "signup" AND event.payload("/plan") eq "free"'),
+    ).toEqual([]);
+  });
+
+  it("matches a custom property of the page view or of one of its events", () => {
+    const db = database();
+    expect(visits(db, 'event.payload("/author") eq "Jane"')).toEqual(["home"]);
+    expect(visits(db, 'event.payload("/plan") eq "free"')).toEqual(["signup"]);
+    expect(visits(db, 'event.payload("/a~1b") eq "slash"')).toEqual(["home"]);
+  });
+
+  it("rejects an alias that isn't an identifier", () => {
+    expect(() =>
+      visitFilterSql(dsl('page.path eq "/"'), scope, "v; DROP TABLE visits"),
     ).toThrow(/internal SQL identifier/);
   });
 
-  it("compiles the direct referrer sentinel as an empty stored referrer", () => {
-    const result = compileFilterDocument(
-      document({
-        kind: "condition",
-        target: { kind: "field", field: "referrer.domain" },
-        operator: "eq",
-        value: "__direct__",
-      }),
-      { alias: "vs" },
-    );
-    expect(result.clause).toContain(
-      "LOWER(TRIM(COALESCE(vs.referrer_host, ''))) = ''",
-    );
-    expect(result.bindings).toEqual([]);
+  it("reaches visits through the site's started_at index", () => {
+    const db = database();
+    const predicate = visitFilterSql(
+      dsl('page.path eq "/pricing" AND event.name eq "purchase"'),
+      scope,
+    )!;
+    const plan = db
+      .prepare(
+        `EXPLAIN QUERY PLAN SELECT v.visit_id FROM visits v
+         WHERE v.site_pk = 1 AND v.started_at >= 0 AND v.started_at < 1000
+           AND ${predicate.text}`,
+      )
+      .all(...(predicate.bindings as SQLInputValue[]))
+      .map((row) => String(row.detail))
+      .join("\n");
+    expect(plan).toMatch(/SEARCH v USING INDEX idx_visits_site_pk_started_at/);
   });
 
-  it("keeps the direct referrer sentinel in generic OR lowering", () => {
-    const result = compileFilterDocument(
-      document({
-        kind: "or",
-        children: [
-          {
-            kind: "condition",
-            target: { kind: "field", field: "referrer.domain" },
-            operator: "eq",
-            value: "__direct__",
-          },
-          {
-            kind: "condition",
-            target: { kind: "field", field: "referrer.domain" },
-            operator: "eq",
-            value: "google.com",
-          },
-        ],
-      }),
+  it("looks a page view property up by the page view's primary key", () => {
+    const db = database();
+    const predicate = pageViewMatchSql(
+      dsl('event.payload("/author") eq "Jane"'),
+      scope,
     );
-
-    expect(result.clause).toContain("IN (?, ?)");
-    expect(result.bindings).toEqual(["", "google.com"]);
+    const plan = db
+      .prepare(
+        `EXPLAIN QUERY PLAN SELECT 1 FROM visits v WHERE ${predicate.text}`,
+      )
+      .all(...(predicate.bindings as SQLInputValue[]))
+      .map((row) => String(row.detail))
+      .join("\n");
+    expect(plan).toMatch(
+      /SEARCH visit_properties USING PRIMARY KEY \(visit_id=\? AND key=\?\)/,
+    );
   });
 });
 
-describe("payload conditions on page views", () => {
-  function pageViews() {
-    const database = createMigratedDatabase();
-    database.exec(`
-      INSERT INTO site_identities (site_pk, site_id) VALUES (1, 'site-1');
-      INSERT INTO visits (visit_id, site_id, site_pk, visitor_id, session_id,
-        status, started_at, last_activity_at, pathname, hostname)
-      VALUES
-        ('jane', 'site-1', 1, 'v1', 's1', 'complete', 1, 1, '/a', 'example.com'),
-        ('john', 'site-1', 1, 'v2', 's2', 'complete', 2, 2, '/b', 'example.com'),
-        ('none', 'site-1', 1, 'v3', 's3', 'complete', 3, 3, '/c', 'example.com');
-      INSERT INTO visit_properties (visit_id, key, value, site_pk, started_at)
-      VALUES
-        ('jane', 'author', 'Jane Doe', 1, 1),
-        ('jane', 'a/b', 'slash', 1, 1),
-        ('john', 'author', 'John', 1, 2),
-        ('john', 'seats', '5', 1, 2);
-    `);
-    return database;
-  }
-
-  function matching(
-    database: DatabaseSync,
-    path: string,
-    operator: string,
-    value?: unknown,
-  ): string[] {
-    const compiled = compileFilterDocument(
-      document({
-        kind: "condition",
-        target: { kind: "event-payload", path },
-        operator,
-        ...(value === undefined ? {} : { value }),
-      }),
-      { alias: "v", observation: "visit" },
-    );
-    return database
-      .prepare(`SELECT visit_id FROM visits v ${compiled.clause} ORDER BY 1`)
-      .all(...compiled.bindings)
-      .map((row) => String(row.visit_id));
-  }
-
-  it("matches a page view's properties by key, as strings", () => {
-    const database = pageViews();
-
-    expect(matching(database, "/author", "eq", "Jane Doe")).toEqual(["jane"]);
-    expect(matching(database, "/author", "neq", "Jane Doe")).toEqual(["john"]);
-    expect(matching(database, "/author", "contains", "Jo")).toEqual(["john"]);
-    expect(matching(database, "/author", "in", ["Jane Doe", "John"])).toEqual([
-      "jane",
-      "john",
+describe("eventFilterSql", () => {
+  it("keeps JSON types apart", () => {
+    const db = database();
+    expect(events(db, 'event.payload("/seats") eq 5')).toEqual(["buy-pro"]);
+    expect(events(db, 'event.payload("/seats") eq "5"')).toEqual([]);
+    expect(events(db, 'event.payload("/seats") eq 0')).toEqual(["buy-free"]);
+    expect(events(db, 'event.payload("/seats") between [1, 10]')).toEqual([
+      "buy-pro",
     ]);
-    const many = ["John", ...Array.from({ length: 8 }, (_, i) => `x${i}`)];
-    expect(matching(database, "/author", "in", many)).toEqual(["john"]);
-    expect(matching(database, "/author", "exists")).toEqual(["jane", "john"]);
-    expect(matching(database, "/author", "notExists")).toEqual(["none"]);
-    expect(matching(database, "/a~1b", "eq", "slash")).toEqual(["jane"]);
-    database.close();
+    expect(events(db, 'event.payload("/paid") eq true')).toEqual(["buy-pro"]);
+    expect(events(db, 'event.payload("/paid") eq false')).toEqual(["buy-free"]);
+    expect(events(db, 'event.payload("/note") isNull')).toEqual(["buy-free"]);
+    expect(events(db, 'event.payload("/note") isEmpty')).toEqual(["buy-pro"]);
+    expect(events(db, 'event.payload("/note") notEmpty')).toEqual([]);
+    expect(events(db, 'event.payload("/note") notNull')).toEqual(["buy-pro"]);
+    expect(events(db, 'event.payload("/note") notExists')).toEqual([
+      "late-buy",
+      "signed-up",
+    ]);
+    expect(events(db, 'event.payload("/plan") in ["pro", "x"]')).toEqual([
+      "buy-pro",
+      "late-buy",
+    ]);
+    expect(events(db, 'event.payload("/plan") notIn ["pro"]')).toEqual([
+      "buy-free",
+    ]);
+    expect(events(db, 'event.payload("/plan") startsWith "fr"')).toEqual([
+      "buy-free",
+    ]);
   });
 
-  it("matches no page view by a nested path or a value that isn't a string", () => {
-    const database = pageViews();
-
-    expect(matching(database, "/author/name", "exists")).toEqual([]);
-    expect(matching(database, "/author/name", "notExists")).toEqual([
-      "jane",
-      "john",
-      "none",
-    ]);
-    expect(matching(database, "/seats", "eq", 5)).toEqual([]);
-    expect(matching(database, "/seats", "eq", "5")).toEqual(["john"]);
-    expect(matching(database, "/author", "isNull")).toEqual([]);
-    expect(matching(database, "/author", "isEmpty")).toEqual([]);
-    database.close();
+  it("rejects a list of mixed JSON types", () => {
+    expect(() =>
+      eventFilterSql(dsl('event.payload("/seats") in [5, "5"]'), scope),
+    ).toThrow(/one JSON type/);
   });
 
-  it("looks a property up by the page view's primary key", () => {
-    const database = pageViews();
-    const compiled = compileFilterDocument(
-      document({
-        kind: "condition",
-        target: { kind: "event-payload", path: "/author" },
-        operator: "eq",
-        value: "John",
-      }),
-      { alias: "v", observation: "visit" },
-    );
+  it("matches the event's name and its visit's page view fields", () => {
+    const db = database();
+    expect(
+      events(db, 'event.name eq "purchase" AND geo.country eq "US"'),
+    ).toEqual(["buy-free"]);
+    expect(events(db, 'event.name in ["signup"]')).toEqual(["signed-up"]);
+  });
+});
 
-    const plan = database
-      .prepare(`EXPLAIN QUERY PLAN SELECT 1 FROM visits v ${compiled.clause}`)
-      .all(...compiled.bindings)
-      .map((row) => String(row.detail));
-    expect(plan.join("\n")).toMatch(
-      /SEARCH visit_properties USING PRIMARY KEY \(visit_id=\? AND key=\?\)/,
-    );
-    database.close();
+describe("goal and funnel step matches", () => {
+  it("matches page views for a page goal and events for an event goal", () => {
+    const pageGoal = dsl('page.path eq "/pricing"');
+    const eventGoal = dsl('event.name eq "purchase"');
+
+    expect(pageViewMatchSql(eventGoal, scope).text).toBe("0");
+    expect(eventMatchSql(pageGoal, scope).text).toBe("0");
+    expect(pageViewMatchSql({ conditions: [] }, scope).text).toBe("1");
+    expect(eventMatchSql(eventGoal, scope).text).toContain("cen.name");
   });
 });

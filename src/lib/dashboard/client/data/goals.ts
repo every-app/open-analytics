@@ -5,6 +5,7 @@ import {
 import { withFilters, withPagination } from "@/lib/dashboard/client/utils";
 import type { TimeWindow } from "@/lib/dashboard/query-state";
 import type {
+  GoalConversionsData,
   GoalDefinition,
   GoalDeleteData,
   GoalListData,
@@ -55,6 +56,22 @@ export async function fetchGoalDefinition(
     "/api/private/goals",
     { siteId, id: goalId.trim() },
     { signal: options?.signal, dedupe: false },
+  );
+}
+/** Every goal of the site with its conversions, in one request. */
+export async function fetchGoalConversions(
+  siteId: string,
+  window: TimeWindow,
+  filters?: FilterDocument,
+  options?: { signal?: AbortSignal },
+): Promise<GoalConversionsData> {
+  return fetchPrivateJson<GoalConversionsData>(
+    "/api/private/goal-conversions",
+    withFilters(
+      { siteId, from: window.from, to: window.to, timeZone: window.timeZone },
+      filters,
+    ),
+    { dedupe: false, signal: options?.signal },
   );
 }
 export async function fetchGoalSummary(

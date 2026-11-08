@@ -22,7 +22,7 @@ describe("goal v1 config contract", () => {
     const config: GoalConfigV1 = {
       filterDslVersion: 1,
       filterDsl:
-        '  event.name eq "purchase" AND\n(event.payload("/plan") eq "pro")  ',
+        '  event.name eq "purchase" AND\nevent.payload("/plan") eq "pro"  ',
     };
     const encoded = encodeGoalConfig(config);
 
@@ -95,9 +95,8 @@ describe("goal v1 config contract", () => {
     ).not.toThrow();
     for (const filterDsl of [
       "session.durationMs gt 1000",
-      "visitor.sessions gte 2",
       'page.path eq "/pricing" AND session.durationMs gt 1000',
-      'event.name eq "purchase" OR visitor.sessions gte 2',
+      'event.name eq "purchase" OR page.path eq "/pricing"',
     ]) {
       const config = { ...validConfig, filterDsl };
       expect(() => validateGoalConfigForWrite(config)).toThrow(
@@ -122,7 +121,7 @@ describe("goal v1 config contract", () => {
   it("keeps the authored DSL while canonicalizing equivalent semantics for fingerprints", async () => {
     const equivalent: GoalConfigV1 = {
       filterDslVersion: 1,
-      filterDsl: 'AND(event.name eq "purchase")',
+      filterDsl: '  event.name   EQ   "purchase" ',
     };
     const semanticChange: GoalConfigV1 = {
       filterDslVersion: 1,
@@ -196,7 +195,6 @@ describe("goal v1 config contract", () => {
     }
     for (const filterDsl of [
       'page.path eq "/thank-you"',
-      'event.name eq "Purchase" OR page.path eq "/thank-you"',
       // A property also matches the page views that carry it.
       'event.payload("/plan") eq "pro"',
     ]) {

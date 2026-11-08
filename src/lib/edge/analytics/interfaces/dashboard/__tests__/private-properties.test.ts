@@ -80,7 +80,7 @@ async function query(
   }
   if (filter) {
     const document = normalizeFilterDocument(
-      { version: 1, root: filter },
+      { conditions: [filter] },
       analyticsFilterRegistry,
     );
     for (const [key, value] of serializeFilterParams(
@@ -101,7 +101,6 @@ async function query(
 }
 
 const author = (value: string) => ({
-  kind: "condition",
   target: { kind: "event-payload", path: "/author" },
   operator: "eq",
   value,
@@ -164,7 +163,6 @@ describe("custom property breakdown", () => {
 
   it("follows the page's filters", async () => {
     const blogB = {
-      kind: "condition",
       target: { kind: "field", field: "page.path" },
       operator: "eq",
       value: "/blog/b",
@@ -202,27 +200,6 @@ describe("custom property breakdown", () => {
     expect((await query("property-values", { key: "author" })).status).toBe(
       500,
     );
-  });
-
-  it("refuses filters the query service didn't prepare", async () => {
-    const filters = normalizeFilterDocument(
-      { version: 1, root: author("Jane") },
-      analyticsFilterRegistry,
-    );
-    await expect(
-      queryPropertyKeysFromD1(
-        { DB: createSqliteD1Database(database) } as unknown as Env,
-        "site-1",
-        {
-          startMs: FROM,
-          endExclusiveMs: FROM + DAY_MS,
-          nowMs: FROM + DAY_MS,
-          timeZone: "UTC",
-        },
-        filters,
-        10,
-      ),
-    ).rejects.toThrow("scoped_dataset_required");
   });
 
   it("rejects a values request without a key or with an unknown sort", async () => {

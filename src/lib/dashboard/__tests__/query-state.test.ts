@@ -17,13 +17,10 @@ import {
   finestIntervalForRange,
   normalizeCustomDateRange,
   parseFilterDocumentFromSearchParams,
-  parseFilterScopeFromSearchParams,
   resolveRangePreset,
   resolveTimeWindow,
-  serializeFilterScopeToSearchParams,
   withRangeAndFilters,
 } from "@/lib/dashboard/query-state";
-import { attachFilterScopePreference } from "@/lib/filter-contract";
 
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
@@ -32,14 +29,14 @@ const DAY_MS = 24 * HOUR_MS;
 describe("dashboard query-state helpers", () => {
   it("opens a link with a filter field that no longer exists unfiltered", () => {
     const filters = parseFilterDocumentFromSearchParams(
-      new URLSearchParams("filter[user.id]=eq:alice&filterScope=session"),
+      new URLSearchParams("filter[user.id]=eq:alice"),
     );
-    expect(filters.root).toBeNull();
+    expect(filters.conditions).toEqual([]);
     expect(
       parseFilterDocumentFromSearchParams(
         new URLSearchParams("filter[geo.country]=eq:DE"),
-      ).root,
-    ).not.toBeNull();
+      ).conditions,
+    ).toHaveLength(1);
   });
 
   describe("resolveRangePreset", () => {
@@ -294,31 +291,15 @@ describe("dashboard query-state helpers", () => {
       });
     });
 
-    it("parses nested event payload and boolean logic through the shared codec", () => {
+    it("parses event payload conditions through the shared codec", () => {
       const filters = parseFilterDocumentFromSearchParams(
         new URLSearchParams({
           "filter[event.payload][/plan]": "pro",
-          "filter[event.payload][/trial]": "neq:false",
-          "filter[page.path][or.0]": "/docs",
-          "filter[page.path][or.1]": "/pricing",
+          "filter[event.payload][/trial]": "ne:json:false",
+          "filter[page.path]": "in:/docs,/pricing",
         }),
       );
-      expect(filters.root).toBeTruthy();
-    });
-  });
-
-  describe("filter scope search parameters", () => {
-    it("parses and serializes explicit scope preferences", () => {
-      expect(
-        parseFilterScopeFromSearchParams(new URLSearchParams("scope=visitor")),
-      ).toBe("visitor");
-
-      const params = serializeFilterScopeToSearchParams(
-        new URLSearchParams("range=7d"),
-        "session",
-      );
-      expect(params.get("range")).toBe("7d");
-      expect(params.get("scope")).toBe("session");
+      expect(filters.conditions).toHaveLength(3);
     });
   });
 
@@ -381,31 +362,6 @@ describe("dashboard query-state helpers", () => {
       expect(url.searchParams.get("filter[geo.country]")).toBeNull();
       expect(url.searchParams.get("filter[client.browser]")).toBe("Chrome");
     });
-
-    it("carries a filter document scope preference into the URL", () => {
-      const filters = attachFilterScopePreference(
-        dashboardFilterDocumentFromPresentation({ path: "/" }),
-        "visitor",
-      );
-
-      const url = new URL(
-        withRangeAndFilters("/dashboard", "7d", filters),
-        "https://example.test",
-      );
-
-      expect(url.searchParams.get("scope")).toBe("visitor");
-    });
-
-    it("does not serialize a scope preference without an active filter", () => {
-      const filters = attachFilterScopePreference(
-        dashboardFilterDocumentFromPresentation({}),
-        "visitor",
-      );
-
-      expect(withRangeAndFilters("/dashboard", "7d", filters)).toBe(
-        "/dashboard?range=7d",
-      );
-    });
   });
 
   describe("withDashboardFilterSearchParams", () => {
@@ -426,16 +382,6 @@ describe("dashboard query-state helpers", () => {
       expect(next.get("geoCountry")).toBeNull();
       expect(next.get("filter[geo.country]")).toBeNull();
       expect(next.get("filter[referrer.domain]")).toBe("google.com");
-    });
-
-    it("removes a stale scope when the active filter document is empty", () => {
-      const next = withDashboardFilterSearchParams(
-        new URLSearchParams("range=7d&scope=visitor"),
-        dashboardFilterDocumentFromPresentation({}),
-      );
-
-      expect(next.get("range")).toBe("7d");
-      expect(next.get("scope")).toBeNull();
     });
   });
 
@@ -493,7 +439,7 @@ describe("dashboard query-state helpers", () => {
       );
 
       expect(state.mode).toBeUndefined();
-      expect(state.filterDocument.root).toBeNull();
+      expect(state.filterDocument.conditions).toEqual([]);
     });
   });
 

@@ -4,6 +4,7 @@ import {
   type QueryAudience,
 } from "@/lib/edge/analytics/contract";
 import type { Env } from "@/lib/edge/types";
+import { FilterFieldSource } from "@/lib/filter-contract/filter-registry";
 import type { PageResult } from "@/lib/pagination";
 import { InvalidCursorError } from "@/lib/pagination";
 
@@ -55,7 +56,7 @@ export async function queryFilterValuesPageFromD1(
   const definition = analyticsFilterDefinition(field);
   if (
     !definition ||
-    definition.source === "payload" ||
+    definition.source === FilterFieldSource.Payload ||
     !definition.audiences.has(audience) ||
     definition.suggestionMode === "none"
   ) {

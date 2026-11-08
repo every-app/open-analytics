@@ -2,18 +2,14 @@ import {
   TRAFFIC_CHANNEL_IDS,
   type TrafficChannelId,
 } from "@/lib/analytics/traffic-channel-rules";
-import { describeFilterExpression } from "@/lib/dashboard/filter-description";
+import { describeFilterCondition } from "@/lib/dashboard/filter-description";
 import { decodeUrlDisplayValue } from "@/lib/dashboard/url-display";
 import {
   analyticsFilterRegistry,
-  copyFilterScopePreferenceMetadata,
-  FILTER_DOCUMENT_VERSION,
   type FilterCondition,
   type FilterDocument,
-  type FilterExpression,
+  FilterOperator,
   type FilterValue,
-  isLegacyFilterTarget,
-  normalizeFilterDocument,
 } from "@/lib/filter-contract";
 import { resolveCountryLabel } from "@/lib/i18n/code-labels";
 import type { Locale } from "@/lib/i18n/config";
@@ -62,30 +58,8 @@ export interface FilterPill {
 const DIRECT_REFERRER_FILTER_VALUE = "__direct__";
 const LOCATION_FIELDS = ["geo.country", "geo.region", "geo.city"] as const;
 
-function fieldOf(expression: FilterExpression): string | null {
-  return expression.kind === "condition" &&
-    isLegacyFilterTarget(expression.target) &&
-    expression.target.kind === "field"
-    ? expression.target.field
-    : null;
-}
-
-function documentOf(
-  children: readonly FilterExpression[],
-  source: FilterDocument,
-): FilterDocument {
-  const root: FilterExpression | null =
-    children.length === 0
-      ? null
-      : children.length === 1
-        ? children[0]!
-        : { kind: "and", children: [...children] };
-  const document = normalizeFilterDocument(
-    { version: FILTER_DOCUMENT_VERSION, root },
-    analyticsFilterRegistry,
-  );
-  copyFilterScopePreferenceMetadata(source, document);
-  return document;
+function fieldOf(condition: FilterCondition): string | null {
+  return condition.target.kind === "field" ? condition.target.field : null;
 }
 
 function valueText(
@@ -138,7 +112,7 @@ function conditionText(
       item === null || ["string", "number", "boolean"].includes(typeof item),
   );
   if (value === undefined || !isPlainValue) {
-    return describeFilterExpression(
+    return describeFilterCondition(
       condition,
       analyticsFilterRegistry,
       messages,
@@ -147,13 +121,19 @@ function conditionText(
   const text = (values as FilterValue[])
     .map((item) => valueText(field, item, messages, locale))
     .join(messages.filterPills.valueSeparator);
-  if (condition.operator === "eq" || condition.operator === "in") {
+  if (
+    condition.operator === FilterOperator.Eq ||
+    condition.operator === FilterOperator.In
+  ) {
     return formatI18nTemplate(messages.filterPills.is, {
       field: fieldLabel,
       value: text,
     });
   }
-  if (condition.operator === "neq" || condition.operator === "notIn") {
+  if (
+    condition.operator === FilterOperator.Neq ||
+    condition.operator === FilterOperator.NotIn
+  ) {
     return formatI18nTemplate(messages.filterPills.isNot, {
       field: fieldLabel,
       value: text,
@@ -166,45 +146,28 @@ function conditionText(
 }
 
 /**
- * The page's filters as pills, one per condition of a plain AND list, with
- * a location's country, region and city as one. Anything else (an OR, a
- * NOT) is described as a whole in a single pill that clears it.
+ * The page's filters as pills, one per condition, with a location's
+ * country, region and city as one.
  */
 export function filterPills(
   document: FilterDocument,
   messages: PillMessages,
   locale: Locale,
 ): FilterPill[] {
-  const root = document.root;
-  if (!root) return [];
-  const children = root.kind === "and" ? root.children : [root];
-  if (root.kind !== "and" && root.kind !== "condition") {
-    return [
-      {
-        key: "expression",
-        label: describeFilterExpression(
-          root,
-          analyticsFilterRegistry,
-          messages,
-        ),
-        without: documentOf([], document),
-      },
-    ];
-  }
+  const conditions = document.conditions;
   const pills: FilterPill[] = [];
-  const locationIndexes = children.flatMap((child, index) =>
-    (LOCATION_FIELDS as readonly string[]).includes(fieldOf(child) ?? "")
-      ? [index]
-      : [],
+  const isLocation = (condition: FilterCondition) =>
+    (LOCATION_FIELDS as readonly string[]).includes(fieldOf(condition) ?? "");
+  const locationIndexes = conditions.flatMap((condition, index) =>
+    isLocation(condition) ? [index] : [],
   );
-  children.forEach((child, index) => {
-    const field = fieldOf(child);
-    const others = children.filter((_, other) => other !== index);
-    if (field && (LOCATION_FIELDS as readonly string[]).includes(field)) {
+  conditions.forEach((condition, index) => {
+    const field = fieldOf(condition);
+    if (isLocation(condition)) {
       // The location's most specific part speaks for all of it.
       if (index !== locationIndexes.at(-1)) return;
       const location = locationIndexes
-        .map((locationIndex) => children[locationIndex]!)
+        .map((locationIndex) => conditions[locationIndex]!)
         .sort(
           (left, right) =>
             LOCATION_FIELDS.indexOf(fieldOf(right) as never) -
@@ -212,26 +175,23 @@ export function filterPills(
         )[0]!;
       pills.push({
         key: "location",
-        label: conditionText(
-          location as FilterCondition,
-          fieldOf(location)!,
-          messages,
-          locale,
-        ),
-        without: documentOf(
-          children.filter((_, other) => !locationIndexes.includes(other)),
-          document,
-        ),
+        label: conditionText(location, fieldOf(location)!, messages, locale),
+        without: {
+          conditions: conditions.filter(
+            (_, other) => !locationIndexes.includes(other),
+          ),
+        },
       });
       return;
     }
     pills.push({
-      key: `${index}:${field ?? child.kind}`,
-      label:
-        field && child.kind === "condition"
-          ? conditionText(child, field, messages, locale)
-          : describeFilterExpression(child, analyticsFilterRegistry, messages),
-      without: documentOf(others, document),
+      key: `${index}:${field ?? "event.payload"}`,
+      label: field
+        ? conditionText(condition, field, messages, locale)
+        : describeFilterCondition(condition, analyticsFilterRegistry, messages),
+      without: {
+        conditions: conditions.filter((_, other) => other !== index),
+      },
     });
   });
   return pills;

@@ -10,18 +10,12 @@ import {
 } from "@/lib/analytics/time-zone";
 import {
   analyticsFilterRegistry,
-  FILTER_DOCUMENT_VERSION,
+  EMPTY_FILTER_DOCUMENT,
   FilterCodecError,
   type FilterDocument,
-  filterScopePreferenceFromDocument,
+  FilterValidationError,
   parseFilterParams,
   serializeFilterParams,
-} from "@/lib/filter-contract";
-import {
-  attachFilterScopePreference,
-  type FilterScopePreference,
-  parseFilterScopePreference,
-  serializeFilterScopePreference,
 } from "@/lib/filter-contract";
 
 import {
@@ -261,41 +255,25 @@ export function resolveTimeWindow(
     timeZone,
   };
 }
-export function parseFilterDocumentFromSearchParams(
-  searchParams: URLSearchParams,
-): FilterDocument {
-  return attachFilterScopePreference(
-    parseDashboardFilterParams(searchParams),
-    parseFilterScopePreference(searchParams),
-  );
-}
 /**
  * The filters in a dashboard address, or none when they don't parse: a link
- * saved before a filter field was removed (user.*, performance.*) opens the
- * dashboard unfiltered instead of breaking it.
+ * saved before a filter field or grammar was removed opens the dashboard
+ * unfiltered instead of breaking it.
  */
-export function parseDashboardFilterParams(
+export function parseFilterDocumentFromSearchParams(
   searchParams: URLSearchParams,
 ): FilterDocument {
   try {
     return parseFilterParams(searchParams, analyticsFilterRegistry);
   } catch (error) {
-    if (error instanceof FilterCodecError) {
+    if (
+      error instanceof FilterCodecError ||
+      error instanceof FilterValidationError
+    ) {
       return EMPTY_DASHBOARD_FILTER_DOCUMENT;
     }
     throw error;
   }
-}
-export function parseFilterScopeFromSearchParams(
-  searchParams: URLSearchParams,
-): FilterScopePreference {
-  return parseFilterScopePreference(searchParams);
-}
-export function serializeFilterScopeToSearchParams(
-  searchParams: URLSearchParams,
-  preference: FilterScopePreference,
-): URLSearchParams {
-  return serializeFilterScopePreference(searchParams, preference);
 }
 export function withRangeAndFilters(
   pathname: string,
@@ -303,16 +281,10 @@ export function withRangeAndFilters(
   filters?: FilterDocument,
 ): string {
   const params = serializeFilterParams(
-    filters ?? { version: FILTER_DOCUMENT_VERSION, root: null },
+    filters ?? EMPTY_FILTER_DOCUMENT,
     analyticsFilterRegistry,
   );
   params.set("range", range);
-  const scopePreference = filterScopePreferenceFromDocument(filters);
-  if (scopePreference && filters?.root) {
-    return `${pathname}?${serializeDashboardSearchParams(
-      serializeFilterScopePreference(params, scopePreference),
-    )}`;
-  }
   return `${pathname}?${serializeDashboardSearchParams(params)}`;
 }
 export function normalizeCustomDateRange(

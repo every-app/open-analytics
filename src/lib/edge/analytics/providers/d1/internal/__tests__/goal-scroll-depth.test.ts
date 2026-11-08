@@ -9,8 +9,10 @@ import {
   type FilterDocument,
 } from "@/lib/edge/analytics/contract";
 import type { QueryWindow } from "@/lib/edge/analytics/providers/d1/internal/core-types";
-import { queryGoalSummaryFromD1 } from "@/lib/edge/analytics/providers/d1/internal/goal-summary";
-import { queryGoalTimeseriesFromD1 } from "@/lib/edge/analytics/providers/d1/internal/goal-timeseries";
+import {
+  queryGoalConversionsFromD1,
+  queryGoalTimeseriesFromD1,
+} from "@/lib/edge/analytics/providers/d1/internal/goal-conversions";
 import { parseFilterDsl } from "@/lib/filter-contract";
 
 const SITE = { siteId: "site-1", sitePk: 1 };
@@ -20,7 +22,7 @@ const window: QueryWindow = {
   nowMs: 180_000,
   timeZone: "UTC",
 };
-const noFilters: FilterDocument = { version: 1, root: null };
+const noFilters: FilterDocument = { conditions: [] };
 const scrollGoal = parseFilterDsl(
   'page.path eq "/pricing" AND page.scrollDepth gte 75',
   analyticsFilterRegistry,
@@ -65,19 +67,19 @@ function createEnv() {
 
 describe("scroll depth goals", () => {
   it("count only the visitors who reached the depth on that page", async () => {
-    await expect(
-      queryGoalSummaryFromD1(
-        createEnv(),
-        SITE.siteId,
-        window,
-        noFilters,
-        scrollGoal,
-      ),
-    ).resolves.toEqual({
-      totalSessions: 4,
-      convertedSessions: 2,
-      totalVisitors: 4,
-      convertedVisitors: 2,
+    const result = await queryGoalConversionsFromD1(
+      createEnv(),
+      SITE.siteId,
+      window,
+      noFilters,
+      [{ id: "scroll", filter: scrollGoal }],
+    );
+    expect(result.totalSessions).toBe(4);
+    expect(result.totalVisitors).toBe(4);
+    expect(result.goals.get("scroll")).toEqual({
+      sessions: 2,
+      visitors: 2,
+      conversions: 2,
       revenue: null,
     });
   });

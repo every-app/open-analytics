@@ -6,7 +6,6 @@ import {
 } from "@/lib/filter-contract/filters";
 import { sha256Hex } from "@/lib/sha256";
 
-import { assertObservationFilterCompatible } from "./observation-planner";
 export const FUNNEL_CONFIG_VERSION = 2 as const;
 export const FUNNEL_FILTER_DSL_VERSION = 1 as const;
 export const MIN_FUNNEL_STEPS = 2;
@@ -276,7 +275,6 @@ export function validateFunnelConfigForWrite(
         analyticsFilterRegistry,
         "private-dashboard",
       );
-      assertObservationFilterCompatible(document);
     } catch {
       throw new FunnelConfigValidationError(
         `funnel_filter_dsl_invalid:${index}`,
@@ -297,7 +295,6 @@ export function encodeFunnelConfig(
 export function parseFunnelStepFilter(step: FunnelStepV2) {
   const document = parseFilterDsl(step.filterDsl, analyticsFilterRegistry);
   assertFilterAudience(document, analyticsFilterRegistry, "private-dashboard");
-  assertObservationFilterCompatible(document);
   return document;
 }
 function semanticPayload(config: FunnelConfigV2): string {
