@@ -24,12 +24,12 @@ export const ChangeRateInline = memo(function ChangeRateInline({
 }) {
   if (value === null) return null;
   const Icon = value >= 0 ? ArrowUpIcon : ArrowDownIcon;
+  // As Plausible: the arrow says which way and whether that's good, so only
+  // it takes the color, and the number is the size of the change.
   return (
-    <span
-      className={`inline-flex items-end gap-0.5 font-mono text-xs leading-none ${changeRateClass(value, lowerIsBetter)}`}
-    >
-      <Icon className="size-3.5" />
-      {formatChangeRate(value)}
+    <span className="inline-flex items-end gap-0.5 font-mono text-xs leading-none text-muted-foreground">
+      <Icon className={`size-3.5 ${changeRateClass(value, lowerIsBetter)}`} />
+      {`${Math.abs(value).toFixed(1)}%`}
     </span>
   );
 });

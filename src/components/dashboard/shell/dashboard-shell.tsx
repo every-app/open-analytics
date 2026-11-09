@@ -6,6 +6,7 @@ import { SiteBrandIcon } from "@/components/dashboard/common/site-brand-icon";
 import { LoadFailedContent } from "@/components/dashboard/common/table-states";
 import { FilterPills } from "@/components/dashboard/filters/filter-pills";
 import { DashboardHeaderControls } from "@/components/dashboard/shell/dashboard-header-controls";
+import { RealtimeActiveBadge } from "@/components/dashboard/shell/dashboard-header-controls/realtime-badge";
 import { DashboardQueryProvider } from "@/components/dashboard/shell/dashboard-query-provider";
 import { useSiteTracking } from "@/components/dashboard/site-pages/common/use-site-tracking";
 import { FirstViewsBanner } from "@/components/dashboard/site-pages/install/first-views-banner";
@@ -183,12 +184,21 @@ export function DashboardShell({
         header={
           showHeader ? (
             <>
-              <div className="flex min-w-0 items-center gap-3 px-4 py-2.5 md:px-6">
+              {/* One row: the controls keep their size, compact below lg, and
+                  the title takes what is left. */}
+              <div className="flex items-center gap-3 px-4 py-2.5 md:px-6">
                 <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
                   {pageTitle}
                 </div>
-                <div className="min-w-0">
-                  {awaitingSiteTracking || awaitingFirstView ? null : (
+                {awaitingSiteTracking || awaitingFirstView ? null : (
+                  <div className="flex shrink-0 items-center gap-1.5 lg:gap-2">
+                    {activeSite && routeState.siteSlug ? (
+                      <RealtimeActiveBadge
+                        siteId={activeSite.id}
+                        href={buildSitePath(routeState.siteSlug, "realtime")}
+                        messages={messages}
+                      />
+                    ) : null}
                     <DashboardHeaderControls
                       locale={locale}
                       messages={messages}
@@ -200,14 +210,9 @@ export function DashboardShell({
                       showFilter={
                         Boolean(routeState.siteSlug) && section !== "realtime"
                       }
-                      realtimeHref={
-                        routeState.siteSlug
-                          ? buildSitePath(routeState.siteSlug, "realtime")
-                          : undefined
-                      }
                     />
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
               {routeState.siteSlug &&
               section !== "realtime" &&

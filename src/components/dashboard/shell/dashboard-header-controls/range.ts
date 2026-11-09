@@ -89,6 +89,13 @@ const RANGE_LABEL_KEYS: Record<RangePreset, keyof AppMessages["ranges"]> = {
 export function rangeLabel(messages: AppMessages, range: RangePreset): string {
   return messages.ranges[RANGE_LABEL_KEYS[range]];
 }
+/** A range's name where the header is narrow: "30d" for Last 30 days. */
+export function rangeShortLabel(
+  messages: AppMessages,
+  range: RangePreset,
+): string {
+  return messages.rangesShort[RANGE_LABEL_KEYS[range]];
+}
 export function intervalLabel(
   messages: AppMessages,
   interval: DashboardInterval,
@@ -119,15 +126,17 @@ export function toDateRange(
   };
 }
 /** A range's first and last day; `to` is exclusive. */
+/** The days a range covers; `withYear: false` drops the years, for a narrow header. */
 export function formatDateSpan(
   locale: Locale,
   timeZone: string,
   from?: number,
   to?: number,
+  { withYear = true }: { withYear?: boolean } = {},
 ): string {
   if (!Number.isFinite(from) || !Number.isFinite(to)) return "";
   const formatter = new Intl.DateTimeFormat(intlLocale(locale), {
-    year: "numeric",
+    year: withYear ? "numeric" : undefined,
     month: "short",
     day: "numeric",
     timeZone,

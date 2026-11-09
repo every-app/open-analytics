@@ -84,6 +84,20 @@ export interface AppMessages {
     allTime: string;
     custom: string;
   };
+  rangesShort: {
+    today: string;
+    yesterday: string;
+    last24h: string;
+    last7d: string;
+    last30d: string;
+    last90d: string;
+    monthToDate: string;
+    lastMonth: string;
+    yearToDate: string;
+    last12m: string;
+    allTime: string;
+    custom: string;
+  };
   intervals: {
     minute: string;
     hour: string;
@@ -1200,6 +1214,20 @@ const enMessages = {
     last12m: "Last 12 months",
     allTime: "All time",
     custom: "Custom range",
+  },
+  rangesShort: {
+    today: "Today",
+    yesterday: "Yesterday",
+    last24h: "24h",
+    last7d: "7d",
+    last30d: "30d",
+    last90d: "90d",
+    monthToDate: "MTD",
+    lastMonth: "Last month",
+    yearToDate: "YTD",
+    last12m: "12mo",
+    allTime: "All time",
+    custom: "Custom",
   },
   intervals: {
     minute: "Minute",

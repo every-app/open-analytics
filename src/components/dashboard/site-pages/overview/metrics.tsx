@@ -200,7 +200,7 @@ export function OverviewMetricsSection({
       <Card className="gap-0 py-0">
         <CardContent className="px-0">
           {failed ? (
-            <div className="flex min-h-[148px] items-center justify-center text-sm text-destructive">
+            <div className="flex min-h-[172px] items-center justify-center text-sm text-destructive">
               <LoadFailedContent messages={messages} onRetry={retry} />
             </div>
           ) : (
@@ -217,7 +217,7 @@ export function OverviewMetricsSection({
                     aria-pressed={active}
                     onClick={() => selectStat(tile.stat)}
                     className={cn(
-                      "group relative min-h-[74px] cursor-pointer text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+                      "group @container relative min-h-[86px] cursor-pointer text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
                       "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:z-20 after:h-0.5 after:transition-colors",
                       active
                         ? "after:bg-primary"
@@ -225,25 +225,21 @@ export function OverviewMetricsSection({
                       statCellBorderClasses(index),
                     )}
                   >
-                    <div className="absolute inset-y-0 right-0 w-1/2 min-w-0">
+                    {/* A narrow tile starts the sparkline under the label,
+                        so no text sits on the line. */}
+                    <div className="absolute inset-y-0 right-0 w-1/2 min-w-0 @max-sm:top-7">
                       <MetricAreaChart
                         points={tile.trend}
                         color={METRIC_AREA_COLOR}
-                        locale={locale}
-                        timeZone={window.timeZone}
-                        interval={window.interval}
-                        label={labels[tile.stat]}
-                        formatValue={tile.format}
                         animationKey={`${window.from}:${window.to}:${comparisonQuery?.mode ?? "none"}`}
                         comparisonPoints={tile.comparisonTrend}
                         comparisonColor={COMPARISON_AREA_COLOR}
-                        comparisonLabel={comparisonLabel}
                       />
                     </div>
-                    <div className="pointer-events-none relative z-10 flex min-h-[74px] min-w-0 flex-col justify-between px-3 py-2.5">
+                    <div className="pointer-events-none relative z-10 flex min-h-[86px] min-w-0 flex-col justify-between px-3 py-2.5">
                       <p
                         className={cn(
-                          "mb-4 truncate text-xs",
+                          "mb-2 truncate text-xs",
                           active
                             ? "font-medium text-foreground"
                             : "text-muted-foreground group-hover:text-foreground",
@@ -254,7 +250,7 @@ export function OverviewMetricsSection({
                       {data ? (
                         <p
                           className={cn(
-                            "inline-flex h-6 flex-wrap items-end gap-x-1.5 text-2xl font-semibold leading-none tracking-tight tabular-nums transition-opacity",
+                            "flex flex-col items-start gap-1 text-2xl font-semibold leading-none tracking-tight tabular-nums transition-opacity",
                             refreshing && "opacity-60",
                           )}
                         >

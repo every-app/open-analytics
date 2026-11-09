@@ -185,7 +185,7 @@ export function ShareHeader({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="shrink-0 [&>div]:flex-nowrap [&_button]:shrink-0">
+        <div className="shrink-0 [&_button]:shrink-0">
           <DashboardHeaderControls
             locale={locale}
             messages={messages}

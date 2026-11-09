@@ -24,7 +24,6 @@ import { FilterActiveCountBadge } from "@/components/dashboard/filters/filter-ac
 import { FilterPanel } from "@/components/dashboard/filters/filter-panel";
 import { useApplyDashboardFilters } from "@/components/dashboard/filters/use-dashboard-filters";
 import { useDashboardQueryControls } from "@/components/dashboard/shell/dashboard-query-provider";
-import { useRealtimeChannelSelector } from "@/hooks/use-realtime-channel";
 import {
   replaceUrlWithoutNavigation,
   useLiveSearchParams,
@@ -48,11 +47,7 @@ import { usePathname } from "@/lib/router";
 import { cn } from "@/lib/utils";
 
 import { DateControl } from "./dashboard-header-controls/date-control";
-import {
-  areRealtimeHeaderStatesEqual,
-  RealtimeActiveBadge,
-  selectRealtimeHeaderState,
-} from "./dashboard-header-controls/realtime-badge";
+
 interface DashboardHeaderControlsProps {
   locale: Locale;
   messages: AppMessages;
@@ -64,8 +59,6 @@ interface DashboardHeaderControlsProps {
   /** Filter; off where the page can't be filtered. */
   showFilter: boolean;
   filterAudience?: "private-dashboard" | "public-share";
-  /** Real-time's page; given, the header shows the live count linking to it. */
-  realtimeHref?: string;
 }
 function FilterTrigger({
   activeFilterCount,
@@ -89,11 +82,7 @@ function FilterTrigger({
       type="button"
       variant="outline"
       size={compact ? "icon" : "default"}
-      className={cn(
-        className,
-        compact &&
-          "relative gap-0 p-0 sm:h-8 sm:w-auto sm:gap-2 sm:px-2.5 sm:has-data-[icon=inline-start]:pl-2",
-      )}
+      className={cn(className, compact && "relative gap-0")}
       aria-label={filterButtonLabel}
       onClick={onClick}
       style={style}
@@ -102,16 +91,12 @@ function FilterTrigger({
         data-icon="inline-start"
         className={cn(activeFilterCount === 0 && "text-muted-foreground")}
       />
-      <span className="hidden whitespace-nowrap sm:inline-block">
-        {filterButtonLabel}
-      </span>
+      {compact ? null : (
+        <span className="whitespace-nowrap">{filterButtonLabel}</span>
+      )}
       <FilterActiveCountBadge
         count={activeFilterCount}
-        className={
-          compact
-            ? "absolute -top-1 -right-2 mr-0 sm:static sm:mr-0"
-            : undefined
-        }
+        className={compact ? "absolute -top-1 -right-2 mr-0" : undefined}
       />
     </Button>
   );
@@ -134,11 +119,7 @@ function CompareTrigger({
       type="button"
       variant="outline"
       size={compact ? "icon" : "default"}
-      className={cn(
-        className,
-        compact &&
-          "gap-0 p-0 sm:h-8 sm:w-auto sm:gap-2 sm:px-2.5 sm:has-data-[icon=inline-start]:pl-2",
-      )}
+      className={cn(className, compact && "gap-0")}
       aria-label={messages.dashboardHeader.compareButton}
       onClick={onClick}
     >
@@ -146,9 +127,7 @@ function CompareTrigger({
         data-icon="inline-start"
         className={cn(!active && "text-muted-foreground")}
       />
-      <span className="hidden sm:inline">
-        {messages.dashboardHeader.compareButton}
-      </span>
+      {compact ? null : <span>{messages.dashboardHeader.compareButton}</span>}
     </Button>
   );
 }
@@ -173,7 +152,6 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
   showComparison,
   showFilter,
   filterAudience = "private-dashboard",
-  realtimeHref,
 }: DashboardHeaderControlsProps) {
   const searchParams = useLiveSearchParams();
   const livePathname = usePathname() || "/";
@@ -229,20 +207,6 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
         currentFilterDsl,
       ),
     );
-  const realtimeSiteId = siteId || undefined;
-  const showRealtimeBadge = Boolean(realtimeHref) && Boolean(siteId);
-  const realtimeHeaderState = useRealtimeChannelSelector(
-    realtimeSiteId,
-    selectRealtimeHeaderState,
-    areRealtimeHeaderStatesEqual,
-    { enabled: showRealtimeBadge },
-  );
-  const {
-    activeNow,
-    status: realtimeStatus,
-    hasConnected: hasRealtimeConnected,
-  } = realtimeHeaderState;
-
   useEffect(() => {
     setComparisonSettings(
       comparisonSettingsFromSearchState(
@@ -331,22 +295,9 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
       onApply={applyFilterDocument}
     />
   );
-  const realtimeBadge =
-    realtimeHref && showRealtimeBadge ? (
-      <RealtimeActiveBadge
-        href={realtimeHref}
-        activeNow={activeNow}
-        status={realtimeStatus}
-        showValue={hasRealtimeConnected}
-        label={messages.realtime.activeNow}
-        messages={messages}
-      />
-    ) : null;
-
   return (
-    <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2">
-      <div className="flex items-center justify-end gap-2 lg:hidden">
-        {realtimeBadge}
+    <div className="flex shrink-0 items-center justify-end gap-1.5 lg:gap-2">
+      <div className="flex items-center gap-1.5 lg:hidden">
         {showComparison ? (
           <Drawer
             open={mobileCompareDrawerOpen}
@@ -402,8 +353,7 @@ export const DashboardHeaderControls = memo(function DashboardHeaderControls({
         ) : null}
       </div>
 
-      <div className="hidden min-w-0 max-w-full flex-wrap items-center justify-end gap-2 lg:flex">
-        {realtimeBadge}
+      <div className="hidden items-center gap-2 lg:flex">
         {showComparison ? (
           <Sheet
             modal={false}

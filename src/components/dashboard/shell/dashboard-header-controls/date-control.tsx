@@ -52,6 +52,7 @@ import {
   RANGE_SHORTCUTS,
   rangeForShortcut,
   rangeLabel,
+  rangeShortLabel,
   ROLLING_RANGE_PRESETS,
   stepTimeWindow,
   toDateRange,
@@ -173,6 +174,12 @@ export function DateControl({
     range === "custom"
       ? formatDateSpan(locale, timeZone, window.from, window.to)
       : rangeLabel(messages, range);
+  const shortRangeTitle =
+    range === "custom"
+      ? formatDateSpan(locale, timeZone, window.from, window.to, {
+          withYear: false,
+        })
+      : rangeShortLabel(messages, range);
 
   return (
     <>
@@ -184,11 +191,12 @@ export function DateControl({
                 data-icon="inline-start"
                 className="text-muted-foreground"
               />
-              <span className="truncate">{rangeTitle}</span>
+              <span className="truncate lg:hidden">{shortRangeTitle}</span>
+              <span className="hidden truncate lg:inline">{rangeTitle}</span>
             </span>
             <ChevronDownIcon
               data-icon="inline-end"
-              className="text-muted-foreground"
+              className="hidden text-muted-foreground lg:block"
             />
           </Button>
         </DropdownMenuTrigger>

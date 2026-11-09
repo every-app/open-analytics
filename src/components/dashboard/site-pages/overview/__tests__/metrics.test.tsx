@@ -113,8 +113,9 @@ describe("the top stats' scroll depth", () => {
     ).toBe(false);
     expect(tile.textContent).toContain("Scroll depth");
     expect(tile.textContent).toContain("65%");
-    // Up from the reference's 50.
-    expect(tile.textContent).toContain("+30.0%");
+    // Up from the reference's 50: the arrow gives the way, the text the size.
+    expect(tile.textContent).toContain("30.0%");
+    expect(tile.querySelector(".lucide-arrow-up")).not.toBeNull();
 
     act(() => tile.click());
     expect(replaceUrlWithoutNavigation).toHaveBeenCalledWith(
