@@ -2,8 +2,12 @@ import { DatabaseSync } from "node:sqlite";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { initializeIngestSqlSchema } from "@/lib/edge/ingest/schema";
+import {
+  bufferedIdToInteger,
+  initializeIngestSqlSchema,
+} from "@/lib/edge/ingest/schema";
 import type { SqlBinding } from "@/lib/edge/ingest/sql";
+import { idFromSha256Hex } from "@/lib/edge/utils";
 
 const NOW = Date.UTC(2026, 4, 25, 12, 0, 0);
 
@@ -247,6 +251,74 @@ describe("initializeIngestSqlSchema", () => {
       rows(sql, "SELECT event_id, dirty FROM buffered_custom_events"),
     ).toEqual([{ event_id: "dirty-event", dirty: 1 }]);
     sql.close();
+  });
+
+  it("converts page views buffered with client UUIDs and other legacy ids instead of failing to start", () => {
+    const sql = new SqliteSqlStorage();
+    createPerRowDeadlineSchema(sql);
+    sql.db.exec(`
+      INSERT INTO buffered_visits (
+        visit_id, site_id, visitor_id, session_id, status, started_at,
+        last_activity_at, pathname, hostname, dirty, created_at, updated_at
+      ) VALUES
+        ('uuid-visitor', 'site-1', '3f2b8c1e-9d4a-4e6b-8a7c-1d2e3f4a5b6c',
+          '84097828fc31a8c8d29210df48901a85de7fd013f686b17be77d1be29cb7a98b',
+          'complete', ${NOW - 2_000}, ${NOW - 1_000}, '/uuid', 'example.com',
+          0, ${NOW}, ${NOW}),
+        ('odd-session', 'site-1', '7fce38c63fcf1dbb90f809bb4ecdb1458fed45780d367f3ab4032f3c73e5f86b',
+          's_1700000000000', 'open', ${NOW - 2_000}, ${NOW - 1_000}, '/odd',
+          'example.com', 0, ${NOW}, ${NOW});
+    `);
+    // A rebuild an earlier start left half done.
+    sql.db.exec("CREATE TABLE buffered_visits_next (visit_id TEXT)");
+
+    expect(() => initializeIngestSqlSchema(sql)).not.toThrow();
+    initializeIngestSqlSchema(sql);
+
+    const converted = rows<{
+      visit_id: string;
+      visitor_id: number;
+      session_id: number;
+      dirty: number;
+    }>(
+      sql,
+      "SELECT visit_id, visitor_id, session_id, dirty FROM buffered_visits WHERE visit_id IN ('uuid-visitor', 'odd-session') ORDER BY visit_id",
+    );
+    // As D1's migration 0016 mapped the same ids.
+    expect(converted).toEqual([
+      {
+        visit_id: "odd-session",
+        visitor_id: idFromSha256Hex(
+          "7fce38c63fcf1dbb90f809bb4ecdb1458fed45780d367f3ab4032f3c73e5f86b",
+        ),
+        session_id: bufferedIdToInteger("s_1700000000000"),
+        dirty: 1,
+      },
+      {
+        visit_id: "uuid-visitor",
+        visitor_id: idFromSha256Hex("3f2b8c1e9d4a4e6b8a7c1d2e3f4a5b6c"),
+        session_id: idFromSha256Hex(
+          "84097828fc31a8c8d29210df48901a85de7fd013f686b17be77d1be29cb7a98b",
+        ),
+        dirty: 1,
+      },
+    ]);
+    expect(
+      rows(
+        sql,
+        "SELECT name FROM sqlite_master WHERE name = 'buffered_visits_next'",
+      ),
+    ).toEqual([]);
+    sql.close();
+  });
+
+  it("maps buffered ids deterministically into 52 bits", () => {
+    const odd = bufferedIdToInteger("s_1700000000000");
+    expect(bufferedIdToInteger("s_1700000000000")).toBe(odd);
+    expect(Number.isSafeInteger(odd)).toBe(true);
+    expect(odd).toBeLessThan(2 ** 52);
+    expect(bufferedIdToInteger("")).toBeGreaterThanOrEqual(0);
+    expect(bufferedIdToInteger(42)).toBe(42);
   });
 
   it("drops the columns page views no longer store and keeps the buffered rows", () => {

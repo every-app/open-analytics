@@ -25,7 +25,11 @@ export class IngestSqlAccess {
   constructor(private readonly doState: DurableObjectState) {}
 
   initializeSchema(): void {
-    initializeIngestSqlSchema(this.doState.storage.sql);
+    // One transaction: an upgrade that throws leaves the buffer as it was,
+    // not half rebuilt.
+    this.doState.storage.transactionSync(() =>
+      initializeIngestSqlSchema(this.doState.storage.sql),
+    );
   }
 
   sqlAll<T>(query: string, ...bindings: SqlBinding[]): T[] {

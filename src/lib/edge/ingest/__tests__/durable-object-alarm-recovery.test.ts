@@ -27,6 +27,7 @@ function createTestDo(options: {
           query.includes("AS pending") ? [{ pending: 1 } satisfies SqlRow] : [],
       })),
     },
+    transactionSync: vi.fn((callback: () => unknown) => callback()),
     getAlarm: vi.fn(async () => alarmAt),
     setAlarm: vi.fn(async (scheduledAt: number) => {
       if (options.setAlarm) {

@@ -236,6 +236,33 @@ const BUFFERED_VISITS_COLUMNS_SQL = `
   updated_at INTEGER NOT NULL
 `;
 
+const HEX_ID = /^[0-9a-f]{13,}$/;
+const FNV_OFFSET_BASIS = 0xcbf29ce484222325n;
+const FNV_PRIME = 0x100000001b3n;
+const ID_MASK = (1n << 52n) - 1n;
+
+/**
+ * A buffered id as D1's migration 0016 maps it: a hex digest, or a client
+ * UUID from before ingest derived ids (until 2026-11-07) by its own first 13
+ * hex digits without the dashes. Any other id gets a deterministic 52-bit
+ * FNV-1a hash rather than stopping the Durable Object: a throw here would
+ * fail its schema on every start, and the site would store nothing.
+ */
+export function bufferedIdToInteger(value: SqlBinding): number {
+  if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) {
+    return value;
+  }
+  const text = String(value ?? "").trim();
+  const hex = text.replaceAll("-", "").toLowerCase();
+  if (HEX_ID.test(hex)) return idFromSha256Hex(hex);
+  let hash = FNV_OFFSET_BASIS;
+  for (const byte of new TextEncoder().encode(text)) {
+    hash ^= BigInt(byte);
+    hash = (hash * FNV_PRIME) & 0xffffffffffffffffn;
+  }
+  return Number(hash & ID_MASK);
+}
+
 /**
  * Page views buffered with hex visitor and session ids get the integers
  * ingest now derives, by the same mapping (idFromSha256Hex), and are written
@@ -248,6 +275,8 @@ function convertBufferedVisitIds(sql: DurableObjectSqlStorage): void {
     (column) => column.name === "visitor_id",
   );
   if (visitorId?.type === "INTEGER") return;
+  // A rebuild an earlier start left half done.
+  sql.exec("DROP TABLE IF EXISTS buffered_visits_next");
   sql.exec(
     `CREATE TABLE buffered_visits_next (${BUFFERED_VISITS_COLUMNS_SQL})`,
   );
@@ -268,8 +297,8 @@ function convertBufferedVisitIds(sql: DurableObjectSqlStorage): void {
           typeof value === "string" ? value.trim() : value,
         ]),
       ),
-      visitor_id: idFromSha256Hex(String(row.visitor_id)),
-      session_id: idFromSha256Hex(String(row.session_id)),
+      visitor_id: bufferedIdToInteger(row.visitor_id),
+      session_id: bufferedIdToInteger(row.session_id),
       dirty: 1,
     };
     sql.exec(
